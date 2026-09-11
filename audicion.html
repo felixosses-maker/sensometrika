@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Sensometrika | Tamizaje Auditivo Biaural</title>
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    /* Gatekeeper obligatorio de audífonos */
+    .caja-gatekeeper {
+      width: 100%;
+      background-color: #0f172a;
+      border: 1.5px solid #f59e0b;
+      border-radius: 12px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      box-sizing: border-box;
+      text-align: center;
+    }
+    .check-audifonos-fila {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      background-color: #1e293b;
+      padding: 12px;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    .check-audifonos-fila input {
+      width: 20px;
+      height: 20px;
+      accent-color: #22c55e;
+      cursor: pointer;
+    }
+
+    /* Monitor sonoro interactivo */
+    .caja-emision-sonido {
+      width: 100%;
+      background-color: #020617;
+      border: 3px solid #334155;
+      border-radius: 12px;
+      padding: 24px 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      box-sizing: border-box;
+    }
+    .onda-sonora {
+      font-size: 2.8rem;
+      animation: pulsoSonoro 1.2s infinite ease-in-out;
+    }
+    @keyframes pulsoSonoro {
+      0%, 100% { transform: scale(1); opacity: 0.8; }
+      50% { transform: scale(1.15); opacity: 1; }
+    }
+
+    /* Botones de discriminación biaural */
+    .grilla-oidos {
+      width: 100%;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    .btn-oido {
+      height: 90px;
+      background-color: #1e293b;
+      border: 2px solid #334155;
+      color: #ffffff;
+      font-size: 0.95rem;
+      font-weight: 700;
+      border-radius: 10px;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      gap: 6px;
+      touch-action: manipulation;
+      transition: background-color 0.15s, border-color 0.15s;
+    }
+    .btn-oido:active {
+      background-color: #0284c7;
+      border-color: #38bdf8;
+      transform: scale(0.97);
+    }
+  </style>
+</head>
+<body>
+  <main class="contenedor">
+    <header class="encabezado">
+      <h1>Sensometrika</h1>
+      <p>Screening Auditivo Biaural (500 - 4.000 Hz)</p>
+    </header>
+
+    <!-- Verificación Previa Obligatoria (Gatekeeper) -->
+    <section class="caja-gatekeeper" id="seccion-bloqueo-audifonos">
+      <div style="font-size: 2.4rem;">🎧</div>
+      <h3 style="font-size: 1rem; color: #f59e0b; margin: 0;">Requisito Técnico Obligatorio</h3>
+      <p style="font-size: 0.82rem; color: #cbd5e1; margin: 0; line-height: 1.4;">
+        Para evaluar la audición lateral independiente (oído izquierdo vs. derecho), <strong>debes usar audífonos</strong> (alámbricos o Bluetooth). Los altavoces de tu dispositivo anulan la prueba.
+      </p>
+
+      <label class="check-audifonos-fila">
+        <input type="checkbox" id="chk-audifonos" onchange="alternarGatekeeper()">
+        <span style="font-size: 0.82rem; font-weight: 600; color: #f8fafc;">Tengo audífonos conectados, colocados y con volumen medio</span>
+      </label>
+
+      <button id="btn-comenzar-audio" class="btn-principal" disabled onclick="iniciarEvaluacionAuditiva()">
+        Confirmar e Iniciar
+      </button>
+    </section>
+
+    <!-- Área de Evaluación Activa -->
+    <section id="seccion-prueba-activa" style="display: none; width: 100%; flex-direction: column; gap: 14px;">
+      <div class="panel-resultados">
+        <div class="tarjeta-metrica">
+          <span>Estímulo</span>
+          <strong id="metrica-paso">1/6</strong>
+        </div>
+        <div class="tarjeta-metrica">
+          <span>Frecuencia</span>
+          <strong id="metrica-frecuencia">1000 Hz</strong>
+        </div>
+        <div class="tarjeta-metrica">
+          <span>Aciertos</span>
+          <strong id="metrica-aciertos-audio" style="color: #4ade80;">0</strong>
+        </div>
+      </div>
+
+      <div class="caja-emision-sonido">
+        <div class="onda-sonora">🔊</div>
+        <div style="font-size: 0.85rem; color: #94a3b8;">Escuchando tono puro...</div>
+      </div>
+
+      <div id="panel-estado" class="estado">¿Por cuál lado escuchaste el sonido?</div>
+
+      <div class="grilla-oidos">
+        <button class="btn-oido" onclick="responderLado('left')">
+          <span style="font-size: 1.5rem;">👂◀️</span>
+          <span>Oído Izquierdo</span>
+        </button>
+        <button class="btn-oido" onclick="responderLado('right')">
+          <span style="font-size: 1.5rem;">▶️👂</span>
+          <span>Oído Derecho</span>
+        </button>
+      </div>
+
+      <button class="btn-principal" style="background-color: #334155; height: 44px; font-size: 0.85rem;" onclick="responderLado('NO_ESCUCHO')">
+        No logré escuchar el sonido
+      </button>
+    </section>
+
+    <a href="menu.html" style="color: #94a3b8; text-decoration: none; font-size: 0.85rem; margin-top: 6px; display: block; text-align: center;">
+      ← Volver al Menú Principal
+    </a>
+  </main>
+
+  <script src="session-timer.js"></script>
+  <script src="audicion.js"></script>
+</body>
+</html>

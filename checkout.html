@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Sensometrika | Checkout de Pago Seguro</title>
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    .caja-resumen {
+      width: 100%;
+      background: linear-gradient(135deg, #0f172a, #1e293b);
+      border: 1.5px solid #38bdf8;
+      border-radius: 12px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      box-sizing: border-box;
+      margin-bottom: 16px;
+    }
+    .caja-resumen h2 {
+      font-size: 1.1rem;
+      color: #38bdf8;
+      margin: 0;
+    }
+    .fila-precio {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.88rem;
+      color: #94a3b8;
+    }
+    .fila-precio.total {
+      border-top: 1px dashed #334155;
+      padding-top: 8px;
+      font-size: 1.25rem;
+      font-weight: 800;
+      color: #ffffff;
+    }
+
+    .form-pago {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .seccion-bloque {
+      background-color: #0f172a;
+      border: 1px solid #334155;
+      border-radius: 12px;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .seccion-bloque h3 {
+      font-size: 0.85rem;
+      color: #38bdf8;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin: 0 0 2px 0;
+    }
+    .grupo-campo {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .grupo-campo label {
+      font-size: 0.78rem;
+      color: #cbd5e1;
+      font-weight: 600;
+    }
+    .grupo-campo input {
+      height: 42px;
+      background-color: #1e293b;
+      border: 1px solid #475569;
+      border-radius: 8px;
+      color: #ffffff;
+      padding: 0 12px;
+      font-size: 0.9rem;
+      box-sizing: border-box;
+    }
+    .grupo-campo input:focus {
+      outline: none;
+      border-color: #38bdf8;
+    }
+    .btn-pagar {
+      width: 100%;
+      height: 52px;
+      background-color: #16a34a;
+      border: none;
+      color: #ffffff;
+      font-size: 1.05rem;
+      font-weight: 800;
+      border-radius: 10px;
+      cursor: pointer;
+      margin-top: 10px;
+      touch-action: manipulation;
+      transition: background 0.2s, transform 0.05s;
+    }
+    .btn-pagar:active {
+      background-color: #15803d;
+      transform: scale(0.98);
+    }
+    .aviso-seguridad {
+      font-size: 0.72rem;
+      color: #64748b;
+      text-align: center;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+  <main class="contenedor">
+    <header class="encabezado">
+      <h1>Sensometrika</h1>
+      <p id="subtitulo-checkout">Paso 2: Registro y Pago Seguro</p>
+    </header>
+
+    <!-- Resumen del Pedido -->
+    <section class="caja-resumen">
+      <div style="font-size: 0.78rem; color: #94a3b8;">Plan Seleccionado:</div>
+      <h2 id="txt-plan-nombre">Cargando pedido...</h2>
+      <div class="fila-precio" id="fila-cant">
+        <span>Evaluaciones habilitadas:</span>
+        <strong id="txt-plan-cant" style="color: #fff;">1</strong>
+      </div>
+      <div class="fila-precio" id="fila-neto" style="display: none;">
+        <span>Subtotal Neto:</span>
+        <strong id="txt-plan-neto" style="color: #fff;">$0 CLP</strong>
+      </div>
+      <div class="fila-precio" id="fila-iva" style="display: none;">
+        <span>IVA (19% Factura):</span>
+        <strong id="txt-plan-iva" style="color: #fff;">$0 CLP</strong>
+      </div>
+      <div class="fila-precio total">
+        <span>Total a Pagar:</span>
+        <strong id="txt-plan-total" style="color: #38bdf8;">$0 CLP</strong>
+      </div>
+    </section>
+
+    <!-- Formulario de Cobro -->
+    <form class="form-pago" id="formulario-checkout" onsubmit="procesarPago(event)">
+      
+      <!-- ==================== BLOQUE EMPRESA (B2B) ==================== -->
+      <div id="bloque-b2b" style="display: none; flex-direction: column; gap: 12px;">
+        
+        <!-- 1. Datos del Solicitante / Responsable de Supervisión -->
+        <div class="seccion-bloque">
+          <h3>1. Solicitante / Responsable Técnico</h3>
+          <p style="font-size: 0.73rem; color: #94a3b8; margin: 0;">
+            Estos datos se estamparán automáticamente en el pie de firma del informe técnico y recibirán las alertas inmediatas.
+          </p>
+
+          <div class="grupo-campo">
+            <label for="inp-resp-nombre">Nombre y Apellido del Responsable *</label>
+            <input type="text" id="inp-resp-nombre" placeholder="Ej: Marcela Gómez Ortiz">
+          </div>
+
+          <div class="grupo-campo">
+            <label for="inp-resp-rut">RUT del Responsable *</label>
+            <input type="text" id="inp-resp-rut" placeholder="Ej: 14.238.910-K">
+          </div>
+
+          <div class="grupo-campo">
+            <label for="inp-resp-cargo">Cargo / Rol en la Empresa *</label>
+            <input type="text" id="inp-resp-cargo" placeholder="Ej: Jefe de Prevención de Riesgos / APR">
+          </div>
+
+          <div class="grupo-campo">
+            <label for="inp-resp-correo">Correo Electrónico (Recepción de Informes) *</label>
+            <input type="email" id="inp-resp-correo" placeholder="prevencion@transportes.cl">
+          </div>
+        </div>
+
+        <!-- 2. Datos de Facturación de la Empresa -->
+        <div class="seccion-bloque">
+          <h3>2. Facturación Corporativa (DTE)</h3>
+          <div class="grupo-campo">
+            <label for="inp-razon-social">Razón Social Empresa / Faena *</label>
+            <input type="text" id="inp-razon-social" placeholder="Ej: Transportes Cordillera SpA">
+          </div>
+
+          <div class="grupo-campo">
+            <label for="inp-rut-empresa">RUT Empresa *</label>
+            <input type="text" id="inp-rut-empresa" placeholder="Ej: 76.890.123-4">
+          </div>
+        </div>
+      </div>
+
+      <!-- ==================== BLOQUE PARTICULAR (B2C) ==================== -->
+      <div id="bloque-b2c" class="seccion-bloque" style="display: none;">
+        <h3>Datos del Postulante / Titular</h3>
+        <div class="grupo-campo">
+          <label for="inp-part-nombre">Nombre Completo *</label>
+          <input type="text" id="inp-part-nombre" placeholder="Ej: Juan Pérez Morales">
+        </div>
+
+        <div class="grupo-campo">
+          <label for="inp-part-rut">RUT Postulante *</label>
+          <input type="text" id="inp-part-rut" placeholder="Ej: 15.678.901-2">
+        </div>
+
+        <div class="grupo-campo">
+          <label for="inp-part-correo">Correo Electrónico (Resultados y Boleta) *</label>
+          <input type="email" id="inp-part-correo" placeholder="nombre@correo.cl">
+        </div>
+      </div>
+
+      <button type="submit" class="btn-pagar" id="btn-submit-pago">
+        🔒 Confirmar y Activar Entrenamiento
+      </button>
+
+      <div class="aviso-seguridad">
+        Transacción cifrada SSL de 256 bits. Al terminar las pruebas el resultado se despachará al correo registrado.
+      </div>
+    </form>
+
+    <a href="planes.html" style="color: #94a3b8; font-size: 0.82rem; text-align: center; margin-top: 14px; text-decoration: none; display: block;">
+      ← Cambiar de Plan
+    </a>
+  </main>
+
+  <script>
+    const pedido = JSON.parse(localStorage.getItem('sensometrika_plan_pedido')) || {
+      planId: 'part_basico',
+      nombrePlan: 'Plan Básico Psicomotriz',
+      precioUnitario: 4990,
+      cantidad: 1,
+      precioNeto: 4990,
+      precioTotal: 4990,
+      rol: 'particular',
+      modulosPermitidos: ['reactimetro', 'palancas', 'punteo']
+    };
+
+    document.getElementById('txt-plan-nombre').innerText = pedido.nombrePlan;
+    document.getElementById('txt-plan-cant').innerText = pedido.cantidad;
+
+    const bloqueB2B = document.getElementById('bloque-b2b');
+    const bloqueB2C = document.getElementById('bloque-b2c');
+
+    if (pedido.rol === 'empresa') {
+      bloqueB2B.style.display = 'flex';
+      bloqueB2C.style.display = 'none';
+      document.getElementById('fila-neto').style.display = 'flex';
+      document.getElementById('fila-iva').style.display = 'flex';
+
+      document.getElementById('inp-resp-nombre').setAttribute('required', 'true');
+      document.getElementById('inp-resp-rut').setAttribute('required', 'true');
+      document.getElementById('inp-resp-cargo').setAttribute('required', 'true');
+      document.getElementById('inp-resp-correo').setAttribute('required', 'true');
+      document.getElementById('inp-razon-social').setAttribute('required', 'true');
+      document.getElementById('inp-rut-empresa').setAttribute('required', 'true');
+
+      document.getElementById('txt-plan-neto').innerText = `$${(pedido.precioNeto || 0).toLocaleString('es-CL')} CLP`;
+      document.getElementById('txt-plan-iva').innerText = `$${(pedido.iva || 0).toLocaleString('es-CL')} CLP`;
+      document.getElementById('txt-plan-total').innerText = `$${(pedido.precioTotal || 0).toLocaleString('es-CL')} CLP`;
+    } else {
+      bloqueB2B.style.display = 'none';
+      bloqueB2C.style.display = 'flex';
+
+      document.getElementById('inp-part-nombre').setAttribute('required', 'true');
+      document.getElementById('inp-part-rut').setAttribute('required', 'true');
+      document.getElementById('inp-part-correo').setAttribute('required', 'true');
+
+      document.getElementById('txt-plan-total').innerText = `$${(pedido.precioTotal || 0).toLocaleString('es-CL')} CLP`;
+    }
+
+    function procesarPago(event) {
+      event.preventDefault();
+
+      if (pedido.rol === 'empresa') {
+        const respNombre = document.getElementById('inp-resp-nombre').value.trim();
+        const respRut = document.getElementById('inp-resp-rut').value.trim();
+        const respCargo = document.getElementById('inp-resp-cargo').value.trim();
+        const respCorreo = document.getElementById('inp-resp-correo').value.trim();
+        const razonSocial = document.getElementById('inp-razon-social').value.trim();
+        const rutEmpresa = document.getElementById('inp-rut-empresa').value.trim();
+
+        // 1. Guardar Datos B2B para la firma automática e informes
+        const datosEmpresa = {
+          empresa: razonSocial,
+          rutEmpresa: rutEmpresa,
+          responsable: respNombre,
+          rutResponsable: respRut,
+          cargo: respCargo,
+          correoInformes: respCorreo
+        };
+        localStorage.setItem('sensometrika_plan_empresa', JSON.stringify(datosEmpresa));
+
+        // 2. Guardar Licencia Activa
+        const sesionActiva = {
+          rol: 'empresa',
+          planId: pedido.planId,
+          nombrePlan: pedido.nombrePlan,
+          modulosPermitidos: pedido.modulosPermitidos,
+          intentosRestantes: pedido.cantidad,
+          razonSocial: razonSocial,
+          correoInformes: respCorreo,
+          fechaActivacion: new Date().toISOString()
+        };
+        localStorage.setItem('sensometrika_sesion', JSON.stringify(sesionActiva));
+
+        // 3. Dejar el portal listo para que el trabajador ingrese en menu.html
+        localStorage.setItem('sensometrika_datos_usuario', JSON.stringify({
+          tipo: 'empresa',
+          nombre: '',
+          rut: '',
+          empresa: razonSocial
+        }));
+
+      } else {
+        const partNombre = document.getElementById('inp-part-nombre').value.trim();
+        const partRut = document.getElementById('inp-part-rut').value.trim();
+        const partCorreo = document.getElementById('inp-part-correo').value.trim();
+
+        localStorage.setItem('sensometrika_datos_usuario', JSON.stringify({
+          tipo: 'particular',
+          nombre: partNombre,
+          rut: partRut,
+          correo: partCorreo,
+          empresa: 'Particular'
+        }));
+
+        localStorage.setItem('sensometrika_sesion', JSON.stringify({
+          rol: 'particular',
+          planId: pedido.planId,
+          nombrePlan: pedido.nombrePlan,
+          modulosPermitidos: pedido.modulosPermitidos,
+          intentosRestantes: pedido.cantidad || 1,
+          correoInformes: partCorreo,
+          fechaActivacion: new Date().toISOString()
+        }));
+      }
+
+      // Limpiar registros previos
+      localStorage.removeItem('sensometrika_reactimetro');
+      localStorage.removeItem('sensometrika_palancas');
+      localStorage.removeItem('sensometrika_punteo');
+      localStorage.removeItem('sensometrika_visual');
+      localStorage.removeItem('sensometrika_auditivo');
+
+      alert('¡Pago y registro completados con éxito! Entrando al portal de evaluación...');
+      window.location.href = 'menu.html';
+    }
+  </script>
+</body>
+</html>
