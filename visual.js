@@ -1,5 +1,5 @@
 /* ==========================================================================
-   1. VALIDACIÓN PREVIA DE USO (PLAN ACOMPAÑAMIENTO)
+   1. VALIDACIÓN PREVIA DE USO (PLAN ACOMPAÑAMIENTO / REGLAS DE ACCESO)
    ========================================================================== */
 if (typeof SessionTimer !== 'undefined' && !SessionTimer.puedeUsarModulo('visual')) {
   alert('Ya has completado tu evaluación visual única incluida en el plan.');
@@ -84,15 +84,19 @@ async function iniciarCamara() {
       video: { facingMode: 'user', width: { ideal: 320 }, height: { ideal: 240 } },
       audio: false
     });
-    video.srcObject = stream;
-    video.onloadedmetadata = () => {
-      iniciarLoopMonitoreoDistancia();
-    };
+    if (video) {
+      video.srcObject = stream;
+      video.onloadedmetadata = () => {
+        iniciarLoopMonitoreoDistancia();
+      };
+    }
   } catch (err) {
-    etiquetaDistancia.innerText = '📱 Modo manual: Extiende el brazo a ~50 cm';
-    estadoDistancia.innerText = 'Manual';
-    estadoDistancia.style.color = '#facc15';
-    cajaCamara.classList.add('distancia-correcta');
+    if (etiquetaDistancia) etiquetaDistancia.innerText = '📱 Modo manual: Extiende el brazo a ~50 cm';
+    if (estadoDistancia) {
+      estadoDistancia.innerText = 'Manual';
+      estadoDistancia.style.color = '#facc15';
+    }
+    if (cajaCamara) cajaCamara.classList.add('distancia-correcta');
     distanciaValidada = true;
     actualizarEstadoBotones();
   }
@@ -105,7 +109,7 @@ function iniciarLoopMonitoreoDistancia() {
   canvasAux.height = 60;
 
   setInterval(() => {
-    if (video.readyState < 2) return;
+    if (!video || video.readyState < 2) return;
 
     ctxAux.drawImage(video, 0, 0, 80, 60);
     const frame = ctxAux.getImageData(0, 0, 80, 60).data;
@@ -126,29 +130,37 @@ function iniciarLoopMonitoreoDistancia() {
     if (esFaseOptotipo) {
       if (densidadRostro > 0.32) {
         distanciaValidada = false;
-        cajaCamara.classList.remove('distancia-correcta');
-        etiquetaDistancia.innerText = '⚠️ Muy cerca: Estira el brazo (~50 cm)';
-        estadoDistancia.innerText = 'Cerca';
-        estadoDistancia.style.color = '#ef4444';
+        if (cajaCamara) cajaCamara.classList.remove('distancia-correcta');
+        if (etiquetaDistancia) etiquetaDistancia.innerText = '⚠️ Muy cerca: Estira el brazo (~50 cm)';
+        if (estadoDistancia) {
+          estadoDistancia.innerText = 'Cerca';
+          estadoDistancia.style.color = '#ef4444';
+        }
       } else if (densidadRostro < 0.05) {
         distanciaValidada = false;
-        cajaCamara.classList.remove('distancia-correcta');
-        etiquetaDistancia.innerText = '👤 Ubica tu rostro frente a la pantalla';
-        estadoDistancia.innerText = 'Buscando';
-        estadoDistancia.style.color = '#facc15';
+        if (cajaCamara) cajaCamara.classList.remove('distancia-correcta');
+        if (etiquetaDistancia) etiquetaDistancia.innerText = '👤 Ubica tu rostro frente a la pantalla';
+        if (estadoDistancia) {
+          estadoDistancia.innerText = 'Buscando';
+          estadoDistancia.style.color = '#facc15';
+        }
       } else {
         distanciaValidada = true;
-        cajaCamara.classList.add('distancia-correcta');
-        etiquetaDistancia.innerText = '✅ Distancia Correcta (~50-60 cm)';
-        estadoDistancia.innerText = 'Óptima';
-        estadoDistancia.style.color = '#4ade80';
+        if (cajaCamara) cajaCamara.classList.add('distancia-correcta');
+        if (etiquetaDistancia) etiquetaDistancia.innerText = '✅ Distancia Correcta (~50-60 cm)';
+        if (estadoDistancia) {
+          estadoDistancia.innerText = 'Óptima';
+          estadoDistancia.style.color = '#4ade80';
+        }
       }
     } else {
       distanciaValidada = true;
-      cajaCamara.classList.add('distancia-correcta');
-      etiquetaDistancia.innerText = '✅ Calibración facial activa';
-      estadoDistancia.innerText = 'Correcta';
-      estadoDistancia.style.color = '#4ade80';
+      if (cajaCamara) cajaCamara.classList.add('distancia-correcta');
+      if (etiquetaDistancia) etiquetaDistancia.innerText = '✅ Calibración facial activa';
+      if (estadoDistancia) {
+        estadoDistancia.innerText = 'Correcta';
+        estadoDistancia.style.color = '#4ade80';
+      }
     }
 
     actualizarEstadoBotones();
@@ -156,6 +168,7 @@ function iniciarLoopMonitoreoDistancia() {
 }
 
 function actualizarEstadoBotones() {
+  if (!contenedorOpciones) return;
   const botones = contenedorOpciones.querySelectorAll('.btn-opcion');
   botones.forEach(btn => {
     btn.disabled = !distanciaValidada;
@@ -167,15 +180,16 @@ function actualizarEstadoBotones() {
    ========================================================================== */
 function cargarPrueba() {
   const item = PRUEBAS_VISUALES[indiceActual];
+  if (!contenedorOpciones) return;
   contenedorOpciones.innerHTML = '';
-  contadorAciertos.innerText = `${aciertosCromaticos + aciertosAgudeza}/${indiceActual}`;
+  if (contadorAciertos) contadorAciertos.innerText = `${aciertosCromaticos + aciertosAgudeza}/${indiceActual}`;
 
   if (item.tipo === 'ISHIHARA') {
-    indicadorFase.innerText = 'Cromático';
-    canvasIshihara.style.display = 'block';
-    simboloOptotipo.style.display = 'none';
-    panelEstado.innerText = '¿Qué número ves dentro del círculo?';
-    cajaInstruccion.innerHTML = '🎨 <strong>Visión Cromática:</strong> Distingue el dígito entre los patrones.';
+    if (indicadorFase) indicadorFase.innerText = 'Cromático';
+    if (canvasIshihara) canvasIshihara.style.display = 'block';
+    if (simboloOptotipo) simboloOptotipo.style.display = 'none';
+    if (panelEstado) panelEstado.innerText = '¿Qué número ves dentro del círculo?';
+    if (cajaInstruccion) cajaInstruccion.innerHTML = '🎨 <strong>Visión Cromática:</strong> Distingue el dígito entre los patrones.';
     dibujarPlacaIshihara(item.numero, item.colorFondo, item.colorPatron);
 
     item.opciones.forEach(opc => {
@@ -187,13 +201,15 @@ function cargarPrueba() {
       contenedorOpciones.appendChild(btn);
     });
   } else {
-    indicadorFase.innerText = 'Agudeza (E)';
-    canvasIshihara.style.display = 'none';
-    simboloOptotipo.style.display = 'block';
-    simboloOptotipo.style.transform = `rotate(${item.orientacion}deg)`;
-    simboloOptotipo.style.fontSize = item.tamanoRem;
-    panelEstado.innerText = '¿Hacia qué dirección apuntan las patas de la letra E?';
-    cajaInstruccion.innerHTML = '👁️ <strong>Agudeza Visual:</strong> Brazo extendido. La cámara valida tu distancia.';
+    if (indicadorFase) indicadorFase.innerText = 'Agudeza (E)';
+    if (canvasIshihara) canvasIshihara.style.display = 'none';
+    if (simboloOptotipo) {
+      simboloOptotipo.style.display = 'block';
+      simboloOptotipo.style.transform = `rotate(${item.orientacion}deg)`;
+      simboloOptotipo.style.fontSize = item.tamanoRem;
+    }
+    if (panelEstado) panelEstado.innerText = '¿Hacia qué dirección apuntan las patas de la letra E?';
+    if (cajaInstruccion) cajaInstruccion.innerHTML = '👁️ <strong>Agudeza Visual:</strong> Brazo extendido. La cámara valida tu distancia.';
 
     item.etiquetaOpciones.forEach(opc => {
       const btn = document.createElement('button');
@@ -246,8 +262,11 @@ function dibujarPlacaIshihara(texto, colorFondo, colorTexto) {
   ctxIshihara.globalAlpha = 1.0;
 }
 
+/* ==========================================================================
+   6. FINALIZACIÓN Y COORDINACIÓN DINÁMICA HACIA AUDITIVO O INFORME
+   ========================================================================== */
 function finalizarTamizaje() {
-  if (video.srcObject) {
+  if (video && video.srcObject) {
     video.srcObject.getTracks().forEach(track => track.stop());
   }
 
@@ -265,23 +284,55 @@ function finalizarTamizaje() {
     distanciaVerificadaCamara: true
   }));
 
-  // Consumir el intento único
+  // Consumir el intento de uso si aplica
   if (typeof SessionTimer !== 'undefined') {
     SessionTimer.consumirUsoModulo('visual');
   }
 
-  indicadorFase.innerText = 'Fin';
-  estadoDistancia.innerText = aprobado ? 'Aprobado' : 'Observado';
-  estadoDistancia.style.color = aprobado ? '#4ade80' : '#f87171';
-  panelEstado.innerText = `Evaluación completada: ${efectividad}% de acierto`;
-  panelEstado.style.color = aprobado ? '#4ade80' : '#ef4444';
-  cajaInstruccion.innerHTML = '✅ <strong>Guardado con éxito.</strong> Volviendo al menú principal...';
-  contenedorOpciones.innerHTML = '';
+  // Detectar si el plan contratado incluye auditivo
+  const sesion = JSON.parse(localStorage.getItem('sensometrika_sesion')) || { modulosPermitidos: [] };
+  const tieneAuditivo = sesion.modulosPermitidos && sesion.modulosPermitidos.includes('auditivo');
 
-  setTimeout(() => {
-    window.location.href = 'menu.html';
-  }, 2200);
+  const siguienteUrl = tieneAuditivo ? 'audicion.html' : 'informe.html';
+  const textoBoton = tieneAuditivo 
+    ? 'Continuar a Módulo 5 (Tamizaje Auditivo) →' 
+    : '📊 Ver Informe y Dictamen Final';
+
+  if (indicadorFase) indicadorFase.innerText = 'Fin';
+  if (estadoDistancia) {
+    estadoDistancia.innerText = aprobado ? 'Aprobado' : 'Observado';
+    estadoDistancia.style.color = aprobado ? '#4ade80' : '#f87171';
+  }
+  if (panelEstado) {
+    panelEstado.innerText = `Evaluación completada: ${efectividad}% de acierto`;
+    panelEstado.style.color = aprobado ? '#4ade80' : '#ef4444';
+  }
+  if (cajaInstruccion) {
+    cajaInstruccion.innerHTML = '✅ <strong>Tamizaje visual completado con éxito.</strong>';
+  }
+
+  // Despliegue de la tarjeta interactiva de transición
+  if (contenedorOpciones) {
+    contenedorOpciones.innerHTML = `
+      <div style="grid-column: 1 / -1; background: #020617; border: 1.5px solid #38bdf8; border-radius: 12px; padding: 16px; margin-top: 10px; text-align: center; width: 100%; box-sizing: border-box;">
+        <h3 style="color: #4ade80; font-size: 1.05rem; margin: 0 0 6px 0;">¡Módulo 4 Finalizado!</h3>
+        <p style="color: #94a3b8; font-size: 0.8rem; margin: 0 0 14px 0;">
+          Efectividad visual registrada: <strong style="color: #fff;">${efectividad}%</strong> (${aprobado ? 'Sin Alertas' : 'Observado'})
+        </p>
+        
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+          <a href="${siguienteUrl}" class="btn-principal" style="display: flex; justify-content: center; align-items: center; text-decoration: none; height: 46px; font-size: 0.9rem; background-color: #0284c7; color: #ffffff; border-radius: 8px; font-weight: bold;">
+            ${textoBoton}
+          </a>
+          <a href="menu.html" style="color: #64748b; font-size: 0.8rem; text-decoration: none; padding: 6px;">
+            Regresar al Menú Principal
+          </a>
+        </div>
+      </div>
+    `;
+  }
 }
 
+// Iniciar componentes al cargar la pantalla
 iniciarCamara();
 cargarPrueba();
