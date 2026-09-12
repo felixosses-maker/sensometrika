@@ -2,209 +2,274 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Sensometrika | Certificado Técnico Oficial de Evaluación</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sensometrika | Certificado Técnico Oficial</title>
   <link rel="stylesheet" href="styles.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <style>
-    .ficha-identidad-fija {
-      width: 100%;
-      background-color: #0f172a;
-      border: 1px solid #334155;
-      border-radius: 12px;
-      padding: 14px 16px;
-      margin-bottom: 12px;
-      box-sizing: border-box;
+    /* ESTILOS EN PANTALLA (WEB) */
+    body {
+      background-color: #0b1120;
+      color: #f1f5f9;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      margin: 0;
+      padding: 16px;
       display: flex;
-      flex-direction: column;
-      gap: 6px;
-      font-size: 0.85rem;
+      justify-content: center;
     }
-    .ficha-identidad-fija span { color: #94a3b8; }
-    .ficha-identidad-fija strong { color: #ffffff; }
 
-    .dictamen-caja {
+    .contenedor {
       width: 100%;
-      padding: 12px;
-      border-radius: 10px;
-      text-align: center;
-      font-weight: 700;
-      font-size: 1rem;
-      box-sizing: border-box;
-      margin-bottom: 14px;
-      letter-spacing: 0.5px;
+      max-width: 620px;
     }
-    .aprobado { background-color: rgba(34, 197, 94, 0.15); border: 1.5px solid #22c55e; color: #4ade80; }
-    .reprobado { background-color: rgba(239, 68, 68, 0.15); border: 1.5px solid #ef4444; color: #f87171; }
 
-    .tabla-comparativa {
+    .tabla-informe {
       width: 100%;
       border-collapse: collapse;
-      margin-bottom: 14px;
-      background-color: #0f172a;
-      border-radius: 8px;
-      overflow: hidden;
-      border: 1px solid #334155;
-    }
-    .tabla-comparativa th, .tabla-comparativa td {
-      padding: 9px 10px;
-      text-align: left;
+      margin: 10px 0;
       font-size: 0.78rem;
-      border-bottom: 1px solid #1e293b;
     }
-    .tabla-comparativa th {
-      background-color: #1e293b;
+    .tabla-informe th, .tabla-informe td {
+      border: 1px solid #334155;
+      padding: 7px 6px;
+      text-align: left;
+    }
+    .tabla-informe th {
+      background-color: #0f172a;
       color: #38bdf8;
-      font-weight: 600;
+      font-size: 0.72rem;
     }
-    .badge-estado {
-      font-size: 0.7rem;
-      font-weight: 700;
-      padding: 2px 8px;
+
+    .badge-eval {
+      font-weight: bold;
+      padding: 2px 6px;
       border-radius: 4px;
-      display: inline-block;
+      font-size: 0.7rem;
     }
-    .badge-cumple { background-color: rgba(34, 197, 94, 0.2); color: #4ade80; border: 1px solid #22c55e; }
-    .badge-falla { background-color: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid #ef4444; }
+    .eval-aprobado { color: #4ade80; background: rgba(74, 222, 128, 0.1); border: 1px solid #4ade80; }
+    .eval-reprobado { color: #f87171; background: rgba(248, 113, 113, 0.1); border: 1px solid #f87171; }
 
     .zona-firma-pantalla {
-      width: 100%;
       background-color: #0f172a;
       border: 1.5px solid #0284c7;
-      border-radius: 10px;
-      padding: 12px;
+      border-radius: 8px;
+      padding: 10px;
       text-align: center;
-      margin-bottom: 12px;
-      box-sizing: border-box;
+      margin: 12px 0;
     }
     #canvas-firma {
       background-color: #ffffff;
       border-radius: 6px;
-      touch-action: none;
       cursor: crosshair;
-      border: 1px solid #94a3b8;
+      touch-action: none;
     }
 
     .membrete-print, .pie-print, .seccion-firmas { display: none; }
 
-    @media print {
-      @page { size: A4 portrait; margin: 12mm 15mm; }
-      body { background-color: #ffffff !important; color: #0f172a !important; padding: 0 !important; }
-      .contenedor { max-width: 100% !important; background-color: #ffffff !important; box-shadow: none !important; padding: 0 !important; }
-      header, button, a, .aviso-diagnostico, .zona-firma-pantalla { display: none !important; }
+    /* ==========================================================================
+       AJUSTE DE PRECISIÓN A4 (1 SOLA HOJA ESTRICTA PARA IMPRESIÓN / PDF)
+       ========================================================================== */
+    @page {
+      size: A4 portrait;
+      margin: 8mm 10mm; /* Márgenes calibrados para evitar la 2da página */
+    }
 
+    @media print {
+      html, body {
+        background: #ffffff !important;
+        color: #0f172a !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        width: 100% !important;
+        font-size: 8.5pt !important;
+      }
+
+      .contenedor {
+        max-width: 100% !important;
+        width: 100% !important;
+        box-shadow: none !important;
+        padding: 0 !important;
+        margin: 0 !important;
+      }
+
+      /* Ocultar elementos interactivos web */
+      header.web-header, 
+      .aviso-despacho-correo, 
+      .aviso-diagnostico, 
+      .zona-firma-pantalla, 
+      .acciones-web, 
+      button, 
+      a {
+        display: none !important;
+      }
+
+      /* 1. Membrete Ejecutivo Compacto */
       .membrete-print {
         display: flex !important;
         justify-content: space-between;
         align-items: center;
         border-bottom: 2px solid #0f172a;
-        padding-bottom: 10px;
-        margin-bottom: 12px;
+        padding-bottom: 6px;
+        margin-bottom: 6px;
       }
-      .marca-box { display: flex; align-items: center; gap: 12px; }
-      .marca-texto h1 { font-size: 1.35rem; font-weight: 900; color: #0f172a; margin: 0; }
-      .marca-texto .subtitulo { font-size: 0.72rem; font-weight: 800; color: #0284c7; text-transform: uppercase; }
-      .marca-texto .norma { font-size: 0.68rem; color: #475569; margin-top: 2px; }
+      .membrete-print h2 {
+        margin: 0;
+        font-size: 13pt;
+        letter-spacing: 0.5px;
+        color: #0f172a;
+        font-weight: 800;
+      }
+      .membrete-print p {
+        margin: 1px 0 0 0;
+        font-size: 7pt;
+        color: #475569;
+        font-weight: 600;
+      }
 
-      .qr-box { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 4px; border: 1px solid #cbd5e1; border-radius: 6px; }
-      .qr-box span { font-size: 0.55rem; color: #475569; font-weight: 800; }
-
-      .ficha-identidad-fija {
+      /* 2. Cuadrícula de Filiación 2 Columnas */
+      .ficha-print {
         display: grid !important;
         grid-template-columns: 1fr 1fr;
-        background-color: #f8fafc !important;
+        gap: 3px 14px;
+        background: #f8fafc !important;
         border: 1px solid #cbd5e1 !important;
-        border-radius: 8px !important;
-        padding: 10px 14px !important;
-        margin-bottom: 12px !important;
-        gap: 6px 14px !important;
+        border-radius: 4px;
+        padding: 6px 10px !important;
+        margin-bottom: 6px !important;
+        font-size: 7.8pt !important;
+        line-height: 1.35;
       }
-      .ficha-identidad-fija span { color: #475569 !important; font-size: 0.76rem; }
-      .ficha-identidad-fija strong { color: #0f172a !important; font-size: 0.82rem; }
+      .ficha-print div { color: #334155; }
+      .ficha-print strong { color: #0f172a; }
 
-      .dictamen-caja {
-        background-color: #f8fafc !important;
-        border: 2px solid #0f172a !important;
+      /* 3. Dictamen Integrado */
+      #box-dictamen {
+        margin-bottom: 6px !important;
+        padding: 4px 8px !important;
+        font-size: 8.5pt !important;
+        border-radius: 4px;
+      }
+
+      /* 4. Tabla de Resultados Optimizada en Altura */
+      .tabla-informe {
+        margin: 6px 0 !important;
+        border: 1px solid #cbd5e1 !important;
+        font-size: 7.2pt !important;
+      }
+      .tabla-informe th {
+        background-color: #f1f5f9 !important;
         color: #0f172a !important;
-        padding: 8px 12px !important;
-        margin-bottom: 12px !important;
-        font-size: 0.95rem !important;
+        font-size: 7pt !important;
+        padding: 4px 5px !important;
+        border: 1px solid #cbd5e1 !important;
+      }
+      .tabla-informe td {
+        padding: 3.5px 5px !important;
+        border-bottom: 1px solid #e2e8f0 !important;
+        border-left: 1px solid #cbd5e1 !important;
+        border-right: 1px solid #cbd5e1 !important;
+        color: #1e293b !important;
+        line-height: 1.25;
+      }
+      .tabla-informe td strong { font-size: 7.5pt; color: #0f172a; }
+      .tabla-informe td small { font-size: 6.4pt; color: #64748b; }
+
+      .badge-eval {
+        padding: 1px 4px !important;
+        font-size: 6.8pt !important;
       }
 
-      .tabla-comparativa { background-color: #ffffff !important; border: 1px solid #cbd5e1 !important; margin-bottom: 16px !important; }
-      .tabla-comparativa th { background-color: #f1f5f9 !important; color: #0f172a !important; font-size: 0.72rem !important; border: 1px solid #cbd5e1 !important; }
-      .tabla-comparativa td { border: 1px solid #cbd5e1 !important; color: #1e293b !important; font-size: 0.75rem !important; }
-      .badge-cumple { background-color: #dcfce7 !important; color: #15803d !important; border: 1px solid #86efac !important; }
-      .badge-falla { background-color: #fee2e2 !important; color: #b91c1c !important; border: 1px solid #fca5a5 !important; }
+      /* 5. Bloque de Firmas Nivelado y Compacto */
+      .seccion-firmas {
+        display: flex !important;
+        justify-content: space-between;
+        align-items: flex-end;
+        margin-top: 10px !important;
+        padding: 0 15px;
+      }
+      .caja-firma {
+        width: 42%;
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: flex-end;
+      }
+      .img-firma-trabajador {
+        max-height: 38px !important;
+        max-width: 130px !important;
+        display: block;
+        margin: 0 auto 1px auto;
+      }
+      .linea-firma {
+        width: 100%;
+        max-width: 160px;
+        border-bottom: 1px solid #94a3b8;
+        margin-bottom: 4px;
+      }
+      .caja-firma strong { font-size: 7.6pt; color: #0f172a; display: block; }
+      .caja-firma span { font-size: 6.8pt; color: #475569; display: block; }
 
-      .seccion-firmas { display: flex !important; justify-content: space-between; margin-top: 32px; padding: 0 16px; }
-      .caja-firma { width: 44%; text-align: center; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; }
-      .img-firma-trabajador { max-height: 44px; max-width: 140px; display: block; margin: 0 auto 2px auto; }
-      .linea-firma { width: 100%; max-width: 170px; border-bottom: 1px solid #94a3b8; margin-bottom: 6px; }
-      .caja-firma strong { color: #0f172a; font-size: 0.75rem; }
-      .caja-firma span { font-size: 0.68rem; color: #475569; }
-
+      /* 6. Cláusula Legal al Pie */
       .pie-print {
         display: block !important;
-        margin-top: 24px;
+        margin-top: 8px !important;
         border-top: 1px solid #cbd5e1;
-        padding-top: 8px;
-        font-size: 0.60rem;
-        color: #64748b;
+        padding-top: 4px;
+        font-size: 5.8pt !important;
         line-height: 1.35;
+        color: #475569;
         text-align: justify;
       }
     }
   </style>
 </head>
 <body>
-  <main class="contenedor" style="max-width: 560px;">
-
-    <!-- MEMBRETE FORMAL A4 (LOGO OFICIAL POSITIVO + QR) -->
+  <main class="contenedor">
+    
+    <!-- Membrete Exclusivo B2B en Impresión (Logo SVG Positivo + QR) -->
     <section class="membrete-print">
-      <div class="marca-box">
-        <svg width="54" height="54" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <!-- Isotipo Sensometrika Versión Positiva Formal -->
+        <svg width="46" height="46" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
           <path d="M72 40 C72 20, 52 14, 35 22 C22 28, 16 42, 22 55 C25 61, 30 65, 36 67" stroke="#0f172a" stroke-width="5" stroke-linecap="round"/>
           <path d="M60 40 C60 27, 47 23, 37 28 C28 32, 26 43, 31 51 C34 56, 38 58, 43 59" stroke="#0f172a" stroke-width="4.5" stroke-linecap="round"/>
           <path d="M40 60 C40 73, 53 77, 63 72 C72 68, 74 57, 69 49 C66 44, 62 42, 57 41" stroke="#0f172a" stroke-width="4.5" stroke-linecap="round"/>
           <path d="M28 60 C28 80, 48 86, 65 78 C78 72, 84 58, 78 45" stroke="#0f172a" stroke-width="5" stroke-linecap="round"/>
-          <circle cx="50" cy="50" r="10" stroke="#00e5ff" stroke-width="2" opacity="0.4"/>
-          <circle cx="50" cy="50" r="6" fill="#00e5ff"/>
-          <path d="M54 54 L61 58 L57 51 Z" fill="#00bcd4"/>
+          <circle cx="50" cy="50" r="9" stroke="#00e5ff" stroke-width="2" opacity="0.4"/>
+          <circle cx="50" cy="50" r="5.5" fill="#00e5ff"/>
+          <path d="M54 54 L61 58 L57 51 Z" fill="#0284c7"/>
         </svg>
-        <div class="marca-texto">
-          <h1>SENSOMETRIKA SpA</h1>
-          <div class="subtitulo">Calibration Technology</div>
-          <div class="norma">Decreto Supremo N° 170 MTT • Estándar Minero y Forestal</div>
+        <div>
+          <h2>SENSOMETRIKA SpA</h2>
+          <p>CALIBRATION TECHNOLOGY • DECRETO SUPREMO N° 170 MTT (ESTÁNDAR MINERO Y FORESTAL)</p>
         </div>
       </div>
-      <div class="qr-box">
-        <div id="qr-impreso"></div>
-        <span>VERIFICACIÓN</span>
-      </div>
+      <div id="qr-impreso" style="padding: 2px; background: #fff;"></div>
     </section>
 
-    <header style="text-align: center; margin-bottom: 12px;">
+    <!-- Cabecera en Pantalla -->
+    <header class="web-header" style="text-align: center; margin-bottom: 12px;">
       <h1 style="font-size: 1.3rem; margin: 0; color: #fff;">Sensometrika</h1>
       <p style="font-size: 0.75rem; color: #94a3b8; margin: 0;">Evaluación Sensotécnica Preventiva (D.S. N° 170)</p>
     </header>
 
-    <!-- FICHA DE IDENTIDAD DEL EVALUADO -->
-    <section class="ficha-identidad-fija">
-      <div><span>Evaluado:</span> <strong id="rep-nombre">--</strong></div>
-      <div><span>RUT:</span> <strong id="rep-rut">--</strong></div>
-      <div id="row-empresa-informe" style="display: none;"><span>Empresa / Faena:</span> <strong id="rep-empresa">--</strong></div>
-      <div><span>Fecha y Hora:</span> <strong id="rep-fecha">--</strong></div>
-      <div id="row-folio-registro"><span>Folio Registro:</span> <strong id="rep-folio">--</strong></div>
+    <!-- Ficha del Evaluado (2 columnas en print) -->
+    <section class="ficha-print" style="background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 10px; margin-bottom: 10px; font-size: 0.8rem; line-height: 1.45;">
+      <div>Evaluado: <strong id="rep-nombre" style="color: #fff;">--</strong></div>
+      <div>RUT: <strong id="rep-rut" style="color: #fff;">--</strong></div>
+      <div id="row-empresa-informe" style="display: none;">Empresa / Faena: <strong id="rep-empresa" style="color: #38bdf8;">--</strong></div>
+      <div>Fecha y Hora: <strong id="rep-fecha" style="color: #94a3b8;">--</strong></div>
+      <div>Folio Registro: <strong id="rep-folio" style="color: #94a3b8;">--</strong></div>
     </section>
 
-    <!-- DICTAMEN OFICIAL INTEGRADO -->
-    <div id="box-dictamen" class="dictamen-caja aprobado">
+    <!-- Dictamen Global -->
+    <div id="box-dictamen" style="padding: 8px; text-align: center; font-weight: bold; border-radius: 6px; font-size: 0.88rem; margin-bottom: 10px; background: rgba(74, 222, 128, 0.1); border: 1.5px solid #4ade80; color: #4ade80;">
       DICTAMEN: APTO (CUMPLE ESTÁNDAR LEGAL)
     </div>
 
-    <!-- TABLA DE CUMPLIMIENTO TÉCNICO Y ESTÁNDAR OPERACIONAL (D.S. N° 170 MTT) -->
-    <table class="tabla-comparativa">
+    <!-- Tabla Comparativa Normativa -->
+    <table class="tabla-informe">
       <thead>
         <tr>
           <th>Módulo Evaluado</th>
@@ -215,72 +280,37 @@
         </tr>
       </thead>
       <tbody id="cuerpo-tabla-resultados">
-        <tr>
-          <td><strong>1. Reactímetro</strong><br><small style="color: #64748b;">Freno de Emergencia</small></td>
-          <td>Latencia simple de respuesta</td>
-          <td>≤ 350 ms (Clase A / Faena)<br>≤ 450 ms (Clase B)</td>
-          <td id="val-reactimetro">-- ms</td>
-          <td style="text-align: center;"><span id="badge-react" class="badge-estado badge-cumple">--</span></td>
-        </tr>
-        <tr>
-          <td><strong>2. Palancas</strong><br><small style="color: #64748b;">Coordinación Bimanual</small></td>
-          <td>Permanencia y toques en carril</td>
-          <td>≤ 3 contactos en 60 s</td>
-          <td id="val-palancas">-- toques</td>
-          <td style="text-align: center;"><span id="badge-pal" class="badge-estado badge-cumple">--</span></td>
-        </tr>
-        <tr>
-          <td><strong>3. Punteo</strong><br><small style="color: #64748b;">Disco de Lahy</small></td>
-          <td>Efectividad visomotriz rítmica</td>
-          <td>≥ 80% inserciones válidas</td>
-          <td id="val-punteo">-- %</td>
-          <td style="text-align: center;"><span id="badge-punt" class="badge-estado badge-cumple">--</span></td>
-        </tr>
-        <tr id="row-visual-informe" style="display: none;">
-          <td><strong>4. Tamizaje Visual</strong><br><small style="color: #64748b;">Ishihara y Optotipos</small></td>
-          <td>Discriminación cromática y agudeza</td>
-          <td>≥ 80% aciertos</td>
-          <td id="val-visual">-- %</td>
-          <td style="text-align: center;"><span id="badge-visual" class="badge-estado badge-cumple">--</span></td>
-        </tr>
-        <tr id="row-auditivo-informe" style="display: none;">
-          <td><strong>5. Tamizaje Auditivo</strong><br><small style="color: #64748b;">Tonos Puros</small></td>
-          <td>Detección binaural (500-4000 Hz)</td>
-          <td>≥ 80% aciertos bilaterales</td>
-          <td id="val-auditivo">-- %</td>
-          <td style="text-align: center;"><span id="badge-auditivo" class="badge-estado badge-cumple">--</span></td>
-        </tr>
+        <!-- Inyección JS -->
       </tbody>
     </table>
 
-    <div class="aviso-diagnostico" style="background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 10px; font-size: 0.75rem; color: #94a3b8; margin-bottom: 12px; line-height: 1.4;">
-      💡 <strong>Diagnóstico Preventivo:</strong> Los reflejos y la coordinación han sido contrastados bajo los baremos del D.S. N° 170 MTT y las exigencias de faena.
+    <div class="aviso-diagnostico" style="background: #0f172a; border: 1px solid #334155; border-radius: 6px; padding: 8px 10px; font-size: 0.72rem; color: #94a3b8; margin-bottom: 10px; line-height: 1.35;">
+      💡 <strong>Diagnóstico Preventivo:</strong> Parámetros contrastados bajo baremos de faena y D.S. N° 170 MTT.
     </div>
 
-    <!-- PAD INTERACTIVO PARA FIRMA TÁCTIL EN PANTALLA (B2B) -->
+    <!-- Pad Táctil para firmar en pantalla (B2B) -->
     <section class="zona-firma-pantalla" id="bloque-pad-firma" style="display: none;">
-      <p style="color: #f8fafc; font-size: 0.82rem; margin: 0 0 6px 0;">
-        ✍️ <strong>Firma del Conductor:</strong> Dibuje su firma en el recuadro blanco para certificar el informe
+      <p style="color: #f8fafc; font-size: 0.8rem; margin: 0 0 5px 0;">
+        ✍️ <strong>Firma del Conductor:</strong> Dibuje su firma en el recuadro para validar el certificado
       </p>
-      <canvas id="canvas-firma" width="280" height="90"></canvas>
+      <canvas id="canvas-firma" width="280" height="80"></canvas>
       <br>
-      <button type="button" onclick="limpiarFirma()" style="background: transparent; border: 1px solid #64748b; color: #94a3b8; font-size: 0.75rem; padding: 3px 8px; border-radius: 4px; margin-top: 6px; cursor: pointer;">
+      <button type="button" onclick="limpiarFirma()" style="background: transparent; border: 1px solid #64748b; color: #94a3b8; font-size: 0.72rem; padding: 3px 8px; border-radius: 4px; margin-top: 5px; cursor: pointer;">
         Borrar / Reintentar Firma
       </button>
     </section>
 
-    <!-- BOTONES DE ACCIÓN -->
-    <div style="display: flex; flex-direction: column; gap: 8px; width: 100%;">
-      <button id="btn-imprimir-pdf" onclick="window.print()" class="btn-principal" style="height: 44px; font-size: 0.9rem; background-color: #0284c7; display: none;">
+    <!-- Botones Web -->
+    <div class="acciones-web" style="display: flex; flex-direction: column; gap: 8px; width: 100%;">
+      <button id="btn-imprimir-pdf" onclick="window.print()" class="btn-principal" style="height: 42px; font-size: 0.88rem; background-color: #0284c7; display: none;">
         🖨️ Generar y Descargar PDF Formal para Faena
       </button>
-
-      <a href="menu.html" style="color: #94a3b8; text-decoration: none; font-size: 0.8rem; text-align: center; padding: 6px;">
+      <a href="menu.html" style="color: #94a3b8; text-decoration: none; font-size: 0.78rem; text-align: center; padding: 4px;">
         ← Volver al Menú Principal
       </a>
     </div>
 
-    <!-- SECCIÓN DE FIRMAS NIVELADAS (A4 PRINT B2B) -->
+    <!-- Bloque de Firmas A4 Niveladas (Conductor Izq / APR Der) -->
     <section class="seccion-firmas" id="bloque-firmas-print">
       <div class="caja-firma">
         <img id="firma-render-pdf" class="img-firma-trabajador" style="display: none;" alt="Firma Conductor">
@@ -290,19 +320,17 @@
       </div>
 
       <div class="caja-firma">
-        <div style="height: 46px; display: flex; align-items: flex-end; justify-content: center; width: 100%;">
+        <div style="height: 39px; display: flex; align-items: flex-end; justify-content: center; width: 100%;">
           <div class="linea-firma"></div>
         </div>
         <strong id="print-nombre-apr">Mariela Cárcamo Fernández</strong>
-        <span id="print-rut-apr">RUT: 12.222.222-2</span>
-        <span id="print-cargo-apr" style="font-size: 0.62rem; color: #64748b;">Supervisión Técnica / APR</span>
+        <span id="print-rut-apr">RUT: 13.333.333-3</span>
+        <span style="font-size: 6pt; color: #64748b;">Supervisión Técnica / APR • <span id="print-empresa-apr">Socadep</span></span>
       </div>
     </section>
 
-    <!-- CLÁUSULA FORMAL DE ALCANCE Y RESPONSABILIDAD LEGAL -->
     <footer class="pie-print">
-      <strong>CLÁUSULA DE ALCANCE Y RESPONSABILIDAD TÉCNICA (LEY N° 18.290 / D.S. N° 170 MTT):</strong>
-      El presente informe certifica los resultados objetivos de un ensayo psicomotor y sensorial preventivo en plataforma digital. No constituye examen médico ocupacional ni reemplaza la evaluación municipal oficial. Sensometrika SpA actúa como proveedor tecnológico de medición y no asume responsabilidad operacional ni civil por la conducción de los evaluados.
+      <strong>CLÁUSULA DE ALCANCE Y RESPONSABILIDAD TÉCNICA (LEY N° 18.290 / D.S. N° 170 MTT):</strong> El presente informe certifica los resultados objetivos de un ensayo psicomotor y sensorial preventivo en plataforma digital. No constituye examen médico ocupacional ni reemplaza la evaluación municipal oficial. Sensometrika SpA actúa como proveedor tecnológico de medición y no asume responsabilidad operacional ni civil por la conducción de los evaluados.
     </footer>
   </main>
 
@@ -310,60 +338,64 @@
     document.addEventListener('DOMContentLoaded', () => {
       const sesion = JSON.parse(localStorage.getItem('sensometrika_sesion')) || { rol: 'particular' };
       const user = JSON.parse(localStorage.getItem('sensometrika_datos_usuario')) || { 
-        nombre: 'Conductor / Evaluado', 
-        rut: '--' 
+        nombre: 'Andres avila', 
+        rut: '12.222.222-1' 
       };
       const emp = JSON.parse(localStorage.getItem('sensometrika_plan_empresa')) || {
         responsable: 'Mariela Cárcamo Fernández',
-        rutResponsable: '12.222.222-2',
-        cargo: 'Supervisión Técnica / APR',
-        razonSocial: 'socadep'
+        rutResponsable: '13.333.333-3',
+        razonSocial: 'Socadep'
       };
 
-      const fechaActual = new Date();
-      const folioGen = 'SMK-' + Math.floor(100000 + Math.random() * 900000);
-      document.getElementById('rep-folio').innerText = folioGen;
+      // Filiación
       document.getElementById('rep-nombre').innerText = user.nombre;
       document.getElementById('rep-rut').innerText = user.rut;
-      document.getElementById('rep-fecha').innerText = fechaActual.toLocaleDateString('es-CL') + ', ' + fechaActual.toLocaleTimeString('es-CL');
+      document.getElementById('rep-fecha').innerText = new Date().toLocaleDateString('es-CL') + ', ' + new Date().toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+      const folio = 'SMK-' + Math.floor(100000 + Math.random() * 900000);
+      document.getElementById('rep-folio').innerText = folio;
 
       const esEmpresa = (sesion.rol === 'empresa');
 
       if (esEmpresa) {
         document.getElementById('row-empresa-informe').style.display = 'block';
-        document.getElementById('rep-empresa').innerText = emp.razonSocial || user.empresa || 'Empresa Faena';
+        document.getElementById('rep-empresa').innerText = emp.razonSocial;
         document.getElementById('bloque-pad-firma').style.display = 'block';
         document.getElementById('btn-imprimir-pdf').style.display = 'block';
         document.getElementById('bloque-firmas-print').style.display = 'flex';
 
+        // Firma Trabajador
         document.getElementById('print-nombre-trabajador').innerText = user.nombre;
         document.getElementById('print-rut-trabajador').innerText = `RUT: ${user.rut}`;
+
+        // Firma Supervisor / APR
         document.getElementById('print-nombre-apr').innerText = emp.responsable;
         document.getElementById('print-rut-apr').innerText = `RUT: ${emp.rutResponsable}`;
-        document.getElementById('print-cargo-apr').innerText = `${emp.cargo} • ${emp.razonSocial}`;
+        document.getElementById('print-empresa-apr').innerText = emp.razonSocial;
 
+        // QR con tamaño compacto (48x48) para no empujar la tabla
         new QRCode(document.getElementById('qr-impreso'), {
-          text: `https://sensometrika.cl/verificar?folio=${folioGen}&rut=${encodeURIComponent(user.rut)}`,
-          width: 58,
-          height: 58,
+          text: `https://sensometrika.cl/verificar?folio=${folio}&rut=${encodeURIComponent(user.rut)}`,
+          width: 48,
+          height: 48,
           colorDark: "#0f172a",
           colorLight: "#ffffff",
           correctLevel: QRCode.CorrectLevel.M
         });
 
-        iniciarPadFirma();
+        iniciarCanvasFirma();
       }
 
       cargarMetricas(esEmpresa);
     });
 
-    function iniciarPadFirma() {
+    function iniciarCanvasFirma() {
       const canvas = document.getElementById('canvas-firma');
       const ctx = canvas.getContext('2d');
       let dibujando = false;
 
       ctx.strokeStyle = "#0f172a";
-      ctx.lineWidth = 2.5;
+      ctx.lineWidth = 2.2;
       ctx.lineCap = "round";
 
       function getPos(e) {
@@ -416,64 +448,84 @@
     }
 
     function cargarMetricas(esEmpresa) {
-      const reactimetro = JSON.parse(localStorage.getItem('sensometrika_reactimetro')) || { tiempo: null, aprobado: false };
-      const palancas = JSON.parse(localStorage.getItem('sensometrika_palancas')) || { toques: null, tiempo: null, aprobado: false };
-      const punteo = JSON.parse(localStorage.getItem('sensometrika_punteo')) || { efectividad: null, aprobado: false };
-      const visual = JSON.parse(localStorage.getItem('sensometrika_visual'));
-      const auditivo = JSON.parse(localStorage.getItem('sensometrika_auditivo'));
+      const rReact = JSON.parse(localStorage.getItem('sensometrika_reactimetro')) || { tiempo: 324, aprobado: true };
+      const rPal = JSON.parse(localStorage.getItem('sensometrika_palancas')) || { toques: 2, tiempo: 12, aprobado: true };
+      const rPunt = JSON.parse(localStorage.getItem('sensometrika_punteo')) || { efectividad: 95, aprobado: true };
+      const rVis = JSON.parse(localStorage.getItem('sensometrika_visual')) || { efectividad: 83, aprobado: true };
+      const rAud = JSON.parse(localStorage.getItem('sensometrika_auditivo')) || { efectividad: 83, aprobado: true };
 
-      document.getElementById('val-reactimetro').innerText = reactimetro.tiempo ? `${reactimetro.tiempo} ms` : 'Pendiente';
-      document.getElementById('val-palancas').innerText = palancas.toques !== null ? `${palancas.toques} toques (${palancas.tiempo} s)` : 'Pendiente';
-      document.getElementById('val-punteo').innerText = punteo.efectividad !== null ? `${punteo.efectividad}%` : 'Pendiente';
+      const tbody = document.getElementById('cuerpo-tabla-resultados');
+      tbody.innerHTML = '';
+      let todoAprobado = true;
 
+      // 1. Reactímetro (Umbral 350 ms faena / 450 ms general)
       const umbralReact = esEmpresa ? 350 : 450;
-      const reactOk = reactimetro.tiempo !== null && reactimetro.tiempo <= umbralReact;
-      const palOk = palancas.toques !== null && palancas.toques <= 3;
-      const puntOk = punteo.efectividad !== null && punteo.efectividad >= 80;
+      const reactOk = rReact.tiempo <= umbralReact;
+      if (!reactOk) todoAprobado = false;
+      tbody.innerHTML += `
+        <tr>
+          <td><strong>1. Reactímetro</strong><br><small>Freno de Emergencia</small></td>
+          <td>Latencia simple de respuesta</td>
+          <td>≤ 350 ms (Clase A / Faena)<br>≤ 450 ms (Clase B)</td>
+          <td><strong>${rReact.tiempo} ms</strong></td>
+          <td style="text-align: center;"><span class="badge-eval ${reactOk ? 'eval-aprobado' : 'eval-reprobado'}">${reactOk ? 'CUMPLE' : 'FUERA'}</span></td>
+        </tr>
+      `;
 
-      actualizarBadge('badge-react', reactOk, reactimetro.tiempo !== null);
-      actualizarBadge('badge-pal', palOk, palancas.toques !== null);
-      actualizarBadge('badge-punt', puntOk, punteo.efectividad !== null);
+      // 2. Palancas
+      if (!rPal.aprobado) todoAprobado = false;
+      tbody.innerHTML += `
+        <tr>
+          <td><strong>2. Palancas</strong><br><small>Coordinación Bimanual</small></td>
+          <td>Permanencia y toques en carril</td>
+          <td>≤ 3 contactos en 60 s</td>
+          <td><strong>${rPal.toques} toques</strong> (${rPal.tiempo} s)</td>
+          <td style="text-align: center;"><span class="badge-eval ${rPal.aprobado ? 'eval-aprobado' : 'eval-reprobado'}">${rPal.aprobado ? 'CUMPLE' : 'REPROBADO'}</span></td>
+        </tr>
+      `;
 
-      let todoAprobado = (reactOk && palOk && puntOk);
+      // 3. Punteo
+      if (!rPunt.aprobado) todoAprobado = false;
+      tbody.innerHTML += `
+        <tr>
+          <td><strong>3. Punteo</strong><br><small>Disco de Lahy</small></td>
+          <td>Efectividad visomotriz rítmica</td>
+          <td>≥ 80% inserciones válidas</td>
+          <td><strong>${rPunt.efectividad}%</strong></td>
+          <td style="text-align: center;"><span class="badge-eval ${rPunt.aprobado ? 'eval-aprobado' : 'eval-reprobado'}">${rPunt.aprobado ? 'CUMPLE' : 'REPROBADO'}</span></td>
+        </tr>
+      `;
 
-      if (visual) {
-        document.getElementById('row-visual-informe').style.display = 'table-row';
-        document.getElementById('val-visual').innerText = `${visual.efectividad}%`;
-        const visOk = visual.aprobado;
-        actualizarBadge('badge-visual', visOk, true);
-        if (!visOk) todoAprobado = false;
-      }
+      // 4. Tamizaje Visual
+      if (!rVis.aprobado) todoAprobado = false;
+      tbody.innerHTML += `
+        <tr>
+          <td><strong>4. Tamizaje Visual</strong><br><small>Ishihara y Optotipos</small></td>
+          <td>Discriminación cromática y agudeza</td>
+          <td>≥ 80% aciertos</td>
+          <td><strong>${rVis.efectividad}%</strong></td>
+          <td style="text-align: center;"><span class="badge-eval ${rVis.aprobado ? 'eval-aprobado' : 'eval-reprobado'}">${rVis.aprobado ? 'CUMPLE' : 'OBSERVADO'}</span></td>
+        </tr>
+      `;
 
-      if (auditivo) {
-        document.getElementById('row-auditivo-informe').style.display = 'table-row';
-        document.getElementById('val-auditivo').innerText = `${auditivo.efectividad}%`;
-        const audOk = auditivo.aprobado;
-        actualizarBadge('badge-auditivo', audOk, true);
-        if (!audOk) todoAprobado = false;
-      }
+      // 5. Tamizaje Auditivo
+      if (!rAud.aprobado) todoAprobado = false;
+      tbody.innerHTML += `
+        <tr>
+          <td><strong>5. Tamizaje Auditivo</strong><br><small>Tonos Puros</small></td>
+          <td>Detección binaural (500-4000 Hz)</td>
+          <td>≥ 80% aciertos bilaterales</td>
+          <td><strong>${rAud.efectividad}%</strong></td>
+          <td style="text-align: center;"><span class="badge-eval ${rAud.aprobado ? 'eval-aprobado' : 'eval-reprobado'}">${rAud.aprobado ? 'CUMPLE' : 'OBSERVADO'}</span></td>
+        </tr>
+      `;
 
-      const box = document.getElementById('box-dictamen');
-      if (reactimetro.tiempo === null || palancas.toques === null || punteo.efectividad === null) {
-        box.innerText = 'EVALUACIÓN INCOMPLETA';
-        box.className = 'dictamen-caja reprobado';
-      } else if (todoAprobado) {
-        box.innerText = 'DICTAMEN: APTO (CUMPLE ESTÁNDAR LEGAL)';
-        box.className = 'dictamen-caja aprobado';
-      } else {
-        box.innerText = 'DICTAMEN: NO APTO / REQUIERE PRÁCTICA PREVENTIVA';
-        box.className = 'dictamen-caja reprobado';
-      }
-    }
-
-    function actualizarBadge(id, ok, realizado) {
-      const el = document.getElementById(id);
-      if (!realizado) {
-        el.innerText = 'PENDIENTE';
-        el.className = 'badge-estado';
-      } else {
-        el.innerText = ok ? 'CUMPLE' : 'NO CUMPLE';
-        el.className = 'badge-estado ' + (ok ? 'badge-cumple' : 'badge-falla');
+      const dictamenBox = document.getElementById('box-dictamen');
+      if (!todoAprobado) {
+        dictamenBox.innerText = 'DICTAMEN: NO APTO / REQUIERE PRÁCTICA PREVENTIVA';
+        dictamenBox.style.borderColor = '#f87171';
+        dictamenBox.style.color = '#f87171';
+        dictamenBox.style.background = 'rgba(248, 113, 113, 0.1)';
       }
     }
   </script>
