@@ -75,7 +75,7 @@
         <strong id="chk-plan-nombre">Plan Psicomotriz DS 170</strong>
       </div>
       <div class="fila-resumen">
-        <span>Evaluados autorizados:</span>
+        <span>Régimen de Evaluación:</span>
         <strong id="chk-plan-cupos">1 persona</strong>
       </div>
       <div class="fila-resumen fila-total">
@@ -111,25 +111,49 @@
   </main>
 
   <script>
-    let sesionActiva = {};
+    let planActivo = {};
 
     document.addEventListener('DOMContentLoaded', () => {
-      sesionActiva = JSON.parse(localStorage.getItem('sensometrika_sesion')) || {
-        rol: 'particular',
-        planId: 'part_unico',
-        nombrePlan: 'Evaluación Psicomotriz DS 170',
-        monto: 4990,
-        cupos: 1,
-        modulosPermitidos: ['reactimetro', 'palancas', 'punteo'],
-        intentosRestantes: 1
+      // Leer el plan seleccionado admitiendo ambas fuentes posibles de datos
+      const planGuardado = JSON.parse(localStorage.getItem('sensometrika_plan_pedido')) || 
+                           JSON.parse(localStorage.getItem('sensometrika_sesion')) || {};
+
+      const montoFinal = Number(planGuardado.precio || planGuardado.monto || 4990);
+      const nombrePlan = planGuardado.nombrePlan || 'Plan Básico Psicomotriz';
+      const rolPlan = planGuardado.rol || 'particular';
+
+      planActivo = {
+        planId: planGuardado.planId || 'part_basico',
+        nombrePlan: nombrePlan,
+        monto: montoFinal,
+        rol: rolPlan,
+        modulosPermitidos: planGuardado.modulosPermitidos || ['reactimetro', 'palancas', 'punteo'],
+        tipoRegimen: planGuardado.tipoRegimen || (rolPlan === 'empresa' ? 'bolsa_empresa' : 'creditos_modulo'),
+        pruebasCompletasRestantes: planGuardado.pruebasCompletasRestantes || 1,
+        ejecucionesRestantes: planGuardado.ejecucionesRestantes || { reactimetro: 3, palancas: 3, punteo: 3 },
+        diasVigencia: planGuardado.diasVigencia || 5,
+        intentosRestantes: planGuardado.intentosRestantes || (rolPlan === 'empresa' ? 30 : 1)
       };
 
-      document.getElementById('chk-plan-nombre').innerText = sesionActiva.nombrePlan || 'Plan Sensometrika';
-      document.getElementById('chk-plan-cupos').innerText = `${sesionActiva.cupos || 1} persona(s)`;
-      document.getElementById('chk-plan-total').innerText = `$${(sesionActiva.monto || 4990).toLocaleString('es-CL')} CLP`;
+      document.getElementById('chk-plan-nombre').innerText = planActivo.nombrePlan;
+      document.getElementById('chk-plan-cupos').innerText = planActivo.rol === 'empresa' 
+        ? `${planActivo.intentosRestantes} Evaluaciones para Faena` 
+        : 'Evaluación Individual';
+      document.getElementById('chk-plan-total').innerText = `$${montoFinal.toLocaleString('es-CL')} CLP`;
 
-      if (sesionActiva.rol === 'empresa') {
+      if (planActivo.rol === 'empresa') {
         document.getElementById('bloque-empresa').style.display = 'flex';
+      }
+
+      // Pre-cargar datos si ya existían en el navegador
+      const datosPrevios = JSON.parse(localStorage.getItem('sensometrika_datos_usuario'));
+      if (datosPrevios) {
+        if (datosPrevios.email) document.getElementById('inp-email').value = datosPrevios.email;
+        if (datosPrevios.nombre) document.getElementById('inp-nombre').value = datosPrevios.nombre;
+        if (datosPrevios.rut) document.getElementById('inp-rut').value = datosPrevios.rut;
+        if (datosPrevios.empresa && datosPrevios.empresa !== 'Particular') {
+          document.getElementById('inp-razon').value = datosPrevios.empresa;
+        }
       }
     });
 
@@ -143,29 +167,29 @@
       const rut = document.getElementById('inp-rut').value.trim();
       const razon = document.getElementById('inp-razon').value.trim();
 
-      // Guardar datos en local para persistencia en el informe
+      // Guardar identidad del usuario para el informe final
       localStorage.setItem('sensometrika_datos_usuario', JSON.stringify({
         nombre: nombre,
         rut: rut,
         email: email,
-        empresa: razon || 'Particular',
-        tipo: sesionActiva.rol
+        empresa: razon || (planActivo.rol === 'empresa' ? 'Empresa Faena' : 'Particular'),
+        tipo: planActivo.rol
       }));
 
-      // Respaldar sesión pendiente
-      localStorage.setItem('sensometrika_sesion_pendiente', JSON.stringify(sesionActiva));
+      // Respaldar sesión completa pendiente de confirmación
+      localStorage.setItem('sensometrika_sesion_pendiente', JSON.stringify(planActivo));
 
       const payload = {
-        planId: sesionActiva.planId,
-        nombrePlan: sesionActiva.nombrePlan,
-        monto: sesionActiva.monto,
+        planId: planActivo.planId,
+        nombrePlan: planActivo.nombrePlan,
+        monto: planActivo.monto,
         email: email,
         rut: rut,
         nombre: nombre,
         empresa: razon || 'Particular',
-        rol: sesionActiva.rol,
-        modulosPermitidos: sesionActiva.modulosPermitidos,
-        intentos: sesionActiva.intentosRestantes
+        rol: planActivo.rol,
+        modulosPermitidos: planActivo.modulosPermitidos,
+        intentos: planActivo.intentosRestantes
       };
 
       try {
@@ -178,7 +202,7 @@
         const data = await res.json();
 
         if (data.url) {
-          // Redirigir a la interfaz oficial de Flow Sandbox (Webpay)
+          // Redirección hacia la pasarela Flow Sandbox
           window.location.href = data.url;
         } else {
           alert('Error al generar la orden: ' + (data.error || 'Respuesta inválida'));
@@ -186,8 +210,8 @@
           btnPagar.innerText = '💳 Pagar con Webpay / Redcompra';
         }
       } catch (err) {
-        console.error('Error de comunicación:', err);
-        alert('No se pudo establecer conexión con el servidor de pagos. Si estás en localhost, sube los cambios a Vercel para ejecutar la función de Flow.');
+        console.error('Error al comunicar con la pasarela:', err);
+        alert('No se pudo establecer conexión con el servidor de pagos.');
         btnPagar.disabled = false;
         btnPagar.innerText = '💳 Pagar con Webpay / Redcompra';
       }
