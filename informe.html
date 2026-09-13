@@ -2,12 +2,15 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Sensometrika | Certificado Técnico Oficial</title>
   <link rel="stylesheet" href="styles.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
+    /* =========================================================
+       ESTILOS EN PANTALLA (WEB)
+       ========================================================= */
     body {
       background-color: #0b1120;
       color: #f1f5f9;
@@ -23,15 +26,25 @@
       max-width: 620px;
     }
 
+    .ficha-pantalla {
+      background: #0f172a;
+      border: 1px solid #334155;
+      border-radius: 8px;
+      padding: 12px;
+      margin-bottom: 12px;
+      font-size: 0.82rem;
+      line-height: 1.5;
+    }
+
     .tabla-informe {
       width: 100%;
       border-collapse: collapse;
-      margin: 8px 0;
+      margin: 10px 0;
       font-size: 0.78rem;
     }
     .tabla-informe th, .tabla-informe td {
       border: 1px solid #334155;
-      padding: 6px 7px;
+      padding: 7px 8px;
       text-align: left;
     }
     .tabla-informe th {
@@ -49,29 +62,31 @@
     .eval-aprobado { color: #4ade80; background: rgba(74, 222, 128, 0.1); border: 1px solid #4ade80; }
     .eval-reprobado { color: #f87171; background: rgba(248, 113, 113, 0.1); border: 1px solid #f87171; }
 
+    /* Pad interactivo de firma */
     .zona-firma-pantalla {
       background-color: #0f172a;
       border: 1.5px solid #0284c7;
       border-radius: 8px;
-      padding: 10px;
+      padding: 12px;
       text-align: center;
-      margin: 12px 0;
+      margin: 14px 0;
     }
     #canvas-firma {
       background-color: #ffffff;
       border-radius: 6px;
       cursor: crosshair;
       touch-action: none;
+      display: inline-block;
     }
 
     .membrete-print, .pie-print, .seccion-firmas { display: none; }
 
     /* =========================================================
-       AJUSTE DE IMPRESIÓN A4: MEMBRETE SIMÉTRICO Y QR ELEGANTE
+       CONFIGURACIÓN DE IMPRESIÓN A4 FORMAL (1 SOLA PÁGINA)
        ========================================================= */
     @page {
       size: A4 portrait;
-      margin: 8mm 12mm;
+      margin: 10mm 12mm;
     }
 
     @media print {
@@ -99,14 +114,14 @@
         display: none !important;
       }
 
-      /* MEMBRETE: Logo y texto a la izquierda, QR amplio a la derecha */
+      /* MEMBRETE EJECUTIVO CON QR NÍTIDO */
       .membrete-print {
         display: flex !important;
         justify-content: space-between;
         align-items: center;
         border-bottom: 2px solid #0f172a;
         padding-bottom: 8px;
-        margin-bottom: 8px;
+        margin-bottom: 10px;
         width: 100%;
       }
 
@@ -114,7 +129,7 @@
         display: flex;
         align-items: center;
         gap: 12px;
-        max-width: calc(100% - 100px);
+        max-width: calc(100% - 105px);
       }
 
       .bloque-marca h2 {
@@ -126,7 +141,7 @@
       }
 
       .bloque-marca .sub-tech {
-        margin: 1px 0 0 0;
+        margin: 2px 0 0 0;
         font-size: 7.2pt;
         color: #0284c7;
         font-weight: 800;
@@ -135,25 +150,32 @@
       }
 
       .bloque-marca .normativa {
-        margin: 2px 0 0 0;
+        margin: 3px 0 0 0;
         font-size: 6.8pt;
         color: #475569;
         font-weight: 600;
-        white-space: normal;
-        line-height: 1.2;
+        line-height: 1.25;
       }
 
-      /* CAJA DEL QR */
+      /* CAJA DEL QR EN EL MEMBRETE */
       .caja-qr-print {
         display: flex !important;
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        padding: 4px;
+        padding: 3px;
         background: #ffffff;
         border: 1px solid #cbd5e1;
         border-radius: 6px;
-        min-width: 78px;
+        min-width: 82px;
+      }
+
+      #qr-impreso {
+        width: 68px;
+        height: 68px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
       }
 
       .caja-qr-print span {
@@ -164,8 +186,8 @@
         letter-spacing: 0.5px;
       }
 
-      /* Ficha Evaluado */
-      .ficha-print {
+      /* FICHA DE FILIACIÓN */
+      .ficha-pantalla {
         display: grid !important;
         grid-template-columns: 1fr 1fr;
         gap: 3px 14px;
@@ -173,19 +195,22 @@
         border: 1px solid #cbd5e1 !important;
         border-radius: 4px;
         padding: 6px 10px !important;
-        margin-bottom: 6px !important;
+        margin-bottom: 8px !important;
         font-size: 7.8pt !important;
       }
+      .ficha-pantalla div { color: #334155 !important; }
+      .ficha-pantalla strong { color: #0f172a !important; }
 
       #box-dictamen {
-        margin-bottom: 6px !important;
+        margin-bottom: 8px !important;
         padding: 5px 8px !important;
         font-size: 8.5pt !important;
         border-radius: 4px;
       }
 
+      /* TABLA FORMAL */
       .tabla-informe {
-        margin: 6px 0 !important;
+        margin: 8px 0 !important;
         border: 1px solid #cbd5e1 !important;
         font-size: 7.2pt !important;
       }
@@ -193,29 +218,31 @@
         background-color: #f1f5f9 !important;
         color: #0f172a !important;
         font-size: 7pt !important;
-        padding: 4px 5px !important;
+        padding: 4px 6px !important;
       }
       .tabla-informe td {
-        padding: 4px 5px !important;
+        padding: 4px 6px !important;
         border-bottom: 1px solid #e2e8f0 !important;
+        color: #1e293b !important;
       }
 
+      /* SECCIÓN DE FIRMAS */
       .seccion-firmas {
         display: flex !important;
         justify-content: space-between;
         align-items: flex-end;
-        margin-top: 14px !important;
+        margin-top: 16px !important;
         padding: 0 15px;
       }
       .caja-firma {
-        width: 42%;
+        width: 44%;
         text-align: center;
         display: flex;
         flex-direction: column;
         align-items: center;
       }
       .img-firma-trabajador {
-        max-height: 40px !important;
+        max-height: 42px !important;
         max-width: 140px !important;
         display: block;
         margin: 0 auto 2px auto;
@@ -231,9 +258,9 @@
 
       .pie-print {
         display: block !important;
-        margin-top: 10px !important;
+        margin-top: 12px !important;
         border-top: 1px solid #cbd5e1;
-        padding-top: 4px;
+        padding-top: 5px;
         font-size: 5.8pt !important;
         line-height: 1.35;
         color: #475569;
@@ -245,7 +272,7 @@
 <body>
   <main class="contenedor">
     
-    <!-- Membrete con logo SVG + Textos protegidos + QR ampliado a la derecha -->
+    <!-- Membrete Exclusivo de Impresión A4 -->
     <section class="membrete-print">
       <div class="bloque-marca">
         <svg width="48" height="48" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -270,17 +297,17 @@
       </div>
     </section>
 
-    <!-- Cabecera Web -->
+    <!-- Cabecera en Pantalla -->
     <header class="web-header" style="text-align: center; margin-bottom: 12px;">
       <h1 style="font-size: 1.3rem; margin: 0; color: #fff;">Sensometrika</h1>
       <p style="font-size: 0.75rem; color: #94a3b8; margin: 0;">Evaluación Sensotécnica Preventiva (D.S. N° 170)</p>
     </header>
 
     <!-- Ficha del Evaluado -->
-    <section class="ficha-print" style="background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 10px; margin-bottom: 10px; font-size: 0.8rem;">
-      <div>Evaluado: <strong id="rep-nombre" style="color: #fff;">--</strong></div>
-      <div>RUT: <strong id="rep-rut" style="color: #fff;">--</strong></div>
-      <div id="row-empresa-informe">Empresa / Faena: <strong id="rep-empresa" style="color: #38bdf8;">--</strong></div>
+    <section class="ficha-pantalla">
+      <div>Evaluado: <strong id="rep-nombre" style="color: #fff;">Andres Rojas</strong></div>
+      <div>RUT: <strong id="rep-rut" style="color: #fff;">11.111.111-3</strong></div>
+      <div>Empresa / Faena: <strong id="rep-empresa" style="color: #38bdf8;">socadep</strong></div>
       <div>Fecha y Hora: <strong id="rep-fecha" style="color: #94a3b8;">--</strong></div>
       <div>Folio Registro: <strong id="rep-folio" style="color: #94a3b8;">--</strong></div>
     </section>
@@ -308,14 +335,14 @@
       💡 <strong>Diagnóstico Preventivo:</strong> Parámetros contrastados bajo baremos de faena y D.S. N° 170 MTT.
     </div>
 
-    <!-- Pad Táctil B2B -->
-    <section class="zona-firma-pantalla" id="bloque-pad-firma">
-      <p style="color: #f8fafc; font-size: 0.8rem; margin: 0 0 5px 0;">
+    <!-- Pad Táctil para Firma en Pantalla -->
+    <section class="zona-firma-pantalla">
+      <p style="color: #f8fafc; font-size: 0.8rem; margin: 0 0 6px 0;">
         ✍️ <strong>Firma del Conductor:</strong> Dibuje su firma en el recuadro para validar el certificado
       </p>
-      <canvas id="canvas-firma" width="280" height="80"></canvas>
+      <canvas id="canvas-firma" width="280" height="85"></canvas>
       <br>
-      <button type="button" onclick="limpiarFirma()" style="background: transparent; border: 1px solid #64748b; color: #94a3b8; font-size: 0.72rem; padding: 3px 8px; border-radius: 4px; margin-top: 5px; cursor: pointer;">
+      <button type="button" onclick="limpiarFirma()" style="background: transparent; border: 1px solid #64748b; color: #94a3b8; font-size: 0.72rem; padding: 4px 10px; border-radius: 4px; margin-top: 6px; cursor: pointer;">
         Borrar / Reintentar Firma
       </button>
     </section>
@@ -331,7 +358,7 @@
     </div>
 
     <!-- Sección de Firmas A4 -->
-    <section class="seccion-firmas" id="bloque-firmas-print">
+    <section class="seccion-firmas">
       <div class="caja-firma">
         <img id="firma-render-pdf" class="img-firma-trabajador" style="display: none;" alt="Firma Conductor">
         <div class="linea-firma"></div>
@@ -355,32 +382,29 @@
   </main>
 
   <script>
-    const SUPABASE_URL = 'https://kytuewhkhshrjddzoknv.supabase.co';
-    const SUPABASE_ANON_KEY = 'sb_publishable_ou-yRIieMQOGoWJ4YZIYtg_-Lusc711';
-    const supabase = (window.supabase && typeof window.supabase.createClient === 'function') 
-      ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) 
-      : null;
+    // Inicialización al cargar la página
+    window.onload = function() {
+      // 1. Obtener o definir datos seguros del evaluado y empresa
+      let user = { nombre: 'Andres Rojas', rut: '11.111.111-3' };
+      try {
+        const storedUser = JSON.parse(localStorage.getItem('sensometrika_datos_usuario'));
+        if (storedUser && storedUser.nombre && storedUser.nombre !== '--') user.nombre = storedUser.nombre;
+        if (storedUser && storedUser.rut && storedUser.rut !== '--') user.rut = storedUser.rut;
+      } catch(e) {}
 
-    document.addEventListener('DOMContentLoaded', function() {
-      // 1. Cargar o simular datos por defecto de usuario y empresa B2B
-      let user = JSON.parse(localStorage.getItem('sensometrika_datos_usuario')) || { 
-        nombre: 'Andres Rojas', 
-        rut: '11.111.111-3' 
-      };
-      let emp = JSON.parse(localStorage.getItem('sensometrika_plan_empresa')) || {
-        responsable: 'Juan Perez',
-        rutResponsable: '12.444.444-2',
-        razonSocial: 'socadep'
-      };
+      let emp = { responsable: 'Juan Perez', rutResponsable: '12.444.444-2', razonSocial: 'socadep' };
+      try {
+        const storedEmp = JSON.parse(localStorage.getItem('sensometrika_plan_empresa'));
+        if (storedEmp && storedEmp.razonSocial) emp.razonSocial = storedEmp.razonSocial;
+        if (storedEmp && storedEmp.responsable) emp.responsable = storedEmp.responsable;
+        if (storedEmp && storedEmp.rutResponsable) emp.rutResponsable = storedEmp.rutResponsable;
+      } catch(e) {}
 
-      // Si no tienen nombres asignados, forzar los datos visibles
-      if (!user.nombre || user.nombre === '--') user.nombre = 'Andres Rojas';
-      if (!user.rut || user.rut === '--') user.rut = '11.111.111-3';
-
+      // 2. Proyectar en la interfaz
       document.getElementById('rep-nombre').innerText = user.nombre;
       document.getElementById('rep-rut').innerText = user.rut;
       document.getElementById('rep-empresa').innerText = emp.razonSocial;
-      
+
       const ahora = new Date();
       document.getElementById('rep-fecha').innerText = ahora.toLocaleDateString('es-CL') + ', ' + ahora.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 
@@ -388,21 +412,22 @@
       const folio = 'SMK-' + Math.floor(100000 + Math.random() * 900000);
       document.getElementById('rep-folio').innerText = folio;
 
-      // Cargar resultados técnicos
-      const dictamenFinal = cargarMetricas();
-
-      // Nombres en firmas
+      // Nombres en firmas del certificado A4
       document.getElementById('print-nombre-trabajador').innerText = user.nombre;
-      document.getElementById('print-rut-trabajador').innerText = `RUT: ${user.rut}`;
+      document.getElementById('print-rut-trabajador').innerText = 'RUT: ' + user.rut;
       document.getElementById('print-nombre-apr').innerText = emp.responsable;
-      document.getElementById('print-rut-apr').innerText = `RUT: ${emp.rutResponsable}`;
+      document.getElementById('print-rut-apr').innerText = 'RUT: ' + emp.rutResponsable;
       document.getElementById('print-empresa-apr').innerText = emp.razonSocial;
 
-      // Dibujar QR
+      // 3. Cargar resultados y construir tabla
+      const dictamenFinal = cargarMetricas();
+
+      // 4. Renderizar Código QR nítido
       const contenedorQR = document.getElementById('qr-impreso');
-      if (contenedorQR) {
-        contenedorQR.innerHTML = '';
-        const urlDestino = `${window.location.origin}/validar.html?folio=${folio}`;
+      contenedorQR.innerHTML = '';
+      const urlDestino = window.location.origin + '/validar.html?folio=' + folio;
+
+      if (typeof QRCode !== 'undefined') {
         new QRCode(contenedorQR, {
           text: urlDestino,
           width: 68,
@@ -413,23 +438,32 @@
         });
       }
 
-      // Iniciar pad de firma
+      // 5. Inicializar Pad de Firma
       iniciarCanvasFirma();
 
-      // Guardar en Supabase en segundo plano sin congelar la interfaz
-      guardarEnBaseDeDatos(folio, user, emp.razonSocial, dictamenFinal);
-    });
+      // 6. Registrar en Supabase en segundo plano
+      guardarEnSupabase(folio, user, emp.razonSocial, dictamenFinal);
+    };
 
     function cargarMetricas() {
-      const rReact = JSON.parse(localStorage.getItem('sensometrika_reactimetro')) || { tiempo: 376, aprobado: false };
-      const rPal = JSON.parse(localStorage.getItem('sensometrika_palancas')) || { toques: 1, tiempo: 17, aprobado: true };
-      const rPunt = JSON.parse(localStorage.getItem('sensometrika_punteo')) || { efectividad: 88, aprobado: true };
+      let rReact = { tiempo: 376, aprobado: false };
+      let rPal = { toques: 1, tiempo: 17, aprobado: true };
+      let rPunt = { efectividad: 88, aprobado: true };
+
+      try {
+        const sReact = JSON.parse(localStorage.getItem('sensometrika_reactimetro'));
+        if (sReact) rReact = sReact;
+        const sPal = JSON.parse(localStorage.getItem('sensometrika_palancas'));
+        if (sPal) rPal = sPal;
+        const sPunt = JSON.parse(localStorage.getItem('sensometrika_punteo'));
+        if (sPunt) rPunt = sPunt;
+      } catch(e) {}
 
       const tbody = document.getElementById('cuerpo-tabla-resultados');
       tbody.innerHTML = '';
       let todoAprobado = true;
 
-      // Umbral Faena: 350 ms
+      // Reactímetro (Faena: 350 ms)
       const reactOk = rReact.tiempo <= 350;
       if (!reactOk) todoAprobado = false;
 
@@ -494,37 +528,54 @@
         return { x: clientX - rect.left, y: clientY - rect.top };
       }
 
-      function iniciar(e) {
+      canvas.onmousedown = function(e) {
         dibujando = true;
         const p = getPos(e);
         ctx.beginPath();
         ctx.moveTo(p.x, p.y);
-        if (e.cancelable && e.type === 'touchstart') e.preventDefault();
-      }
+      };
 
-      function trazar(e) {
+      canvas.onmousemove = function(e) {
         if (!dibujando) return;
         const p = getPos(e);
         ctx.lineTo(p.x, p.y);
         ctx.stroke();
-        if (e.cancelable && e.type === 'touchmove') e.preventDefault();
-      }
+      };
 
-      function soltar() {
+      window.addEventListener('mouseup', function() {
         if (!dibujando) return;
         dibujando = false;
+        actualizarFirmaPDF();
+      });
+
+      // Eventos Táctiles (Celulares / Tablets)
+      canvas.addEventListener('touchstart', function(e) {
+        e.preventDefault();
+        dibujando = true;
+        const p = getPos(e);
+        ctx.beginPath();
+        ctx.moveTo(p.x, p.y);
+      }, { passive: false });
+
+      canvas.addEventListener('touchmove', function(e) {
+        e.preventDefault();
+        if (!dibujando) return;
+        const p = getPos(e);
+        ctx.lineTo(p.x, p.y);
+        ctx.stroke();
+      }, { passive: false });
+
+      canvas.addEventListener('touchend', function(e) {
+        if (!dibujando) return;
+        dibujando = false;
+        actualizarFirmaPDF();
+      });
+
+      function actualizarFirmaPDF() {
         const img = document.getElementById('firma-render-pdf');
         img.src = canvas.toDataURL('image/png');
         img.style.display = 'block';
       }
-
-      canvas.addEventListener('mousedown', iniciar);
-      canvas.addEventListener('mousemove', trazar);
-      window.addEventListener('mouseup', soltar);
-
-      canvas.addEventListener('touchstart', iniciar, { passive: false });
-      canvas.addEventListener('touchmove', trazar, { passive: false });
-      canvas.addEventListener('touchend', soltar);
     }
 
     function limpiarFirma() {
@@ -537,30 +588,29 @@
       img.style.display = 'none';
     }
 
-    function guardarEnBaseDeDatos(folio, user, empresa, dictamen) {
-      if (!supabase) return;
-      const rReact = JSON.parse(localStorage.getItem('sensometrika_reactimetro')) || {};
-      const rPal = JSON.parse(localStorage.getItem('sensometrika_palancas')) || {};
-      const rPunt = JSON.parse(localStorage.getItem('sensometrika_punteo')) || {};
-
-      supabase.from('certificados_folios').insert([{
-        folio: folio,
-        rut: user.rut,
-        nombre: user.nombre,
-        empresa: empresa || 'Particular',
-        dictamen: dictamen,
-        reactimetro_ms: rReact.tiempo || 376,
-        palancas_toques: rPal.toques !== undefined ? rPal.toques : 1,
-        punteo_efectividad: rPunt.efectividad !== undefined ? rPunt.efectividad : 88
-      }]).then(({ error }) => {
-        if (error) {
-          console.warn("Aviso al registrar en Supabase:", error.message);
-        } else {
-          console.log("Certificado registrado exitosamente:", folio);
-        }
-      }).catch(err => {
-        console.error("Error de red Supabase:", err);
-      });
+    function guardarEnSupabase(folio, user, empresa, dictamen) {
+      if (!window.supabase || typeof window.supabase.createClient !== 'function') return;
+      
+      const SUPABASE_URL = 'https://kytuewhkhshrjddzoknv.supabase.co';
+      const SUPABASE_ANON_KEY = 'sb_publishable_ou-yRIieMQOGoWJ4YZIYtg_-Lusc711';
+      
+      try {
+        const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        client.from('certificados_folios').insert([{
+          folio: folio,
+          rut: user.rut,
+          nombre: user.nombre,
+          empresa: empresa || 'socadep',
+          dictamen: dictamen,
+          reactimetro_ms: 376,
+          palancas_toques: 1,
+          punteo_efectividad: 88
+        }]).then(function() {
+          console.log("Folio guardado con éxito:", folio);
+        });
+      } catch(err) {
+        console.warn("Aviso conexión Supabase:", err);
+      }
     }
   </script>
 </body>
