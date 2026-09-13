@@ -6,177 +6,191 @@
   <title>Sensometrika | Checkout Seguro</title>
   <link rel="stylesheet" href="styles.css">
   <style>
-    .caja-resumen {
-      background: #0f172a;
-      border: 1.5px solid #38bdf8;
-      border-radius: 12px;
-      padding: 16px;
-      margin-bottom: 14px;
+    .formulario-checkout {
       width: 100%;
-      box-sizing: border-box;
-    }
-    .caja-resumen h2 { margin: 0; font-size: 1.05rem; color: #fff; }
-    .monto-total { font-size: 1.4rem; font-weight: 900; color: #38bdf8; margin-top: 4px; }
-    
-    .form-cobro {
-      background: #0f172a;
-      border: 1.5px solid #334155;
+      background-color: #0f172a;
+      border: 1px solid #334155;
       border-radius: 12px;
-      padding: 16px;
+      padding: 18px;
       display: flex;
       flex-direction: column;
-      gap: 10px;
+      gap: 12px;
+      box-sizing: border-box;
+      margin-bottom: 12px;
+    }
+    .formulario-checkout label {
+      font-size: 0.76rem;
+      color: #94a3b8;
+      font-weight: 600;
+    }
+    .formulario-checkout input, .formulario-checkout select {
       width: 100%;
+      height: 42px;
+      background-color: #1e293b;
+      border: 1px solid #475569;
+      border-radius: 8px;
+      color: #ffffff;
+      padding: 0 12px;
+      font-size: 0.88rem;
       box-sizing: border-box;
     }
-    .form-cobro label { font-size: 0.76rem; color: #94a3b8; font-weight: 600; }
-    .form-cobro input {
-      height: 42px;
-      background: #020617;
-      border: 1px solid #334155;
-      border-radius: 8px;
-      color: #fff;
-      padding: 0 10px;
-      font-size: 0.88rem;
+    .resumen-cobro {
+      width: 100%;
+      background-color: #0b1120;
+      border: 1px solid #1e293b;
+      border-radius: 10px;
+      padding: 14px;
+      box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-bottom: 14px;
     }
-    .form-cobro input:focus { outline: none; border-color: #38bdf8; }
-
-    .btn-pagar-ahora {
-      height: 48px;
-      background: #16a34a;
-      border: none;
-      border-radius: 8px;
-      color: #fff;
-      font-weight: 800;
-      font-size: 1rem;
-      cursor: pointer;
-      margin-top: 8px;
+    .fila-resumen {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.84rem;
     }
-    .btn-pagar-ahora:active { transform: scale(0.98); }
-    .seccion-empresa { display: none; flex-direction: column; gap: 10px; border-top: 1px dashed #334155; padding-top: 10px; margin-top: 4px; }
+    .fila-resumen span { color: #94a3b8; }
+    .fila-resumen strong { color: #f8fafc; }
+    .fila-total {
+      border-top: 1px solid #334155;
+      padding-top: 8px;
+      font-size: 1.05rem;
+    }
+    .fila-total strong { color: #38bdf8; }
   </style>
 </head>
 <body>
-  <main class="contenedor">
-    <header class="encabezado">
-      <h1>Sensometrika</h1>
-      <p>Paso 2: Registro de Titular y Pasarela de Pago</p>
+  <main class="contenedor" style="max-width: 480px; margin: 0 auto; padding: 16px;">
+    <header style="text-align: center; margin-bottom: 14px;">
+      <h1 style="color: #fff; font-size: 1.3rem; margin: 0;">SENSOMETRIKA SpA</h1>
+      <p style="color: #94a3b8; font-size: 0.78rem; margin: 2px 0 0 0;">Finalización de Compra y Acreditación de Sesión</p>
     </header>
 
-    <section class="caja-resumen">
-      <div style="font-size: 0.75rem; color: #94a3b8;">Plan Seleccionado:</div>
-      <h2 id="txt-nombre-plan">Cargando...</h2>
-      <div class="monto-total" id="txt-monto-total">$0 CLP</div>
-      <div id="txt-desglose-iva" style="font-size: 0.75rem; color: #64748b;"></div>
+    <!-- Resumen del Plan -->
+    <section class="resumen-cobro">
+      <div class="fila-resumen">
+        <span>Servicio:</span>
+        <strong id="chk-plan-nombre">Plan Psicomotriz DS 170</strong>
+      </div>
+      <div class="fila-resumen">
+        <span>Evaluados autorizados:</span>
+        <strong id="chk-plan-cupos">1 persona</strong>
+      </div>
+      <div class="fila-resumen fila-total">
+        <span>Total a Pagar:</span>
+        <strong id="chk-plan-total">$4.990 CLP</strong>
+      </div>
     </section>
 
-    <form class="form-cobro" onsubmit="confirmarPago(event)">
-      <label id="lbl-datos-titular">Datos del Evaluado / Postulante:</label>
-      <input type="text" id="pago-nombre" placeholder="Nombre Completo *" required>
-      <input type="text" id="pago-rut" placeholder="RUT (Ej: 12.345.678-9) *" required>
-      <input type="email" id="pago-correo" placeholder="Correo Electrónico (para informes y boleta) *" required>
+    <!-- Formulario de Facturación / Contacto -->
+    <form class="formulario-checkout" onsubmit="event.preventDefault(); procesarPagoFlow();">
+      <label for="inp-email">CORREO ELECTRÓNICO (Para comprobante y acceso):</label>
+      <input type="email" id="inp-email" placeholder="ejemplo@correo.cl" required>
 
-      <!-- Bloque Corporativo B2B -->
-      <div class="seccion-empresa" id="bloque-b2b">
-        <label style="color: #38bdf8;">Datos de Facturación Empresa (DTE):</label>
-        <input type="text" id="pago-razon-social" placeholder="Razón Social Empresa / Faena">
-        <input type="text" id="pago-rut-empresa" placeholder="RUT Empresa (Para Factura)">
-        <input type="email" id="pago-correo-informes" placeholder="Correo de Notificación de Informes PDF *">
+      <label for="inp-nombre">NOMBRE COMPLETO DEL RESPONSABLE:</label>
+      <input type="text" id="inp-nombre" placeholder="Nombre y Apellidos" required>
+
+      <label for="inp-rut">RUT DEL RESPONSABLE O EMPRESA:</label>
+      <input type="text" id="inp-rut" placeholder="12.345.678-9" required>
+
+      <div id="bloque-empresa" style="display: none; flex-direction: column; gap: 8px;">
+        <label for="inp-razon">RAZÓN SOCIAL (Facturación):</label>
+        <input type="text" id="inp-razon" placeholder="Nombre Empresa SpA / Ltda">
       </div>
 
-      <button type="submit" class="btn-pagar-ahora">🔒 Pagar con Webpay / Redcompra</button>
-      <div style="font-size: 0.7rem; color: #64748b; text-align: center; margin-top: 4px;">
-        Transacción protegida por protocolo SSL de 256 bits.
-      </div>
+      <button type="submit" id="btn-pagar" class="btn-principal" style="height: 48px; background-color: #0284c7; margin-top: 8px;">
+        💳 Pagar con Webpay / Redcompra
+      </button>
     </form>
 
-    <a href="planes.html" style="color: #94a3b8; text-decoration: none; font-size: 0.8rem; text-align: center; margin-top: 14px; display: block;">
-      ← Cambiar de Plan
+    <a href="index.html" style="color: #94a3b8; text-decoration: none; font-size: 0.8rem; text-align: center; display: block;">
+      ← Volver al Catálogo de Planes
     </a>
   </main>
 
   <script>
-    const pedido = JSON.parse(localStorage.getItem('sensometrika_plan_pedido'));
+    let sesionActiva = {};
 
-    if (!pedido) {
-      window.location.href = 'planes.html';
-    }
+    document.addEventListener('DOMContentLoaded', () => {
+      sesionActiva = JSON.parse(localStorage.getItem('sensometrika_sesion')) || {
+        rol: 'particular',
+        planId: 'part_unico',
+        nombrePlan: 'Evaluación Psicomotriz DS 170',
+        monto: 4990,
+        cupos: 1,
+        modulosPermitidos: ['reactimetro', 'palancas', 'punteo'],
+        intentosRestantes: 1
+      };
 
-    document.getElementById('txt-nombre-plan').innerText = pedido.nombrePlan;
-    document.getElementById('txt-monto-total').innerText = `$${pedido.precioTotal.toLocaleString('es-CL')} CLP`;
+      document.getElementById('chk-plan-nombre').innerText = sesionActiva.nombrePlan || 'Plan Sensometrika';
+      document.getElementById('chk-plan-cupos').innerText = `${sesionActiva.cupos || 1} persona(s)`;
+      document.getElementById('chk-plan-total').innerText = `$${(sesionActiva.monto || 4990).toLocaleString('es-CL')} CLP`;
 
-    if (pedido.rol === 'empresa') {
-      document.getElementById('bloque-b2b').style.display = 'flex';
-      document.getElementById('lbl-datos-titular').innerText = 'Datos del Responsable Técnico / APR (Firma Supervisor):';
-      document.getElementById('pago-razon-social').required = true;
-      document.getElementById('pago-rut-empresa').required = true;
-      document.getElementById('pago-correo-informes').required = true;
-      document.getElementById('txt-desglose-iva').innerText = `Neto: $${pedido.precioNeto.toLocaleString('es-CL')} | IVA: $${pedido.iva.toLocaleString('es-CL')} (Factura)`;
-    } else {
-      document.getElementById('txt-desglose-iva').innerText = 'Boleta Electrónica IVA incluido';
-    }
-
-    function confirmarPago(e) {
-      e.preventDefault();
-
-      const nombre = document.getElementById('pago-nombre').value.trim();
-      const rut = document.getElementById('pago-rut').value.trim();
-      const correo = document.getElementById('pago-correo').value.trim();
-
-      let empresa = 'Particular';
-      let rutEmpresa = '';
-      let correoInformes = correo;
-
-      if (pedido.rol === 'empresa') {
-        empresa = document.getElementById('pago-razon-social').value.trim();
-        rutEmpresa = document.getElementById('pago-rut-empresa').value.trim();
-        correoInformes = document.getElementById('pago-correo-informes').value.trim();
-
-        // Guardar Responsable de la empresa
-        localStorage.setItem('sensometrika_plan_empresa', JSON.stringify({
-          responsable: nombre,
-          rutResponsable: rut,
-          cargo: 'Supervisión Técnica / APR',
-          razonSocial: empresa,
-          rutEmpresa: rutEmpresa,
-          correoInformes: correoInformes
-        }));
-
-        // En B2B borramos el usuario activo para exigir el ingreso del trabajador
-        localStorage.removeItem('sensometrika_datos_usuario');
-      } else {
-        // En B2C el comprador es el evaluado
-        localStorage.setItem('sensometrika_datos_usuario', JSON.stringify({
-          tipo: 'particular',
-          nombre: nombre,
-          rut: rut,
-          correo: correo,
-          empresa: 'Particular'
-        }));
+      if (sesionActiva.rol === 'empresa') {
+        document.getElementById('bloque-empresa').style.display = 'flex';
       }
+    });
 
-      // Guardar licencia
-      localStorage.setItem('sensometrika_sesion', JSON.stringify({
-        rol: pedido.rol,
-        planId: pedido.planId,
-        nombrePlan: pedido.nombrePlan,
-        modulosPermitidos: pedido.modulosPermitidos,
-        intentosRestantes: pedido.cantidad,
-        razonSocial: empresa,
-        correoInformes: correoInformes,
-        pagoAprobado: true,
-        fechaPago: new Date().toISOString()
+    async function procesarPagoFlow() {
+      const btnPagar = document.getElementById('btn-pagar');
+      btnPagar.disabled = true;
+      btnPagar.innerText = 'Conectando con Webpay...';
+
+      const email = document.getElementById('inp-email').value.trim();
+      const nombre = document.getElementById('inp-nombre').value.trim();
+      const rut = document.getElementById('inp-rut').value.trim();
+      const razon = document.getElementById('inp-razon').value.trim();
+
+      // Guardar datos en local para persistencia en el informe
+      localStorage.setItem('sensometrika_datos_usuario', JSON.stringify({
+        nombre: nombre,
+        rut: rut,
+        email: email,
+        empresa: razon || 'Particular',
+        tipo: sesionActiva.rol
       }));
 
-      // Limpiar evaluaciones previas
-      localStorage.removeItem('sensometrika_reactimetro');
-      localStorage.removeItem('sensometrika_palancas');
-      localStorage.removeItem('sensometrika_punteo');
-      localStorage.removeItem('sensometrika_visual');
-      localStorage.removeItem('sensometrika_auditivo');
+      // Respaldar sesión pendiente
+      localStorage.setItem('sensometrika_sesion_pendiente', JSON.stringify(sesionActiva));
 
-      alert('¡Pago procesado con éxito! Se ha activado tu plan corporativo.');
-      window.location.href = 'menu.html';
+      const payload = {
+        planId: sesionActiva.planId,
+        nombrePlan: sesionActiva.nombrePlan,
+        monto: sesionActiva.monto,
+        email: email,
+        rut: rut,
+        nombre: nombre,
+        empresa: razon || 'Particular',
+        rol: sesionActiva.rol,
+        modulosPermitidos: sesionActiva.modulosPermitidos,
+        intentos: sesionActiva.intentosRestantes
+      };
+
+      try {
+        const res = await fetch('/api/crear-orden', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        const data = await res.json();
+
+        if (data.url) {
+          // Redirigir a la interfaz oficial de Flow Sandbox (Webpay)
+          window.location.href = data.url;
+        } else {
+          alert('Error al generar la orden: ' + (data.error || 'Respuesta inválida'));
+          btnPagar.disabled = false;
+          btnPagar.innerText = '💳 Pagar con Webpay / Redcompra';
+        }
+      } catch (err) {
+        console.error('Error de comunicación:', err);
+        alert('No se pudo establecer conexión con el servidor de pagos. Si estás en localhost, sube los cambios a Vercel para ejecutar la función de Flow.');
+        btnPagar.disabled = false;
+        btnPagar.innerText = '💳 Pagar con Webpay / Redcompra';
+      }
     }
   </script>
 </body>
