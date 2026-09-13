@@ -3,213 +3,180 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Sensometrika | Checkout Seguro</title>
+  <title>Sensometrika | Planes y Tarifas Oficiales</title>
   <link rel="stylesheet" href="styles.css">
   <style>
-    .formulario-checkout {
-      width: 100%;
-      background-color: #0f172a;
-      border: 1px solid #334155;
-      border-radius: 12px;
-      padding: 18px;
+    body {
+      background-color: #0b1120;
+      color: #f1f5f9;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      margin: 0;
+      padding: 16px;
       display: flex;
-      flex-direction: column;
-      gap: 12px;
-      box-sizing: border-box;
-      margin-bottom: 12px;
+      justify-content: center;
     }
-    .formulario-checkout label {
-      font-size: 0.76rem;
-      color: #94a3b8;
-      font-weight: 600;
-    }
-    .formulario-checkout input, .formulario-checkout select {
+    .contenedor {
       width: 100%;
-      height: 42px;
+      max-width: 480px;
+    }
+    .selector-segmento {
+      display: flex;
+      gap: 8px;
+      width: 100%;
+      margin-bottom: 16px;
+    }
+    .btn-tab {
+      flex: 1;
+      height: 44px;
       background-color: #1e293b;
       border: 1px solid #475569;
+      color: #94a3b8;
+      font-weight: 700;
       border-radius: 8px;
-      color: #ffffff;
-      padding: 0 12px;
-      font-size: 0.88rem;
-      box-sizing: border-box;
+      cursor: pointer;
+      font-size: 0.9rem;
     }
-    .resumen-cobro {
+    .btn-tab.activo {
+      background-color: #0284c7;
+      border-color: #38bdf8;
+      color: #ffffff;
+    }
+    .grilla-planes {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
       width: 100%;
-      background-color: #0b1120;
-      border: 1px solid #1e293b;
-      border-radius: 10px;
-      padding: 14px;
-      box-sizing: border-box;
+    }
+    .tarjeta-plan {
+      background-color: #0f172a;
+      border: 1.5px solid #334155;
+      border-radius: 12px;
+      padding: 18px 16px;
       display: flex;
       flex-direction: column;
       gap: 8px;
-      margin-bottom: 14px;
+      position: relative;
     }
-    .fila-resumen {
-      display: flex;
-      justify-content: space-between;
-      font-size: 0.84rem;
+    .tarjeta-plan.destacado {
+      border-color: #38bdf8;
+      box-shadow: 0 0 14px rgba(56, 189, 248, 0.2);
     }
-    .fila-resumen span { color: #94a3b8; }
-    .fila-resumen strong { color: #f8fafc; }
-    .fila-total {
-      border-top: 1px solid #334155;
-      padding-top: 8px;
-      font-size: 1.05rem;
+    .tarjeta-plan h3 { margin: 0; font-size: 1.05rem; color: #ffffff; }
+    .precio { font-size: 1.35rem; font-weight: 900; color: #38bdf8; margin: 2px 0; }
+    .detalle-modulos { font-size: 0.8rem; color: #94a3b8; line-height: 1.4; margin: 0; }
+    .btn-elegir {
+      margin-top: 8px;
+      height: 44px;
+      background-color: #0284c7;
+      border: none;
+      color: #ffffff;
+      font-weight: 700;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 0.95rem;
     }
-    .fila-total strong { color: #38bdf8; }
+    .btn-elegir:active { transform: scale(0.98); }
+    .badge-tiempo {
+      position: absolute;
+      top: 14px;
+      right: 14px;
+      font-size: 0.68rem;
+      background-color: #1e293b;
+      color: #22c55e;
+      border: 1px solid #22c55e;
+      padding: 3px 8px;
+      border-radius: 12px;
+      font-weight: 700;
+    }
   </style>
 </head>
 <body>
-  <main class="contenedor" style="max-width: 480px; margin: 0 auto; padding: 16px;">
-    <header style="text-align: center; margin-bottom: 14px;">
-      <h1 style="color: #fff; font-size: 1.3rem; margin: 0;">SENSOMETRIKA SpA</h1>
-      <p style="color: #94a3b8; font-size: 0.78rem; margin: 2px 0 0 0;">Finalización de Compra y Acreditación de Sesión</p>
+  <main class="contenedor">
+    <header style="text-align: center; margin-bottom: 16px;">
+      <p style="font-size: 0.8rem; color: #38bdf8; margin: 0; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Catálogo Oficial de Evaluaciones (D.S. N° 170)</p>
+      <h1 style="font-size: 1.3rem; margin: 4px 0 0 0; color: #fff;">Sensometrika SpA</h1>
     </header>
 
-    <!-- Resumen del Plan -->
-    <section class="resumen-cobro">
-      <div class="fila-resumen">
-        <span>Servicio:</span>
-        <strong id="chk-plan-nombre">Plan Psicomotriz DS 170</strong>
+    <div class="selector-segmento">
+      <button class="btn-tab activo" id="tab-b2c" onclick="verSegmento('b2c')">Particular (B2C)</button>
+      <button class="btn-tab" id="tab-b2b" onclick="verSegmento('b2b')">Empresas (B2B)</button>
+    </div>
+
+    <!-- PLANES B2C (PARTICULAR) -->
+    <section class="grilla-planes" id="planes-b2c">
+      <div class="tarjeta-plan">
+        <span class="badge-tiempo">Batería Básica</span>
+        <h3>Pase Básico Psicomotriz</h3>
+        <div class="precio">$4.990 CLP <small style="font-size: 0.72rem; color: #94a3b8; font-weight: normal;">IVA incl.</small></div>
+        <p class="detalle-modulos">1 demo guiado + 3 simulaciones oficiales (Reactímetro, Palancas y Punteo).</p>
+        <button class="btn-elegir" onclick="irAlCheckout('b2c_basico', 'Pase Básico Psicomotriz', 4990, 'particular', ['reactimetro', 'palancas', 'punteo'])">
+          Pagar y Acceder ($4.990)
+        </button>
       </div>
-      <div class="fila-resumen">
-        <span>Régimen de Evaluación:</span>
-        <strong id="chk-plan-cupos">1 persona</strong>
+
+      <div class="tarjeta-plan">
+        <span class="badge-tiempo">Básica + Visual</span>
+        <h3>Pase Plus Sensotécnico</h3>
+        <div class="precio">$6.990 CLP <small style="font-size: 0.72rem; color: #94a3b8; font-weight: normal;">IVA incl.</small></div>
+        <p class="detalle-modulos">Batería psicomotriz completa + Tamizaje Visual Orientativo (Ishihara y Agudeza).</p>
+        <button class="btn-elegir" onclick="irAlCheckout('b2c_plus', 'Pase Plus Sensotécnico', 6990, 'particular', ['reactimetro', 'palancas', 'punteo', 'visual'])">
+          Pagar y Acceder ($6.990)
+        </button>
       </div>
-      <div class="fila-resumen fila-total">
-        <span>Total a Pagar:</span>
-        <strong id="chk-plan-total">$4.990 CLP</strong>
+
+      <div class="tarjeta-plan destacado">
+        <span class="badge-tiempo">Los 5 Módulos</span>
+        <h3>Pase Full Integral</h3>
+        <div class="precio">$9.990 CLP <small style="font-size: 0.72rem; color: #94a3b8; font-weight: normal;">IVA incl.</small></div>
+        <p class="detalle-modulos">Batería Psicomotriz + Tamizaje Visual + Tamizaje Auditivo Biaural con envío directo al correo.</p>
+        <button class="btn-elegir" onclick="irAlCheckout('b2c_full', 'Pase Full Integral', 9990, 'particular', ['reactimetro', 'palancas', 'punteo', 'visual', 'auditivo'])">
+          Pagar y Acceder ($9.990)
+        </button>
       </div>
     </section>
 
-    <!-- Formulario de Facturación / Contacto -->
-    <form class="formulario-checkout" onsubmit="event.preventDefault(); procesarPagoFlow();">
-      <label for="inp-email">CORREO ELECTRÓNICO (Para comprobante y acceso):</label>
-      <input type="email" id="inp-email" placeholder="ejemplo@correo.cl" required>
-
-      <label for="inp-nombre">NOMBRE COMPLETO DEL RESPONSABLE:</label>
-      <input type="text" id="inp-nombre" placeholder="Nombre y Apellidos" required>
-
-      <label for="inp-rut">RUT DEL RESPONSABLE O EMPRESA:</label>
-      <input type="text" id="inp-rut" placeholder="12.345.678-9" required>
-
-      <div id="bloque-empresa" style="display: none; flex-direction: column; gap: 8px;">
-        <label for="inp-razon">RAZÓN SOCIAL (Facturación):</label>
-        <input type="text" id="inp-razon" placeholder="Nombre Empresa SpA / Ltda">
+    <!-- PLANES B2B (EMPRESAS) -->
+    <section class="grilla-planes" id="planes-b2b" style="display: none;">
+      <div class="tarjeta-plan">
+        <span class="badge-tiempo">B2B Base</span>
+        <h3>Batería Psicomotriz Corporativa</h3>
+        <div class="precio">$7.990 CLP <small style="font-size: 0.72rem; color: #94a3b8; font-weight: normal;">+ IVA por trabajador</small></div>
+        <p class="detalle-modulos">Reactímetro + Palancas + Punteo con Certificado Oficial A4 timbrado para Faena.</p>
+        <button class="btn-elegir" onclick="irAlCheckout('b2b_base', 'B2B Batería Base', 9508, 'empresa', ['reactimetro', 'palancas', 'punteo'])">
+          Contratar Plan Corporativo
+        </button>
       </div>
 
-      <button type="submit" id="btn-pagar" class="btn-principal" style="height: 48px; background-color: #0284c7; margin-top: 8px;">
-        💳 Pagar con Webpay / Redcompra
-      </button>
-    </form>
-
-    <a href="index.html" style="color: #94a3b8; text-decoration: none; font-size: 0.8rem; text-align: center; display: block;">
-      ← Volver al Catálogo de Planes
-    </a>
+      <div class="tarjeta-plan destacado">
+        <span class="badge-tiempo">B2B Integral</span>
+        <h3>Batería Full Sensométrica (5 Módulos)</h3>
+        <div class="precio">$11.990 CLP <small style="font-size: 0.72rem; color: #94a3b8; font-weight: normal;">+ IVA por trabajador</small></div>
+        <p class="detalle-modulos">Los 5 Módulos normativos (Reactímetro, Palancas, Punteo, Visual, Auditivo) + QR de Trazabilidad.</p>
+        <button class="btn-elegir" onclick="irAlCheckout('b2b_full', 'B2B Full Sensométrica', 14268, 'empresa', ['reactimetro', 'palancas', 'punteo', 'visual', 'auditivo'])">
+          Contratar B2B Full
+        </button>
+      </div>
+    </section>
   </main>
 
   <script>
-    let planActivo = {};
+    function verSegmento(seg) {
+      document.getElementById('tab-b2c').className = seg === 'b2c' ? 'btn-tab activo' : 'btn-tab';
+      document.getElementById('tab-b2b').className = seg === 'b2b' ? 'btn-tab activo' : 'btn-tab';
+      document.getElementById('planes-b2c').style.display = seg === 'b2c' ? 'flex' : 'none';
+      document.getElementById('planes-b2b').style.display = seg === 'b2b' ? 'flex' : 'none';
+    }
 
-    document.addEventListener('DOMContentLoaded', () => {
-      const planGuardado = JSON.parse(localStorage.getItem('sensometrika_plan_pedido')) || 
-                           JSON.parse(localStorage.getItem('sensometrika_sesion')) || {};
-
-      const montoFinal = Number(planGuardado.precio || planGuardado.monto || 4990);
-      const nombrePlan = planGuardado.nombrePlan || 'Plan Básico Psicomotriz';
-      const rolPlan = planGuardado.rol || 'particular';
-
-      planActivo = {
-        planId: planGuardado.planId || 'part_basico',
-        nombrePlan: nombrePlan,
-        monto: montoFinal,
-        rol: rolPlan,
-        modulosPermitidos: planGuardado.modulosPermitidos || ['reactimetro', 'palancas', 'punteo'],
-        tipoRegimen: planGuardado.tipoRegimen || (rolPlan === 'empresa' ? 'bolsa_empresa' : 'creditos_modulo'),
-        pruebasCompletasRestantes: planGuardado.pruebasCompletasRestantes || 1,
-        ejecucionesRestantes: planGuardado.ejecucionesRestantes || { reactimetro: 3, palancas: 3, punteo: 3 },
-        diasVigencia: planGuardado.diasVigencia || 5,
-        intentosRestantes: planGuardado.intentosRestantes || (rolPlan === 'empresa' ? 30 : 1)
-      };
-
-      document.getElementById('chk-plan-nombre').innerText = planActivo.nombrePlan;
-      document.getElementById('chk-plan-cupos').innerText = planActivo.rol === 'empresa' 
-        ? `${planActivo.intentosRestantes} Evaluaciones para Faena` 
-        : 'Evaluación Individual';
-      document.getElementById('chk-plan-total').innerText = `$${montoFinal.toLocaleString('es-CL')} CLP`;
-
-      if (planActivo.rol === 'empresa') {
-        document.getElementById('bloque-empresa').style.display = 'flex';
-      }
-
-      const datosPrevios = JSON.parse(localStorage.getItem('sensometrika_datos_usuario'));
-      if (datosPrevios) {
-        if (datosPrevios.email) document.getElementById('inp-email').value = datosPrevios.email;
-        if (datosPrevios.nombre) document.getElementById('inp-nombre').value = datosPrevios.nombre;
-        if (datosPrevios.rut) document.getElementById('inp-rut').value = datosPrevios.rut;
-        if (datosPrevios.empresa && datosPrevios.empresa !== 'Particular') {
-          document.getElementById('inp-razon').value = datosPrevios.empresa;
-        }
-      }
-    });
-
-    async function procesarPagoFlow() {
-      const btnPagar = document.getElementById('btn-pagar');
-      btnPagar.disabled = true;
-      btnPagar.innerText = 'Conectando con Webpay...';
-
-      const email = document.getElementById('inp-email').value.trim();
-      const nombre = document.getElementById('inp-nombre').value.trim();
-      const rut = document.getElementById('inp-rut').value.trim();
-      const razon = document.getElementById('inp-razon').value.trim();
-
-      localStorage.setItem('sensometrika_datos_usuario', JSON.stringify({
+    function irAlCheckout(id, nombre, precio, tipo, modulos) {
+      const seleccion = {
+        planId: id,
         nombre: nombre,
-        rut: rut,
-        email: email,
-        empresa: razon || (planActivo.rol === 'empresa' ? 'Empresa Faena' : 'Particular'),
-        tipo: planActivo.rol
-      }));
-
-      localStorage.setItem('sensometrika_sesion_pendiente', JSON.stringify(planActivo));
-
-      const payload = {
-        planId: planActivo.planId,
-        nombrePlan: planActivo.nombrePlan,
-        monto: planActivo.monto,
-        email: email,
-        rut: rut,
-        nombre: nombre,
-        empresa: razon || 'Particular',
-        rol: planActivo.rol,
-        modulosPermitidos: planActivo.modulosPermitidos,
-        intentos: planActivo.intentosRestantes
+        precio: precio,
+        tipo: tipo,
+        modulos: modulos
       };
-
-      try {
-        const res = await fetch('/api/crear-orden', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
-
-        const data = await res.json();
-
-        if (data.url) {
-          window.location.href = data.url;
-        } else {
-          alert('Error al generar la orden: ' + (data.error || 'Respuesta inválida'));
-          btnPagar.disabled = false;
-          btnPagar.innerText = '💳 Pagar con Webpay / Redcompra';
-        }
-      } catch (err) {
-        console.error('Error al comunicar con la pasarela:', err);
-        alert('No se pudo establecer conexión con el servidor de pagos.');
-        btnPagar.disabled = false;
-        btnPagar.innerText = '💳 Pagar con Webpay / Redcompra';
-      }
+      localStorage.setItem('sensometrika_plan_seleccionado', JSON.stringify(seleccion));
+      window.location.href = 'checkout.html';
     }
   </script>
 </body>
