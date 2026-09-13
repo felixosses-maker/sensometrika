@@ -114,7 +114,7 @@
         display: flex;
         align-items: center;
         gap: 12px;
-        max-width: calc(100% - 100px); /* Espacio reservado para que nunca choque con el QR */
+        max-width: calc(100% - 100px);
       }
 
       .bloque-marca h2 {
@@ -280,7 +280,7 @@
     <section class="ficha-print" style="background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 10px; margin-bottom: 10px; font-size: 0.8rem;">
       <div>Evaluado: <strong id="rep-nombre" style="color: #fff;">--</strong></div>
       <div>RUT: <strong id="rep-rut" style="color: #fff;">--</strong></div>
-      <div id="row-empresa-informe" style="display: none;">Empresa / Faena: <strong id="rep-empresa" style="color: #38bdf8;">--</strong></div>
+      <div id="row-empresa-informe">Empresa / Faena: <strong id="rep-empresa" style="color: #38bdf8;">--</strong></div>
       <div>Fecha y Hora: <strong id="rep-fecha" style="color: #94a3b8;">--</strong></div>
       <div>Folio Registro: <strong id="rep-folio" style="color: #94a3b8;">--</strong></div>
     </section>
@@ -309,7 +309,7 @@
     </div>
 
     <!-- Pad Táctil B2B -->
-    <section class="zona-firma-pantalla" id="bloque-pad-firma" style="display: none;">
+    <section class="zona-firma-pantalla" id="bloque-pad-firma">
       <p style="color: #f8fafc; font-size: 0.8rem; margin: 0 0 5px 0;">
         ✍️ <strong>Firma del Conductor:</strong> Dibuje su firma en el recuadro para validar el certificado
       </p>
@@ -322,7 +322,7 @@
 
     <!-- Botones Web -->
     <div class="acciones-web" style="display: flex; flex-direction: column; gap: 8px; width: 100%;">
-      <button id="btn-imprimir-pdf" onclick="window.print()" class="btn-principal" style="height: 42px; font-size: 0.88rem; background-color: #0284c7; display: none;">
+      <button id="btn-imprimir-pdf" onclick="window.print()" class="btn-principal" style="height: 42px; font-size: 0.88rem; background-color: #0284c7; cursor: pointer; color: white; border: none; border-radius: 6px; font-weight: bold;">
         🖨️ Generar y Descargar PDF Formal para Faena
       </button>
       <a href="menu.html" style="color: #94a3b8; text-decoration: none; font-size: 0.78rem; text-align: center; padding: 4px;">
@@ -335,16 +335,16 @@
       <div class="caja-firma">
         <img id="firma-render-pdf" class="img-firma-trabajador" style="display: none;" alt="Firma Conductor">
         <div class="linea-firma"></div>
-        <strong id="print-nombre-trabajador">Firma del Conductor</strong>
-        <span id="print-rut-trabajador">RUT: --</span>
+        <strong id="print-nombre-trabajador">Andres Rojas</strong>
+        <span id="print-rut-trabajador">RUT: 11.111.111-3</span>
       </div>
 
       <div class="caja-firma">
         <div style="height: 40px; display: flex; align-items: flex-end; justify-content: center; width: 100%;">
           <div class="linea-firma"></div>
         </div>
-        <strong id="print-nombre-apr">Mariela Cárcamo Fernández</strong>
-        <span id="print-rut-apr">RUT: 12.222.222-2</span>
+        <strong id="print-nombre-apr">Juan Perez</strong>
+        <span id="print-rut-apr">RUT: 12.444.444-2</span>
         <span style="font-size: 6pt; color: #64748b;">Supervisión Técnica / APR • <span id="print-empresa-apr">socadep</span></span>
       </div>
     </section>
@@ -355,56 +355,54 @@
   </main>
 
   <script>
-    // Conexión Supabase
     const SUPABASE_URL = 'https://kytuewhkhshrjddzoknv.supabase.co';
-    // REEMPLAZA CON TU ANON KEY CLÁSICA (eyJ...) SI ES NECESARIO
     const SUPABASE_ANON_KEY = 'sb_publishable_ou-yRIieMQOGoWJ4YZIYtg_-Lusc711';
-    const supabase = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
+    const supabase = (window.supabase && typeof window.supabase.createClient === 'function') 
+      ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) 
+      : null;
 
-    document.addEventListener('DOMContentLoaded', async () => {
-      const sesion = JSON.parse(localStorage.getItem('sensometrika_sesion')) || { rol: 'particular' };
-      const user = JSON.parse(localStorage.getItem('sensometrika_datos_usuario')) || { 
+    document.addEventListener('DOMContentLoaded', function() {
+      // 1. Cargar o simular datos por defecto de usuario y empresa B2B
+      let user = JSON.parse(localStorage.getItem('sensometrika_datos_usuario')) || { 
         nombre: 'Andres Rojas', 
         rut: '11.111.111-3' 
       };
-      const emp = JSON.parse(localStorage.getItem('sensometrika_plan_empresa')) || {
+      let emp = JSON.parse(localStorage.getItem('sensometrika_plan_empresa')) || {
         responsable: 'Juan Perez',
         rutResponsable: '12.444.444-2',
         razonSocial: 'socadep'
       };
 
-      // Filiación
+      // Si no tienen nombres asignados, forzar los datos visibles
+      if (!user.nombre || user.nombre === '--') user.nombre = 'Andres Rojas';
+      if (!user.rut || user.rut === '--') user.rut = '11.111.111-3';
+
       document.getElementById('rep-nombre').innerText = user.nombre;
       document.getElementById('rep-rut').innerText = user.rut;
-      document.getElementById('rep-fecha').innerText = new Date().toLocaleDateString('es-CL') + ', ' + new Date().toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      document.getElementById('rep-empresa').innerText = emp.razonSocial;
+      
+      const ahora = new Date();
+      document.getElementById('rep-fecha').innerText = ahora.toLocaleDateString('es-CL') + ', ' + ahora.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 
+      // Generar Folio
       const folio = 'SMK-' + Math.floor(100000 + Math.random() * 900000);
       document.getElementById('rep-folio').innerText = folio;
 
-      const esEmpresa = (sesion.rol === 'empresa');
-      const dictamenFinal = cargarMetricas(esEmpresa);
+      // Cargar resultados técnicos
+      const dictamenFinal = cargarMetricas();
 
-      if (esEmpresa) {
-        document.getElementById('row-empresa-informe').style.display = 'block';
-        document.getElementById('rep-empresa').innerText = emp.razonSocial;
-        document.getElementById('bloque-pad-firma').style.display = 'block';
-        document.getElementById('btn-imprimir-pdf').style.display = 'block';
-        document.getElementById('bloque-firmas-print').style.display = 'flex';
+      // Nombres en firmas
+      document.getElementById('print-nombre-trabajador').innerText = user.nombre;
+      document.getElementById('print-rut-trabajador').innerText = `RUT: ${user.rut}`;
+      document.getElementById('print-nombre-apr').innerText = emp.responsable;
+      document.getElementById('print-rut-apr').innerText = `RUT: ${emp.rutResponsable}`;
+      document.getElementById('print-empresa-apr').innerText = emp.razonSocial;
 
-        // Firma Trabajador
-        document.getElementById('print-nombre-trabajador').innerText = user.nombre;
-        document.getElementById('print-rut-trabajador').innerText = `RUT: ${user.rut}`;
-
-        // Firma Supervisor / APR
-        document.getElementById('print-nombre-apr').innerText = emp.responsable;
-        document.getElementById('print-rut-apr').innerText = `RUT: ${emp.rutResponsable}`;
-        document.getElementById('print-empresa-apr').innerText = emp.razonSocial;
-
-        // Generar QR en tamaño 68x68 con URL dinámica que funciona en local y en Vercel
-        const contenedorQR = document.getElementById('qr-impreso');
+      // Dibujar QR
+      const contenedorQR = document.getElementById('qr-impreso');
+      if (contenedorQR) {
         contenedorQR.innerHTML = '';
         const urlDestino = `${window.location.origin}/validar.html?folio=${folio}`;
-        
         new QRCode(contenedorQR, {
           text: urlDestino,
           width: 68,
@@ -413,44 +411,75 @@
           colorLight: "#ffffff",
           correctLevel: QRCode.CorrectLevel.M
         });
-
-        iniciarCanvasFirma();
       }
 
-      // Guardar inmediatamente el folio en Supabase para que el QR sea válido al instante
-      await guardarFolioEnBD(folio, user, emp.razonSocial, dictamenFinal);
+      // Iniciar pad de firma
+      iniciarCanvasFirma();
+
+      // Guardar en Supabase en segundo plano sin congelar la interfaz
+      guardarEnBaseDeDatos(folio, user, emp.razonSocial, dictamenFinal);
     });
 
-    async function guardarFolioEnBD(folio, user, empresa, dictamen) {
-      if (!supabase) return;
-      const rReact = JSON.parse(localStorage.getItem('sensometrika_reactimetro')) || {};
-      const rPal = JSON.parse(localStorage.getItem('sensometrika_palancas')) || {};
-      const rPunt = JSON.parse(localStorage.getItem('sensometrika_punteo')) || {};
+    function cargarMetricas() {
+      const rReact = JSON.parse(localStorage.getItem('sensometrika_reactimetro')) || { tiempo: 376, aprobado: false };
+      const rPal = JSON.parse(localStorage.getItem('sensometrika_palancas')) || { toques: 1, tiempo: 17, aprobado: true };
+      const rPunt = JSON.parse(localStorage.getItem('sensometrika_punteo')) || { efectividad: 88, aprobado: true };
 
-      try {
-        const { error } = await supabase.from('certificados_folios').insert([{
-          folio: folio,
-          rut: user.rut,
-          nombre: user.nombre,
-          empresa: empresa || 'Particular',
-          dictamen: dictamen,
-          reactimetro_ms: rReact.tiempo || 376,
-          palancas_toques: rPal.toques !== undefined ? rPal.toques : 1,
-          punteo_efectividad: rPunt.efectividad !== undefined ? rPunt.efectividad : 88
-        }]);
+      const tbody = document.getElementById('cuerpo-tabla-resultados');
+      tbody.innerHTML = '';
+      let todoAprobado = true;
 
-        if (error) {
-          console.warn("Aviso al registrar en Supabase:", error.message);
-        } else {
-          console.log("Certificado registrado exitosamente en base de datos:", folio);
-        }
-      } catch (err) {
-        console.error("Fallo de red al conectar con Supabase:", err);
+      // Umbral Faena: 350 ms
+      const reactOk = rReact.tiempo <= 350;
+      if (!reactOk) todoAprobado = false;
+
+      tbody.innerHTML += `
+        <tr>
+          <td><strong>1. Reactímetro</strong><br><small style="color: #64748b;">Freno de Emergencia</small></td>
+          <td>Latencia simple de respuesta</td>
+          <td>≤ 350 ms (Clase A / Faena)<br>≤ 450 ms (Clase B)</td>
+          <td><strong>${rReact.tiempo} ms</strong></td>
+          <td style="text-align: center;"><span class="badge-eval ${reactOk ? 'eval-aprobado' : 'eval-reprobado'}">${reactOk ? 'CUMPLE' : 'NO CUMPLE'}</span></td>
+        </tr>
+      `;
+
+      if (!rPal.aprobado) todoAprobado = false;
+      tbody.innerHTML += `
+        <tr>
+          <td><strong>2. Palancas</strong><br><small style="color: #64748b;">Coordinación Bimanual</small></td>
+          <td>Permanencia y toques en carril</td>
+          <td>≤ 3 contactos en 60 s</td>
+          <td><strong>${rPal.toques} toques</strong> (${rPal.tiempo} s)</td>
+          <td style="text-align: center;"><span class="badge-eval ${rPal.aprobado ? 'eval-aprobado' : 'eval-reprobado'}">${rPal.aprobado ? 'CUMPLE' : 'REPROBADO'}</span></td>
+        </tr>
+      `;
+
+      if (!rPunt.aprobado) todoAprobado = false;
+      tbody.innerHTML += `
+        <tr>
+          <td><strong>3. Punteo</strong><br><small style="color: #64748b;">Disco de Lahy</small></td>
+          <td>Efectividad visomotriz rítmica</td>
+          <td>≥ 80% inserciones válidas</td>
+          <td><strong>${rPunt.efectividad}%</strong></td>
+          <td style="text-align: center;"><span class="badge-eval ${rPunt.aprobado ? 'eval-aprobado' : 'eval-reprobado'}">${rPunt.aprobado ? 'CUMPLE' : 'REPROBADO'}</span></td>
+        </tr>
+      `;
+
+      const dictamenBox = document.getElementById('box-dictamen');
+      let dictamenTexto = 'APTO (CUMPLE ESTÁNDAR LEGAL)';
+      if (!todoAprobado) {
+        dictamenTexto = 'NO APTO / REQUIERE PRÁCTICA PREVENTIVA';
+        dictamenBox.innerText = 'DICTAMEN: ' + dictamenTexto;
+        dictamenBox.style.borderColor = '#f87171';
+        dictamenBox.style.color = '#f87171';
+        dictamenBox.style.background = 'rgba(248, 113, 113, 0.1)';
       }
+      return dictamenTexto;
     }
 
     function iniciarCanvasFirma() {
       const canvas = document.getElementById('canvas-firma');
+      if (!canvas) return;
       const ctx = canvas.getContext('2d');
       let dibujando = false;
 
@@ -500,6 +529,7 @@
 
     function limpiarFirma() {
       const canvas = document.getElementById('canvas-firma');
+      if (!canvas) return;
       const ctx = canvas.getContext('2d');
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       const img = document.getElementById('firma-render-pdf');
@@ -507,62 +537,30 @@
       img.style.display = 'none';
     }
 
-    function cargarMetricas(esEmpresa) {
-      const rReact = JSON.parse(localStorage.getItem('sensometrika_reactimetro')) || { tiempo: 376, aprobado: false };
-      const rPal = JSON.parse(localStorage.getItem('sensometrika_palancas')) || { toques: 1, tiempo: 17, aprobado: true };
-      const rPunt = JSON.parse(localStorage.getItem('sensometrika_punteo')) || { efectividad: 88, aprobado: true };
+    function guardarEnBaseDeDatos(folio, user, empresa, dictamen) {
+      if (!supabase) return;
+      const rReact = JSON.parse(localStorage.getItem('sensometrika_reactimetro')) || {};
+      const rPal = JSON.parse(localStorage.getItem('sensometrika_palancas')) || {};
+      const rPunt = JSON.parse(localStorage.getItem('sensometrika_punteo')) || {};
 
-      const tbody = document.getElementById('cuerpo-tabla-resultados');
-      tbody.innerHTML = '';
-      let todoAprobado = true;
-
-      // Umbral Faena: 350 ms / Particular: 450 ms
-      const umbralReact = esEmpresa ? 350 : 450;
-      const reactOk = rReact.tiempo <= umbralReact;
-      if (!reactOk) todoAprobado = false;
-
-      tbody.innerHTML += `
-        <tr>
-          <td><strong>1. Reactímetro</strong><br><small style="color: #64748b;">Freno de Emergencia</small></td>
-          <td>Latencia simple de respuesta</td>
-          <td>≤ 350 ms (Clase A / Faena)<br>≤ 450 ms (Clase B)</td>
-          <td><strong>${rReact.tiempo} ms</strong></td>
-          <td style="text-align: center;"><span class="badge-eval ${reactOk ? 'eval-aprobado' : 'eval-reprobado'}">${reactOk ? 'CUMPLE' : 'NO CUMPLE'}</span></td>
-        </tr>
-      `;
-
-      if (!rPal.aprobado) todoAprobado = false;
-      tbody.innerHTML += `
-        <tr>
-          <td><strong>2. Palancas</strong><br><small style="color: #64748b;">Coordinación Bimanual</small></td>
-          <td>Permanencia y toques en carril</td>
-          <td>≤ 3 contactos en 60 s</td>
-          <td><strong>${rPal.toques} toques</strong> (${rPal.tiempo} s)</td>
-          <td style="text-align: center;"><span class="badge-eval ${rPal.aprobado ? 'eval-aprobado' : 'eval-reprobado'}">${rPal.aprobado ? 'CUMPLE' : 'REPROBADO'}</span></td>
-        </tr>
-      `;
-
-      if (!rPunt.aprobado) todoAprobado = false;
-      tbody.innerHTML += `
-        <tr>
-          <td><strong>3. Punteo</strong><br><small style="color: #64748b;">Disco de Lahy</small></td>
-          <td>Efectividad visomotriz rítmica</td>
-          <td>≥ 80% inserciones válidas</td>
-          <td><strong>${rPunt.efectividad}%</strong></td>
-          <td style="text-align: center;"><span class="badge-eval ${rPunt.aprobado ? 'eval-aprobado' : 'eval-reprobado'}">${rPunt.aprobado ? 'CUMPLE' : 'REPROBADO'}</span></td>
-        </tr>
-      `;
-
-      const dictamenBox = document.getElementById('box-dictamen');
-      let dictamenTexto = 'APTO (CUMPLE ESTÁNDAR LEGAL)';
-      if (!todoAprobado) {
-        dictamenTexto = 'NO APTO / REQUIERE PRÁCTICA PREVENTIVA';
-        dictamenBox.innerText = 'DICTAMEN: ' + dictamenTexto;
-        dictamenBox.style.borderColor = '#f87171';
-        dictamenBox.style.color = '#f87171';
-        dictamenBox.style.background = 'rgba(248, 113, 113, 0.1)';
-      }
-      return dictamenTexto;
+      supabase.from('certificados_folios').insert([{
+        folio: folio,
+        rut: user.rut,
+        nombre: user.nombre,
+        empresa: empresa || 'Particular',
+        dictamen: dictamen,
+        reactimetro_ms: rReact.tiempo || 376,
+        palancas_toques: rPal.toques !== undefined ? rPal.toques : 1,
+        punteo_efectividad: rPunt.efectividad !== undefined ? rPunt.efectividad : 88
+      }]).then(({ error }) => {
+        if (error) {
+          console.warn("Aviso al registrar en Supabase:", error.message);
+        } else {
+          console.log("Certificado registrado exitosamente:", folio);
+        }
+      }).catch(err => {
+        console.error("Error de red Supabase:", err);
+      });
     }
   </script>
 </body>
