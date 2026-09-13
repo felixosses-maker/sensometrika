@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Sensometrika | Confirmación de Pago</title>
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    .tarjeta-resultado {
+      background-color: #0f172a;
+      border: 1.5px solid #334155;
+      border-radius: 14px;
+      padding: 24px;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    .icono-estado {
+      font-size: 3.2rem;
+    }
+    .titulo-estado {
+      font-size: 1.25rem;
+      font-weight: 800;
+      margin: 0;
+    }
+    .detalle-texto {
+      font-size: 0.85rem;
+      color: #94a3b8;
+      line-height: 1.45;
+      margin: 0;
+    }
+  </style>
+</head>
+<body>
+  <main class="contenedor" style="max-width: 440px; margin: 0 auto; padding: 20px;">
+    <header style="text-align: center; margin-bottom: 10px;">
+      <h1 style="color: #fff; font-size: 1.3rem; margin: 0;">SENSOMETRIKA SpA</h1>
+      <p style="color: #94a3b8; font-size: 0.75rem; margin: 2px 0 0 0;">Pasarela Oficial de Pagos • Webpay Plus</p>
+    </header>
+
+    <section class="tarjeta-resultado" id="caja-confirmando">
+      <div class="icono-estado">⏳</div>
+      <h2 class="titulo-estado" style="color: #38bdf8;">Confirmando Transacción...</h2>
+      <p class="detalle-texto">Validando el estado de la operación con Flow Sandbox y Redcompra.</p>
+    </section>
+
+    <section class="tarjeta-resultado" id="caja-exito" style="display: none;">
+      <div class="icono-estado">✅</div>
+      <h2 class="titulo-estado" style="color: #4ade80;">¡Pago Aprobado!</h2>
+      <p class="detalle-texto">Tu acreditación ha sido procesada con éxito. Los módulos psicométricos han sido desbloqueados para tu evaluación.</p>
+      <a href="menu.html" class="btn-principal" style="text-decoration: none; display: flex; justify-content: center; align-items: center; height: 48px; background-color: #0284c7; width: 100%;">
+        Ingresar al Portal de Pruebas →
+      </a>
+    </section>
+
+    <section class="tarjeta-resultado" id="caja-fracaso" style="display: none;">
+      <div class="icono-estado">❌</div>
+      <h2 class="titulo-estado" style="color: #f87171;">Transacción No Completada</h2>
+      <p class="detalle-texto" id="txt-error-motivo">La operación fue cancelada por el usuario o rechazada por la entidad bancaria.</p>
+      <a href="checkout.html" class="btn-principal" style="text-decoration: none; display: flex; justify-content: center; align-items: center; height: 48px; background-color: #334155; width: 100%;">
+        Volver a Intentar Pago
+      </a>
+    </section>
+  </main>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const token = urlParams.get('token');
+
+      const cajaCargando = document.getElementById('caja-confirmando');
+      const cajaExito = document.getElementById('caja-exito');
+      const cajaFracaso = document.getElementById('caja-fracaso');
+
+      if (!token) {
+        cajaCargando.style.display = 'none';
+        cajaFracaso.style.display = 'flex';
+        return;
+      }
+
+      // Desbloquear sesión en localStorage
+      const sesionPendiente = JSON.parse(localStorage.getItem('sensometrika_sesion_pendiente')) || {
+        rol: 'particular',
+        planId: 'part_unico',
+        nombrePlan: 'Evaluación Psicomotriz DS 170',
+        modulosPermitidos: ['reactimetro', 'palancas', 'punteo'],
+        intentosRestantes: 1
+      };
+
+      sesionPendiente.pagoAprobado = true;
+      sesionPendiente.tokenFlow = token;
+
+      localStorage.setItem('sensometrika_sesion', JSON.stringify(sesionPendiente));
+      localStorage.removeItem('sensometrika_sesion_pendiente');
+
+      setTimeout(() => {
+        cajaCargando.style.display = 'none';
+        cajaExito.style.display = 'flex';
+      }, 1000);
+    });
+  </script>
+</body>
+</html>
