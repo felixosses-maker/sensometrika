@@ -155,7 +155,7 @@
       </div>
     </div>
 
-    <form class="formulario-pago" onsubmit="procesarPagoFinal(event)">
+    <form class="formulario-pago" onsubmit="iniciarPagoFlow(event)">
       <!-- Datos según B2C o B2B -->
       <div class="campo-form">
         <label id="lbl-nombre">NOMBRE COMPLETO DEL POSTULANTE:</label>
@@ -184,9 +184,13 @@
         </div>
       </div>
 
-      <button type="submit" class="btn-webpay">
+      <button type="submit" id="btn-submit-pago" class="btn-webpay">
         💳 Pagar con Webpay / Redcompra
       </button>
+
+      <div style="font-size: 0.68rem; color: #64748b; text-align: center; margin-top: 4px;">
+        🔒 Conexión encriptada directa con Webpay Plus (Flow Sandbox)
+      </div>
 
       <a href="planes.html" class="link-volver">← Volver al Catálogo de Planes</a>
     </form>
@@ -198,7 +202,6 @@
     document.addEventListener('DOMContentLoaded', () => {
       pedido = JSON.parse(localStorage.getItem('sensometrika_plan_pedido'));
 
-      // Si entra a checkout sin pedido previo, redirigir al catálogo
       if (!pedido) {
         window.location.href = 'planes.html';
         return;
@@ -216,7 +219,6 @@
         document.getElementById('fila-desglose-iva').style.display = 'flex';
         document.getElementById('txt-desglose').innerText = `Neto: $${pedido.precioNeto.toLocaleString('es-CL')} | IVA: $${pedido.iva.toLocaleString('es-CL')}`;
 
-        // Etiquetas B2B: Datos del APR/Supervisor
         document.getElementById('bloque-empresa').style.display = 'flex';
         document.getElementById('lbl-nombre').innerText = 'NOMBRE DEL RESPONSABLE TÉCNICO / SUPERVISOR APR:';
         document.getElementById('lbl-rut').innerText = 'RUT DEL RESPONSABLE:';
@@ -232,50 +234,39 @@
       }
     });
 
-    function procesarPagoFinal(e) {
+    async function iniciarPagoFlow(e) {
       e.preventDefault();
+
+      const btn = document.getElementById('btn-submit-pago');
+      btn.disabled = true;
+      btn.innerText = '⏳ Conectando con Webpay...';
 
       const nombre = document.getElementById('in-nombre').value.trim();
       const rut = document.getElementById('in-rut').value.trim();
       const email = document.getElementById('in-email').value.trim();
       const esB2B = (pedido.rol === 'empresa');
 
+      let empresaNombre = 'Particular';
+      let empresaRut = '';
+
       if (esB2B) {
-        const razonSocial = document.getElementById('in-empresa-nombre').value.trim() || 'Empresa Faena';
-        const rutEmpresa = document.getElementById('in-empresa-rut').value.trim();
+        empresaNombre = document.getElementById('in-empresa-nombre').value.trim() || 'Empresa Faena';
+        empresaRut = document.getElementById('in-empresa-rut').value.trim();
 
-        // 1. Guardar la licencia corporativa activa
-        localStorage.setItem('sensometrika_sesion', JSON.stringify({
-          rol: 'empresa',
-          planId: pedido.planId,
-          nombrePlan: pedido.nombrePlan,
-          modulosPermitidos: pedido.modulosPermitidos,
-          creditosRestantes: pedido.cantidad,
-          razonSocial: razonSocial,
-          correoInformes: email
-        }));
-
-        // 2. Guardar datos del supervisor que estampa la firma del informe
+        // 1. Guardar Supervisor para la firma del informe
         localStorage.setItem('sensometrika_plan_empresa', JSON.stringify({
           responsable: nombre,
           rutResponsable: rut,
           cargo: 'Supervisión Técnica / APR',
-          razonSocial: razonSocial,
-          rutEmpresa: rutEmpresa,
+          razonSocial: empresaNombre,
+          rutEmpresa: empresaRut,
           correoInformes: email
         }));
 
-        // En B2B borramos usuario previo para que el trabajador ingrese Nombre y RUT en menu.html
+        // En B2B se limpia el usuario previo para que el trabajador ingrese sus datos en menu.html
         localStorage.removeItem('sensometrika_datos_usuario');
       } else {
-        // En B2C el comprador es quien rinde la prueba
-        localStorage.setItem('sensometrika_sesion', JSON.stringify({
-          rol: 'particular',
-          planId: pedido.planId,
-          nombrePlan: pedido.nombrePlan,
-          modulosPermitidos: pedido.modulosPermitidos
-        }));
-
+        // En B2C el comprador es el evaluado
         localStorage.setItem('sensometrika_datos_usuario', JSON.stringify({
           tipo: 'particular',
           nombre: nombre,
@@ -285,15 +276,54 @@
         }));
       }
 
-      // Limpiar mediciones antiguas
-      localStorage.removeItem('sensometrika_reactimetro');
-      localStorage.removeItem('sensometrika_palancas');
-      localStorage.removeItem('sensometrika_punteo');
-      localStorage.removeItem('sensometrika_visual');
-      localStorage.removeItem('sensometrika_auditivo');
+      // Preparar sesión pendiente que se activará tras confirmar en Webpay
+      const sesionPendiente = {
+        rol: pedido.rol,
+        planId: pedido.planId,
+        nombrePlan: pedido.nombrePlan,
+        modulosPermitidos: pedido.modulosPermitidos,
+        intentosRestantes: pedido.cantidad || 1,
+        razonSocial: empresaNombre,
+        correoInformes: email,
+        monto: pedido.precioTotal
+      };
+      localStorage.setItem('sensometrika_sesion_pendiente', JSON.stringify(sesionPendiente));
 
-      alert('¡Pago procesado con éxito! Se ha activado la sesión de evaluación.');
-      window.location.href = 'menu.html';
+      // Llamada real al backend serverless de Flow
+      const payload = {
+        planId: pedido.planId,
+        nombrePlan: pedido.nombrePlan,
+        monto: pedido.precioTotal,
+        email: email,
+        rut: rut,
+        nombre: nombre,
+        empresa: empresaNombre,
+        rol: pedido.rol
+      };
+
+      try {
+        const respuesta = await fetch('/api/crear-orden', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        const data = await respuesta.json();
+
+        if (data.url) {
+          // Redirige directamente a Flow Sandbox / Webpay Plus
+          window.location.href = data.url;
+        } else {
+          alert('Error al generar la orden con Flow: ' + (data.error || 'Respuesta no válida'));
+          btn.disabled = false;
+          btn.innerText = '💳 Pagar con Webpay / Redcompra';
+        }
+      } catch (err) {
+        console.error('Error al comunicar con /api/crear-orden:', err);
+        alert('No se pudo conectar con el servidor de pagos. Revisa tu conexión.');
+        btn.disabled = false;
+        btn.innerText = '💳 Pagar con Webpay / Redcompra';
+      }
     }
   </script>
 </body>
