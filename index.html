@@ -61,7 +61,12 @@
       border-color: #38bdf8;
       box-shadow: 0 0 14px rgba(56, 189, 248, 0.2);
     }
-    .tarjeta-plan h3 { margin: 0; font-size: 1.05rem; color: #ffffff; }
+    .tarjeta-plan h3 { 
+      margin: 0; 
+      font-size: 1.1rem; 
+      color: #ffffff; 
+      padding-right: 110px;
+    }
     .precio { font-size: 1.35rem; font-weight: 900; color: #38bdf8; margin: 2px 0; }
     .detalle-modulos { font-size: 0.8rem; color: #94a3b8; line-height: 1.4; margin: 0; }
     .btn-elegir {
@@ -88,6 +93,51 @@
       border-radius: 12px;
       font-weight: 700;
     }
+
+    /* Selector de Cantidad B2B */
+    .caja-contador-b2b {
+      background-color: #0f172a;
+      border: 1.5px solid #0284c7;
+      border-radius: 10px;
+      padding: 14px;
+      margin-bottom: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .caja-contador-b2b label {
+      font-size: 0.8rem;
+      color: #38bdf8;
+      font-weight: 700;
+    }
+    .control-contador {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .btn-ctrl {
+      width: 38px;
+      height: 38px;
+      background-color: #0284c7;
+      color: #ffffff;
+      border: none;
+      border-radius: 6px;
+      font-size: 1.2rem;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    .inp-ctrl {
+      width: 70px;
+      height: 36px;
+      background-color: #1e293b;
+      border: 1px solid #475569;
+      border-radius: 6px;
+      color: #ffffff;
+      font-size: 1.1rem;
+      font-weight: bold;
+      text-align: center;
+      outline: none;
+    }
   </style>
 </head>
 <body>
@@ -102,14 +152,14 @@
       <button class="btn-tab" id="tab-b2b" onclick="verSegmento('b2b')">Empresas (B2B)</button>
     </div>
 
-    <!-- PLANES B2C (PARTICULAR) -->
+    <!-- SECCIÓN B2C (PARTICULARES) -->
     <section class="grilla-planes" id="planes-b2c">
       <div class="tarjeta-plan">
         <span class="badge-tiempo">Batería Básica</span>
         <h3>Pase Básico Psicomotriz</h3>
         <div class="precio">$4.990 CLP <small style="font-size: 0.72rem; color: #94a3b8; font-weight: normal;">IVA incl.</small></div>
         <p class="detalle-modulos">1 demo guiado + 3 simulaciones oficiales (Reactímetro, Palancas y Punteo).</p>
-        <button class="btn-elegir" onclick="irAlCheckout('b2c_basico', 'Pase Básico Psicomotriz', 4990, 'particular', ['reactimetro', 'palancas', 'punteo'])">
+        <button class="btn-elegir" onclick="seleccionarPlanB2C('b2c_basico', 'Pase Básico Psicomotriz', 4990, ['reactimetro', 'palancas', 'punteo'])">
           Pagar y Acceder ($4.990)
         </button>
       </div>
@@ -119,7 +169,7 @@
         <h3>Pase Plus Sensotécnico</h3>
         <div class="precio">$6.990 CLP <small style="font-size: 0.72rem; color: #94a3b8; font-weight: normal;">IVA incl.</small></div>
         <p class="detalle-modulos">Batería psicomotriz completa + Tamizaje Visual Orientativo (Ishihara y Agudeza).</p>
-        <button class="btn-elegir" onclick="irAlCheckout('b2c_plus', 'Pase Plus Sensotécnico', 6990, 'particular', ['reactimetro', 'palancas', 'punteo', 'visual'])">
+        <button class="btn-elegir" onclick="seleccionarPlanB2C('b2c_plus', 'Pase Plus Sensotécnico', 6990, ['reactimetro', 'palancas', 'punteo', 'visual'])">
           Pagar y Acceder ($6.990)
         </button>
       </div>
@@ -129,30 +179,64 @@
         <h3>Pase Full Integral</h3>
         <div class="precio">$9.990 CLP <small style="font-size: 0.72rem; color: #94a3b8; font-weight: normal;">IVA incl.</small></div>
         <p class="detalle-modulos">Batería Psicomotriz + Tamizaje Visual + Tamizaje Auditivo Biaural con envío directo al correo.</p>
-        <button class="btn-elegir" onclick="irAlCheckout('b2c_full', 'Pase Full Integral', 9990, 'particular', ['reactimetro', 'palancas', 'punteo', 'visual', 'auditivo'])">
+        <button class="btn-elegir" onclick="seleccionarPlanB2C('b2c_full', 'Pase Full Integral', 9990, ['reactimetro', 'palancas', 'punteo', 'visual', 'auditivo'])">
           Pagar y Acceder ($9.990)
         </button>
       </div>
     </section>
 
-    <!-- PLANES B2B (EMPRESAS) -->
+    <!-- SECCIÓN B2B (EMPRESAS CON PACK 10+ Y LOS 4 PLANES RESTAURADOS) -->
     <section class="grilla-planes" id="planes-b2b" style="display: none;">
+      <div class="caja-contador-b2b">
+        <label>N° de Trabajadores a Evaluar (Mínimo 10):</label>
+        <div class="control-contador">
+          <button type="button" class="btn-ctrl" onclick="alterarCantidad(-1)">-</button>
+          <input type="number" id="cant-trabajadores" class="inp-ctrl" value="10" min="10" step="1" onchange="recalcularTotalesB2B()">
+          <button type="button" class="btn-ctrl" onclick="alterarCantidad(1)">+</button>
+          <span style="font-size: 0.8rem; color: #94a3b8;">perfiles habilitados</span>
+        </div>
+      </div>
+
+      <!-- Plan Básico B2B -->
       <div class="tarjeta-plan">
-        <span class="badge-tiempo">B2B Base</span>
-        <h3>Batería Psicomotriz Corporativa</h3>
-        <div class="precio">$7.990 CLP <small style="font-size: 0.72rem; color: #94a3b8; font-weight: normal;">+ IVA por trabajador</small></div>
-        <p class="detalle-modulos">Reactímetro + Palancas + Punteo con Certificado Oficial A4 timbrado para Faena.</p>
-        <button class="btn-elegir" onclick="irAlCheckout('b2b_base', 'B2B Batería Base', 9508, 'empresa', ['reactimetro', 'palancas', 'punteo'])">
-          Contratar Plan Corporativo
+        <span class="badge-tiempo">$7.990 / trab.</span>
+        <h3>Básico</h3>
+        <div class="precio" id="precio-b2b-basico">$79.900 CLP <small style="font-size: 0.7rem; color: #94a3b8;">+ IVA</small></div>
+        <p class="detalle-modulos">Batería Psicomotriz (Reactímetro + Palancas + Punteo). Demo e informe formal individual con QR.</p>
+        <button class="btn-elegir" onclick="seleccionarPlanB2B('b2b_basico', 'Plan Empresa Básico', 7990, ['reactimetro', 'palancas', 'punteo'])">
+          Contratar Plan Básico
         </button>
       </div>
 
+      <!-- Plan Semi Full 1 B2B -->
+      <div class="tarjeta-plan">
+        <span class="badge-tiempo">$9.990 / trab.</span>
+        <h3>Semi Full 1</h3>
+        <div class="precio" id="precio-b2b-semi1">$99.900 CLP <small style="font-size: 0.7rem; color: #94a3b8;">+ IVA</small></div>
+        <p class="detalle-modulos">Batería Psicomotriz + Módulo Visual (Agudeza e Ishihara). Certificado timbrado para Faena.</p>
+        <button class="btn-elegir" onclick="seleccionarPlanB2B('b2b_semi1', 'Plan Empresa Semi Full 1 (Visual)', 9990, ['reactimetro', 'palancas', 'punteo', 'visual'])">
+          Contratar Semi Full 1
+        </button>
+      </div>
+
+      <!-- Plan Semi Full 2 B2B -->
+      <div class="tarjeta-plan">
+        <span class="badge-tiempo">$9.990 / trab.</span>
+        <h3>Semi Full 2</h3>
+        <div class="precio" id="precio-b2b-semi2">$99.900 CLP <small style="font-size: 0.7rem; color: #94a3b8;">+ IVA</small></div>
+        <p class="detalle-modulos">Batería Psicomotriz + Tamizaje Auditivo Biaural de Tonos Puros. Certificado formal con QR.</p>
+        <button class="btn-elegir" onclick="seleccionarPlanB2B('b2b_semi2', 'Plan Empresa Semi Full 2 (Audición)', 9990, ['reactimetro', 'palancas', 'punteo', 'auditivo'])">
+          Contratar Semi Full 2
+        </button>
+      </div>
+
+      <!-- Plan Full B2B -->
       <div class="tarjeta-plan destacado">
-        <span class="badge-tiempo">B2B Integral</span>
-        <h3>Batería Full Sensométrica (5 Módulos)</h3>
-        <div class="precio">$11.990 CLP <small style="font-size: 0.72rem; color: #94a3b8; font-weight: normal;">+ IVA por trabajador</small></div>
-        <p class="detalle-modulos">Los 5 Módulos normativos (Reactímetro, Palancas, Punteo, Visual, Auditivo) + QR de Trazabilidad.</p>
-        <button class="btn-elegir" onclick="irAlCheckout('b2b_full', 'B2B Full Sensométrica', 14268, 'empresa', ['reactimetro', 'palancas', 'punteo', 'visual', 'auditivo'])">
+        <span class="badge-tiempo">$11.990 / trab.</span>
+        <h3>Full (5 Módulos)</h3>
+        <div class="precio" id="precio-b2b-full">$119.900 CLP <small style="font-size: 0.7rem; color: #94a3b8;">+ IVA</small></div>
+        <p class="detalle-modulos">Los 5 Módulos normativos (Reactímetro + Palancas + Punteo + Visual + Auditivo) + Informe A4 completo.</p>
+        <button class="btn-elegir" onclick="seleccionarPlanB2B('b2b_full', 'Plan Empresa Full (5 Módulos)', 11990, ['reactimetro', 'palancas', 'punteo', 'visual', 'auditivo'])">
           Contratar B2B Full
         </button>
       </div>
@@ -160,6 +244,13 @@
   </main>
 
   <script>
+    const tarifasB2B = {
+      b2b_basico: 7990,
+      b2b_semi1: 9990,
+      b2b_semi2: 9990,
+      b2b_full: 11990
+    };
+
     function verSegmento(seg) {
       document.getElementById('tab-b2c').className = seg === 'b2c' ? 'btn-tab activo' : 'btn-tab';
       document.getElementById('tab-b2b').className = seg === 'b2b' ? 'btn-tab activo' : 'btn-tab';
@@ -167,15 +258,59 @@
       document.getElementById('planes-b2b').style.display = seg === 'b2b' ? 'flex' : 'none';
     }
 
-    function irAlCheckout(id, nombre, precio, tipo, modulos) {
-      const seleccion = {
+    function alterarCantidad(delta) {
+      const inp = document.getElementById('cant-trabajadores');
+      let cant = parseInt(inp.value) || 10;
+      cant += delta;
+      if (cant < 10) cant = 10;
+      inp.value = cant;
+      recalcularTotalesB2B();
+    }
+
+    function recalcularTotalesB2B() {
+      const inp = document.getElementById('cant-trabajadores');
+      let cant = parseInt(inp.value) || 10;
+      if (cant < 10) { cant = 10; inp.value = 10; }
+
+      document.getElementById('precio-b2b-basico').innerHTML = `$${(cant * tarifasB2B.b2b_basico).toLocaleString('es-CL')} CLP <small style="font-size:0.7rem;color:#94a3b8;">+ IVA</small>`;
+      document.getElementById('precio-b2b-semi1').innerHTML = `$${(cant * tarifasB2B.b2b_semi1).toLocaleString('es-CL')} CLP <small style="font-size:0.7rem;color:#94a3b8;">+ IVA</small>`;
+      document.getElementById('precio-b2b-semi2').innerHTML = `$${(cant * tarifasB2B.b2b_semi2).toLocaleString('es-CL')} CLP <small style="font-size:0.7rem;color:#94a3b8;">+ IVA</small>`;
+      document.getElementById('precio-b2b-full').innerHTML = `$${(cant * tarifasB2B.b2b_full).toLocaleString('es-CL')} CLP <small style="font-size:0.7rem;color:#94a3b8;">+ IVA</small>`;
+    }
+
+    function seleccionarPlanB2C(id, nombre, precio, modulos) {
+      const pedido = {
         planId: id,
-        nombre: nombre,
-        precio: precio,
-        tipo: tipo,
-        modulos: modulos
+        nombrePlan: nombre,
+        precioTotal: precio,
+        precioNeto: precio,
+        iva: 0,
+        rol: 'particular',
+        modulosPermitidos: modulos,
+        cantidad: 1
       };
-      localStorage.setItem('sensometrika_plan_seleccionado', JSON.stringify(seleccion));
+      localStorage.setItem('sensometrika_plan_pedido', JSON.stringify(pedido));
+      window.location.href = 'checkout.html';
+    }
+
+    function seleccionarPlanB2B(id, nombre, unitario, modulos) {
+      const cant = parseInt(document.getElementById('cant-trabajadores').value) || 10;
+      const neto = cant * unitario;
+      const iva = Math.round(neto * 0.19);
+      const total = neto + iva;
+
+      const pedido = {
+        planId: id,
+        nombrePlan: nombre,
+        precioUnitarioNeto: unitario,
+        cantidad: cant,
+        precioNeto: neto,
+        iva: iva,
+        precioTotal: total,
+        rol: 'empresa',
+        modulosPermitidos: modulos
+      };
+      localStorage.setItem('sensometrika_plan_pedido', JSON.stringify(pedido));
       window.location.href = 'checkout.html';
     }
   </script>
