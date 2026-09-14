@@ -3,9 +3,24 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Sensometrika | Reactímetro</title>
+  <title>Sensometrika | Test de Reactímetro</title>
   <link rel="stylesheet" href="styles.css">
   <style>
+    body {
+      background-color: #0b1120;
+      color: #f1f5f9;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      margin: 0;
+      padding: 16px;
+      display: flex;
+      justify-content: center;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    .contenedor {
+      width: 100%;
+      max-width: 440px;
+    }
     .barra-superior {
       width: 100%;
       display: flex;
@@ -13,21 +28,26 @@
       align-items: center;
       margin-bottom: 12px;
     }
-    .btn-retorno {
+    .barra-superior a {
       color: #94a3b8;
       text-decoration: none;
       font-size: 0.85rem;
       font-weight: 600;
     }
-    .btn-ayuda-test {
+    .btn-ayuda {
       background: #1e293b;
       border: 1px solid #38bdf8;
       color: #38bdf8;
-      padding: 4px 10px;
+      padding: 5px 12px;
       border-radius: 6px;
       font-size: 0.78rem;
-      font-weight: 700;
       cursor: pointer;
+      font-weight: 700;
+      transition: background 0.2s;
+    }
+    .btn-ayuda:hover {
+      background: #0284c7;
+      color: #fff;
     }
     .barra-calibracion {
       background: #0f172a;
@@ -40,54 +60,85 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 12px;
+      margin-bottom: 10px;
       box-sizing: border-box;
     }
     .semaforo-caja {
       background-color: #020617;
-      padding: 16px;
+      padding: 18px;
       border-radius: 40px;
       display: flex;
-      gap: 20px;
+      gap: 24px;
       border: 3px solid #334155;
-      margin: 10px auto;
+      margin: 12px auto;
       justify-content: center;
       width: fit-content;
     }
     .luz {
-      width: 70px;
-      height: 70px;
+      width: 72px;
+      height: 72px;
       border-radius: 50%;
-      transition: opacity 0.1s ease, box-shadow 0.1s ease;
+      transition: opacity 0.05s ease, box-shadow 0.05s ease;
     }
     .verde { background-color: #22c55e; }
     .roja { background-color: #ef4444; }
     .apagada { opacity: 0.15; box-shadow: none; }
     .verde.encendida { opacity: 1; box-shadow: 0 0 25px #22c55e; }
     .roja.encendida { opacity: 1; box-shadow: 0 0 30px #ef4444; }
-    .panel-resultados {
+
+    .panel-metricas {
+      width: 100%;
       display: grid;
       grid-template-columns: repeat(3, 1fr);
       gap: 8px;
-      margin: 14px 0;
-      width: 100%;
+      margin-bottom: 10px;
     }
     .tarjeta-metrica {
       background-color: #0f172a;
       border: 1px solid #334155;
-      padding: 10px 6px;
+      padding: 8px 4px;
       border-radius: 8px;
       text-align: center;
     }
-    .tarjeta-metrica span { display: block; font-size: 0.7rem; color: #94a3b8; }
+    .tarjeta-metrica span { display: block; font-size: 0.68rem; color: #94a3b8; }
     .tarjeta-metrica strong { font-size: 0.95rem; color: #38bdf8; }
 
-    /* Modal específico */
-    .modal-overlay {
+    .instruccion-caja {
+      font-size: 0.82rem;
+      color: #cbd5e1;
+      text-align: center;
+      margin: 10px 0;
+      font-weight: 600;
+      min-height: 22px;
+    }
+    .btn-principal {
+      width: 100%;
+      height: 52px;
+      background: #0284c7;
+      color: #ffffff;
+      border: none;
+      border-radius: 8px;
+      font-weight: 700;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.05s;
+    }
+    .btn-principal:active {
+      transform: scale(0.98);
+    }
+    .btn-frenar {
+      background: #ef4444 !important;
+    }
+    .btn-frenar:active {
+      background: #dc2626 !important;
+    }
+
+    /* MODAL GUÍA RÁPIDA */
+    .modal-fondo {
       display: none;
       position: fixed;
       inset: 0;
-      background: rgba(2, 6, 23, 0.88);
+      background: rgba(2, 6, 23, 0.85);
       z-index: 9999;
       backdrop-filter: blur(4px);
       align-items: center;
@@ -95,30 +146,74 @@
       padding: 16px;
       box-sizing: border-box;
     }
-    .modal-caja {
+    .modal-tarjeta {
       background: #0f172a;
       border: 1.5px solid #38bdf8;
       border-radius: 14px;
-      max-width: 400px;
+      max-width: 420px;
       width: 100%;
+      max-height: 85vh;
+      overflow-y: auto;
       padding: 20px;
       box-sizing: border-box;
       color: #cbd5e1;
       font-size: 0.85rem;
       line-height: 1.45;
+      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5);
+    }
+    .modal-cabecera {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #334155;
+      padding-bottom: 10px;
+      margin-bottom: 14px;
+    }
+    .modal-cabecera h3 {
+      margin: 0;
+      color: #38bdf8;
+      font-size: 1.05rem;
+    }
+    .btn-cerrar-x {
+      background: transparent;
+      border: none;
+      color: #94a3b8;
+      font-size: 1.4rem;
+      cursor: pointer;
+      line-height: 1;
+      padding: 0;
+    }
+    .item-guia {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    .item-guia span.icono {
+      font-size: 1.1rem;
+      line-height: 1;
+    }
+    .caja-alerta-guia {
+      background: rgba(239, 68, 68, 0.1);
+      border-left: 3px solid #ef4444;
+      padding: 8px 10px;
+      font-size: 0.78rem;
+      color: #fca5a5;
+      border-radius: 4px;
+      margin-top: 10px;
     }
   </style>
 </head>
 <body>
   <main class="contenedor">
     <header class="barra-superior">
-      <a href="menu.html" class="btn-retorno">← Menú Principal</a>
-      <button type="button" id="btn-guia-modulo" class="btn-ayuda-test">❓ ¿Cómo funciona?</button>
+      <a href="menu.html">← Menú Principal</a>
+      <button class="btn-ayuda" type="button" onclick="abrirModalGuia()">❓ ¿Cómo funciona?</button>
     </header>
 
     <div class="barra-calibracion">
-      <span id="badge-modo">🟢 Demo Calibración (Ensayo)</span>
-      <span id="txt-tiempo-cabecera">Estímulos: <strong>5 de prueba</strong></span>
+      <span id="badge-modo">🟢 Demo Calibración (Ensayo Libre)</span>
+      <span id="txt-tiempo-cabecera">Fase de Práctica</span>
     </div>
 
     <section class="semaforo-caja">
@@ -126,11 +221,15 @@
       <div id="luz-roja" class="luz roja apagada"></div>
     </section>
 
-    <div id="panel-estado" class="estado">Presiona "Iniciar Calibración" para comenzar</div>
+    <div class="instruccion-caja" id="panel-estado">
+      Presiona "Iniciar Calibración" para comenzar
+    </div>
 
-    <button id="btn-accion" class="btn-principal">Iniciar Calibración</button>
+    <div id="contenedor-accion">
+      <button id="btn-accion" class="btn-principal">Iniciar Calibración (5 de prueba)</button>
+    </div>
 
-    <section class="panel-resultados">
+    <section class="panel-metricas" style="margin-top: 14px;">
       <div class="tarjeta-metrica">
         <span>Último Tiempo</span>
         <strong id="metrica-tiempo">-- ms</strong>
@@ -141,35 +240,54 @@
       </div>
       <div class="tarjeta-metrica">
         <span>Anticipaciones</span>
-        <strong id="metrica-anticipaciones">0</strong>
+        <strong id="metrica-anticipaciones" style="color: #ef4444;">0</strong>
       </div>
     </section>
-
-    <div id="zona-coordinacion-test" style="width: 100%;"></div>
   </main>
 
-  <!-- Modal Guía Módulo 1 -->
-  <div id="modal-guia" class="modal-overlay">
-    <div class="modal-caja">
-      <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #334155; padding-bottom: 8px; margin-bottom: 10px;">
-        <h3 style="margin: 0; color: #38bdf8; font-size: 1.05rem;">Módulo 1: Reactímetro</h3>
-        <button id="btn-cerrar-guia" type="button" style="background: none; border: none; color: #94a3b8; font-size: 1.4rem; cursor: pointer;">&times;</button>
+  <!-- MODAL DE GUÍA RÁPIDA -->
+  <div class="modal-fondo" id="modal-guia">
+    <div class="modal-tarjeta">
+      <div class="modal-cabecera">
+        <h3>Guía: Reactímetro (D.S. N° 170)</h3>
+        <button type="button" class="btn-cerrar-x" onclick="cerrarModalGuia()">&times;</button>
       </div>
-      <p><strong>🎯 Objetivo:</strong> Medir tu latencia neuromuscular ante una frenada de emergencia sin pulsaciones falsas.</p>
-      <ul style="padding-left: 18px; margin: 8px 0;">
-        <li><strong>Fase Demo:</strong> 5 estímulos de ensayo para adaptarte al sensor táctil.</li>
-        <li><strong>Fase Oficial:</strong> 3 estímulos con intervalos estocásticos (1.6 a 4.8 s).</li>
-      </ul>
-      <div style="background: #020617; border-left: 3px solid #ef4444; padding: 8px 10px; margin: 10px 0; font-size: 0.78rem;">
-        ⚠️ <strong>Anticipación:</strong> Tocar la pantalla antes de la luz roja cuenta como falta grave y penaliza la evaluación.
+
+      <div class="item-guia">
+        <span class="icono">🟢</span>
+        <div><strong>Luz Verde (Acelerador):</strong> Mientras esté encendida la luz verde, mantén la concentración esperando la detención de emergencia.</div>
       </div>
-      <p style="color: #94a3b8; font-size: 0.8rem;">💡 <em>Mantén el pulgar suspendido a milímetros del botón sin presionarlo hasta ver el color rojo.</em></p>
-      <button id="btn-entendido-guia" class="btn-principal" style="width: 100%; height: 40px; margin-top: 14px; background-color: #0284c7; font-size: 0.88rem;">
-        Entendido
+
+      <div class="item-guia">
+        <span class="icono">🔴</span>
+        <div><strong>Luz Roja (Frenado Inmediato):</strong> Apenas aparezca el estímulo rojo, pulsa el botón de frenar lo más rápido posible.</div>
+      </div>
+
+      <div class="item-guia">
+        <span class="icono">⏱️</span>
+        <div><strong>Estándar Legal:</strong> Latencia promedio menor o igual a 350 ms para licencias profesionales Clase A y 450 ms para Clase B[cite: 2, 21].</div>
+      </div>
+
+      <div class="caja-alerta-guia">
+        ⚠️ <strong>Anticipaciones:</strong> No intentes adivinar cuándo cambiará la luz; pulsar antes de que encienda la luz roja computará falta por anticipación mecánica[cite: 1, 2].
+      </div>
+
+      <button type="button" class="btn-principal" style="margin-top: 16px; height: 42px;" onclick="cerrarModalGuia()">
+        Entendido, Volver al Reactímetro
       </button>
     </div>
   </div>
 
   <script src="reactimetro.js"></script>
+  <script>
+    function abrirModalGuia() {
+      const m = document.getElementById('modal-guia');
+      if (m) m.style.display = 'flex';
+    }
+    function cerrarModalGuia() {
+      const m = document.getElementById('modal-guia');
+      if (m) m.style.display = 'none';
+    }
+  </script>
 </body>
 </html>

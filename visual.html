@@ -3,266 +3,303 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Sensometrika | Tamizaje Visual Preventivo</title>
+  <title>Sensometrika | Tamizaje Visual</title>
   <link rel="stylesheet" href="styles.css">
   <style>
-    /* MODAL DE PERMISO PREVIO */
-    #modal-permiso-camara {
-      position: fixed;
-      inset: 0;
-      background: rgba(2, 6, 23, 0.94);
+    body {
+      background-color: #0b1120;
+      color: #f1f5f9;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      margin: 0;
+      padding: 16px;
       display: flex;
       justify-content: center;
-      align-items: center;
-      z-index: 9999;
-      padding: 16px;
-      box-sizing: border-box;
+      user-select: none;
+      -webkit-user-select: none;
     }
-    .tarjeta-autorizacion {
-      background: #0f172a;
-      border: 1.5px solid #38bdf8;
-      border-radius: 14px;
-      padding: 22px;
+    .contenedor {
+      width: 100%;
       max-width: 440px;
+    }
+    .barra-superior {
       width: 100%;
-      text-align: center;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
     }
-    .tarjeta-autorizacion h2 {
-      margin: 8px 0 12px 0;
-      color: #fff;
-      font-size: 1.15rem;
-    }
-    .tarjeta-autorizacion p {
-      font-size: 0.82rem;
+    .barra-superior a {
       color: #94a3b8;
-      line-height: 1.45;
-      margin: 0 0 18px 0;
-      text-align: left;
+      text-decoration: none;
+      font-size: 0.85rem;
+      font-weight: 600;
     }
-    .btn-autorizar {
-      width: 100%;
-      height: 46px;
+    .btn-ayuda {
+      background: #1e293b;
+      border: 1px solid #38bdf8;
+      color: #38bdf8;
+      padding: 5px 12px;
+      border-radius: 6px;
+      font-size: 0.78rem;
+      cursor: pointer;
+      font-weight: 700;
+      transition: background 0.2s;
+    }
+    .btn-ayuda:hover {
       background: #0284c7;
       color: #fff;
-      border: none;
+    }
+    .barra-calibracion {
+      background: #0f172a;
+      border: 1px solid #38bdf8;
       border-radius: 8px;
-      font-weight: 700;
-      font-size: 0.9rem;
-      cursor: pointer;
-      margin-bottom: 10px;
-    }
-    .btn-autorizar:hover {
-      background: #0369a1;
-    }
-    .btn-omitir-camara {
-      background: none;
-      border: none;
-      color: #64748b;
-      font-size: 0.78rem;
-      text-decoration: underline;
-      cursor: pointer;
-    }
-
-    /* MONITOR FACIAL */
-    .caja-monitor-camara {
-      width: 100%;
-      background-color: #0f172a;
-      border: 1.5px solid #334155;
-      border-radius: 10px;
       padding: 8px 12px;
+      font-size: 0.78rem;
+      color: #94a3b8;
+      width: 100%;
       display: flex;
+      justify-content: space-between;
       align-items: center;
-      gap: 12px;
+      margin-bottom: 10px;
       box-sizing: border-box;
+    }
+    .panel-metricas {
+      width: 100%;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
       margin-bottom: 12px;
     }
-    .distancia-ok {
-      border-color: #22c55e !important;
-      background-color: rgba(34, 197, 94, 0.08) !important;
-    }
-    .distancia-alerta {
-      border-color: #ef4444 !important;
-      background-color: rgba(239, 68, 68, 0.08) !important;
-    }
-    .video-preview-mini {
-      width: 50px;
-      height: 50px;
-      border-radius: 6px;
-      object-fit: cover;
-      transform: scaleX(-1);
-      background-color: #020617;
+    .tarjeta-metrica {
+      background-color: #0f172a;
       border: 1px solid #334155;
+      padding: 8px 4px;
+      border-radius: 8px;
+      text-align: center;
     }
+    .tarjeta-metrica span { display: block; font-size: 0.68rem; color: #94a3b8; }
+    .tarjeta-metrica strong { font-size: 0.95rem; }
 
-    /* VISOR ESTÍMULO */
-    .visor-visual-caja {
-      width: 100%;
-      min-height: 230px;
-      background-color: #020617;
-      border: 2px solid #334155;
+    .pantalla-estimulo {
+      background-color: #ffffff;
+      border: 3px solid #334155;
       border-radius: 12px;
+      width: 100%;
+      height: 220px;
       display: flex;
-      flex-direction: column;
       justify-content: center;
       align-items: center;
-      position: relative;
-      padding: 12px;
-      box-sizing: border-box;
       margin-bottom: 12px;
+      position: relative;
+      overflow: hidden;
+      box-sizing: border-box;
     }
-    #canvas-ishihara {
-      border-radius: 50%;
-      background-color: #0f172a;
+    #canvas-visual {
+      display: block;
+      max-width: 100%;
+      max-height: 100%;
     }
-    #simbolo-optotipo {
-      font-weight: 900;
-      font-family: monospace, sans-serif;
-      color: #ffffff;
-      user-select: none;
-      line-height: 1;
-      display: none;
-    }
-
     .grilla-opciones {
-      width: 100%;
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 10px;
+      width: 100%;
+      box-sizing: border-box;
       margin-bottom: 12px;
     }
     .btn-opcion {
       height: 48px;
-      background-color: #1e293b;
-      border: 1.5px solid #475569;
-      color: #f8fafc;
-      font-size: 0.95rem;
+      background: #1e293b;
+      border: 1px solid #475569;
+      border-radius: 8px;
+      color: #fff;
       font-weight: 700;
-      border-radius: 8px;
+      font-size: 1.05rem;
       cursor: pointer;
-      touch-action: manipulation;
+      transition: background 0.15s, transform 0.05s;
     }
-    .btn-opcion:not(:disabled):active {
-      background-color: #0284c7;
-      border-color: #38bdf8;
+    .btn-opcion:active {
+      transform: scale(0.97);
+      background: #0284c7;
     }
-    .btn-opcion:disabled {
-      opacity: 0.35;
-      cursor: not-allowed;
-      border-style: dashed;
-      border-color: #ef4444;
-    }
-
-    .panel-metricas-mini {
-      display: grid;
-      grid-template-columns: 1fr 1fr 1fr;
-      gap: 8px;
+    .btn-principal {
       width: 100%;
+      height: 48px;
+      background: #0284c7;
+      color: #ffffff;
+      border: none;
+      border-radius: 8px;
+      font-weight: 700;
+      font-size: 0.95rem;
+      cursor: pointer;
+    }
+    .instruccion-caja {
+      font-size: 0.8rem;
+      color: #cbd5e1;
+      text-align: center;
       margin-bottom: 10px;
-    }
-    .tarjeta-metrica-mini {
-      background: #0f172a;
-      border: 1px solid #1e293b;
-      border-radius: 8px;
-      padding: 8px;
-      text-align: center;
-    }
-    .tarjeta-metrica-mini span {
-      display: block;
-      font-size: 0.68rem;
-      color: #94a3b8;
-      margin-bottom: 2px;
-    }
-    .tarjeta-metrica-mini strong {
-      font-size: 0.88rem;
-      color: #38bdf8;
+      font-weight: 600;
     }
 
-    .aviso-distancia {
-      width: 100%;
-      background-color: #0f172a;
-      border: 1px solid #334155;
-      border-radius: 8px;
-      padding: 10px 12px;
-      font-size: 0.78rem;
-      color: #94a3b8;
-      text-align: center;
-      line-height: 1.35;
+    /* MODAL GUÍA RÁPIDA */
+    .modal-fondo {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(2, 6, 23, 0.85);
+      z-index: 9999;
+      backdrop-filter: blur(4px);
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
       box-sizing: border-box;
+    }
+    .modal-tarjeta {
+      background: #0f172a;
+      border: 1.5px solid #38bdf8;
+      border-radius: 14px;
+      max-width: 420px;
+      width: 100%;
+      max-height: 85vh;
+      overflow-y: auto;
+      padding: 20px;
+      box-sizing: border-box;
+      color: #cbd5e1;
+      font-size: 0.85rem;
+      line-height: 1.45;
+      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5);
+    }
+    .modal-cabecera {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #334155;
+      padding-bottom: 10px;
+      margin-bottom: 14px;
+    }
+    .modal-cabecera h3 {
+      margin: 0;
+      color: #38bdf8;
+      font-size: 1.05rem;
+    }
+    .btn-cerrar-x {
+      background: transparent;
+      border: none;
+      color: #94a3b8;
+      font-size: 1.4rem;
+      cursor: pointer;
+      line-height: 1;
+      padding: 0;
+    }
+    .item-guia {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
       margin-bottom: 10px;
+    }
+    .item-guia span.icono {
+      font-size: 1.1rem;
+      line-height: 1;
+    }
+    .caja-alerta-guia {
+      background: rgba(239, 68, 68, 0.1);
+      border-left: 3px solid #ef4444;
+      padding: 8px 10px;
+      font-size: 0.78rem;
+      color: #fca5a5;
+      border-radius: 4px;
+      margin-top: 10px;
     }
   </style>
 </head>
 <body>
-  <!-- MODAL DE AUTORIZACIÓN OBLIGATORIA -->
-  <div id="modal-permiso-camara">
-    <div class="tarjeta-autorizacion">
-      <div style="font-size: 2.2rem; margin-bottom: 4px;">📷</div>
-      <h2>Autorización de Cámara Frontal</h2>
-      <p>
-        Para validar la agudeza visual de forma reglamentaria, el sistema medirá que mantengas tu dispositivo a <strong>distancia de brazo extendido (~50 a 60 cm)</strong>[cite: 9].
-        <br><br>
-        🔒 <strong>Privacidad:</strong> El análisis óptico se realiza localmente en tu navegador; <em>no se guarda ni se graba ninguna imagen</em>[cite: 2].
-      </p>
-      <button id="btn-dar-autorizacion" class="btn-autorizar">
-        ✓ Conceder Autorización e Iniciar
-      </button>
-      <br>
-      <button id="btn-omitir-autorizacion" class="btn-omitir-camara">
-        Continuar en modo manual (brazo extendido)
+  <main class="contenedor">
+    <header class="barra-superior">
+      <a href="menu.html">← Menú Principal</a>
+      <button class="btn-ayuda" type="button" onclick="abrirModalGuia()">❓ ¿Cómo funciona?</button>
+    </header>
+
+    <div class="barra-calibracion">
+      <span id="badge-modo">🟢 Tamizaje Visual Preventivo</span>
+      <span>Progreso: <strong id="txt-progreso">1 / 6</strong></span>
+    </div>
+
+    <section class="panel-metricas">
+      <div class="tarjeta-metrica">
+        <span>Prueba</span>
+        <strong id="tipo-prueba-visual" style="color: #38bdf8;">Ishihara</strong>
+      </div>
+      <div class="tarjeta-metrica">
+        <span>Aciertos</span>
+        <strong id="contador-aciertos-vis" style="color: #4ade80;">0</strong>
+      </div>
+      <div class="tarjeta-metrica">
+        <span>Efectividad</span>
+        <strong id="efectividad-vis" style="color: #38bdf8;">-- %</strong>
+      </div>
+    </section>
+
+    <div class="pantalla-estimulo">
+      <canvas id="canvas-visual" width="300" height="210"></canvas>
+    </div>
+
+    <div class="instruccion-caja" id="txt-instruccion-visual">
+      Identifica el número dentro de la placa cromática
+    </div>
+
+    <section class="grilla-opciones" id="caja-opciones">
+      <button type="button" class="btn-opcion" id="btn-op-1" onclick="responderOpcion(0)">-</button>
+      <button type="button" class="btn-opcion" id="btn-op-2" onclick="responderOpcion(1)">-</button>
+      <button type="button" class="btn-opcion" id="btn-op-3" onclick="responderOpcion(2)">-</button>
+      <button type="button" class="btn-opcion" id="btn-op-4" onclick="responderOpcion(3)">-</button>
+    </section>
+
+    <div id="contenedor-coordinacion-vis"></div>
+  </main>
+
+  <!-- MODAL DE GUÍA RÁPIDA -->
+  <div class="modal-fondo" id="modal-guia">
+    <div class="modal-tarjeta">
+      <div class="modal-cabecera">
+        <h3>Guía: Tamizaje Visual Orientativo</h3>
+        <button type="button" class="btn-cerrar-x" onclick="cerrarModalGuia()">&times;</button>
+      </div>
+
+      <div class="item-guia">
+        <span class="icono">🎨</span>
+        <div><strong>Discriminación Cromática (Ishihara):</strong> Reconoce el número oculto entre los patrones circulares de colores[cite: 2, 3].</div>
+      </div>
+
+      <div class="item-guia">
+        <span class="icono">📐</span>
+        <div><strong>Agudeza Visual (Optotipo E):</strong> Indica hacia qué dirección apuntan las ramas de la letra E (Arriba, Abajo, Izquierda o Derecha)[cite: 2, 3].</div>
+      </div>
+
+      <div class="item-guia">
+        <span class="icono">📏</span>
+        <div><strong>Distancia Recomendada:</strong> Mantén la pantalla a la distancia de un brazo extendido (~50 a 60 cm)[cite: 2]. Si utilizas lentes ópticos para conducir, rinde la prueba con ellos puestos.</div>
+      </div>
+
+      <div class="caja-alerta-guia">
+        ⚠️ <strong>Carácter Preventivo:</strong> Este módulo es una prueba orientativa psicofísica preliminar de tamizaje antes de acudir a tu gabinete clínico[cite: 13].
+      </div>
+
+      <button type="button" class="btn-principal" style="margin-top: 16px; height: 42px;" onclick="cerrarModalGuia()">
+        Entendido, Volver al Tamizaje
       </button>
     </div>
   </div>
 
-  <main class="contenedor">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; width: 100%;">
-      <a href="menu.html" style="color: #94a3b8; text-decoration: none; font-size: 0.82rem;">← Menú Principal</a>
-      <span style="font-size: 0.75rem; color: #38bdf8; font-weight: 600;">Módulo 4: Tamizaje Visual</span>
-    </div>
-
-    <!-- Panel de Métricas -->
-    <section class="panel-metricas-mini">
-      <div class="tarjeta-metrica-mini">
-        <span>Fase Actual</span>
-        <strong id="indicador-fase">Cromático</strong>
-      </div>
-      <div class="tarjeta-metrica-mini">
-        <span>Aciertos</span>
-        <strong id="contador-aciertos">0/6</strong>
-      </div>
-      <div class="tarjeta-metrica-mini">
-        <span>Distancia</span>
-        <strong id="estado-distancia" style="color: #facc15;">Pendiente</strong>
-      </div>
-    </section>
-
-    <!-- Monitor Facial -->
-    <section class="caja-monitor-camara" id="caja-camara">
-      <video id="video-camara" class="video-preview-mini" autoplay playsinline muted></video>
-      <div style="display: flex; flex-direction: column; gap: 2px; text-align: left;">
-        <strong id="etiqueta-distancia" style="font-size: 0.82rem; color: #fff;">Esperando confirmación...</strong>
-        <span id="sub-distancia" style="font-size: 0.72rem; color: #94a3b8;">Auditoría de distancia referencial (~50-60 cm)</span>
-      </div>
-    </section>
-
-    <!-- Visor de Prueba -->
-    <div class="visor-visual-caja" id="area-visor">
-      <canvas id="canvas-ishihara" width="200" height="200"></canvas>
-      <div id="simbolo-optotipo">E</div>
-    </div>
-
-    <div id="panel-estado" style="text-align: center; font-size: 0.85rem; color: #fff; font-weight: 700; margin-bottom: 10px;">
-      ¿Qué número ves dentro del círculo?
-    </div>
-
-    <!-- Opciones de Respuesta -->
-    <div class="grilla-opciones" id="contenedor-opciones"></div>
-
-    <div class="aviso-distancia" id="caja-instruccion">
-      📱 <strong>Posición de ensayo:</strong> Mantén el dispositivo a la distancia de tu brazo (~50-60 cm)[cite: 9].
-    </div>
-  </main>
-
   <script src="visual.js"></script>
+  <script>
+    function abrirModalGuia() {
+      const m = document.getElementById('modal-guia');
+      if (m) m.style.display = 'flex';
+    }
+    function cerrarModalGuia() {
+      const m = document.getElementById('modal-guia');
+      if (m) m.style.display = 'none';
+    }
+  </script>
 </body>
 </html>

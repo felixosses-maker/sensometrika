@@ -1,194 +1,210 @@
-/**
- * Sensometrika | Módulo 4: Screening Visual Preventivo (Ishihara y Optotipo E)
- */
-
-const canvas = document.getElementById('canvas-ishihara');
-const ctx = canvas ? canvas.getContext('2d') : null;
-const simboloOptotipo = document.getElementById('simbolo-optotipo');
-const panelEstado = document.getElementById('panel-estado');
-const contenedorOpciones = document.getElementById('contenedor-opciones');
-const contadorAciertos = document.getElementById('contador-aciertos');
-const indicadorFase = document.getElementById('indicador-fase');
-const estadoAlerta = document.getElementById('estado-alerta');
-const cajaInstruccion = document.getElementById('caja-instruccion');
-
-let fase = 'CROMATICA'; // 'CROMATICA' (3 láminas) o 'AGUDEZA' (3 optotipos)
-let pasoActual = 0;
-let aciertosCromaticos = 0;
-let aciertosAgudeza = 0;
-
-// Banco de láminas cromáticas Ishihara
-const laminasIshihara = [
-  { numero: 12, fondo: '#f97316', puntos: '#22c55e', opciones: [12, 72, 21, 'No distingo'] },
-  { numero: 8, fondo: '#ef4444', puntos: '#84cc16', opciones: [8, 3, 9, 'No distingo'] },
-  { numero: 74, fondo: '#eab308', puntos: '#06b6d4', opciones: [74, 21, 71, 'No distingo'] },
-  { numero: 6, fondo: '#ec4899', puntos: '#10b981', opciones: [6, 5, 8, 'No distingo'] },
-  { numero: 29, fondo: '#8b5cf6', puntos: '#f59e0b', opciones: [29, 70, 26, 'No distingo'] }
+/* ==========================================================================
+   MÓDULO 4: TAMIZAJE VISUAL (ISHIHARA + AGUDEZA CON CÁMARA FRONTAL)
+   ========================================================================== */
+const BANCO_ISHIHARA = [
+  { numero: '12', fondo: '#e27d60', patron: '#41b3a3', opciones: ['12', '74', 'No distingo', '8'] },
+  { numero: '8',  fondo: '#85dcba', patron: '#e8a87c', opciones: ['3', '8', 'No distingo', '5'] },
+  { numero: '74', fondo: '#c38d9e', patron: '#41b3a3', opciones: ['21', '74', 'No distingo', '71'] },
+  { numero: '29', fondo: '#a3e4d7', patron: '#e74c3c', opciones: ['70', '29', 'No distingo', '26'] }
 ];
 
-// Banco de optotipos E Snellen (rotaciones en grados)
-const optotipos = [
-  { rotacion: 0, direccion: 'Derecha', opciones: ['Derecha', 'Izquierda', 'Arriba', 'Abajo'] },
-  { rotacion: 90, direccion: 'Abajo', opciones: ['Derecha', 'Izquierda', 'Arriba', 'Abajo'] },
-  { rotacion: 180, direccion: 'Izquierda', opciones: ['Derecha', 'Izquierda', 'Arriba', 'Abajo'] },
-  { rotacion: 270, direccion: 'Arriba', opciones: ['Derecha', 'Izquierda', 'Arriba', 'Abajo'] }
+const ANGULOS_E = [
+  { ang: 0,   dir: 'Derecha' },
+  { ang: 90,  dir: 'Abajo' },
+  { ang: 180, dir: 'Izquierda' },
+  { ang: 270, dir: 'Arriba' }
 ];
 
-let itemsPruebaCromatica = [];
-let itemsPruebaAgudeza = [];
+let bateriaPruebas = [];
+let indiceActual = 0;
+let aciertos = 0;
+let pruebaFinalizada = false;
+let camaraActiva = false;
 
-document.addEventListener('DOMContentLoaded', () => {
-  // Barajar láminas para evitar memorización
-  itemsPruebaCromatica = [...laminasIshihara].sort(() => Math.random() - 0.5).slice(0, 3);
-  itemsPruebaAgudeza = [...optotipos].sort(() => Math.random() - 0.5).slice(0, 3);
-  iniciarFaseCromatica();
-});
+// Elementos del DOM
+const modalPermiso = document.getElementById('modal-permiso-camara');
+const btnConceder = document.querySelector('#modal-permiso-camara button');
+const btnModoManual = document.querySelector('#modal-permiso-camara a');
+const video = document.getElementById('video-camara');
+const canvasIshihara = document.getElementById('canvas-ishihara');
+const ctxIsh = canvasIshihara ? canvasIshihara.getContext('2d') : null;
+const optotipo = document.getElementById('simbolo-optotipo');
+const panelOpciones = document.getElementById('contenedor-opciones');
+const lblFase = document.getElementById('indicador-fase');
+const lblAciertos = document.getElementById('contador-aciertos');
+const lblDistancia = document.getElementById('estado-distancia');
 
-function iniciarFaseCromatica() {
-  fase = 'CROMATICA';
-  pasoActual = 0;
-  if (indicadorFase) indicadorFase.innerText = 'Cromático';
-  if (canvas) canvas.style.display = 'block';
-  if (simboloOptotipo) simboloOptotipo.style.display = 'none';
-  cargarLaminaActual();
-}
+function generarBateria() {
+  const cromaticos = [...BANCO_ISHIHARA].sort(() => Math.random() - 0.5).slice(0, 3).map(i => ({
+    tipo: 'ISHIHARA',
+    correcto: i.numero,
+    fondo: i.fondo,
+    patron: i.patron,
+    opciones: i.opciones
+  }));
 
-function cargarLaminaActual() {
-  const item = itemsPruebaCromatica[pasoActual];
-  if (!item) return;
-
-  if (contadorAciertos) contadorAciertos.innerText = `${aciertosCromaticos + aciertosAgudeza}/6`;
-  if (panelEstado) panelEstado.innerText = `Lámina ${pasoActual + 1} de 3: ¿Qué número observas?`;
-
-  // Dibujar lámina simulada de Ishihara
-  if (ctx) {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = item.fondo;
-    ctx.beginPath();
-    ctx.arc(100, 100, 95, 0, Math.PI * 2);
-    ctx.fill();
-
-    ctx.fillStyle = item.puntos;
-    ctx.font = 'bold 70px monospace';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(item.numero, 100, 100);
-  }
-
-  // Barajar opciones
-  const opciones = [...item.opciones].sort(() => Math.random() - 0.5);
-  renderizarBotones(opciones, (opcionSeleccionada) => {
-    if (opcionSeleccionada === item.numero) {
-      aciertosCromaticos++;
-    }
-    pasoActual++;
-    if (pasoActual < 3) {
-      cargarLaminaActual();
-    } else {
-      iniciarFaseAgudeza();
-    }
+  const escalas = ['3.8rem', '2.5rem', '1.6rem'];
+  const agudeza = escalas.map(tam => {
+    const elegido = ANGULOS_E[Math.floor(Math.random() * ANGULOS_E.length)];
+    return {
+      tipo: 'OPTOTIPO',
+      correcto: elegido.dir,
+      rotacion: elegido.ang,
+      tamano: tam,
+      opciones: ['Derecha', 'Izquierda', 'Arriba', 'Abajo']
+    };
   });
+
+  return [...cromaticos, ...agudeza];
 }
 
-function iniciarFaseAgudeza() {
-  fase = 'AGUDEZA';
-  pasoActual = 0;
-  if (indicadorFase) indicadorFase.innerText = 'Agudeza E';
-  if (canvas) canvas.style.display = 'none';
-  if (simboloOptotipo) simboloOptotipo.style.display = 'block';
-  if (cajaInstruccion) {
-    cajaInstruccion.innerHTML = '📱 <strong>Agudeza Visual:</strong> Mantén el brazo extendido a ~50 cm e indica hacia dónde apuntan las patas de la E.';
-  }
-  cargarOptotipoActual();
-}
+async function activarCamaraYEmpezar() {
+  // Ocultar modal de inmediato para no congelar la pantalla
+  if (modalPermiso) modalPermiso.style.display = 'none';
 
-function cargarOptotipoActual() {
-  const item = itemsPruebaAgudeza[pasoActual];
-  if (!item) return;
-
-  if (contadorAciertos) contadorAciertos.innerText = `${aciertosCromaticos + aciertosAgudeza}/6`;
-  if (panelEstado) panelEstado.innerText = `Optotipo ${pasoActual + 1} de 3: ¿Hacia dónde apuntan las barras?`;
-
-  // Rotación y tamaño del optotipo E
-  if (simboloOptotipo) {
-    simboloOptotipo.style.transform = `rotate(${item.rotacion}deg)`;
-    const tamanos = ['56px', '42px', '32px'];
-    simboloOptotipo.style.fontSize = tamanos[pasoActual] || '38px';
-  }
-
-  const opciones = ['Arriba', 'Abajo', 'Izquierda', 'Derecha'];
-  renderizarBotones(opciones, (opcionSeleccionada) => {
-    if (opcionSeleccionada === item.direccion) {
-      aciertosAgudeza++;
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: 'user', width: { ideal: 320 }, height: { ideal: 240 } },
+      audio: false
+    });
+    camaraActiva = true;
+    if (video) {
+      video.srcObject = stream;
+      video.play();
     }
-    pasoActual++;
-    if (pasoActual < 3) {
-      cargarOptotipoActual();
-    } else {
-      finalizarTestVisual();
+    if (lblDistancia) {
+      lblDistancia.innerText = 'Óptima (~50 cm)';
+      lblDistancia.style.color = '#4ade80';
     }
-  });
+  } catch (err) {
+    console.warn('Cámara no autorizada. Iniciando en Modo Asistido Brazo Extendido.');
+    if (lblDistancia) {
+      lblDistancia.innerText = 'Manual (Brazo Ext.)';
+      lblDistancia.style.color = '#38bdf8';
+    }
+  }
+
+  cargarEstimulo();
 }
 
-function renderizarBotones(opciones, callback) {
-  if (!contenedorOpciones) return;
-  contenedorOpciones.innerHTML = '';
-  opciones.forEach(op => {
+function activarModoManual(e) {
+  if (e) e.preventDefault();
+  if (modalPermiso) modalPermiso.style.display = 'none';
+  if (lblDistancia) {
+    lblDistancia.innerText = 'Manual (Brazo Ext.)';
+    lblDistancia.style.color = '#38bdf8';
+  }
+  cargarEstimulo();
+}
+
+function cargarEstimulo() {
+  if (indiceActual >= bateriaPruebas.length) {
+    finalizarTamizaje();
+    return;
+  }
+
+  const item = bateriaPruebas[indiceActual];
+  if (lblAciertos) lblAciertos.innerText = `${aciertos}/${indiceActual}`;
+  if (panelOpciones) panelOpciones.innerHTML = '';
+
+  if (item.tipo === 'ISHIHARA') {
+    if (lblFase) lblFase.innerText = 'Cromático (Ishihara)';
+    if (canvasIshihara) canvasIshihara.style.display = 'block';
+    if (optotipo) optotipo.style.display = 'none';
+    dibujarIshihara(item.correcto, item.fondo, item.patron);
+  } else {
+    if (lblFase) lblFase.innerText = 'Agudeza Visual (Optotipo E)';
+    if (canvasIshihara) canvasIshihara.style.display = 'none';
+    if (optotipo) {
+      optotipo.style.display = 'block';
+      optotipo.innerText = 'E';
+      optotipo.style.transform = `rotate(${item.rotacion}deg)`;
+      optotipo.style.fontSize = item.tamano;
+    }
+  }
+
+  item.opciones.forEach(opc => {
     const btn = document.createElement('button');
-    btn.type = 'button';
     btn.className = 'btn-opcion';
-    btn.innerText = op;
-    btn.onclick = () => callback(op);
-    contenedorOpciones.appendChild(btn);
+    btn.innerText = opc;
+    btn.onclick = () => responder(opc === item.correcto);
+    panelOpciones.appendChild(btn);
   });
 }
 
-function finalizarTestVisual() {
-  const total = aciertosCromaticos + aciertosAgudeza;
-  const efectividad = Math.round((total / 6) * 100);
-  const aprobado = (efectividad >= 80);
+function responder(esCorrecta) {
+  if (pruebaFinalizada) return;
+  if (esCorrecta) aciertos++;
+  indiceActual++;
+  cargarEstimulo();
+}
+
+function dibujarIshihara(texto, cFondo, cTexto) {
+  if (!ctxIsh) return;
+  ctxIsh.clearRect(0, 0, 200, 200);
+
+  for (let i = 0; i < 450; i++) {
+    const r = Math.random() * 85;
+    const a = Math.random() * Math.PI * 2;
+    const x = 100 + r * Math.cos(a);
+    const y = 100 + r * Math.sin(a);
+    ctxIsh.beginPath();
+    ctxIsh.arc(x, y, Math.random() * 3 + 2, 0, Math.PI * 2);
+    ctxIsh.fillStyle = cFondo;
+    ctxIsh.globalAlpha = 0.7;
+    ctxIsh.fill();
+  }
+
+  ctxIsh.font = 'bold 60px Arial';
+  ctxIsh.fillStyle = cTexto;
+  ctxIsh.textAlign = 'center';
+  ctxIsh.textBaseline = 'middle';
+  ctxIsh.globalAlpha = 0.95;
+  ctxIsh.fillText(texto, 100, 105);
+  ctxIsh.globalAlpha = 1.0;
+}
+
+function finalizarTamizaje() {
+  pruebaFinalizada = true;
+  if (video && video.srcObject) {
+    video.srcObject.getTracks().forEach(t => t.stop());
+  }
+
+  const efectividad = Math.round((aciertos / bateriaPruebas.length) * 100);
+  const aprobado = efectividad >= 80;
 
   localStorage.setItem('sensometrika_visual', JSON.stringify({
     efectividad: efectividad,
-    aciertos: total,
-    aprobado: aprobado
+    aciertos: aciertos,
+    total: bateriaPruebas.length,
+    aprobado: aprobado,
+    fecha: new Date().toISOString()
   }));
 
   const sesion = JSON.parse(localStorage.getItem('sensometrika_sesion')) || {};
-  const modulosPermitidos = sesion.modulosPermitidos || [];
-  const tieneAuditivo = modulosPermitidos.includes('auditivo');
+  const permitidos = sesion.modulosPermitidos || ['reactimetro', 'palancas', 'punteo', 'visual', 'auditivo'];
+  const tieneAuditivo = permitidos.includes('auditivo');
 
   const siguienteUrl = tieneAuditivo ? 'audicion.html' : 'informe.html';
-  const textoBoton = tieneAuditivo ? 'Continuar a Módulo 5 (Tamizaje Auditivo) →' : '📊 Ver Informe y Dictamen Final';
+  const textoBoton = tieneAuditivo ? 'Continuar a Módulo 5 (Tamizaje Auditivo) →' : '📊 Ver Dictamen e Informe Consolidado';
 
-  if (indicadorFase) indicadorFase.innerText = 'Fin';
-  if (contadorAciertos) contadorAciertos.innerText = `${total}/6`;
-  if (estadoAlerta) {
-    estadoAlerta.innerText = aprobado ? 'Aprobado' : 'Observado';
-    estadoAlerta.style.color = aprobado ? '#4ade80' : '#f87171';
-  }
-
-  if (panelEstado) {
-    panelEstado.innerText = `Evaluación completada: ${efectividad}% acierto`;
-    panelEstado.style.color = aprobado ? '#4ade80' : '#f87171';
-  }
-
-  if (contenedorOpciones) {
-    contenedorOpciones.innerHTML = `
-      <div style="grid-column: 1 / -1; background: #020617; border: 1.5px solid #38bdf8; border-radius: 12px; padding: 16px; margin-top: 10px; text-align: center; width: 100%; box-sizing: border-box;">
-        <h3 style="color: ${aprobado ? '#4ade80' : '#f87171'}; font-size: 1.05rem; margin: 0 0 6px 0;">¡Módulo 4 Finalizado!</h3>
-        <p style="color: #94a3b8; font-size: 0.82rem; margin: 0 0 14px 0;">
-          Efectividad: <strong style="color: #fff;">${efectividad}%</strong> (${aprobado ? 'Sin Alertas' : 'Observado'})
-        </p>
-        <div style="display: flex; flex-direction: column; gap: 8px;">
-          <a href="${siguienteUrl}" class="btn-principal" style="display: flex; justify-content: center; align-items: center; text-decoration: none; height: 46px; font-size: 0.95rem; background-color: #0284c7; color: #ffffff; border-radius: 8px; font-weight: bold;">
-            ${textoBoton}
-          </a>
-          <a href="menu.html" style="color: #64748b; font-size: 0.8rem; text-decoration: none; padding: 6px;">
-            Regresar al Menú Principal
-          </a>
-        </div>
-      </div>
-    `;
-  }
+  panelOpciones.innerHTML = `
+    <div style="grid-column: 1 / -1; background: #020617; border: 1.5px solid #38bdf8; border-radius: 12px; padding: 16px; text-align: center;">
+      <h3 style="color: ${aprobado ? '#4ade80' : '#f87171'}; margin: 0 0 6px 0;">
+        Tamizaje Visual: ${aprobado ? 'Aprobado' : 'Observado'} (${efectividad}%)
+      </h3>
+      <p style="color: #94a3b8; font-size: 0.85rem; margin-bottom: 12px;">
+        ${aprobado ? 'Cumple con discriminación cromática y agudeza mínima.' : 'Sugiere revisión oftalmológica ocupacional.'}
+      </p>
+      <a href="${siguienteUrl}" style="display: block; background: #0284c7; color: #fff; text-decoration: none; padding: 12px; border-radius: 8px; font-weight: bold;">
+        ${textoBoton}
+      </a>
+    </div>
+  `;
 }
+
+document.addEventListener('DOMContentLoaded', () => {
+  bateriaPruebas = generarBateria();
+  if (btnConceder) btnConceder.addEventListener('click', activarCamaraYEmpezar);
+  if (btnModoManual) btnModoManual.addEventListener('click', activarModoManual);
+});

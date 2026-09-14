@@ -2,441 +2,538 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Sensometrika | Informe de Evaluación</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Sensometrika | Certificado Técnico Oficial</title>
   <link rel="stylesheet" href="styles.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
+    body {
+      background-color: #0b1120;
+      color: #f1f5f9;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      margin: 0;
+      padding: 16px;
+      display: flex;
+      justify-content: center;
+    }
+
+    .contenedor {
+      width: 100%;
+      max-width: 640px;
+    }
+
+    /* HOJA FORMAL A4 */
+    .hoja-informe {
+      background: #ffffff;
+      color: #0f172a;
+      border-radius: 12px;
+      padding: 24px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+      box-sizing: border-box;
+    }
+
+    /* MEMBRETE */
+    .membrete-cabecera {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 2px solid #0f172a;
+      padding-bottom: 12px;
+      margin-bottom: 12px;
+    }
+    .marca-box {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .marca-box svg {
+      width: 46px;
+      height: 46px;
+      flex-shrink: 0;
+    }
+    .marca-texto h2 {
+      margin: 0;
+      font-size: 1.25rem;
+      font-weight: 900;
+      color: #0f172a;
+      letter-spacing: 0.5px;
+    }
+    .marca-texto p {
+      margin: 2px 0 0 0;
+      font-size: 0.68rem;
+      font-weight: 700;
+      color: #0284c7;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    /* AVISO DESPACHO AUTOMÁTICO B2B */
+    .aviso-despacho-b2b {
+      background: rgba(2, 132, 199, 0.08);
+      border: 1px solid #0284c7;
+      border-radius: 6px;
+      padding: 8px 12px;
+      font-size: 0.74rem;
+      color: #0369a1;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* FILIACIÓN */
+    .ficha-filiacion {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px 14px;
+      background: #f8fafc;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      padding: 10px 14px;
+      font-size: 0.8rem;
+      line-height: 1.4;
+      margin-bottom: 12px;
+    }
+    .ficha-filiacion span { color: #475569; }
+    .ficha-filiacion strong { color: #0f172a; }
+
+    /* DICTAMEN */
+    .dictamen-banner {
+      width: 100%;
+      padding: 10px;
+      text-align: center;
+      font-weight: 800;
+      font-size: 0.92rem;
+      border-radius: 6px;
+      box-sizing: border-box;
+      margin-bottom: 14px;
+      letter-spacing: 0.4px;
+    }
+    .dictamen-apto {
+      background: rgba(34, 197, 94, 0.12);
+      border: 1.5px solid #22c55e;
+      color: #15803d;
+    }
+    .dictamen-incompleto {
+      background: rgba(245, 158, 11, 0.12);
+      border: 1.5px solid #f59e0b;
+      color: #b45309;
+    }
+    .dictamen-no-apto {
+      background: rgba(239, 68, 68, 0.12);
+      border: 1.5px solid #ef4444;
+      color: #b91c1c;
+    }
+
+    /* TABLA */
     .tabla-informe {
       width: 100%;
       border-collapse: collapse;
-      margin: 14px 0;
+      margin-bottom: 14px;
       font-size: 0.78rem;
     }
     .tabla-informe th, .tabla-informe td {
-      border: 1px solid #334155;
-      padding: 8px 6px;
+      border: 1px solid #cbd5e1;
+      padding: 7px 8px;
       text-align: left;
     }
     .tabla-informe th {
-      background-color: #0f172a;
-      color: #38bdf8;
+      background-color: #f1f5f9;
+      color: #0f172a;
+      font-weight: 700;
       font-size: 0.72rem;
     }
-    .badge-eval {
-      font-weight: bold;
+    .badge-estado {
+      font-size: 0.68rem;
+      font-weight: 700;
       padding: 2px 6px;
       border-radius: 4px;
-      font-size: 0.7rem;
+      display: inline-block;
     }
-    .eval-aprobado { color: #4ade80; background: rgba(74, 222, 128, 0.1); border: 1px solid #4ade80; }
-    .eval-reprobado { color: #f87171; background: rgba(248, 113, 113, 0.1); border: 1px solid #f87171; }
-    .eval-pendiente { color: #94a3b8; background: rgba(148, 163, 184, 0.1); border: 1px solid #94a3b8; }
+    .badge-cumple { background: #dcfce7; color: #15803d; border: 1px solid #86efac; }
+    .badge-falla { background: #fee2e2; color: #b91c1c; border: 1px solid #fca5a5; }
+    .badge-pendiente { background: #fef3c7; color: #b45309; border: 1px solid #fde68a; }
 
-    .zona-firma-pantalla {
-      background-color: #0f172a;
-      border: 1.5px solid #0284c7;
-      border-radius: 10px;
-      padding: 12px;
+    /* SECCIÓN DE FIRMAS */
+    .seccion-firmas {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      margin-top: 24px;
+      padding: 0 10px;
+    }
+    .caja-firma {
+      width: 44%;
       text-align: center;
-      margin: 14px 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-end;
+    }
+    .linea-firma {
       width: 100%;
-      box-sizing: border-box;
+      max-width: 180px;
+      border-bottom: 1px solid #64748b;
+      margin-bottom: 5px;
     }
-    #canvas-firma {
-      background-color: #ffffff;
+    .img-firma-trabajador {
+      max-height: 48px;
+      max-width: 150px;
+      display: block;
+      margin: 0 auto 2px auto;
+    }
+    .caja-firma strong { font-size: 0.78rem; color: #0f172a; }
+    .caja-firma span { font-size: 0.7rem; color: #475569; }
+
+    /* CLÁUSULA */
+    .pie-legal {
+      margin-top: 16px;
+      border-top: 1px solid #e2e8f0;
+      padding-top: 6px;
+      font-size: 0.62rem;
+      line-height: 1.35;
+      color: #64748b;
+      text-align: justify;
+    }
+
+    /* BOTONES */
+    .barra-botones {
+      display: flex;
+      gap: 10px;
+      margin-top: 16px;
+      width: 100%;
+    }
+    .btn-imprimir {
+      flex: 1;
+      height: 44px;
+      background: #0284c7;
+      color: #fff;
+      border: none;
       border-radius: 6px;
-      cursor: crosshair;
-      touch-action: none;
+      font-weight: 700;
+      font-size: 0.9rem;
+      cursor: pointer;
+    }
+    .btn-volver-menu {
+      height: 44px;
+      line-height: 44px;
+      padding: 0 16px;
+      background: #334155;
+      color: #f1f5f9;
+      text-decoration: none;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      text-align: center;
     }
 
-    .membrete-print, .pie-print, .seccion-firmas { display: none; }
-
+    @page {
+      size: A4 portrait;
+      margin: 10mm 12mm;
+    }
     @media print {
-      body { background: #fff !important; color: #0f172a !important; padding: 0 !important; }
-      .contenedor { max-width: 100% !important; background: #fff !important; box-shadow: none !important; padding: 0 !important; }
-      header, .aviso-despacho-correo, .aviso-diagnostico, .zona-firma-pantalla, button, a { display: none !important; }
-      .membrete-print { display: flex !important; justify-content: space-between; align-items: center; border-bottom: 2px solid #0f172a; padding-bottom: 10px; margin-bottom: 12px; }
-      .tabla-informe { border: 1px solid #cbd5e1 !important; }
-      .tabla-informe th { background: #f1f5f9 !important; color: #0f172a !important; }
-      .tabla-informe td { border-bottom: 1px solid #e2e8f0 !important; color: #1e293b !important; }
-      .seccion-firmas { display: flex !important; justify-content: space-between; margin-top: 30px; }
-      .caja-firma { width: 44%; text-align: center; display: flex; flex-direction: column; align-items: center; }
-      .img-firma-trabajador { max-height: 44px; max-width: 140px; display: block; margin: 0 auto 2px auto; }
-      .linea-firma { width: 100%; max-width: 170px; border-bottom: 1px solid #94a3b8; margin-bottom: 6px; }
-      .pie-print { display: block !important; margin-top: 25px; border-top: 1px solid #cbd5e1; padding-top: 6px; font-size: 0.65rem; color: #64748b; }
+      body {
+        background: #ffffff !important;
+        padding: 0 !important;
+      }
+      .hoja-informe {
+        box-shadow: none !important;
+        padding: 0 !important;
+        border-radius: 0 !important;
+      }
+      .aviso-despacho-b2b, .barra-botones {
+        display: none !important;
+      }
     }
   </style>
 </head>
 <body>
-  <main class="contenedor" style="max-width: 540px;">
-    
-    <!-- Membrete B2B para Impresión -->
-    <section class="membrete-print">
-      <div>
-        <h2 style="margin: 0; font-size: 1.3rem; color: #0f172a;">SENSOMETRIKA SpA</h2>
-        <p style="margin: 2px 0 0 0; font-size: 0.75rem; color: #475569;">Gabinete Sensotécnico Laboral • D.S. N° 170 MTT</p>
-      </div>
-      <div id="qr-impreso"></div>
-    </section>
-
-    <header style="text-align: center; margin-bottom: 12px;">
-      <h1 style="font-size: 1.3rem; margin: 0; color: #fff;">Sensometrika</h1>
-      <p style="font-size: 0.75rem; color: #94a3b8; margin: 0;">Evaluación Sensotécnica Preventiva (D.S. N° 170)</p>
-    </header>
-
-    <!-- Ficha del Evaluado -->
-    <section style="background: #0f172a; border: 1px solid #334155; border-radius: 10px; padding: 12px; margin-bottom: 12px; font-size: 0.8rem; line-height: 1.5;">
-      <div>Evaluado: <strong id="rep-nombre" style="color: #fff;">Postulante</strong></div>
-      <div>RUT: <strong id="rep-rut" style="color: #fff;">--</strong></div>
-      <div id="row-empresa-informe" style="display: none;">Empresa: <strong id="rep-empresa" style="color: #38bdf8;">--</strong></div>
-      <div>Fecha y Hora: <strong id="rep-fecha" style="color: #94a3b8;">--</strong></div>
-    </section>
-
-    <!-- Dictamen Global -->
-    <div id="box-dictamen" style="padding: 10px; text-align: center; font-weight: bold; border-radius: 8px; font-size: 0.9rem; margin-bottom: 12px; background: rgba(74, 222, 128, 0.1); border: 1.5px solid #4ade80; color: #4ade80;">
-      DICTAMEN: APTO (CUMPLE ESTÁNDAR LEGAL)
-    </div>
-
-    <!-- Tabla consolidada -->
-    <table class="tabla-informe">
-      <thead>
-        <tr>
-          <th>Módulo Evaluado</th>
-          <th>Estándar Exigido</th>
-          <th>Resultado</th>
-          <th>Evaluación</th>
-        </tr>
-      </thead>
-      <tbody id="cuerpo-tabla-resultados"></tbody>
-    </table>
-
-    <!-- Pad Táctil para firmar en pantalla (Modo Empresa) -->
-    <section class="zona-firma-pantalla" id="bloque-pad-firma" style="display: none;">
-      <p style="color: #f8fafc; font-size: 0.82rem; margin: 0 0 6px 0;">
-        ✍️ <strong>Firma del Trabajador:</strong> Dibuje su firma en el recuadro blanco para certificar el informe
-      </p>
-      <canvas id="canvas-firma" width="280" height="90"></canvas>
-      <br>
-      <button type="button" onclick="limpiarFirma()" style="background: transparent; border: 1px solid #64748b; color: #94a3b8; font-size: 0.75rem; padding: 3px 8px; border-radius: 4px; margin-top: 6px; cursor: pointer;">
-        Borrar / Reintentar Firma
-      </button>
-    </section>
-
-    <div style="display: flex; flex-direction: column; gap: 8px; width: 100%;">
-      <button id="btn-imprimir-pdf" onclick="window.print()" class="btn-principal" style="height: 44px; font-size: 0.9rem; background-color: #0284c7; display: none;">
-        🖨️ Generar y Descargar PDF Formal
-      </button>
-      <a href="menu.html" style="color: #94a3b8; text-decoration: none; font-size: 0.8rem; text-align: center; padding: 6px;">
-        ← Volver al Menú Principal
-      </a>
-    </div>
-
-    <!-- Firmas A4 Impresas -->
-    <section class="seccion-firmas" id="bloque-firmas-print">
-      <div class="caja-firma">
-        <img id="firma-render-pdf" class="img-firma-trabajador" style="display: none;" alt="Firma Trabajador">
-        <div class="linea-firma"></div>
-        <strong id="print-nombre-trabajador">Firma del Conductor</strong>
-        <span id="print-rut-trabajador">RUT: --</span>
-      </div>
-
-      <div class="caja-firma">
-        <div style="height: 46px; display: flex; align-items: flex-end; justify-content: center; width: 100%;">
-          <div class="linea-firma"></div>
+  <main class="contenedor">
+    <div class="hoja-informe">
+      
+      <!-- MEMBRETE CON ISOTIPO Y QR -->
+      <section class="membrete-cabecera">
+        <div class="marca-box">
+          <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M72 40 C72 20, 52 14, 35 22 C22 28, 16 42, 22 55 C25 61, 30 65, 36 67" stroke="#0f172a" stroke-width="5" stroke-linecap="round"/>
+            <path d="M60 40 C60 27, 47 23, 37 28 C28 32, 26 43, 31 51 C34 56, 38 58, 43 59" stroke="#0f172a" stroke-width="4.5" stroke-linecap="round"/>
+            <path d="M40 60 C40 73, 53 77, 63 72 C72 68, 74 57, 69 49 C66 44, 62 42, 57 41" stroke="#0f172a" stroke-width="4.5" stroke-linecap="round"/>
+            <path d="M28 60 C28 80, 48 86, 65 78 C78 72, 84 58, 78 45" stroke="#0f172a" stroke-width="5" stroke-linecap="round"/>
+            <circle cx="50" cy="50" r="9" stroke="#0284c7" stroke-width="2" opacity="0.4"/>
+            <circle cx="50" cy="50" r="5.5" fill="#0284c7"/>
+            <path d="M54 54 L61 58 L57 51 Z" fill="#0369a1"/>
+          </svg>
+          <div class="marca-texto">
+            <h2>SENSOMETRIKA SpA</h2>
+            <p>Gabinete Sensotécnico Laboral • D.S. N° 170 MTT</p>
+          </div>
         </div>
-        <strong id="print-nombre-apr">Mariela Cárcamo Fernández</strong>
-        <span id="print-rut-apr">RUT: 12.222.222-2</span>
-        <span style="font-size: 0.62rem; color: #64748b;">Supervisión Técnica / APR</span>
-      </div>
-    </section>
+        <div id="qr-impreso" style="padding: 2px; background: #fff;"></div>
+      </section>
 
-    <footer class="pie-print">
-      Documento electrónico emitido conforme a la Ley N° 18.290 y D.S. N° 170 MTT. Sensometrika SpA.
-    </footer>
+      <!-- AVISO DE NOTIFICACIÓN DIRECTA AL ENCARGADO B2B -->
+      <div class="aviso-despacho-b2b" id="banner-despacho">
+        <span>📨</span>
+        <span><strong>Copia oficial emitida:</strong> Este certificado formal y sus respaldos han sido notificados automáticamente al supervisor corporativo registrado.</span>
+      </div>
+
+      <!-- FICHA DE FILIACIÓN -->
+      <section class="ficha-filiacion">
+        <div><span>Evaluado:</span> <strong id="rep-nombre">--</strong></div>
+        <div><span>RUT Trabajador:</span> <strong id="rep-rut">--</strong></div>
+        <div><span>Empresa Mandante:</span> <strong id="rep-empresa">--</strong></div>
+        <div><span>Folio Verificación:</span> <strong id="rep-folio">--</strong></div>
+        <div><span>Fecha y Hora:</span> <strong id="rep-fecha">--</strong></div>
+        <div><span>Régimen Examen:</span> <strong id="rep-regimen">Faena / Clase A (Estricto)</strong></div>
+      </section>
+
+      <!-- DICTAMEN -->
+      <div class="dictamen-banner dictamen-incompleto" id="box-dictamen">
+        DICTAMEN EN ESPERA: EVALUACIÓN INCOMPLETA / MÓDULOS PENDIENTES
+      </div>
+
+      <!-- TABLA NORMATIVA -->
+      <table class="tabla-informe">
+        <thead>
+          <tr>
+            <th>Módulo Evaluado</th>
+            <th>Estándar Normativo (DS 170)</th>
+            <th>Resultado</th>
+            <th style="text-align: center;">Evaluación</th>
+          </tr>
+        </thead>
+        <tbody id="cuerpo-tabla-resultados">
+          <tr>
+            <td><strong>1. Reactímetro</strong><br><small style="color: #64748b;">Latencia simple de frenado</small></td>
+            <td>Máx. 350 ms</td>
+            <td id="res-reactimetro">-- ms</td>
+            <td style="text-align: center;"><span id="badge-react" class="badge-estado badge-pendiente">PENDIENTE</span></td>
+          </tr>
+          <tr>
+            <td><strong>2. Palancas</strong><br><small style="color: #64748b;">Coordinación bimanual</small></td>
+            <td>Máx. 3 toques en 60 s</td>
+            <td id="res-palancas">-- toques</td>
+            <td style="text-align: center;"><span id="badge-pal" class="badge-estado badge-pendiente">PENDIENTE</span></td>
+          </tr>
+          <tr>
+            <td><strong>3. Punteo</strong><br><small style="color: #64748b;">Lahy rotatorio</small></td>
+            <td>Mín. 80% efectividad</td>
+            <td id="res-punteo">-- %</td>
+            <td style="text-align: center;"><span id="badge-punt" class="badge-estado badge-pendiente">PENDIENTE</span></td>
+          </tr>
+          <tr>
+            <td><strong>4. Tamizaje Visual</strong><br><small style="color: #64748b;">Ishihara y Optotipos</small></td>
+            <td>Mín. 80% acierto</td>
+            <td id="res-visual">-- %</td>
+            <td style="text-align: center;"><span id="badge-vis" class="badge-estado badge-pendiente">PENDIENTE</span></td>
+          </tr>
+          <tr>
+            <td><strong>5. Tamizaje Auditivo</strong><br><small style="color: #64748b;">Tonos puros binaurales</small></td>
+            <td>Mín. 80% detección</td>
+            <td id="res-auditivo">-- %</td>
+            <td style="text-align: center;"><span id="badge-aud" class="badge-estado badge-pendiente">PENDIENTE</span></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- SECCIÓN DE FIRMAS ESTAMPADAS -->
+      <section class="seccion-firmas">
+        <div class="caja-firma">
+          <!-- Firma del Trabajador precargada desde menu.html -->
+          <div style="height: 48px; display: flex; align-items: flex-end; justify-content: center; width: 100%;">
+            <img id="firma-render-pdf" class="img-firma-trabajador" alt="Firma Evaluado">
+          </div>
+          <div class="linea-firma"></div>
+          <strong id="print-nombre-trabajador">--</strong>
+          <span id="print-rut-trabajador">RUT: --</span>
+        </div>
+
+        <div class="caja-firma">
+          <div style="height: 48px; display: flex; align-items: flex-end; justify-content: center; width: 100%;"></div>
+          <div class="linea-firma"></div>
+          <strong id="print-nombre-apr">--</strong>
+          <span id="print-cargo-apr">Supervisión Técnica / APR</span>
+          <span id="print-rut-apr">RUT: --</span>
+        </div>
+      </section>
+
+      <!-- CLÁUSULA LEGAL -->
+      <footer class="pie-legal">
+        <strong>Cláusula de Responsabilidad Técnica:</strong> Documento electrónico emitido conforme a los requerimientos técnicos de la Ley de Tránsito N° 18.290 y el D.S. N° 170 del Ministerio de Transportes y Telecomunicaciones (MTT). Las mediciones reflejan la latencia psicomotriz, coordinación y tamizajes sensoriales ejecutados en simulador acreditado. Validez contrastable mediante código QR.
+      </footer>
+    </div>
+
+    <!-- ACCIONES -->
+    <div class="barra-botones">
+      <button onclick="window.print()" class="btn-imprimir">🖨️ Imprimir / Guardar PDF Formal</button>
+      <a href="menu.html" class="btn-volver-menu">← Volver al Menú</a>
+    </div>
   </main>
 
   <script>
+    const SUPABASE_URL = 'https://kytuewhkhshrjddzoknv.supabase.co';
+    const SUPABASE_ANON_KEY = 'sb_publishable_ou-yRIieMQOGoWJ4YZIYtg_-Lusc711';
+    const supabase = (window.supabase && window.supabase.createClient) ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
+
     document.addEventListener('DOMContentLoaded', () => {
-      try {
-        const sesion = JSON.parse(localStorage.getItem('sensometrika_sesion')) || { rol: 'particular' };
-        const user = JSON.parse(localStorage.getItem('sensometrika_datos_usuario')) || { 
-          nombre: 'Postulante Particular', 
-          rut: 'Sin Registrar' 
-        };
-        const emp = JSON.parse(localStorage.getItem('sensometrika_plan_empresa')) || {
-          responsable: 'Mariela Cárcamo Fernández',
-          rutResponsable: '12.222.222-2',
-          razonSocial: 'Empresa Faena'
-        };
+      const user = JSON.parse(localStorage.getItem('sensometrika_datos_usuario')) || {
+        nombre: 'FELIX OSSES MARTINEZ',
+        rut: '12.222.222-2',
+        empresa: 'socadep ltda'
+      };
 
-        // Pintar ficha de identificación
-        const elNombre = document.getElementById('rep-nombre');
-        const elRut = document.getElementById('rep-rut');
-        const elFecha = document.getElementById('rep-fecha');
+      const sesion = JSON.parse(localStorage.getItem('sensometrika_sesion')) || { rol: 'empresa' };
+      const emp = JSON.parse(localStorage.getItem('sensometrika_plan_empresa')) || {
+        responsable: 'Mariela Cárcamo Fernández',
+        cargo: 'Supervisión Técnica / APR',
+        rutResponsable: '12.222.222-2',
+        razonSocial: user.empresa || 'socadep ltda',
+        correoInformes: 'prevencion@empresa.cl'
+      };
 
-        if (elNombre) elNombre.innerText = user.nombre || 'Postulante';
-        if (elRut) elRut.innerText = user.rut || '--';
-        if (elFecha) elFecha.innerText = new Date().toLocaleDateString('es-CL') + ' ' + new Date().toLocaleTimeString('es-CL');
+      // Filiación
+      document.getElementById('rep-nombre').innerText = (user.nombre || 'FELIX OSSES MARTINEZ').toUpperCase();
+      document.getElementById('rep-rut').innerText = user.rut || '12.222.222-2';
+      document.getElementById('rep-empresa').innerText = user.empresa || emp.razonSocial || 'socadep ltda';
 
-        const esEmpresa = (sesion.rol === 'empresa');
-        const folioGen = 'SMK-' + Math.floor(100000 + Math.random() * 900000);
+      const ahora = new Date();
+      document.getElementById('rep-fecha').innerText = ahora.toLocaleDateString('es-CL') + ', ' + ahora.toLocaleTimeString('es-CL');
 
-        if (esEmpresa) {
-          const rowEmp = document.getElementById('row-empresa-informe');
-          const repEmp = document.getElementById('rep-empresa');
-          const padFirma = document.getElementById('bloque-pad-firma');
-          const btnPdf = document.getElementById('btn-imprimir-pdf');
-          const bloqueFirmas = document.getElementById('bloque-firmas-print');
+      const folio = 'SMK-' + Math.floor(100000 + Math.random() * 900000);
+      document.getElementById('rep-folio').innerText = folio;
 
-          if (rowEmp) rowEmp.style.display = 'block';
-          if (repEmp) repEmp.innerText = emp.razonSocial || 'Empresa Faena';
-          if (padFirma) padFirma.style.display = 'block';
-          if (btnPdf) btnPdf.style.display = 'block';
-          if (bloqueFirmas) bloqueFirmas.style.display = 'flex';
+      // Nombres en firmas
+      document.getElementById('print-nombre-trabajador').innerText = (user.nombre || 'FELIX OSSES MARTINEZ').toUpperCase();
+      document.getElementById('print-rut-trabajador').innerText = `RUT: ${user.rut || '12.222.222-2'}`;
 
-          const printTrab = document.getElementById('print-nombre-trabajador');
-          const printRut = document.getElementById('print-rut-trabajador');
-          if (printTrab) printTrab.innerText = user.nombre;
-          if (printRut) printRut.innerText = `RUT: ${user.rut}`;
+      document.getElementById('print-nombre-apr').innerText = emp.responsable || 'Mariela Cárcamo Fernández';
+      document.getElementById('print-cargo-apr').innerText = emp.cargo || 'Supervisión Técnica / APR';
+      document.getElementById('print-rut-apr').innerText = `RUT: ${emp.rutResponsable || '12.222.222-2'}`;
 
-          const qrContainer = document.getElementById('qr-impreso');
-          if (qrContainer && typeof QRCode !== 'undefined') {
-            qrContainer.innerHTML = '';
-            new QRCode(qrContainer, {
-              text: `${window.location.origin}/validar.html?folio=${folioGen}&rut=${encodeURIComponent(user.rut)}`,
-              width: 55,
-              height: 55,
-              colorDark: "#0f172a",
-              colorLight: "#ffffff",
-              correctLevel: QRCode.CorrectLevel.M
-            });
-          }
-
-          iniciarCanvasFirma();
-        }
-
-        // Cargar resultados técnicos
-        cargarMetricas(esEmpresa, sesion);
-      } catch (err) {
-        console.error("Error al inicializar informe:", err);
+      // Inyectar firma trazada previamente en menu.html
+      const firmaGuardada = localStorage.getItem('sensometrika_firma_trabajador');
+      const imgFirma = document.getElementById('firma-render-pdf');
+      if (firmaGuardada) {
+        imgFirma.src = firmaGuardada;
+        imgFirma.style.display = 'block';
+      } else {
+        imgFirma.style.display = 'none';
       }
+
+      // Código QR trazable
+      const contenedorQR = document.getElementById('qr-impreso');
+      if (contenedorQR) {
+        contenedorQR.innerHTML = '';
+        new QRCode(contenedorQR, {
+          text: `https://sensometrika.cl/validar?folio=${folio}&rut=${encodeURIComponent(user.rut || '')}`,
+          width: 58,
+          height: 58,
+          colorDark: "#0f172a",
+          colorLight: "#ffffff",
+          correctLevel: QRCode.CorrectLevel.M
+        });
+      }
+
+      cargarResultados(folio, user);
     });
 
-    function iniciarCanvasFirma() {
-      const canvas = document.getElementById('canvas-firma');
-      if (!canvas) return;
-      const ctx = canvas.getContext('2d');
-      let dibujando = false;
-
-      ctx.strokeStyle = "#0f172a";
-      ctx.lineWidth = 2.5;
-      ctx.lineCap = "round";
-
-      function getPos(e) {
-        const rect = canvas.getBoundingClientRect();
-        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-        return { x: clientX - rect.left, y: clientY - rect.top };
-      }
-
-      function iniciar(e) {
-        dibujando = true;
-        const p = getPos(e);
-        ctx.beginPath();
-        ctx.moveTo(p.x, p.y);
-        if (e.cancelable && e.type === 'touchstart') e.preventDefault();
-      }
-
-      function trazar(e) {
-        if (!dibujando) return;
-        const p = getPos(e);
-        ctx.lineTo(p.x, p.y);
-        ctx.stroke();
-        if (e.cancelable && e.type === 'touchmove') e.preventDefault();
-      }
-
-      function soltar() {
-        if (!dibujando) return;
-        dibujando = false;
-        const img = document.getElementById('firma-render-pdf');
-        if (img) {
-          img.src = canvas.toDataURL('image/png');
-          img.style.display = 'block';
-        }
-      }
-
-      canvas.addEventListener('mousedown', iniciar);
-      canvas.addEventListener('mousemove', trazar);
-      window.addEventListener('mouseup', soltar);
-
-      canvas.addEventListener('touchstart', iniciar, { passive: false });
-      canvas.addEventListener('touchmove', trazar, { passive: false });
-      canvas.addEventListener('touchend', soltar);
-    }
-
-    function limpiarFirma() {
-      const canvas = document.getElementById('canvas-firma');
-      if (!canvas) return;
-      const ctx = canvas.getContext('2d');
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      const img = document.getElementById('firma-render-pdf');
-      if (img) {
-        img.src = '';
-        img.style.display = 'none';
-      }
-    }
-
-    function cargarMetricas(esEmpresa, sesion) {
+    function cargarResultados(folio, user) {
       const rReact = JSON.parse(localStorage.getItem('sensometrika_reactimetro'));
       const rPal = JSON.parse(localStorage.getItem('sensometrika_palancas'));
       const rPunt = JSON.parse(localStorage.getItem('sensometrika_punteo'));
       const rVis = JSON.parse(localStorage.getItem('sensometrika_visual'));
       const rAud = JSON.parse(localStorage.getItem('sensometrika_auditivo'));
 
-      const tbody = document.getElementById('cuerpo-tabla-resultados');
-      if (!tbody) return;
-      tbody.innerHTML = '';
+      let completas = 0;
       let todoAprobado = true;
 
-      // 1. Reactímetro
-      const umbralReact = esEmpresa ? 350 : 450;
+      // Reactímetro
       if (rReact && rReact.tiempo !== undefined) {
-        const okReact = (rReact.tiempo <= umbralReact);
-        if (!okReact) todoAprobado = false;
-
-        tbody.innerHTML += `
-          <tr>
-            <td><strong>1. Reactímetro</strong><br><small>Latencia simple</small></td>
-            <td>Máx. ${umbralReact} ms ${esEmpresa ? '(Faena Clase A)' : '(Clase B)'}</td>
-            <td>${rReact.tiempo} ms</td>
-            <td><span class="badge-eval ${okReact ? 'eval-aprobado' : 'eval-reprobado'}">${okReact ? 'APROBADO' : 'FUERA'}</span></td>
-          </tr>
-        `;
-      } else {
-        tbody.innerHTML += `
-          <tr>
-            <td><strong>1. Reactímetro</strong><br><small>Latencia simple</small></td>
-            <td>Máx. ${umbralReact} ms</td>
-            <td>-- ms</td>
-            <td><span class="badge-eval eval-pendiente">PENDIENTE</span></td>
-          </tr>
-        `;
+        completas++;
+        document.getElementById('res-reactimetro').innerText = `${rReact.tiempo} ms`;
+        const ok = rReact.tiempo <= 350;
+        if (!ok) todoAprobado = false;
+        setBadge('badge-react', ok);
       }
 
-      // 2. Palancas
+      // Palancas
       if (rPal && rPal.toques !== undefined) {
-        const okPal = (rPal.toques <= 3);
-        if (!okPal) todoAprobado = false;
-
-        tbody.innerHTML += `
-          <tr>
-            <td><strong>2. Palancas</strong><br><small>Coordinación</small></td>
-            <td>Máx. 3 toques en 60 s</td>
-            <td>${rPal.toques} toques (${rPal.tiempo || 60} s)</td>
-            <td><span class="badge-eval ${okPal ? 'eval-aprobado' : 'eval-reprobado'}">${okPal ? 'APROBADO' : 'REPROBADO'}</span></td>
-          </tr>
-        `;
-      } else {
-        tbody.innerHTML += `
-          <tr>
-            <td><strong>2. Palancas</strong><br><small>Coordinación</small></td>
-            <td>Máx. 3 toques en 60 s</td>
-            <td>-- toques</td>
-            <td><span class="badge-eval eval-pendiente">PENDIENTE</span></td>
-          </tr>
-        `;
+        completas++;
+        document.getElementById('res-palancas').innerText = `${rPal.toques} toques`;
+        const ok = rPal.toques <= 3;
+        if (!ok) todoAprobado = false;
+        setBadge('badge-pal', ok);
       }
 
-      // 3. Punteo
+      // Punteo
       if (rPunt && rPunt.efectividad !== undefined) {
-        const okPunt = (rPunt.efectividad >= 80);
-        if (!okPunt) todoAprobado = false;
+        completas++;
+        document.getElementById('res-punteo').innerText = `${rPunt.efectividad} %`;
+        const ok = rPunt.efectividad >= 80;
+        if (!ok) todoAprobado = false;
+        setBadge('badge-punt', ok);
+      }
 
-        tbody.innerHTML += `
-          <tr>
-            <td><strong>3. Punteo</strong><br><small>Lahy rotatorio</small></td>
-            <td>Mín. 80% efectividad</td>
-            <td>${rPunt.efectividad}%</td>
-            <td><span class="badge-eval ${okPunt ? 'eval-aprobado' : 'eval-reprobado'}">${okPunt ? 'APROBADO' : 'REPROBADO'}</span></td>
-          </tr>
-        `;
+      // Visual
+      if (rVis && rVis.efectividad !== undefined) {
+        completas++;
+        document.getElementById('res-visual').innerText = `${rVis.efectividad} %`;
+        const ok = rVis.efectividad >= 80;
+        if (!ok) todoAprobado = false;
+        setBadge('badge-vis', ok);
+      }
+
+      // Auditivo
+      if (rAud && rAud.efectividad !== undefined) {
+        completas++;
+        document.getElementById('res-auditivo').innerText = `${rAud.efectividad} %`;
+        const ok = rAud.efectividad >= 80;
+        if (!ok) todoAprobado = false;
+        setBadge('badge-aud', ok);
+      }
+
+      // Dictamen
+      const banner = document.getElementById('box-dictamen');
+      let dictamenTexto = '';
+      if (completas < 3) {
+        banner.className = 'dictamen-banner dictamen-incompleto';
+        dictamenTexto = 'DICTAMEN EN ESPERA: EVALUACIÓN INCOMPLETA / MÓDULOS PENDIENTES';
+      } else if (todoAprobado) {
+        banner.className = 'dictamen-banner dictamen-apto';
+        dictamenTexto = 'DICTAMEN: APTO (CUMPLE ESTÁNDAR LEGAL D.S. N° 170)';
       } else {
-        tbody.innerHTML += `
-          <tr>
-            <td><strong>3. Punteo</strong><br><small>Lahy rotatorio</small></td>
-            <td>Mín. 80% efectividad</td>
-            <td>-- %</td>
-            <td><span class="badge-eval eval-pendiente">PENDIENTE</span></td>
-          </tr>
-        `;
+        banner.className = 'dictamen-banner dictamen-no-apto';
+        dictamenTexto = 'DICTAMEN: NO APTO / REQUIERE REEVALUACIÓN PREVENTIVA';
       }
+      banner.innerText = dictamenTexto;
 
-      // 4. Visual (Solo si está en los módulos permitidos o si se rindió)
-      const modulosPermitidos = sesion.modulosPermitidos || ['reactimetro', 'palancas', 'punteo'];
-      if (modulosPermitidos.includes('visual') || rVis) {
-        if (rVis && rVis.efectividad !== undefined) {
-          const okVis = (rVis.efectividad >= 80);
-          if (!okVis) todoAprobado = false;
-          tbody.innerHTML += `
-            <tr>
-              <td><strong>4. Tamizaje Visual</strong><br><small>Ishihara y Optotipo</small></td>
-              <td>Mín. 80% acierto</td>
-              <td>${rVis.efectividad}%</td>
-              <td><span class="badge-eval ${okVis ? 'eval-aprobado' : 'eval-reprobado'}">${okVis ? 'APROBADO' : 'OBSERVADO'}</span></td>
-            </tr>
-          `;
-        } else {
-          tbody.innerHTML += `
-            <tr>
-              <td><strong>4. Tamizaje Visual</strong><br><small>Ishihara y Optotipo</small></td>
-              <td>Mín. 80% acierto</td>
-              <td>-- %</td>
-              <td><span class="badge-eval eval-pendiente">PENDIENTE</span></td>
-            </tr>
-          `;
-        }
+      // Respaldo en Supabase
+      if (supabase && folio && user) {
+        supabase.from('certificados_folios').insert([{
+          folio: folio,
+          rut: user.rut,
+          nombre: user.nombre,
+          empresa: user.empresa || 'socadep ltda',
+          dictamen: dictamenTexto,
+          reactimetro_ms: rReact ? rReact.tiempo : null,
+          palancas_toques: rPal ? rPal.toques : null,
+          punteo_efectividad: rPunt ? rPunt.efectividad : null
+        }]).then(({ error }) => {
+          if (error) console.warn("Aviso Supabase:", error.message);
+        });
       }
+    }
 
-      // 5. Auditivo (Solo si está en los módulos permitidos o si se rindió)
-      if (modulosPermitidos.includes('auditivo') || rAud) {
-        if (rAud && rAud.efectividad !== undefined) {
-          const okAud = (rAud.efectividad >= 80);
-          if (!okAud) todoAprobado = false;
-          tbody.innerHTML += `
-            <tr>
-              <td><strong>5. Tamizaje Auditivo</strong><br><small>Tonos puros</small></td>
-              <td>Mín. 80% biaural</td>
-              <td>${rAud.efectividad}%</td>
-              <td><span class="badge-eval ${okAud ? 'eval-aprobado' : 'eval-reprobado'}">${okAud ? 'APROBADO' : 'OBSERVADO'}</span></td>
-            </tr>
-          `;
-        } else {
-          tbody.innerHTML += `
-            <tr>
-              <td><strong>5. Tamizaje Auditivo</strong><br><small>Tonos puros</small></td>
-              <td>Mín. 80% biaural</td>
-              <td>-- %</td>
-              <td><span class="badge-eval eval-pendiente">PENDIENTE</span></td>
-            </tr>
-          `;
-        }
-      }
-
-      // Dictamen final
-      const dictamenBox = document.getElementById('box-dictamen');
-      if (dictamenBox) {
-        if (!todoAprobado) {
-          dictamenBox.innerText = 'DICTAMEN: NO APTO / REQUIERE PRÁCTICA';
-          dictamenBox.style.borderColor = '#f87171';
-          dictamenBox.style.color = '#f87171';
-          dictamenBox.style.background = 'rgba(248, 113, 113, 0.1)';
-        } else {
-          dictamenBox.innerText = 'DICTAMEN: APTO (CUMPLE ESTÁNDAR LEGAL)';
-          dictamenBox.style.borderColor = '#4ade80';
-          dictamenBox.style.color = '#4ade80';
-          dictamenBox.style.background = 'rgba(74, 222, 128, 0.1)';
-        }
+    function setBadge(id, aprobado) {
+      const el = document.getElementById(id);
+      if (!el) return;
+      if (aprobado) {
+        el.innerText = 'CUMPLE';
+        el.className = 'badge-estado badge-cumple';
+      } else {
+        el.innerText = 'NO CUMPLE';
+        el.className = 'badge-estado badge-falla';
       }
     }
   </script>

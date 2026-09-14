@@ -1,272 +1,303 @@
-/**
- * Sensometrika | Módulo 3: Test de Punteo (Disco de Lahy)
- * Baremos D.S. N° 170 MTT
- */
-
+/* ==========================================================================
+   TEST DE PUNTEO (DISCO DE LAHY / TAMBOR ROTATORIO) - SENSOMETRIKA
+   ========================================================================== */
 const canvas = document.getElementById('canvas-punteo');
 const ctx = canvas ? canvas.getContext('2d') : null;
-const panelEstado = document.getElementById('panel-estado');
-const btnAccion = document.getElementById('btn-accion');
-const metricaAciertos = document.getElementById('metrica-aciertos');
-const metricaFallos = document.getElementById('metrica-fallos');
-const metricaEfectividad = document.getElementById('metrica-efectividad');
-const metricaTiempo = document.getElementById('metrica-tiempo');
-const badgeModo = document.getElementById('badge-modo');
-const zonaCoordinacion = document.getElementById('zona-coordinacion-test');
 
-let modo = 'DEMO'; // 'DEMO' (15 s) u 'OFICIAL' (30 s)
-let pruebaActiva = false;
-let tiempoRestante = 15;
-let temporizador = null;
+const btnAccion = document.getElementById('btn-iniciar');
+const contenedorAccion = document.getElementById('contenedor-accion');
+const lblAciertos = document.getElementById('contador-aciertos');
+const lblFallos = document.getElementById('contador-fallos');
+const lblEfectividad = document.getElementById('porcentaje-efectividad');
+const badgeFase = document.getElementById('badge-fase');
+const txtTiempo = document.getElementById('txt-tiempo');
+const cajaTiempoCabecera = document.getElementById('caja-tiempo-cabecera');
+const panelInstruccion = document.getElementById('caja-instruccion');
+
 let animacionId = null;
+let enEjecucion = false;
+let faseActual = 'DEMO'; // 'DEMO' (15 s) | 'OFICIAL' (30 s sin reloj visible)
+let tiempoRestante = 15;
+let timerInterval = null;
 
 let aciertos = 0;
 let fallos = 0;
 let orificios = [];
-let ultimoOrificioId = 0;
 
-// Configuración de la franja dorada central
-const FRANJA = {
-  x: 140,
-  y: 40,
-  ancho: 80,
-  alto: 240
-};
+// CADENCIA Y ÁREA CALIBRADAS
+const VELOCIDAD = 2.3;
+const SEPARACION_ORIFICIOS = 135;
+const RADIO_ORIFICIO = 16;
 
-// Generador de orificios dinámicos en movimiento
-function generarOrificio() {
-  ultimoOrificioId++;
-  const radio = 14;
-  const x = FRANJA.x + Math.floor(Math.random() * (FRANJA.ancho - radio * 2)) + radio;
-  const velocidad = (modo === 'DEMO') ? 2.2 : 3.0; // Velocidad de caída
-  
-  orificios.push({
-    id: ultimoOrificioId,
-    x: x,
-    y: FRANJA.y - 20,
-    radio: radio,
-    velocidad: velocidad,
-    tocado: false
-  });
+let franjaMinX = 135;
+let franjaMaxX = 245;
+
+function recalcularGeometria() {
+  if (!canvas) return;
+  const anchoContenedor = canvas.parentElement ? canvas.parentElement.clientWidth : 380;
+  canvas.width = Math.min(380, Math.max(300, anchoContenedor));
+  canvas.height = 200;
+
+  const centro = canvas.width / 2;
+  franjaMinX = centro - 55;
+  franjaMaxX = centro + 55;
+
+  dibujarEscenario();
 }
 
-function dibujarPunteo() {
-  if (!ctx) return;
+function inicializarOrificios() {
+  orificios = [];
+  const total = 5;
+  for (let i = 0; i < total; i++) {
+    orificios.push({
+      x: canvas.width + 40 + (i * SEPARACION_ORIFICIOS),
+      y: 45 + Math.random() * (canvas.height - 90),
+      radio: RADIO_ORIFICIO,
+      tocado: false,
+      acertado: false
+    });
+  }
+}
+
+function dibujarEscenario() {
+  if (!ctx || !canvas) return;
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  // Fondo del tambor
-  ctx.fillStyle = '#0f172a';
+  // 1. Fondo del tambor
+  ctx.fillStyle = '#020617';
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-  // Franja dorada de calibración
-  ctx.strokeStyle = '#f59e0b';
-  ctx.lineWidth = 3;
-  ctx.strokeRect(FRANJA.x, FRANJA.y, FRANJA.ancho, FRANJA.alto);
+  // 2. Franja dorada de inserción reglamentaria
+  const anchoFranja = franjaMaxX - franjaMinX;
+  ctx.fillStyle = 'rgba(234, 179, 8, 0.16)';
+  ctx.fillRect(franjaMinX, 0, anchoFranja, canvas.height);
 
-  // Mover y dibujar orificios
-  ctx.fillStyle = '#94a3b8';
-  for (let i = orificios.length - 1; i >= 0; i--) {
-    const o = orificios[i];
-    o.y += o.velocidad;
+  ctx.strokeStyle = '#eab308';
+  ctx.lineWidth = 2.5;
+  ctx.setLineDash([6, 5]);
+  ctx.strokeRect(franjaMinX, 0, anchoFranja, canvas.height);
+  ctx.setLineDash([]);
 
+  // 3. Orificios móviles
+  orificios.forEach(o => {
     ctx.beginPath();
     ctx.arc(o.x, o.y, o.radio, 0, Math.PI * 2);
+
+    if (o.tocado) {
+      if (o.acertado) {
+        ctx.fillStyle = '#eab308';
+        ctx.strokeStyle = '#fef08a';
+      } else {
+        ctx.fillStyle = '#ef4444';
+        ctx.strokeStyle = '#fca5a5';
+      }
+    } else {
+      ctx.fillStyle = '#10b981';
+      ctx.strokeStyle = '#d1fae5';
+    }
+
     ctx.fill();
+    ctx.lineWidth = 2.5;
+    ctx.stroke();
 
-    // Si sale de la franja sin ser tocado, cuenta como fallo
-    if (o.y - o.radio > FRANJA.y + FRANJA.alto) {
-      if (!o.tocado && pruebaActiva) {
+    ctx.beginPath();
+    ctx.arc(o.x, o.y, 4, 0, Math.PI * 2);
+    ctx.fillStyle = '#ffffff';
+    ctx.fill();
+  });
+}
+
+function actualizarFisica() {
+  orificios.forEach(o => {
+    o.x -= VELOCIDAD;
+
+    if (o.x + o.radio < 0) {
+      if (!o.tocado && enEjecucion) {
         fallos++;
-        actualizarMetricas();
+        actualizarMarcadores();
       }
-      orificios.splice(i, 1);
-    }
-  }
 
-  if (pruebaActiva) {
-    // Frecuencia estocástica de caída de orificios
-    if (Math.random() < 0.04) {
-      generarOrificio();
-    }
-    animacionId = requestAnimationFrame(dibujarPunteo);
-  }
-}
+      let maxX = canvas.width;
+      orificios.forEach(otro => {
+        if (otro.x > maxX) maxX = otro.x;
+      });
 
-function actualizarMetricas() {
-  const total = aciertos + fallos;
-  const efectividad = total > 0 ? Math.round((aciertos / total) * 100) : 0;
-  
-  if (metricaAciertos) metricaAciertos.innerText = aciertos;
-  if (metricaFallos) metricaFallos.innerText = fallos;
-  if (metricaEfectividad) metricaEfectividad.innerText = `${efectividad}%`;
-}
-
-// Detección de toque en pantalla / clic sobre el orificio
-if (canvas) {
-  canvas.addEventListener('pointerdown', (e) => {
-    if (!pruebaActiva) return;
-    e.preventDefault();
-
-    const rect = canvas.getBoundingClientRect();
-    const touchX = e.clientX - rect.left;
-    const touchY = e.clientY - rect.top;
-
-    let impacto = false;
-    for (let i = 0; i < orificios.length; i++) {
-      const o = orificios[i];
-      const dist = Math.hypot(touchX - o.x, touchY - o.y);
-
-      // Si el toque cae dentro del radio del orificio dentro de la franja dorada
-      if (dist <= o.radio + 8 && !o.tocado) {
-        if (o.y >= FRANJA.y && o.y <= FRANJA.y + FRANJA.alto) {
-          o.tocado = true;
-          aciertos++;
-          impacto = true;
-          if ('vibrate' in navigator) navigator.vibrate(30);
-          orificios.splice(i, 1);
-          break;
-        }
-      }
-    }
-
-    if (!impacto) {
-      fallos++;
-    }
-    actualizarMetricas();
-  });
-}
-
-if (btnAccion) {
-  btnAccion.addEventListener('pointerdown', (e) => {
-    e.preventDefault();
-    if (!pruebaActiva && modo === 'DEMO') {
-      iniciarDemo();
-    } else if (!pruebaActiva && modo === 'OFICIAL') {
-      iniciarOficial();
+      o.x = maxX + SEPARACION_ORIFICIOS;
+      o.y = 45 + Math.random() * (canvas.height - 90);
+      o.tocado = false;
+      o.acertado = false;
     }
   });
 }
 
-function iniciarDemo() {
-  pruebaActiva = true;
-  tiempoRestante = 15;
-  aciertos = 0;
-  fallos = 0;
-  orificios = [];
-  actualizarMetricas();
+function bucleAnimacion() {
+  if (!enEjecucion) return;
+  actualizarFisica();
+  dibujarEscenario();
+  animacionId = requestAnimationFrame(bucleAnimacion);
+}
 
-  btnAccion.style.display = 'none';
-  panelEstado.innerText = 'Presiona los círculos únicamente dentro del marco dorado';
-  panelEstado.style.color = '#38bdf8';
+function registrarImpacto(clientX, clientY) {
+  if (!enEjecucion) return;
 
-  dibujarPunteo();
+  const rect = canvas.getBoundingClientRect();
+  const x = clientX - rect.left;
+  const y = clientY - rect.top;
 
-  temporizador = setInterval(() => {
-    tiempoRestante--;
-    if (metricaTiempo) metricaTiempo.innerText = `${tiempoRestante} s`;
+  let impactoRegistrado = false;
 
-    if (tiempoRestante <= 0) {
-      clearInterval(temporizador);
-      pruebaActiva = false;
-      cancelAnimationFrame(animacionId);
-      finalizarDemo();
+  orificios.forEach(o => {
+    const dist = Math.hypot(x - o.x, y - o.y);
+    if (dist <= o.radio + 12 && !o.tocado) {
+      impactoRegistrado = true;
+      o.tocado = true;
+
+      if (o.x >= franjaMinX && o.x <= franjaMaxX) {
+        aciertos++;
+        o.acertado = true;
+        if ('vibrate' in navigator) navigator.vibrate(25);
+      } else {
+        fallos++;
+        o.acertado = false;
+      }
     }
-  }, 1000);
-}
+  });
 
-function finalizarDemo() {
-  modo = 'OFICIAL';
-  panelEstado.innerText = 'Calibración lista. Presiona el botón verde para la Evaluación Oficial.';
-  panelEstado.style.color = '#4ade80';
-
-  btnAccion.style.display = 'block';
-  btnAccion.innerText = 'Iniciar Evaluación Oficial (30 s)';
-  btnAccion.style.backgroundColor = '#22c55e';
-}
-
-function iniciarOficial() {
-  pruebaActiva = true;
-  tiempoRestante = 30;
-  aciertos = 0;
-  fallos = 0;
-  orificios = [];
-  actualizarMetricas();
-
-  if (badgeModo) {
-    badgeModo.innerText = '🔴 Evaluación Oficial D.S. N° 170';
-    badgeModo.style.color = '#38bdf8';
+  if (!impactoRegistrado) {
+    fallos++;
   }
 
-  btnAccion.style.display = 'none';
-  panelEstado.innerText = 'Evaluación Oficial en curso...';
-  panelEstado.style.color = '#38bdf8';
+  actualizarMarcadores();
+}
 
-  dibujarPunteo();
+function actualizarMarcadores() {
+  const total = aciertos + fallos;
+  const ef = total > 0 ? Math.round((aciertos / total) * 100) : 0;
+  if (lblAciertos) lblAciertos.innerText = aciertos;
+  if (lblFallos) lblFallos.innerText = fallos;
+  if (lblEfectividad) lblEfectividad.innerText = `${ef} %`;
+}
 
-  temporizador = setInterval(() => {
+function iniciarFase() {
+  if (enEjecucion) return;
+  enEjecucion = true;
+  aciertos = 0;
+  fallos = 0;
+  actualizarMarcadores();
+
+  tiempoRestante = (faseActual === 'DEMO') ? 15 : 30;
+
+  if (faseActual === 'DEMO') {
+    if (txtTiempo) txtTiempo.innerText = `${tiempoRestante} s`;
+    if (btnAccion) {
+      btnAccion.disabled = true;
+      btnAccion.innerText = `Calibrando... (${tiempoRestante} s)`;
+    }
+  } else {
+    // EN EXAMEN OFICIAL: CRONÓMETRO OCULTO
+    if (cajaTiempoCabecera) cajaTiempoCabecera.innerHTML = '<strong>Evaluación Activa</strong>';
+    if (btnAccion) {
+      btnAccion.disabled = true;
+      btnAccion.innerText = 'Evaluando...';
+    }
+  }
+
+  inicializarOrificios();
+  bucleAnimacion();
+
+  timerInterval = setInterval(() => {
     tiempoRestante--;
-    if (metricaTiempo) metricaTiempo.innerText = `${tiempoRestante} s`;
+
+    // Solo actualiza el texto de tiempo visible si es fase DEMO
+    if (faseActual === 'DEMO') {
+      if (txtTiempo) txtTiempo.innerText = `${tiempoRestante} s`;
+      if (btnAccion) btnAccion.innerText = `Calibrando... (${tiempoRestante} s)`;
+    }
 
     if (tiempoRestante <= 0) {
-      clearInterval(temporizador);
-      pruebaActiva = false;
-      cancelAnimationFrame(animacionId);
-      finalizarPruebaOficial();
+      finalizarFase();
     }
   }, 1000);
 }
 
-function finalizarPruebaOficial() {
+function finalizarFase() {
+  clearInterval(timerInterval);
+  cancelAnimationFrame(animacionId);
+  enEjecucion = false;
+
   const total = aciertos + fallos;
-  const efectividad = total > 0 ? Math.round((aciertos / total) * 100) : 0;
-  const aprobado = (efectividad >= 80);
+  const ef = total > 0 ? Math.round((aciertos / total) * 100) : 0;
 
-  // 1. Guardar resultado para el informe consolidado
-  localStorage.setItem('sensometrika_punteo', JSON.stringify({
-    efectividad: efectividad,
-    aciertos: aciertos,
-    fallos: fallos,
-    aprobado: aprobado
-  }));
+  if (faseActual === 'DEMO') {
+    faseActual = 'OFICIAL';
+    badgeFase.innerText = '🔴 Modo Oficial D.S. N° 170 (Calificatorio)';
+    badgeFase.style.borderColor = '#ef4444';
 
-  // 2. Comprobar permisos del plan adquirido
+    // Se retira el cronómetro de 30 seg de la cabecera
+    if (cajaTiempoCabecera) cajaTiempoCabecera.innerHTML = '<strong>Evaluación Activa</strong>';
+
+    panelInstruccion.innerHTML = '✅ <strong>Demo finalizado.</strong> Ahora comienza la evaluación reglamentaria.';
+
+    if (btnAccion) {
+      btnAccion.disabled = false;
+      btnAccion.innerText = 'Iniciar Evaluación Oficial';
+      btnAccion.style.backgroundColor = '#16a34a';
+    }
+  } else {
+    // Fin de evaluación oficial
+    const aprobado = ef >= 80;
+    localStorage.setItem('sensometrika_punteo', JSON.stringify({
+      efectividad: ef,
+      aciertos: aciertos,
+      fallos: fallos,
+      aprobado: aprobado,
+      fecha: new Date().toISOString()
+    }));
+
+    mostrarBotonContinuar(ef, aprobado);
+  }
+}
+
+function mostrarBotonContinuar(ef, aprobado) {
   const sesion = JSON.parse(localStorage.getItem('sensometrika_sesion')) || {};
-  const modulosPermitidos = sesion.modulosPermitidos || ['reactimetro', 'palancas', 'punteo'];
-  const tieneVisual = modulosPermitidos.includes('visual');
-  const tieneAuditivo = modulosPermitidos.includes('auditivo');
+  const permitidos = sesion.modulosPermitidos || ['reactimetro', 'palancas', 'punteo'];
+  const tieneVisual = permitidos.includes('visual');
 
-  // Enrutamiento dinámico según el plan:
-  let siguienteUrl = 'informe.html';
-  let textoBoton = '📊 Ver Informe y Dictamen Final';
+  const siguienteUrl = tieneVisual ? 'visual.html' : 'informe.html';
+  const textoBoton = tieneVisual ? 'Continuar a Módulo 4 (Tamizaje Visual) →' : '📋 Ver Certificado e Informe Final';
 
-  if (tieneVisual) {
-    siguienteUrl = 'visual.html';
-    textoBoton = 'Continuar a Módulo 4 (Tamizaje Visual) →';
-  } else if (tieneAuditivo) {
-    siguienteUrl = 'audicion.html';
-    textoBoton = 'Continuar a Módulo 5 (Tamizaje Auditivo) →';
-  }
-
-  const colorResultado = aprobado ? '#4ade80' : '#f87171';
-  const textoTitulo = aprobado ? '¡Módulo 3 Finalizado!' : 'Módulo 3 Finalizado (Fuera de Rango)';
-
-  if (zonaCoordinacion) {
-    zonaCoordinacion.innerHTML = `
-      <div style="background: #020617; border: 1.5px solid ${colorResultado}; border-radius: 12px; padding: 16px; margin-top: 14px; text-align: center; width: 100%; box-sizing: border-box;">
-        <h3 style="color: ${colorResultado}; margin: 0 0 6px 0; font-size: 1.05rem;">${textoTitulo}</h3>
-        <p style="color: #94a3b8; font-size: 0.82rem; margin-bottom: 14px;">
-          Efectividad registrada: <strong style="color: #ffffff;">${efectividad}%</strong> (${aciertos} aciertos)<br>
-          <span style="font-size: 0.76rem; color: ${colorResultado};">Resultado: <strong>${aprobado ? 'APROBADO' : 'NO APTO'}</strong> (Exigencia D.S. N° 170: &ge; 80%)</span>
+  if (contenedorAccion) {
+    contenedorAccion.innerHTML = `
+      <div style="background: #020617; border: 1.5px solid #38bdf8; border-radius: 10px; padding: 14px; text-align: center; margin-top: 6px;">
+        <h3 style="color: ${aprobado ? '#4ade80' : '#f87171'}; margin: 0 0 6px 0; font-size: 1.05rem;">
+          ${aprobado ? '✅ Módulo Superado' : '⚠️ Bajo Estándar Normativo'} (${ef}%)
+        </h3>
+        <p style="color: #94a3b8; font-size: 0.8rem; margin-bottom: 12px;">
+          Exigencia legal: Mínimo 80% de efectividad rítmica[cite: 2, 6].
         </p>
-        <div style="display: flex; flex-direction: column; gap: 8px;">
-          <a href="${siguienteUrl}" class="btn-principal" style="display: flex; justify-content: center; align-items: center; text-decoration: none; height: 46px; background-color: #0284c7; font-size: 0.95rem;">
-            ${textoBoton}
-          </a>
-          <a href="menu.html" style="color: #64748b; font-size: 0.8rem; text-decoration: none; padding: 6px;">
-            Regresar al Menú Principal
-          </a>
-        </div>
+        <a href="${siguienteUrl}" class="btn-principal" style="display: flex; justify-content: center; align-items: center; text-decoration: none; height: 46px; background-color: #0284c7;">
+          ${textoBoton}
+        </a>
       </div>
     `;
   }
 }
+
+// Interacción con mouse y táctil
+if (canvas) {
+  canvas.addEventListener('pointerdown', (e) => {
+    e.preventDefault();
+    registrarImpacto(e.clientX, e.clientY);
+  });
+}
+
+if (btnAccion) {
+  btnAccion.addEventListener('click', iniciarFase);
+}
+
+window.addEventListener('resize', recalcularGeometria);
+document.addEventListener('DOMContentLoaded', () => {
+  recalcularGeometria();
+  inicializarOrificios();
+  dibujarEscenario();
+});
