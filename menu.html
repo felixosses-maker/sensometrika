@@ -156,7 +156,31 @@
       cursor: not-allowed !important;
     }
 
-    /* RECUADRO OBLIGATORIO DE FIRMA PREVIO A EMITIR INFORME */
+    /* BOTÓN DIRECTO PARA B2C (SIN FIRMA) */
+    .caja-cierre-b2c {
+      display: none;
+      margin-top: 16px;
+    }
+    .btn-ver-informe-b2c {
+      width: 100%;
+      height: 48px;
+      line-height: 48px;
+      background: #0284c7;
+      color: #ffffff;
+      border: none;
+      border-radius: 8px;
+      font-weight: 800;
+      font-size: 0.95rem;
+      text-align: center;
+      text-decoration: none;
+      display: block;
+      transition: background 0.2s;
+    }
+    .btn-ver-informe-b2c:hover {
+      background: #0369a1;
+    }
+
+    /* RECUADRO DE FIRMA OBLIGATORIA (SOLO PARA B2B EMPRESA) */
     .caja-firma-previa {
       background: #0f172a;
       border: 2px dashed #0284c7;
@@ -233,11 +257,11 @@
       </div>
     </section>
 
-    <!-- CONSENTIMIENTO -->
+    <!-- CONSENTIMIENTO INFORMADO -->
     <div class="caja-consentimiento-menu" id="box-consent-menu">
       <input type="checkbox" id="chk-consent-menu">
       <label for="chk-consent-menu">
-        <strong>Consentimiento Informado:</strong> Declaro rendir estas evaluaciones de forma personal conforme a la Ley N° 18.290 y el D.S. N° 170.
+        <strong>Consentimiento Informado:</strong> Declaro rendir estas evaluaciones de forma personal conforme a la Ley N° 18.290 y el D.S. N° 170[cite: 1, 3].
       </label>
     </div>
 
@@ -284,7 +308,14 @@
       </a>
     </section>
 
-    <!-- RECUADRO DE FIRMA PREVIO A EMITIR INFORME (SE ACTIVA AL TERMINAR LOS MÓDULOS) -->
+    <!-- FLUJO B2C: BOTÓN DIRECTO AL INFORME (SIN RECUADRO DE FIRMA) -->
+    <div class="caja-cierre-b2c" id="bloque-cierre-b2c">
+      <a href="informe.html" class="btn-ver-informe-b2c">
+        📋 Ver Informe de Resultados en Pantalla →
+      </a>
+    </div>
+
+    <!-- FLUJO B2B: RECUADRO DE FIRMA OBLIGATORIO (SOLO EMPRESAS) -->
     <section class="caja-firma-previa" id="bloque-firma-previa">
       <p>✍️ EVALUACIONES COMPLETADAS: DIBUJE SU FIRMA PARA VALIDAR Y EMITIR EL INFORME</p>
       <canvas id="canvas-firma-menu" width="340" height="90"></canvas>
@@ -292,24 +323,29 @@
         <button type="button" class="btn-limpiar" onclick="limpiarFirmaMenu()">Borrar / Reintentar</button>
       </div>
       <button type="button" id="btn-cerrar-y-emitir" class="btn-finalizar-proceso" disabled onclick="finalizarYEmitir()">
-        🔒 Validar Firma y Generar Informe Formal
+        🔒 Validar Firma y Generar Certificado Formal
       </button>
     </section>
   </main>
 
   <script>
     let firmaTrazada = false;
+    let esEmpresa = false;
 
     document.addEventListener('DOMContentLoaded', () => {
       const sesion = JSON.parse(localStorage.getItem('sensometrika_sesion')) || {
         rol: 'particular',
-        nombrePlan: 'Evaluación Psicomotriz DS 170',
+        nombrePlan: 'Plan Básico Psicomotriz',
         modulosPermitidos: ['reactimetro', 'palancas', 'punteo']
       };
       const datosUser = JSON.parse(localStorage.getItem('sensometrika_datos_usuario')) || {};
       const planEmpresa = JSON.parse(localStorage.getItem('sensometrika_plan_empresa')) || {};
 
-      document.getElementById('lbl-nombre-plan').innerText = sesion.nombrePlan || 'Plan Activo';
+      // Determinación estricta de segmento B2B frente a B2C
+      esEmpresa = (sesion.rol === 'empresa') && 
+                  (datosUser.empresa && datosUser.empresa.toLowerCase() !== 'particular');
+
+      document.getElementById('lbl-nombre-plan').innerText = sesion.nombrePlan || 'Plan Básico Psicomotriz';
 
       const inNombre = document.getElementById('in-nombre');
       const inRut = document.getElementById('in-rut');
@@ -319,9 +355,8 @@
       const cajaIdentidad = document.getElementById('caja-identidad');
       const chkConsent = document.getElementById('chk-consent-menu');
 
-      const esB2C = sesion.rol === 'particular' || !sesion.rol;
-
-      if (esB2C) {
+      if (!esEmpresa) {
+        // MODO B2C: Titular individual precargado
         tituloFicha.innerText = '👤 DATOS DEL TITULAR';
         cajaIdentidad.classList.add('bloqueada');
         cajaEmpresa.style.display = 'none';
@@ -332,9 +367,10 @@
         inRut.setAttribute('readonly', 'true');
         chkConsent.checked = true;
       } else {
+        // MODO B2B: Ficha del trabajador corporativo
         tituloFicha.innerText = '🏢 TRABAJADOR A EVALUAR (EMPRESA)';
         cajaEmpresa.style.display = 'flex';
-        inEmpresa.value = sesion.razonSocial || planEmpresa.razonSocial || 'socadep ltda';
+        inEmpresa.value = sesion.razonSocial || planEmpresa.razonSocial || 'Empresa Faena';
 
         if (datosUser.nombre) inNombre.value = datosUser.nombre;
         if (datosUser.rut) inRut.value = datosUser.rut;
@@ -356,7 +392,9 @@
       chkConsent.addEventListener('change', actualizarEstadoModulos);
 
       actualizarEstadoModulos();
-      iniciarPadFirmaMenu();
+      if (esEmpresa) {
+        iniciarPadFirmaMenu();
+      }
     });
 
     function actualizarEstadoModulos() {
@@ -414,12 +452,23 @@
         }
       });
 
-      // Si completó todos los módulos de su plan, activar bloque de firma
-      const bloqueFirma = document.getElementById('bloque-firma-previa');
+      const bloqueFirmaB2B = document.getElementById('bloque-firma-previa');
+      const bloqueCierreB2C = document.getElementById('bloque-cierre-b2c');
+
+      // Si concluyó todos los módulos de su plan:
       if (todosRendidos) {
-        bloqueFirma.style.display = 'block';
+        if (esEmpresa) {
+          // B2B: Requiere firma digital
+          bloqueFirmaB2B.style.display = 'block';
+          bloqueCierreB2C.style.display = 'none';
+        } else {
+          // B2C: NO MUESTRA RECUADRO DE FIRMA, va directo al informe en pantalla
+          bloqueFirmaB2B.style.display = 'none';
+          bloqueCierreB2C.style.display = 'block';
+        }
       } else {
-        bloqueFirma.style.display = 'none';
+        bloqueFirmaB2B.style.display = 'none';
+        bloqueCierreB2C.style.display = 'none';
       }
     }
 
@@ -483,7 +532,7 @@
 
     function finalizarYEmitir() {
       if (!firmaTrazada) {
-        alert('Debe firmar en el recuadro antes de generar el informe.');
+        alert('Debe firmar en el recuadro antes de generar el certificado.');
         return;
       }
       const canvas = document.getElementById('canvas-firma-menu');
