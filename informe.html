@@ -3,9 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Sensometrika | Informe de Evaluación</title>
+  <title>Sensometrika | Certificado Oficial de Evaluación</title>
   <link rel="stylesheet" href="styles.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     body {
       background-color: #0b1120;
@@ -22,7 +23,6 @@
       max-width: 620px;
     }
 
-    /* TARJETA DEL INFORME */
     .hoja-informe {
       background: #ffffff;
       color: #0f172a;
@@ -32,7 +32,6 @@
       box-sizing: border-box;
     }
 
-    /* MEMBRETE */
     .membrete-cabecera {
       display: flex;
       justify-content: space-between;
@@ -45,10 +44,11 @@
       display: flex;
       align-items: center;
       gap: 12px;
+      max-width: calc(100% - 90px);
     }
     .marca-box svg {
-      width: 44px;
-      height: 44px;
+      width: 46px;
+      height: 46px;
       flex-shrink: 0;
     }
     .marca-texto h2 {
@@ -67,7 +67,30 @@
       letter-spacing: 0.5px;
     }
 
-    /* BANNER B2C: CONFIRMACIÓN DE ENVÍO AL CORREO */
+    .caja-qr-header {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 4px;
+      background: #ffffff;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      min-width: 74px;
+      min-height: 84px;
+    }
+    #qr-impreso {
+      width: 68px;
+      height: 68px;
+    }
+    .caja-qr-header span {
+      font-size: 0.6rem;
+      font-weight: 800;
+      color: #64748b;
+      margin-top: 3px;
+      letter-spacing: 0.5px;
+    }
+
     .aviso-despacho-b2c {
       background: rgba(34, 197, 94, 0.08);
       border: 1px solid #22c55e;
@@ -82,8 +105,6 @@
       gap: 10px;
       box-sizing: border-box;
     }
-
-    /* BANNER B2B: COPIA CORPORATIVA */
     .aviso-despacho-b2b {
       background: rgba(2, 132, 199, 0.08);
       border: 1px solid #0284c7;
@@ -99,7 +120,6 @@
       box-sizing: border-box;
     }
 
-    /* FICHA FILIACIÓN */
     .ficha-filiacion {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -115,7 +135,6 @@
     .ficha-filiacion span { color: #475569; }
     .ficha-filiacion strong { color: #0f172a; }
 
-    /* DICTAMEN */
     .dictamen-banner {
       width: 100%;
       padding: 10px;
@@ -143,7 +162,6 @@
       color: #b91c1c;
     }
 
-    /* TABLA RESULTADOS */
     .tabla-informe {
       width: 100%;
       border-collapse: collapse;
@@ -172,7 +190,6 @@
     .badge-falla { background: #fee2e2; color: #b91c1c; border: 1px solid #fca5a5; }
     .badge-pendiente { background: #fef3c7; color: #b45309; border: 1px solid #fde68a; }
 
-    /* TIPS DE RENDIMIENTO (SOLO B2C EN PANTALLA) */
     .caja-tips-b2c {
       background: #f8fafc;
       border: 1.5px dashed #0284c7;
@@ -183,9 +200,7 @@
       line-height: 1.45;
       color: #334155;
     }
-    .caja-tips-b2c strong { color: #0284c7; }
 
-    /* SECCIÓN DE FIRMAS (EXCLUSIVA B2B) */
     .seccion-firmas {
       display: none;
       justify-content: space-between;
@@ -216,7 +231,6 @@
     .caja-firma strong { font-size: 0.78rem; color: #0f172a; }
     .caja-firma span { font-size: 0.7rem; color: #475569; }
 
-    /* CLÁUSULA TÉCNICA */
     .pie-legal {
       margin-top: 14px;
       border-top: 1px solid #e2e8f0;
@@ -227,7 +241,6 @@
       text-align: justify;
     }
 
-    /* BOTONES */
     .btn-volver-menu {
       height: 46px;
       line-height: 46px;
@@ -242,10 +255,6 @@
       box-sizing: border-box;
       display: block;
       margin-top: 16px;
-      transition: background 0.2s;
-    }
-    .btn-volver-menu:hover {
-      background: #0369a1;
     }
     .btn-descargar-b2b {
       display: none;
@@ -259,6 +268,12 @@
       cursor: pointer;
       width: 100%;
       margin-top: 10px;
+    }
+
+    @media print {
+      body { background: #ffffff !important; padding: 0 !important; }
+      .hoja-informe { box-shadow: none !important; padding: 0 !important; border-radius: 0 !important; }
+      .aviso-despacho-b2c, .aviso-despacho-b2b, .btn-volver-menu, .btn-descargar-b2b, .caja-tips-b2c { display: none !important; }
     }
   </style>
 </head>
@@ -280,30 +295,34 @@
           </svg>
           <div class="marca-texto">
             <h2>SENSOMETRIKA SpA</h2>
-            <p id="lbl-subtitulo-membrete">Evaluación Sensotécnica Preventiva • D.S. N° 170</p>
+            <p>Gabinete Sensotécnico Laboral • D.S. N° 170 MTT</p>
           </div>
         </div>
-        <div id="qr-impreso" style="padding: 2px; background: #fff;"></div>
+        
+        <div class="caja-qr-header">
+          <div id="qr-impreso"></div>
+          <span>VERIFICACIÓN</span>
+        </div>
       </section>
 
-      <!-- NOTIFICACIÓN EXCLUSIVA B2C: ENVÍO AL CORREO -->
+      <!-- NOTIFICACIÓN B2C -->
       <div class="aviso-despacho-b2c" id="banner-b2c">
         <span style="font-size: 1.3rem;">📬</span>
         <div>
-          <strong>Informe General Generado con Éxito:</strong><br>
-          Se remitió una copia de respaldo a: <u id="txt-correo-b2c">correo@registrado.cl</u>
+          <strong>Informe General Emitido:</strong><br>
+          Copia de respaldo enviada a: <u id="txt-correo-b2c">--</u>
         </div>
       </div>
 
-      <!-- NOTIFICACIÓN EXCLUSIVA B2B: DESPACHO A LA EMPRESA (OCULTO EN B2C) -->
+      <!-- NOTIFICACIÓN B2B -->
       <div class="aviso-despacho-b2b" id="banner-b2b">
         <span style="font-size: 1.3rem;">🏢</span>
         <div>
-          <strong>Copia Oficial Emitida:</strong> Certificado formal notificado automáticamente al supervisor registrado (<span id="txt-correo-b2b">--</span>).
+          <strong>Copia Oficial Emitida:</strong> Certificado formal notificado al supervisor (<span id="txt-correo-b2b">--</span>).
         </div>
       </div>
 
-      <!-- FICHA DE FILIACIÓN -->
+      <!-- FILIACIÓN -->
       <section class="ficha-filiacion">
         <div><span>Evaluado:</span> <strong id="rep-nombre">--</strong></div>
         <div><span>RUT:</span> <strong id="rep-rut">--</strong></div>
@@ -315,7 +334,7 @@
 
       <!-- DICTAMEN -->
       <div class="dictamen-banner dictamen-incompleto" id="box-dictamen">
-        DICTAMEN EN ESPERA: EVALUACIÓN INCOMPLETA / MÓDULOS PENDIENTES
+        DICTAMEN EN ESPERA: EVALUACIÓN INCOMPLETA
       </div>
 
       <!-- TABLA DE RESULTADOS -->
@@ -362,17 +381,17 @@
         </tbody>
       </table>
 
-      <!-- TIPS MOTRICES PREVENTIVOS (VISIBLE EN PANTALLA PARA B2C) -->
+      <!-- TIPS B2C -->
       <section class="caja-tips-b2c" id="bloque-tips-b2c">
-        <strong>💡 Consejos Técnicos de Rendimiento:</strong>
+        <strong>💡 Recomendaciones Técnicas Preventivas:</strong>
         <div style="margin-top: 4px;">
-          • <strong>Freno de Emergencia:</strong> En Clase B el umbral legal es ≤ 450 ms. Mantén la calma para evitar anticipaciones antes de la luz roja.<br>
-          • <strong>Coordinación Bimanual:</strong> Disocia ambas manos de manera suave. Tienes 60 s completos, prioriza el pulso sobre la velocidad[cite: 1].<br>
-          • <strong>Ritmo y Punteo:</strong> Focaliza el toque exclusivamente dentro de la franja dorada central[cite: 1].
+          • <strong>Frenado:</strong> Mantén la distancia adecuada y evita anticipaciones impulsivas ante el semáforo.<br>
+          • <strong>Coordinación:</strong> La prueba evalúa disociación de ambas manos; prioriza precisión sobre velocidad.<br>
+          • <strong>Ritmo:</strong> En el punteo continuo, focaliza el impacto en el centro de la franja dorada.
         </div>
       </section>
 
-      <!-- FIRMAS (EXCLUSIVAS B2B, OCULTAS EN B2C) -->
+      <!-- FIRMAS B2B -->
       <section class="seccion-firmas" id="bloque-firmas-b2b">
         <div class="caja-firma">
           <div style="height: 48px; display: flex; align-items: flex-end; justify-content: center; width: 100%;">
@@ -392,42 +411,36 @@
         </div>
       </section>
 
-      <!-- CLÁUSULA LEGAL -->
       <footer class="pie-legal">
-        <strong>Cláusula de Responsabilidad Técnica:</strong> Documento electrónico emitido conforme a los requerimientos técnicos de la Ley de Tránsito N° 18.290 y el D.S. N° 170 del Ministerio de Transportes y Telecomunicaciones (MTT)[cite: 1, 3]. Las mediciones reflejan la latencia psicomotriz, coordinación y tamizajes sensoriales ejecutados en simulador acreditado[cite: 1, 3].
+        <strong>Cláusula de Responsabilidad Técnica:</strong> Documento electrónico emitido conforme a los requerimientos técnicos de la Ley de Tránsito N° 18.290 y el D.S. N° 170 MTT[cite: 1, 3]. Autenticidad contrastable mediante código QR en línea.
       </footer>
     </div>
 
     <!-- BOTONES -->
     <a href="menu.html" class="btn-volver-menu">← Volver al Menú Principal</a>
-    <button id="btn-descargar-b2b" onclick="window.print()" class="btn-descargar-b2b">🖨️ Descargar Certificado Formal para Faena (PDF)</button>
+    <button id="btn-descargar-b2b" onclick="window.print()" class="btn-descargar-b2b">🖨️ Descargar Certificado Formal (PDF)</button>
   </main>
 
   <script>
+    const SUPABASE_URL = 'https://kytuewhkhshrjddzoknv.supabase.co';
+    const SUPABASE_ANON_KEY = 'sb_publishable_ou-yRIieMQOGoWJ4YZIYtg_-Lusc711';
+    const supabase = (window.supabase && typeof window.supabase.createClient === 'function') 
+      ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) 
+      : null;
+
     document.addEventListener('DOMContentLoaded', () => {
+      // 1. Carga síncrona segura de datos locales
       const sesion = JSON.parse(localStorage.getItem('sensometrika_sesion')) || {};
       const user = JSON.parse(localStorage.getItem('sensometrika_datos_usuario')) || {};
       const emp = JSON.parse(localStorage.getItem('sensometrika_plan_empresa')) || {};
 
-      // Determinación estricta de B2B
-      // Si el rol es particular o el usuario tiene empresa 'Particular', ES B2C
       const esEmpresa = (sesion.rol === 'empresa') && 
                         (user.empresa && user.empresa.toLowerCase() !== 'particular');
 
-      // Elementos del DOM
-      const bannerB2C = document.getElementById('banner-b2c');
-      const bannerB2B = document.getElementById('banner-b2b');
-      const rowEmpresa = document.getElementById('row-empresa');
-      const repRegimen = document.getElementById('rep-regimen');
-      const estandarReact = document.getElementById('estandar-reactimetro');
-      const bloqueFirmas = document.getElementById('bloque-firmas-b2b');
-      const bloqueTips = document.getElementById('bloque-tips-b2c');
-      const btnDescarga = document.getElementById('btn-descargar-b2b');
-
-      // Filiación
-      const nombreEvaluado = user.nombre || 'FELIX OSSES MARTINEZ';
-      const rutEvaluado = user.rut || '13.741.882-7';
-      const correoEvaluado = user.correo || sesion.correoInforme || 'felix.osses@gmail.com';
+      // Si no vienen nombres, tomar los del plan registrado o titular
+      const nombreEvaluado = user.nombre || sesion.nombre || 'Evaluado Sensometrika';
+      const rutEvaluado = user.rut || sesion.rut || '12.345.678-9';
+      const correoEvaluado = user.correo || sesion.correoInforme || emp.correoInformes || 'contacto@sensometrika.cl';
 
       document.getElementById('rep-nombre').innerText = nombreEvaluado.toUpperCase();
       document.getElementById('rep-rut').innerText = rutEvaluado;
@@ -435,43 +448,36 @@
       const ahora = new Date();
       document.getElementById('rep-fecha').innerText = ahora.toLocaleDateString('es-CL') + ', ' + ahora.toLocaleTimeString('es-CL');
 
+      // Folio consistente
       const folio = 'SMK-' + Math.floor(100000 + Math.random() * 900000);
       document.getElementById('rep-folio').innerText = folio;
 
+      // Adaptación de interfaz B2B vs B2C
       if (!esEmpresa) {
-        // MODO B2C: SOLO INFORME GENERAL EN PANTALLA
-        bannerB2C.style.display = 'flex';
-        bannerB2B.style.display = 'none';
+        document.getElementById('banner-b2c').style.display = 'flex';
+        document.getElementById('banner-b2b').style.display = 'none';
         document.getElementById('txt-correo-b2c').innerText = correoEvaluado;
-
-        rowEmpresa.style.display = 'none';
-        repRegimen.innerText = 'Particular (Clase B)';
-        estandarReact.innerText = '≤ 450 ms (Clase B)';
-
-        // Ocultar firmas corporativas y botón de descarga PDF
-        bloqueFirmas.style.display = 'none';
-        btnDescarga.style.display = 'none';
-        bloqueTips.style.display = 'block';
-
+        document.getElementById('row-empresa').style.display = 'none';
+        document.getElementById('rep-regimen').innerText = 'Particular (Clase B)';
+        document.getElementById('estandar-reactimetro').innerText = '≤ 450 ms (Clase B)';
+        document.getElementById('bloque-firmas-b2b').style.display = 'none';
+        document.getElementById('btn-descargar-b2b').style.display = 'none';
+        document.getElementById('bloque-tips-b2c').style.display = 'block';
       } else {
-        // MODO B2B: CERTIFICADO FORMAL CON FIRMAS Y DESCARGA
-        bannerB2C.style.display = 'none';
-        bannerB2B.style.display = 'flex';
+        document.getElementById('banner-b2c').style.display = 'none';
+        document.getElementById('banner-b2b').style.display = 'flex';
         document.getElementById('txt-correo-b2b').innerText = emp.correoInformes || sesion.correoInformes || correoEvaluado;
-
-        rowEmpresa.style.display = 'block';
+        document.getElementById('row-empresa').style.display = 'block';
         document.getElementById('rep-empresa').innerText = user.empresa || emp.razonSocial || 'Empresa Faena';
-        repRegimen.innerText = 'Faena / Clase A (Estricto)';
-        estandarReact.innerText = '≤ 350 ms (Faena / Clase A)';
-
-        bloqueFirmas.style.display = 'flex';
-        btnDescarga.style.display = 'block';
-        bloqueTips.style.display = 'none';
+        document.getElementById('rep-regimen').innerText = 'Faena / Clase A (Estricto)';
+        document.getElementById('estandar-reactimetro').innerText = '≤ 350 ms (Faena / Clase A)';
+        document.getElementById('bloque-firmas-b2b').style.display = 'flex';
+        document.getElementById('btn-descargar-b2b').style.display = 'block';
+        document.getElementById('bloque-tips-b2c').style.display = 'none';
 
         document.getElementById('print-nombre-trabajador').innerText = nombreEvaluado.toUpperCase();
         document.getElementById('print-rut-trabajador').innerText = `RUT: ${rutEvaluado}`;
-
-        document.getElementById('print-nombre-apr').innerText = emp.responsable || 'Mariela Cárcamo Fernández';
+        document.getElementById('print-nombre-apr').innerText = emp.responsable || 'Supervisión Técnica';
         document.getElementById('print-cargo-apr').innerText = emp.cargo || 'Supervisión Técnica / APR';
         document.getElementById('print-rut-apr').innerText = `RUT: ${emp.rutResponsable || '--'}`;
 
@@ -480,29 +486,33 @@
         if (firmaGuardada) {
           imgFirma.src = firmaGuardada;
           imgFirma.style.display = 'block';
-        } else {
-          imgFirma.style.display = 'none';
         }
       }
 
-      // Código QR
+      // 2. Procesar métricas y dictamen
+      const dictamenFinal = cargarMetricas(esEmpresa);
+
+      // 3. Renderizar el código QR de manera directa y síncrona
       const contenedorQR = document.getElementById('qr-impreso');
-      if (contenedorQR) {
+      if (contenedorQR && typeof QRCode !== 'undefined') {
         contenedorQR.innerHTML = '';
+        const urlValidacion = `${window.location.origin}/validar.html?folio=${folio}`;
+        
         new QRCode(contenedorQR, {
-          text: `${window.location.origin}/validar.html?folio=${folio}&rut=${encodeURIComponent(rutEvaluado)}`,
-          width: 58,
-          height: 58,
+          text: urlValidacion,
+          width: 68,
+          height: 68,
           colorDark: "#0f172a",
           colorLight: "#ffffff",
           correctLevel: QRCode.CorrectLevel.M
         });
       }
 
-      cargarResultados(esEmpresa);
+      // 4. Guardar en Supabase en segundo plano sin congelar la pantalla
+      persistirSupabaseBackground(folio, rutEvaluado, nombreEvaluado, esEmpresa ? (user.empresa || emp.razonSocial) : 'Particular', dictamenFinal);
     });
 
-    function cargarResultados(esEmpresa) {
+    function cargarMetricas(esEmpresa) {
       const rReact = JSON.parse(localStorage.getItem('sensometrika_reactimetro'));
       const rPal = JSON.parse(localStorage.getItem('sensometrika_palancas'));
       const rPunt = JSON.parse(localStorage.getItem('sensometrika_punteo'));
@@ -512,7 +522,6 @@
       let completas = 0;
       let todoAprobado = true;
 
-      // 1. Reactímetro: En B2C es <= 450 ms (por tanto 421 ms CUMPLE)
       const umbralReact = esEmpresa ? 350 : 450;
       if (rReact && rReact.tiempo !== undefined) {
         completas++;
@@ -522,7 +531,6 @@
         setBadge('badge-react', ok);
       }
 
-      // 2. Palancas
       if (rPal && rPal.toques !== undefined) {
         completas++;
         document.getElementById('res-palancas').innerText = `${rPal.toques} toques`;
@@ -531,7 +539,6 @@
         setBadge('badge-pal', ok);
       }
 
-      // 3. Punteo
       if (rPunt && rPunt.efectividad !== undefined) {
         completas++;
         document.getElementById('res-punteo').innerText = `${rPunt.efectividad} %`;
@@ -540,7 +547,6 @@
         setBadge('badge-punt', ok);
       }
 
-      // 4. Visual (si existe)
       if (rVis && rVis.efectividad !== undefined) {
         completas++;
         document.getElementById('fila-visual').style.display = 'table-row';
@@ -550,7 +556,6 @@
         setBadge('badge-vis', ok);
       }
 
-      // 5. Auditivo (si existe)
       if (rAud && rAud.efectividad !== undefined) {
         completas++;
         document.getElementById('fila-auditivo').style.display = 'table-row';
@@ -560,18 +565,20 @@
         setBadge('badge-aud', ok);
       }
 
-      // Dictamen final
       const banner = document.getElementById('box-dictamen');
+      let dictamenTexto = '';
       if (completas < 3) {
         banner.className = 'dictamen-banner dictamen-incompleto';
-        banner.innerText = 'DICTAMEN EN ESPERA: EVALUACIÓN INCOMPLETA / MÓDULOS PENDIENTES';
+        dictamenTexto = 'DICTAMEN EN ESPERA: EVALUACIÓN INCOMPLETA';
       } else if (todoAprobado) {
         banner.className = 'dictamen-banner dictamen-apto';
-        banner.innerText = 'DICTAMEN: APTO (CUMPLE ESTÁNDAR LEGAL D.S. N° 170)';
+        dictamenTexto = 'DICTAMEN: APTO (CUMPLE ESTÁNDAR LEGAL D.S. N° 170)';
       } else {
         banner.className = 'dictamen-banner dictamen-no-apto';
-        banner.innerText = 'DICTAMEN: NO APTO / REQUIERE PRÁCTICA PREVENTIVA';
+        dictamenTexto = 'DICTAMEN: NO APTO / REQUIERE PRÁCTICA PREVENTIVA';
       }
+      banner.innerText = dictamenTexto;
+      return dictamenTexto;
     }
 
     function setBadge(id, aprobado) {
@@ -584,6 +591,36 @@
         el.innerText = 'NO CUMPLE';
         el.className = 'badge-estado badge-falla';
       }
+    }
+
+    function persistirSupabaseBackground(folio, rut, nombre, empresa, dictamen) {
+      if (!supabase) return;
+      const rReact = JSON.parse(localStorage.getItem('sensometrika_reactimetro')) || {};
+      const rPal = JSON.parse(localStorage.getItem('sensometrika_palancas')) || {};
+      const rPunt = JSON.parse(localStorage.getItem('sensometrika_punteo')) || {};
+      const rVis = JSON.parse(localStorage.getItem('sensometrika_visual')) || {};
+      const rAud = JSON.parse(localStorage.getItem('sensometrika_auditivo')) || {};
+
+      supabase.from('certificados_folios').insert([{
+        folio: folio,
+        rut: rut,
+        nombre: nombre,
+        empresa: empresa,
+        dictamen: dictamen,
+        reactimetro_ms: rReact.tiempo || null,
+        palancas_toques: rPal.toques !== undefined ? rPal.toques : null,
+        punteo_efectividad: rPunt.efectividad !== undefined ? rPunt.efectividad : null,
+        visual_efectividad: rVis.efectividad !== undefined ? rVis.efectividad : null,
+        auditivo_efectividad: rAud.efectividad !== undefined ? rAud.efectividad : null
+      }]).then(({ error }) => {
+        if (error) {
+          console.warn("Aviso al guardar en Supabase:", error.message);
+        } else {
+          console.log("Folio guardado con éxito en Supabase:", folio);
+        }
+      }).catch(err => {
+        console.warn("Fallo de red Supabase:", err);
+      });
     }
   </script>
 </body>

@@ -2,293 +2,164 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Sensometrika | Verificación Oficial de Certificado</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sensometrika | Portal de Verificación Oficial</title>
   <link rel="stylesheet" href="styles.css">
-  <!-- Cliente JS de Supabase via CDN -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
-    .tarjeta-validacion {
-      width: 100%;
-      background-color: #0f172a;
-      border: 1px solid #334155;
-      border-radius: 12px;
-      padding: 20px;
+    body {
+      background-color: #0b1120;
+      color: #f1f5f9;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      margin: 0;
+      padding: 16px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
       box-sizing: border-box;
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
     }
-
-    .estado-sello {
-      padding: 12px 14px;
-      border-radius: 8px;
-      text-align: center;
-      font-weight: 800;
-      font-size: 0.95rem;
-      letter-spacing: 0.5px;
-      margin-bottom: 12px;
-    }
-
-    .valido-apto { 
-      background-color: rgba(34, 197, 94, 0.15); 
-      border: 1.5px solid #22c55e; 
-      color: #4ade80; 
-    }
-    .valido-noapto { 
-      background-color: rgba(239, 68, 68, 0.15); 
-      border: 1.5px solid #ef4444; 
-      color: #f87171; 
-    }
-    .invalido { 
-      background-color: rgba(239, 68, 68, 0.2); 
-      border: 1.5px solid #ef4444; 
-      color: #fca5a5; 
-    }
-    .cargando { 
-      background-color: rgba(2, 132, 199, 0.15); 
-      border: 1.5px solid #0284c7; 
-      color: #38bdf8; 
-    }
-
-    .fila-dato {
-      display: flex;
-      justify-content: space-between;
-      border-bottom: 1px solid #1e293b;
-      padding-bottom: 8px;
-      font-size: 0.85rem;
-    }
-
-    .fila-dato span { color: #94a3b8; }
-    .fila-dato strong { color: #f8fafc; text-align: right; }
-
-    .tabla-metricas {
+    .tarjeta-validador {
+      background: #0f172a;
+      border: 1.5px solid #334155;
+      border-radius: 14px;
+      max-width: 440px;
       width: 100%;
-      border-collapse: collapse;
-      margin-top: 8px;
-      font-size: 0.78rem;
+      padding: 24px;
+      box-sizing: border-box;
+      text-align: center;
+      box-shadow: 0 15px 35px rgba(0,0,0,0.5);
     }
-
-    .tabla-metricas th, .tabla-metricas td {
-      padding: 8px 10px;
-      border: 1px solid #334155;
-      text-align: left;
+    .tarjeta-validador h2 {
+      margin: 0;
+      color: #fff;
+      font-size: 1.3rem;
     }
-
-    .tabla-metricas th {
-      background-color: #1e293b;
+    .tarjeta-validador p.sub {
+      margin: 4px 0 16px 0;
+      font-size: 0.76rem;
+      color: #94a3b8;
+    }
+    .estado-banner {
+      border-radius: 8px;
+      padding: 12px;
+      font-weight: 800;
+      font-size: 0.88rem;
+      margin-bottom: 16px;
+      line-height: 1.4;
+    }
+    .estado-valido {
+      background: rgba(34, 197, 94, 0.12);
+      border: 1.5px solid #22c55e;
+      color: #4ade80;
+    }
+    .estado-no-valido {
+      background: rgba(239, 68, 68, 0.12);
+      border: 1.5px solid #ef4444;
+      color: #f87171;
+    }
+    .estado-cargando {
+      background: rgba(2, 132, 199, 0.12);
+      border: 1.5px solid #0284c7;
       color: #38bdf8;
     }
-
-    .badge-estado {
-      font-size: 0.7rem;
-      font-weight: 700;
-      padding: 3px 8px;
-      border-radius: 4px;
-      display: inline-block;
-      text-align: center;
+    .caja-datos {
+      background: #020617;
+      border: 1px solid #1e293b;
+      border-radius: 8px;
+      padding: 12px;
+      text-align: left;
+      font-size: 0.8rem;
+      line-height: 1.6;
+      margin-bottom: 16px;
     }
-    .badge-cumple { background-color: rgba(34, 197, 94, 0.2); color: #4ade80; border: 1px solid #22c55e; }
-    .badge-falla { background-color: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid #ef4444; }
-
-    .pie-legal {
-      font-size: 0.68rem;
-      color: #64748b;
-      text-align: justify;
-      line-height: 1.4;
-      margin-top: 10px;
-      border-top: 1px solid #1e293b;
-      padding-top: 8px;
+    .caja-datos div span { color: #64748b; }
+    .caja-datos div strong { color: #fff; }
+    .btn-portal {
+      color: #94a3b8;
+      text-decoration: none;
+      font-size: 0.8rem;
     }
   </style>
 </head>
 <body>
-  <main class="contenedor" style="max-width: 520px; margin: 0 auto; padding: 16px;">
-    <header style="text-align: center; margin-bottom: 14px;">
-      <h1 style="color: #fff; font-size: 1.3rem; margin: 0;">SENSOMETRIKA SpA</h1>
-      <p style="color: #94a3b8; font-size: 0.78rem; margin: 2px 0 0 0;">Servicio Oficial de Trazabilidad y Verificación Pública</p>
-    </header>
+  <div class="tarjeta-validador">
+    <h2>SENSOMETRIKA SpA</h2>
+    <p class="sub">Servicio Oficial de Trazabilidad y Verificación Pública</p>
 
-    <div id="caja-estado" class="estado-sello cargando">
-      CONSULTANDO REGISTRO EN SERVIDOR...
+    <div class="estado-banner estado-cargando" id="banner-estado">
+      Verificando autenticidad en base de datos...
     </div>
 
-    <section class="tarjeta-validacion" id="contenedor-resultado" style="display: none;">
-      <div class="fila-dato">
-        <span>Folio Trazabilidad:</span>
-        <strong id="res-folio">--</strong>
-      </div>
-      <div class="fila-dato">
-        <span>Postulante / Evaluado:</span>
-        <strong id="res-nombre">--</strong>
-      </div>
-      <div class="fila-dato">
-        <span>RUT:</span>
-        <strong id="res-rut">--</strong>
-      </div>
-      <div class="fila-dato">
-        <span>Razón Social / Faena:</span>
-        <strong id="res-empresa">--</strong>
-      </div>
-      <div class="fila-dato">
-        <span>Fecha de Emisión:</span>
-        <strong id="res-fecha">--</strong>
-      </div>
-      <div class="fila-dato" style="border-bottom: none;">
-        <span>Dictamen Registrado:</span>
-        <strong id="res-dictamen">--</strong>
-      </div>
+    <div class="caja-datos" id="datos-certificado" style="display: none;">
+      <div><span>Folio Registro:</span> <strong id="val-folio">--</strong></div>
+      <div><span>Evaluado:</span> <strong id="val-nombre">--</strong></div>
+      <div><span>RUT:</span> <strong id="val-rut">--</strong></div>
+      <div><span>Empresa / Entidad:</span> <strong id="val-empresa">--</strong></div>
+      <div><span>Fecha de Emisión:</span> <strong id="val-fecha">--</strong></div>
+      <div><span>Dictamen Técnico:</span> <strong id="val-dictamen" style="color: #4ade80;">--</strong></div>
+    </div>
 
-      <table class="tabla-metricas">
-        <thead>
-          <tr>
-            <th>Prueba Evaluada</th>
-            <th>Telemetría</th>
-            <th style="text-align: center;">Evaluación</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td>Reactímetro (Latencia Simple)</td>
-            <td id="res-reactimetro">-- ms</td>
-            <td style="text-align: center;"><span id="badge-res-react" class="badge-estado badge-cumple">--</span></td>
-          </tr>
-          <tr>
-            <td>Palancas (Coordinación Bimanual)</td>
-            <td id="res-palancas">-- toques</td>
-            <td style="text-align: center;"><span id="badge-res-pal" class="badge-estado badge-cumple">--</span></td>
-          </tr>
-          <tr>
-            <td>Punteo de Lahy (Precisión Visomotriz)</td>
-            <td id="res-punteo">-- %</td>
-            <td style="text-align: center;"><span id="badge-res-punt" class="badge-estado badge-cumple">--</span></td>
-          </tr>
-          <tr id="fila-res-visual" style="display: none;">
-            <td>Tamizaje Visual Preventivo</td>
-            <td id="res-visual">-- %</td>
-            <td style="text-align: center;"><span id="badge-res-vis" class="badge-estado badge-cumple">--</span></td>
-          </tr>
-          <tr id="fila-res-auditivo" style="display: none;">
-            <td>Tamizaje Auditivo Biaural</td>
-            <td id="res-auditivo">-- %</td>
-            <td style="text-align: center;"><span id="badge-res-aud" class="badge-estado badge-cumple">--</span></td>
-          </tr>
-        </tbody>
-      </table>
-
-      <div class="pie-legal">
-        <strong>Constancia de Integridad:</strong> Este registro valida que el informe digital o impreso coincide con los datos inmutables generados en la plataforma Sensometrika SpA al momento de su evaluación (D.S. N° 170 MTT).
-      </div>
-    </section>
-
-    <a href="menu.html" style="color: #94a3b8; text-decoration: none; font-size: 0.8rem; text-align: center; margin-top: 14px; display: block;">
-      ← Ir al Portal Principal
-    </a>
-  </main>
+    <a href="index.html" class="btn-portal">← Ir al Portal Principal</a>
+  </div>
 
   <script>
     const SUPABASE_URL = 'https://kytuewhkhshrjddzoknv.supabase.co';
-    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt5dHVld2hraHNocmpkZHpva252Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkxMzc4MzcsImV4cCI6MjEwNDcxMzgzN30.gNWbr8E7oF-56yKnNIDVvGIaGXfHkCCcKonWVDthp2k';
-
-    const clienteSupabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const SUPABASE_ANON_KEY = 'sb_publishable_ou-yRIieMQOGoWJ4YZIYtg_-Lusc711';
+    const supabase = (window.supabase && typeof window.supabase.createClient === 'function') 
+      ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) 
+      : null;
 
     document.addEventListener('DOMContentLoaded', async () => {
-      const boxEstado = document.getElementById('caja-estado');
-      const cardInfo = document.getElementById('contenedor-resultado');
-      const urlParams = new URLSearchParams(window.location.search);
-      const folioBuscado = urlParams.get('folio');
+      const params = new URLSearchParams(window.location.search);
+      const folioBuscado = params.get('folio');
+      const banner = document.getElementById('banner-estado');
+      const caja = document.getElementById('datos-certificado');
 
       if (!folioBuscado) {
-        boxEstado.className = 'estado-sello invalido';
-        boxEstado.innerText = 'DOCUMENTO NO VÁLIDO: FOLIO NO ESPECIFICADO';
+        banner.className = 'estado-banner estado-no-valido';
+        banner.innerText = 'NO SE ESPECIFICÓ UN FOLIO DE VERIFICACIÓN';
+        return;
+      }
+
+      if (!supabase) {
+        banner.className = 'estado-banner estado-no-valido';
+        banner.innerText = 'ERROR DE CONEXIÓN CON EL SERVIDOR DE AUDITORÍA';
         return;
       }
 
       try {
-        const { data, error } = await clienteSupabase
+        const { data, error } = await supabase
           .from('certificados_folios')
           .select('*')
           .eq('folio', folioBuscado)
-          .maybeSingle();
+          .single();
 
         if (error || !data) {
-          boxEstado.className = 'estado-sello invalido';
-          boxEstado.innerText = `DOCUMENTO NO REGISTRADO (${folioBuscado})`;
-          return;
-        }
-
-        // Llenar datos de identidad
-        document.getElementById('res-folio').innerText = data.folio;
-        document.getElementById('res-nombre').innerText = data.nombre;
-        document.getElementById('res-rut').innerText = data.rut;
-        document.getElementById('res-empresa').innerText = data.empresa || 'Particular';
-        document.getElementById('res-fecha').innerText = new Date(data.creado_el).toLocaleString('es-CL');
-
-        // Baremos normativos D.S. N° 170 (corte profesional 350 ms para empresas / 450 ms particular)
-        const esEmpresa = (data.empresa && data.empresa.toLowerCase() !== 'particular');
-        const umbralReact = esEmpresa ? 350 : 450;
-
-        const reactOk = data.reactimetro_ms !== null && data.reactimetro_ms <= umbralReact;
-        const palOk = data.palancas_toques !== null && data.palancas_toques <= 3;
-        const puntOk = data.punteo_efectividad !== null && data.punteo_efectividad >= 80;
-
-        // Mostrar valores y pintar badges
-        document.getElementById('res-reactimetro').innerText = data.reactimetro_ms ? `${data.reactimetro_ms} ms` : 'N/A';
-        asignarBadge('badge-res-react', reactOk);
-
-        document.getElementById('res-palancas').innerText = data.palancas_toques !== null ? `${data.palancas_toques} toques` : 'N/A';
-        asignarBadge('badge-res-pal', palOk);
-
-        document.getElementById('res-punteo').innerText = data.punteo_efectividad !== null ? `${data.punteo_efectividad}%` : 'N/A';
-        asignarBadge('badge-res-punt', puntOk);
-
-        if (data.visual_efectividad !== null && data.visual_efectividad !== undefined) {
-          document.getElementById('fila-res-visual').style.display = 'table-row';
-          document.getElementById('res-visual').innerText = `${data.visual_efectividad}%`;
-          asignarBadge('badge-res-vis', data.visual_efectividad >= 80);
-        }
-
-        if (data.auditivo_efectividad !== null && data.auditivo_efectividad !== undefined) {
-          document.getElementById('fila-res-auditivo').style.display = 'table-row';
-          document.getElementById('res-auditivo').innerText = `${data.auditivo_efectividad}%`;
-          asignarBadge('badge-res-aud', data.auditivo_efectividad >= 80);
-        }
-
-        // Dictamen y Sello con color condicional
-        const elDictamen = document.getElementById('res-dictamen');
-        elDictamen.innerText = data.dictamen;
-
-        const esAprobado = data.dictamen.includes('APTO') && !data.dictamen.includes('NO APTO');
-
-        if (esAprobado) {
-          boxEstado.className = 'estado-sello valido-apto';
-          boxEstado.innerText = 'DOCUMENTO VERIFICADO: APTO (CUMPLE DS N° 170)';
-          elDictamen.style.color = '#4ade80';
+          banner.className = 'estado-banner estado-no-valido';
+          banner.innerText = `DOCUMENTO NO REGISTRADO (${folioBuscado})`;
         } else {
-          boxEstado.className = 'estado-sello valido-noapto';
-          boxEstado.innerText = 'DOCUMENTO VERIFICADO: NO APTO / REQUIERE PRÁCTICA';
-          elDictamen.style.color = '#f87171';
+          banner.className = 'estado-banner estado-valido';
+          banner.innerText = `✓ CERTIFICADO OFICIAL VERIFICADO (${data.folio})`;
+
+          document.getElementById('val-folio').innerText = data.folio;
+          document.getElementById('val-nombre').innerText = data.nombre;
+          document.getElementById('val-rut').innerText = data.rut;
+          document.getElementById('val-empresa').innerText = data.empresa || 'Particular';
+          document.getElementById('val-fecha').innerText = new Date(data.created_at || Date.now()).toLocaleDateString('es-CL');
+          document.getElementById('val-dictamen').innerText = data.dictamen;
+          
+          if (data.dictamen && data.dictamen.includes('NO APTO')) {
+            document.getElementById('val-dictamen').style.color = '#f87171';
+          }
+
+          caja.style.display = 'block';
         }
-
-        cardInfo.style.display = 'flex';
-
       } catch (err) {
-        console.error("Fallo general:", err);
-        boxEstado.className = 'estado-sello invalido';
-        boxEstado.innerText = 'ERROR DE COMUNICACIÓN CON EL SERVIDOR';
+        banner.className = 'estado-banner estado-no-valido';
+        banner.innerText = 'ERROR AL CONSULTAR LA BASE DE DATOS';
       }
     });
-
-    function asignarBadge(id, cumple) {
-      const el = document.getElementById(id);
-      if (cumple) {
-        el.innerText = 'CUMPLE';
-        el.className = 'badge-estado badge-cumple';
-      } else {
-        el.innerText = 'NO CUMPLE';
-        el.className = 'badge-estado badge-falla';
-      }
-    }
   </script>
 </body>
 </html>
