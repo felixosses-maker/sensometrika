@@ -13,21 +13,21 @@
       align-items: center;
       margin-bottom: 12px;
     }
-    .btn-retorno {
+    .barra-superior a {
       color: #94a3b8;
       text-decoration: none;
       font-size: 0.85rem;
       font-weight: 600;
     }
-    .btn-ayuda-test {
-      background: #1e293b;
-      border: 1px solid #38bdf8;
+    .btn-ayuda {
+      background: transparent;
+      border: 1px solid #0284c7;
       color: #38bdf8;
       padding: 4px 10px;
       border-radius: 6px;
       font-size: 0.78rem;
-      font-weight: 700;
       cursor: pointer;
+      font-weight: 600;
     }
     .barra-calibracion {
       background: #0f172a;
@@ -44,38 +44,50 @@
       box-sizing: border-box;
     }
     .panel-resultados {
+      width: 100%;
       display: grid;
       grid-template-columns: repeat(3, 1fr);
       gap: 8px;
-      width: 100%;
-      margin-bottom: 8px;
+      margin-bottom: 10px;
     }
     .tarjeta-metrica {
-      background: #0f172a;
+      background-color: #0f172a;
       border: 1px solid #334155;
       padding: 8px 4px;
       border-radius: 8px;
       text-align: center;
     }
-    .tarjeta-metrica span { font-size: 0.68rem; color: #94a3b8; display: block; }
-    .tarjeta-metrica strong { font-size: 0.95rem; }
+    .tarjeta-metrica span { display: block; font-size: 0.68rem; color: #94a3b8; }
+    .tarjeta-metrica strong { font-size: 0.95rem; color: #38bdf8; }
 
+    .canvas-palancas-caja {
+      position: relative;
+      width: 100%;
+      max-width: 340px;
+      display: flex;
+      justify-content: center;
+      margin: 4px 0;
+    }
     #lienzo-palancas {
-      background: #020617;
-      border: 3px solid #334155;
+      background-color: #020617;
+      border: 2px solid #334155;
       border-radius: 12px;
       touch-action: none;
     }
-
-    /* Controles Bimanuales Disociados */
-    .caja-mandos-bimanuales {
+    .instruccion-caja {
+      font-size: 0.78rem;
+      color: #94a3b8;
+      text-align: center;
+      margin: 6px 0;
+    }
+    .panel-mandos {
       width: 100%;
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 12px;
-      margin-top: 10px;
+      gap: 10px;
+      margin-top: 8px;
     }
-    .grupo-mando {
+    .caja-mando {
       background: #0f172a;
       border: 1px solid #334155;
       border-radius: 10px;
@@ -85,123 +97,88 @@
       align-items: center;
       gap: 6px;
     }
-    .btn-mando {
+    .caja-mando span {
+      font-size: 0.68rem;
+      color: #94a3b8;
+      font-weight: 600;
+    }
+    .fila-botones {
+      display: flex;
+      gap: 6px;
       width: 100%;
-      height: 44px;
+    }
+    .btn-control {
+      flex: 1;
+      height: 42px;
       background: #1e293b;
-      border: 1.5px solid #475569;
+      border: 1px solid #475569;
       color: #ffffff;
       border-radius: 8px;
-      font-size: 1.1rem;
-      font-weight: bold;
-      touch-action: manipulation;
+      font-size: 0.85rem;
+      font-weight: 700;
       cursor: pointer;
+      touch-action: manipulation;
     }
-    .btn-mando:active {
+    .btn-control:active {
       background: #0284c7;
       border-color: #38bdf8;
-    }
-
-    /* Modal emergente */
-    .modal-overlay {
-      display: none;
-      position: fixed;
-      inset: 0;
-      background: rgba(2, 6, 23, 0.88);
-      z-index: 9999;
-      backdrop-filter: blur(4px);
-      align-items: center;
-      justify-content: center;
-      padding: 16px;
-      box-sizing: border-box;
-    }
-    .modal-caja {
-      background: #0f172a;
-      border: 1.5px solid #38bdf8;
-      border-radius: 14px;
-      max-width: 400px;
-      width: 100%;
-      padding: 20px;
-      box-sizing: border-box;
-      color: #cbd5e1;
-      font-size: 0.85rem;
-      line-height: 1.45;
     }
   </style>
 </head>
 <body>
   <main class="contenedor">
     <header class="barra-superior">
-      <a href="menu.html" class="btn-retorno">← Menú Principal</a>
-      <button type="button" id="btn-guia-modulo" class="btn-ayuda-test">❓ ¿Cómo funciona?</button>
+      <a href="menu.html">← Menú Principal</a>
+      <button class="btn-ayuda" onclick="alert('Usa los mandos inferiores para guiar el puntero amarillo hasta el punto verde de llegada sin tocar las paredes azules.')">❓ ¿Cómo funciona?</button>
     </header>
 
     <div class="barra-calibracion">
       <span id="badge-modo">🟢 Demo Calibración (20 s)</span>
-      <span id="txt-tiempo">Tiempo: <strong id="cronometro-palancas">20 s</strong></span>
+      <span id="txt-tiempo">Tiempo: <strong id="lbl-reloj">20 s</strong></span>
     </div>
 
     <section class="panel-resultados">
       <div class="tarjeta-metrica">
         <span>Contactos</span>
-        <strong id="metrica-contactos" style="color: #ef4444;">0</strong>
+        <strong id="metrica-toques" style="color: #ef4444;">0</strong>
       </div>
       <div class="tarjeta-metrica">
         <span>T. Contacto</span>
-        <strong id="metrica-tiempo-contacto" style="color: #facc15;">0.0 s</strong>
+        <strong id="metrica-tiempo-contacto">0.0 s</strong>
       </div>
       <div class="tarjeta-metrica">
         <span>Circuito</span>
-        <strong id="metrica-circuito" style="color: #38bdf8;">Trazado A</strong>
+        <strong id="metrica-circuito" style="color: #38bdf8;">Demo P-1</strong>
       </div>
     </section>
 
-    <canvas id="lienzo-palancas" width="330" height="230"></canvas>
+    <div class="canvas-palancas-caja">
+      <canvas id="lienzo-palancas" width="330" height="230"></canvas>
+    </div>
 
-    <div id="panel-estado" class="estado">Usa los mandos inferiores para guiar el puntero</div>
+    <div class="instruccion-caja" id="caja-instrucciones">
+      Usa los mandos inferiores para guiar el puntero
+    </div>
 
-    <button id="btn-iniciar-palancas" class="btn-principal">Iniciar Calibración (20 s)</button>
+    <button id="btn-accion-palancas" class="btn-principal">Iniciar Calibración (20 s)</button>
 
-    <!-- Controles Disociados: Pulgar Izquierdo (Y) y Pulgar Derecho (X) -->
-    <div class="caja-mandos-bimanuales">
-      <div class="grupo-mando">
-        <span style="font-size: 0.72rem; color: #94a3b8; font-weight: 600;">Mano Izq (Vertical)</span>
-        <button id="btn-arriba" class="btn-mando">▲ Arriba</button>
-        <button id="btn-abajo" class="btn-mando">▼ Abajo</button>
+    <div class="panel-mandos">
+      <div class="caja-mando">
+        <span>Mano Izq (Vertical)</span>
+        <button class="btn-control" id="btn-arriba">▲ Arriba</button>
+        <button class="btn-control" id="btn-abajo">▼ Abajo</button>
       </div>
-      <div class="grupo-mando">
-        <span style="font-size: 0.72rem; color: #94a3b8; font-weight: 600;">Mano Der (Horizontal)</span>
-        <div style="display: flex; gap: 6px; width: 100%;">
-          <button id="btn-izq" class="btn-mando">◀</button>
-          <button id="btn-der" class="btn-mando">▶</button>
+      <div class="caja-mando">
+        <span>Mano Der (Horizontal)</span>
+        <div class="fila-botones" style="margin-top: 24px;">
+          <button class="btn-control" id="btn-izq">◄</button>
+          <button class="btn-control" id="btn-der">►</button>
         </div>
       </div>
     </div>
 
-    <div id="zona-coordinacion-palancas" style="width: 100%;"></div>
+    <div id="zona-coordinacion-palancas" style="width: 100%; margin-top: 10px;"></div>
   </main>
-
-  <!-- Modal Guía Módulo 2 -->
-  <div id="modal-guia" class="modal-overlay">
-    <div class="modal-caja">
-      <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #334155; padding-bottom: 8px; margin-bottom: 10px;">
-        <h3 style="margin: 0; color: #38bdf8; font-size: 1.05rem;">Módulo 2: Test de Palancas</h3>
-        <button id="btn-cerrar-guia" type="button" style="background: none; border: none; color: #94a3b8; font-size: 1.4rem; cursor: pointer;">&times;</button>
-      </div>
-      <p><strong>🎯 Objetivo:</strong> Coordinación visomotriz disociada guiando el puntero por el laberinto sin tocar las paredes metálicas.</p>
-      <ul style="padding-left: 18px; margin: 8px 0;">
-        <li><strong>Pulgar Izquierdo:</strong> Mueve el puntero hacia Arriba / Abajo.</li>
-        <li><strong>Pulgar Derecho:</strong> Mueve el puntero hacia Izquierda / Derecha.</li>
-        <li><strong>Tiempo Oficial:</strong> 60 segundos con límite reglamentario de ≤ 3 contactos.</li>
-      </ul>
-      <div style="background: #020617; border-left: 3px solid #f59e0b; padding: 8px 10px; margin: 10px 0; font-size: 0.78rem;">
-        ⚠️ <strong>Error Común:</strong> Avanzar con toques bruscos. En curvas cerradas debes pulsar suavemente para evitar rozar los bordes.
-      </div>
-      <button id="btn-entendido-guia" class="btn-principal" style="width: 100%; height: 40px; margin-top: 14px; background-color: #0284c7; font-size: 0.88rem;">
-        Entendido
-      </button>
-    </div>
-  </div>
 
   <script src="palancas.js"></script>
 </body>

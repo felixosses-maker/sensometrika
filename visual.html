@@ -6,34 +6,101 @@
   <title>Sensometrika | Tamizaje Visual Preventivo</title>
   <link rel="stylesheet" href="styles.css">
   <style>
-    .barra-superior {
-      width: 100%;
+    /* MODAL DE PERMISO PREVIO */
+    #modal-permiso-camara {
+      position: fixed;
+      inset: 0;
+      background: rgba(2, 6, 23, 0.94);
       display: flex;
-      justify-content: space-between;
+      justify-content: center;
       align-items: center;
-      margin-bottom: 12px;
+      z-index: 9999;
+      padding: 16px;
+      box-sizing: border-box;
     }
-    .btn-retorno {
+    .tarjeta-autorizacion {
+      background: #0f172a;
+      border: 1.5px solid #38bdf8;
+      border-radius: 14px;
+      padding: 22px;
+      max-width: 440px;
+      width: 100%;
+      text-align: center;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
+    }
+    .tarjeta-autorizacion h2 {
+      margin: 8px 0 12px 0;
+      color: #fff;
+      font-size: 1.15rem;
+    }
+    .tarjeta-autorizacion p {
+      font-size: 0.82rem;
       color: #94a3b8;
-      text-decoration: none;
-      font-size: 0.85rem;
-      font-weight: 600;
+      line-height: 1.45;
+      margin: 0 0 18px 0;
+      text-align: left;
     }
-    .btn-ayuda-test {
-      background: #1e293b;
-      border: 1px solid #38bdf8;
-      color: #38bdf8;
-      padding: 4px 10px;
-      border-radius: 6px;
-      font-size: 0.78rem;
+    .btn-autorizar {
+      width: 100%;
+      height: 46px;
+      background: #0284c7;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
       font-weight: 700;
+      font-size: 0.9rem;
+      cursor: pointer;
+      margin-bottom: 10px;
+    }
+    .btn-autorizar:hover {
+      background: #0369a1;
+    }
+    .btn-omitir-camara {
+      background: none;
+      border: none;
+      color: #64748b;
+      font-size: 0.78rem;
+      text-decoration: underline;
       cursor: pointer;
     }
+
+    /* MONITOR FACIAL */
+    .caja-monitor-camara {
+      width: 100%;
+      background-color: #0f172a;
+      border: 1.5px solid #334155;
+      border-radius: 10px;
+      padding: 8px 12px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      box-sizing: border-box;
+      margin-bottom: 12px;
+    }
+    .distancia-ok {
+      border-color: #22c55e !important;
+      background-color: rgba(34, 197, 94, 0.08) !important;
+    }
+    .distancia-alerta {
+      border-color: #ef4444 !important;
+      background-color: rgba(239, 68, 68, 0.08) !important;
+    }
+    .video-preview-mini {
+      width: 50px;
+      height: 50px;
+      border-radius: 6px;
+      object-fit: cover;
+      transform: scaleX(-1);
+      background-color: #020617;
+      border: 1px solid #334155;
+    }
+
+    /* VISOR ESTÍMULO */
     .visor-visual-caja {
       width: 100%;
-      min-height: 220px;
+      min-height: 230px;
       background-color: #020617;
-      border: 3px solid #334155;
+      border: 2px solid #334155;
       border-radius: 12px;
       display: flex;
       flex-direction: column;
@@ -42,7 +109,7 @@
       position: relative;
       padding: 12px;
       box-sizing: border-box;
-      margin: 8px 0;
+      margin-bottom: 12px;
     }
     #canvas-ishihara {
       border-radius: 50%;
@@ -53,150 +120,149 @@
       font-family: monospace, sans-serif;
       color: #ffffff;
       user-select: none;
-      transition: transform 0.2s ease;
       line-height: 1;
+      display: none;
     }
+
     .grilla-opciones {
       width: 100%;
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 10px;
-      margin-top: 10px;
+      margin-bottom: 12px;
     }
     .btn-opcion {
       height: 48px;
       background-color: #1e293b;
       border: 1.5px solid #475569;
       color: #f8fafc;
-      font-size: 1rem;
+      font-size: 0.95rem;
       font-weight: 700;
       border-radius: 8px;
       cursor: pointer;
       touch-action: manipulation;
     }
-    .btn-opcion:active {
+    .btn-opcion:not(:disabled):active {
       background-color: #0284c7;
       border-color: #38bdf8;
     }
+    .btn-opcion:disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+      border-style: dashed;
+      border-color: #ef4444;
+    }
+
+    .panel-metricas-mini {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 8px;
+      width: 100%;
+      margin-bottom: 10px;
+    }
+    .tarjeta-metrica-mini {
+      background: #0f172a;
+      border: 1px solid #1e293b;
+      border-radius: 8px;
+      padding: 8px;
+      text-align: center;
+    }
+    .tarjeta-metrica-mini span {
+      display: block;
+      font-size: 0.68rem;
+      color: #94a3b8;
+      margin-bottom: 2px;
+    }
+    .tarjeta-metrica-mini strong {
+      font-size: 0.88rem;
+      color: #38bdf8;
+    }
+
     .aviso-distancia {
       width: 100%;
       background-color: #0f172a;
       border: 1px solid #334155;
       border-radius: 8px;
-      padding: 10px;
+      padding: 10px 12px;
       font-size: 0.78rem;
       color: #94a3b8;
       text-align: center;
       line-height: 1.35;
-      margin-top: 8px;
-    }
-
-    /* Modal emergente */
-    .modal-overlay {
-      display: none;
-      position: fixed;
-      inset: 0;
-      background: rgba(2, 6, 23, 0.88);
-      z-index: 9999;
-      backdrop-filter: blur(4px);
-      align-items: center;
-      justify-content: center;
-      padding: 16px;
       box-sizing: border-box;
-    }
-    .modal-caja {
-      background: #0f172a;
-      border: 1.5px solid #38bdf8;
-      border-radius: 14px;
-      max-width: 400px;
-      width: 100%;
-      padding: 20px;
-      box-sizing: border-box;
-      color: #cbd5e1;
-      font-size: 0.85rem;
-      line-height: 1.45;
+      margin-bottom: 10px;
     }
   </style>
 </head>
 <body>
-  <main class="contenedor">
-    <header class="barra-superior">
-      <a href="menu.html" class="btn-retorno">← Menú Principal</a>
-      <button type="button" id="btn-guia-modulo" class="btn-ayuda-test">❓ ¿Cómo funciona?</button>
-    </header>
-
-    <section class="panel-resultados">
-      <div class="tarjeta-metrica">
-        <span>Fase Actual</span>
-        <strong id="indicador-fase">Cromático</strong>
-      </div>
-      <div class="tarjeta-metrica">
-        <span>Aciertos</span>
-        <strong id="contador-aciertos">0/6</strong>
-      </div>
-      <div class="tarjeta-metrica">
-        <span>Distancia</span>
-        <strong id="estado-distancia" style="color: #4ade80;">Óptima</strong>
-      </div>
-    </section>
-
-    <!-- Monitor auxiliar de cámara oculta para auditoría -->
-    <div id="caja-camara" style="display: none;">
-      <video id="video-camara" playsinline autoplay muted></video>
-      <span id="etiqueta-distancia"></span>
-    </div>
-
-    <div class="visor-visual-caja">
-      <canvas id="canvas-ishihara" width="200" height="200"></canvas>
-      <div id="simbolo-optotipo" style="display: none;">E</div>
-    </div>
-
-    <div id="panel-estado" class="estado">¿Qué número ves dentro del círculo?</div>
-
-    <div class="grilla-opciones" id="contenedor-opciones"></div>
-
-    <div class="aviso-distancia" id="caja-instruccion">
-      📱 <strong>Posición de ensayo:</strong> Mantén el dispositivo a la distancia de tu brazo (~50-60 cm) sin acercarte a la pantalla.
-    </div>
-  </main>
-
-  <!-- Modal Guía Módulo 4 -->
-  <div id="modal-guia" class="modal-overlay">
-    <div class="modal-caja">
-      <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #334155; padding-bottom: 8px; margin-bottom: 10px;">
-        <h3 style="margin: 0; color: #38bdf8; font-size: 1.05rem;">Módulo 4: Tamizaje Visual</h3>
-        <button id="btn-cerrar-guia" type="button" style="background: none; border: none; color: #94a3b8; font-size: 1.4rem; cursor: pointer;">&times;</button>
-      </div>
-      <p><strong>🎯 Objetivo:</strong> Autovalidación orientativa de discriminación cromática (Ishihara) y agudeza visual.</p>
-      <ul style="padding-left: 18px; margin: 8px 0;">
-        <li>Sostén el teléfono con el brazo extendido (~50 a 60 cm).</li>
-        <li>Si usas lentes ópticos para conducir, <em>debes realizar la prueba con ellos puestos</em>.</li>
-      </ul>
-      <div style="background: #020617; border-left: 3px solid #38bdf8; padding: 8px 10px; margin: 10px 0; font-size: 0.78rem;">
-        ℹ️ <strong>Nota Legal:</strong> Tamizaje preventivo preliminar; no sustituye el examen oftalmológico clínico oficial.
-      </div>
-      <button id="btn-entendido-guia" class="btn-principal" style="width: 100%; height: 40px; margin-top: 14px; background-color: #0284c7; font-size: 0.88rem;">
-        Entendido
+  <!-- MODAL DE AUTORIZACIÓN OBLIGATORIA -->
+  <div id="modal-permiso-camara">
+    <div class="tarjeta-autorizacion">
+      <div style="font-size: 2.2rem; margin-bottom: 4px;">📷</div>
+      <h2>Autorización de Cámara Frontal</h2>
+      <p>
+        Para validar la agudeza visual de forma reglamentaria, el sistema medirá que mantengas tu dispositivo a <strong>distancia de brazo extendido (~50 a 60 cm)</strong>[cite: 9].
+        <br><br>
+        🔒 <strong>Privacidad:</strong> El análisis óptico se realiza localmente en tu navegador; <em>no se guarda ni se graba ninguna imagen</em>[cite: 2].
+      </p>
+      <button id="btn-dar-autorizacion" class="btn-autorizar">
+        ✓ Conceder Autorización e Iniciar
+      </button>
+      <br>
+      <button id="btn-omitir-autorizacion" class="btn-omitir-camara">
+        Continuar en modo manual (brazo extendido)
       </button>
     </div>
   </div>
 
-  <script src="visual.js"></script>
-  <script>
-    // Enlace de modal
-    const modalGuia = document.getElementById('modal-guia');
-    const btnGuiaModulo = document.getElementById('btn-guia-modulo');
-    const btnCerrarGuia = document.getElementById('btn-cerrar-guia');
-    const btnEntendidoGuia = document.getElementById('btn-entendido-guia');
+  <main class="contenedor">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; width: 100%;">
+      <a href="menu.html" style="color: #94a3b8; text-decoration: none; font-size: 0.82rem;">← Menú Principal</a>
+      <span style="font-size: 0.75rem; color: #38bdf8; font-weight: 600;">Módulo 4: Tamizaje Visual</span>
+    </div>
 
-    if (btnGuiaModulo && modalGuia) {
-      btnGuiaModulo.addEventListener('click', () => modalGuia.style.display = 'flex');
-      btnCerrarGuia.addEventListener('click', () => modalGuia.style.display = 'none');
-      btnEntendidoGuia.addEventListener('click', () => modalGuia.style.display = 'none');
-      modalGuia.addEventListener('click', (e) => {
-        if (e.target === modalGuia) modalGuia.style.display = 'none';
-      });
-    }
-  </script>
+    <!-- Panel de Métricas -->
+    <section class="panel-metricas-mini">
+      <div class="tarjeta-metrica-mini">
+        <span>Fase Actual</span>
+        <strong id="indicador-fase">Cromático</strong>
+      </div>
+      <div class="tarjeta-metrica-mini">
+        <span>Aciertos</span>
+        <strong id="contador-aciertos">0/6</strong>
+      </div>
+      <div class="tarjeta-metrica-mini">
+        <span>Distancia</span>
+        <strong id="estado-distancia" style="color: #facc15;">Pendiente</strong>
+      </div>
+    </section>
+
+    <!-- Monitor Facial -->
+    <section class="caja-monitor-camara" id="caja-camara">
+      <video id="video-camara" class="video-preview-mini" autoplay playsinline muted></video>
+      <div style="display: flex; flex-direction: column; gap: 2px; text-align: left;">
+        <strong id="etiqueta-distancia" style="font-size: 0.82rem; color: #fff;">Esperando confirmación...</strong>
+        <span id="sub-distancia" style="font-size: 0.72rem; color: #94a3b8;">Auditoría de distancia referencial (~50-60 cm)</span>
+      </div>
+    </section>
+
+    <!-- Visor de Prueba -->
+    <div class="visor-visual-caja" id="area-visor">
+      <canvas id="canvas-ishihara" width="200" height="200"></canvas>
+      <div id="simbolo-optotipo">E</div>
+    </div>
+
+    <div id="panel-estado" style="text-align: center; font-size: 0.85rem; color: #fff; font-weight: 700; margin-bottom: 10px;">
+      ¿Qué número ves dentro del círculo?
+    </div>
+
+    <!-- Opciones de Respuesta -->
+    <div class="grilla-opciones" id="contenedor-opciones"></div>
+
+    <div class="aviso-distancia" id="caja-instruccion">
+      📱 <strong>Posición de ensayo:</strong> Mantén el dispositivo a la distancia de tu brazo (~50-60 cm)[cite: 9].
+    </div>
+  </main>
+
+  <script src="visual.js"></script>
 </body>
 </html>
