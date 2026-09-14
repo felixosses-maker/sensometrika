@@ -1,210 +1,136 @@
-// Referencias del DOM
-const chkAudifonos = document.getElementById('chk-audifonos');
-const btnComenzar = document.getElementById('btn-comenzar-test');
-const seccionAviso = document.getElementById('seccion-aviso');
-const seccionPrueba = document.getElementById('seccion-prueba');
-const panelEstado = document.getElementById('panel-estado');
-const txtFrecuencia = document.getElementById('txt-frecuencia');
-const txtPaso = document.getElementById('txt-paso');
-const txtAciertos = document.getElementById('txt-aciertos');
-const txtSubtitulo = document.getElementById('txt-subtitulo-audio');
-const btnIzquierdo = document.getElementById('btn-izquierdo');
-const btnDerecho = document.getElementById('btn-derecho');
-const btnNoEscucho = document.getElementById('btn-no-escucho');
-const zonaCoordinacion = document.getElementById('zona-coordinacion-audio');
-
-// Configuración de frecuencias normativas (D.S. N° 170: 500 a 4000 Hz)
-const FRECUENCIAS_BASE = [1000, 2000, 4000, 500, 2000, 1000];
-
-// Secuencia barajada al azar para evitar que se memorice el lado o la secuencia
-function armarEstimulos() {
-  const canales = ['IZQ', 'DER'];
-  const frecuenciasBarajadas = [...FRECUENCIAS_BASE].sort(() => Math.random() - 0.5);
-
-  return frecuenciasBarajadas.map(freq => ({
-    hz: freq,
-    canal: canales[Math.floor(Math.random() * canales.length)]
-  }));
-}
-
-let estimulos = [];
-let indicePaso = 0;
-let aciertos = 0;
-let aciertosIzquierdo = 0;
-let aciertosDerecho = 0;
-let esperandoRespuesta = false;
-let timeoutVentana = null;
-
 let audioCtx = null;
+let indiceTono = 0;
+let aciertosAudio = 0;
+let estimuloActivo = false;
 
-// 1. Control del Gatekeeper (Casilla obligatoria de audífonos)
-chkAudifonos.addEventListener('change', (e) => {
-  if (e.target.checked) {
-    btnComenzar.style.opacity = '1';
-    btnComenzar.style.pointerEvents = 'auto';
-  } else {
-    btnComenzar.style.opacity = '0.45';
-    btnComenzar.style.pointerEvents = 'none';
+const TONOS = [
+  { freq: 1000, pan: -1, lado: 'left' },
+  { freq: 2000, pan: 1,  lado: 'right' },
+  { freq: 500,  pan: -1, lado: 'left' },
+  { freq: 4000, pan: 1,  lado: 'right' },
+  { freq: 1000, pan: 1,  lado: 'right' },
+  { freq: 2000, pan: -1, lado: 'left' }
+];
+
+const chkAudifonos = document.getElementById('chk-audifonos');
+const btnComenzar = document.getElementById('btn-comenzar-audio');
+const secBloqueo = document.getElementById('seccion-bloqueo-audifonos');
+const secPrueba = document.getElementById('seccion-prueba-activa');
+const txtPaso = document.getElementById('metrica-paso');
+const txtFreq = document.getElementById('metrica-frecuencia');
+const txtAciertos = document.getElementById('metrica-aciertos-audio');
+const panelEstado = document.getElementById('panel-estado');
+const zonaCoordinacion = document.getElementById('zona-coordinacion-audicion');
+
+function alternarGatekeeper() {
+  if (chkAudifonos && btnComenzar) {
+    btnComenzar.disabled = !chkAudifonos.checked;
+    btnComenzar.style.opacity = chkAudifonos.checked ? '1' : '0.5';
   }
-});
-
-// 2. Inicio del Test y desbloqueo del motor Web Audio API
-btnComenzar.addEventListener('click', () => {
-  // Desbloqueo estricto de audio tras interacción de usuario
-  const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-  audioCtx = new AudioContextClass();
-  if (audioCtx.state === 'suspended') {
-    audioCtx.resume();
-  }
-
-  seccionAviso.style.display = 'none';
-  seccionPrueba.style.display = 'block';
-
-  estimulos = armarEstimulos();
-  indicePaso = 0;
-  aciertos = 0;
-  aciertosIzquierdo = 0;
-  aciertosDerecho = 0;
-
-  lanzarEstimulo();
-});
-
-// 3. Síntesis acústica sinusoidal pura con paneo estéreo
-function reproducirTono(frecuencia, lado) {
-  if (!audioCtx) return;
-  if (audioCtx.state === 'suspended') audioCtx.resume();
-
-  const oscilador = audioCtx.createOscillator();
-  const ganancia = audioCtx.createGain();
-  const paneo = audioCtx.createStereoPanner ? audioCtx.createStereoPanner() : null;
-
-  oscilador.type = 'sine';
-  oscilador.frequency.setValueAtTime(frecuencia, audioCtx.currentTime);
-
-  // Calibración de rampa acústica suave
-  ganancia.gain.setValueAtTime(0.001, audioCtx.currentTime);
-  ganancia.gain.exponentialRampToValueAtTime(0.20, audioCtx.currentTime + 0.1);
-  ganancia.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.85);
-
-  if (paneo) {
-    paneo.pan.setValueAtTime(lado === 'IZQ' ? -1.0 : 1.0, audioCtx.currentTime);
-    oscilador.connect(paneo);
-    paneo.connect(ganancia);
-  } else {
-    oscilador.connect(ganancia);
-  }
-
-  ganancia.connect(audioCtx.destination);
-  oscilador.start(audioCtx.currentTime + 0.05);
-  oscilador.stop(audioCtx.currentTime + 0.95);
 }
 
-// 4. Ciclo de estímulos y captura de respuestas
-function lanzarEstimulo() {
-  if (indicePaso >= estimulos.length) {
+function iniciarEvaluacionAuditiva() {
+  const AudioContext = window.AudioContext || window.webkitAudioContext;
+  audioCtx = new AudioContext();
+
+  if (secBloqueo && secPrueba) {
+    secBloqueo.style.display = 'none';
+    secPrueba.style.display = 'flex';
+  }
+
+  indiceTono = 0;
+  aciertosAudio = 0;
+  reproducirSiguienteTono();
+}
+
+function reproducirSiguienteTono() {
+  if (indiceTono >= TONOS.length) {
     finalizarTamizajeAuditivo();
     return;
   }
 
-  esperandoRespuesta = false;
-  const pasoActual = estimulos[indicePaso];
-
-  txtPaso.innerText = `${indicePaso + 1}/${estimulos.length}`;
-  txtFrecuencia.innerText = `${pasoActual.hz} Hz`;
-  txtAciertos.innerText = aciertos;
-
-  panelEstado.innerText = 'Escucha con atención...';
+  const tono = TONOS[indiceTono];
+  txtPaso.innerText = `${indiceTono + 1}/6`;
+  txtFreq.innerText = `${tono.freq} Hz`;
+  txtAciertos.innerText = aciertosAudio;
+  panelEstado.innerText = 'Escuchando tono puro... ¿Por cuál lado suena?';
   panelEstado.style.color = '#38bdf8';
-  txtSubtitulo.innerText = 'Emitiendo frecuencia pura...';
+  estimuloActivo = true;
 
-  // Espera silenciosa aleatoria (entre 1.1 y 2.2 s) anti-anticipación
-  const esperaSilencio = Math.floor(Math.random() * (2200 - 1100 + 1)) + 1100;
-
-  setTimeout(() => {
-    reproducirTono(pasoActual.hz, pasoActual.canal);
-
-    // Permitir respuesta tras iniciar el sonido
-    setTimeout(() => {
-      esperandoRespuesta = true;
-      panelEstado.innerText = '¿En qué oído escuchaste el pitido?';
-      panelEstado.style.color = '#facc15';
-      txtSubtitulo.innerText = 'Selecciona el oído correspondiente';
-
-      // Ventana de tiempo límite para responder (3.5 segundos)
-      timeoutVentana = setTimeout(() => {
-        if (esperandoRespuesta) {
-          registrarRespuesta('TIMEOUT');
-        }
-      }, 3500);
-    }, 400);
-  }, esperaSilencio);
-}
-
-function registrarRespuesta(ladoElegido) {
-  if (!esperandoRespuesta) return;
-  clearTimeout(timeoutVentana);
-  esperandoRespuesta = false;
-
-  const pasoActual = estimulos[indicePaso];
-  const esCorrecto = (ladoElegido === pasoActual.canal);
-
-  if (esCorrecto) {
-    aciertos++;
-    if (pasoActual.canal === 'IZQ') aciertosIzquierdo++;
-    if (pasoActual.canal === 'DER') aciertosDerecho++;
-    panelEstado.innerText = '✅ Tono percibido correctamente';
-    panelEstado.style.color = '#4ade80';
-  } else {
-    panelEstado.innerText = ladoElegido === 'TIMEOUT' ? '⏱️ Tiempo agotado (No percibido)' : '❌ Lado incorrecto o no percibido';
-    panelEstado.style.color = '#f87171';
+  if (audioCtx.state === 'suspended') {
+    audioCtx.resume();
   }
 
-  txtAciertos.innerText = aciertos;
-  indicePaso++;
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  const panner = audioCtx.createStereoPanner ? audioCtx.createStereoPanner() : null;
 
-  setTimeout(() => {
-    lanzarEstimulo();
-  }, 900);
+  osc.type = 'sine';
+  osc.frequency.setValueAtTime(tono.freq, audioCtx.currentTime);
+
+  // Curva de ganancia suave para evitar chasquidos acústicos
+  gain.gain.setValueAtTime(0.001, audioCtx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.12, audioCtx.currentTime + 0.1);
+  gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 1.2);
+
+  if (panner) {
+    panner.pan.setValueAtTime(tono.pan, audioCtx.currentTime);
+    osc.connect(gain);
+    gain.connect(panner);
+    panner.connect(audioCtx.destination);
+  } else {
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+  }
+
+  osc.start(audioCtx.currentTime + 0.1);
+  osc.stop(audioCtx.currentTime + 1.3);
 }
 
-btnIzquierdo.addEventListener('click', () => registrarRespuesta('IZQ'));
-btnDerecho.addEventListener('click', () => registrarRespuesta('DER'));
-btnNoEscucho.addEventListener('click', () => registrarRespuesta('NO_ESCUCHO'));
+function responderLado(ladoElegido) {
+  if (!estimuloActivo) return;
+  estimuloActivo = false;
 
-// 5. Cierre definitivo, persistencia y coordinación al informe
+  const tonoActual = TONOS[indiceTono];
+  if (ladoElegido === tonoActual.lado) {
+    aciertosAudio++;
+  }
+
+  indiceTono++;
+  setTimeout(() => {
+    reproducirSiguienteTono();
+  }, 600);
+}
+
 function finalizarTamizajeAuditivo() {
-  seccionPrueba.style.display = 'none';
-
-  const efectividad = Math.round((aciertos / estimulos.length) * 100);
+  const efectividad = Math.round((aciertosAudio / 6) * 100);
   const aprobado = efectividad >= 80;
 
-  // Persistir resultado oficial en localStorage para que lo tome informe.html y menu.html
-  localStorage.setItem('sensometrika_auditivo', JSON.stringify({
-    aciertos: aciertos,
-    aciertosIzquierdo: aciertosIzquierdo,
-    aciertosDerecho: aciertosDerecho,
-    total: estimulos.length,
+  // Persistir en memoria para el informe consolidado
+  localStorage.setItem('sensometrika_audicion', JSON.stringify({
+    aciertos: aciertosAudio,
     efectividad: efectividad,
-    dictamen: aprobado ? 'SIN ALERTAS AUDITIVAS' : 'OBSERVADO: Sugiere audiometría clínica',
+    dictamen: aprobado ? 'SIN ALERTAS PREVIAS' : 'ALERTA: Sugiere audiometría clínica',
     aprobado: aprobado,
-    audifonosConfirmados: true
+    audifonosDeclarados: true
   }));
 
-  // Desplegar tarjeta oficial de fin de módulo
+  panelEstado.innerText = `Evaluación completada: ${efectividad}% de efectividad`;
+  panelEstado.style.color = aprobado ? '#4ade80' : '#f87171';
+
+  // Despliegue de la tarjeta final con salto al Certificado Global
   zonaCoordinacion.innerHTML = `
-    <div style="background: #020617; border: 1.5px solid #38bdf8; border-radius: 12px; padding: 18px; margin-top: 14px; text-align: center; width: 100%;">
-      <h3 style="color: ${aprobado ? '#4ade80' : '#f87171'}; margin: 0 0 6px 0; font-size: 1.15rem;">
-        ${aprobado ? '¡Tamizaje Auditivo Culminado!' : 'Tamizaje Auditivo con Observación'}
-      </h3>
-      <p style="color: #94a3b8; font-size: 0.85rem; margin-bottom: 14px;">
-        Aciertos biaurales oficiales: <strong style="color: #ffffff;">${aciertos}/${estimulos.length} (${efectividad}%)</strong>
+    <div style="background: #020617; border: 1.5px solid #38bdf8; border-radius: 12px; padding: 16px; margin-top: 14px; text-align: center; box-sizing: border-box;">
+      <h3 style="color: #4ade80; font-size: 1.05rem; margin: 0 0 6px 0;">¡Batería de Exámenes Completada!</h3>
+      <p style="color: #94a3b8; font-size: 0.82rem; margin: 0 0 14px 0;">
+        Has finalizado los 5 módulos de evaluación psicométrica y sensorial.
       </p>
       <div style="display: flex; flex-direction: column; gap: 8px;">
-        <a href="informe.html" class="btn-principal" style="display: flex; justify-content: center; align-items: center; text-decoration: none; height: 48px; background-color: #0284c7; font-size: 0.95rem;">
-          📊 Ver Dictamen e Informe Consolidado Final →
+        <a href="informe.html" class="btn-principal" style="display: flex; justify-content: center; align-items: center; text-decoration: none; height: 46px; font-size: 0.95rem; background-color: #0284c7; color: #fff; border-radius: 8px; font-weight: bold;">
+          📊 Ver Certificado e Informe Global →
         </a>
-        <a href="menu.html" style="color: #64748b; font-size: 0.8rem; text-decoration: none; padding: 6px;">
-          Volver al Menú Principal
+        <a href="menu.html" style="color: #64748b; font-size: 0.8rem; text-decoration: none; padding: 4px;">
+          Regresar al Menú Principal
         </a>
       </div>
     </div>

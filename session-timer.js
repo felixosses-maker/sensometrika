@@ -1,27 +1,20 @@
 /**
- * Sensometrika | Gestor de Tiempo Diario y Créditos de Módulos Únicos
+ * Sensometrika | Gestor Unificado de Regímenes, Créditos y Planes
  */
 const SessionTimer = {
-  getHoyStr: () => new Date().toISOString().split('T')[0],
-
   obtenerSesion: () => {
     let sesion = JSON.parse(localStorage.getItem('sensometrika_sesion'));
     if (!sesion) {
       sesion = {
+        planId: 'part_basico',
+        nombrePlan: 'Plan Básico Psicomotriz',
         rol: 'particular',
-        planId: 'part_acomp_10m',
-        nombrePlan: 'Plan Acompañamiento',
-        modulosPermitidos: ['reactimetro', 'palancas', 'punteo', 'visual', 'auditivo'],
-        segundosMaxDiarios: 600, // 10 min
-        diasVigencia: 5,
-        usosVisualAuditivoMax: 1,
-        usosConsumidos: { visual: 0, auditivo: 0 },
-        fechaInicio: new Date().toISOString()
+        modulosPermitidos: ['reactimetro', 'palancas', 'punteo'],
+        tipoRegimen: 'creditos_modulo',
+        pruebasCompletasRestantes: 1,
+        ejecucionesRestantes: { reactimetro: 3, palancas: 3, punteo: 3 }
       };
       localStorage.setItem('sensometrika_sesion', JSON.stringify(sesion));
-    }
-    if (!sesion.usosConsumidos) {
-      sesion.usosConsumidos = { visual: 0, auditivo: 0 };
     }
     return sesion;
   },
@@ -30,80 +23,40 @@ const SessionTimer = {
     localStorage.setItem('sensometrika_sesion', JSON.stringify(sesion));
   },
 
-  obtenerControlTiempo: () => {
+  puedeIngresarModulo: (moduloKey) => {
     const sesion = SessionTimer.obtenerSesion();
-    const hoy = SessionTimer.getHoyStr();
-    let control = JSON.parse(localStorage.getItem('sensometrika_tiempo_diario'));
+    if (!sesion.modulosPermitidos || !sesion.modulosPermitidos.includes(moduloKey)) return false;
 
-    if (!control || control.fecha !== hoy) {
-      control = {
-        fecha: hoy,
-        segundosConsumidos: 0
-      };
-      localStorage.setItem('sensometrika_tiempo_diario', JSON.stringify(control));
+    // Plan Básico: 1 diagnóstico general + 3 ejecuciones por módulo
+    if (sesion.tipoRegimen === 'creditos_modulo') {
+      if (sesion.pruebasCompletasRestantes > 0) return true;
+      const restantes = (sesion.ejecucionesRestantes && sesion.ejecucionesRestantes[moduloKey]) || 0;
+      return restantes > 0;
     }
-    return { control, sesion };
-  },
 
-  formatearMinSeg: (segundos) => {
-    const min = Math.floor(segundos / 60);
-    const sec = segundos % 60;
-    return `${min}:${sec < 10 ? '0' : ''}${sec}`;
-  },
-
-  obtenerSegundosRestantes: () => {
-    const { control, sesion } = SessionTimer.obtenerControlTiempo();
-    if (!sesion.segundosMaxDiarios || sesion.segundosMaxDiarios === 0) {
-      return 999999;
-    }
-    const restantes = sesion.segundosMaxDiarios - control.segundosConsumidos;
-    return restantes > 0 ? restantes : 0;
-  },
-
-  calcularDiaActual: () => {
-    const sesion = SessionTimer.obtenerSesion();
-    if (!sesion.fechaInicio) return 1;
-    const inicio = new Date(sesion.fechaInicio);
-    const hoy = new Date();
-    const diferenciaDias = Math.floor((hoy - inicio) / (1000 * 60 * 60 * 24)) + 1;
-    return Math.min(Math.max(diferenciaDias, 1), sesion.diasVigencia || 5);
-  },
-
-  verificarDiasExpirados: () => {
-    const sesion = SessionTimer.obtenerSesion();
-    if (!sesion.fechaInicio) return false;
-    const inicio = new Date(sesion.fechaInicio);
-    const ahora = new Date();
-    const diferenciaDias = Math.floor((ahora - inicio) / (1000 * 60 * 60 * 24));
-    return diferenciaDias >= (sesion.diasVigencia || 5);
-  },
-
-  registrarSegundoConsumido: () => {
-    const { control, sesion } = SessionTimer.obtenerControlTiempo();
-    if (sesion.segundosMaxDiarios > 0) {
-      control.segundosConsumidos += 1;
-      localStorage.setItem('sensometrika_tiempo_diario', JSON.stringify(control));
-    }
-  },
-
-  puedeUsarModulo: (moduloKey) => {
-    const sesion = SessionTimer.obtenerSesion();
-    if (!sesion.modulosPermitidos.includes(moduloKey)) return false;
-
-    if (moduloKey === 'visual' || moduloKey === 'auditivo') {
-      if (sesion.usosVisualAuditivoMax > 0) {
+    // Plan Acompañamiento: 1 único uso para visual/auditivo
+    if (sesion.tipoRegimen === 'tiempo_diario') {
+      if (moduloKey === 'visual' || moduloKey === 'auditivo') {
         const consumidos = (sesion.usosConsumidos && sesion.usosConsumidos[moduloKey]) || 0;
-        return consumidos < sesion.usosVisualAuditivoMax;
+        return consumidos < (sesion.usosVisualAuditivoMax || 1);
       }
-      return true;
     }
 
-    return SessionTimer.obtenerSegundosRestantes() > 0;
+    return true;
   },
 
-  consumirUsoModulo: (moduloKey) => {
-    if (moduloKey === 'visual' || moduloKey === 'auditivo') {
-      const sesion = SessionTimer.obtenerSesion();
+  descontarEjecucion: (moduloKey) => {
+    const sesion = SessionTimer.obtenerSesion();
+    if (sesion.tipoRegimen === 'creditos_modulo') {
+      if (sesion.pruebasCompletasRestantes > 0) {
+        // La prueba inicial diagnóstica se descuenta al llegar al informe
+        return;
+      }
+      if (sesion.ejecucionesRestantes && sesion.ejecucionesRestantes[moduloKey] > 0) {
+        sesion.ejecucionesRestantes[moduloKey] -= 1;
+        SessionTimer.guardarSesion(sesion);
+      }
+    } else if (moduloKey === 'visual' || moduloKey === 'auditivo') {
       if (!sesion.usosConsumidos) sesion.usosConsumidos = { visual: 0, auditivo: 0 };
       sesion.usosConsumidos[moduloKey] = (sesion.usosConsumidos[moduloKey] || 0) + 1;
       SessionTimer.guardarSesion(sesion);
