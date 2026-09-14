@@ -56,7 +56,6 @@ const botones = [
   document.getElementById('btn-op-4')
 ];
 
-// 1. GESTIÓN DE PERMISOS Y ACTIVACIÓN DE CÁMARA
 if (btnDarAutorizacion) {
   btnDarAutorizacion.addEventListener('click', async () => {
     if (modalPermiso) modalPermiso.style.display = 'none';
@@ -102,7 +101,6 @@ function activarModoManual() {
   actualizarEstadoBotones();
 }
 
-// 2. MONITOREO EN VIVO DE DISTANCIA BIOMÉTRICA
 function iniciarMonitoreoDistancia() {
   const canvasAux = document.createElement('canvas');
   const ctxAux = canvasAux.getContext('2d', { willReadFrequently: true });
@@ -132,7 +130,6 @@ function iniciarMonitoreoDistancia() {
 
     if (esOptotipo) {
       if (densidad > 0.32) {
-        // Demasiado cerca (<45 cm)
         distanciaValidada = false;
         cajaCamara.className = 'caja-monitor-camara distancia-alerta';
         etiquetaDistancia.innerText = '⚠️ Muy cerca: Estira el brazo (~50 cm)';
@@ -145,7 +142,6 @@ function iniciarMonitoreoDistancia() {
         estadoDistancia.innerText = 'Buscando';
         estadoDistancia.style.color = '#facc15';
       } else {
-        // Distancia óptima
         distanciaValidada = true;
         cajaCamara.className = 'caja-monitor-camara distancia-ok';
         etiquetaDistancia.innerText = '✅ Distancia Correcta (~50-60 cm)';
@@ -153,7 +149,6 @@ function iniciarMonitoreoDistancia() {
         estadoDistancia.style.color = '#4ade80';
       }
     } else {
-      // Ishihara permite lectura cómoda
       distanciaValidada = true;
       cajaCamara.className = 'caja-monitor-camara distancia-ok';
       etiquetaDistancia.innerText = '✅ Posición adecuada';
@@ -172,7 +167,6 @@ function actualizarEstadoBotones() {
   });
 }
 
-// 3. GENERACIÓN ESTOCÁSTICA DE PREGUNTAS
 function generarBateria() {
   const cromaticos = [...BANCO_ISHIHARA].sort(() => Math.random() - 0.5).slice(0, 3).map(i => ({
     tipo: 'ISHIHARA',
@@ -207,7 +201,6 @@ function cargarEstimulo() {
   txtProgreso.innerText = `${indiceActual + 1} / ${bateriaPruebas.length}`;
   txtAciertos.innerText = `${aciertosCromaticos + aciertosAgudeza}`;
 
-  // Configurar los 4 botones
   botones.forEach((btn, i) => {
     if (btn) {
       btn.innerText = p.opciones[i];
@@ -241,7 +234,6 @@ function dibujarPlacaIshihara(texto, colorFondo, colorTexto) {
   if (!ctxIshihara) return;
   ctxIshihara.clearRect(0, 0, 200, 200);
 
-  // Fondo circular
   for (let i = 0; i < 480; i++) {
     const radioC = Math.random() * 85;
     const angulo = Math.random() * Math.PI * 2;
@@ -256,7 +248,6 @@ function dibujarPlacaIshihara(texto, colorFondo, colorTexto) {
     ctxIshihara.fill();
   }
 
-  // Dígito
   ctxIshihara.font = 'bold 64px Arial';
   ctxIshihara.fillStyle = colorTexto;
   ctxIshihara.textAlign = 'center';
@@ -316,10 +307,13 @@ function finalizarTamizaje() {
   txtInstruccion.innerText = '';
 
   const sesion = JSON.parse(localStorage.getItem('sensometrika_sesion')) || {};
-  const permitidos = sesion.modulosPermitidos || ['reactimetro', 'palancas', 'punteo', 'visual'];
-  const tieneAuditivo = permitidos.includes('auditivo');
+  const esFull = (sesion.nombrePlan && sesion.nombrePlan.toLowerCase().includes('full')) || 
+                 (sesion.planId && sesion.planId.includes('full'));
+  const modulos = sesion.modulosPermitidos || [];
+  const tieneAuditivo = esFull || modulos.includes('auditivo') || modulos.includes('audicion');
 
-  const siguienteUrl = tieneAuditivo ? 'auditivo.html' : 'informe.html';
+  // REDIRECCIÓN CORREGIDA: Apunta exactamente a audicion.html
+  const siguienteUrl = tieneAuditivo ? 'audicion.html' : 'informe.html';
   const textoBoton = tieneAuditivo 
     ? 'Continuar a Módulo 5 (Tamizaje Auditivo) →' 
     : '📋 Ver Informe de Resultados Final →';
@@ -330,7 +324,7 @@ function finalizarTamizaje() {
         ${aprobado ? '✅ Tamizaje Visual Superado' : '⚠️ Observación Visual Preventiva'} (${efectividad}%)
       </h3>
       <p style="color: #94a3b8; font-size: 0.8rem; margin: 0 0 14px 0;">
-        Aciertos: ${totalAciertos} de ${total} estímulos evaluados (Exigencia legal: ≥ 80%)[cite: 2, 4].
+        Aciertos: ${totalAciertos} de ${total} estímulos evaluados (Exigencia legal: ≥ 80%).
       </p>
       <a href="${siguienteUrl}" class="btn-principal" style="display: flex; justify-content: center; align-items: center; text-decoration: none; height: 48px; background-color: #0284c7;">
         ${textoBoton}
