@@ -80,7 +80,7 @@
     .tarjeta-metrica span { display: block; font-size: 0.68rem; color: #94a3b8; }
     .tarjeta-metrica strong { font-size: 0.95rem; }
 
-    /* COMPUERTA DE AUDÍFONOS */
+    /* GATEKEEPER PREVIO OBLIGATORIO */
     .caja-gatekeeper {
       background: #0f172a;
       border: 1.5px solid #0284c7;
@@ -90,12 +90,13 @@
       box-sizing: border-box;
       display: flex;
       align-items: flex-start;
-      gap: 10px;
+      gap: 12px;
+      cursor: pointer;
     }
     .caja-gatekeeper input[type="checkbox"] {
-      width: 18px;
-      height: 18px;
-      accent-color: #0284c7;
+      width: 20px;
+      height: 20px;
+      accent-color: #22c55e;
       margin-top: 2px;
       cursor: pointer;
       flex-shrink: 0;
@@ -103,22 +104,24 @@
     .caja-gatekeeper label {
       font-size: 0.78rem;
       color: #e2e8f0;
-      line-height: 1.4;
+      line-height: 1.45;
       cursor: pointer;
     }
 
-    /* VISOR ACÚSTICO */
+    /* VISOR ACÚSTICO CENTRAL */
     .visor-acustico {
       background: #020617;
       border: 2px solid #334155;
       border-radius: 12px;
-      height: 140px;
+      height: 130px;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      margin-bottom: 14px;
+      margin-bottom: 12px;
       gap: 8px;
+      padding: 10px;
+      box-sizing: border-box;
     }
     .onda-sonora {
       font-size: 2.2rem;
@@ -130,33 +133,41 @@
       100% { transform: scale(0.92); opacity: 0.6; }
     }
 
+    /* BOTONES BINAURALES DE RESPUESTA */
     .grilla-oidos {
-      display: grid;
+      display: none;
       grid-template-columns: 1fr 1fr;
       gap: 12px;
       width: 100%;
       box-sizing: border-box;
-      margin-bottom: 12px;
+      margin-bottom: 10px;
     }
     .btn-oido {
-      height: 52px;
+      height: 70px;
       background: #1e293b;
-      border: 1px solid #475569;
-      border-radius: 8px;
+      border: 2px solid #475569;
+      border-radius: 10px;
       color: #fff;
       font-weight: 800;
-      font-size: 0.92rem;
+      font-size: 0.95rem;
       cursor: pointer;
       display: flex;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 6px;
-      transition: background 0.15s, transform 0.05s;
+      gap: 4px;
+      transition: background 0.15s, border-color 0.15s, transform 0.05s;
     }
     .btn-oido:active {
       transform: scale(0.97);
       background: #0284c7;
+      border-color: #38bdf8;
     }
+    .btn-oido:disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+    }
+
     .btn-principal {
       width: 100%;
       height: 48px;
@@ -164,16 +175,18 @@
       color: #ffffff;
       border: none;
       border-radius: 8px;
-      font-weight: 700;
+      font-weight: 800;
       font-size: 0.95rem;
       cursor: pointer;
+      transition: background 0.2s, opacity 0.2s;
     }
     .btn-principal:disabled {
-      opacity: 0.5;
+      opacity: 0.45;
       cursor: not-allowed;
+      background: #334155;
     }
 
-    /* MODAL GUÍA RÁPIDA */
+    /* MODAL DE GUÍA INTEGRADO */
     .modal-fondo {
       display: none;
       position: fixed;
@@ -256,11 +269,11 @@
       <span>Progreso: <strong id="txt-progreso-aud">1 / 6</strong></span>
     </div>
 
-    <!-- REQUISITO EXCLUYENTE: CHECKBOX DE AUDÍFONOS -->
-    <div class="caja-gatekeeper" id="box-gatekeeper">
-      <input type="checkbox" id="chk-audifonos" onchange="alternarGatekeeper(this)">
+    <!-- REQUISITO PREVIO DE AUDÍFONOS -->
+    <div class="caja-gatekeeper" id="box-gatekeeper" onclick="marcarCheckDirecto(event)">
+      <input type="checkbox" id="chk-audifonos">
       <label for="chk-audifonos">
-        <strong>Requisito Técnico:</strong> Confirmo que tengo audífonos estéreo (cable o bluetooth) conectados y colocados correctamente en mis oídos izquierdo y derecho[cite: 8, 26].
+        <strong>Requisito Técnico:</strong> Confirmo que tengo audífonos estéreo (cable o bluetooth) conectados y colocados correctamente en mis oídos izquierdo y derecho[cite: 8].
       </label>
     </div>
 
@@ -279,26 +292,30 @@
       </div>
     </section>
 
+    <!-- VISOR DE ESTADO -->
     <div class="visor-acustico">
       <div class="onda-sonora" id="icono-onda">🎧</div>
-      <div id="txt-estado-acustico" style="font-size: 0.8rem; color: #94a3b8; font-weight: 600;">
+      <div id="txt-estado-acustico" style="font-size: 0.82rem; color: #94a3b8; font-weight: 600; text-align: center;">
         Marca la confirmación de audífonos para activar la prueba
       </div>
     </div>
 
+    <!-- BOTÓN DE INICIO DEL TEST -->
     <div id="contenedor-boton-inicio" style="margin-bottom: 12px;">
-      <button type="button" class="btn-principal" id="btn-iniciar-aud" disabled onclick="iniciarTamizajeAuditivo()">
+      <button type="button" class="btn-principal" id="btn-iniciar-aud" disabled>
         Comenzar Evaluación Sonora
       </button>
     </div>
 
-    <!-- SELECCIÓN DE CANAL DE PERCEPCIÓN -->
-    <section class="grilla-oidos" id="caja-botones-oido" style="display: none;">
-      <button type="button" class="btn-oido" id="btn-oido-izq" onclick="responderCanal('izquierdo')">
-        ◀ Oído Izquierdo
+    <!-- BOTONES DE RESPUESTA BINAURAL -->
+    <section class="grilla-oidos" id="caja-botones-oido">
+      <button type="button" class="btn-oido" id="btn-oido-izq">
+        <span style="font-size: 1.4rem;">◀️ 👂</span>
+        <span>Oído Izquierdo</span>
       </button>
-      <button type="button" class="btn-oido" id="btn-oido-der" onclick="responderCanal('derecho')">
-        Oído Derecho ▶
+      <button type="button" class="btn-oido" id="btn-oido-der">
+        <span style="font-size: 1.4rem;">👂 ▶️</span>
+        <span>Oído Derecho</span>
       </button>
     </section>
 
@@ -315,21 +332,17 @@
 
       <div class="item-guia">
         <span class="icono">🎧</span>
-        <div><strong>Separación Estéreo Indispensable:</strong> Los parlantes externos del teléfono o PC combinan el sonido e impiden determinar qué oído está escuchando[cite: 8, 26].</div>
+        <div><strong>Separación Estéreo Indispensable:</strong> Los parlantes externos mezclan el sonido en el aire e impiden determinar qué oído está escuchando[cite: 8].</div>
       </div>
 
       <div class="item-guia">
         <span class="icono">🔊</span>
-        <div><strong>Tonos Puros Clínicos:</strong> El sistema emitirá pitidos en frecuencias estándar de conducción (500 a 4.000 Hz) con pausas variables para evitar anticipaciones[cite: 8, 15].</div>
+        <div><strong>Tonos Puros Clínicos:</strong> El sistema emitirá pitidos en frecuencias estándar de conducción (500 a 4.000 Hz) con pausas variables anti-anticipación[cite: 8, 15].</div>
       </div>
 
       <div class="item-guia">
         <span class="icono">👂</span>
-        <div><strong>Respuesta Directa:</strong> Apenas percibas el pitido, pulsa el botón del lado correspondiente: <strong>Oído Izquierdo</strong> u <strong>Oído Derecho</strong>.</div>
-      </div>
-
-      <div class="caja-alerta-guia">
-        ⚠️ <strong>Ambiente Recomendado:</strong> Realiza la prueba en un lugar silencioso sin ruidos de motores o conversaciones de fondo.
+        <div><strong>Respuesta Directa:</strong> Apenas percibas el pitido, presiona el botón correspondiente: <strong>Oído Izquierdo</strong> u <strong>Oído Derecho</strong>[cite: 8].</div>
       </div>
 
       <button type="button" class="btn-principal" style="margin-top: 16px; height: 42px;" onclick="cerrarModalGuia()">
@@ -340,12 +353,11 @@
 
   <script src="audicion.js"></script>
   <script>
-    function alternarGatekeeper(chk) {
-      const btn = document.getElementById('btn-iniciar-aud');
-      const txt = document.getElementById('txt-estado-acustico');
-      if (btn) btn.disabled = !chk.checked;
-      if (txt) {
-        txt.innerText = chk.checked ? 'Presiona el botón para comenzar el test' : 'Marca la confirmación de audífonos para activar la prueba';
+    function marcarCheckDirecto(e) {
+      if (e.target.tagName !== 'INPUT') {
+        const chk = document.getElementById('chk-audifonos');
+        chk.checked = !chk.checked;
+        chk.dispatchEvent(new Event('change'));
       }
     }
     function abrirModalGuia() {
