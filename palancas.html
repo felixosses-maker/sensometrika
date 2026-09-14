@@ -6,6 +6,21 @@
   <title>Sensometrika | Test de Palancas</title>
   <link rel="stylesheet" href="styles.css">
   <style>
+    body {
+      background-color: #0b1120;
+      color: #f1f5f9;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      margin: 0;
+      padding: 16px;
+      display: flex;
+      justify-content: center;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    .contenedor {
+      width: 100%;
+      max-width: 440px;
+    }
     .barra-superior {
       width: 100%;
       display: flex;
@@ -20,14 +35,19 @@
       font-weight: 600;
     }
     .btn-ayuda {
-      background: transparent;
-      border: 1px solid #0284c7;
+      background: #1e293b;
+      border: 1px solid #38bdf8;
       color: #38bdf8;
-      padding: 4px 10px;
+      padding: 5px 12px;
       border-radius: 6px;
       font-size: 0.78rem;
       cursor: pointer;
-      font-weight: 600;
+      font-weight: 700;
+      transition: background 0.2s;
+    }
+    .btn-ayuda:hover {
+      background: #0284c7;
+      color: #fff;
     }
     .barra-calibracion {
       background: #0f172a;
@@ -43,7 +63,7 @@
       margin-bottom: 10px;
       box-sizing: border-box;
     }
-    .panel-resultados {
+    .panel-metricas {
       width: 100%;
       display: grid;
       grid-template-columns: repeat(3, 1fr);
@@ -58,70 +78,158 @@
       text-align: center;
     }
     .tarjeta-metrica span { display: block; font-size: 0.68rem; color: #94a3b8; }
-    .tarjeta-metrica strong { font-size: 0.95rem; color: #38bdf8; }
+    .tarjeta-metrica strong { font-size: 0.95rem; }
 
     .canvas-palancas-caja {
-      position: relative;
       width: 100%;
-      max-width: 340px;
       display: flex;
       justify-content: center;
-      margin: 4px 0;
+      margin: 4px 0 10px 0;
     }
-    #lienzo-palancas {
+    #canvas-palancas {
       background-color: #020617;
       border: 2px solid #334155;
       border-radius: 12px;
       touch-action: none;
+      display: block;
+      width: 100%;
+      max-width: 380px;
+      height: 200px;
     }
     .instruccion-caja {
-      font-size: 0.78rem;
-      color: #94a3b8;
+      font-size: 0.8rem;
+      color: #cbd5e1;
       text-align: center;
-      margin: 6px 0;
+      margin: 8px 0;
+      font-weight: 600;
     }
-    .panel-mandos {
+    .btn-principal {
       width: 100%;
+      height: 48px;
+      background: #0284c7;
+      color: #ffffff;
+      border: none;
+      border-radius: 8px;
+      font-weight: 700;
+      font-size: 0.95rem;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .btn-principal:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    /* MANDOS BIMANUALES */
+    .seccion-mandos {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 10px;
-      margin-top: 8px;
+      gap: 12px;
+      margin-top: 12px;
+      width: 100%;
+      box-sizing: border-box;
     }
     .caja-mando {
       background: #0f172a;
       border: 1px solid #334155;
       border-radius: 10px;
-      padding: 8px;
+      padding: 10px;
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 6px;
+      gap: 8px;
     }
     .caja-mando span {
-      font-size: 0.68rem;
+      font-size: 0.72rem;
+      font-weight: 700;
       color: #94a3b8;
-      font-weight: 600;
     }
-    .fila-botones {
-      display: flex;
-      gap: 6px;
+    .btn-mando {
       width: 100%;
-    }
-    .btn-control {
-      flex: 1;
       height: 42px;
       background: #1e293b;
       border: 1px solid #475569;
-      color: #ffffff;
-      border-radius: 8px;
-      font-size: 0.85rem;
-      font-weight: 700;
+      border-radius: 6px;
+      color: #fff;
+      font-weight: 800;
+      font-size: 0.9rem;
       cursor: pointer;
-      touch-action: manipulation;
+      touch-action: none;
+      transition: background 0.1s, transform 0.05s;
     }
-    .btn-control:active {
+    .btn-mando:active {
       background: #0284c7;
-      border-color: #38bdf8;
+      transform: scale(0.96);
+    }
+
+    /* MODAL OSCURO DE GUÍA */
+    .modal-fondo {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(2, 6, 23, 0.85);
+      z-index: 9999;
+      backdrop-filter: blur(4px);
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      box-sizing: border-box;
+    }
+    .modal-tarjeta {
+      background: #0f172a;
+      border: 1.5px solid #38bdf8;
+      border-radius: 14px;
+      max-width: 420px;
+      width: 100%;
+      max-height: 85vh;
+      overflow-y: auto;
+      padding: 20px;
+      box-sizing: border-box;
+      color: #cbd5e1;
+      font-size: 0.85rem;
+      line-height: 1.45;
+      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5);
+    }
+    .modal-cabecera {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #334155;
+      padding-bottom: 10px;
+      margin-bottom: 14px;
+    }
+    .modal-cabecera h3 {
+      margin: 0;
+      color: #38bdf8;
+      font-size: 1.05rem;
+    }
+    .btn-cerrar-x {
+      background: transparent;
+      border: none;
+      color: #94a3b8;
+      font-size: 1.4rem;
+      cursor: pointer;
+      line-height: 1;
+      padding: 0;
+    }
+    .item-guia {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    .item-guia span.icono {
+      font-size: 1.1rem;
+      line-height: 1;
+    }
+    .caja-alerta-guia {
+      background: rgba(239, 68, 68, 0.1);
+      border-left: 3px solid #ef4444;
+      padding: 8px 10px;
+      font-size: 0.78rem;
+      color: #fca5a5;
+      border-radius: 4px;
+      margin-top: 10px;
     }
   </style>
 </head>
@@ -129,57 +237,106 @@
   <main class="contenedor">
     <header class="barra-superior">
       <a href="menu.html">← Menú Principal</a>
-      <button class="btn-ayuda" onclick="alert('Usa los mandos inferiores para guiar el puntero amarillo hasta el punto verde de llegada sin tocar las paredes azules.')">❓ ¿Cómo funciona?</button>
+      <button class="btn-ayuda" type="button" id="btn-abrir-ayuda" onclick="abrirModalGuia()">❓ ¿Cómo funciona?</button>
     </header>
 
     <div class="barra-calibracion">
-      <span id="badge-modo">🟢 Demo Calibración (20 s)</span>
-      <span id="txt-tiempo">Tiempo: <strong id="lbl-reloj">20 s</strong></span>
+      <span id="badge-fase">🟢 Demo Calibración (20 s)</span>
+      <span>Tiempo: <strong id="txt-tiempo">20 s</strong></span>
     </div>
 
-    <section class="panel-resultados">
+    <section class="panel-metricas">
       <div class="tarjeta-metrica">
         <span>Contactos</span>
-        <strong id="metrica-toques" style="color: #ef4444;">0</strong>
+        <strong id="contador-toques" style="color: #ef4444;">0</strong>
       </div>
       <div class="tarjeta-metrica">
         <span>T. Contacto</span>
-        <strong id="metrica-tiempo-contacto">0.0 s</strong>
+        <strong id="contador-tiempo-toque" style="color: #38bdf8;">0.0 s</strong>
       </div>
       <div class="tarjeta-metrica">
         <span>Circuito</span>
-        <strong id="metrica-circuito" style="color: #38bdf8;">Demo P-1</strong>
+        <strong id="tipo-circuito" style="color: #38bdf8;">Calibración A</strong>
       </div>
     </section>
 
     <div class="canvas-palancas-caja">
-      <canvas id="lienzo-palancas" width="330" height="230"></canvas>
+      <canvas id="canvas-palancas" width="380" height="200"></canvas>
     </div>
 
-    <div class="instruccion-caja" id="caja-instrucciones">
+    <div class="instruccion-caja" id="caja-instruccion">
       Usa los mandos inferiores para guiar el puntero
     </div>
 
-    <button id="btn-accion-palancas" class="btn-principal">Iniciar Calibración (20 s)</button>
-
-    <div class="panel-mandos">
-      <div class="caja-mando">
-        <span>Mano Izq (Vertical)</span>
-        <button class="btn-control" id="btn-arriba">▲ Arriba</button>
-        <button class="btn-control" id="btn-abajo">▼ Abajo</button>
-      </div>
-      <div class="caja-mando">
-        <span>Mano Der (Horizontal)</span>
-        <div class="fila-botones" style="margin-top: 24px;">
-          <button class="btn-control" id="btn-izq">◄</button>
-          <button class="btn-control" id="btn-der">►</button>
-        </div>
-      </div>
+    <div id="contenedor-accion">
+      <button id="btn-iniciar" class="btn-principal" onclick="iniciarPalancas()">Iniciar Calibración (20 s)</button>
     </div>
 
-    <div id="zona-coordinacion-palancas" style="width: 100%; margin-top: 10px;"></div>
+    <!-- MANDOS BIMANUALES -->
+    <section class="seccion-mandos">
+      <div class="caja-mando">
+        <span>Mano Izq (Vertical)</span>
+        <button type="button" class="btn-mando" id="btn-arriba">▲ Arriba</button>
+        <button type="button" class="btn-mando" id="btn-abajo">▼ Abajo</button>
+      </div>
+
+      <div class="caja-mando">
+        <span>Mano Der (Horizontal)</span>
+        <div style="display: flex; gap: 6px; width: 100%;">
+          <button type="button" class="btn-mando" id="btn-izq">◄</button>
+          <button type="button" class="btn-mando" id="btn-der">►</button>
+        </div>
+      </div>
+    </section>
   </main>
 
+  <!-- MODAL INTEGRADO DE GUÍA RÁPIDA -->
+  <div class="modal-fondo" id="modal-guia">
+    <div class="modal-tarjeta">
+      <div class="modal-cabecera">
+        <h3>Guía: Test de Palancas (DS 170)</h3>
+        <button type="button" class="btn-cerrar-x" onclick="cerrarModalGuia()">&times;</button>
+      </div>
+
+      <div class="item-guia">
+        <span class="icono">🎮</span>
+        <div><strong>Coordinación Bimanual:</strong> Usa ambas manos a la vez: la izquierda para subir/bajar y la derecha para los costados[cite: 2, 3].</div>
+      </div>
+
+      <div class="item-guia">
+        <span class="icono">🟡</span>
+        <div><strong>Objetivo:</strong> Guía el punto amarillo por el canal continuo hasta alcanzar la meta verde[cite: 1, 4].</div>
+      </div>
+
+      <div class="item-guia">
+        <span class="icono">⚡</span>
+        <div><strong>Paredes activas:</strong> Rozar los límites azules suma contactos y tiempo de penalización[cite: 1, 4].</div>
+      </div>
+
+      <div class="caja-alerta-guia">
+        ⚠️ <strong>Consejo Clave:</strong> No te apresures; el examen oficial concede 60 segundos completos[cite: 1, 2]. Prioriza el pulso sobre la velocidad[cite: 4].
+      </div>
+
+      <button type="button" class="btn-principal" style="margin-top: 16px; height: 42px;" onclick="cerrarModalGuia()">
+        Entendido, Volver a la Prueba
+      </button>
+    </div>
+  </div>
+
   <script src="palancas.js"></script>
+  <script>
+    function abrirModalGuia() {
+      const m = document.getElementById('modal-guia');
+      if (m) {
+        m.style.display = 'flex';
+      }
+    }
+    function cerrarModalGuia() {
+      const m = document.getElementById('modal-guia');
+      if (m) {
+        m.style.display = 'none';
+      }
+    }
+  </script>
 </body>
 </html>
