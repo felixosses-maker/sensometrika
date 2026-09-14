@@ -1,210 +1,272 @@
-const canvas = document.getElementById('lienzo-punteo');
-const ctx = canvas.getContext('2d');
-const elAciertos = document.getElementById('metrica-aciertos');
-const elFallos = document.getElementById('metrica-fallos');
-const elEfectividad = document.getElementById('metrica-efectividad');
+/**
+ * Sensometrika | Módulo 3: Test de Punteo (Disco de Lahy)
+ * Baremos D.S. N° 170 MTT
+ */
+
+const canvas = document.getElementById('canvas-punteo');
+const ctx = canvas ? canvas.getContext('2d') : null;
 const panelEstado = document.getElementById('panel-estado');
-const btnIniciar = document.getElementById('btn-iniciar-punteo');
-const badgeModo = document.getElementById('badge-modo-punteo');
-const txtTiempo = document.getElementById('txt-tiempo-punteo');
-const zonaCoordinacion = document.getElementById('zona-coordinacion-punteo');
+const btnAccion = document.getElementById('btn-accion');
+const metricaAciertos = document.getElementById('metrica-aciertos');
+const metricaFallos = document.getElementById('metrica-fallos');
+const metricaEfectividad = document.getElementById('metrica-efectividad');
+const metricaTiempo = document.getElementById('metrica-tiempo');
+const badgeModo = document.getElementById('badge-modo');
+const zonaCoordinacion = document.getElementById('zona-coordinacion-test');
 
-// Modal de guía
-const modalGuia = document.getElementById('modal-guia');
-const btnGuiaModulo = document.getElementById('btn-guia-modulo');
-const btnCerrarGuia = document.getElementById('btn-cerrar-guia');
-const btnEntendidoGuia = document.getElementById('btn-entendido-guia');
+let modo = 'DEMO'; // 'DEMO' (15 s) u 'OFICIAL' (30 s)
+let pruebaActiva = false;
+let tiempoRestante = 15;
+let temporizador = null;
+let animacionId = null;
 
-if (btnGuiaModulo && modalGuia) {
-  btnGuiaModulo.addEventListener('click', () => modalGuia.style.display = 'flex');
-  btnCerrarGuia.addEventListener('click', () => modalGuia.style.display = 'none');
-  btnEntendidoGuia.addEventListener('click', () => modalGuia.style.display = 'none');
-  modalGuia.addEventListener('click', (e) => {
-    if (e.target === modalGuia) modalGuia.style.display = 'none';
-  });
-}
-
-let fase = 'DEMO'; // DEMO u OFICIAL
-let activo = false;
 let aciertos = 0;
 let fallos = 0;
-let circulos = [];
-let temporizadorGeneracion = null;
-let temporizadorFin = null;
+let orificios = [];
+let ultimoOrificioId = 0;
 
-function renderizar() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  ctx.fillStyle = "#0f172a";
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
+// Configuración de la franja dorada central
+const FRANJA = {
+  x: 140,
+  y: 40,
+  ancho: 80,
+  alto: 240
+};
 
-  // Zona de inserción delimitada (Franja Dorada Central)
-  ctx.strokeStyle = "#f59e0b";
-  ctx.lineWidth = 3;
-  ctx.strokeRect(125, 15, 80, 200);
-
-  circulos.forEach(c => {
-    ctx.beginPath();
-    ctx.arc(c.x, c.y, c.radio, 0, Math.PI * 2);
-    ctx.fillStyle = c.tocado ? "#64748b" : "#22c55e";
-    ctx.fill();
-    ctx.lineWidth = 2;
-    ctx.strokeStyle = "#ffffff";
-    ctx.stroke();
-  });
-}
-
-function programarSiguienteCirculo() {
-  if (!activo) return;
-
-  const velVariacion = 1.7 + Math.random() * 0.8;
-  circulos.push({
-    x: -15,
-    y: 35 + Math.random() * 160,
-    radio: 14,
-    velocidad: velVariacion,
+// Generador de orificios dinámicos en movimiento
+function generarOrificio() {
+  ultimoOrificioId++;
+  const radio = 14;
+  const x = FRANJA.x + Math.floor(Math.random() * (FRANJA.ancho - radio * 2)) + radio;
+  const velocidad = (modo === 'DEMO') ? 2.2 : 3.0; // Velocidad de caída
+  
+  orificios.push({
+    id: ultimoOrificioId,
+    x: x,
+    y: FRANJA.y - 20,
+    radio: radio,
+    velocidad: velocidad,
     tocado: false
   });
-
-  const proximoIntervalo = Math.floor(Math.random() * (1800 - 1100 + 1)) + 1100;
-  temporizadorGeneracion = setTimeout(programarSiguienteCirculo, proximoIntervalo);
 }
 
-function actualizar() {
-  if (!activo) return;
+function dibujarPunteo() {
+  if (!ctx) return;
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  circulos.forEach(c => {
-    c.x += c.velocidad;
-  });
+  // Fondo del tambor
+  ctx.fillStyle = '#0f172a';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-  circulos = circulos.filter(c => {
-    if (c.x > canvas.width + 20) {
-      if (!c.tocado) {
+  // Franja dorada de calibración
+  ctx.strokeStyle = '#f59e0b';
+  ctx.lineWidth = 3;
+  ctx.strokeRect(FRANJA.x, FRANJA.y, FRANJA.ancho, FRANJA.alto);
+
+  // Mover y dibujar orificios
+  ctx.fillStyle = '#94a3b8';
+  for (let i = orificios.length - 1; i >= 0; i--) {
+    const o = orificios[i];
+    o.y += o.velocidad;
+
+    ctx.beginPath();
+    ctx.arc(o.x, o.y, o.radio, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Si sale de la franja sin ser tocado, cuenta como fallo
+    if (o.y - o.radio > FRANJA.y + FRANJA.alto) {
+      if (!o.tocado && pruebaActiva) {
         fallos++;
-        elFallos.innerText = fallos;
+        actualizarMetricas();
       }
-      return false;
+      orificios.splice(i, 1);
     }
-    return true;
-  });
+  }
 
-  renderizar();
-  requestAnimationFrame(actualizar);
+  if (pruebaActiva) {
+    // Frecuencia estocástica de caída de orificios
+    if (Math.random() < 0.04) {
+      generarOrificio();
+    }
+    animacionId = requestAnimationFrame(dibujarPunteo);
+  }
 }
 
-btnIniciar.addEventListener('click', () => {
-  if (activo) return;
-  iniciarCicloPunteo();
-});
-
-function iniciarCicloPunteo() {
-  activo = true;
-  aciertos = 0;
-  fallos = 0;
-  circulos = [];
-  elAciertos.innerText = "0";
-  elFallos.innerText = "0";
-  elEfectividad.innerText = "-- %";
-
-  const duracion = (fase === 'DEMO') ? 15000 : 30000;
-  panelEstado.innerText = (fase === 'DEMO') 
-    ? 'Fase Demo: Ensayo libre (15 s)' 
-    : '¡Evaluación Oficial (30 s)! Mantén el ritmo';
-  panelEstado.style.color = '#38bdf8';
-
-  btnIniciar.innerText = "En curso...";
-  btnIniciar.disabled = true;
-
-  clearTimeout(temporizadorGeneracion);
-  clearTimeout(temporizadorFin);
-
-  programarSiguienteCirculo();
-
-  temporizadorFin = setTimeout(() => {
-    finalizarCicloPunteo();
-  }, duracion);
-
-  actualizar();
-}
-
-canvas.addEventListener('pointerdown', (e) => {
-  if (!activo) return;
-  const rect = canvas.getBoundingClientRect();
-  const px = e.clientX - rect.left;
-  const py = e.clientY - rect.top;
-
-  let impacto = false;
-  circulos.forEach(c => {
-    const dist = Math.hypot(c.x - px, c.y - py);
-    if (dist <= c.radio + 8 && !c.tocado) {
-      c.tocado = true;
-      if (c.x >= 120 && c.x <= 210) {
-        aciertos++;
-        impacto = true;
-      } else {
-        fallos++;
-      }
-    }
-  });
-
-  elAciertos.innerText = aciertos;
-  elFallos.innerText = fallos;
-  if ('vibrate' in navigator && impacto) navigator.vibrate(30);
-});
-
-function finalizarCicloPunteo() {
-  activo = false;
-  clearTimeout(temporizadorGeneracion);
-  clearTimeout(temporizadorFin);
-
+function actualizarMetricas() {
   const total = aciertos + fallos;
   const efectividad = total > 0 ? Math.round((aciertos / total) * 100) : 0;
-  elEfectividad.innerText = `${efectividad}%`;
+  
+  if (metricaAciertos) metricaAciertos.innerText = aciertos;
+  if (metricaFallos) metricaFallos.innerText = fallos;
+  if (metricaEfectividad) metricaEfectividad.innerText = `${efectividad}%`;
+}
 
-  if (fase === 'DEMO') {
-    fase = 'OFICIAL';
-    badgeModo.innerText = '🔴 Evaluación Oficial (30 s)';
-    badgeModo.style.borderColor = '#ef4444';
-    txtTiempo.innerHTML = 'Tiempo: <strong>30 s</strong>';
+// Detección de toque en pantalla / clic sobre el orificio
+if (canvas) {
+  canvas.addEventListener('pointerdown', (e) => {
+    if (!pruebaActiva) return;
+    e.preventDefault();
 
-    panelEstado.innerText = '¡Demo finalizada! Pulsa para la Evaluación Oficial';
-    panelEstado.style.color = '#facc15';
-    btnIniciar.innerText = "Iniciar Evaluación Oficial (30 s)";
-    btnIniciar.disabled = false;
-  } else {
-    btnIniciar.innerText = "Módulo 3 Completado";
-    const aprobado = efectividad >= 80;
+    const rect = canvas.getBoundingClientRect();
+    const touchX = e.clientX - rect.left;
+    const touchY = e.clientY - rect.top;
 
-    panelEstado.innerText = aprobado ? `Aprobado (${efectividad}%)` : `Reprobado (${efectividad}%)`;
-    panelEstado.style.color = aprobado ? '#4ade80' : '#f87171';
+    let impacto = false;
+    for (let i = 0; i < orificios.length; i++) {
+      const o = orificios[i];
+      const dist = Math.hypot(touchX - o.x, touchY - o.y);
 
-    // Persistencia oficial
-    localStorage.setItem('sensometrika_punteo', JSON.stringify({
-      efectividad: efectividad,
-      aciertos: aciertos,
-      fallos: fallos,
-      aprobado: aprobado
-    }));
+      // Si el toque cae dentro del radio del orificio dentro de la franja dorada
+      if (dist <= o.radio + 8 && !o.tocado) {
+        if (o.y >= FRANJA.y && o.y <= FRANJA.y + FRANJA.alto) {
+          o.tocado = true;
+          aciertos++;
+          impacto = true;
+          if ('vibrate' in navigator) navigator.vibrate(30);
+          orificios.splice(i, 1);
+          break;
+        }
+      }
+    }
 
-    // Tarjeta interactiva hacia el Módulo 4 (Visual) o Informe
+    if (!impacto) {
+      fallos++;
+    }
+    actualizarMetricas();
+  });
+}
+
+if (btnAccion) {
+  btnAccion.addEventListener('pointerdown', (e) => {
+    e.preventDefault();
+    if (!pruebaActiva && modo === 'DEMO') {
+      iniciarDemo();
+    } else if (!pruebaActiva && modo === 'OFICIAL') {
+      iniciarOficial();
+    }
+  });
+}
+
+function iniciarDemo() {
+  pruebaActiva = true;
+  tiempoRestante = 15;
+  aciertos = 0;
+  fallos = 0;
+  orificios = [];
+  actualizarMetricas();
+
+  btnAccion.style.display = 'none';
+  panelEstado.innerText = 'Presiona los círculos únicamente dentro del marco dorado';
+  panelEstado.style.color = '#38bdf8';
+
+  dibujarPunteo();
+
+  temporizador = setInterval(() => {
+    tiempoRestante--;
+    if (metricaTiempo) metricaTiempo.innerText = `${tiempoRestante} s`;
+
+    if (tiempoRestante <= 0) {
+      clearInterval(temporizador);
+      pruebaActiva = false;
+      cancelAnimationFrame(animacionId);
+      finalizarDemo();
+    }
+  }, 1000);
+}
+
+function finalizarDemo() {
+  modo = 'OFICIAL';
+  panelEstado.innerText = 'Calibración lista. Presiona el botón verde para la Evaluación Oficial.';
+  panelEstado.style.color = '#4ade80';
+
+  btnAccion.style.display = 'block';
+  btnAccion.innerText = 'Iniciar Evaluación Oficial (30 s)';
+  btnAccion.style.backgroundColor = '#22c55e';
+}
+
+function iniciarOficial() {
+  pruebaActiva = true;
+  tiempoRestante = 30;
+  aciertos = 0;
+  fallos = 0;
+  orificios = [];
+  actualizarMetricas();
+
+  if (badgeModo) {
+    badgeModo.innerText = '🔴 Evaluación Oficial D.S. N° 170';
+    badgeModo.style.color = '#38bdf8';
+  }
+
+  btnAccion.style.display = 'none';
+  panelEstado.innerText = 'Evaluación Oficial en curso...';
+  panelEstado.style.color = '#38bdf8';
+
+  dibujarPunteo();
+
+  temporizador = setInterval(() => {
+    tiempoRestante--;
+    if (metricaTiempo) metricaTiempo.innerText = `${tiempoRestante} s`;
+
+    if (tiempoRestante <= 0) {
+      clearInterval(temporizador);
+      pruebaActiva = false;
+      cancelAnimationFrame(animacionId);
+      finalizarPruebaOficial();
+    }
+  }, 1000);
+}
+
+function finalizarPruebaOficial() {
+  const total = aciertos + fallos;
+  const efectividad = total > 0 ? Math.round((aciertos / total) * 100) : 0;
+  const aprobado = (efectividad >= 80);
+
+  // 1. Guardar resultado para el informe consolidado
+  localStorage.setItem('sensometrika_punteo', JSON.stringify({
+    efectividad: efectividad,
+    aciertos: aciertos,
+    fallos: fallos,
+    aprobado: aprobado
+  }));
+
+  // 2. Comprobar permisos del plan adquirido
+  const sesion = JSON.parse(localStorage.getItem('sensometrika_sesion')) || {};
+  const modulosPermitidos = sesion.modulosPermitidos || ['reactimetro', 'palancas', 'punteo'];
+  const tieneVisual = modulosPermitidos.includes('visual');
+  const tieneAuditivo = modulosPermitidos.includes('auditivo');
+
+  // Enrutamiento dinámico según el plan:
+  let siguienteUrl = 'informe.html';
+  let textoBoton = '📊 Ver Informe y Dictamen Final';
+
+  if (tieneVisual) {
+    siguienteUrl = 'visual.html';
+    textoBoton = 'Continuar a Módulo 4 (Tamizaje Visual) →';
+  } else if (tieneAuditivo) {
+    siguienteUrl = 'audicion.html';
+    textoBoton = 'Continuar a Módulo 5 (Tamizaje Auditivo) →';
+  }
+
+  const colorResultado = aprobado ? '#4ade80' : '#f87171';
+  const textoTitulo = aprobado ? '¡Módulo 3 Finalizado!' : 'Módulo 3 Finalizado (Fuera de Rango)';
+
+  if (zonaCoordinacion) {
     zonaCoordinacion.innerHTML = `
-      <div style="background: #020617; border: 1.5px solid #38bdf8; border-radius: 12px; padding: 16px; margin-top: 14px; text-align: center; box-sizing: border-box;">
-        <h3 style="color: #4ade80; font-size: 1.05rem; margin: 0 0 6px 0;">¡Módulo 3 Finalizado!</h3>
-        <p style="color: #94a3b8; font-size: 0.82rem; margin: 0 0 14px 0;">
-          Efectividad registrada: <strong style="color: #fff;">${efectividad}%</strong> (${aprobado ? 'Aprobado D.S. 170' : 'Reprobado'})
+      <div style="background: #020617; border: 1.5px solid ${colorResultado}; border-radius: 12px; padding: 16px; margin-top: 14px; text-align: center; width: 100%; box-sizing: border-box;">
+        <h3 style="color: ${colorResultado}; margin: 0 0 6px 0; font-size: 1.05rem;">${textoTitulo}</h3>
+        <p style="color: #94a3b8; font-size: 0.82rem; margin-bottom: 14px;">
+          Efectividad registrada: <strong style="color: #ffffff;">${efectividad}%</strong> (${aciertos} aciertos)<br>
+          <span style="font-size: 0.76rem; color: ${colorResultado};">Resultado: <strong>${aprobado ? 'APROBADO' : 'NO APTO'}</strong> (Exigencia D.S. N° 170: &ge; 80%)</span>
         </p>
         <div style="display: flex; flex-direction: column; gap: 8px;">
-          <a href="visual.html" class="btn-principal" style="display: flex; justify-content: center; align-items: center; text-decoration: none; height: 44px; font-size: 0.9rem; background-color: #0284c7; color: #fff; border-radius: 8px; font-weight: bold;">
-            Continuar a Módulo 4 (Tamizaje Visual) →
+          <a href="${siguienteUrl}" class="btn-principal" style="display: flex; justify-content: center; align-items: center; text-decoration: none; height: 46px; background-color: #0284c7; font-size: 0.95rem;">
+            ${textoBoton}
           </a>
-          <a href="menu.html" style="color: #64748b; font-size: 0.8rem; text-decoration: none; padding: 4px;">
+          <a href="menu.html" style="color: #64748b; font-size: 0.8rem; text-decoration: none; padding: 6px;">
             Regresar al Menú Principal
           </a>
         </div>
       </div>
     `;
   }
-
-  renderizar();
 }
-
-renderizar();

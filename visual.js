@@ -1,370 +1,194 @@
-/* ==========================================================================
-   1. BANCO DE ESTÍMULOS ANTI-MEMORIZACIÓN
-   ========================================================================== */
-const BANCO_ISHIHARA = [
-  { numero: '12', fondo: '#e27d60', patron: '#41b3a3', opciones: ['12', '74', 'No distingo', '8'] },
-  { numero: '8',  fondo: '#85dcba', patron: '#e8a87c', opciones: ['3', '8', 'No distingo', '5'] },
-  { numero: '74', fondo: '#c38d9e', patron: '#41b3a3', opciones: ['21', '74', 'No distingo', '71'] },
-  { numero: '6',  fondo: '#e8a87c', patron: '#5b92e5', opciones: ['5', '6', 'No distingo', '8'] },
-  { numero: '29', fondo: '#a3e4d7', patron: '#e74c3c', opciones: ['70', '29', 'No distingo', '26'] },
-  { numero: '5',  fondo: '#f6cd61', patron: '#0e9aa7', opciones: ['2', '5', 'No distingo', '3'] }
-];
+/**
+ * Sensometrika | Módulo 4: Screening Visual Preventivo (Ishihara y Optotipo E)
+ */
 
-const ANGULOS_E = [
-  { ang: 0,   dir: 'Derecha' },
-  { ang: 90,  dir: 'Abajo' },
-  { ang: 180, dir: 'Izquierda' },
-  { ang: 270, dir: 'Arriba' }
-];
-
-function mezclar(arr) {
-  return [...arr].sort(() => Math.random() - 0.5);
-}
-
-function generarBateria() {
-  const cromatica = mezclar(BANCO_ISHIHARA).slice(0, 3).map(item => ({
-    tipo: 'ISHIHARA',
-    numero: item.numero,
-    colorFondo: item.fondo,
-    colorPatron: item.patron,
-    opciones: mezclar(item.opciones)
-  }));
-
-  const escalas = ['4.2rem', '2.8rem', '1.6rem'];
-  const agudeza = escalas.map(tam => {
-    const elegido = ANGULOS_E[Math.floor(Math.random() * ANGULOS_E.length)];
-    return {
-      tipo: 'OPTOTIPO',
-      orientacion: elegido.ang,
-      tamanoRem: tam,
-      etiquetaOpciones: ['Derecha', 'Izquierda', 'Arriba', 'Abajo'],
-      respuestaCorrecta: elegido.dir
-    };
-  });
-
-  return [...cromatica, ...agudeza];
-}
-
-const PRUEBAS_VISUALES = generarBateria();
-let indiceActual = 0;
-let aciertosCromaticos = 0;
-let aciertosAgudeza = 0;
-let distanciaValidada = true;
-let pruebaFinalizada = false;
-let camaraAutorizada = false;
-
-/* ==========================================================================
-   2. DOM Y CONTROL DE MODAL / AUTORIZACIÓN
-   ========================================================================== */
-const modalPermiso = document.getElementById('modal-permiso-camara');
-const btnDarAutorizacion = document.getElementById('btn-dar-autorizacion');
-const btnOmitirAutorizacion = document.getElementById('btn-omitir-autorizacion');
-
-const video = document.getElementById('video-camara');
-const cajaCamara = document.getElementById('caja-camara');
-const etiquetaDistancia = document.getElementById('etiqueta-distancia');
-const subDistancia = document.getElementById('sub-distancia');
-const estadoDistancia = document.getElementById('estado-distancia');
-const canvasIshihara = document.getElementById('canvas-ishihara');
-const ctxIshihara = canvasIshihara ? canvasIshihara.getContext('2d') : null;
+const canvas = document.getElementById('canvas-ishihara');
+const ctx = canvas ? canvas.getContext('2d') : null;
 const simboloOptotipo = document.getElementById('simbolo-optotipo');
-const contenedorOpciones = document.getElementById('contenedor-opciones');
 const panelEstado = document.getElementById('panel-estado');
-const indicadorFase = document.getElementById('indicador-fase');
+const contenedorOpciones = document.getElementById('contenedor-opciones');
 const contadorAciertos = document.getElementById('contador-aciertos');
+const indicadorFase = document.getElementById('indicador-fase');
+const estadoAlerta = document.getElementById('estado-alerta');
 const cajaInstruccion = document.getElementById('caja-instruccion');
 
-// Asignación de eventos de autorización
-if (btnDarAutorizacion) {
-  btnDarAutorizacion.addEventListener('click', async () => {
-    // 1. Ocultar el modal de inmediato para no congelar la vista
-    cerrarModal();
+let fase = 'CROMATICA'; // 'CROMATICA' (3 láminas) o 'AGUDEZA' (3 optotipos)
+let pasoActual = 0;
+let aciertosCromaticos = 0;
+let aciertosAgudeza = 0;
 
-    // 2. Solicitar stream de video
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'user', width: { ideal: 320 }, height: { ideal: 240 } },
-        audio: false
-      });
+// Banco de láminas cromáticas Ishihara
+const laminasIshihara = [
+  { numero: 12, fondo: '#f97316', puntos: '#22c55e', opciones: [12, 72, 21, 'No distingo'] },
+  { numero: 8, fondo: '#ef4444', puntos: '#84cc16', opciones: [8, 3, 9, 'No distingo'] },
+  { numero: 74, fondo: '#eab308', puntos: '#06b6d4', opciones: [74, 21, 71, 'No distingo'] },
+  { numero: 6, fondo: '#ec4899', puntos: '#10b981', opciones: [6, 5, 8, 'No distingo'] },
+  { numero: 29, fondo: '#8b5cf6', puntos: '#f59e0b', opciones: [29, 70, 26, 'No distingo'] }
+];
 
-      camaraAutorizada = true;
-      if (video) {
-        video.srcObject = stream;
-        video.onloadedmetadata = () => {
-          iniciarMonitoreoDistancia();
-        };
-      }
-    } catch (err) {
-      activarModoManual();
-    }
-  });
+// Banco de optotipos E Snellen (rotaciones en grados)
+const optotipos = [
+  { rotacion: 0, direccion: 'Derecha', opciones: ['Derecha', 'Izquierda', 'Arriba', 'Abajo'] },
+  { rotacion: 90, direccion: 'Abajo', opciones: ['Derecha', 'Izquierda', 'Arriba', 'Abajo'] },
+  { rotacion: 180, direccion: 'Izquierda', opciones: ['Derecha', 'Izquierda', 'Arriba', 'Abajo'] },
+  { rotacion: 270, direccion: 'Arriba', opciones: ['Derecha', 'Izquierda', 'Arriba', 'Abajo'] }
+];
+
+let itemsPruebaCromatica = [];
+let itemsPruebaAgudeza = [];
+
+document.addEventListener('DOMContentLoaded', () => {
+  // Barajar láminas para evitar memorización
+  itemsPruebaCromatica = [...laminasIshihara].sort(() => Math.random() - 0.5).slice(0, 3);
+  itemsPruebaAgudeza = [...optotipos].sort(() => Math.random() - 0.5).slice(0, 3);
+  iniciarFaseCromatica();
+});
+
+function iniciarFaseCromatica() {
+  fase = 'CROMATICA';
+  pasoActual = 0;
+  if (indicadorFase) indicadorFase.innerText = 'Cromático';
+  if (canvas) canvas.style.display = 'block';
+  if (simboloOptotipo) simboloOptotipo.style.display = 'none';
+  cargarLaminaActual();
 }
 
-if (btnOmitirAutorizacion) {
-  btnOmitirAutorizacion.addEventListener('click', () => {
-    cerrarModal();
-    activarModoManual();
-  });
-}
+function cargarLaminaActual() {
+  const item = itemsPruebaCromatica[pasoActual];
+  if (!item) return;
 
-function cerrarModal() {
-  if (modalPermiso) {
-    modalPermiso.style.display = 'none';
+  if (contadorAciertos) contadorAciertos.innerText = `${aciertosCromaticos + aciertosAgudeza}/6`;
+  if (panelEstado) panelEstado.innerText = `Lámina ${pasoActual + 1} de 3: ¿Qué número observas?`;
+
+  // Dibujar lámina simulada de Ishihara
+  if (ctx) {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = item.fondo;
+    ctx.beginPath();
+    ctx.arc(100, 100, 95, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.fillStyle = item.puntos;
+    ctx.font = 'bold 70px monospace';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(item.numero, 100, 100);
   }
-}
 
-function activarModoManual() {
-  camaraAutorizada = false;
-  distanciaValidada = true;
-
-  if (cajaCamara) {
-    cajaCamara.className = 'caja-monitor-camara distancia-ok';
-    if (video) video.style.display = 'none';
-    if (etiquetaDistancia) etiquetaDistancia.innerText = '📱 Modo Manual Asistido';
-    if (subDistancia) subDistancia.innerText = 'Extiende tu brazo a ~50-60 cm';
-  }
-  if (estadoDistancia) {
-    estadoDistancia.innerText = 'Manual';
-    estadoDistancia.style.color = '#38bdf8';
-  }
-  actualizarEstadoBotones();
-}
-
-/* ==========================================================================
-   3. LOOP DE MONITOREO DE DISTANCIA
-   ========================================================================== */
-function iniciarMonitoreoDistancia() {
-  const canvasAux = document.createElement('canvas');
-  const ctxAux = canvasAux.getContext('2d', { willReadFrequently: true });
-  canvasAux.width = 80;
-  canvasAux.height = 60;
-
-  const timer = setInterval(() => {
-    if (pruebaFinalizada) {
-      clearInterval(timer);
-      return;
+  // Barajar opciones
+  const opciones = [...item.opciones].sort(() => Math.random() - 0.5);
+  renderizarBotones(opciones, (opcionSeleccionada) => {
+    if (opcionSeleccionada === item.numero) {
+      aciertosCromaticos++;
     }
-    if (!video || video.readyState < 2) return;
-
-    ctxAux.drawImage(video, 0, 0, 80, 60);
-    const frame = ctxAux.getImageData(0, 0, 80, 60).data;
-
-    let pixelesRostro = 0;
-    for (let i = 0; i < frame.length; i += 4) {
-      const r = frame[i], g = frame[i + 1], b = frame[i + 2];
-      if (r > 60 && g > 40 && b > 20 && r > g && r > b && (r - g) > 10) {
-        pixelesRostro++;
-      }
-    }
-
-    const densidad = pixelesRostro / (80 * 60);
-    const esOptotipo = PRUEBAS_VISUALES[indiceActual] && PRUEBAS_VISUALES[indiceActual].tipo === 'OPTOTIPO';
-
-    if (esOptotipo) {
-      if (densidad > 0.32) {
-        distanciaValidada = false;
-        cajaCamara.className = 'caja-monitor-camara distancia-alerta';
-        etiquetaDistancia.innerText = '⚠️ Muy cerca: Estira el brazo (~50 cm)';
-        estadoDistancia.innerText = 'Cerca';
-        estadoDistancia.style.color = '#ef4444';
-      } else if (densidad < 0.05) {
-        distanciaValidada = false;
-        cajaCamara.className = 'caja-monitor-camara distancia-alerta';
-        etiquetaDistancia.innerText = '👤 Coloca tu rostro frente a la pantalla';
-        estadoDistancia.innerText = 'Buscando';
-        estadoDistancia.style.color = '#facc15';
-      } else {
-        distanciaValidada = true;
-        cajaCamara.className = 'caja-monitor-camara distancia-ok';
-        etiquetaDistancia.innerText = '✅ Distancia Correcta (~50-60 cm)';
-        estadoDistancia.innerText = 'Óptima';
-        estadoDistancia.style.color = '#4ade80';
-      }
+    pasoActual++;
+    if (pasoActual < 3) {
+      cargarLaminaActual();
     } else {
-      distanciaValidada = true;
-      cajaCamara.className = 'caja-monitor-camara distancia-ok';
-      etiquetaDistancia.innerText = '✅ Calibración activa';
-      estadoDistancia.innerText = 'Óptima';
-      estadoDistancia.style.color = '#4ade80';
+      iniciarFaseAgudeza();
     }
-
-    actualizarEstadoBotones();
-  }, 250);
-}
-
-function actualizarEstadoBotones() {
-  if (!contenedorOpciones || pruebaFinalizada) return;
-  const botones = contenedorOpciones.querySelectorAll('.btn-opcion');
-  botones.forEach(btn => {
-    btn.disabled = !distanciaValidada;
   });
 }
 
-/* ==========================================================================
-   4. RENDERIZADO Y CARGA DEL ESTÍMULO
-   ========================================================================== */
-function cargarPrueba() {
-  if (indiceActual >= PRUEBAS_VISUALES.length) {
-    finalizarTamizaje();
-    return;
+function iniciarFaseAgudeza() {
+  fase = 'AGUDEZA';
+  pasoActual = 0;
+  if (indicadorFase) indicadorFase.innerText = 'Agudeza E';
+  if (canvas) canvas.style.display = 'none';
+  if (simboloOptotipo) simboloOptotipo.style.display = 'block';
+  if (cajaInstruccion) {
+    cajaInstruccion.innerHTML = '📱 <strong>Agudeza Visual:</strong> Mantén el brazo extendido a ~50 cm e indica hacia dónde apuntan las patas de la E.';
+  }
+  cargarOptotipoActual();
+}
+
+function cargarOptotipoActual() {
+  const item = itemsPruebaAgudeza[pasoActual];
+  if (!item) return;
+
+  if (contadorAciertos) contadorAciertos.innerText = `${aciertosCromaticos + aciertosAgudeza}/6`;
+  if (panelEstado) panelEstado.innerText = `Optotipo ${pasoActual + 1} de 3: ¿Hacia dónde apuntan las barras?`;
+
+  // Rotación y tamaño del optotipo E
+  if (simboloOptotipo) {
+    simboloOptotipo.style.transform = `rotate(${item.rotacion}deg)`;
+    const tamanos = ['56px', '42px', '32px'];
+    simboloOptotipo.style.fontSize = tamanos[pasoActual] || '38px';
   }
 
-  const item = PRUEBAS_VISUALES[indiceActual];
+  const opciones = ['Arriba', 'Abajo', 'Izquierda', 'Derecha'];
+  renderizarBotones(opciones, (opcionSeleccionada) => {
+    if (opcionSeleccionada === item.direccion) {
+      aciertosAgudeza++;
+    }
+    pasoActual++;
+    if (pasoActual < 3) {
+      cargarOptotipoActual();
+    } else {
+      finalizarTestVisual();
+    }
+  });
+}
+
+function renderizarBotones(opciones, callback) {
+  if (!contenedorOpciones) return;
   contenedorOpciones.innerHTML = '';
-
-  if (contadorAciertos) {
-    contadorAciertos.innerText = `${aciertosCromaticos + aciertosAgudeza}/${indiceActual}`;
-  }
-
-  if (item.tipo === 'ISHIHARA') {
-    if (indicadorFase) indicadorFase.innerText = 'Cromático';
-    if (canvasIshihara) canvasIshihara.style.display = 'block';
-    if (simboloOptotipo) simboloOptotipo.style.display = 'none';
-    if (panelEstado) panelEstado.innerText = '¿Qué número ves dentro del círculo?';
-    if (cajaInstruccion) {
-      cajaInstruccion.innerHTML = '🎨 <strong>Visión Cromática:</strong> Identifica el dígito oculto entre los patrones.';
-    }
-    dibujarPlacaIshihara(item.numero, item.colorFondo, item.colorPatron);
-
-    item.opciones.forEach(opc => {
-      const btn = document.createElement('button');
-      btn.className = 'btn-opcion';
-      btn.innerText = opc;
-      btn.disabled = !distanciaValidada;
-      btn.addEventListener('click', () => registrarRespuesta(opc === item.numero));
-      contenedorOpciones.appendChild(btn);
-    });
-  } else {
-    if (indicadorFase) indicadorFase.innerText = 'Agudeza (E)';
-    if (canvasIshihara) canvasIshihara.style.display = 'none';
-    if (simboloOptotipo) {
-      simboloOptotipo.style.display = 'block';
-      simboloOptotipo.innerText = 'E';
-      simboloOptotipo.style.transform = `rotate(${item.orientacion}deg)`;
-      simboloOptotipo.style.fontSize = item.tamanoRem;
-    }
-    if (panelEstado) panelEstado.innerText = '¿Hacia qué dirección apuntan las patas de la letra E?';
-    if (cajaInstruccion) {
-      cajaInstruccion.innerHTML = '👁️ <strong>Agudeza Visual:</strong> Brazo extendido. La cámara audita que no te acerques.';
-    }
-
-    item.etiquetaOpciones.forEach(opc => {
-      const btn = document.createElement('button');
-      btn.className = 'btn-opcion';
-      btn.innerText = opc;
-      btn.disabled = !distanciaValidada;
-      btn.addEventListener('click', () => registrarRespuesta(opc === item.respuestaCorrecta));
-      contenedorOpciones.appendChild(btn);
-    });
-  }
-
-  actualizarEstadoBotones();
+  opciones.forEach(op => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'btn-opcion';
+    btn.innerText = op;
+    btn.onclick = () => callback(op);
+    contenedorOpciones.appendChild(btn);
+  });
 }
 
-function registrarRespuesta(correcta) {
-  if (pruebaFinalizada) return;
-
-  const item = PRUEBAS_VISUALES[indiceActual];
-  if (item.tipo === 'ISHIHARA' && correcta) aciertosCromaticos++;
-  if (item.tipo === 'OPTOTIPO' && correcta) aciertosAgudeza++;
-
-  indiceActual++;
-
-  if (indiceActual < PRUEBAS_VISUALES.length) {
-    cargarPrueba();
-  } else {
-    finalizarTamizaje();
-  }
-}
-
-function dibujarPlacaIshihara(texto, colorFondo, colorTexto) {
-  if (!ctxIshihara) return;
-  ctxIshihara.clearRect(0, 0, 200, 200);
-
-  for (let i = 0; i < 500; i++) {
-    const radioC = Math.random() * 85;
-    const angulo = Math.random() * Math.PI * 2;
-    const x = 100 + radioC * Math.cos(angulo);
-    const y = 100 + radioC * Math.sin(angulo);
-    const radioPunto = Math.random() * 3.5 + 2;
-
-    ctxIshihara.beginPath();
-    ctxIshihara.arc(x, y, radioPunto, 0, Math.PI * 2);
-    ctxIshihara.fillStyle = colorFondo;
-    ctxIshihara.globalAlpha = 0.6 + Math.random() * 0.4;
-    ctxIshihara.fill();
-  }
-
-  ctxIshihara.font = 'bold 64px Arial';
-  ctxIshihara.fillStyle = colorTexto;
-  ctxIshihara.textAlign = 'center';
-  ctxIshihara.textBaseline = 'middle';
-  ctxIshihara.globalAlpha = 0.95;
-  ctxIshihara.fillText(texto, 100, 105);
-  ctxIshihara.globalAlpha = 1.0;
-}
-
-/* ==========================================================================
-   5. FINALIZACIÓN Y CONTINUACIÓN A AUDICIÓN / INFORME
-   ========================================================================== */
-function finalizarTamizaje() {
-  pruebaFinalizada = true;
-
-  if (video && video.srcObject) {
-    video.srcObject.getTracks().forEach(track => track.stop());
-  }
-
-  const totalAciertos = aciertosCromaticos + aciertosAgudeza;
-  const efectividad = Math.round((totalAciertos / PRUEBAS_VISUALES.length) * 100);
-  const aprobado = efectividad >= 80;
+function finalizarTestVisual() {
+  const total = aciertosCromaticos + aciertosAgudeza;
+  const efectividad = Math.round((total / 6) * 100);
+  const aprobado = (efectividad >= 80);
 
   localStorage.setItem('sensometrika_visual', JSON.stringify({
-    aciertosCromaticos,
-    aciertosAgudeza,
-    efectividad,
-    dictamenVisual: aprobado ? 'SIN ALERTAS PREVIAS' : 'ALERTA: Sugiere revisión óptica',
-    aprobado,
-    distanciaVerificadaCamara: camaraAutorizada
+    efectividad: efectividad,
+    aciertos: total,
+    aprobado: aprobado
   }));
 
-  if (indicadorFase) indicadorFase.innerText = 'Fin';
-  if (contadorAciertos) contadorAciertos.innerText = `${totalAciertos}/6`;
-  if (estadoDistancia) {
-    estadoDistancia.innerText = aprobado ? 'Aprobado' : 'Observado';
-    estadoDistancia.style.color = aprobado ? '#4ade80' : '#f87171';
-  }
-  if (panelEstado) {
-    panelEstado.innerText = `Evaluación Finalizada: ${efectividad}% de acierto`;
-    panelEstado.style.color = aprobado ? '#4ade80' : '#f59e0b';
-  }
-  if (cajaInstruccion) cajaInstruccion.style.display = 'none';
-
   const sesion = JSON.parse(localStorage.getItem('sensometrika_sesion')) || {};
-  const permitidos = sesion.modulosPermitidos || ['reactimetro', 'palancas', 'punteo', 'visual', 'auditivo'];
-  const tieneAuditivo = permitidos.includes('auditivo');
+  const modulosPermitidos = sesion.modulosPermitidos || [];
+  const tieneAuditivo = modulosPermitidos.includes('auditivo');
 
   const siguienteUrl = tieneAuditivo ? 'audicion.html' : 'informe.html';
-  const textoBoton = tieneAuditivo 
-    ? 'Continuar a Módulo 5 (Tamizaje Auditivo) →' 
-    : '📊 Ver Dictamen e Informe Consolidado';
+  const textoBoton = tieneAuditivo ? 'Continuar a Módulo 5 (Tamizaje Auditivo) →' : '📊 Ver Informe y Dictamen Final';
 
-  contenedorOpciones.innerHTML = `
-    <div style="grid-column: 1 / -1; background: #020617; border: 1.5px solid #38bdf8; border-radius: 12px; padding: 18px 14px; text-align: center; width: 100%; box-sizing: border-box;">
-      <h3 style="color: #4ade80; margin: 0 0 6px 0; font-size: 1.1rem;">¡Módulo 4 Finalizado!</h3>
-      <p style="color: #94a3b8; font-size: 0.82rem; margin: 0 0 14px 0;">
-        Efectividad registrada: <strong style="color: #fff;">${efectividad}%</strong> (${aprobado ? 'Aprobado' : 'Observado'})
-      </p>
-      <div style="display: flex; flex-direction: column; gap: 8px;">
-        <a href="${siguienteUrl}" style="display: flex; justify-content: center; align-items: center; text-decoration: none; height: 46px; background-color: #0284c7; color: #fff; border-radius: 8px; font-weight: bold; font-size: 0.9rem;">
-          ${textoBoton}
-        </a>
-        <a href="menu.html" style="color: #64748b; font-size: 0.78rem; text-decoration: none; padding: 4px;">
-          Regresar al Menú Principal
-        </a>
+  if (indicadorFase) indicadorFase.innerText = 'Fin';
+  if (contadorAciertos) contadorAciertos.innerText = `${total}/6`;
+  if (estadoAlerta) {
+    estadoAlerta.innerText = aprobado ? 'Aprobado' : 'Observado';
+    estadoAlerta.style.color = aprobado ? '#4ade80' : '#f87171';
+  }
+
+  if (panelEstado) {
+    panelEstado.innerText = `Evaluación completada: ${efectividad}% acierto`;
+    panelEstado.style.color = aprobado ? '#4ade80' : '#f87171';
+  }
+
+  if (contenedorOpciones) {
+    contenedorOpciones.innerHTML = `
+      <div style="grid-column: 1 / -1; background: #020617; border: 1.5px solid #38bdf8; border-radius: 12px; padding: 16px; margin-top: 10px; text-align: center; width: 100%; box-sizing: border-box;">
+        <h3 style="color: ${aprobado ? '#4ade80' : '#f87171'}; font-size: 1.05rem; margin: 0 0 6px 0;">¡Módulo 4 Finalizado!</h3>
+        <p style="color: #94a3b8; font-size: 0.82rem; margin: 0 0 14px 0;">
+          Efectividad: <strong style="color: #fff;">${efectividad}%</strong> (${aprobado ? 'Sin Alertas' : 'Observado'})
+        </p>
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+          <a href="${siguienteUrl}" class="btn-principal" style="display: flex; justify-content: center; align-items: center; text-decoration: none; height: 46px; font-size: 0.95rem; background-color: #0284c7; color: #ffffff; border-radius: 8px; font-weight: bold;">
+            ${textoBoton}
+          </a>
+          <a href="menu.html" style="color: #64748b; font-size: 0.8rem; text-decoration: none; padding: 6px;">
+            Regresar al Menú Principal
+          </a>
+        </div>
       </div>
-    </div>
-  `;
+    `;
+  }
 }
-
-// Cargar la primera lámina de inmediato
-cargarPrueba();
