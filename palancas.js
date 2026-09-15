@@ -1,8 +1,9 @@
 /* ==========================================================================
    SENSOMETRIKA - MÓDULO 2: TEST DE PALANCAS (palancas.js)
-   • Banco de circuitos anti-memorización (Demo + Oficiales aleatorios)
-   • Conexión blindada a CreditManager (1 Demo + 3 Simulaciones con bloqueo)
-   • Trazo perimetral continuo sin líneas segmentadas
+   • Cuota dinámica por Plan (Básico: 3 | Plus: 5 | Full: 8)
+   • 1 Demo de calibración de 20 s único por módulo
+   • Banco de trazados continuo anti-memorización
+   • Botón directo para rendir la siguiente simulación oficial
    ========================================================================== */
 const canvas = document.getElementById('canvas-circuito');
 const ctx = canvas.getContext('2d');
@@ -17,17 +18,13 @@ const panelEstado = document.getElementById('panel-estado');
 const btnAccion = document.getElementById('btn-accion');
 const zonaCoordinacion = document.getElementById('zona-coordinacion-test');
 
-// Mandos táctiles
 const btnArriba = document.getElementById('btn-arriba');
 const btnAbajo = document.getElementById('btn-abajo');
 const btnIzq = document.getElementById('btn-izq');
 const btnDer = document.getElementById('btn-der');
 
-// ==========================================================================
-// BANCO DINÁMICO DE CIRCUITOS (ANTI-MEMORIZACIÓN)
-// ==========================================================================
+// Banco de trazados anti-memorización
 const BANCO_CIRCUITOS = {
-  // Pista de calibración (más amplia y directa para habituar los mandos)
   DEMO: {
     nombre: 'Calibración A',
     inicio: { x: 30, y: 40 },
@@ -40,7 +37,6 @@ const BANCO_CIRCUITOS = {
       { x1: 240, y1: 140, x2: 305, y2: 140 }
     ]
   },
-  // Banco de pistas oficiales (se eligen al azar o por rotación en cada intento)
   OFICIALES: [
     {
       nombre: 'Circuito 1 (Escalera Asimétrica)',
@@ -94,9 +90,8 @@ const BANCO_CIRCUITOS = {
   ]
 };
 
-// Variables de estado
-let modo = 'DEMO'; // 'DEMO' u 'OFICIAL'
-let estado = 'INACTIVO'; // 'INACTIVO', 'JUGANDO', 'PAUSA_ENTRE_FASES', 'FINALIZADO'
+let modo = 'DEMO';
+let estado = 'INACTIVO';
 let circuitoActivo = BANCO_CIRCUITOS.DEMO;
 const anchoCanal = 26;
 const radioPuntero = 6;
@@ -117,17 +112,16 @@ let temporizadorInterval = null;
 let animacionFrame = null;
 let tiempoInicioOficial = 0;
 
-// Inicialización de página
 window.addEventListener('DOMContentLoaded', () => {
   CreditManager.pintarBadgeCabecera('caja-contador-simulacion', 'palancas');
 
-  // Control de bloqueo si ya consumió las 3 simulaciones del plan
+  // Validación de cuota dinámica según el plan
   if (!CreditManager.puedeRendir('palancas')) {
     bloquearModuloPorCupo();
     return;
   }
 
-  // Si ya realizó el Demo previamente, va directo al examen oficial con una pista aleatoria
+  // Si ya completó el demo de calibración, entra directo a la simulación oficial
   if (CreditManager.demoYaRealizado('palancas')) {
     seleccionarPistaOficialAleatoria();
     prepararVistaOficialDirecta();
@@ -136,10 +130,28 @@ window.addEventListener('DOMContentLoaded', () => {
   }
 });
 
+function bloquearModuloPorCupo() {
+  const max = CreditManager.obtenerLimiteModulo('palancas');
+  btnAccion.disabled = true;
+  btnAccion.style.opacity = '0.4';
+  btnAccion.innerText = `Cupo Bloqueado (${max}/${max} Realizadas)`;
+  panelEstado.innerText = `Has alcanzado el límite de ${max} simulaciones oficiales de tu Plan.`;
+  panelEstado.style.color = '#f87171';
+
+  zonaCoordinacion.innerHTML = `
+    <div style="background: #020617; border: 1.5px solid #dc2626; border-radius: 12px; padding: 16px; margin-top: 14px; text-align: center;">
+      <h3 style="color: #ef4444; margin: 0 0 6px 0;">Módulo Bloqueado (${max} de ${max})</h3>
+      <p style="color: #94a3b8; font-size: 0.85rem; margin-bottom: 12px;">Completaste todas las simulaciones de tu Plan en este módulo.</p>
+      <a href="menu.html" class="btn-principal" style="display:inline-block; text-decoration:none; background:#0284c7; padding:10px 16px; border-radius:6px; color:#fff;">
+        Volver al Menú Principal
+      </a>
+    </div>
+  `;
+}
+
 function seleccionarPistaOficialAleatoria() {
   const consumidas = CreditManager.obtenerConsumidas('palancas');
-  // Alterna determinísticamente o al azar dentro del banco
-  const indice = (consumidas) % BANCO_CIRCUITOS.OFICIALES.length;
+  const indice = consumidas % BANCO_CIRCUITOS.OFICIALES.length;
   cargarPista(BANCO_CIRCUITOS.OFICIALES[indice]);
 }
 
@@ -164,36 +176,20 @@ function resetearPuntero() {
   metricaTContacto.innerText = '0.0 s';
 }
 
-function bloquearModuloPorCupo() {
-  btnAccion.disabled = true;
-  btnAccion.style.opacity = '0.4';
-  btnAccion.innerText = 'Cupo Bloqueado (3/3 Realizadas)';
-  panelEstado.innerText = 'Has alcanzado el límite de 3 simulaciones oficiales para este módulo.';
-  panelEstado.style.color = '#f87171';
-
-  zonaCoordinacion.innerHTML = `
-    <div style="background: #020617; border: 1.5px solid #dc2626; border-radius: 12px; padding: 16px; margin-top: 14px; text-align: center;">
-      <h3 style="color: #ef4444; margin: 0 0 6px 0;">Módulo Bloqueado (3 de 3)</h3>
-      <p style="color: #94a3b8; font-size: 0.85rem; margin-bottom: 12px;">Completaste todas las simulaciones de tu Plan Básico.</p>
-      <a href="menu.html" class="btn-principal" style="display:inline-block; text-decoration:none; background:#0284c7; padding:10px 16px; border-radius:6px; color:#fff;">
-        Volver al Menú Principal
-      </a>
-    </div>
-  `;
-}
-
 function prepararVistaOficialDirecta() {
   modo = 'OFICIAL';
   estado = 'INACTIVO';
-  const numSim = CreditManager.obtenerNumeroSimulacionActual('palancas');
-  badgeModo.innerText = `🔴 Simulación Oficial ${numSim} de 3 (D.S. N° 170)`;
+  const actual = CreditManager.obtenerNumeroSimulacionActual('palancas');
+  const max = CreditManager.obtenerLimiteModulo('palancas');
+
+  badgeModo.innerText = `🔴 Simulación Oficial ${actual} de ${max} (D.S. N° 170)`;
   badgeModo.style.color = '#38bdf8';
   txtTiempoCabecera.innerHTML = 'Evaluación Activa (60 s)';
   panelEstado.innerText = `Trazado generado: ${circuitoActivo.nombre}. Presiona iniciar.`;
   panelEstado.style.color = '#38bdf8';
 
   btnAccion.style.display = 'block';
-  btnAccion.innerText = `Iniciar Simulación Oficial (${numSim} de 3)`;
+  btnAccion.innerText = `Iniciar Simulación Oficial (${actual} de ${max})`;
   btnAccion.style.backgroundColor = '#22c55e';
   dibujarEscena();
 }
@@ -245,7 +241,6 @@ function bucleAnimacion() {
   posX += velX;
   posY += velY;
 
-  // Límites del canvas
   if (posX < radioPuntero) posX = radioPuntero;
   if (posX > canvas.width - radioPuntero) posX = canvas.width - radioPuntero;
   if (posY < radioPuntero) posY = radioPuntero;
@@ -303,19 +298,21 @@ function finalizarRecorrido(llegoAMeta) {
   clearInterval(temporizadorInterval);
   estado = 'FINALIZADO';
 
+  const max = CreditManager.obtenerLimiteModulo('palancas');
+
   if (modo === 'DEMO') {
     CreditManager.marcarDemoCompletado('palancas');
     estado = 'PAUSA_ENTRE_FASES';
 
-    const numSim = CreditManager.obtenerNumeroSimulacionActual('palancas');
-    panelEstado.innerText = `¡Calibración lista! Tuviste ${contactos} contactos. Pasa a tu Simulación ${numSim} de 3.`;
+    const actual = CreditManager.obtenerNumeroSimulacionActual('palancas');
+    panelEstado.innerText = `¡Calibración lista! Tuviste ${contactos} contactos. Pasa a Simulación Oficial ${actual} de ${max}.`;
     panelEstado.style.color = '#4ade80';
 
     btnAccion.style.display = 'block';
-    btnAccion.innerText = `Iniciar Simulación Oficial (${numSim} de 3)`;
+    btnAccion.innerText = `Iniciar Simulación Oficial (${actual} de ${max})`;
     btnAccion.style.backgroundColor = '#22c55e';
   } else {
-    // Oficial: Descontar simulación y guardar persistencia
+    // Registro de la simulación oficial completada
     const consumidas = CreditManager.registrarConsumo('palancas');
     const tiempoUsado = Math.min(60, Math.round((performance.now() - tiempoInicioOficial) / 1000));
     const aprobado = llegoAMeta && contactos <= 3;
@@ -329,9 +326,27 @@ function finalizarRecorrido(llegoAMeta) {
     }));
 
     CreditManager.pintarBadgeCabecera('caja-contador-simulacion', 'palancas');
-    const bloqueoTotal = consumidas >= CreditManager.LIMITE_SIMULACIONES;
+    const agotado = consumidas >= max;
 
     panelEstado.innerText = llegoAMeta ? '¡Circuito completado!' : 'Tiempo límite cumplido (60 s)';
+
+    let bloqueBotones = '';
+    if (!agotado) {
+      bloqueBotones = `
+        <button onclick="repetirSimulacionPalancas()" class="btn-principal" style="width:100%; height:44px; background-color:#22c55e; color:#fff; border-radius:6px; font-weight:bold; font-size:0.9rem; border:none; cursor:pointer; margin-bottom:8px;">
+          🔄 Rendir Simulación ${consumidas + 1} de ${max} →
+        </button>
+        <a href="punteo.html" style="display:flex; justify-content:center; align-items:center; text-decoration:none; height:40px; background-color:#0284c7; color:#fff; border-radius:6px; font-weight:bold; font-size:0.85rem;">
+          Continuar a Módulo 3 (Test de Punteo) →
+        </a>
+      `;
+    } else {
+      bloqueBotones = `
+        <a href="punteo.html" class="btn-principal" style="display:flex; justify-content:center; align-items:center; text-decoration:none; height:44px; background-color:#0284c7; color:#fff; border-radius:6px; font-weight:bold; font-size:0.9rem; margin-bottom:8px;">
+          Continuar a Módulo 3 (Test de Punteo) →
+        </a>
+      `;
+    }
 
     zonaCoordinacion.innerHTML = `
       <div style="background: #020617; border: 1.5px solid ${aprobado ? '#38bdf8' : '#ef4444'}; border-radius: 12px; padding: 16px; margin-top: 14px; text-align: center; width: 100%; box-sizing: border-box;">
@@ -342,13 +357,11 @@ function finalizarRecorrido(llegoAMeta) {
           Tiempo empleado: <strong style="color: #fff;">${tiempoUsado} s</strong> | Pista: <strong style="color: #38bdf8;">${circuitoActivo.nombre}</strong>
         </p>
         <p style="color: #38bdf8; font-size: 0.82rem; font-weight: bold; margin-bottom: 12px;">
-          Simulación ${consumidas} de 3 registrada con éxito.
+          ${agotado ? `Has completado tus ${max}/${max} simulaciones en este módulo.` : `Simulación ${consumidas} de ${max} registrada. Te restan ${max - consumidas}.`}
         </p>
-        <div style="display: flex; flex-direction: column; gap: 8px;">
-          <a href="punteo.html" class="btn-principal" style="display:flex; justify-content:center; align-items:center; text-decoration:none; height:44px; background-color:#0284c7; color:#fff; border-radius:6px; font-weight:bold; font-size:0.9rem;">
-            Continuar a Módulo 3 (Test de Punteo) →
-          </a>
-          <a href="menu.html" style="color:#64748b; font-size:0.8rem; text-decoration:none; padding:6px;">
+        <div style="display: flex; flex-direction: column;">
+          ${bloqueBotones}
+          <a href="menu.html" style="color: #64748b; font-size: 0.8rem; text-decoration: none; padding: 6px; margin-top: 4px;">
             Regresar al Menú Principal
           </a>
         </div>
@@ -357,6 +370,12 @@ function finalizarRecorrido(llegoAMeta) {
   }
 }
 
+window.repetirSimulacionPalancas = function() {
+  zonaCoordinacion.innerHTML = '';
+  seleccionarPistaOficialAleatoria();
+  prepararVistaOficialDirecta();
+};
+
 function iniciarFaseOficial() {
   modo = 'OFICIAL';
   seleccionarPistaOficialAleatoria();
@@ -364,11 +383,9 @@ function iniciarFaseOficial() {
   iniciarRecorrido();
 }
 
-// Dibujo continuo sin cortes intermedios
 function dibujarEscena() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  // Pared exterior
   ctx.lineCap = 'round';
   ctx.lineJoin = 'round';
   ctx.lineWidth = anchoCanal;
@@ -380,18 +397,15 @@ function dibujarEscena() {
   });
   ctx.stroke();
 
-  // Interior libre del canal
   ctx.lineWidth = anchoCanal - 4;
   ctx.strokeStyle = '#020617';
   ctx.stroke();
 
-  // Meta verde
   ctx.beginPath();
   ctx.arc(circuitoActivo.meta.x, circuitoActivo.meta.y, circuitoActivo.meta.radio, 0, Math.PI * 2);
   ctx.fillStyle = '#22c55e';
   ctx.fill();
 
-  // Puntero guiado
   ctx.beginPath();
   ctx.arc(posX, posY, radioPuntero, 0, Math.PI * 2);
   ctx.fillStyle = enContacto ? '#ef4444' : '#facc15';
@@ -409,7 +423,6 @@ function distanciaPuntoASegmento(px, py, x1, y1, x2, y2) {
   return Math.hypot(px - (x1 + t * (x2 - x1)), py - (y1 + t * (y2 - y1)));
 }
 
-// Configuración de botones táctiles
 function configurarBotonMando(boton, setVel, resetVel) {
   const iniciar = (e) => { e.preventDefault(); if (estado === 'JUGANDO') setVel(); };
   const frenar = (e) => { e.preventDefault(); resetVel(); };
@@ -425,7 +438,6 @@ configurarBotonMando(btnAbajo, () => velY = VELOCIDAD, () => velY = 0);
 configurarBotonMando(btnIzq, () => velX = -VELOCIDAD, () => velX = 0);
 configurarBotonMando(btnDer, () => velX = VELOCIDAD, () => velX = 0);
 
-// Controles de teclado
 window.addEventListener('keydown', (e) => {
   if (estado !== 'JUGANDO') return;
   if (e.key === 'ArrowUp' || e.key === 'w') velY = -VELOCIDAD;

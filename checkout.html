@@ -103,62 +103,47 @@
     </section>
 
     <form class="caja-formulario" id="form-checkout" onsubmit="procesarActivacion(event)">
-      
-      <!-- ==============================================
-           SECCIÓN B2C: DATOS DEL POSTULANTE / TITULAR
-           ============================================== -->
+      <!-- SECCIÓN B2C -->
       <div id="seccion-campos-b2c" style="display: flex; flex-direction: column; gap: 10px;">
         <div class="titulo-seccion-form">👤 DATOS DEL POSTULANTE</div>
-        
         <div class="campo-grupo">
           <label for="b2c-nombre">Nombre Completo *</label>
           <input type="text" id="b2c-nombre" placeholder="Ej: Felix Osses Martinez">
         </div>
-
         <div class="campo-grupo">
           <label for="b2c-rut">RUT *</label>
           <input type="text" id="b2c-rut" placeholder="Ej: 13.741.882-7">
         </div>
-
         <div class="campo-grupo">
           <label for="b2c-email">Correo Electrónico (Para envío de resultados) *</label>
           <input type="email" id="b2c-email" placeholder="tu-correo@gmail.com">
         </div>
       </div>
 
-      <!-- ==============================================
-           SECCIÓN B2B: DATOS EMPRESA Y RESPONSABLE (APR)
-           ============================================== -->
+      <!-- SECCIÓN B2B -->
       <div id="seccion-campos-b2b" style="display: none; flex-direction: column; gap: 10px;">
         <div class="titulo-seccion-form">🏢 DATOS DE LA EMPRESA (FACTURACIÓN DTE)</div>
-        
         <div class="campo-grupo">
           <label for="b2b-razon-social">Razón Social Empresa / Faena *</label>
           <input type="text" id="b2b-razon-social" placeholder="Ej: Transportes del Norte SpA">
         </div>
-
         <div class="campo-grupo">
           <label for="b2b-rut-empresa">RUT Empresa *</label>
           <input type="text" id="b2b-rut-empresa" placeholder="Ej: 76.123.456-7">
         </div>
-
         <div class="titulo-seccion-form" style="margin-top: 8px;">👤 RESPONSABLE EN LA EMPRESA / APR MANDANTE</div>
-
         <div class="campo-grupo">
           <label for="b2b-resp-nombre">Nombre Completo del Responsable *</label>
           <input type="text" id="b2b-resp-nombre" placeholder="Ej: Mariela Cárcamo Fernández">
         </div>
-
         <div class="campo-grupo">
           <label for="b2b-resp-rut">RUT del Responsable *</label>
           <input type="text" id="b2b-resp-rut" placeholder="Ej: 12.345.678-9">
         </div>
-
         <div class="campo-grupo">
           <label for="b2b-resp-cargo">Cargo en la Empresa *</label>
           <input type="text" id="b2b-resp-cargo" placeholder="Ej: Prevencionista de Riesgos / APR">
         </div>
-
         <div class="campo-grupo">
           <label for="b2b-resp-email">Correo Corporativo (Para Notificación de Informes) *</label>
           <input type="email" id="b2b-resp-email" placeholder="prevencion@empresa.cl">
@@ -178,7 +163,7 @@
     </form>
 
     <div style="text-align: center; margin-top: 14px;">
-      <a href="planes.html" style="color: #94a3b8; text-decoration: none; font-size: 0.8rem;">← Volver al Catálogo de Planes</a>
+      <a href="index.html" style="color: #94a3b8; text-decoration: none; font-size: 0.8rem;">← Volver al Catálogo de Planes</a>
     </div>
   </main>
 
@@ -191,10 +176,9 @@
       if (guardado) {
         planActivo = JSON.parse(guardado);
       } else {
-        // Fallback
         planActivo = {
           planId: 'part_basico',
-          nombrePlan: 'Pase Básico Sensotécnico',
+          nombrePlan: 'Pase Básico Psicomotriz',
           precio: 4990,
           rol: 'particular',
           modulosPermitidos: ['reactimetro', 'palancas', 'punteo']
@@ -212,13 +196,11 @@
       txtNombre.innerText = planActivo.nombrePlan || 'Plan Sensotécnico';
 
       if (esB2B) {
-        // MODO B2B
         seccionB2C.style.display = 'none';
         seccionB2B.style.display = 'flex';
         txtPrecio.innerText = `$${(planActivo.precio || 79900).toLocaleString('es-CL')} CLP`;
         txtDetalle.innerText = 'Factura Electrónica (+ 19% IVA)';
 
-        // Prellenar si existían datos corporativos guardados
         const emp = JSON.parse(localStorage.getItem('sensometrika_plan_empresa')) || {};
         if (emp.razonSocial) document.getElementById('b2b-razon-social').value = emp.razonSocial;
         if (emp.rutEmpresa) document.getElementById('b2b-rut-empresa').value = emp.rutEmpresa;
@@ -229,7 +211,6 @@
           if (emp.responsable.correo) document.getElementById('b2b-resp-email').value = emp.responsable.correo;
         }
 
-        // Requeridos dinámicos B2B
         document.getElementById('b2b-razon-social').required = true;
         document.getElementById('b2b-rut-empresa').required = true;
         document.getElementById('b2b-resp-nombre').required = true;
@@ -241,7 +222,6 @@
         document.getElementById('b2c-rut').required = false;
         document.getElementById('b2c-email').required = false;
       } else {
-        // MODO B2C
         seccionB2C.style.display = 'flex';
         seccionB2B.style.display = 'none';
         txtPrecio.innerText = `$${(planActivo.precio || 4990).toLocaleString('es-CL')} CLP`;
@@ -269,7 +249,6 @@
       e.preventDefault();
 
       if (esB2B) {
-        // Guardar configuración completa B2B
         const razonSocial = document.getElementById('b2b-razon-social').value.trim();
         const rutEmpresa = document.getElementById('b2b-rut-empresa').value.trim();
         const respNombre = document.getElementById('b2b-resp-nombre').value.trim();
@@ -280,16 +259,10 @@
         const planEmpresa = {
           razonSocial: razonSocial,
           rutEmpresa: rutEmpresa,
-          responsable: {
-            nombre: respNombre,
-            rut: respRut,
-            cargo: respCargo,
-            correo: respEmail
-          }
+          responsable: { nombre: respNombre, rut: respRut, cargo: respCargo, correo: respEmail }
         };
         localStorage.setItem('sensometrika_plan_empresa', JSON.stringify(planEmpresa));
 
-        // Inicializar sesión B2B: los campos del trabajador quedan limpios para que se inscriba en menu.html
         const sesion = {
           rol: 'empresa',
           planId: planActivo.planId,
@@ -298,33 +271,40 @@
           rutEmpresa: rutEmpresa,
           correoInformes: respEmail,
           modulosPermitidos: planActivo.modulosPermitidos || ['reactimetro', 'palancas', 'punteo'],
+          limitesSimulaciones: { reactimetro: 1, palancas: 1, punteo: 1, visual: 1, auditivo: 1 },
           simulacionesConsumidas: { reactimetro: 0, palancas: 0, punteo: 0, visual: 0, auditivo: 0 },
           demosCompletados: { reactimetro: false, palancas: false, punteo: false, visual: false, auditivo: false }
         };
         localStorage.setItem('sensometrika_sesion', JSON.stringify(sesion));
-
-        // Dejar libre el usuario para que el trabajador ingrese en el menú
         localStorage.removeItem('sensometrika_datos_usuario');
         localStorage.removeItem('sensometrika_firma_trabajador');
-
       } else {
-        // Guardar sesión B2C (Particular)
         const nombre = document.getElementById('b2c-nombre').value.trim();
         const rut = document.getElementById('b2c-rut').value.trim();
         const email = document.getElementById('b2c-email').value.trim();
 
         localStorage.setItem('sensometrika_datos_usuario', JSON.stringify({
-          nombre: nombre,
-          rut: rut,
-          correo: email,
-          tipo: 'particular'
+          nombre: nombre, rut: rut, correo: email, tipo: 'particular'
         }));
+
+        const idPlan = String(planActivo.planId || '').toLowerCase();
+        let limites = { reactimetro: 3, palancas: 3, punteo: 3, visual: 0, auditivo: 0 };
+        let modulos = ['reactimetro', 'palancas', 'punteo'];
+
+        if (idPlan.includes('full') || idPlan.includes('integral')) {
+          limites = { reactimetro: 8, palancas: 8, punteo: 8, visual: 4, auditivo: 4 };
+          modulos = ['reactimetro', 'palancas', 'punteo', 'visual', 'auditivo'];
+        } else if (idPlan.includes('plus')) {
+          limites = { reactimetro: 5, palancas: 5, punteo: 5, visual: 2, auditivo: 0 };
+          modulos = ['reactimetro', 'palancas', 'punteo', 'visual'];
+        }
 
         const sesion = {
           rol: 'particular',
           planId: planActivo.planId,
           nombrePlan: planActivo.nombrePlan,
-          modulosPermitidos: planActivo.modulosPermitidos || ['reactimetro', 'palancas', 'punteo'],
+          modulosPermitidos: modulos,
+          limitesSimulaciones: limites,
           simulacionesConsumidas: { reactimetro: 0, palancas: 0, punteo: 0, visual: 0, auditivo: 0 },
           demosCompletados: { reactimetro: false, palancas: false, punteo: false, visual: false, auditivo: false }
         };

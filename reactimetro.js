@@ -1,8 +1,8 @@
 /* ==========================================================================
    SENSOMETRIKA - MÓDULO 1: REACTÍMETRO (reactimetro.js)
-   • 1 Demo único de inducción (5 estímulos)
-   • 3 Simulaciones Oficiales (10 estímulos c/u) con opción de repetir o avanzar
-   • Bloqueo estricto al completar la simulación 3 de 3
+   • Cuota dinámica (B2C: 3, 5, 8 | B2B: 1 de 1)
+   • 1 Demo de 5 estímulos único por módulo
+   • Textos formales adaptados por rol
    ========================================================================== */
 const luzVerde = document.getElementById('luz-verde');
 const luzRoja = document.getElementById('luz-roja');
@@ -15,7 +15,7 @@ const badgeModo = document.getElementById('badge-modo');
 const txtTiempoCabecera = document.getElementById('txt-tiempo-cabecera');
 const zonaCoordinacion = document.getElementById('zona-coordinacion-test');
 
-let modo = 'DEMO'; // 'DEMO' u 'OFICIAL'
+let modo = 'DEMO';
 let estado = 'INACTIVO';
 let tiempoInicio = 0;
 let temporizadorVerde = null;
@@ -28,33 +28,34 @@ let contadorEnsayosDemo = 0;
 const MAX_ENSAYOS_DEMO = 5;
 const MAX_INTENTOS_OFICIALES = 10;
 
-// Verificación inicial de estado y cupo
 window.addEventListener('DOMContentLoaded', () => {
   CreditManager.pintarBadgeCabecera('caja-contador-simulacion', 'reactimetro');
 
-  // Si ya agotó sus 3 simulaciones oficiales, se bloquea
   if (!CreditManager.puedeRendir('reactimetro')) {
     bloquearModuloPorCupo();
     return;
   }
 
-  // Si ya realizó el Demo, entra directo a la simulación oficial correspondiente
   if (CreditManager.demoYaRealizado('reactimetro')) {
     prepararVistaOficialDirecta();
   }
 });
 
 function bloquearModuloPorCupo() {
+  const esEmpresa = CreditManager.esB2B();
+  const max = CreditManager.obtenerLimiteModulo('reactimetro');
   btnAccion.disabled = true;
   btnAccion.style.opacity = '0.4';
-  btnAccion.innerText = 'Cupo Bloqueado (3/3 Realizadas)';
-  panelEstado.innerText = 'Has alcanzado el límite de 3 simulaciones oficiales para este módulo.';
+  btnAccion.innerText = esEmpresa ? 'Examen Oficial Realizado (Bloqueado)' : `Cupo Bloqueado (${max}/${max} Realizadas)`;
+  panelEstado.innerText = esEmpresa ? 'Ya completaste tu examen oficial de este módulo.' : `Has alcanzado el límite de ${max} simulaciones oficiales de tu Plan.`;
   panelEstado.style.color = '#f87171';
 
   zonaCoordinacion.innerHTML = `
     <div style="background: #020617; border: 1.5px solid #dc2626; border-radius: 12px; padding: 16px; margin-top: 14px; text-align: center;">
-      <h3 style="color: #ef4444; margin: 0 0 6px 0;">Módulo Bloqueado (3 de 3)</h3>
-      <p style="color: #94a3b8; font-size: 0.85rem; margin-bottom: 12px;">Completaste todas las simulaciones de tu Plan Básico.</p>
+      <h3 style="color: #ef4444; margin: 0 0 6px 0;">Módulo Bloqueado</h3>
+      <p style="color: #94a3b8; font-size: 0.85rem; margin-bottom: 12px;">
+        ${esEmpresa ? 'Tu examen oficial de Reactímetro ya quedó registrado.' : 'Completaste todas las simulaciones de tu Plan en este módulo.'}
+      </p>
       <a href="menu.html" class="btn-principal" style="display:inline-block; text-decoration:none; background:#0284c7; padding:10px 16px; border-radius:6px; color:#fff;">
         Volver al Menú Principal
       </a>
@@ -67,17 +68,19 @@ function prepararVistaOficialDirecta() {
   estado = 'INACTIVO';
   tiemposOficiales = [];
   anticipacionesOficiales = 0;
-  
-  const numSim = CreditManager.obtenerNumeroSimulacionActual('reactimetro');
-  
-  badgeModo.innerText = `🔴 Simulación Oficial ${numSim} de 3 (D.S. N° 170)`;
+
+  const esEmpresa = CreditManager.esB2B();
+  const actual = CreditManager.obtenerNumeroSimulacionActual('reactimetro');
+  const max = CreditManager.obtenerLimiteModulo('reactimetro');
+
+  badgeModo.innerText = esEmpresa ? '🔴 Examen Oficial B2B 1 de 1 (D.S. N° 170)' : `🔴 Simulación Oficial ${actual} de ${max} (D.S. N° 170)`;
   badgeModo.style.color = '#38bdf8';
   txtTiempoCabecera.innerHTML = 'Evaluación Activa (10 Estímulos)';
-  panelEstado.innerText = `Listo para iniciar la Simulación Oficial ${numSim} de 3.`;
+  panelEstado.innerText = esEmpresa ? 'Listo para iniciar Examen Oficial B2B.' : `Listo para iniciar Simulación Oficial ${actual} de ${max}.`;
   panelEstado.style.color = '#38bdf8';
 
   btnAccion.style.display = 'block';
-  btnAccion.innerText = `Iniciar Simulación Oficial (${numSim} de 3)`;
+  btnAccion.innerText = esEmpresa ? 'Iniciar Examen Oficial (1 de 1)' : `Iniciar Simulación Oficial (${actual} de ${max})`;
   btnAccion.style.backgroundColor = '#22c55e';
 }
 
@@ -109,7 +112,7 @@ function iniciarEstimulo() {
 
   panelEstado.innerText = 'Atento: Frena únicamente ante la luz ROJA';
   panelEstado.style.color = '#38bdf8';
-  
+
   btnAccion.innerText = '¡FRENAR!';
   btnAccion.style.backgroundColor = '#dc2626';
 
@@ -166,6 +169,9 @@ function registrarFreno() {
     panelEstado.style.color = '#f87171';
   }
 
+  const esEmpresa = CreditManager.esB2B();
+  const max = CreditManager.obtenerLimiteModulo('reactimetro');
+
   if (modo === 'DEMO') {
     tiemposDemo.push(latencia);
     contadorEnsayosDemo++;
@@ -176,11 +182,11 @@ function registrarFreno() {
     } else {
       CreditManager.marcarDemoCompletado('reactimetro');
       estado = 'PAUSA_ENTRE_FASES';
-      const simActual = CreditManager.obtenerNumeroSimulacionActual('reactimetro');
-      panelEstado.innerText = `Demo completado. Listo para Simulación Oficial ${simActual} de 3.`;
+      const actual = CreditManager.obtenerNumeroSimulacionActual('reactimetro');
+      panelEstado.innerText = esEmpresa ? 'Demo completado. Listo para tu Examen Oficial 1 de 1.' : `Demo completado. Listo para Simulación Oficial ${actual} de ${max}.`;
       panelEstado.style.color = '#4ade80';
 
-      btnAccion.innerText = `Iniciar Simulación Oficial (${simActual} de 3)`;
+      btnAccion.innerText = esEmpresa ? 'Iniciar Examen Oficial (1 de 1)' : `Iniciar Simulación Oficial (${actual} de ${max})`;
       btnAccion.style.backgroundColor = '#22c55e';
     }
   } else {
@@ -207,11 +213,10 @@ function iniciarFaseOficial() {
 function finalizarSimulacionReactimetro(promedio) {
   btnAccion.style.display = 'none';
 
-  // Descuenta 1 simulación oficial del cupo (de 3)
   const consumidas = CreditManager.registrarConsumo('reactimetro');
-  const sesion = CreditManager.obtenerSesion();
-  const rol = sesion.rol || 'particular';
-  const umbral = (rol === 'empresa') ? 350 : 450;
+  const max = CreditManager.obtenerLimiteModulo('reactimetro');
+  const esEmpresa = CreditManager.esB2B();
+  const umbral = esEmpresa ? 350 : 450;
   const aprobado = promedio <= umbral && anticipacionesOficiales <= 2;
 
   localStorage.setItem('sensometrika_reactimetro', JSON.stringify({
@@ -221,14 +226,19 @@ function finalizarSimulacionReactimetro(promedio) {
   }));
 
   CreditManager.pintarBadgeCabecera('caja-contador-simulacion', 'reactimetro');
-  const agotado = consumidas >= CreditManager.LIMITE_SIMULACIONES;
+  const agotado = consumidas >= max;
 
-  // Botón dinámico según le resten simulaciones o esté bloqueado
+  // Título corregido: '¡Examen Finalizado!' en B2B
+  const tituloCierre = esEmpresa ? '¡Examen Finalizado!' : `¡Simulación ${consumidas} de ${max} Finalizada!`;
+  const leyendaCierre = esEmpresa 
+    ? 'Evaluación oficial 1 de 1 registrada con éxito para la empresa.' 
+    : (agotado ? `Has completado tus ${max}/${max} simulaciones en este módulo.` : `Te restan ${max - consumidas} simulación(es) en este módulo.`);
+
   let bloqueBotones = '';
-  if (!agotado) {
+  if (!agotado && !esEmpresa) {
     bloqueBotones = `
-      <button onclick="repetirSimulacionActual()" class="btn-principal" style="width:100%; height:44px; background-color:#22c55e; color:#fff; border-radius:6px; font-weight:bold; font-size:0.9rem; border:none; cursor:pointer; margin-bottom:8px;">
-        🔄 Rendir Simulación ${consumidas + 1} de 3 →
+      <button onclick="repetirSimulacionReactimetro()" class="btn-principal" style="width:100%; height:44px; background-color:#22c55e; color:#fff; border-radius:6px; font-weight:bold; font-size:0.9rem; border:none; cursor:pointer; margin-bottom:8px;">
+        🔄 Rendir Simulación ${consumidas + 1} de ${max} →
       </button>
       <a href="palancas.html" style="display:flex; justify-content:center; align-items:center; text-decoration:none; height:40px; background-color:#0284c7; color:#fff; border-radius:6px; font-weight:bold; font-size:0.85rem;">
         Continuar a Módulo 2 (Palancas) →
@@ -245,13 +255,13 @@ function finalizarSimulacionReactimetro(promedio) {
   zonaCoordinacion.innerHTML = `
     <div style="background: #020617; border: 1.5px solid ${aprobado ? '#38bdf8' : '#ef4444'}; border-radius: 12px; padding: 16px; margin-top: 14px; text-align: center; width: 100%; box-sizing: border-box;">
       <h3 style="color: ${aprobado ? '#4ade80' : '#f87171'}; margin: 0 0 6px 0; font-size: 1.1rem;">
-        ¡Simulación ${consumidas} de 3 Finalizada!
+        ${tituloCierre}
       </h3>
       <p style="color: #94a3b8; font-size: 0.82rem; margin-bottom: 8px;">
         Latencia promedio: <strong style="color: #ffffff;">${promedio} ms</strong> (${aprobado ? 'Aprobado' : 'Observado'})
       </p>
       <p style="color: #38bdf8; font-size: 0.82rem; font-weight: bold; margin-bottom: 12px;">
-        ${agotado ? 'Has completado el cupo máximo de 3/3 simulaciones de este módulo.' : `Te restan ${3 - consumidas} simulación(es) en este módulo.`}
+        ${leyendaCierre}
       </p>
       <div style="display: flex; flex-direction: column;">
         ${bloqueBotones}
@@ -263,8 +273,7 @@ function finalizarSimulacionReactimetro(promedio) {
   `;
 }
 
-// Función para ejecutar inmediatamente la siguiente simulación oficial sin recargar
-window.repetirSimulacionActual = function() {
+window.repetirSimulacionReactimetro = function() {
   zonaCoordinacion.innerHTML = '';
   metricaTiempo.innerText = '-- ms';
   metricaPromedio.innerText = '-- ms';

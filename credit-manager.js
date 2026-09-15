@@ -1,18 +1,20 @@
 /* ==========================================================================
-   SENSOMETRIKA - GESTOR CENTRAL DE CRÉDITOS Y DEMOS (credit-manager.js)
-   Regla: 1 Demo único por módulo + 3 Simulaciones Oficiales (1/3, 2/3, 3/3 Bloqueo)
+   SENSOMETRIKA - GESTOR CENTRAL DE CRÉDITOS Y CONTROL B2C / B2B (credit-manager.js)
+   • Regla B2C: 1 Demo + N simulaciones según plan (Básico: 3, Plus: 5, Full: 8)
+   • Regla B2B: 1 Demo + 1 Examen Oficial único (1 de 1) y bloqueo estricto
    ========================================================================== */
 const CreditManager = {
-  LIMITE_SIMULACIONES: 3,
-
   obtenerSesion: function() {
     let sesion = JSON.parse(localStorage.getItem('sensometrika_sesion'));
     if (!sesion) {
       sesion = {
         rol: 'particular',
         planId: 'part_basico',
+        nombrePlan: 'Pase Básico Psicomotriz',
+        modulosPermitidos: ['reactimetro', 'palancas', 'punteo'],
+        limitesSimulaciones: { reactimetro: 3, palancas: 3, punteo: 3, visual: 0, auditivo: 0 },
         simulacionesConsumidas: { reactimetro: 0, palancas: 0, punteo: 0, visual: 0, auditivo: 0 },
-        demosCompletados: { reactimetro: false, palancas: false, punteo: false }
+        demosCompletados: { reactimetro: false, palancas: false, punteo: false, visual: false, auditivo: false }
       };
       localStorage.setItem('sensometrika_sesion', JSON.stringify(sesion));
     }
@@ -20,13 +22,49 @@ const CreditManager = {
       sesion.simulacionesConsumidas = { reactimetro: 0, palancas: 0, punteo: 0, visual: 0, auditivo: 0 };
     }
     if (!sesion.demosCompletados) {
-      sesion.demosCompletados = { reactimetro: false, palancas: false, punteo: false };
+      sesion.demosCompletados = { reactimetro: false, palancas: false, punteo: false, visual: false, auditivo: false };
+    }
+    if (!sesion.limitesSimulaciones) {
+      sesion.limitesSimulaciones = this.determinarLimitesPorPlan(sesion.planId, sesion.rol);
+      this.guardarSesion(sesion);
     }
     return sesion;
   },
 
   guardarSesion: function(sesion) {
     localStorage.setItem('sensometrika_sesion', JSON.stringify(sesion));
+  },
+
+  esB2B: function() {
+    const sesion = this.obtenerSesion();
+    return (sesion.rol === 'empresa' || (sesion.planId && String(sesion.planId).toLowerCase().includes('b2b')));
+  },
+
+  determinarLimitesPorPlan: function(planId, rol) {
+    if (rol === 'empresa' || String(planId || '').toLowerCase().includes('b2b')) {
+      // Regla estricta B2B: exactamente 1 examen oficial por trabajador
+      return { reactimetro: 1, palancas: 1, punteo: 1, visual: 1, auditivo: 1 };
+    }
+    const id = String(planId || '').toLowerCase();
+    if (id.includes('full') || id.includes('integral')) {
+      return { reactimetro: 8, palancas: 8, punteo: 8, visual: 4, auditivo: 4 };
+    } else if (id.includes('plus')) {
+      return { reactimetro: 5, palancas: 5, punteo: 5, visual: 2, auditivo: 0 };
+    } else {
+      return { reactimetro: 3, palancas: 3, punteo: 3, visual: 0, auditivo: 0 };
+    }
+  },
+
+  obtenerLimiteModulo: function(moduloKey) {
+    if (this.esB2B()) {
+      return 1; // En B2B siempre es 1 examen oficial
+    }
+    const sesion = this.obtenerSesion();
+    if (sesion.limitesSimulaciones && sesion.limitesSimulaciones[moduloKey] !== undefined) {
+      return sesion.limitesSimulaciones[moduloKey];
+    }
+    const limites = this.determinarLimitesPorPlan(sesion.planId, sesion.rol);
+    return limites[moduloKey] || 3;
   },
 
   obtenerDatosUsuario: function() {
@@ -36,13 +74,12 @@ const CreditManager = {
     }
     const sesion = this.obtenerSesion();
     return {
-      nombre: sesion.nombre || 'Particular Registrado',
-      rut: sesion.rut || 'No informado',
+      nombre: sesion.nombre || (this.esB2B() ? '' : 'Particular Registrado'),
+      rut: sesion.rut || (this.esB2B() ? '' : 'No informado'),
       correo: sesion.correoInforme || ''
     };
   },
 
-  // Control de Demo único
   demoYaRealizado: function(moduloKey) {
     const sesion = this.obtenerSesion();
     return Boolean(sesion.demosCompletados && sesion.demosCompletados[moduloKey]);
@@ -55,23 +92,21 @@ const CreditManager = {
     this.guardarSesion(sesion);
   },
 
-  // Retorna la simulación actual en curso: 1, 2 o 3
-  obtenerNumeroSimulacionActual: function(moduloKey) {
-    const sesion = this.obtenerSesion();
-    const consumidas = (sesion.simulacionesConsumidas && sesion.simulacionesConsumidas[moduloKey]) || 0;
-    return Math.min(consumidas + 1, this.LIMITE_SIMULACIONES);
-  },
-
   obtenerConsumidas: function(moduloKey) {
     const sesion = this.obtenerSesion();
     return (sesion.simulacionesConsumidas && sesion.simulacionesConsumidas[moduloKey]) || 0;
   },
 
-  puedeRendir: function(moduloKey) {
-    const sesion = this.obtenerSesion();
-    if (sesion.rol === 'empresa') return true;
+  obtenerNumeroSimulacionActual: function(moduloKey) {
+    const max = this.obtenerLimiteModulo(moduloKey);
     const consumidas = this.obtenerConsumidas(moduloKey);
-    return consumidas < this.LIMITE_SIMULACIONES;
+    return Math.min(consumidas + 1, max);
+  },
+
+  puedeRendir: function(moduloKey) {
+    const max = this.obtenerLimiteModulo(moduloKey);
+    const consumidas = this.obtenerConsumidas(moduloKey);
+    return consumidas < max; // En B2B si consumió 1, bloquea inmediatamente
   },
 
   registrarConsumo: function(moduloKey) {
@@ -88,16 +123,23 @@ const CreditManager = {
     const cont = document.getElementById(contenedorId);
     if (!cont) return;
 
-    const sesion = this.obtenerSesion();
-    if (sesion.rol === 'empresa') return;
-
+    const esEmpresa = this.esB2B();
+    const max = this.obtenerLimiteModulo(moduloKey);
     const consumidas = this.obtenerConsumidas(moduloKey);
-    const actual = Math.min(consumidas + 1, this.LIMITE_SIMULACIONES);
 
-    if (consumidas >= this.LIMITE_SIMULACIONES) {
-      cont.innerHTML = `<span style="background:#dc2626; color:#ffffff; padding:4px 10px; border-radius:6px; font-weight:700; font-size:0.75rem; border:1px solid #ef4444;">Simulaciones: 3 de 3 (Cupo Bloqueado)</span>`;
+    if (esEmpresa) {
+      if (consumidas >= 1) {
+        cont.innerHTML = `<span style="background:#dc2626; color:#ffffff; padding:4px 10px; border-radius:6px; font-weight:700; font-size:0.75rem; border:1px solid #ef4444;">Examen Oficial: 1 de 1 (Evaluación Realizada - Bloqueado)</span>`;
+      } else {
+        cont.innerHTML = `<span style="background:#0284c7; color:#ffffff; padding:4px 10px; border-radius:6px; font-weight:700; font-size:0.75rem; border:1px solid #38bdf8;">Examen Oficial B2B: 1 de 1</span>`;
+      }
     } else {
-      cont.innerHTML = `<span style="background:#0284c7; color:#ffffff; padding:4px 10px; border-radius:6px; font-weight:700; font-size:0.75rem; border:1px solid #38bdf8;">Simulación Oficial: ${actual} de ${this.LIMITE_SIMULACIONES}</span>`;
+      const actual = Math.min(consumidas + 1, max);
+      if (consumidas >= max) {
+        cont.innerHTML = `<span style="background:#dc2626; color:#ffffff; padding:4px 10px; border-radius:6px; font-weight:700; font-size:0.75rem; border:1px solid #ef4444;">Simulaciones: ${max} de ${max} (Cupo Bloqueado)</span>`;
+      } else {
+        cont.innerHTML = `<span style="background:#0284c7; color:#ffffff; padding:4px 10px; border-radius:6px; font-weight:700; font-size:0.75rem; border:1px solid #38bdf8;">Simulación Oficial: ${actual} de ${max}</span>`;
+      }
     }
   }
 };

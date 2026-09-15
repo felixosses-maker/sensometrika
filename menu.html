@@ -11,7 +11,7 @@
       border: 1px solid #334155;
       border-radius: 12px;
       padding: 14px 16px;
-      margin-bottom: 16px;
+      margin-bottom: 12px;
       width: 100%;
       box-sizing: border-box;
     }
@@ -27,7 +27,38 @@
     .rol-b2c { background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid #38bdf8; }
     .rol-b2b { background: rgba(34, 197, 94, 0.15); color: #4ade80; border: 1px solid #22c55e; }
 
-    /* Ficha B2B: Datos de la empresa, responsable y entrada del trabajador */
+    .caja-consentimiento-menu {
+      background: #0b1120;
+      border: 1.5px solid #0284c7;
+      border-radius: 10px;
+      padding: 12px 14px;
+      margin-bottom: 16px;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    .caja-consentimiento-menu label {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      color: #cbd5e1;
+      font-size: 0.76rem;
+      line-height: 1.4;
+      cursor: pointer;
+    }
+    .caja-consentimiento-menu input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      margin-top: 1px;
+      accent-color: #0284c7;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+    .caja-consentimiento-menu a {
+      color: #38bdf8;
+      text-decoration: underline;
+      font-weight: bold;
+    }
+
     .grilla-info-empresa {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -75,11 +106,7 @@
       padding: 0 10px;
       font-size: 0.85rem;
     }
-    .campo-b2b input:focus {
-      border-color: #38bdf8;
-    }
 
-    /* Lista de módulos */
     .lista-modulos {
       width: 100%;
       display: flex;
@@ -112,6 +139,11 @@
       margin: 0;
       line-height: 1.35;
     }
+    .bloqueo-consentimiento {
+      opacity: 0.35 !important;
+      pointer-events: none !important;
+      filter: grayscale(0.5);
+    }
     .modulo-bloqueado {
       opacity: 0.42 !important;
       pointer-events: none !important;
@@ -136,13 +168,13 @@
     .badge-rojo { background: #dc2626; color: #ffffff; }
     .badge-gris { background: #334155; color: #94a3b8; }
 
-    /* Pad táctil de firma exclusiva para B2B */
+    /* Recuadro de firma B2B siempre visible y accesible */
     .caja-firma-b2b {
       background: #0f172a;
       border: 1.5px solid #38bdf8;
       border-radius: 12px;
       padding: 14px;
-      margin: 16px 0;
+      margin: 14px 0;
       text-align: center;
     }
     #canvas-firma-trabajador {
@@ -162,9 +194,7 @@
       <p style="color: #94a3b8; font-size:0.8rem; margin:2px 0 0 0;">Plataforma de Entrenamiento y Certificación Sensotécnica</p>
     </header>
 
-    <!-- =======================================================
-         VISTA 1: IDENTIFICACIÓN B2C (PARTICULARES)
-         ======================================================= -->
+    <!-- IDENTIFICACIÓN B2C -->
     <section class="cabecera-panel" id="panel-identidad-b2c" style="display: none;">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
         <span class="badge-rol rol-b2c" id="b2c-txt-plan">Plan B2C</span>
@@ -174,16 +204,13 @@
       <p id="b2c-lbl-rut" style="font-size: 0.8rem; color: #38bdf8; margin: 0;">RUT: --</p>
     </section>
 
-    <!-- =======================================================
-         VISTA 2: IDENTIFICACIÓN B2B (EMPRESAS)
-         ======================================================= -->
+    <!-- IDENTIFICACIÓN B2B -->
     <section class="cabecera-panel" id="panel-identidad-b2b" style="display: none;">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
         <span class="badge-rol rol-b2b">Pase Laboral B2B</span>
         <span id="b2b-lbl-plan-nombre" style="font-size: 0.72rem; color: #94a3b8;">Plan Empresa</span>
       </div>
 
-      <!-- Datos de la Empresa y del Responsable (Solo Lectura) -->
       <div class="grilla-info-empresa">
         <div>
           <span>Razón Social / Faena:</span>
@@ -203,7 +230,6 @@
         </div>
       </div>
 
-      <!-- Ficha para ingresar al trabajador evaluado -->
       <div class="formulario-trabajador-b2b">
         <div style="font-size: 0.78rem; font-weight: bold; color: #38bdf8;">
           👤 INGRESO DE DATOS DEL TRABAJADOR A EVALUAR
@@ -219,54 +245,60 @@
       </div>
     </section>
 
-    <!-- LISTA UNIVERSAL DE MÓDULOS -->
-    <section class="lista-modulos">
-      <!-- Módulo 1: Reactímetro -->
+    <!-- CONSENTIMIENTO INFORMADO -->
+    <section class="caja-consentimiento-menu" id="bloque-consentimiento">
+      <label for="chk-terminos-menu">
+        <input type="checkbox" id="chk-terminos-menu" onchange="alternarAceptacionTerminos(this.checked)">
+        <span>
+          Declaro conocer y aceptar los <a href="terminos.html" target="_blank">Términos y Condiciones</a>, la <a href="terminos.html" target="_blank">Política de Privacidad (Ley N° 21.719)</a> y el alcance de entrenamiento preventivo no médico según el D.S. N° 170.
+        </span>
+      </label>
+    </section>
+
+    <!-- LISTA DE MÓDULOS -->
+    <section class="lista-modulos" id="contenedor-lista-modulos">
       <a href="reactimetro.html" class="tarjeta-modulo" id="tarjeta-reactimetro">
         <h3>Módulo 1: Reactímetro <span>→</span></h3>
         <p>Tiempo de reacción simple ante luz roja y prevención de anticipaciones.</p>
-        <span class="badge-conteo badge-verde" id="badge-reactimetro">Simulaciones: 0/3</span>
+        <span class="badge-conteo badge-verde" id="badge-reactimetro">Examen: 0/1</span>
       </a>
 
-      <!-- Módulo 2: Palancas -->
       <a href="palancas.html" class="tarjeta-modulo" id="tarjeta-palancas">
         <h3>Módulo 2: Palancas Bimanuales <span>→</span></h3>
         <p>Coordinación motriz disociada a través de recorridos reglamentarios.</p>
-        <span class="badge-conteo badge-verde" id="badge-palancas">Simulaciones: 0/3</span>
+        <span class="badge-conteo badge-verde" id="badge-palancas">Examen: 0/1</span>
       </a>
 
-      <!-- Módulo 3: Punteo -->
       <a href="punteo.html" class="tarjeta-modulo" id="tarjeta-punteo">
         <h3>Módulo 3: Test de Punteo (Lahy) <span>→</span></h3>
         <p>Cadencia y sincronización visomotriz a velocidad constante.</p>
-        <span class="badge-conteo badge-verde" id="badge-punteo">Simulaciones: 0/3</span>
+        <span class="badge-conteo badge-verde" id="badge-punteo">Examen: 0/1</span>
       </a>
 
-      <!-- Módulo 4: Visual -->
       <a href="visual.html" class="tarjeta-modulo" id="tarjeta-visual">
         <h3>Módulo 4: Tamizaje Visual <span>→</span></h3>
         <p>Agudeza visual con Optotipo E y Discriminación Cromática Ishihara.</p>
-        <span class="badge-conteo badge-verde" id="badge-visual">Simulaciones: 0/3</span>
+        <span class="badge-conteo badge-verde" id="badge-visual">Examen: 0/1</span>
       </a>
 
-      <!-- Módulo 5: Auditivo -->
       <a href="audicion.html" class="tarjeta-modulo" id="tarjeta-auditivo">
         <h3>Módulo 5: Tamizaje Auditivo <span>→</span></h3>
         <p>Audiometría orientativa de tonos puros con separación biaural.</p>
-        <span class="badge-conteo badge-verde" id="badge-auditivo">Simulaciones: 0/3</span>
+        <span class="badge-conteo badge-verde" id="badge-auditivo">Examen: 0/1</span>
       </a>
 
-      <!-- Pad táctil de firma para trabajador B2B -->
+      <!-- RECUADRO DE FIRMA B2B (Siempre presente para rubricar en modo Empresa) -->
       <div class="caja-firma-b2b" id="bloque-firma-b2b" style="display: none;">
         <h4 style="color: #38bdf8; margin: 0 0 4px 0; font-size: 0.85rem;">✍️ Rúbrica del Trabajador Evaluado</h4>
-        <p style="color: #94a3b8; font-size: 0.72rem; margin: 0 0 6px 0;">Firme en el recuadro blanco para rubricar su certificado legal de faena.</p>
+        <p style="color: #94a3b8; font-size: 0.72rem; margin: 0 0 6px 0;">Firme con su dedo en el cuadro blanco para rubricar su certificado formal con QR.</p>
         <canvas id="canvas-firma-trabajador" width="280" height="90"></canvas>
-        <button type="button" onclick="limpiarFirma()" style="background: transparent; border: 1px solid #64748b; color: #94a3b8; font-size: 0.72rem; padding: 2px 8px; border-radius: 4px; cursor: pointer;">
-          Borrar Firma
-        </button>
+        <div style="display: flex; justify-content: center; gap: 8px;">
+          <button type="button" onclick="limpiarFirma()" style="background: transparent; border: 1px solid #64748b; color: #94a3b8; font-size: 0.72rem; padding: 3px 10px; border-radius: 4px; cursor: pointer;">
+            Borrar Rúbrica
+          </button>
+        </div>
       </div>
 
-      <!-- Acceso a Informe Final -->
       <a href="informe.html" class="tarjeta-modulo" id="tarjeta-informe" style="border-color: #22c55e;">
         <h3 style="color: #4ade80;">📊 Ver Resultados de Evaluación <span>→</span></h3>
         <p id="txt-desc-informe">Consulta el dictamen de las pruebas rendidas.</p>
@@ -289,15 +321,18 @@
       const usuario = CreditManager.obtenerDatosUsuario();
       const planEmpresa = JSON.parse(localStorage.getItem('sensometrika_plan_empresa')) || {};
 
-      const esB2B = (sesion.rol === 'empresa' || (sesion.planId && String(sesion.planId).startsWith('b2b')));
+      const esB2B = CreditManager.esB2B();
+      const chkTerminos = document.getElementById('chk-terminos-menu');
+      const terminosAceptados = localStorage.getItem('sensometrika_terminos_aceptados') === 'true';
+      if (chkTerminos) chkTerminos.checked = terminosAceptados;
 
       if (esB2B) {
-        // ============================================
-        // MODO B2B: EMPRESA, RESPONSABLE Y TRABAJADOR
-        // ============================================
         document.getElementById('panel-identidad-b2b').style.display = 'block';
         document.getElementById('panel-identidad-b2c').style.display = 'none';
+        
+        // Mostrar siempre el bloque de firma en B2B
         document.getElementById('bloque-firma-b2b').style.display = 'block';
+        inicializarPadFirma();
 
         const razon = planEmpresa.razonSocial || sesion.razonSocial || 'SOCADEP SpA';
         const rutEmp = planEmpresa.rutEmpresa || sesion.rutEmpresa || '76.123.456-7';
@@ -312,18 +347,12 @@
         document.getElementById('b2b-lbl-resp-cargo').innerText = `${respRut} (${respCargo})`;
         document.getElementById('b2b-lbl-plan-nombre').innerText = sesion.nombrePlan || 'Plan Empresa';
 
-        // Prellenar datos del trabajador si ya los había ingresado
         const trabajador = JSON.parse(localStorage.getItem('sensometrika_datos_usuario')) || {};
         if (trabajador.nombre) document.getElementById('b2b-in-nombre').value = trabajador.nombre;
         if (trabajador.rut) document.getElementById('b2b-in-rut').value = trabajador.rut;
 
         document.getElementById('txt-desc-informe').innerText = 'Emisión formal de Certificado A4 con código QR y doble firma para faena.';
-        inicializarPadFirma();
-
       } else {
-        // ============================================
-        // MODO B2C: POSTULANTE PARTICULAR DIRECTO
-        // ============================================
         document.getElementById('panel-identidad-b2c').style.display = 'block';
         document.getElementById('panel-identidad-b2b').style.display = 'none';
         document.getElementById('bloque-firma-b2b').style.display = 'none';
@@ -334,7 +363,17 @@
         document.getElementById('txt-desc-informe').innerText = 'Consulta tus métricas obtenidas y dictamen normativo en pantalla.';
       }
 
-      // Control de Módulos y Badges
+      actualizarEstadoModulos(terminosAceptados);
+    });
+
+    function alternarAceptacionTerminos(aceptado) {
+      localStorage.setItem('sensometrika_terminos_aceptados', aceptado ? 'true' : 'false');
+      actualizarEstadoModulos(aceptado);
+    }
+
+    function actualizarEstadoModulos(terminosAceptados) {
+      const sesion = CreditManager.obtenerSesion();
+      const esB2B = CreditManager.esB2B();
       const modulosPermitidos = sesion.modulosPermitidos || ['reactimetro', 'palancas', 'punteo'];
       const todosLosModulos = ['reactimetro', 'palancas', 'punteo', 'visual', 'auditivo'];
 
@@ -344,7 +383,8 @@
         if (!tarjeta) return;
 
         const contratado = modulosPermitidos.includes(mod);
-        const consumidas = (sesion.simulacionesConsumidas && sesion.simulacionesConsumidas[mod]) || 0;
+        const consumidas = CreditManager.obtenerConsumidas(mod);
+        const max = CreditManager.obtenerLimiteModulo(mod);
 
         if (!contratado) {
           tarjeta.classList.add('modulo-no-contratado');
@@ -355,48 +395,70 @@
         } else {
           tarjeta.classList.remove('modulo-no-contratado');
 
-          if (esB2B) {
-            if (badge) {
-              badge.innerText = consumidas > 0 ? '✔ Evaluación Realizada' : 'Pendiente de Evaluación';
-              badge.className = consumidas > 0 ? 'badge-conteo badge-verde' : 'badge-conteo badge-gris';
-            }
+          if (!terminosAceptados) {
+            tarjeta.classList.add('bloqueo-consentimiento');
           } else {
-            if (badge) {
-              if (consumidas >= 3) {
-                badge.innerText = 'Simulaciones: 3/3 (Bloqueado)';
+            tarjeta.classList.remove('bloqueo-consentimiento');
+          }
+
+          if (esB2B) {
+            if (consumidas >= 1) {
+              if (badge) {
+                badge.innerText = 'Examen: 1/1 (Realizado - Bloqueado)';
                 badge.className = 'badge-conteo badge-rojo';
-              } else {
-                badge.innerText = `Simulaciones: ${consumidas}/3`;
-                badge.className = 'badge-conteo badge-verde';
               }
-            }
-            if (consumidas >= 3) {
               tarjeta.classList.add('modulo-bloqueado');
             } else {
+              if (badge) {
+                badge.innerText = 'Examen: 0/1 (Pendiente)';
+                badge.className = 'badge-conteo badge-verde';
+              }
+              tarjeta.classList.remove('modulo-bloqueado');
+            }
+          } else {
+            if (consumidas >= max) {
+              if (badge) {
+                badge.innerText = `Simulaciones: ${max}/${max} (Bloqueado)`;
+                badge.className = 'badge-conteo badge-rojo';
+              }
+              tarjeta.classList.add('modulo-bloqueado');
+            } else {
+              if (badge) {
+                badge.innerText = `Simulaciones: ${consumidas}/${max}`;
+                badge.className = 'badge-conteo badge-verde';
+              }
               tarjeta.classList.remove('modulo-bloqueado');
             }
           }
         }
       });
-    });
+    }
 
     function actualizarFichaTrabajador() {
       const nombre = document.getElementById('b2b-in-nombre').value.trim();
       const rut = document.getElementById('b2b-in-rut').value.trim();
       localStorage.setItem('sensometrika_datos_usuario', JSON.stringify({
-        nombre: nombre,
-        rut: rut,
-        tipo: 'empresa'
+        nombre: nombre, rut: rut, tipo: 'empresa'
       }));
     }
 
     function inicializarPadFirma() {
       canvasFirma = document.getElementById('canvas-firma-trabajador');
-      if (!canvasFirma) return;
+      if (!canvasFirma || canvasFirma.dataset.inicializado) return;
+      canvasFirma.dataset.inicializado = 'true';
+
       ctxFirma = canvasFirma.getContext('2d');
       ctxFirma.lineWidth = 2;
       ctxFirma.lineCap = 'round';
       ctxFirma.strokeStyle = '#0f172a';
+
+      // Restaurar firma si ya existía en localStorage
+      const firmaPrevia = localStorage.getItem('sensometrika_firma_trabajador');
+      if (firmaPrevia) {
+        const img = new Image();
+        img.onload = () => ctxFirma.drawImage(img, 0, 0);
+        img.src = firmaPrevia;
+      }
 
       const obtenerPos = (e) => {
         const rect = canvasFirma.getBoundingClientRect();
@@ -449,6 +511,8 @@
       sesion.simulacionesConsumidas = { reactimetro: 0, palancas: 0, punteo: 0, visual: 0, auditivo: 0 };
       sesion.demosCompletados = { reactimetro: false, palancas: false, punteo: false, visual: false, auditivo: false };
       CreditManager.guardarSesion(sesion);
+      localStorage.removeItem('sensometrika_terminos_aceptados');
+      localStorage.removeItem('sensometrika_firma_trabajador');
       window.location.reload();
     }
   </script>
