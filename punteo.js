@@ -1,303 +1,319 @@
 /* ==========================================================================
-   TEST DE PUNTEO (DISCO DE LAHY / TAMBOR ROTATORIO) - SENSOMETRIKA
+   SENSOMETRIKA - MÓDULO 3: TEST DE PUNTEO (punteo.js)
+   • 1 Demo único de 15 s por módulo
+   • Conteo y bloqueo 1/3, 2/3 y 3/3 sincronizado con CreditManager
+   • Variación de secuencias de orificios (anti-memorización)
    ========================================================================== */
-const canvas = document.getElementById('canvas-punteo');
-const ctx = canvas ? canvas.getContext('2d') : null;
+const canvas = document.getElementById('lienzo-punteo');
+const ctx = canvas.getContext('2d');
 
-const btnAccion = document.getElementById('btn-iniciar');
-const contenedorAccion = document.getElementById('contenedor-accion');
-const lblAciertos = document.getElementById('contador-aciertos');
-const lblFallos = document.getElementById('contador-fallos');
-const lblEfectividad = document.getElementById('porcentaje-efectividad');
-const badgeFase = document.getElementById('badge-fase');
-const txtTiempo = document.getElementById('txt-tiempo');
-const cajaTiempoCabecera = document.getElementById('caja-tiempo-cabecera');
-const panelInstruccion = document.getElementById('caja-instruccion');
+const badgeModo = document.getElementById('badge-modo-punteo');
+const txtTiempo = document.getElementById('txt-tiempo-punteo');
+const lblCrono = document.getElementById('lbl-crono-punteo');
+const metricaAciertos = document.getElementById('metrica-aciertos');
+const metricaFallos = document.getElementById('metrica-fallos');
+const metricaEfectividad = document.getElementById('metrica-efectividad');
+const panelEstado = document.getElementById('panel-estado');
+const btnIniciar = document.getElementById('btn-iniciar-punteo');
+const zonaCoordinacion = document.getElementById('zona-coordinacion-punteo');
 
-let animacionId = null;
-let enEjecucion = false;
-let faseActual = 'DEMO'; // 'DEMO' (15 s) | 'OFICIAL' (30 s sin reloj visible)
+let modo = 'DEMO'; // 'DEMO' u 'OFICIAL'
+let pruebaActiva = false;
+let intervalo = null;
+let animacionFrame = null;
+
 let tiempoRestante = 15;
-let timerInterval = null;
-
 let aciertos = 0;
 let fallos = 0;
+
+// Franja dorada central
+const franjaX = 110;
+const franjaAncho = 110;
+
+// Banco dinámico de orificios (Anti-memorización de cadencia y posición)
 let orificios = [];
+let velocidadTambor = 2.4;
 
-// CADENCIA Y ÁREA CALIBRADAS
-const VELOCIDAD = 2.3;
-const SEPARACION_ORIFICIOS = 135;
-const RADIO_ORIFICIO = 16;
+function generarOrificiosAleatorios() {
+  const lista = [];
+  const carrilesY = [45, 90, 135, 180];
+  let xActual = 340;
 
-let franjaMinX = 135;
-let franjaMaxX = 245;
+  for (let i = 0; i < 35; i++) {
+    const carrilAleatorio = carrilesY[Math.floor(Math.random() * carrilesY.length)];
+    const separacion = Math.floor(Math.random() * (160 - 115 + 1)) + 115;
+    xActual += separacion;
 
-function recalcularGeometria() {
-  if (!canvas) return;
-  const anchoContenedor = canvas.parentElement ? canvas.parentElement.clientWidth : 380;
-  canvas.width = Math.min(380, Math.max(300, anchoContenedor));
-  canvas.height = 200;
-
-  const centro = canvas.width / 2;
-  franjaMinX = centro - 55;
-  franjaMaxX = centro + 55;
-
-  dibujarEscenario();
-}
-
-function inicializarOrificios() {
-  orificios = [];
-  const total = 5;
-  for (let i = 0; i < total; i++) {
-    orificios.push({
-      x: canvas.width + 40 + (i * SEPARACION_ORIFICIOS),
-      y: 45 + Math.random() * (canvas.height - 90),
-      radio: RADIO_ORIFICIO,
+    lista.push({
+      x: xActual,
+      y: carrilAleatorio,
+      radio: 12,
       tocado: false,
-      acertado: false
+      fallado: false
     });
   }
+  return lista;
 }
 
-function dibujarEscenario() {
-  if (!ctx || !canvas) return;
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
+window.addEventListener('DOMContentLoaded', () => {
+  CreditManager.pintarBadgeCabecera('caja-contador-simulacion', 'punteo');
 
-  // 1. Fondo del tambor
-  ctx.fillStyle = '#020617';
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-  // 2. Franja dorada de inserción reglamentaria
-  const anchoFranja = franjaMaxX - franjaMinX;
-  ctx.fillStyle = 'rgba(234, 179, 8, 0.16)';
-  ctx.fillRect(franjaMinX, 0, anchoFranja, canvas.height);
-
-  ctx.strokeStyle = '#eab308';
-  ctx.lineWidth = 2.5;
-  ctx.setLineDash([6, 5]);
-  ctx.strokeRect(franjaMinX, 0, anchoFranja, canvas.height);
-  ctx.setLineDash([]);
-
-  // 3. Orificios móviles
-  orificios.forEach(o => {
-    ctx.beginPath();
-    ctx.arc(o.x, o.y, o.radio, 0, Math.PI * 2);
-
-    if (o.tocado) {
-      if (o.acertado) {
-        ctx.fillStyle = '#eab308';
-        ctx.strokeStyle = '#fef08a';
-      } else {
-        ctx.fillStyle = '#ef4444';
-        ctx.strokeStyle = '#fca5a5';
-      }
-    } else {
-      ctx.fillStyle = '#10b981';
-      ctx.strokeStyle = '#d1fae5';
-    }
-
-    ctx.fill();
-    ctx.lineWidth = 2.5;
-    ctx.stroke();
-
-    ctx.beginPath();
-    ctx.arc(o.x, o.y, 4, 0, Math.PI * 2);
-    ctx.fillStyle = '#ffffff';
-    ctx.fill();
-  });
-}
-
-function actualizarFisica() {
-  orificios.forEach(o => {
-    o.x -= VELOCIDAD;
-
-    if (o.x + o.radio < 0) {
-      if (!o.tocado && enEjecucion) {
-        fallos++;
-        actualizarMarcadores();
-      }
-
-      let maxX = canvas.width;
-      orificios.forEach(otro => {
-        if (otro.x > maxX) maxX = otro.x;
-      });
-
-      o.x = maxX + SEPARACION_ORIFICIOS;
-      o.y = 45 + Math.random() * (canvas.height - 90);
-      o.tocado = false;
-      o.acertado = false;
-    }
-  });
-}
-
-function bucleAnimacion() {
-  if (!enEjecucion) return;
-  actualizarFisica();
-  dibujarEscenario();
-  animacionId = requestAnimationFrame(bucleAnimacion);
-}
-
-function registrarImpacto(clientX, clientY) {
-  if (!enEjecucion) return;
-
-  const rect = canvas.getBoundingClientRect();
-  const x = clientX - rect.left;
-  const y = clientY - rect.top;
-
-  let impactoRegistrado = false;
-
-  orificios.forEach(o => {
-    const dist = Math.hypot(x - o.x, y - o.y);
-    if (dist <= o.radio + 12 && !o.tocado) {
-      impactoRegistrado = true;
-      o.tocado = true;
-
-      if (o.x >= franjaMinX && o.x <= franjaMaxX) {
-        aciertos++;
-        o.acertado = true;
-        if ('vibrate' in navigator) navigator.vibrate(25);
-      } else {
-        fallos++;
-        o.acertado = false;
-      }
-    }
-  });
-
-  if (!impactoRegistrado) {
-    fallos++;
+  // 1. Bloqueo al llegar a 3/3
+  if (!CreditManager.puedeRendir('punteo')) {
+    bloquearModuloPorCupo();
+    return;
   }
 
-  actualizarMarcadores();
+  // 2. Si ya completó el Demo en Punteo, salta directo al examen oficial
+  if (CreditManager.demoYaRealizado('punteo')) {
+    prepararVistaOficialDirecta();
+  } else {
+    orificios = generarOrificiosAleatorios();
+    dibujarEscena();
+  }
+});
+
+function bloquearModuloPorCupo() {
+  btnIniciar.disabled = true;
+  btnIniciar.style.opacity = '0.4';
+  btnIniciar.innerText = 'Cupo Bloqueado (3/3 Realizadas)';
+  panelEstado.innerText = 'Has alcanzado el límite de 3 simulaciones oficiales para este módulo.';
+  panelEstado.style.color = '#f87171';
+
+  zonaCoordinacion.innerHTML = `
+    <div style="background: #020617; border: 1.5px solid #dc2626; border-radius: 12px; padding: 16px; margin-top: 14px; text-align: center;">
+      <h3 style="color: #ef4444; margin: 0 0 6px 0;">Módulo Bloqueado (3 de 3)</h3>
+      <p style="color: #94a3b8; font-size: 0.85rem; margin-bottom: 12px;">Completaste todas las simulaciones de tu Plan Básico.</p>
+      <a href="menu.html" class="btn-principal" style="display:inline-block; text-decoration:none; background:#0284c7; padding:10px 16px; border-radius:6px; color:#fff;">
+        Volver al Menú Principal
+      </a>
+    </div>
+  `;
 }
 
-function actualizarMarcadores() {
-  const total = aciertos + fallos;
-  const ef = total > 0 ? Math.round((aciertos / total) * 100) : 0;
-  if (lblAciertos) lblAciertos.innerText = aciertos;
-  if (lblFallos) lblFallos.innerText = fallos;
-  if (lblEfectividad) lblEfectividad.innerText = `${ef} %`;
+function prepararVistaOficialDirecta() {
+  modo = 'OFICIAL';
+  pruebaActiva = false;
+  const numSim = CreditManager.obtenerNumeroSimulacionActual('punteo');
+
+  badgeModo.innerText = `🔴 Simulación Oficial ${numSim} de 3 (D.S. N° 170)`;
+  badgeModo.style.color = '#38bdf8';
+  txtTiempo.innerHTML = 'Evaluación Activa';
+  panelEstado.innerText = 'Presiona "Iniciar Simulación Oficial" para comenzar.';
+  panelEstado.style.color = '#38bdf8';
+
+  btnIniciar.style.display = 'block';
+  btnIniciar.innerText = `Iniciar Simulación Oficial (${numSim} de 3)`;
+  btnIniciar.style.backgroundColor = '#22c55e';
+
+  orificios = generarOrificiosAleatorios();
+  dibujarEscena();
 }
 
-function iniciarFase() {
-  if (enEjecucion) return;
-  enEjecucion = true;
+btnIniciar.addEventListener('pointerdown', (e) => {
+  e.preventDefault();
+  if (btnIniciar.disabled) return;
+
+  if (!pruebaActiva) {
+    iniciarPrueba();
+  }
+});
+
+function iniciarPrueba() {
+  pruebaActiva = true;
   aciertos = 0;
   fallos = 0;
-  actualizarMarcadores();
+  metricaAciertos.innerText = '0';
+  metricaFallos.innerText = '0';
+  metricaEfectividad.innerText = '-- %';
+  btnIniciar.style.display = 'none';
 
-  tiempoRestante = (faseActual === 'DEMO') ? 15 : 30;
+  orificios = generarOrificiosAleatorios();
 
-  if (faseActual === 'DEMO') {
-    if (txtTiempo) txtTiempo.innerText = `${tiempoRestante} s`;
-    if (btnAccion) {
-      btnAccion.disabled = true;
-      btnAccion.innerText = `Calibrando... (${tiempoRestante} s)`;
-    }
+  if (modo === 'DEMO') {
+    tiempoRestante = 15;
+    lblCrono.innerText = `${tiempoRestante} s`;
+    panelEstado.innerText = 'Fase Demo: Calibra el ritmo de inserción';
   } else {
-    // EN EXAMEN OFICIAL: CRONÓMETRO OCULTO
-    if (cajaTiempoCabecera) cajaTiempoCabecera.innerHTML = '<strong>Evaluación Activa</strong>';
-    if (btnAccion) {
-      btnAccion.disabled = true;
-      btnAccion.innerText = 'Evaluando...';
-    }
+    tiempoRestante = 30; // 30 s normativos
+    panelEstado.innerText = 'Evaluación Oficial en curso: Precisión rítmica';
   }
 
-  inicializarOrificios();
-  bucleAnimacion();
-
-  timerInterval = setInterval(() => {
+  intervalo = setInterval(() => {
     tiempoRestante--;
-
-    // Solo actualiza el texto de tiempo visible si es fase DEMO
-    if (faseActual === 'DEMO') {
-      if (txtTiempo) txtTiempo.innerText = `${tiempoRestante} s`;
-      if (btnAccion) btnAccion.innerText = `Calibrando... (${tiempoRestante} s)`;
+    if (modo === 'DEMO' && lblCrono) {
+      lblCrono.innerText = `${tiempoRestante} s`;
     }
 
     if (tiempoRestante <= 0) {
-      finalizarFase();
+      clearInterval(intervalo);
+      cancelAnimationFrame(animacionFrame);
+      finalizarPrueba();
     }
   }, 1000);
+
+  bucleAnimacion();
 }
 
-function finalizarFase() {
-  clearInterval(timerInterval);
-  cancelAnimationFrame(animacionId);
-  enEjecucion = false;
+function bucleAnimacion() {
+  if (!pruebaActiva) return;
+
+  // Desplazar tambor hacia la izquierda
+  for (let o of orificios) {
+    o.x -= velocidadTambor;
+
+    // Si salió de la franja dorada sin ser tocado, cuenta fallo
+    if (!o.tocado && !o.fallado && (o.x + o.radio < franjaX)) {
+      o.fallado = true;
+      fallos++;
+      metricaFallos.innerText = fallos;
+      actualizarEfectividad();
+    }
+  }
+
+  dibujarEscena();
+  animacionFrame = requestAnimationFrame(bucleAnimacion);
+}
+
+// Detección de toque táctil o clic
+canvas.addEventListener('pointerdown', (e) => {
+  if (!pruebaActiva) return;
+  e.preventDefault();
+
+  const rect = canvas.getBoundingClientRect();
+  const touchX = e.clientX - rect.left;
+  const touchY = e.clientY - rect.top;
+
+  // Solo es válido dentro de la franja dorada reglamentaria
+  if (touchX < franjaX || touchX > franjaX + franjaAncho) {
+    fallos++;
+    metricaFallos.innerText = fallos;
+    actualizarEfectividad();
+    return;
+  }
+
+  let acerto = false;
+  for (let o of orificios) {
+    const dist = Math.hypot(touchX - o.x, touchY - o.y);
+    if (dist <= o.radio + 10 && !o.tocado) {
+      o.tocado = true;
+      aciertos++;
+      acerto = true;
+      if ('vibrate' in navigator) navigator.vibrate(40);
+      metricaAciertos.innerText = aciertos;
+      actualizarEfectividad();
+      break;
+    }
+  }
+
+  if (!acerto) {
+    fallos++;
+    metricaFallos.innerText = fallos;
+    actualizarEfectividad();
+  }
+});
+
+function actualizarEfectividad() {
+  const total = aciertos + fallos;
+  const efec = total > 0 ? Math.round((aciertos / total) * 100) : 0;
+  metricaEfectividad.innerText = `${efec} %`;
+}
+
+function finalizarPrueba() {
+  pruebaActiva = false;
+  clearInterval(intervalo);
+  cancelAnimationFrame(animacionFrame);
 
   const total = aciertos + fallos;
-  const ef = total > 0 ? Math.round((aciertos / total) * 100) : 0;
+  const efectividad = total > 0 ? Math.round((aciertos / total) * 100) : 0;
 
-  if (faseActual === 'DEMO') {
-    faseActual = 'OFICIAL';
-    badgeFase.innerText = '🔴 Modo Oficial D.S. N° 170 (Calificatorio)';
-    badgeFase.style.borderColor = '#ef4444';
+  if (modo === 'DEMO') {
+    CreditManager.marcarDemoCompletado('punteo');
+    const numSim = CreditManager.obtenerNumeroSimulacionActual('punteo');
+    panelEstado.innerText = `¡Calibración lista! Efectividad: ${efectividad}%. Pasa a Simulación Oficial ${numSim} de 3.`;
+    panelEstado.style.color = '#4ade80';
 
-    // Se retira el cronómetro de 30 seg de la cabecera
-    if (cajaTiempoCabecera) cajaTiempoCabecera.innerHTML = '<strong>Evaluación Activa</strong>';
-
-    panelInstruccion.innerHTML = '✅ <strong>Demo finalizado.</strong> Ahora comienza la evaluación reglamentaria.';
-
-    if (btnAccion) {
-      btnAccion.disabled = false;
-      btnAccion.innerText = 'Iniciar Evaluación Oficial';
-      btnAccion.style.backgroundColor = '#16a34a';
-    }
+    btnIniciar.style.display = 'block';
+    btnIniciar.innerText = `Iniciar Simulación Oficial (${numSim} de 3)`;
+    btnIniciar.style.backgroundColor = '#22c55e';
+    modo = 'OFICIAL';
   } else {
-    // Fin de evaluación oficial
-    const aprobado = ef >= 80;
+    // Oficial: Descontar simulación
+    const consumidas = CreditManager.registrarConsumo('punteo');
+    const aprobado = efectividad >= 80 && aciertos >= 12;
+
     localStorage.setItem('sensometrika_punteo', JSON.stringify({
-      efectividad: ef,
+      efectividad: efectividad,
       aciertos: aciertos,
-      fallos: fallos,
-      aprobado: aprobado,
-      fecha: new Date().toISOString()
+      aprobado: aprobado
     }));
 
-    mostrarBotonContinuar(ef, aprobado);
-  }
-}
+    CreditManager.pintarBadgeCabecera('caja-contador-simulacion', 'punteo');
+    const bloqueoTotal = consumidas >= CreditManager.LIMITE_SIMULACIONES;
 
-function mostrarBotonContinuar(ef, aprobado) {
-  const sesion = JSON.parse(localStorage.getItem('sensometrika_sesion')) || {};
-  const permitidos = sesion.modulosPermitidos || ['reactimetro', 'palancas', 'punteo'];
-  const tieneVisual = permitidos.includes('visual');
+    // Detectar si el plan incluye módulos sensoriales para el botón siguiente
+    const sesion = CreditManager.obtenerSesion();
+    const tieneVisual = sesion.modulosPermitidos && sesion.modulosPermitidos.includes('visual');
+    const siguienteUrl = tieneVisual ? 'visual.html' : 'informe.html';
+    const textoBoton = tieneVisual ? 'Continuar a Módulo 4 (Tamizaje Visual) →' : '📊 Ver Informe de Evaluación Global';
 
-  const siguienteUrl = tieneVisual ? 'visual.html' : 'informe.html';
-  const textoBoton = tieneVisual ? 'Continuar a Módulo 4 (Tamizaje Visual) →' : '📋 Ver Certificado e Informe Final';
+    panelEstado.innerText = 'Evaluación Oficial completada.';
 
-  if (contenedorAccion) {
-    contenedorAccion.innerHTML = `
-      <div style="background: #020617; border: 1.5px solid #38bdf8; border-radius: 10px; padding: 14px; text-align: center; margin-top: 6px;">
-        <h3 style="color: ${aprobado ? '#4ade80' : '#f87171'}; margin: 0 0 6px 0; font-size: 1.05rem;">
-          ${aprobado ? '✅ Módulo Superado' : '⚠️ Bajo Estándar Normativo'} (${ef}%)
+    zonaCoordinacion.innerHTML = `
+      <div style="background: #020617; border: 1.5px solid ${aprobado ? '#38bdf8' : '#ef4444'}; border-radius: 12px; padding: 16px; margin-top: 14px; text-align: center; width: 100%; box-sizing: border-box;">
+        <h3 style="color: ${aprobado ? '#4ade80' : '#f87171'}; margin: 0 0 6px 0; font-size: 1.1rem;">
+          ¡Simulación ${consumidas}/3 Finalizada!
         </h3>
-        <p style="color: #94a3b8; font-size: 0.8rem; margin-bottom: 12px;">
-          Exigencia legal: Mínimo 80% de efectividad rítmica[cite: 2, 6].
+        <p style="color: #94a3b8; font-size: 0.82rem; margin-bottom: 8px;">
+          Efectividad oficial: <strong style="color: #fff;">${efectividad}%</strong> (${aciertos} aciertos) - ${aprobado ? 'Aprobado' : 'Observado'}
         </p>
-        <a href="${siguienteUrl}" class="btn-principal" style="display: flex; justify-content: center; align-items: center; text-decoration: none; height: 46px; background-color: #0284c7;">
-          ${textoBoton}
-        </a>
+        <p style="color: #38bdf8; font-size: 0.82rem; font-weight: bold; margin-bottom: 12px;">
+          ${bloqueoTotal ? 'Has completado el cupo máximo de 3/3 simulaciones de este módulo.' : `Te restan ${3 - consumidas} simulación(es) en este módulo.`}
+        </p>
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+          <a href="${siguienteUrl}" class="btn-principal" style="display:flex; justify-content:center; align-items:center; text-decoration:none; height:44px; background-color:#0284c7; color:#fff; border-radius:6px; font-weight:bold; font-size:0.9rem;">
+            ${textoBoton}
+          </a>
+          <a href="menu.html" style="color:#64748b; font-size:0.8rem; text-decoration:none; padding:6px;">
+            Volver al Menú Principal
+          </a>
+        </div>
       </div>
     `;
   }
 }
 
-// Interacción con mouse y táctil
-if (canvas) {
-  canvas.addEventListener('pointerdown', (e) => {
-    e.preventDefault();
-    registrarImpacto(e.clientX, e.clientY);
-  });
-}
+function dibujarEscena() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-if (btnAccion) {
-  btnAccion.addEventListener('click', iniciarFase);
-}
+  // Franja dorada de inserción
+  ctx.fillStyle = 'rgba(234, 179, 8, 0.12)';
+  ctx.fillRect(franjaX, 0, franjaAncho, canvas.height);
+  ctx.strokeStyle = '#eab308';
+  ctx.lineWidth = 2;
+  ctx.strokeRect(franjaX, 0, franjaAncho, canvas.height);
 
-window.addEventListener('resize', recalcularGeometria);
-document.addEventListener('DOMContentLoaded', () => {
-  recalcularGeometria();
-  inicializarOrificios();
-  dibujarEscenario();
-});
+  // Orificios móviles
+  for (let o of orificios) {
+    if (o.x + o.radio < 0 || o.x - o.radio > canvas.width) continue;
+
+    ctx.beginPath();
+    ctx.arc(o.x, o.y, o.radio, 0, Math.PI * 2);
+
+    if (o.tocado) {
+      ctx.fillStyle = '#eab308'; // Acierto dorado
+      ctx.shadowColor = '#eab308';
+      ctx.shadowBlur = 10;
+    } else if (o.fallado) {
+      ctx.fillStyle = '#ef4444'; // Fallo rojo
+      ctx.shadowBlur = 0;
+    } else {
+      ctx.fillStyle = '#22c55e'; // Verde de inserción
+      ctx.shadowColor = '#22c55e';
+      ctx.shadowBlur = 6;
+    }
+
+    ctx.fill();
+    ctx.shadowBlur = 0;
+  }
+}
