@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Sensometrika | Certificado Técnico de Evaluación</title>
   <link rel="stylesheet" href="styles.css">
+  <!-- Librería QR y Supabase -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
@@ -39,20 +40,23 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      min-width: 60px;
     }
     #contenedor-qr {
-      width: 58px;
-      height: 58px;
+      width: 72px;
+      height: 72px;
+      padding: 4px;
+      background: #ffffff;
+      border-radius: 6px;
+      border: 1px solid #cbd5e1;
+      box-sizing: content-box;
       display: flex;
       align-items: center;
       justify-content: center;
-      background: #ffffff;
     }
     #contenedor-qr img, #contenedor-qr canvas {
       display: block;
-      width: 58px !important;
-      height: 58px !important;
+      width: 72px !important;
+      height: 72px !important;
     }
     .alerta-despacho {
       background: #f0fdf4;
@@ -191,7 +195,7 @@
       </div>
       <div class="caja-qr-print">
         <div id="contenedor-qr"></div>
-        <span style="font-size: 0.55rem; color: #64748b; font-weight: 700; margin-top: 3px;">VERIFICACIÓN</span>
+        <span style="font-size: 0.55rem; color: #64748b; font-weight: 700; margin-top: 4px; letter-spacing: 0.5px;">VERIFICACIÓN</span>
       </div>
     </header>
 
@@ -269,7 +273,6 @@
       </tbody>
     </table>
 
-    <!-- Recomendaciones Técnicas (Visibles solo si es plan particular B2C) -->
     <div class="caja-recomendaciones" id="bloque-recomendaciones-tips">
       <strong style="color: #0f172a;">💡 Recomendaciones Técnicas Preventivas:</strong>
       <ul style="margin: 4px 0 0 16px; padding: 0;">
@@ -281,7 +284,6 @@
 
     <!-- Bloque de Firmas B2B Mejorado -->
     <section class="caja-firmas-b2b" id="bloque-firmas-b2b" style="display: none;">
-      <!-- Lado Trabajador: Firma estampada previa -->
       <div class="celda-firma">
         <div style="height: 52px; display: flex; align-items: flex-end; justify-content: center; width: 100%;">
           <img id="img-firma-empleado" src="" alt="Firma" style="max-height: 48px; max-width: 140px; display: none;">
@@ -294,9 +296,7 @@
         </div>
       </div>
 
-      <!-- Lado Empresa: Espacio en blanco para firma/timbre con V°B° al pie -->
       <div class="celda-firma">
-        <!-- Espacio en blanco formal para estampilla / firma manual o digital -->
         <div style="height: 52px; width: 100%;"></div>
         <div class="linea-firma">
           <strong id="pie-nombre-encargado" style="font-size: 0.75rem; color: #0f172a; display: block;">Mariela Cárcamo Fernández</strong>
@@ -308,7 +308,7 @@
     </section>
 
     <footer class="clausula-legal">
-      <strong>Cláusula de Responsabilidad Técnica:</strong> Documento electrónico emitido conforme a los requerimientos técnicos de la Ley de Tránsito N° 18.290 y el D.S. N° 170 MTT. Autenticidad contrastable mediante código QR en línea[cite: 1].
+      <strong>Cláusula de Responsabilidad Técnica:</strong> Documento electrónico emitido conforme a los requerimientos técnicos de la Ley de Tránsito N° 18.290 y el D.S. N° 170 MTT. Autenticidad contrastable mediante código QR en línea.
     </footer>
 
     <button type="button" class="btn-retorno-menu" onclick="window.location.href='menu.html'">
@@ -323,14 +323,14 @@
       const planEmpresa = JSON.parse(localStorage.getItem('sensometrika_plan_empresa')) || {};
       const firma = localStorage.getItem('sensometrika_firma_trabajador');
 
-      const esB2B = (sesion.rol === 'empresa' || (datosUser.tipo && datosUser.tipo === 'empresa') || (sesion.planId && sesion.planId.includes('b2b')));
+      const esB2B = (sesion.rol === 'empresa' || (datosUser.tipo && datosUser.tipo === 'empresa') || (sesion.planId && String(sesion.planId).includes('b2b')));
 
-      // 1. Manejo de Recomendaciones según segmento
+      // 1. Recomendaciones según segmento
       const boxRecomendaciones = document.getElementById('bloque-recomendaciones-tips');
       if (esB2B) {
-        boxRecomendaciones.style.display = 'none'; // Se oculta en certificados de empresa para máxima solemnidad
+        boxRecomendaciones.style.display = 'none';
       } else {
-        boxRecomendaciones.style.display = 'block'; // Se mantiene en particulares
+        boxRecomendaciones.style.display = 'block';
       }
 
       // 2. Filiación
@@ -388,7 +388,7 @@
         document.getElementById('pie-rut-encargado').innerText = resp.rut || '12.345.678-9';
       }
 
-      // 6. Generación Síncrona Inmediata del QR
+      // 6. GENERACIÓN QR OPTIMIZADA PARA CÁMARAS (Nivel L con Quiet Zone)
       const contenedorQR = document.getElementById('contenedor-qr');
       contenedorQR.innerHTML = '';
       const esLocal = (window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost');
@@ -398,21 +398,22 @@
       if (window.QRCode) {
         new QRCode(contenedorQR, {
           text: urlDestino,
-          width: 58,
-          height: 58,
-          colorDark: '#0f172a',
-          colorLight: '#ffffff',
-          correctLevel: QRCode.CorrectLevel.M
+          width: 72,
+          height: 72,
+          colorDark: "#000000",
+          colorLight: "#ffffff",
+          correctLevel: QRCode.CorrectLevel.L
         });
       }
 
-      // 7. Respaldo en la base de datos (segundo plano)
+      // 7. Respaldo en la base de datos (segundo plano no bloqueante)
       respaldarEnNube(folio, rut, nombre, empresa, rReact.tiempo, rPal.toques, rPunt.efectividad, rVis.efectividad, rAud.efectividad);
     });
 
     function respaldarEnNube(folio, rut, nombre, empresa, react, pal, punt, vis, aud) {
       const SUPABASE_URL = 'https://kytuewhkhshrjddzoknv.supabase.co';
       const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt5dHVld2hraHNocmpkZHpva252Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkxMzc4MzcsImV4cCI6MjEwNDcxMzgzN30.gNWbr8E7oF-56yKnNIDVvGIaGXfHkCCcKonWVDthp2k';
+      
       if (!window.supabase || typeof window.supabase.createClient !== 'function') return;
 
       const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
