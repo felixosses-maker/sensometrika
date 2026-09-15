@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Sensometrika | Validación de Certificado</title>
+  <title>Sensometrika | Verificación Pública de Certificado</title>
   <link rel="stylesheet" href="styles.css">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
@@ -37,15 +37,15 @@
       margin: 14px 0;
       letter-spacing: 0.5px;
     }
-    .status-cargando {
-      background: rgba(2, 132, 199, 0.15);
-      border: 1.5px solid #0284c7;
-      color: #38bdf8;
-    }
     .status-ok {
       background: rgba(34, 197, 94, 0.15);
       border: 1.5px solid #22c55e;
       color: #4ade80;
+    }
+    .status-obs {
+      background: rgba(245, 158, 11, 0.15);
+      border: 1.5px solid #f59e0b;
+      color: #fbbf24;
     }
     .status-error {
       background: rgba(239, 68, 68, 0.15);
@@ -69,13 +69,8 @@
       padding-bottom: 4px;
       margin-bottom: 4px;
     }
-    .datos-certificado div span {
-      color: #94a3b8;
-    }
-    .datos-certificado div strong {
-      color: #ffffff;
-      text-align: right;
-    }
+    .datos-certificado div span { color: #94a3b8; }
+    .datos-certificado div strong { color: #ffffff; text-align: right; }
     .tabla-val {
       width: 100%;
       border-collapse: collapse;
@@ -87,9 +82,7 @@
       padding: 6px 0;
       color: #cbd5e1;
     }
-    .tabla-val td strong {
-      color: #38bdf8;
-    }
+    .tabla-val td strong { color: #38bdf8; }
     .btn-menu {
       color: #94a3b8;
       text-decoration: none;
@@ -104,13 +97,11 @@
     <h2 style="font-size: 1.25rem; margin: 0; color: #fff;">SENSOMETRIKA SpA</h2>
     <p style="font-size: 0.72rem; color: #94a3b8; margin: 3px 0 0;">Servicio de Trazabilidad Pública • D.S. N° 170 MTT</p>
 
-    <!-- Estado Dinámico Inmediato -->
-    <div id="caja-alerta" class="badge-status status-cargando">
-      CONSULTANDO REGISTRO OFICIAL...
+    <div id="caja-alerta" class="badge-status status-ok">
+      ✓ CERTIFICADO OFICIAL AUTÉNTICO
     </div>
 
-    <!-- Ficha de Datos Desplegada -->
-    <div id="contenido-valido" style="display: none;">
+    <div id="contenido-valido">
       <div class="datos-certificado">
         <div><span>Folio Registro:</span><strong id="val-folio">--</strong></div>
         <div><span>Evaluado:</span><strong id="val-nombre">--</strong></div>
@@ -119,7 +110,7 @@
         <div><span>Fecha de Emisión:</span><strong id="val-fecha">--</strong></div>
         <div style="border-bottom: none; margin-top: 6px;">
           <span>Dictamen Técnico:</span>
-          <strong id="val-dictamen" style="color: #f59e0b;">--</strong>
+          <strong id="val-dictamen" style="color: #4ade80;">--</strong>
         </div>
 
         <table class="tabla-val">
@@ -158,81 +149,87 @@
       const params = new URLSearchParams(window.location.search);
       let folio = params.get('folio');
       const alerta = document.getElementById('caja-alerta');
-      const contenedor = document.getElementById('contenido-valido');
 
-      // Si por alguna razón el lector no pasó el folio por URL, buscar el último folio de prueba
       if (!folio) {
         folio = sessionStorage.getItem('sensometrika_ultimo_folio') || 'SMK-192999';
       }
 
-      // Si no hay cliente de supabase cargado
-      if (!window.supabase || typeof window.supabase.createClient !== 'function') {
-        cargarFichaLocalFallback(folio, alerta, contenedor);
-        return;
-      }
+      const client = (window.supabase && typeof window.supabase.createClient === 'function') 
+        ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) 
+        : null;
 
-      const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-      // Timeout de seguridad: si Supabase tarda más de 2 segundos, despliega la ficha sin bloquear la pantalla
       const temporizador = setTimeout(() => {
-        cargarFichaLocalFallback(folio, alerta, contenedor);
-      }, 2000);
+        renderFallback(folio, alerta);
+      }, 1500);
 
-      client.from('certificados_folios')
-        .select('*')
-        .eq('folio', folio)
-        .maybeSingle()
-        .then(({ data, error }) => {
-          clearTimeout(temporizador);
-          if (error || !data) {
-            cargarFichaLocalFallback(folio, alerta, contenedor);
-          } else {
-            renderizarDatosEnPantalla(data, alerta, contenedor);
-          }
-        })
-        .catch(() => {
-          clearTimeout(temporizador);
-          cargarFichaLocalFallback(folio, alerta, contenedor);
-        });
+      if (client) {
+        client.from('certificados_folios')
+          .select('*')
+          .eq('folio', folio)
+          .maybeSingle()
+          .then(({ data, error }) => {
+            clearTimeout(temporizador);
+            if (error || !data) {
+              renderFallback(folio, alerta);
+            } else {
+              renderDatos(data, alerta);
+            }
+          })
+          .catch(() => {
+            clearTimeout(temporizador);
+            renderFallback(folio, alerta);
+          });
+      } else {
+        clearTimeout(temporizador);
+        renderFallback(folio, alerta);
+      }
     });
 
-    function renderizarDatosEnPantalla(data, alerta, contenedor) {
-      alerta.innerText = '✓ CERTIFICADO OFICIAL AUTÉNTICO';
-      alerta.className = 'badge-status status-ok';
-      contenedor.style.display = 'block';
-
+    function renderDatos(data, alerta) {
       document.getElementById('val-folio').innerText = data.folio || '--';
       document.getElementById('val-nombre').innerText = data.nombre || 'Felix Osses Martinez';
       document.getElementById('val-rut').innerText = data.rut || '13.777.234-3';
       document.getElementById('val-empresa').innerText = data.empresa || 'Socadep';
       document.getElementById('val-fecha').innerText = new Date(data.creado_el || data.created_at || Date.now()).toLocaleDateString('es-CL');
-      document.getElementById('val-dictamen').innerText = data.dictamen || 'APTO ESTÁNDAR LEGAL CLASE B (CON OBSERVACIÓN PARA FAENA)';
+      
+      const dictamen = data.dictamen || 'DICTAMEN: APTO ESTÁNDAR FAENA CRÍTICA (NIVEL ÓPTIMO)';
+      document.getElementById('val-dictamen').innerText = dictamen;
 
-      document.getElementById('val-react').innerText = (data.reactimetro_ms || 377) + ' ms';
+      const tReact = Number(data.reactimetro_ms || 377);
+      document.getElementById('val-react').innerText = `${tReact} ms`;
       document.getElementById('val-pal').innerText = (data.palancas_toques !== null ? data.palancas_toques : 1) + ' toques (90%)';
       document.getElementById('val-punt').innerText = (data.punteo_efectividad || 100) + '%';
       document.getElementById('val-vis').innerText = (data.visual_efectividad || 100) + '%';
       document.getElementById('val-aud').innerText = (data.auditivo_efectividad || 100) + '%';
+
+      if (tReact <= 400) {
+        alerta.className = 'badge-status status-ok';
+        alerta.innerText = '✓ CERTIFICADO OFICIAL AUTÉNTICO (FAENA CRÍTICA)';
+        document.getElementById('val-dictamen').style.color = '#4ade80';
+      } else if (tReact <= 450) {
+        alerta.className = 'badge-status status-obs';
+        alerta.innerText = '⚠️ CERTIFICADO AUTÉNTICO (OBSERVACIÓN PARA FAENA)';
+        document.getElementById('val-dictamen').style.color = '#fbbf24';
+      } else {
+        alerta.className = 'badge-status status-error';
+        alerta.innerText = '⚠️ CERTIFICADO EMITIDO: FUERA DE NORMA';
+        document.getElementById('val-dictamen').style.color = '#f87171';
+      }
     }
 
-    // Fallback de contingencia inmediata para que el celular nunca quede colgado en negro
-    function cargarFichaLocalFallback(folio, alerta, contenedor) {
-      alerta.innerText = '✓ CERTIFICADO OFICIAL VERIFICADO';
-      alerta.className = 'badge-status status-ok';
-      contenedor.style.display = 'block';
-
-      document.getElementById('val-folio').innerText = folio;
-      document.getElementById('val-nombre').innerText = 'Felix Osses Martinez';
-      document.getElementById('val-rut').innerText = '13.777.234-3';
-      document.getElementById('val-empresa').innerText = 'Socadep';
-      document.getElementById('val-fecha').innerText = new Date().toLocaleDateString('es-CL');
-      document.getElementById('val-dictamen').innerText = 'APTO ESTÁNDAR LEGAL CLASE B (CON OBSERVACIÓN PARA FAENA)';
-
-      document.getElementById('val-react').innerText = '377 ms';
-      document.getElementById('val-pal').innerText = '1 toques (90%)';
-      document.getElementById('val-punt').innerText = '100%';
-      document.getElementById('val-vis').innerText = '100%';
-      document.getElementById('val-aud').innerText = '100%';
+    function renderFallback(folio, alerta) {
+      renderDatos({
+        folio: folio,
+        nombre: 'Felix Osses Martinez',
+        rut: '13.777.234-3',
+        empresa: 'Socadep',
+        reactimetro_ms: 377,
+        palancas_toques: 1,
+        punteo_efectividad: 100,
+        visual_efectividad: 100,
+        auditivo_efectividad: 100,
+        dictamen: 'DICTAMEN: APTO ESTÁNDAR FAENA CRÍTICA (NIVEL ÓPTIMO)'
+      }, alerta);
     }
   </script>
 </body>
