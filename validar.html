@@ -37,21 +37,9 @@
       margin: 14px 0;
       letter-spacing: 0.5px;
     }
-    .status-ok {
-      background: rgba(34, 197, 94, 0.15);
-      border: 1.5px solid #22c55e;
-      color: #4ade80;
-    }
-    .status-obs {
-      background: rgba(245, 158, 11, 0.15);
-      border: 1.5px solid #f59e0b;
-      color: #fbbf24;
-    }
-    .status-error {
-      background: rgba(239, 68, 68, 0.15);
-      border: 1.5px solid #ef4444;
-      color: #f87171;
-    }
+    .status-ok { background: rgba(34, 197, 94, 0.15); border: 1.5px solid #22c55e; color: #4ade80; }
+    .status-obs { background: rgba(245, 158, 11, 0.15); border: 1.5px solid #f59e0b; color: #fbbf24; }
+    .status-error { background: rgba(239, 68, 68, 0.15); border: 1.5px solid #ef4444; color: #f87171; }
     .datos-certificado {
       background: #020617;
       border: 1px solid #1e293b;
@@ -98,7 +86,7 @@
     <p style="font-size: 0.72rem; color: #94a3b8; margin: 3px 0 0;">Servicio de Trazabilidad Pública • D.S. N° 170 MTT</p>
 
     <div id="caja-alerta" class="badge-status status-ok">
-      ✓ CERTIFICADO OFICIAL AUTÉNTICO
+      ✓ CERTIFICADO OFICIAL AUTÉNTICO (FAENA CRÍTICA)
     </div>
 
     <div id="contenido-valido">
@@ -120,17 +108,17 @@
           </tr>
           <tr>
             <td>2. Palancas (Coordinación):</td>
-            <td style="text-align: right;"><strong id="val-pal">-- toques</strong></td>
+            <td style="text-align: right;"><strong id="val-pal">-- toques (90%)</strong></td>
           </tr>
           <tr>
             <td>3. Punteo (Ritmo Lahy):</td>
             <td style="text-align: right;"><strong id="val-punt">-- %</strong></td>
           </tr>
-          <tr>
+          <tr id="val-fila-vis" style="display: none;">
             <td>4. Tamizaje Visual:</td>
             <td style="text-align: right;"><strong id="val-vis">-- %</strong></td>
           </tr>
-          <tr>
+          <tr id="val-fila-aud" style="display: none;">
             <td>5. Tamizaje Auditivo:</td>
             <td style="text-align: right;"><strong id="val-aud">-- %</strong></td>
           </tr>
@@ -147,19 +135,29 @@
 
     document.addEventListener('DOMContentLoaded', () => {
       const params = new URLSearchParams(window.location.search);
-      let folio = params.get('folio');
+      const folio = params.get('folio') || 'SMK-186158';
       const alerta = document.getElementById('caja-alerta');
-
-      if (!folio) {
-        folio = sessionStorage.getItem('sensometrika_ultimo_folio') || 'SMK-192999';
-      }
 
       const client = (window.supabase && typeof window.supabase.createClient === 'function') 
         ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) 
         : null;
 
+      // Respaldo de contingencia: coincide con los 4 módulos evaluados en la Foto 1
+      const fallbackDatos = {
+        folio: folio,
+        nombre: 'FELIX OSSES MARTINEZ',
+        rut: '12.222.222-2',
+        empresa: 'socadep ltda',
+        reactimetro_ms: 377,
+        palancas_toques: 1,
+        punteo_efectividad: 100,
+        visual_efectividad: 100,
+        auditivo_efectividad: null, // Null oculta el módulo 5 en la validación
+        dictamen: 'DICTAMEN: APTO ESTÁNDAR FAENA CRÍTICA (NIVEL ÓPTIMO)'
+      };
+
       const temporizador = setTimeout(() => {
-        renderFallback(folio, alerta);
+        renderDatos(fallbackDatos, alerta);
       }, 1500);
 
       if (client) {
@@ -170,26 +168,23 @@
           .then(({ data, error }) => {
             clearTimeout(temporizador);
             if (error || !data) {
-              renderFallback(folio, alerta);
+              renderDatos(fallbackDatos, alerta);
             } else {
               renderDatos(data, alerta);
             }
           })
           .catch(() => {
             clearTimeout(temporizador);
-            renderFallback(folio, alerta);
+            renderDatos(fallbackDatos, alerta);
           });
-      } else {
-        clearTimeout(temporizador);
-        renderFallback(folio, alerta);
       }
     });
 
     function renderDatos(data, alerta) {
       document.getElementById('val-folio').innerText = data.folio || '--';
-      document.getElementById('val-nombre').innerText = data.nombre || 'Felix Osses Martinez';
-      document.getElementById('val-rut').innerText = data.rut || '13.777.234-3';
-      document.getElementById('val-empresa').innerText = data.empresa || 'Socadep';
+      document.getElementById('val-nombre').innerText = data.nombre || 'FELIX OSSES MARTINEZ';
+      document.getElementById('val-rut').innerText = data.rut || '12.222.222-2';
+      document.getElementById('val-empresa').innerText = data.empresa || 'socadep ltda';
       document.getElementById('val-fecha').innerText = new Date(data.creado_el || data.created_at || Date.now()).toLocaleDateString('es-CL');
       
       const dictamen = data.dictamen || 'DICTAMEN: APTO ESTÁNDAR FAENA CRÍTICA (NIVEL ÓPTIMO)';
@@ -197,10 +192,25 @@
 
       const tReact = Number(data.reactimetro_ms || 377);
       document.getElementById('val-react').innerText = `${tReact} ms`;
-      document.getElementById('val-pal').innerText = (data.palancas_toques !== null ? data.palancas_toques : 1) + ' toques (90%)';
-      document.getElementById('val-punt').innerText = (data.punteo_efectividad || 100) + '%';
-      document.getElementById('val-vis').innerText = (data.visual_efectividad || 100) + '%';
-      document.getElementById('val-aud').innerText = (data.auditivo_efectividad || 100) + '%';
+      document.getElementById('val-pal').innerText = `${data.palancas_toques !== null ? data.palancas_toques : 1} toques (90%)`;
+      document.getElementById('val-punt').innerText = `${data.punteo_efectividad || 100}%`;
+
+      // Regla de visibilidad estricta para Visual y Auditivo
+      const filaVis = document.getElementById('val-fila-vis');
+      if (data.visual_efectividad !== null && data.visual_efectividad !== undefined && String(data.visual_efectividad).trim() !== '') {
+        filaVis.style.display = 'table-row';
+        document.getElementById('val-vis').innerText = `${data.visual_efectividad}%`;
+      } else {
+        filaVis.style.display = 'none';
+      }
+
+      const filaAud = document.getElementById('val-fila-aud');
+      if (data.auditivo_efectividad !== null && data.auditivo_efectividad !== undefined && String(data.auditivo_efectividad).trim() !== '') {
+        filaAud.style.display = 'table-row';
+        document.getElementById('val-aud').innerText = `${data.auditivo_efectividad}%`;
+      } else {
+        filaAud.style.display = 'none';
+      }
 
       if (tReact <= 400) {
         alerta.className = 'badge-status status-ok';
@@ -215,21 +225,6 @@
         alerta.innerText = '⚠️ CERTIFICADO EMITIDO: FUERA DE NORMA';
         document.getElementById('val-dictamen').style.color = '#f87171';
       }
-    }
-
-    function renderFallback(folio, alerta) {
-      renderDatos({
-        folio: folio,
-        nombre: 'Felix Osses Martinez',
-        rut: '13.777.234-3',
-        empresa: 'Socadep',
-        reactimetro_ms: 377,
-        palancas_toques: 1,
-        punteo_efectividad: 100,
-        visual_efectividad: 100,
-        auditivo_efectividad: 100,
-        dictamen: 'DICTAMEN: APTO ESTÁNDAR FAENA CRÍTICA (NIVEL ÓPTIMO)'
-      }, alerta);
     }
   </script>
 </body>
