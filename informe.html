@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Sensometrika | Certificado Técnico Oficial de Evaluación</title>
   <link rel="stylesheet" href="styles.css">
-  <!-- Librería QR y Cliente Supabase -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
@@ -193,7 +192,6 @@
 <body>
   <main class="contenedor">
     <div class="tarjeta-informe">
-      <!-- Membrete con Logo SVG y Contenedor QR -->
       <section class="cabecera-formal">
         <div class="bloque-marca">
           <svg width="42" height="42" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -217,12 +215,10 @@
         </div>
       </section>
 
-      <!-- Banner Informativo -->
       <div class="banner-correo">
         📬 <div><strong>Informe Emitido:</strong> Copia de respaldo enviada a: <span id="correo-respaldo">contacto@sensometrika.cl</span></div>
       </div>
 
-      <!-- Ficha del Evaluado -->
       <section class="ficha-evaluado">
         <div>Evaluado: <strong id="rep-nombre">Postulante Particular</strong></div>
         <div>RUT: <strong id="rep-rut">11.111.111-3</strong></div>
@@ -231,12 +227,10 @@
         <div style="grid-column: span 2;">Régimen / Empresa: <strong id="rep-regimen">Particular (Clase B)</strong></div>
       </section>
 
-      <!-- Dictamen Dinámico -->
       <div id="box-dictamen" class="box-dictamen dictamen-espera">
         DICTAMEN EN ESPERA: EVALUACIÓN INCOMPLETA
       </div>
 
-      <!-- Tabla de Resultados -->
       <table class="tabla-informe">
         <thead>
           <tr>
@@ -247,11 +241,10 @@
           </tr>
         </thead>
         <tbody id="cuerpo-tabla-resultados">
-          <!-- Se inyecta dinámicamente -->
+          <!-- Inyectado dinámicamente -->
         </tbody>
       </table>
 
-      <!-- Recomendaciones -->
       <div class="caja-tips">
         💡 <strong>Recomendaciones Técnicas Preventivas:</strong><br>
         • <strong>Frenado:</strong> Mantén la distancia adecuada y evita anticipaciones impulsivas ante el semáforo.<br>
@@ -275,14 +268,13 @@
       : null;
 
     document.addEventListener('DOMContentLoaded', async () => {
-      // 1. Cargar datos de identidad
       const usuario = JSON.parse(localStorage.getItem('sensometrika_datos_usuario')) || {};
       const sesion = JSON.parse(localStorage.getItem('sensometrika_sesion')) || { rol: 'particular' };
-      const esEmpresa = (sesion.rol === 'empresa');
+      const esEmpresa = (sesion.rol === 'empresa' || (usuario.empresa && usuario.empresa !== 'Particular'));
 
       const nombreFinal = (usuario.nombre && usuario.nombre !== '--') ? usuario.nombre : 'Postulante Particular';
       const rutFinal = (usuario.rut && usuario.rut !== '--') ? usuario.rut : '11.111.111-3';
-      const empresaFinal = esEmpresa ? (sesion.razonSocial || usuario.empresa || 'Empresa Faena') : 'Particular (Clase B)';
+      const empresaFinal = esEmpresa ? (sesion.razonSocial || usuario.empresa || 'Socadep') : 'Particular (Clase B)';
       const correoFinal = usuario.email || usuario.correo || sesion.correoInformes || 'contacto@sensometrika.cl';
 
       document.getElementById('rep-nombre').innerText = nombreFinal;
@@ -290,18 +282,16 @@
       document.getElementById('rep-regimen').innerText = empresaFinal;
       document.getElementById('correo-respaldo').innerText = correoFinal;
 
-      // 2. Fecha y Folio
       const ahora = new Date();
       document.getElementById('rep-fecha').innerText = ahora.toLocaleDateString('es-CL') + ' ' + ahora.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' });
       
       const folio = 'SMK-' + Math.floor(100000 + Math.random() * 900000);
       document.getElementById('rep-folio').innerText = folio;
 
-      // 3. GENERACIÓN DEL QR (Si es local, apunta a producción para que el celular no dé ERR_CONNECTION_REFUSED)
+      // QR Dinámico
       const contenedorQR = document.getElementById('qr-impreso');
       if (contenedorQR) {
         contenedorQR.innerHTML = '';
-        
         const hostActual = window.location.hostname;
         const esLocal = (hostActual === '127.0.0.1' || hostActual === 'localhost');
         const dominioBase = esLocal ? 'https://sensometrika.vercel.app' : window.location.origin;
@@ -318,7 +308,6 @@
         });
       }
 
-      // 4. Cargar resultados y sincronizar con base de datos
       await procesarResultadosYGuardar(esEmpresa, folio, nombreFinal, rutFinal, empresaFinal);
     });
 
@@ -344,8 +333,8 @@
         tbody.innerHTML += `
           <tr>
             <td><strong>1. Reactímetro</strong><br><span style="color:#64748b;">Latencia de frenado</span></td>
-            <td>≤ ${umbralReact} ms (${esEmpresa ? 'Clase A / Faena' : 'Clase B'})</td>
-            <td><strong>${valReact} ms</strong></td>
+            <td>≤ ${umbralReact} ms (${esEmpresa ? 'Faena Clase A' : 'Clase B'})</td>
+            <td style="color: ${ok ? '#0f172a' : '#dc2626'}; font-weight: bold;">${valReact} ms</td>
             <td style="text-align:center;"><span class="badge-estado ${ok ? 'st-cumple' : 'st-nocumple'}">${ok ? 'CUMPLE' : 'NO CUMPLE'}</span></td>
           </tr>
         `;
@@ -353,25 +342,26 @@
         tbody.innerHTML += `
           <tr>
             <td><strong>1. Reactímetro</strong><br><span style="color:#64748b;">Latencia de frenado</span></td>
-            <td>≤ ${umbralReact} ms (${esEmpresa ? 'Clase A / Faena' : 'Clase B'})</td>
+            <td>≤ ${umbralReact} ms (${esEmpresa ? 'Faena Clase A' : 'Clase B'})</td>
             <td>-- ms</td>
             <td style="text-align:center;"><span class="badge-estado st-pendiente">PENDIENTE</span></td>
           </tr>
         `;
       }
 
-      // Palancas
+      // Palancas con porcentaje
       let valPal = null;
       if (rPal && rPal.toques !== undefined && rPal.toques !== null) {
         rendidos++;
         valPal = rPal.toques;
         const ok = valPal <= 3;
         if (!ok) todosAprobados = false;
+        const porcentajePal = Math.max(0, 100 - (valPal * 10));
         tbody.innerHTML += `
           <tr>
             <td><strong>2. Palancas</strong><br><span style="color:#64748b;">Coordinación bimanual</span></td>
             <td>≤ 3 toques en 60 s</td>
-            <td><strong>${valPal} toques</strong></td>
+            <td style="color: ${ok ? '#0f172a' : '#dc2626'}; font-weight: bold;">${valPal} toques (${porcentajePal}%)</td>
             <td style="text-align:center;"><span class="badge-estado ${ok ? 'st-cumple' : 'st-nocumple'}">${ok ? 'CUMPLE' : 'REPROBADO'}</span></td>
           </tr>
         `;
@@ -397,7 +387,7 @@
           <tr>
             <td><strong>3. Punteo</strong><br><span style="color:#64748b;">Lahy rotatorio</span></td>
             <td>≥ 80% efectividad</td>
-            <td><strong>${valPunt}%</strong></td>
+            <td style="color: ${ok ? '#0f172a' : '#dc2626'}; font-weight: bold;">${valPunt}%</td>
             <td style="text-align:center;"><span class="badge-estado ${ok ? 'st-cumple' : 'st-nocumple'}">${ok ? 'CUMPLE' : 'REPROBADO'}</span></td>
           </tr>
         `;
@@ -429,7 +419,7 @@
         dictamen.innerText = 'DICTAMEN: ' + dictamenTexto;
       }
 
-      // Guardar folio en Supabase para que el validador lo encuentre al escanear
+      // Sincronización en Supabase
       if (clienteSupabase) {
         try {
           await clienteSupabase.from('certificados_folios').insert([{
@@ -442,9 +432,8 @@
             palancas_toques: valPal,
             punteo_efectividad: valPunt
           }]);
-          console.log("Folio sincronizado en Supabase:", folio);
         } catch (e) {
-          console.warn("No se pudo sincronizar con Supabase:", e);
+          console.warn("Error al guardar en Supabase:", e);
         }
       }
     }

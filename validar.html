@@ -23,7 +23,7 @@
       border-radius: 8px;
       text-align: center;
       font-weight: 800;
-      font-size: 0.92rem;
+      font-size: 0.90rem;
       letter-spacing: 0.5px;
       margin-bottom: 14px;
     }
@@ -57,12 +57,24 @@
       font-size: 0.78rem;
     }
     .tabla-metricas th, .tabla-metricas td {
-      padding: 6px 8px;
+      padding: 7px 8px;
       border: 1px solid #334155;
       text-align: left;
     }
     .tabla-metricas th { background-color: #1e293b; color: #38bdf8; }
-    
+
+    /* Insignias de evaluación */
+    .badge-estado {
+      font-size: 0.68rem;
+      font-weight: 800;
+      padding: 2px 6px;
+      border-radius: 4px;
+      display: inline-block;
+      text-align: center;
+    }
+    .badge-cumple { background-color: rgba(34, 197, 94, 0.2); color: #4ade80; border: 1px solid #22c55e; }
+    .badge-falla { background-color: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid #ef4444; }
+
     .btn-volver {
       display: block;
       margin-top: 14px;
@@ -80,6 +92,7 @@
       <p style="color: #94a3b8; font-size: 0.75rem; margin: 2px 0 0 0;">Servicio de Trazabilidad Pública • D.S. N° 170 MTT</p>
     </header>
 
+    <!-- Sello Superior Dinámico (Verde si es Aprobado, Rojo si Reprobó o Inválido) -->
     <div id="caja-estado" class="estado-sello cargando">
       VERIFICANDO AUTENTICIDAD EN BASE DE DATOS...
     </div>
@@ -90,19 +103,19 @@
       <div class="fila-dato"><span>RUT:</span><strong id="res-rut">--</strong></div>
       <div class="fila-dato"><span>Régimen / Empresa:</span><strong id="res-empresa">--</strong></div>
       <div class="fila-dato"><span>Fecha de Emisión:</span><strong id="res-fecha">--</strong></div>
-      <div class="fila-dato" style="border-bottom: none;"><span>Dictamen:</span><strong id="res-dictamen" style="color: #4ade80;">--</strong></div>
+      <div class="fila-dato" style="border-bottom: none;"><span>Dictamen:</span><strong id="res-dictamen">--</strong></div>
 
+      <!-- Tabla con columna de Evaluación en Rojo/Verde -->
       <table class="tabla-metricas">
         <thead>
           <tr>
             <th>Prueba Psicomotriz</th>
             <th>Medición Registrada</th>
+            <th style="text-align: center;">Evaluación</th>
           </tr>
         </thead>
-        <tbody>
-          <tr><td>1. Reactímetro (Frenado)</td><td id="res-reactimetro">-- ms</td></tr>
-          <tr><td>2. Palancas (Coordinación)</td><td id="res-palancas">-- toques</td></tr>
-          <tr><td>3. Punteo (Ritmo)</td><td id="res-punteo">-- %</td></tr>
+        <tbody id="cuerpo-metricas-validador">
+          <!-- Inyectado dinámicamente -->
         </tbody>
       </table>
     </section>
@@ -136,7 +149,6 @@
         return;
       }
 
-      // Timeout de seguridad: si tarda más de 4 segundos, cancela el estado de carga
       let respondio = false;
       const temporizador = setTimeout(() => {
         if (!respondio) {
@@ -161,24 +173,97 @@
           return;
         }
 
-        // Datos encontrados
-        boxEstado.className = 'estado-sello valido';
-        boxEstado.innerText = '✓ CERTIFICADO OFICIAL VERIFICADO';
+        // Determinar si aprobó o reprobó según el dictamen y empresa
+        const dictamen = data.dictamen || '';
+        const esReprobado = dictamen.includes('NO APTO') || dictamen.includes('REENTRENAMIENTO') || dictamen.includes('INCOMPLETA');
+        const esEmpresa = (data.empresa && data.empresa !== 'Particular' && !data.empresa.includes('Particular'));
+        const umbralReact = esEmpresa ? 350 : 450;
 
+        // 1. Sello Superior: Alerta roja inmediata si no es apto
+        if (esReprobado) {
+          boxEstado.className = 'estado-sello invalido';
+          boxEstado.innerText = '⚠️ CERTIFICADO OFICIAL: NO APTO / REPROBADO';
+        } else {
+          boxEstado.className = 'estado-sello valido';
+          boxEstado.innerText = '✓ CERTIFICADO OFICIAL VERIFICADO (APTO)';
+        }
+
+        // 2. Ficha de filiación
         document.getElementById('res-folio').innerText = data.folio;
         document.getElementById('res-nombre').innerText = data.nombre;
         document.getElementById('res-rut').innerText = data.rut;
         document.getElementById('res-empresa').innerText = data.empresa || 'Particular';
         document.getElementById('res-fecha').innerText = new Date(data.created_at || data.creado_el || Date.now()).toLocaleString('es-CL');
-        document.getElementById('res-dictamen').innerText = data.dictamen;
+        
+        const elDictamen = document.getElementById('res-dictamen');
+        elDictamen.innerText = dictamen;
+        elDictamen.style.color = esReprobado ? '#f87171' : '#4ade80';
 
-        if (data.dictamen && (data.dictamen.includes('NO APTO') || data.dictamen.includes('INCOMPLETA'))) {
-          document.getElementById('res-dictamen').style.color = '#f87171';
+        // 3. Tabla de Resultados con indicación en rojo de lo que falló
+        const tbody = document.getElementById('cuerpo-metricas-validador');
+        tbody.innerHTML = '';
+
+        // Módulo 1: Reactímetro
+        if (data.reactimetro_ms !== null && data.reactimetro_ms !== undefined) {
+          const reactOk = data.reactimetro_ms <= umbralReact;
+          tbody.innerHTML += `
+            <tr>
+              <td><strong>1. Reactímetro (Frenado)</strong><br><small style="color:#94a3b8;">Límite: $\\le$ ${umbralReact} ms</small></td>
+              <td style="color: ${reactOk ? '#f8fafc' : '#f87171'}; font-weight: ${reactOk ? 'normal' : 'bold'};">${data.reactimetro_ms} ms</td>
+              <td style="text-align: center;"><span class="badge-estado ${reactOk ? 'badge-cumple' : 'badge-falla'}">${reactOk ? 'CUMPLE' : 'NO CUMPLE'}</span></td>
+            </tr>
+          `;
+        } else {
+          tbody.innerHTML += `
+            <tr>
+              <td><strong>1. Reactímetro (Frenado)</strong></td>
+              <td>-- ms</td>
+              <td style="text-align: center;"><span class="badge-estado badge-falla">PENDIENTE</span></td>
+            </tr>
+          `;
         }
 
-        document.getElementById('res-reactimetro').innerText = data.reactimetro_ms ? `${data.reactimetro_ms} ms` : 'N/A';
-        document.getElementById('res-palancas').innerText = data.palancas_toques !== null ? `${data.palancas_toques} toques` : 'N/A';
-        document.getElementById('res-punteo').innerText = data.punteo_efectividad !== null ? `${data.punteo_efectividad}%` : 'N/A';
+        // Módulo 2: Palancas (con toques y porcentaje de coordinación)
+        if (data.palancas_toques !== null && data.palancas_toques !== undefined) {
+          const palOk = data.palancas_toques <= 3;
+          // Cálculo de precisión: 0 toques = 100%, 1 toque = 90%, 2 toques = 80%, etc.
+          const porcentajePalancas = Math.max(0, 100 - (data.palancas_toques * 10));
+          tbody.innerHTML += `
+            <tr>
+              <td><strong>2. Palancas (Coordinación)</strong><br><small style="color:#94a3b8;">Límite: $\\le$ 3 contactos</small></td>
+              <td style="color: ${palOk ? '#f8fafc' : '#f87171'}; font-weight: ${palOk ? 'normal' : 'bold'};">${data.palancas_toques} toques (${porcentajePalancas}%)</td>
+              <td style="text-align: center;"><span class="badge-estado ${palOk ? 'badge-cumple' : 'badge-falla'}">${palOk ? 'CUMPLE' : 'REPROBADO'}</span></td>
+            </tr>
+          `;
+        } else {
+          tbody.innerHTML += `
+            <tr>
+              <td><strong>2. Palancas (Coordinación)</strong></td>
+              <td>-- toques</td>
+              <td style="text-align: center;"><span class="badge-estado badge-falla">PENDIENTE</span></td>
+            </tr>
+          `;
+        }
+
+        // Módulo 3: Punteo
+        if (data.punteo_efectividad !== null && data.punteo_efectividad !== undefined) {
+          const puntOk = data.punteo_efectividad >= 80;
+          tbody.innerHTML += `
+            <tr>
+              <td><strong>3. Punteo (Ritmo)</strong><br><small style="color:#94a3b8;">Límite: $\\ge$ 80%</small></td>
+              <td style="color: ${puntOk ? '#f8fafc' : '#f87171'}; font-weight: ${puntOk ? 'normal' : 'bold'};">${data.punteo_efectividad}%</td>
+              <td style="text-align: center;"><span class="badge-estado ${puntOk ? 'badge-cumple' : 'badge-falla'}">${puntOk ? 'CUMPLE' : 'REPROBADO'}</span></td>
+            </tr>
+          `;
+        } else {
+          tbody.innerHTML += `
+            <tr>
+              <td><strong>3. Punteo (Ritmo)</strong></td>
+              <td>-- %</td>
+              <td style="text-align: center;"><span class="badge-estado badge-falla">PENDIENTE</span></td>
+            </tr>
+          `;
+        }
 
         cardInfo.style.display = 'flex';
 
