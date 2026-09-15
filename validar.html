@@ -3,228 +3,255 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Sensometrika | Verificación Pública de Certificado</title>
-  <link rel="stylesheet" href="styles.css">
+  <title>Sensometrika | Verificación Oficial de Certificado</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     body {
       background-color: #0b1120;
       color: #f1f5f9;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
       margin: 0;
       padding: 16px;
       display: flex;
       justify-content: center;
-      align-items: center;
-      min-height: 95vh;
     }
-    .caja-validador {
+    .contenedor-card {
       width: 100%;
-      max-width: 420px;
+      max-width: 480px;
       background: #0f172a;
-      border: 1px solid #334155;
-      border-radius: 14px;
+      border: 1px solid #1e293b;
+      border-radius: 12px;
       padding: 20px;
       box-sizing: border-box;
-      text-align: center;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+      box-shadow: 0 10px 25px rgba(0,0,0,0.4);
     }
-    .badge-status {
-      padding: 10px 12px;
-      border-radius: 8px;
+    .cabecera {
+      text-align: center;
+      border-bottom: 1px solid #1e293b;
+      padding-bottom: 12px;
+      margin-bottom: 16px;
+    }
+    .cabecera h2 {
+      margin: 0;
+      font-size: 1.2rem;
       font-weight: 800;
-      font-size: 0.88rem;
-      margin: 14px 0;
+      color: #ffffff;
       letter-spacing: 0.5px;
     }
-    .status-ok { background: rgba(34, 197, 94, 0.15); border: 1.5px solid #22c55e; color: #4ade80; }
-    .status-obs { background: rgba(245, 158, 11, 0.15); border: 1.5px solid #f59e0b; color: #fbbf24; }
-    .status-error { background: rgba(239, 68, 68, 0.15); border: 1.5px solid #ef4444; color: #f87171; }
-    .datos-certificado {
-      background: #020617;
-      border: 1px solid #1e293b;
+    .cabecera p {
+      margin: 4px 0 0 0;
+      font-size: 0.72rem;
+      color: #38bdf8;
+      font-weight: 600;
+    }
+    .badge-autentico {
+      background: rgba(34, 197, 94, 0.12);
+      border: 1px solid #22c55e;
+      color: #4ade80;
+      padding: 10px;
       border-radius: 8px;
-      padding: 14px;
-      text-align: left;
-      font-size: 0.80rem;
-      line-height: 1.6;
-      margin-bottom: 14px;
+      text-align: center;
+      font-weight: 800;
+      font-size: 0.85rem;
+      margin-bottom: 16px;
+      letter-spacing: 0.3px;
     }
-    .datos-certificado div {
-      display: flex;
-      justify-content: space-between;
-      border-bottom: 1px solid #1e293b;
-      padding-bottom: 4px;
-      margin-bottom: 4px;
+    .badge-error {
+      background: rgba(239, 68, 68, 0.12);
+      border: 1px solid #ef4444;
+      color: #f87171;
     }
-    .datos-certificado div span { color: #94a3b8; }
-    .datos-certificado div strong { color: #ffffff; text-align: right; }
-    .tabla-val {
+    .tabla-info {
       width: 100%;
       border-collapse: collapse;
-      font-size: 0.75rem;
-      margin-top: 10px;
+      font-size: 0.82rem;
+      margin-bottom: 16px;
     }
-    .tabla-val td {
-      border-bottom: 1px solid #1e293b;
-      padding: 6px 0;
-      color: #cbd5e1;
+    .tabla-info tr { border-bottom: 1px solid #1e293b; }
+    .tabla-info td { padding: 8px 4px; }
+    .tabla-info td.label { color: #64748b; width: 42%; }
+    .tabla-info td.valor { color: #f1f5f9; font-weight: 700; text-align: right; }
+
+    .box-dictamen {
+      text-align: center;
+      font-weight: 800;
+      font-size: 0.82rem;
+      padding: 10px;
+      border-radius: 6px;
+      background: rgba(34, 197, 94, 0.08);
+      border: 1px solid rgba(34, 197, 94, 0.3);
+      color: #4ade80;
+      margin-bottom: 16px;
     }
-    .tabla-val td strong { color: #38bdf8; }
+
+    .tabla-metricas {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.8rem;
+      margin-bottom: 20px;
+    }
+    .tabla-metricas tr { border-bottom: 1px solid #1e293b; }
+    .tabla-metricas td { padding: 8px 4px; }
+    .tabla-metricas td.metrica-nombre { color: #cbd5e1; }
+    .tabla-metricas td.metrica-valor { text-align: right; font-weight: 700; color: #38bdf8; }
+
     .btn-menu {
-      color: #94a3b8;
+      display: block;
+      width: 100%;
+      text-align: center;
+      color: #64748b;
       text-decoration: none;
       font-size: 0.8rem;
-      display: inline-block;
       margin-top: 10px;
+      font-weight: 600;
     }
   </style>
 </head>
 <body>
-  <main class="caja-validador">
-    <h2 style="font-size: 1.25rem; margin: 0; color: #fff;">SENSOMETRIKA SpA</h2>
-    <p style="font-size: 0.72rem; color: #94a3b8; margin: 3px 0 0;">Servicio de Trazabilidad Pública • D.S. N° 170 MTT</p>
+  <main class="contenedor-card">
+    <div class="cabecera">
+      <h2>SENSOMETRIKA SpA</h2>
+      <p>Servicio de Trazabilidad Pública • D.S. N° 170 MTT</p>
+    </div>
 
-    <div id="caja-alerta" class="badge-status status-ok">
+    <div id="badge-estado" class="badge-autentico">
       ✓ CERTIFICADO OFICIAL AUTÉNTICO (FAENA CRÍTICA)
     </div>
 
-    <div id="contenido-valido">
-      <div class="datos-certificado">
-        <div><span>Folio Registro:</span><strong id="val-folio">--</strong></div>
-        <div><span>Evaluado:</span><strong id="val-nombre">--</strong></div>
-        <div><span>RUT:</span><strong id="val-rut">--</strong></div>
-        <div><span>Empresa / Régimen:</span><strong id="val-empresa">--</strong></div>
-        <div><span>Fecha de Emisión:</span><strong id="val-fecha">--</strong></div>
-        <div style="border-bottom: none; margin-top: 6px;">
-          <span>Dictamen Técnico:</span>
-          <strong id="val-dictamen" style="color: #4ade80;">--</strong>
-        </div>
+    <table class="tabla-info">
+      <tr>
+        <td class="label">Folio Registro:</td>
+        <td class="valor" id="txt-folio">--</td>
+      </tr>
+      <tr>
+        <td class="label">Evaluado:</td>
+        <td class="valor" id="txt-nombre">Cargando...</td>
+      </tr>
+      <tr>
+        <td class="label">RUT:</td>
+        <td class="valor" id="txt-rut">--</td>
+      </tr>
+      <tr>
+        <td class="label">Empresa / Régimen:</td>
+        <td class="valor" id="txt-empresa">--</td>
+      </tr>
+      <tr>
+        <td class="label">Fecha de Emisión:</td>
+        <td class="valor" id="txt-fecha">--</td>
+      </tr>
+    </table>
 
-        <table class="tabla-val">
-          <tr>
-            <td>1. Reactímetro (Frenado):</td>
-            <td style="text-align: right;"><strong id="val-react">-- ms</strong></td>
-          </tr>
-          <tr>
-            <td>2. Palancas (Coordinación):</td>
-            <td style="text-align: right;"><strong id="val-pal">-- toques (90%)</strong></td>
-          </tr>
-          <tr>
-            <td>3. Punteo (Ritmo Lahy):</td>
-            <td style="text-align: right;"><strong id="val-punt">-- %</strong></td>
-          </tr>
-          <tr id="val-fila-vis" style="display: none;">
-            <td>4. Tamizaje Visual:</td>
-            <td style="text-align: right;"><strong id="val-vis">-- %</strong></td>
-          </tr>
-          <tr id="val-fila-aud" style="display: none;">
-            <td>5. Tamizaje Auditivo:</td>
-            <td style="text-align: right;"><strong id="val-aud">-- %</strong></td>
-          </tr>
-        </table>
-      </div>
+    <div class="box-dictamen" id="txt-dictamen">
+      DICTAMEN: APTO ESTÁNDAR FAENA CRÍTICA (NIVEL ÓPTIMO)
     </div>
+
+    <table class="tabla-metricas">
+      <tr id="row-react">
+        <td class="metrica-nombre">1. Reactímetro (Frenado):</td>
+        <td class="metrica-valor" id="txt-react">-- ms</td>
+      </tr>
+      <tr id="row-pal">
+        <td class="metrica-nombre">2. Palancas (Coordinación):</td>
+        <td class="metrica-valor" id="txt-pal">-- toques</td>
+      </tr>
+      <tr id="row-punt">
+        <td class="metrica-nombre">3. Punteo (Ritmo Lahy):</td>
+        <td class="metrica-valor" id="txt-punt">-- %</td>
+      </tr>
+      <tr id="row-vis" style="display: none;">
+        <td class="metrica-nombre">4. Tamizaje Visual:</td>
+        <td class="metrica-valor" id="txt-vis">-- %</td>
+      </tr>
+      <tr id="row-aud" style="display: none;">
+        <td class="metrica-nombre">5. Tamizaje Auditivo:</td>
+        <td class="metrica-valor" id="txt-aud">-- %</td>
+      </tr>
+    </table>
 
     <a href="menu.html" class="btn-menu">← Ir al Menú Principal</a>
   </main>
 
   <script>
     const SUPABASE_URL = 'https://kytuewhkhshrjddzoknv.supabase.co';
-    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt5dHVld2hraHNocmpkZHpva252Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkxMzc4MzcsImV4cCI6MjEwNDcxMzgzN30.gNWbr8E7oF-56yKnNIDVvGIaGXfHkCCcKonWVDthp2k';
+    const SUPABASE_ANON_KEY = 'sb_publishable_ou-yRIieMQOGoWJ4YZIYtg_-Lusc711';
+    const supabase = (window.supabase && typeof window.supabase.createClient === 'function') 
+      ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) 
+      : null;
 
-    document.addEventListener('DOMContentLoaded', () => {
-      const params = new URLSearchParams(window.location.search);
-      const folio = params.get('folio') || 'SMK-186158';
-      const alerta = document.getElementById('caja-alerta');
+    document.addEventListener('DOMContentLoaded', async () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const folio = urlParams.get('folio');
 
-      const client = (window.supabase && typeof window.supabase.createClient === 'function') 
-        ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) 
-        : null;
+      if (!folio) {
+        mostrarError("FOLIO NO ESPECIFICADO");
+        return;
+      }
 
-      // Respaldo de contingencia: coincide con los 4 módulos evaluados en la Foto 1
-      const fallbackDatos = {
-        folio: folio,
-        nombre: 'FELIX OSSES MARTINEZ',
-        rut: '12.222.222-2',
-        empresa: 'socadep ltda',
-        reactimetro_ms: 377,
-        palancas_toques: 1,
-        punteo_efectividad: 100,
-        visual_efectividad: 100,
-        auditivo_efectividad: null, // Null oculta el módulo 5 en la validación
-        dictamen: 'DICTAMEN: APTO ESTÁNDAR FAENA CRÍTICA (NIVEL ÓPTIMO)'
-      };
+      document.getElementById('txt-folio').innerText = folio;
 
-      const temporizador = setTimeout(() => {
-        renderDatos(fallbackDatos, alerta);
-      }, 1500);
+      if (!supabase) {
+        mostrarError("ERROR DE CONEXIÓN CON SERVIDOR");
+        return;
+      }
 
-      if (client) {
-        client.from('certificados_folios')
+      try {
+        const { data, error } = await supabase
+          .from('certificados_folios')
           .select('*')
           .eq('folio', folio)
-          .maybeSingle()
-          .then(({ data, error }) => {
-            clearTimeout(temporizador);
-            if (error || !data) {
-              renderDatos(fallbackDatos, alerta);
-            } else {
-              renderDatos(data, alerta);
-            }
-          })
-          .catch(() => {
-            clearTimeout(temporizador);
-            renderDatos(fallbackDatos, alerta);
-          });
+          .maybeSingle();
+
+        if (error || !data) {
+          mostrarError(`DOCUMENTO NO ENCONTRADO (${folio})`);
+          return;
+        }
+
+        // Renderizar datos reales desde Supabase
+        document.getElementById('txt-nombre').innerText = (data.nombre || 'SIN REGISTRO').toUpperCase();
+        document.getElementById('txt-rut').innerText = data.rut || '--';
+        document.getElementById('txt-empresa').innerText = data.empresa || 'Socadep';
+        
+        if (data.created_at) {
+          const f = new Date(data.created_at);
+          document.getElementById('txt-fecha').innerText = f.toLocaleDateString('es-CL');
+        } else {
+          document.getElementById('txt-fecha').innerText = new Date().toLocaleDateString('es-CL');
+        }
+
+        if (data.dictamen) {
+          document.getElementById('txt-dictamen').innerText = data.dictamen;
+        }
+
+        // Métricas reales
+        document.getElementById('txt-react').innerText = data.reactimetro_ms ? `${data.reactimetro_ms} ms` : '-- ms';
+        document.getElementById('txt-pal').innerText = (data.palancas_toques !== null && data.palancas_toques !== undefined) ? `${data.palancas_toques} toques` : '--';
+        document.getElementById('txt-punt').innerText = data.punteo_efectividad ? `${data.punteo_efectividad}%` : '--%';
+
+        // Ocultar módulos no rendidos
+        if (data.visual_efectividad !== null && data.visual_efectividad !== undefined) {
+          document.getElementById('row-vis').style.display = 'table-row';
+          document.getElementById('txt-vis').innerText = `${data.visual_efectividad}%`;
+        } else {
+          document.getElementById('row-vis').style.display = 'none';
+        }
+
+        if (data.auditivo_efectividad !== null && data.auditivo_efectividad !== undefined) {
+          document.getElementById('row-aud').style.display = 'table-row';
+          document.getElementById('txt-aud').innerText = `${data.auditivo_efectividad}%`;
+        } else {
+          document.getElementById('row-aud').style.display = 'none';
+        }
+
+      } catch (e) {
+        mostrarError("ERROR AL VERIFICAR CERTIFICADO");
       }
     });
 
-    function renderDatos(data, alerta) {
-      document.getElementById('val-folio').innerText = data.folio || '--';
-      document.getElementById('val-nombre').innerText = data.nombre || 'FELIX OSSES MARTINEZ';
-      document.getElementById('val-rut').innerText = data.rut || '12.222.222-2';
-      document.getElementById('val-empresa').innerText = data.empresa || 'socadep ltda';
-      document.getElementById('val-fecha').innerText = new Date(data.creado_el || data.created_at || Date.now()).toLocaleDateString('es-CL');
-      
-      const dictamen = data.dictamen || 'DICTAMEN: APTO ESTÁNDAR FAENA CRÍTICA (NIVEL ÓPTIMO)';
-      document.getElementById('val-dictamen').innerText = dictamen;
-
-      const tReact = Number(data.reactimetro_ms || 377);
-      document.getElementById('val-react').innerText = `${tReact} ms`;
-      document.getElementById('val-pal').innerText = `${data.palancas_toques !== null ? data.palancas_toques : 1} toques (90%)`;
-      document.getElementById('val-punt').innerText = `${data.punteo_efectividad || 100}%`;
-
-      // Regla de visibilidad estricta para Visual y Auditivo
-      const filaVis = document.getElementById('val-fila-vis');
-      if (data.visual_efectividad !== null && data.visual_efectividad !== undefined && String(data.visual_efectividad).trim() !== '') {
-        filaVis.style.display = 'table-row';
-        document.getElementById('val-vis').innerText = `${data.visual_efectividad}%`;
-      } else {
-        filaVis.style.display = 'none';
-      }
-
-      const filaAud = document.getElementById('val-fila-aud');
-      if (data.auditivo_efectividad !== null && data.auditivo_efectividad !== undefined && String(data.auditivo_efectividad).trim() !== '') {
-        filaAud.style.display = 'table-row';
-        document.getElementById('val-aud').innerText = `${data.auditivo_efectividad}%`;
-      } else {
-        filaAud.style.display = 'none';
-      }
-
-      if (tReact <= 400) {
-        alerta.className = 'badge-status status-ok';
-        alerta.innerText = '✓ CERTIFICADO OFICIAL AUTÉNTICO (FAENA CRÍTICA)';
-        document.getElementById('val-dictamen').style.color = '#4ade80';
-      } else if (tReact <= 450) {
-        alerta.className = 'badge-status status-obs';
-        alerta.innerText = '⚠️ CERTIFICADO AUTÉNTICO (OBSERVACIÓN PARA FAENA)';
-        document.getElementById('val-dictamen').style.color = '#fbbf24';
-      } else {
-        alerta.className = 'badge-status status-error';
-        alerta.innerText = '⚠️ CERTIFICADO EMITIDO: FUERA DE NORMA';
-        document.getElementById('val-dictamen').style.color = '#f87171';
-      }
+    function mostrarError(mensaje) {
+      const badge = document.getElementById('badge-estado');
+      badge.className = 'badge-autentico badge-error';
+      badge.innerText = `⚠️ ${mensaje}`;
+      document.getElementById('txt-nombre').innerText = '--';
     }
   </script>
 </body>
