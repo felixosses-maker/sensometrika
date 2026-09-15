@@ -29,6 +29,7 @@
     }
     .cargando { background-color: rgba(2, 132, 199, 0.15); border: 1.5px solid #0284c7; color: #38bdf8; }
     .valido { background-color: rgba(34, 197, 94, 0.15); border: 1.5px solid #22c55e; color: #4ade80; }
+    .observado { background-color: rgba(245, 158, 11, 0.15); border: 1.5px solid #f59e0b; color: #fbbf24; }
     .invalido { background-color: rgba(239, 68, 68, 0.15); border: 1.5px solid #ef4444; color: #f87171; }
     
     .tarjeta-validacion {
@@ -63,16 +64,16 @@
     }
     .tabla-metricas th { background-color: #1e293b; color: #38bdf8; }
 
-    /* Insignias de evaluación */
     .badge-estado {
-      font-size: 0.68rem;
+      font-size: 0.66rem;
       font-weight: 800;
-      padding: 2px 6px;
+      padding: 3px 6px;
       border-radius: 4px;
       display: inline-block;
       text-align: center;
     }
     .badge-cumple { background-color: rgba(34, 197, 94, 0.2); color: #4ade80; border: 1px solid #22c55e; }
+    .badge-observado { background-color: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid #f59e0b; }
     .badge-falla { background-color: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid #ef4444; }
 
     .btn-volver {
@@ -92,7 +93,7 @@
       <p style="color: #94a3b8; font-size: 0.75rem; margin: 2px 0 0 0;">Servicio de Trazabilidad Pública • D.S. N° 170 MTT</p>
     </header>
 
-    <!-- Sello Superior Dinámico (Verde si es Aprobado, Rojo si Reprobó o Inválido) -->
+    <!-- Sello Dinámico Superior -->
     <div id="caja-estado" class="estado-sello cargando">
       VERIFICANDO AUTENTICIDAD EN BASE DE DATOS...
     </div>
@@ -105,7 +106,7 @@
       <div class="fila-dato"><span>Fecha de Emisión:</span><strong id="res-fecha">--</strong></div>
       <div class="fila-dato" style="border-bottom: none;"><span>Dictamen:</span><strong id="res-dictamen">--</strong></div>
 
-      <!-- Tabla con columna de Evaluación en Rojo/Verde -->
+      <!-- Tabla con columna de Evaluación adaptativa -->
       <table class="tabla-metricas">
         <thead>
           <tr>
@@ -173,19 +174,21 @@
           return;
         }
 
-        // Determinar si aprobó o reprobó según el dictamen y empresa
         const dictamen = data.dictamen || '';
-        const esReprobado = dictamen.includes('NO APTO') || dictamen.includes('REENTRENAMIENTO') || dictamen.includes('INCOMPLETA');
-        const esEmpresa = (data.empresa && data.empresa !== 'Particular' && !data.empresa.includes('Particular'));
-        const umbralReact = esEmpresa ? 350 : 450;
+        const esIncompleta = dictamen.includes('INCOMPLETA');
+        const esReprobado = dictamen.includes('NO APTO') || dictamen.includes('REENTRENAMIENTO');
+        const esObservado = dictamen.includes('OBSERVACIÓN') || dictamen.includes('OBS.');
 
-        // 1. Sello Superior: Alerta roja inmediata si no es apto
-        if (esReprobado) {
+        // 1. Sello Superior Tri-Estado
+        if (esReprobado || esIncompleta) {
           boxEstado.className = 'estado-sello invalido';
           boxEstado.innerText = '⚠️ CERTIFICADO OFICIAL: NO APTO / REPROBADO';
+        } else if (esObservado) {
+          boxEstado.className = 'estado-sello observado';
+          boxEstado.innerText = '⚠️ CERTIFICADO: APTO CLASE B (CON OBSERVACIÓN FAENA)';
         } else {
           boxEstado.className = 'estado-sello valido';
-          boxEstado.innerText = '✓ CERTIFICADO OFICIAL VERIFICADO (APTO)';
+          boxEstado.innerText = '✓ CERTIFICADO OFICIAL VERIFICADO (APTO FAENA)';
         }
 
         // 2. Ficha de filiación
@@ -197,20 +200,42 @@
         
         const elDictamen = document.getElementById('res-dictamen');
         elDictamen.innerText = dictamen;
-        elDictamen.style.color = esReprobado ? '#f87171' : '#4ade80';
+        if (esReprobado || esIncompleta) {
+          elDictamen.style.color = '#f87171';
+        } else if (esObservado) {
+          elDictamen.style.color = '#fbbf24';
+        } else {
+          elDictamen.style.color = '#4ade80';
+        }
 
-        // 3. Tabla de Resultados con indicación en rojo de lo que falló
+        // 3. Tabla de Resultados Detallada
         const tbody = document.getElementById('cuerpo-metricas-validador');
         tbody.innerHTML = '';
 
         // Módulo 1: Reactímetro
         if (data.reactimetro_ms !== null && data.reactimetro_ms !== undefined) {
-          const reactOk = data.reactimetro_ms <= umbralReact;
+          const ms = data.reactimetro_ms;
+          let badgeReact = '';
+          let colorTxt = '#f8fafc';
+
+          if (ms <= 350) {
+            badgeReact = '<span class="badge-estado badge-cumple">CUMPLE FAENA</span>';
+          } else if (ms <= 450) {
+            colorTxt = '#fbbf24';
+            badgeReact = '<span class="badge-estado badge-observado">APTO CLASE B (OBS. FAENA)</span>';
+          } else {
+            colorTxt = '#f87171';
+            badgeReact = '<span class="badge-estado badge-falla">NO CUMPLE NORMATIVA</span>';
+          }
+
           tbody.innerHTML += `
             <tr>
-              <td><strong>1. Reactímetro (Frenado)</strong><br><small style="color:#94a3b8;">Límite: $\\le$ ${umbralReact} ms</small></td>
-              <td style="color: ${reactOk ? '#f8fafc' : '#f87171'}; font-weight: ${reactOk ? 'normal' : 'bold'};">${data.reactimetro_ms} ms</td>
-              <td style="text-align: center;"><span class="badge-estado ${reactOk ? 'badge-cumple' : 'badge-falla'}">${reactOk ? 'CUMPLE' : 'NO CUMPLE'}</span></td>
+              <td>
+                <strong>1. Reactímetro (Frenado)</strong><br>
+                <small style="color:#94a3b8;">Faena: &le; 350 ms | Legal: &le; 450 ms</small>
+              </td>
+              <td style="color: ${colorTxt}; font-weight: bold;">${ms} ms</td>
+              <td style="text-align: center;">${badgeReact}</td>
             </tr>
           `;
         } else {
@@ -223,16 +248,24 @@
           `;
         }
 
-        // Módulo 2: Palancas (con toques y porcentaje de coordinación)
+        // Módulo 2: Palancas con porcentaje
         if (data.palancas_toques !== null && data.palancas_toques !== undefined) {
-          const palOk = data.palancas_toques <= 3;
-          // Cálculo de precisión: 0 toques = 100%, 1 toque = 90%, 2 toques = 80%, etc.
-          const porcentajePalancas = Math.max(0, 100 - (data.palancas_toques * 10));
+          const toques = data.palancas_toques;
+          const palOk = toques <= 3;
+          const porcentajePal = Math.max(0, 100 - (toques * 10));
+
           tbody.innerHTML += `
             <tr>
-              <td><strong>2. Palancas (Coordinación)</strong><br><small style="color:#94a3b8;">Límite: $\\le$ 3 contactos</small></td>
-              <td style="color: ${palOk ? '#f8fafc' : '#f87171'}; font-weight: ${palOk ? 'normal' : 'bold'};">${data.palancas_toques} toques (${porcentajePalancas}%)</td>
-              <td style="text-align: center;"><span class="badge-estado ${palOk ? 'badge-cumple' : 'badge-falla'}">${palOk ? 'CUMPLE' : 'REPROBADO'}</span></td>
+              <td>
+                <strong>2. Palancas (Coordinación)</strong><br>
+                <small style="color:#94a3b8;">Límite normativo: &le; 3 toques</small>
+              </td>
+              <td style="color: ${palOk ? '#f8fafc' : '#f87171'}; font-weight: bold;">
+                ${toques} toques (${porcentajePal}%)
+              </td>
+              <td style="text-align: center;">
+                <span class="badge-estado ${palOk ? 'badge-cumple' : 'badge-falla'}">${palOk ? 'CUMPLE' : 'REPROBADO'}</span>
+              </td>
             </tr>
           `;
         } else {
@@ -247,12 +280,19 @@
 
         // Módulo 3: Punteo
         if (data.punteo_efectividad !== null && data.punteo_efectividad !== undefined) {
-          const puntOk = data.punteo_efectividad >= 80;
+          const ef = data.punteo_efectividad;
+          const puntOk = ef >= 80;
+
           tbody.innerHTML += `
             <tr>
-              <td><strong>3. Punteo (Ritmo)</strong><br><small style="color:#94a3b8;">Límite: $\\ge$ 80%</small></td>
-              <td style="color: ${puntOk ? '#f8fafc' : '#f87171'}; font-weight: ${puntOk ? 'normal' : 'bold'};">${data.punteo_efectividad}%</td>
-              <td style="text-align: center;"><span class="badge-estado ${puntOk ? 'badge-cumple' : 'badge-falla'}">${puntOk ? 'CUMPLE' : 'REPROBADO'}</span></td>
+              <td>
+                <strong>3. Punteo (Ritmo)</strong><br>
+                <small style="color:#94a3b8;">Límite normativo: &ge; 80%</small>
+              </td>
+              <td style="color: ${puntOk ? '#f8fafc' : '#f87171'}; font-weight: bold;">${ef}%</td>
+              <td style="text-align: center;">
+                <span class="badge-estado ${puntOk ? 'badge-cumple' : 'badge-falla'}">${puntOk ? 'CUMPLE' : 'REPROBADO'}</span>
+              </td>
             </tr>
           `;
         } else {
