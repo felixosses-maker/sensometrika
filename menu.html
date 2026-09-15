@@ -9,7 +9,7 @@
     body {
       background-color: #0b1120;
       color: #f1f5f9;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       margin: 0;
       padding: 16px;
       display: flex;
@@ -61,7 +61,6 @@
     .grupo-campo input[readonly] {
       background: #1e293b;
       color: #cbd5e1;
-      cursor: not-allowed;
       border-color: #475569;
     }
     .caja-consentimiento {
@@ -99,7 +98,7 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      transition: border-color 0.2s, transform 0.1s;
+      transition: border-color 0.2s;
     }
     .item-modulo.bloqueado {
       opacity: 0.4;
@@ -149,36 +148,32 @@
       font-size: 0.92rem;
       cursor: pointer;
     }
-    .btn-accion:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-      background: #334155;
-    }
   </style>
 </head>
 <body>
   <main class="contenedor-menu">
     <header style="text-align: center; margin-bottom: 4px;">
       <h1 style="font-size: 1.35rem; margin: 0; color: #fff;">Sensometrika</h1>
-      <span id="badge-plan-titulo" style="font-size: 0.72rem; background: #0284c7; color: #fff; padding: 2px 8px; border-radius: 10px; font-weight: 700;">Pase Full Integral</span>
+      <span id="badge-plan-titulo" style="font-size: 0.72rem; background: #0284c7; color: #fff; padding: 2px 8px; border-radius: 10px; font-weight: 700;">--</span>
     </header>
 
-    <!-- Ficha de Registro del Evaluado -->
+    <!-- Ficha de Identificación -->
     <section class="tarjeta-ficha">
       <h3 id="titulo-ficha">📝 FICHA DE EVALUACIÓN</h3>
       
+      <!-- Empresa visible únicamente en B2B -->
       <div class="grupo-campo" id="box-empresa-mandante" style="display: none;">
         <label for="in-empresa">EMPRESA MANDANTE / FAENA:</label>
         <input type="text" id="in-empresa" readonly>
       </div>
 
       <div class="grupo-campo">
-        <label for="in-nombre">NOMBRE COMPLETO:</label>
+        <label for="in-nombre" id="lbl-nombre-evaluado">NOMBRE COMPLETO:</label>
         <input type="text" id="in-nombre" placeholder="Nombre y Apellidos" oninput="validarAccesoModulos()">
       </div>
 
       <div class="grupo-campo">
-        <label for="in-rut">RUT:</label>
+        <label for="in-rut" id="lbl-rut-evaluado">RUT:</label>
         <input type="text" id="in-rut" placeholder="Ej: 12.345.678-9" oninput="validarAccesoModulos()">
       </div>
 
@@ -190,7 +185,7 @@
 
     <!-- Lista de Módulos Normativos -->
     <section class="lista-modulos">
-      <a href="index.html" class="item-modulo bloqueado" id="btn-mod-react">
+      <a href="reactimetro.html" class="item-modulo bloqueado" id="btn-mod-react">
         <div>
           <strong style="font-size: 0.9rem; display: block;">1. Reactímetro (Frenado)</strong>
           <small style="color: #94a3b8; font-size: 0.74rem;">Latencia psicomotriz simple y compleja</small>
@@ -231,7 +226,7 @@
       </a>
     </section>
 
-    <!-- Pad de Firma Exclusivo para B2B antes de generar informe -->
+    <!-- Pad de Firma Exclusivo para B2B antes del Informe -->
     <section class="tarjeta-firma" id="seccion-firma-b2b" style="display: none;">
       <h3 style="color: #38bdf8; font-size: 0.88rem; margin: 0;">✍️ FIRMA OBLIGATORIA DEL TRABAJADOR</h3>
       <p style="font-size: 0.74rem; color: #94a3b8; margin: 4px 0 8px;">Estampe su firma con el dedo o mouse para certificar su evaluación:</p>
@@ -240,7 +235,7 @@
       
       <div style="display: flex; gap: 8px; margin-top: 6px;">
         <button type="button" onclick="limpiarFirma()" style="flex: 1; height: 36px; background: #334155; border: none; border-radius: 6px; color: #fff; font-size: 0.78rem; cursor: pointer;">Borrar Firma</button>
-        <button type="button" id="btn-confirmar-firma" onclick="guardarFirmaB2B()" style="flex: 2; height: 36px; background: #22c55e; border: none; border-radius: 6px; color: #fff; font-size: 0.78rem; font-weight: 700; cursor: pointer;">Validar y Emitir Certificado</button>
+        <button type="button" onclick="guardarFirmaB2B()" style="flex: 2; height: 36px; background: #22c55e; border: none; border-radius: 6px; color: #fff; font-size: 0.78rem; font-weight: 700; cursor: pointer;">Validar y Ver Informe</button>
       </div>
     </section>
 
@@ -260,36 +255,46 @@
     document.addEventListener('DOMContentLoaded', () => {
       sesion = JSON.parse(localStorage.getItem('sensometrika_sesion')) || {
         rol: 'particular',
-        planId: 'part_full',
+        planId: 'b2c_full',
         modulosPermitidos: ['reactimetro', 'palancas', 'punteo', 'visual', 'auditivo']
       };
 
       const datosUser = JSON.parse(localStorage.getItem('sensometrika_datos_usuario')) || {};
       const planEmpresa = JSON.parse(localStorage.getItem('sensometrika_plan_empresa')) || {};
+      const esB2B = (sesion.rol === 'empresa');
 
-      document.getElementById('badge-plan-titulo').innerText = sesion.nombrePlan || (sesion.rol === 'empresa' ? 'Plan Corporativo B2B' : 'Pase Full Integral');
+      document.getElementById('badge-plan-titulo').innerText = sesion.nombrePlan || (esB2B ? 'Plan Corporativo B2B' : 'Pase Full Integral');
 
       const boxEmpresa = document.getElementById('box-empresa-mandante');
       const inEmpresa = document.getElementById('in-empresa');
       const inNombre = document.getElementById('in-nombre');
       const inRut = document.getElementById('in-rut');
       const tituloFicha = document.getElementById('titulo-ficha');
+      const lblNombre = document.getElementById('lbl-nombre-evaluado');
 
-      if (sesion.rol === 'empresa') {
+      if (esB2B) {
+        // EN B2B: MUESTRA EMPRESA FIJA Y DEJA NOMBRE/RUT EN BLANCO PARA EL TRABAJADOR
         boxEmpresa.style.display = 'block';
-        tituloFicha.innerText = '🏢 FICHA DEL TRABAJADOR A EVALUAR';
         inEmpresa.value = planEmpresa.razonSocial || sesion.razonSocial || 'EMPRESA MANDANTE';
-        
-        // Si hay un trabajador anotado previamente
+        tituloFicha.innerText = '🏢 FICHA DEL TRABAJADOR A EVALUAR';
+        lblNombre.innerText = 'NOMBRE COMPLETO DEL TRABAJADOR:';
+
+        // Si ya había registrado un trabajador en esta sesión
         if (datosUser.tipo === 'empresa') {
           inNombre.value = datosUser.nombre || '';
           inRut.value = datosUser.rut || '';
+        } else {
+          inNombre.value = '';
+          inRut.value = '';
         }
+        inNombre.removeAttribute('readonly');
+        inRut.removeAttribute('readonly');
       } else {
-        // En B2C (Particular) OCULTA FAENA Y BLOQUEA NOMBRE Y RUT
+        // EN B2C: OCULTA EMPRESA Y BLOQUEA DATOS DEL TITULAR COMPRADOR
         boxEmpresa.style.display = 'none';
         tituloFicha.innerText = '👤 DATOS DEL POSTULANTE';
-        
+        lblNombre.innerText = 'NOMBRE COMPLETO:';
+
         if (datosUser.nombre) {
           inNombre.value = datosUser.nombre;
           inNombre.setAttribute('readonly', 'true');
@@ -308,18 +313,18 @@
       const nombre = document.getElementById('in-nombre').value.trim();
       const rut = document.getElementById('in-rut').value.trim();
       const chk = document.getElementById('chk-consentimiento').checked;
+      const esB2B = (sesion.rol === 'empresa');
 
       const valido = nombre.length >= 3 && rut.length >= 7 && chk;
 
-      // Actualizar datos de usuario
+      // Actualizar datos del evaluado
       const datosUser = JSON.parse(localStorage.getItem('sensometrika_datos_usuario')) || {};
       datosUser.nombre = nombre;
       datosUser.rut = rut;
-      datosUser.tipo = sesion.rol === 'empresa' ? 'empresa' : 'particular';
+      datosUser.tipo = esB2B ? 'empresa' : 'particular';
       localStorage.setItem('sensometrika_datos_usuario', JSON.stringify(datosUser));
 
       const permitidos = sesion.modulosPermitidos || ['reactimetro', 'palancas', 'punteo'];
-
       const modulos = [
         { id: 'btn-mod-react', key: 'reactimetro' },
         { id: 'btn-mod-pal', key: 'palancas' },
@@ -352,22 +357,22 @@
       const r4 = localStorage.getItem('sensometrika_visual');
       const r5 = localStorage.getItem('sensometrika_auditivo');
 
-      if (r1) { marcarModuloListo('btn-mod-react', 'st-react'); }
-      if (r2) { marcarModuloListo('btn-mod-pal', 'st-pal'); }
-      if (r3) { marcarModuloListo('btn-mod-punt', 'st-punt'); }
-      if (r4) { marcarModuloListo('btn-mod-vis', 'st-vis'); }
-      if (r5) { marcarModuloListo('btn-mod-aud', 'st-aud'); }
+      if (r1) marcarListo('btn-mod-react', 'st-react');
+      if (r2) marcarListo('btn-mod-pal', 'st-pal');
+      if (r3) marcarListo('btn-mod-punt', 'st-punt');
+      if (r4) marcarListo('btn-mod-vis', 'st-vis');
+      if (r5) marcarListo('btn-mod-aud', 'st-aud');
 
       const permitidos = sesion.modulosPermitidos || ['reactimetro', 'palancas', 'punteo'];
-      let todosListos = true;
+      let todos = true;
 
-      if (permitidos.includes('reactimetro') && !r1) todosListos = false;
-      if (permitidos.includes('palancas') && !r2) todosListos = false;
-      if (permitidos.includes('punteo') && !r3) todosListos = false;
-      if (permitidos.includes('visual') && !r4) todosListos = false;
-      if (permitidos.includes('auditivo') && !r5) todosListos = false;
+      if (permitidos.includes('reactimetro') && !r1) todos = false;
+      if (permitidos.includes('palancas') && !r2) todos = false;
+      if (permitidos.includes('punteo') && !r3) todos = false;
+      if (permitidos.includes('visual') && !r4) todos = false;
+      if (permitidos.includes('auditivo') && !r5) todos = false;
 
-      if (todosListos) {
+      if (todos) {
         if (sesion.rol === 'empresa') {
           document.getElementById('seccion-firma-b2b').style.display = 'block';
         } else {
@@ -376,7 +381,7 @@
       }
     }
 
-    function marcarModuloListo(btnId, badgeId) {
+    function marcarListo(btnId, badgeId) {
       const btn = document.getElementById(btnId);
       const b = document.getElementById(badgeId);
       if (btn) btn.classList.add('completado');
@@ -386,7 +391,6 @@
       }
     }
 
-    // Lógica del Pad de Firmas táctil / mouse
     function iniciarPadFirma() {
       const canvas = document.getElementById('pad-firma');
       if (!canvas) return;
@@ -435,12 +439,11 @@
 
     function guardarFirmaB2B() {
       if (!tieneFirma) {
-        alert('Por favor, estampe su firma antes de continuar.');
+        alert('Por favor, estampe su firma antes de emitir el certificado.');
         return;
       }
       const canvas = document.getElementById('pad-firma');
-      const dataURL = canvas.toDataURL('image/png');
-      localStorage.setItem('sensometrika_firma_trabajador', dataURL);
+      localStorage.setItem('sensometrika_firma_trabajador', canvas.toDataURL('image/png'));
       window.location.href = 'informe.html';
     }
   </script>

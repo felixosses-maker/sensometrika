@@ -9,7 +9,7 @@
     body {
       background-color: #0b1120;
       color: #f1f5f9;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       margin: 0;
       padding: 16px;
       display: flex;
@@ -31,7 +31,7 @@
       font-size: 1.6rem;
       font-weight: 800;
       color: #38bdf8;
-      margin: 6px 0;
+      margin: 4px 0;
     }
     .tarjeta-formulario {
       background: #0f172a;
@@ -43,11 +43,11 @@
     .grupo-campo {
       display: flex;
       flex-direction: column;
-      gap: 6px;
+      gap: 5px;
       margin-bottom: 12px;
     }
     .grupo-campo label {
-      font-size: 0.8rem;
+      font-size: 0.78rem;
       color: #94a3b8;
       font-weight: 600;
     }
@@ -96,10 +96,9 @@
       font-weight: 800;
       font-size: 1rem;
       cursor: pointer;
-      transition: background 0.2s;
     }
     .btn-pagar-ahora:disabled {
-      opacity: 0.5;
+      opacity: 0.45;
       cursor: not-allowed;
       background: #475569;
     }
@@ -108,6 +107,14 @@
       color: #64748b;
       text-align: center;
       margin-top: 14px;
+    }
+    .desglose-impuestos {
+      font-size: 0.78rem;
+      color: #94a3b8;
+      margin-top: 4px;
+      line-height: 1.4;
+      border-top: 1px solid #1e293b;
+      padding-top: 6px;
     }
   </style>
 </head>
@@ -118,49 +125,22 @@
       <p style="font-size: 0.8rem; color: #94a3b8; margin: 4px 0 0;">Confirmación y Activación de Evaluaciones</p>
     </header>
 
-    <!-- Resumen del Plan -->
+    <!-- Resumen del Plan Dinámico -->
     <section class="caja-resumen">
       <div style="font-size: 0.75rem; color: #94a3b8;">Plan Seleccionado:</div>
-      <h2 id="txt-nombre-plan" style="font-size: 1.2rem; margin: 4px 0; color: #fff;">Pase Full Integral</h2>
-      <div class="monto-total" id="txt-monto-total">$9.990 CLP</div>
-      <div id="txt-desglose-iva" style="font-size: 0.75rem; color: #94a3b8;">Boleta Electrónica IVA incluido</div>
+      <h2 id="txt-nombre-plan" style="font-size: 1.2rem; margin: 4px 0; color: #fff;">--</h2>
+      <div class="monto-total" id="txt-monto-total">--</div>
+      <div id="txt-desglose-iva" class="desglose-impuestos">Cargando condiciones...</div>
     </section>
 
     <!-- Formulario de Activación -->
-    <form class="tarjeta-formulario" onsubmit="procesarActivacionPlan(event)">
+    <form class="tarjeta-formulario" onsubmit="procesarActivacion(event)">
       
-      <!-- Campos Titular (B2C y Contacto B2B) -->
-      <div id="bloque-titular">
-        <label id="lbl-titulo-titular" style="color: #38bdf8; font-size: 0.85rem; font-weight: 700; display: block; margin-bottom: 12px;">
-          👤 DATOS DEL TITULAR
+      <!-- Bloque Exclusivo B2B (Empresa Mandante) -->
+      <div id="bloque-b2b" style="display: none; margin-bottom: 14px;">
+        <label style="color: #38bdf8; font-size: 0.85rem; font-weight: 700; display: block; margin-bottom: 10px;">
+          🏢 DATOS DE EMPRESA Y FACTURACIÓN (DTE)
         </label>
-        
-        <div class="grupo-campo">
-          <label for="pago-nombre">Nombre Completo *</label>
-          <input type="text" id="pago-nombre" placeholder="Ej: Mariela Cárcamo Fernández" required>
-        </div>
-
-        <div class="grupo-campo">
-          <label for="pago-rut">RUT *</label>
-          <input type="text" id="pago-rut" placeholder="Ej: 12.345.678-9" required>
-        </div>
-
-        <div class="grupo-campo">
-          <label for="pago-correo">Correo Electrónico (Para envío de resultados y boleta) *</label>
-          <input type="email" id="pago-correo" placeholder="Ej: contacto@correo.cl" required>
-        </div>
-      </div>
-
-      <!-- Campos Corporativos (Solo en B2B) -->
-      <div id="bloque-b2b" style="display: none; margin-top: 14px; border-top: 1px dashed #334155; padding-top: 14px;">
-        <label style="color: #38bdf8; font-size: 0.85rem; font-weight: 700; display: block; margin-bottom: 12px;">
-          🏢 DATOS DE EMPRESA Y FACTURACIÓN
-        </label>
-
-        <div class="grupo-campo">
-          <label for="pago-cargo">Cargo del Responsable / APR *</label>
-          <input type="text" id="pago-cargo" placeholder="Ej: Encargado de Prevención de Riesgos">
-        </div>
 
         <div class="grupo-campo">
           <label for="pago-empresa">Razón Social Empresa Mandante / Faena *</label>
@@ -168,12 +148,39 @@
         </div>
 
         <div class="grupo-campo">
-          <label for="pago-rut-empresa">RUT Empresa (Para Factura DTE) *</label>
+          <label for="pago-rut-empresa">RUT Empresa (Para Factura Electrónica) *</label>
           <input type="text" id="pago-rut-empresa" placeholder="Ej: 76.543.210-K">
         </div>
       </div>
 
-      <!-- Consentimiento y Términos -->
+      <!-- Datos del Solicitante / Titular -->
+      <div id="bloque-titular">
+        <label id="lbl-titulo-titular" style="color: #38bdf8; font-size: 0.85rem; font-weight: 700; display: block; margin-bottom: 10px;">
+          👤 DATOS DEL TITULAR
+        </label>
+        
+        <div class="grupo-campo">
+          <label for="pago-nombre" id="lbl-nombre">Nombre Completo *</label>
+          <input type="text" id="pago-nombre" placeholder="Ej: Mariela Cárcamo Fernández" required>
+        </div>
+
+        <div class="grupo-campo">
+          <label for="pago-rut" id="lbl-rut">RUT *</label>
+          <input type="text" id="pago-rut" placeholder="Ej: 12.666.787-9" required>
+        </div>
+
+        <div class="grupo-campo" id="box-cargo-b2b" style="display: none;">
+          <label for="pago-cargo">Cargo en la Empresa / Prevención de Riesgos *</label>
+          <input type="text" id="pago-cargo" placeholder="Ej: Encargado de Prevención / APR">
+        </div>
+
+        <div class="grupo-campo">
+          <label for="pago-correo" id="lbl-correo">Correo Electrónico (Para envío de boleta y resultados) *</label>
+          <input type="email" id="pago-correo" placeholder="Ej: contacto@empresa.cl" required>
+        </div>
+      </div>
+
+      <!-- Checkbox de Consentimiento -->
       <label class="check-terminos">
         <input type="checkbox" id="chk-terminos" required onchange="validarBotonCobro()">
         <span>He leído y acepto los <strong>Términos y Condiciones</strong> y la <strong>Política de Protección de Datos Personales (Ley N° 21.719)</strong>. Consiento el tratamiento de mis antecedentes y resultados técnicos.</span>
@@ -194,63 +201,88 @@
   </main>
 
   <script>
-    let sesionActual = {};
+    let planData = {};
 
     document.addEventListener('DOMContentLoaded', () => {
-      // Recuperar datos del plan seleccionado
-      sesionActual = JSON.parse(localStorage.getItem('sensometrika_sesion')) || {
-        rol: 'particular',
-        planId: 'part_full',
-        nombrePlan: 'Pase Full Integral',
-        precio: 9990,
-        modulosPermitidos: ['reactimetro', 'palancas', 'punteo', 'visual', 'auditivo']
-      };
+      // 1. Prioriza el plan seleccionado desde el catálogo
+      planData = JSON.parse(localStorage.getItem('sensometrika_plan_pedido')) || 
+                 JSON.parse(localStorage.getItem('sensometrika_sesion')) || {
+                   rol: 'particular',
+                   planId: 'b2c_full',
+                   nombrePlan: 'Pase Full Integral',
+                   precioTotal: 9990,
+                   modulosPermitidos: ['reactimetro', 'palancas', 'punteo', 'visual', 'auditivo']
+                 };
 
-      document.getElementById('txt-nombre-plan').innerText = sesionActual.nombrePlan || 'Pase Full Integral';
-      document.getElementById('txt-monto-total').innerText = '$' + (sesionActual.precio ? Number(sesionActual.precio).toLocaleString('es-CL') : '9.990') + ' CLP';
+      const esB2B = (planData.rol === 'empresa' || (planData.planId && String(planData.planId).startsWith('b2b')));
 
+      const txtPlan = document.getElementById('txt-nombre-plan');
+      const txtMonto = document.getElementById('txt-monto-total');
+      const txtDesglose = document.getElementById('txt-desglose-iva');
       const bloqueB2B = document.getElementById('bloque-b2b');
-      const inEmpresa = document.getElementById('pago-empresa');
-      const inCargo = document.getElementById('pago-cargo');
-      const inRutEmpresa = document.getElementById('pago-rut-empresa');
+      const boxCargo = document.getElementById('box-cargo-b2b');
       const lblTitular = document.getElementById('lbl-titulo-titular');
+      const inEmpresa = document.getElementById('pago-empresa');
+      const inRutEmpresa = document.getElementById('pago-rut-empresa');
+      const inCargo = document.getElementById('pago-cargo');
+      const lblCorreo = document.getElementById('lbl-correo');
 
-      if (sesionActual.rol === 'empresa') {
+      if (esB2B) {
+        // Modo B2B (Corporativo)
+        const cantidad = planData.cantidad || 10;
+        const total = planData.precioTotal || (cantidad * 7990 * 1.19);
+        const neto = planData.precioNeto || Math.round(total / 1.19);
+        const iva = planData.iva || (total - neto);
+
+        txtPlan.innerText = planData.nombrePlan || 'Plan Empresa Full B2B';
+        txtMonto.innerText = '$' + Number(total).toLocaleString('es-CL') + ' CLP';
+        txtDesglose.innerHTML = `Pack de <strong>${cantidad} trabajadores</strong><br>Neto: $${Number(neto).toLocaleString('es-CL')} CLP • IVA (19%): $${Number(iva).toLocaleString('es-CL')} CLP<br>Factura Electrónica DTE`;
+
         bloqueB2B.style.display = 'block';
+        boxCargo.style.display = 'flex';
         lblTitular.innerText = '👤 DATOS DEL ENCARGADO / SOLICITANTE EMPRESA';
-        document.getElementById('txt-desglose-iva').innerText = 'Factura Electrónica (+ IVA)';
+        lblCorreo.innerText = 'Correo de Supervisión (Recepción de Certificados Formales) *';
+
         inEmpresa.required = true;
-        inCargo.required = true;
         inRutEmpresa.required = true;
+        inCargo.required = true;
       } else {
+        // Modo B2C (Particular)
+        const total = planData.precioTotal || planData.precio || 9990;
+        txtPlan.innerText = planData.nombrePlan || 'Pase Full Integral';
+        txtMonto.innerText = '$' + Number(total).toLocaleString('es-CL') + ' CLP';
+        txtDesglose.innerText = 'Boleta Electrónica IVA incluido';
+
         bloqueB2B.style.display = 'none';
-        lblTitular.innerText = '👤 DATOS DEL TITULAR';
-        document.getElementById('txt-desglose-iva').innerText = 'Boleta Electrónica IVA incluido';
+        boxCargo.style.display = 'none';
+        lblTitular.innerText = '👤 DATOS DEL POSTULANTE / TITULAR';
+        lblCorreo.innerText = 'Correo Electrónico (Para envío de resultados y boleta) *';
+
         inEmpresa.required = false;
-        inCargo.required = false;
         inRutEmpresa.required = false;
+        inCargo.required = false;
       }
     });
 
     function validarBotonCobro() {
       const chk = document.getElementById('chk-terminos');
-      const btn = document.getElementById('btn-submit-pago');
-      btn.disabled = !chk.checked;
+      document.getElementById('btn-submit-pago').disabled = !chk.checked;
     }
 
-    function procesarActivacionPlan(e) {
+    function procesarActivacion(e) {
       e.preventDefault();
 
       const nombre = document.getElementById('pago-nombre').value.trim();
       const rut = document.getElementById('pago-rut').value.trim();
       const correo = document.getElementById('pago-correo').value.trim();
+      const esB2B = (planData.rol === 'empresa' || (planData.planId && String(planData.planId).startsWith('b2b')));
 
-      if (sesionActual.rol === 'empresa') {
+      if (esB2B) {
         const razonSocial = document.getElementById('pago-empresa').value.trim();
         const rutEmpresa = document.getElementById('pago-rut-empresa').value.trim();
         const cargo = document.getElementById('pago-cargo').value.trim();
 
-        // Datos del encargado corporativo que validará y recibirá los certificados
+        // 1. Guardar la empresa y su supervisor comprador
         const planEmpresa = {
           razonSocial: razonSocial,
           rutEmpresa: rutEmpresa,
@@ -259,22 +291,30 @@
             rut: rut,
             cargo: cargo,
             correo: correo
-          }
+          },
+          cantidad: planData.cantidad || 10
         };
         localStorage.setItem('sensometrika_plan_empresa', JSON.stringify(planEmpresa));
 
-        sesionActual.razonSocial = razonSocial;
-        sesionActual.responsableNombre = nombre;
-        sesionActual.responsableRut = rut;
-        sesionActual.responsableCargo = cargo;
-        sesionActual.correoInformes = correo;
+        // 2. Sesión activa B2B
+        const sesionActual = {
+          rol: 'empresa',
+          planId: planData.planId || 'b2b_full',
+          nombrePlan: planData.nombrePlan || 'Plan Empresa Full',
+          razonSocial: razonSocial,
+          responsableNombre: nombre,
+          responsableRut: rut,
+          responsableCargo: cargo,
+          correoInformes: correo,
+          modulosPermitidos: planData.modulosPermitidos || ['reactimetro', 'palancas', 'punteo', 'visual', 'auditivo']
+        };
+        localStorage.setItem('sensometrika_sesion', JSON.stringify(sesionActual));
 
-        // Limpiar para que el trabajador se identifique en menu.html
+        // 3. Limpiar datos del trabajador para que en menu.html ingrese el operador que dará el examen
         localStorage.removeItem('sensometrika_datos_usuario');
         localStorage.removeItem('sensometrika_firma_trabajador');
       } else {
-        // En B2C, quien compra es quien se evalúa
-        sesionActual.rol = 'particular';
+        // En B2C el comprador es el evaluado
         const datosUsuario = {
           nombre: nombre,
           rut: rut,
@@ -284,9 +324,16 @@
         };
         localStorage.setItem('sensometrika_datos_usuario', JSON.stringify(datosUsuario));
         localStorage.removeItem('sensometrika_plan_empresa');
+
+        const sesionActual = {
+          rol: 'particular',
+          planId: planData.planId || 'b2c_full',
+          nombrePlan: planData.nombrePlan || 'Pase Full Integral',
+          modulosPermitidos: planData.modulosPermitidos || ['reactimetro', 'palancas', 'punteo', 'visual', 'auditivo']
+        };
+        localStorage.setItem('sensometrika_sesion', JSON.stringify(sesionActual));
       }
 
-      localStorage.setItem('sensometrika_sesion', JSON.stringify(sesionActual));
       window.location.href = 'menu.html';
     }
   </script>
