@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Sensometrika | Portal de Verificación Oficial</title>
   <link rel="stylesheet" href="styles.css">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -10,72 +10,63 @@
     body {
       background-color: #0b1120;
       color: #f1f5f9;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       margin: 0;
       padding: 16px;
       display: flex;
       justify-content: center;
-      align-items: center;
-      min-height: 100vh;
-      box-sizing: border-box;
     }
-    .tarjeta-validador {
-      background: #0f172a;
-      border: 1.5px solid #334155;
-      border-radius: 14px;
-      max-width: 440px;
-      width: 100%;
-      padding: 24px;
-      box-sizing: border-box;
+    .contenedor { width: 100%; max-width: 480px; }
+    
+    .estado-sello {
+      padding: 14px;
+      border-radius: 8px;
       text-align: center;
-      box-shadow: 0 15px 35px rgba(0,0,0,0.5);
-    }
-    .tarjeta-validador h2 {
-      margin: 0;
-      color: #fff;
-      font-size: 1.3rem;
-    }
-    .tarjeta-validador p.sub {
-      margin: 4px 0 16px 0;
-      font-size: 0.76rem;
-      color: #94a3b8;
-    }
-    .estado-banner {
-      border-radius: 8px;
-      padding: 12px;
       font-weight: 800;
-      font-size: 0.88rem;
-      margin-bottom: 16px;
-      line-height: 1.4;
+      font-size: 0.92rem;
+      letter-spacing: 0.5px;
+      margin-bottom: 14px;
     }
-    .estado-valido {
-      background: rgba(34, 197, 94, 0.12);
-      border: 1.5px solid #22c55e;
-      color: #4ade80;
+    .cargando { background-color: rgba(2, 132, 199, 0.15); border: 1.5px solid #0284c7; color: #38bdf8; }
+    .valido { background-color: rgba(34, 197, 94, 0.15); border: 1.5px solid #22c55e; color: #4ade80; }
+    .invalido { background-color: rgba(239, 68, 68, 0.15); border: 1.5px solid #ef4444; color: #f87171; }
+    
+    .tarjeta-validacion {
+      background-color: #0f172a;
+      border: 1px solid #334155;
+      border-radius: 12px;
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
     }
-    .estado-no-valido {
-      background: rgba(239, 68, 68, 0.12);
-      border: 1.5px solid #ef4444;
-      color: #f87171;
+    .fila-dato {
+      display: flex;
+      justify-content: space-between;
+      border-bottom: 1px solid #1e293b;
+      padding-bottom: 6px;
+      font-size: 0.82rem;
     }
-    .estado-cargando {
-      background: rgba(2, 132, 199, 0.12);
-      border: 1.5px solid #0284c7;
-      color: #38bdf8;
+    .fila-dato span { color: #94a3b8; }
+    .fila-dato strong { color: #f8fafc; text-align: right; }
+    
+    .tabla-metricas {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 8px;
+      font-size: 0.78rem;
     }
-    .caja-datos {
-      background: #020617;
-      border: 1px solid #1e293b;
-      border-radius: 8px;
-      padding: 12px;
+    .tabla-metricas th, .tabla-metricas td {
+      padding: 6px 8px;
+      border: 1px solid #334155;
       text-align: left;
-      font-size: 0.8rem;
-      line-height: 1.6;
-      margin-bottom: 16px;
     }
-    .caja-datos div span { color: #64748b; }
-    .caja-datos div strong { color: #fff; }
-    .btn-portal {
+    .tabla-metricas th { background-color: #1e293b; color: #38bdf8; }
+    
+    .btn-volver {
+      display: block;
+      margin-top: 14px;
+      text-align: center;
       color: #94a3b8;
       text-decoration: none;
       font-size: 0.8rem;
@@ -83,81 +74,119 @@
   </style>
 </head>
 <body>
-  <div class="tarjeta-validador">
-    <h2>SENSOMETRIKA SpA</h2>
-    <p class="sub">Servicio Oficial de Trazabilidad y Verificación Pública</p>
+  <main class="contenedor">
+    <header style="text-align: center; margin-bottom: 14px;">
+      <h1 style="color: #fff; font-size: 1.25rem; margin: 0;">SENSOMETRIKA SpA</h1>
+      <p style="color: #94a3b8; font-size: 0.75rem; margin: 2px 0 0 0;">Servicio de Trazabilidad Pública • D.S. N° 170 MTT</p>
+    </header>
 
-    <div class="estado-banner estado-cargando" id="banner-estado">
-      Verificando autenticidad en base de datos...
+    <div id="caja-estado" class="estado-sello cargando">
+      VERIFICANDO AUTENTICIDAD EN BASE DE DATOS...
     </div>
 
-    <div class="caja-datos" id="datos-certificado" style="display: none;">
-      <div><span>Folio Registro:</span> <strong id="val-folio">--</strong></div>
-      <div><span>Evaluado:</span> <strong id="val-nombre">--</strong></div>
-      <div><span>RUT:</span> <strong id="val-rut">--</strong></div>
-      <div><span>Empresa / Entidad:</span> <strong id="val-empresa">--</strong></div>
-      <div><span>Fecha de Emisión:</span> <strong id="val-fecha">--</strong></div>
-      <div><span>Dictamen Técnico:</span> <strong id="val-dictamen" style="color: #4ade80;">--</strong></div>
-    </div>
+    <section class="tarjeta-validacion" id="contenedor-resultado" style="display: none;">
+      <div class="fila-dato"><span>Folio Registro:</span><strong id="res-folio">--</strong></div>
+      <div class="fila-dato"><span>Evaluado:</span><strong id="res-nombre">--</strong></div>
+      <div class="fila-dato"><span>RUT:</span><strong id="res-rut">--</strong></div>
+      <div class="fila-dato"><span>Régimen / Empresa:</span><strong id="res-empresa">--</strong></div>
+      <div class="fila-dato"><span>Fecha de Emisión:</span><strong id="res-fecha">--</strong></div>
+      <div class="fila-dato" style="border-bottom: none;"><span>Dictamen:</span><strong id="res-dictamen" style="color: #4ade80;">--</strong></div>
 
-    <a href="index.html" class="btn-portal">← Ir al Portal Principal</a>
-  </div>
+      <table class="tabla-metricas">
+        <thead>
+          <tr>
+            <th>Prueba Psicomotriz</th>
+            <th>Medición Registrada</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>1. Reactímetro (Frenado)</td><td id="res-reactimetro">-- ms</td></tr>
+          <tr><td>2. Palancas (Coordinación)</td><td id="res-palancas">-- toques</td></tr>
+          <tr><td>3. Punteo (Ritmo)</td><td id="res-punteo">-- %</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <a href="menu.html" class="btn-volver">← Ir al Menú Principal</a>
+  </main>
 
   <script>
     const SUPABASE_URL = 'https://kytuewhkhshrjddzoknv.supabase.co';
-    const SUPABASE_ANON_KEY = 'sb_publishable_ou-yRIieMQOGoWJ4YZIYtg_-Lusc711';
-    const supabase = (window.supabase && typeof window.supabase.createClient === 'function') 
-      ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) 
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt5dHVld2hraHNocmpkZHpva252Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkxMzc4MzcsImV4cCI6MjEwNDcxMzgzN30.gNWbr8E7oF-56yKnNIDVvGIaGXfHkCCcKonWVDthp2k';
+
+    const clienteSupabase = (window.supabase && typeof window.supabase.createClient === 'function')
+      ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
       : null;
 
     document.addEventListener('DOMContentLoaded', async () => {
-      const params = new URLSearchParams(window.location.search);
-      const folioBuscado = params.get('folio');
-      const banner = document.getElementById('banner-estado');
-      const caja = document.getElementById('datos-certificado');
+      const urlParams = new URLSearchParams(window.location.search);
+      const folioBuscado = urlParams.get('folio');
+      const boxEstado = document.getElementById('caja-estado');
+      const cardInfo = document.getElementById('contenedor-resultado');
 
       if (!folioBuscado) {
-        banner.className = 'estado-banner estado-no-valido';
-        banner.innerText = 'NO SE ESPECIFICÓ UN FOLIO DE VERIFICACIÓN';
+        boxEstado.className = 'estado-sello invalido';
+        boxEstado.innerText = 'DOCUMENTO NO VÁLIDO: FOLIO NO ESPECIFICADO';
         return;
       }
 
-      if (!supabase) {
-        banner.className = 'estado-banner estado-no-valido';
-        banner.innerText = 'ERROR DE CONEXIÓN CON EL SERVIDOR DE AUDITORÍA';
+      if (!clienteSupabase) {
+        boxEstado.className = 'estado-sello invalido';
+        boxEstado.innerText = 'ERROR: CLIENTE DE BASE DE DATOS NO DISPONIBLE';
         return;
       }
+
+      // Timeout de seguridad: si tarda más de 4 segundos, cancela el estado de carga
+      let respondio = false;
+      const temporizador = setTimeout(() => {
+        if (!respondio) {
+          boxEstado.className = 'estado-sello invalido';
+          boxEstado.innerText = 'TIEMPO DE ESPERA AGOTADO (VERIFIQUE SU CONEXIÓN)';
+        }
+      }, 4000);
 
       try {
-        const { data, error } = await supabase
+        const { data, error } = await clienteSupabase
           .from('certificados_folios')
           .select('*')
           .eq('folio', folioBuscado)
-          .single();
+          .maybeSingle();
+
+        respondio = true;
+        clearTimeout(temporizador);
 
         if (error || !data) {
-          banner.className = 'estado-banner estado-no-valido';
-          banner.innerText = `DOCUMENTO NO REGISTRADO (${folioBuscado})`;
-        } else {
-          banner.className = 'estado-banner estado-valido';
-          banner.innerText = `✓ CERTIFICADO OFICIAL VERIFICADO (${data.folio})`;
-
-          document.getElementById('val-folio').innerText = data.folio;
-          document.getElementById('val-nombre').innerText = data.nombre;
-          document.getElementById('val-rut').innerText = data.rut;
-          document.getElementById('val-empresa').innerText = data.empresa || 'Particular';
-          document.getElementById('val-fecha').innerText = new Date(data.created_at || Date.now()).toLocaleDateString('es-CL');
-          document.getElementById('val-dictamen').innerText = data.dictamen;
-          
-          if (data.dictamen && data.dictamen.includes('NO APTO')) {
-            document.getElementById('val-dictamen').style.color = '#f87171';
-          }
-
-          caja.style.display = 'block';
+          boxEstado.className = 'estado-sello invalido';
+          boxEstado.innerText = `DOCUMENTO NO ENCONTRADO (${folioBuscado})`;
+          return;
         }
+
+        // Datos encontrados
+        boxEstado.className = 'estado-sello valido';
+        boxEstado.innerText = '✓ CERTIFICADO OFICIAL VERIFICADO';
+
+        document.getElementById('res-folio').innerText = data.folio;
+        document.getElementById('res-nombre').innerText = data.nombre;
+        document.getElementById('res-rut').innerText = data.rut;
+        document.getElementById('res-empresa').innerText = data.empresa || 'Particular';
+        document.getElementById('res-fecha').innerText = new Date(data.created_at || data.creado_el || Date.now()).toLocaleString('es-CL');
+        document.getElementById('res-dictamen').innerText = data.dictamen;
+
+        if (data.dictamen && (data.dictamen.includes('NO APTO') || data.dictamen.includes('INCOMPLETA'))) {
+          document.getElementById('res-dictamen').style.color = '#f87171';
+        }
+
+        document.getElementById('res-reactimetro').innerText = data.reactimetro_ms ? `${data.reactimetro_ms} ms` : 'N/A';
+        document.getElementById('res-palancas').innerText = data.palancas_toques !== null ? `${data.palancas_toques} toques` : 'N/A';
+        document.getElementById('res-punteo').innerText = data.punteo_efectividad !== null ? `${data.punteo_efectividad}%` : 'N/A';
+
+        cardInfo.style.display = 'flex';
+
       } catch (err) {
-        banner.className = 'estado-banner estado-no-valido';
-        banner.innerText = 'ERROR AL CONSULTAR LA BASE DE DATOS';
+        respondio = true;
+        clearTimeout(temporizador);
+        boxEstado.className = 'estado-sello invalido';
+        boxEstado.innerText = 'ERROR DE COMUNICACIÓN CON EL SERVIDOR';
       }
     });
   </script>

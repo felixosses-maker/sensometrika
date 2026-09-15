@@ -2,10 +2,12 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Sensometrika | Certificado Oficial de Aptitud</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Sensometrika | Certificado Técnico Oficial de Evaluación</title>
   <link rel="stylesheet" href="styles.css">
+  <!-- Librería QR y Cliente Supabase -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     body {
       background-color: #0b1120;
@@ -19,7 +21,7 @@
 
     .contenedor {
       width: 100%;
-      max-width: 640px;
+      max-width: 600px;
     }
 
     .tarjeta-informe {
@@ -28,6 +30,7 @@
       border-radius: 12px;
       padding: 24px;
       box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+      box-sizing: border-box;
     }
 
     .cabecera-formal {
@@ -67,16 +70,16 @@
       justify-content: center;
       border: 1.5px solid #cbd5e1;
       border-radius: 8px;
-      padding: 4px 6px;
+      padding: 6px;
       background: #ffffff;
-      min-width: 78px;
+      min-width: 76px;
     }
 
     .caja-qr span {
       font-size: 0.6rem;
       font-weight: 800;
       color: #475569;
-      margin-top: 2px;
+      margin-top: 4px;
       letter-spacing: 0.5px;
     }
 
@@ -115,21 +118,9 @@
       letter-spacing: 0.5px;
     }
 
-    .dictamen-espera {
-      background: #fffbeb;
-      border: 1.5px solid #fde68a;
-      color: #d97706;
-    }
-    .dictamen-apto {
-      background: #f0fdf4;
-      border: 1.5px solid #4ade80;
-      color: #16a34a;
-    }
-    .dictamen-noapto {
-      background: #fef2f2;
-      border: 1.5px solid #f87171;
-      color: #dc2626;
-    }
+    .dictamen-espera { background: #fffbeb; border: 1.5px solid #fde68a; color: #d97706; }
+    .dictamen-apto { background: #f0fdf4; border: 1.5px solid #4ade80; color: #16a34a; }
+    .dictamen-noapto { background: #fef2f2; border: 1.5px solid #f87171; color: #dc2626; }
 
     .tabla-informe {
       width: 100%;
@@ -202,7 +193,7 @@
 <body>
   <main class="contenedor">
     <div class="tarjeta-informe">
-      <!-- Membrete con Logo y Caja QR obligatoria -->
+      <!-- Membrete con Logo SVG y Contenedor QR -->
       <section class="cabecera-formal">
         <div class="bloque-marca">
           <svg width="42" height="42" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -228,7 +219,7 @@
 
       <!-- Banner Informativo -->
       <div class="banner-correo">
-        📬 <div><strong>Informe General Emitido:</strong> Copia de respaldo enviada a: <span id="correo-respaldo">contacto@sensometrika.cl</span></div>
+        📬 <div><strong>Informe Emitido:</strong> Copia de respaldo enviada a: <span id="correo-respaldo">contacto@sensometrika.cl</span></div>
       </div>
 
       <!-- Ficha del Evaluado -->
@@ -237,7 +228,7 @@
         <div>RUT: <strong id="rep-rut">11.111.111-3</strong></div>
         <div>Folio Verificación: <strong id="rep-folio">--</strong></div>
         <div>Fecha y Hora: <strong id="rep-fecha">--</strong></div>
-        <div>Régimen Examen: <strong id="rep-regimen">Particular (Clase B)</strong></div>
+        <div style="grid-column: span 2;">Régimen / Empresa: <strong id="rep-regimen">Particular (Clase B)</strong></div>
       </section>
 
       <!-- Dictamen Dinámico -->
@@ -277,29 +268,45 @@
   </main>
 
   <script>
-    document.addEventListener('DOMContentLoaded', function() {
-      // 1. Carga de datos de identidad con valores de respaldo automáticos
+    const SUPABASE_URL = 'https://kytuewhkhshrjddzoknv.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt5dHVld2hraHNocmpkZHpva252Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkxMzc4MzcsImV4cCI6MjEwNDcxMzgzN30.gNWbr8E7oF-56yKnNIDVvGIaGXfHkCCcKonWVDthp2k';
+    const clienteSupabase = (window.supabase && typeof window.supabase.createClient === 'function')
+      ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+      : null;
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      // 1. Cargar datos de identidad
       const usuario = JSON.parse(localStorage.getItem('sensometrika_datos_usuario')) || {};
+      const sesion = JSON.parse(localStorage.getItem('sensometrika_sesion')) || { rol: 'particular' };
+      const esEmpresa = (sesion.rol === 'empresa');
+
       const nombreFinal = (usuario.nombre && usuario.nombre !== '--') ? usuario.nombre : 'Postulante Particular';
       const rutFinal = (usuario.rut && usuario.rut !== '--') ? usuario.rut : '11.111.111-3';
-      const correoFinal = usuario.email || usuario.correo || 'contacto@sensometrika.cl';
+      const empresaFinal = esEmpresa ? (sesion.razonSocial || usuario.empresa || 'Empresa Faena') : 'Particular (Clase B)';
+      const correoFinal = usuario.email || usuario.correo || sesion.correoInformes || 'contacto@sensometrika.cl';
 
       document.getElementById('rep-nombre').innerText = nombreFinal;
       document.getElementById('rep-rut').innerText = rutFinal;
+      document.getElementById('rep-regimen').innerText = empresaFinal;
       document.getElementById('correo-respaldo').innerText = correoFinal;
 
-      // 2. Fecha y Folio garantizados
+      // 2. Fecha y Folio
       const ahora = new Date();
       document.getElementById('rep-fecha').innerText = ahora.toLocaleDateString('es-CL') + ' ' + ahora.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' });
       
       const folio = 'SMK-' + Math.floor(100000 + Math.random() * 900000);
       document.getElementById('rep-folio').innerText = folio;
 
-      // 3. GENERACIÓN OBLIGATORIA DEL CÓDIGO QR
+      // 3. GENERACIÓN DEL QR (Si es local, apunta a producción para que el celular no dé ERR_CONNECTION_REFUSED)
       const contenedorQR = document.getElementById('qr-impreso');
       if (contenedorQR) {
         contenedorQR.innerHTML = '';
-        const urlValidacion = `${window.location.origin}/validar.html?folio=${folio}&rut=${encodeURIComponent(rutFinal)}`;
+        
+        const hostActual = window.location.hostname;
+        const esLocal = (hostActual === '127.0.0.1' || hostActual === 'localhost');
+        const dominioBase = esLocal ? 'https://sensometrika.vercel.app' : window.location.origin;
+
+        const urlValidacion = `${dominioBase}/validar.html?folio=${folio}`;
         
         new QRCode(contenedorQR, {
           text: urlValidacion,
@@ -311,11 +318,11 @@
         });
       }
 
-      // 4. Cargar métricas de módulos
-      cargarResultados();
+      // 4. Cargar resultados y sincronizar con base de datos
+      await procesarResultadosYGuardar(esEmpresa, folio, nombreFinal, rutFinal, empresaFinal);
     });
 
-    function cargarResultados() {
+    async function procesarResultadosYGuardar(esEmpresa, folio, nombre, rut, empresa) {
       const rReact = JSON.parse(localStorage.getItem('sensometrika_reactimetro'));
       const rPal = JSON.parse(localStorage.getItem('sensometrika_palancas'));
       const rPunt = JSON.parse(localStorage.getItem('sensometrika_punteo'));
@@ -325,26 +332,28 @@
 
       let rendidos = 0;
       let todosAprobados = true;
+      const umbralReact = esEmpresa ? 350 : 450;
 
       // Reactímetro
+      let valReact = null;
       if (rReact && rReact.tiempo) {
         rendidos++;
-        const ok = rReact.tiempo <= 450;
+        valReact = rReact.tiempo;
+        const ok = valReact <= umbralReact;
         if (!ok) todosAprobados = false;
         tbody.innerHTML += `
           <tr>
-            <td><strong>1. Reactímetro</strong><br><span style="color:#64748b;">Latencia simple de frenado</span></td>
-            <td>≤ 450 ms (Clase B)</td>
-            <td><strong>${rReact.tiempo} ms</strong></td>
+            <td><strong>1. Reactímetro</strong><br><span style="color:#64748b;">Latencia de frenado</span></td>
+            <td>≤ ${umbralReact} ms (${esEmpresa ? 'Clase A / Faena' : 'Clase B'})</td>
+            <td><strong>${valReact} ms</strong></td>
             <td style="text-align:center;"><span class="badge-estado ${ok ? 'st-cumple' : 'st-nocumple'}">${ok ? 'CUMPLE' : 'NO CUMPLE'}</span></td>
           </tr>
         `;
       } else {
-        todosAprobados = false;
         tbody.innerHTML += `
           <tr>
-            <td><strong>1. Reactímetro</strong><br><span style="color:#64748b;">Latencia simple de frenado</span></td>
-            <td>≤ 450 ms (Clase B)</td>
+            <td><strong>1. Reactímetro</strong><br><span style="color:#64748b;">Latencia de frenado</span></td>
+            <td>≤ ${umbralReact} ms (${esEmpresa ? 'Clase A / Faena' : 'Clase B'})</td>
             <td>-- ms</td>
             <td style="text-align:center;"><span class="badge-estado st-pendiente">PENDIENTE</span></td>
           </tr>
@@ -352,20 +361,21 @@
       }
 
       // Palancas
+      let valPal = null;
       if (rPal && rPal.toques !== undefined && rPal.toques !== null) {
         rendidos++;
-        const ok = rPal.toques <= 3;
+        valPal = rPal.toques;
+        const ok = valPal <= 3;
         if (!ok) todosAprobados = false;
         tbody.innerHTML += `
           <tr>
             <td><strong>2. Palancas</strong><br><span style="color:#64748b;">Coordinación bimanual</span></td>
             <td>≤ 3 toques en 60 s</td>
-            <td><strong>${rPal.toques} toques</strong></td>
+            <td><strong>${valPal} toques</strong></td>
             <td style="text-align:center;"><span class="badge-estado ${ok ? 'st-cumple' : 'st-nocumple'}">${ok ? 'CUMPLE' : 'REPROBADO'}</span></td>
           </tr>
         `;
       } else {
-        todosAprobados = false;
         tbody.innerHTML += `
           <tr>
             <td><strong>2. Palancas</strong><br><span style="color:#64748b;">Coordinación bimanual</span></td>
@@ -377,20 +387,21 @@
       }
 
       // Punteo
+      let valPunt = null;
       if (rPunt && rPunt.efectividad !== undefined && rPunt.efectividad !== null) {
         rendidos++;
-        const ok = rPunt.efectividad >= 80;
+        valPunt = rPunt.efectividad;
+        const ok = valPunt >= 80;
         if (!ok) todosAprobados = false;
         tbody.innerHTML += `
           <tr>
             <td><strong>3. Punteo</strong><br><span style="color:#64748b;">Lahy rotatorio</span></td>
             <td>≥ 80% efectividad</td>
-            <td><strong>${rPunt.efectividad}%</strong></td>
+            <td><strong>${valPunt}%</strong></td>
             <td style="text-align:center;"><span class="badge-estado ${ok ? 'st-cumple' : 'st-nocumple'}">${ok ? 'CUMPLE' : 'REPROBADO'}</span></td>
           </tr>
         `;
       } else {
-        todosAprobados = false;
         tbody.innerHTML += `
           <tr>
             <td><strong>3. Punteo</strong><br><span style="color:#64748b;">Lahy rotatorio</span></td>
@@ -401,17 +412,40 @@
         `;
       }
 
-      // Veredicto
+      // Dictamen final
       const dictamen = document.getElementById('box-dictamen');
+      let dictamenTexto = '';
       if (rendidos < 3) {
+        dictamenTexto = 'DICTAMEN EN ESPERA: EVALUACIÓN INCOMPLETA';
         dictamen.className = 'box-dictamen dictamen-espera';
-        dictamen.innerText = 'DICTAMEN EN ESPERA: EVALUACIÓN INCOMPLETA';
+        dictamen.innerText = dictamenTexto;
       } else if (todosAprobados) {
+        dictamenTexto = 'APTO (CUMPLE ESTÁNDAR LEGAL DS N° 170)';
         dictamen.className = 'box-dictamen dictamen-apto';
-        dictamen.innerText = 'DICTAMEN: APTO (CUMPLE ESTÁNDAR LEGAL)';
+        dictamen.innerText = 'DICTAMEN: ' + dictamenTexto;
       } else {
+        dictamenTexto = 'NO APTO / REQUIERE REENTRENAMIENTO';
         dictamen.className = 'box-dictamen dictamen-noapto';
-        dictamen.innerText = 'DICTAMEN: NO APTO / REQUIERE REENTRENAMIENTO';
+        dictamen.innerText = 'DICTAMEN: ' + dictamenTexto;
+      }
+
+      // Guardar folio en Supabase para que el validador lo encuentre al escanear
+      if (clienteSupabase) {
+        try {
+          await clienteSupabase.from('certificados_folios').insert([{
+            folio: folio,
+            rut: rut,
+            nombre: nombre,
+            empresa: empresa,
+            dictamen: dictamenTexto,
+            reactimetro_ms: valReact,
+            palancas_toques: valPal,
+            punteo_efectividad: valPunt
+          }]);
+          console.log("Folio sincronizado en Supabase:", folio);
+        } catch (e) {
+          console.warn("No se pudo sincronizar con Supabase:", e);
+        }
       }
     }
   </script>
