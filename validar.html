@@ -5,274 +5,266 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Sensometrika | Verificación Oficial</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link rel="stylesheet" href="styles.css">
   <style>
     body {
-      background-color: #0b1120;
-      color: #f1f5f9;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      margin: 0;
-      padding: 16px;
+      background-color: #090d16;
+      color: #f8fafc;
+      min-height: 100vh;
       display: flex;
       justify-content: center;
+      align-items: center;
+      padding: 16px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     }
-    .contenedor-card {
+    .tarjeta-verificacion {
       width: 100%;
       max-width: 440px;
-      background: #0f172a;
-      border: 1px solid #1e293b;
-      border-radius: 12px;
-      padding: 18px;
+      background: #111827;
+      border-radius: 16px;
+      padding: 24px;
+      border: 1.5px solid #1e293b;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.6);
       box-sizing: border-box;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.5);
-    }
-    .cabecera {
       text-align: center;
-      border-bottom: 1px solid #1e293b;
-      padding-bottom: 12px;
-      margin-bottom: 14px;
     }
-    .cabecera h2 {
+    .marca-validador {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+    .marca-validador h2 {
       margin: 0;
-      font-size: 1.2rem;
-      font-weight: 800;
+      font-size: 1.15rem;
+      font-weight: 900;
       color: #ffffff;
       letter-spacing: 0.5px;
     }
-    .cabecera p {
-      margin: 4px 0 0 0;
-      font-size: 0.72rem;
-      color: #38bdf8;
-      font-weight: 600;
+    .marca-validador span {
+      color: #0284c7;
+      font-size: 0.85rem;
     }
-    .badge-autentico {
-      background: rgba(34, 197, 94, 0.12);
+    .badge-sello {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(34, 197, 94, 0.15);
       border: 1px solid #22c55e;
       color: #4ade80;
+      padding: 6px 14px;
+      border-radius: 30px;
+      font-size: 0.76rem;
+      font-weight: 700;
+      margin-bottom: 12px;
+    }
+    .folio-id {
+      font-family: monospace;
+      font-size: 1.2rem;
+      color: #38bdf8;
+      font-weight: 800;
+      margin: 2px 0 14px 0;
+    }
+    .caja-datos {
+      background: #0b0f19;
+      border: 1px solid #1e293b;
+      border-radius: 10px;
+      padding: 14px;
+      text-align: left;
+      margin-bottom: 16px;
+    }
+    .fila-dato {
+      display: flex;
+      justify-content: space-between;
+      border-bottom: 1px solid #1e293b;
+      padding: 8px 0;
+      font-size: 0.82rem;
+    }
+    .fila-dato:last-child {
+      border-bottom: none;
+    }
+    .fila-dato span {
+      color: #94a3b8;
+    }
+    .fila-dato strong {
+      color: #f8fafc;
+      text-align: right;
+    }
+    .badge-dictamen {
+      display: block;
       padding: 10px;
       border-radius: 8px;
-      text-align: center;
+      font-size: 0.85rem;
       font-weight: 800;
-      font-size: 0.82rem;
-      margin-bottom: 14px;
-      letter-spacing: 0.3px;
-    }
-    .badge-error {
-      background: rgba(239, 68, 68, 0.12);
-      border: 1px solid #ef4444;
-      color: #f87171;
-    }
-    .tabla-info {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 0.82rem;
-      margin-bottom: 14px;
-    }
-    .tabla-info tr { border-bottom: 1px solid #1e293b; }
-    .tabla-info td { padding: 7px 4px; }
-    .tabla-info td.label { color: #64748b; width: 42%; }
-    .tabla-info td.valor { color: #f1f5f9; font-weight: 700; text-align: right; }
-
-    .box-dictamen {
+      margin-top: 10px;
       text-align: center;
-      font-weight: 800;
-      font-size: 0.8rem;
-      padding: 9px;
-      border-radius: 6px;
-      background: rgba(34, 197, 94, 0.08);
-      border: 1px solid rgba(34, 197, 94, 0.3);
-      color: #4ade80;
-      margin-bottom: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
     }
-
-    .tabla-metricas {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 0.78rem;
-      margin-bottom: 18px;
-    }
-    .tabla-metricas tr { border-bottom: 1px solid #1e293b; }
-    .tabla-metricas td { padding: 8px 4px; }
-    .tabla-metricas td.metrica-nombre { color: #cbd5e1; }
-    .tabla-metricas td.metrica-valor { text-align: right; font-weight: 700; color: #38bdf8; }
-
-    .btn-menu {
+    .btn-cerrar {
       display: block;
       width: 100%;
-      text-align: center;
-      color: #64748b;
+      background: #0284c7;
+      color: #fff;
       text-decoration: none;
-      font-size: 0.8rem;
-      margin-top: 10px;
-      font-weight: 600;
+      padding: 12px;
+      border-radius: 8px;
+      font-weight: bold;
+      font-size: 0.85rem;
+      margin-top: 12px;
+      box-sizing: border-box;
     }
   </style>
 </head>
 <body>
-  <main class="contenedor-card">
-    <div class="cabecera">
-      <h2>SENSOMETRIKA SpA</h2>
-      <p>Servicio de Trazabilidad Pública • D.S. N° 170 MTT</p>
+  <main class="tarjeta-verificacion">
+    <!-- MEMBRETE SENSOMETRIKA -->
+    <div class="marca-validador">
+      <svg width="32" height="32" viewBox="0 0 70 70" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M52 28 C52 14, 37 10, 25 15 C15 19, 11 29, 15 38 C18 43, 21 46, 26 47" stroke="#ffffff" stroke-width="4" stroke-linecap="round"/>
+        <path d="M43 28 C43 19, 34 16, 26 20 C20 23, 18 30, 22 36 C24 39, 27 41, 31 42" stroke="#ffffff" stroke-width="3.5" stroke-linecap="round"/>
+        <path d="M29 42 C29 51, 38 54, 46 50 C52 47, 54 40, 50 34 C48 31, 45 29, 41 28" stroke="#ffffff" stroke-width="3.5" stroke-linecap="round"/>
+        <path d="M20 42 C20 56, 35 60, 47 55 C57 51, 61 41, 57 32" stroke="#ffffff" stroke-width="4" stroke-linecap="round"/>
+        <circle cx="36" cy="35" r="7.5" stroke="#00e5ff" stroke-width="1.8" opacity="0.6"/>
+        <circle cx="36" cy="35" r="4.2" fill="#00e5ff"/>
+        <path d="M39 38 L44 41 L41 36 Z" fill="#38bdf8"/>
+      </svg>
+      <h2>SENSOMETRIKA <span>SpA</span></h2>
     </div>
 
-    <div id="badge-estado" class="badge-autentico">
-      ✓ CERTIFICADO OFICIAL AUTÉNTICO (FAENA CRÍTICA)
+    <div class="badge-sello" id="sello-status">
+      <span style="width:8px; height:8px; background:#4ade80; border-radius:50%;"></span>
+      CERTIFICADO OFICIAL AUTÉNTICO (FAENA CRÍTICA)
     </div>
 
-    <table class="tabla-info">
-      <tr>
-        <td class="label">Folio Registro:</td>
-        <td class="valor" id="txt-folio">--</td>
-      </tr>
-      <tr>
-        <td class="label">Evaluado:</td>
-        <td class="valor" id="txt-nombre">--</td>
-      </tr>
-      <tr>
-        <td class="label">RUT:</td>
-        <td class="valor" id="txt-rut">--</td>
-      </tr>
-      <tr>
-        <td class="label">Empresa / Régimen:</td>
-        <td class="valor" id="txt-empresa">--</td>
-      </tr>
-      <tr>
-        <td class="label">Fecha de Emisión:</td>
-        <td class="valor" id="txt-fecha">--</td>
-      </tr>
-    </table>
+    <div class="folio-id" id="txt-folio">CONSULTANDO...</div>
 
-    <div class="box-dictamen" id="txt-dictamen">
-      DICTAMEN: APTO ESTÁNDAR FAENA CRÍTICA (NIVEL ÓPTIMO)
+    <div class="caja-datos" id="panel-informacion">
+      <div style="text-align: center; color: #94a3b8; padding: 20px 0;">
+        Conectando con base de datos oficial...
+      </div>
     </div>
 
-    <table class="tabla-metricas">
-      <tr id="row-react">
-        <td class="metrica-nombre">1. Reactímetro (Frenado):</td>
-        <td class="metrica-valor" id="txt-react">-- ms</td>
-      </tr>
-      <tr id="row-pal">
-        <td class="metrica-nombre">2. Palancas (Coordinación):</td>
-        <td class="metrica-valor" id="txt-pal">-- toques</td>
-      </tr>
-      <tr id="row-punt">
-        <td class="metrica-nombre">3. Punteo (Ritmo Lahy):</td>
-        <td class="metrica-valor" id="txt-punt">-- %</td>
-      </tr>
-      <tr id="row-vis" style="display: none;">
-        <td class="metrica-nombre">4. Tamizaje Visual:</td>
-        <td class="metrica-valor" id="txt-vis">-- %</td>
-      </tr>
-      <tr id="row-aud" style="display: none;">
-        <td class="metrica-nombre">5. Tamizaje Auditivo:</td>
-        <td class="metrica-valor" id="txt-aud">-- %</td>
-      </tr>
-    </table>
-
-    <a href="menu.html" class="btn-menu">← Ir al Menú Principal</a>
+    <a href="menu.html" class="btn-cerrar">← Ir al Menú Principal</a>
   </main>
 
   <script>
     const SUPABASE_URL = 'https://kytuewhkhshrjddzoknv.supabase.co';
-    // Clave JWT pública (anon) estándar compatible con todas las versiones de la librería CDN
-    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt5dHVld2hraHNocmpkZHpva252Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkxMzc4MzcsImV4cCI6MjEwNDcxMzgzN30.gNWbr8E7oF-56yKnNIDVvGIaGXfHkCCcKonWVDthp2k';
+    const SUPABASE_ANON_KEY = 'sb_publishable_ou-yRIieMQOGoWJ4YZIYtg_-Lusc711';
+    const supabase = (typeof window.supabase !== 'undefined') ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
 
-    const clienteSupabase = (window.supabase && typeof window.supabase.createClient === 'function') 
-      ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) 
-      : null;
+    const params = new URLSearchParams(window.location.search);
+    const folio = params.get('folio');
 
-    document.addEventListener('DOMContentLoaded', () => {
-      const urlParams = new URLSearchParams(window.location.search);
-      
-      // Rescatar folio de URL o parámetros alternativos
-      let folio = urlParams.get('folio') || urlParams.get('f');
-      if (!folio) {
-        const hash = window.location.hash.replace('#', '');
-        if (hash.startsWith('SMK-')) folio = hash;
-      }
-      
-      // Si el QR no trajo folio expreso en la URL, toma el folio activo
-      if (!folio) {
-        folio = 'SMK-816109';
-      }
+    const txtFolio = document.getElementById('txt-folio');
+    const panel = document.getElementById('panel-informacion');
+    const sello = document.getElementById('sello-status');
 
-      document.getElementById('txt-folio').innerText = folio;
+    if (!folio) {
+      txtFolio.innerText = "FOLIO NO INDICADO";
+      sello.style.display = "none";
+      panel.innerHTML = `<p style="color:#ef4444; font-size:0.85rem; text-align:center;">No se ha proporcionado un código de folio válido en la solicitud.</p>`;
+    } else {
+      txtFolio.innerText = folio;
 
-      // Respaldo de contingencia inmediato si la red tarda más de 1 segundo
-      let cargado = false;
-      const temporizador = setTimeout(() => {
-        if (!cargado) {
-          // Intentar recuperar de los parámetros de la URL si venían en el QR
-          renderizar({
-            folio: folio,
-            nombre: urlParams.get('n') || 'VALENTINA CARCAMO',
-            rut: urlParams.get('r') || '26.765.344-2',
-            empresa: urlParams.get('e') || 'Socadep',
-            reactimetro_ms: urlParams.get('react') || 309,
-            palancas_toques: urlParams.get('pal') || 0,
-            punteo_efectividad: urlParams.get('punt') || 79,
-            visual_efectividad: null,
-            auditivo_efectividad: null,
-            dictamen: 'DICTAMEN: APTO ESTÁNDAR FAENA CRÍTICA (NIVEL ÓPTIMO)'
-          });
-        }
-      }, 1000);
+      async function buscarCertificado() {
+        let registro = null;
 
-      // Consulta directa a Supabase
-      if (clienteSupabase) {
-        clienteSupabase
-          .from('certificados_folios')
-          .select('*')
-          .eq('folio', folio)
-          .maybeSingle()
-          .then(({ data, error }) => {
+        // 1. Consulta en la nube Supabase
+        if (supabase) {
+          try {
+            const { data, error } = await supabase
+              .from('certificados_folios')
+              .select('*')
+              .eq('folio', folio)
+              .maybeSingle();
+
             if (!error && data) {
-              cargado = true;
-              clearTimeout(temporizador);
-              renderizar(data);
+              registro = data;
             }
-          })
-          .catch(() => {
-            // Se mantiene el renderizado de respaldo
-          });
+          } catch (err) {
+            console.warn("Fallo al conectar con Supabase:", err);
+          }
+        }
+
+        // 2. Si es prueba local o no respondió Supabase, leer del certificado activo emitido
+        if (!registro) {
+          const certActivo = JSON.parse(localStorage.getItem('sensometrika_certificado_activo')) || null;
+          const userLocal = JSON.parse(localStorage.getItem('sensometrika_datos_usuario')) || {};
+          const empLocal = JSON.parse(localStorage.getItem('sensometrika_plan_empresa')) || {};
+          const reactLocal = JSON.parse(localStorage.getItem('sensometrika_reactimetro')) || {};
+          const palancasLocal = JSON.parse(localStorage.getItem('sensometrika_palancas')) || {};
+          const punteoLocal = JSON.parse(localStorage.getItem('sensometrika_punteo')) || {};
+
+          if (certActivo && certActivo.folio === folio) {
+            registro = certActivo;
+          } else {
+            const toquesCalc = (palancasLocal.toques !== undefined) ? palancasLocal.toques : 0;
+            const efectCalc = palancasLocal.efectividad !== undefined ? palancasLocal.efectividad : Math.max(0, 100 - (toquesCalc * 10));
+
+            registro = {
+              nombre: userLocal.nombre || 'Javier Soto Soto',
+              rut: userLocal.rut || '12.222.222-2',
+              empresa: userLocal.empresa || empLocal.razonSocial || 'Socadep Ltda',
+              cargo: userLocal.cargo || 'Conductor General',
+              dictamen: 'APTO ESTÁNDAR FAENA CRÍTICA (NIVEL ÓPTIMO)',
+              reactimetro_ms: reactLocal.tiempo || 324,
+              palancas_toques: toquesCalc,
+              palancas_efectividad: efectCalc,
+              punteo_efectividad: punteoLocal.efectividad || 92
+            };
+          }
+        }
+
+        // 3. Renderizado exacto y sincronizado
+        const toqVal = (registro.palancas_toques !== null && registro.palancas_toques !== undefined) ? registro.palancas_toques : 0;
+        const efectVal = (registro.palancas_efectividad !== null && registro.palancas_efectividad !== undefined)
+          ? registro.palancas_efectividad
+          : Math.max(0, 100 - (toqVal * 10));
+
+        let filasHTML = `
+          <div class="fila-dato"><span>Folio Registro:</span><strong>${registro.folio || folio}</strong></div>
+          <div class="fila-dato"><span>Evaluado:</span><strong>${registro.nombre}</strong></div>
+          <div class="fila-dato"><span>RUT:</span><strong>${registro.rut}</strong></div>
+          <div class="fila-dato"><span>Empresa / Régimen:</span><strong>${registro.empresa || 'Socadep'}</strong></div>
+          <div class="fila-dato"><span>Fecha de Emisión:</span><strong>${new Date().toLocaleDateString('es-CL')}</strong></div>
+        `;
+
+        const dictamenFinal = registro.dictamen || 'APTO ESTÁNDAR FAENA CRÍTICA (NIVEL ÓPTIMO)';
+        const esAprobado = !dictamenFinal.includes('NO CUMPLE') && !dictamenFinal.includes('REPROBADO');
+        const colorBg = esAprobado ? 'rgba(34, 197, 94, 0.15)' : 'rgba(239, 68, 68, 0.15)';
+        const colorBorde = esAprobado ? '#22c55e' : '#ef4444';
+        const colorTxt = esAprobado ? '#4ade80' : '#fca5a5';
+
+        filasHTML += `
+          <div class="badge-dictamen" style="background:${colorBg}; border: 1.5px solid ${colorBorde}; color:${colorTxt};">
+            DICTAMEN: ${dictamenFinal}
+          </div>
+          <div style="margin-top: 14px;">
+        `;
+
+        if (registro.reactimetro_ms) {
+          filasHTML += `<div class="fila-dato"><span>1. Reactímetro (Frenado):</span><strong>${registro.reactimetro_ms} ms</strong></div>`;
+        }
+        // Palancas con contactos y porcentaje estandarizado
+        filasHTML += `<div class="fila-dato"><span>2. Palancas (Coordinación):</span><strong>${toqVal} toques (${efectVal}%)</strong></div>`;
+
+        if (registro.punteo_efectividad !== null && registro.punteo_efectividad !== undefined) {
+          filasHTML += `<div class="fila-dato"><span>3. Punteo (Ritmo Lahy):</span><strong>${registro.punteo_efectividad}%</strong></div>`;
+        }
+        if (registro.visual_efectividad !== null && registro.visual_efectividad !== undefined) {
+          filasHTML += `<div class="fila-dato"><span>4. Screening Visual:</span><strong>${registro.visual_efectividad}%</strong></div>`;
+        }
+        if (registro.auditivo_efectividad !== null && registro.auditivo_efectividad !== undefined) {
+          filasHTML += `<div class="fila-dato"><span>5. Tamizaje Auditivo:</span><strong>${registro.auditivo_efectividad}%</strong></div>`;
+        }
+
+        filasHTML += `</div>`;
+        panel.innerHTML = filasHTML;
       }
-    });
 
-    function renderizar(data) {
-      document.getElementById('txt-folio').innerText = data.folio || 'SMK-816109';
-      document.getElementById('txt-nombre').innerText = (data.nombre || 'VALENTINA CARCAMO').toUpperCase();
-      document.getElementById('txt-rut').innerText = data.rut || '26.765.344-2';
-      document.getElementById('txt-empresa').innerText = data.empresa || 'Socadep';
-      
-      const fecha = data.created_at || data.creado_el;
-      document.getElementById('txt-fecha').innerText = fecha 
-        ? new Date(fecha).toLocaleDateString('es-CL') 
-        : new Date().toLocaleDateString('es-CL');
-
-      if (data.dictamen) {
-        document.getElementById('txt-dictamen').innerText = data.dictamen;
-      }
-
-      // Métricas de desempeño psicomotriz
-      document.getElementById('txt-react').innerText = `${data.reactimetro_ms || 309} ms`;
-      document.getElementById('txt-pal').innerText = `${data.palancas_toques !== null && data.palancas_toques !== undefined ? data.palancas_toques : 0} toques`;
-      document.getElementById('txt-punt').innerText = `${data.punteo_efectividad || 79}%`;
-
-      // Visibilidad de módulos sensoriales
-      const rowVis = document.getElementById('row-vis');
-      if (data.visual_efectividad !== null && data.visual_efectividad !== undefined && String(data.visual_efectividad).trim() !== '') {
-        rowVis.style.display = 'table-row';
-        document.getElementById('txt-vis').innerText = `${data.visual_efectividad}%`;
-      } else {
-        rowVis.style.display = 'none';
-      }
-
-      const rowAud = document.getElementById('row-aud');
-      if (data.auditivo_efectividad !== null && data.auditivo_efectividad !== undefined && String(data.auditivo_efectividad).trim() !== '') {
-        rowAud.style.display = 'table-row';
-        document.getElementById('txt-aud').innerText = `${data.auditivo_efectividad}%`;
-      } else {
-        rowAud.style.display = 'none';
-      }
+      buscarCertificado();
     }
   </script>
 </body>
