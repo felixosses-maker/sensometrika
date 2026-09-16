@@ -6,95 +6,268 @@
   <title>Sensometrika | Tamizaje Auditivo</title>
   <link rel="stylesheet" href="styles.css">
   <style>
-    .barra-superior {
+    body {
+      background-color: #0b1120;
+      color: #f1f5f9;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      margin: 0;
+      padding: 16px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      box-sizing: border-box;
+    }
+    .tarjeta-audicion {
       width: 100%;
+      max-width: 440px;
+      background: #0f172a;
+      border: 1.5px solid #1e293b;
+      border-radius: 16px;
+      padding: 24px;
+      box-sizing: border-box;
+      text-align: center;
+    }
+    .header-audicion {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 8px;
+      margin-bottom: 14px;
     }
-    .barra-superior a {
+    .header-audicion a {
       color: #94a3b8;
       text-decoration: none;
+      font-size: 0.8rem;
+    }
+    .badge-modulo {
+      color: #38bdf8;
+      font-weight: 800;
+      font-size: 0.76rem;
+      letter-spacing: 0.5px;
+    }
+    .pildora-simulacion {
+      background: #0284c7;
+      color: #fff;
+      display: inline-block;
+      padding: 4px 14px;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      margin-bottom: 16px;
+    }
+    .box-requisito {
+      background: #182235;
+      border: 1.5px solid #f59e0b;
+      border-radius: 10px;
+      padding: 14px;
+      text-align: left;
+      margin-bottom: 18px;
+    }
+    .box-requisito h4 {
+      margin: 0 0 6px 0;
+      color: #f59e0b;
       font-size: 0.85rem;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .box-requisito p {
+      margin: 0 0 12px 0;
+      font-size: 0.75rem;
+      color: #cbd5e1;
+      line-height: 1.35;
+    }
+    .check-audifonos {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+      font-size: 0.8rem;
+      color: #ffffff;
       font-weight: 600;
     }
-    .barra-conteo-b2c {
-      width: 100%;
-      display: flex;
-      justify-content: center;
-      margin-bottom: 8px;
+    .check-audifonos input {
+      width: 18px;
+      height: 18px;
+      accent-color: #0284c7;
     }
-    .caja-gatekeeper {
-      background: #0f172a;
-      border: 1.5px solid #f59e0b;
-      border-radius: 12px;
-      padding: 14px;
-      margin-bottom: 12px;
+    .btn-accion-audio {
       width: 100%;
-      box-sizing: border-box;
+      height: 48px;
+      background: #16a34a;
+      color: #ffffff;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      font-weight: 800;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+    .btn-accion-audio:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+    .panel-prueba {
+      display: none;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .indicador-onda {
+      width: 80px;
+      height: 80px;
+      margin: 10px auto;
+      border-radius: 50%;
+      background: rgba(56, 189, 248, 0.1);
+      border: 2px dashed #38bdf8;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2rem;
     }
     .grilla-oidos {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 12px;
-      width: 100%;
-      margin: 14px 0;
+      margin-top: 10px;
     }
     .btn-oido {
-      background: #0f172a;
-      border: 2px solid #38bdf8;
-      color: #fff;
-      padding: 16px 8px;
-      border-radius: 10px;
-      font-size: 1rem;
-      font-weight: bold;
+      height: 54px;
+      background: #1e293b;
+      border: 1.5px solid #334155;
+      color: #ffffff;
+      border-radius: 8px;
+      font-weight: 800;
+      font-size: 0.9rem;
       cursor: pointer;
-      touch-action: manipulation;
     }
     .btn-oido:active {
       background: #0284c7;
+      border-color: #38bdf8;
     }
   </style>
 </head>
 <body>
-  <main class="contenedor">
-    <header class="barra-superior">
+  <main class="tarjeta-audicion">
+    <div class="header-audicion">
       <a href="menu.html">← Menú Principal</a>
-      <span style="font-size: 0.8rem; color: #38bdf8; font-weight: 700;">MÓDULO 5: AUDITIVO</span>
-    </header>
+      <span class="badge-modulo">MÓDULO 5: AUDITIVO</span>
+    </div>
 
-    <!-- Indicador dinámico de simulación -->
-    <div id="caja-contador-simulacion" class="barra-conteo-b2c"></div>
+    <!-- Píldora de Conteo Dinámica -->
+    <div class="pildora-simulacion" id="lbl-pildora-conteo">Simulación Oficial: 1 de 4</div>
 
-    <!-- Verificación obligatoria de audífonos -->
-    <section class="caja-gatekeeper" id="caja-aviso-audifonos">
-      <h3 style="color: #f59e0b; margin: 0 0 6px 0; font-size: 0.95rem;">🎧 Exigencia Técnica de Audífonos</h3>
-      <p style="color: #94a3b8; font-size: 0.8rem; margin: 0 0 10px 0; line-height: 1.35;">
-        Para evaluar la separación binaural (oído izquierdo y derecho independientemente), es obligatorio el uso de audífonos.
-      </p>
-      <label style="display: flex; align-items: center; gap: 8px; color: #fff; font-size: 0.82rem; cursor: pointer;">
-        <input type="checkbox" id="chk-audifonos" style="width: 18px; height: 18px;">
-        Tengo audífonos estéreo colocados
-      </label>
-    </section>
+    <!-- Pantalla de Requisitos -->
+    <div id="pantalla-inicio">
+      <div class="box-requisito">
+        <h4>🎧 Exigencia Técnica de Audífonos</h4>
+        <p>Para evaluar la separación biaural (oído izquierdo y derecho independientemente), es obligatorio el uso de audífonos estéreo conectados.</p>
+        <label class="check-audifonos">
+          <input type="checkbox" id="chk-audifonos" onchange="toggleIniciarPrueba()">
+          <span>Tengo audífonos estéreo colocados</span>
+        </label>
+      </div>
+      <p style="font-size: 0.75rem; color: #94a3b8; margin-bottom: 14px;">Marca la casilla para iniciar tu Simulación Oficial.</p>
+      <!-- Botón dinámico corregido: sin el texto duro (2 de 3) -->
+      <button type="button" class="btn-accion-audio" id="btn-iniciar" disabled onclick="comenzarEvaluacionAuditiva()">Iniciar Simulación Oficial</button>
+    </div>
 
-    <div id="panel-estado" class="estado">Confirma tus audífonos para iniciar</div>
-
-    <button id="btn-iniciar-audio" class="btn-principal" disabled style="opacity: 0.5; margin-bottom: 12px;">
-      Iniciar Calibración Sonora
-    </button>
-
-    <!-- Mandos de respuesta binaural -->
-    <section class="grilla-oidos" id="zona-botones-oidos" style="display: none;">
-      <button class="btn-oido" id="btn-oido-izq">👂 Oído Izquierdo</button>
-      <button class="btn-oido" id="btn-oido-der">Oído Derecho 👂</button>
-    </section>
-
-    <div id="zona-coordinacion-audio" style="width: 100%;"></div>
+    <!-- Pantalla de Test Interactivo -->
+    <div id="pantalla-test" class="panel-prueba">
+      <div class="indicador-onda" id="anim-onda">🔊</div>
+      <p style="font-size: 0.85rem; color: #cbd5e1; margin: 0;" id="txt-instruccion-estimulo">Escuchando tono de frecuencia...</p>
+      <div class="grilla-oidos">
+        <button type="button" class="btn-oido" onclick="responderOido('IZQ')">👂 Oído Izquierdo</button>
+        <button type="button" class="btn-oido" onclick="responderOido('DER')">Oído Derecho 👂</button>
+      </div>
+    </div>
   </main>
 
-  <script src="credit-manager.js"></script>
-  <script src="audicion.js"></script>
+  <script>
+    let audioCtx = null;
+    let estimuloActual = 0;
+    let aciertos = 0;
+    const totalEstimulos = 6;
+    let ladoCorrecto = 'IZQ';
+
+    // Cargar cuota real y sincronizar textos
+    const sesion = JSON.parse(localStorage.getItem('sensometrika_sesion')) || { planId: 'part_full' };
+    const ejecuciones = JSON.parse(localStorage.getItem('sensometrika_ejecuciones')) || {};
+    const intentosPrevios = ejecuciones.auditivo || 0;
+    const limiteReal = (sesion.planId && sesion.planId.includes('plus')) ? 2 : 4;
+    const intentoEnCurso = Math.min(intentosPrevios + 1, limiteReal);
+
+    // Sincronizar etiquetas dinámicas
+    document.getElementById('lbl-pildora-conteo').innerText = `Simulación Oficial: ${intentoEnCurso} de ${limiteReal}`;
+    document.getElementById('btn-iniciar').innerText = `Iniciar Simulación Oficial (${intentoEnCurso} de ${limiteReal})`;
+
+    function toggleIniciarPrueba() {
+      const chk = document.getElementById('chk-audifonos');
+      document.getElementById('btn-iniciar').disabled = !chk.checked;
+    }
+
+    function emitirTonoBiaural(lado) {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const osc = audioCtx.createOscillator();
+      const panner = audioCtx.createStereoPanner();
+      const gain = audioCtx.createGain();
+
+      panner.pan.value = (lado === 'IZQ') ? -1 : 1;
+      osc.frequency.value = 1000;
+      osc.type = 'sine';
+
+      gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.8);
+
+      osc.connect(panner);
+      panner.connect(gain);
+      gain.connect(audioCtx.destination);
+
+      osc.start();
+      osc.stop(audioCtx.currentTime + 0.8);
+    }
+
+    function comenzarEvaluacionAuditiva() {
+      document.getElementById('pantalla-inicio').style.display = 'none';
+      document.getElementById('pantalla-test').style.display = 'flex';
+      siguienteEstimulo();
+    }
+
+    function siguienteEstimulo() {
+      if (estimuloActual >= totalEstimulos) {
+        finalizarPrueba();
+        return;
+      }
+      ladoCorrecto = (Math.random() > 0.5) ? 'DER' : 'IZQ';
+      document.getElementById('txt-instruccion-estimulo').innerText = `Estímulo ${estimuloActual + 1} de ${totalEstimulos}...`;
+      setTimeout(() => {
+        emitirTonoBiaural(ladoCorrecto);
+      }, 500);
+    }
+
+    function responderOido(ladoPulsado) {
+      if (ladoPulsado === ladoCorrecto) aciertos++;
+      estimuloActual++;
+      siguienteEstimulo();
+    }
+
+    function finalizarPrueba() {
+      const pct = Math.round((aciertos / totalEstimulos) * 100);
+      const aprobado = pct >= 75;
+
+      // Registrar métrica
+      localStorage.setItem('sensometrika_auditivo', JSON.stringify({
+        efectividad: pct,
+        aprobado: aprobado,
+        fecha: new Date().toISOString()
+      }));
+
+      // Descontar intento
+      ejecuciones.auditivo = intentoEnCurso;
+      localStorage.setItem('sensometrika_ejecuciones', JSON.stringify(ejecuciones));
+
+      alert(`¡Evaluación Auditiva Finalizada!\nResultado: ${pct}% de acierto (${aprobado ? 'APROBADO' : 'OBSERVADO'})`);
+      window.location.href = 'informe.html';
+    }
+  </script>
 </body>
 </html>
