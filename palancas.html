@@ -3,217 +3,231 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Sensometrika | Test de Palancas</title>
-  <script src="credit-manager.js"></script>
+  <title>Sensometrika | Test de Palancas (Coordinación Bimanual)</title>
   <link rel="stylesheet" href="styles.css">
   <style>
     body {
-      background-color: #0b1120;
+      background-color: #060b16;
       color: #f1f5f9;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       margin: 0;
       padding: 12px;
       display: flex;
       justify-content: center;
-      user-select: none;
-      -webkit-user-select: none;
     }
-    .tarjeta-palancas {
+    .contenedor-palancas {
       width: 100%;
       max-width: 440px;
-      background: #0f172a;
-      border: 1.5px solid #1e293b;
-      border-radius: 16px;
-      padding: 14px;
-      box-sizing: border-box;
       display: flex;
       flex-direction: column;
       gap: 10px;
     }
-    .header-modulo {
+    .barra-superior {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      font-size: 0.8rem;
+      padding: 4px 2px;
     }
-    .header-modulo a {
+    .enlace-volver {
       color: #94a3b8;
       text-decoration: none;
+      font-size: 0.82rem;
       font-weight: 600;
     }
-    .badge-top {
+    .titulo-modulo {
       color: #38bdf8;
+      font-size: 0.85rem;
       font-weight: 800;
       letter-spacing: 0.5px;
     }
-    .pila-estado {
-      background: #1e293b;
-      border: 1px solid #334155;
+    .tarjeta-modo {
+      background: #0b1329;
+      border: 1px solid #1e293b;
       border-radius: 8px;
       padding: 8px 12px;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      font-size: 0.76rem;
+      font-size: 0.80rem;
     }
     .panel-metricas {
       display: grid;
-      grid-template-columns: 1fr 1fr 1.2fr;
+      grid-template-columns: 1fr 1fr 1fr;
       gap: 8px;
-      text-align: center;
     }
     .caja-metrica {
-      background: #182235;
+      background: #0f172a;
       border: 1px solid #1e293b;
       border-radius: 8px;
-      padding: 6px;
+      padding: 8px 4px;
+      text-align: center;
     }
     .caja-metrica span {
       display: block;
-      font-size: 0.62rem;
+      font-size: 0.65rem;
       color: #94a3b8;
       text-transform: uppercase;
       font-weight: 700;
     }
     .caja-metrica strong {
-      font-size: 0.88rem;
-      color: #38bdf8;
+      display: block;
+      font-size: 1.05rem;
+      color: #ffffff;
+      margin-top: 2px;
     }
-    .canvas-contenedor {
-      width: 100%;
-      background: #090d16;
-      border: 1.5px solid #1e293b;
-      border-radius: 10px;
+
+    /* CONTENEDOR DEL CANVAS CON ESTÉTICA DE CABINA */
+    .caja-canvas {
+      position: relative;
+      background: #020617;
+      border: 2px solid #1e293b;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: inset 0 0 25px rgba(0, 0, 0, 0.9), 0 4px 16px rgba(2, 132, 199, 0.15);
       display: flex;
       justify-content: center;
       align-items: center;
-      padding: 4px;
-      box-sizing: border-box;
     }
-    canvas {
-      width: 100%;
-      height: 200px;
-      background: transparent;
+    #canvas-palancas {
       display: block;
+      background: #020617;
       touch-action: none;
     }
-    .btn-iniciar-test {
+
+    #panel-estado {
+      background: #0f172a;
+      border: 1px solid #1e293b;
+      border-radius: 8px;
+      padding: 8px 10px;
+      text-align: center;
+      font-size: 0.80rem;
+      color: #38bdf8;
+      font-weight: 600;
+    }
+
+    .btn-principal {
       width: 100%;
       height: 46px;
       background: #0284c7;
       color: #ffffff;
       border: none;
       border-radius: 8px;
-      font-size: 0.92rem;
       font-weight: 800;
+      font-size: 0.92rem;
       cursor: pointer;
+      box-shadow: 0 4px 14px rgba(2, 132, 199, 0.35);
+      transition: all 0.2s;
     }
-    .controles-palancas {
+    .btn-principal:hover { background: #0369a1; }
+
+    /* MANDOS BIMANUALES MODERNOS */
+    .zona-mandos {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 10px;
-      margin-top: 2px;
     }
-    .bloque-mando {
-      background: #182235;
+    .caja-mando {
+      background: #0b1329;
       border: 1px solid #1e293b;
       border-radius: 10px;
-      padding: 8px;
-      text-align: center;
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
     }
-    .bloque-mando span {
-      display: block;
-      font-size: 0.65rem;
+    .caja-mando span {
+      font-size: 0.70rem;
       color: #94a3b8;
       font-weight: 700;
-      margin-bottom: 6px;
+      letter-spacing: 0.5px;
     }
     .btn-mando {
-      width: 100%;
-      height: 46px;
       background: #1e293b;
-      border: 1.5px solid #334155;
+      border: 1px solid #334155;
       color: #ffffff;
       border-radius: 8px;
-      font-weight: 800;
+      font-weight: 700;
       font-size: 0.95rem;
-      touch-action: manipulation;
       cursor: pointer;
-      margin-bottom: 4px;
       user-select: none;
-      -webkit-user-select: none;
+      touch-action: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.4);
     }
-    .btn-mando:active, .btn-mando.activo {
-      background: #0284c7 !important;
-      border-color: #38bdf8 !important;
-      color: #ffffff !important;
+    .btn-mando:active, .btn-mando.pulsado {
+      background: #0284c7;
+      border-color: #38bdf8;
+      box-shadow: 0 0 12px rgba(56, 189, 248, 0.5);
     }
-    .fila-doble-mando {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 6px;
-      margin-top: 8px;
-    }
+    .btn-vertical { width: 100%; height: 42px; }
+    .grupo-horizontal { display: flex; width: 100%; gap: 8px; }
+    .btn-horizontal { flex: 1; height: 42px; }
+
+    #zona-final-palancas { width: 100%; }
   </style>
 </head>
 <body>
-  <main class="tarjeta-palancas">
-    <div class="header-modulo">
-      <a href="menu.html">← Menú Principal</a>
-      <span class="badge-top">MÓDULO 2: PALANCAS</span>
+
+  <main class="contenedor-palancas">
+    <header class="barra-superior">
+      <a href="menu.html" class="enlace-volver">← Menú Principal</a>
+      <span class="titulo-modulo">MÓDULO 2: PALANCAS</span>
+    </header>
+
+    <div class="tarjeta-modo">
+      <span id="badge-modo" style="color: #facc15; font-weight: 700;">🟡 Calibración Técnica (Demo 20s)</span>
+      <span id="txt-tiempo-cabecera" style="color: #94a3b8;">Fase de Inducción</span>
     </div>
 
-    <div class="pila-estado">
-      <span id="badge-modo-palancas" style="color: #38bdf8; font-weight: 700;">🟡 Calibración Técnica (Demo 20 s)</span>
-      <span id="txt-tiempo-palancas" style="color: #94a3b8;">Fase de Inducción</span>
-    </div>
-
-    <div class="panel-metricas">
+    <section class="panel-metricas">
       <div class="caja-metrica">
         <span>Contactos</span>
         <strong id="metrica-contactos" style="color: #ef4444;">0</strong>
       </div>
       <div class="caja-metrica">
-        <span>T. Contacto</span>
-        <strong id="metrica-tiempo-contacto">0.0 s</strong>
+        <span>Tiempo</span>
+        <strong id="metrica-tiempo">20 s</strong>
       </div>
       <div class="caja-metrica">
         <span>Circuito</span>
-        <strong id="metrica-circuito" style="font-size: 0.72rem;">Calibración</strong>
+        <strong id="metrica-circuito" style="font-size: 0.78rem; color: #38bdf8;">Trazado 1</strong>
       </div>
+    </section>
+
+    <!-- LIENZO CANVAS DE ALTA RESOLUCIÓN -->
+    <div class="caja-canvas">
+      <canvas id="canvas-palancas" width="414" height="230"></canvas>
     </div>
 
-    <div class="canvas-contenedor">
-      <canvas id="lienzo-palancas" width="320" height="200"></canvas>
-    </div>
+    <div id="panel-estado">Presiona "Iniciar Calibración Guiada" para comenzar</div>
 
-    <p id="panel-estado" style="margin: 0; font-size: 0.75rem; color: #94a3b8; text-align: center; min-height: 18px;">
-      Usa los botones inferiores para mover el puntero.
-    </p>
+    <button type="button" id="btn-iniciar" class="btn-principal">
+      Iniciar Calibración Guiada (Demo)
+    </button>
 
-    <div id="zona-coordinacion-palancas">
-      <button type="button" class="btn-iniciar-test" id="btn-iniciar-palancas">
-        Iniciar Calibración Guiada (Demo)
-      </button>
-    </div>
+    <div id="zona-final-palancas"></div>
 
-    <div class="controles-palancas">
-      <!-- Mano Izquierda: Eje Y -->
-      <div class="bloque-mando">
-        <span>Mano Izq (Vertical)</span>
-        <button type="button" class="btn-mando" id="btn-izq-arriba">▲ Arriba</button>
-        <button type="button" class="btn-mando" id="btn-izq-abajo">▼ Abajo</button>
+    <!-- MANDOS BIMANUALES -->
+    <section class="zona-mandos">
+      <!-- MANO IZQUIERDA: VERTICAL -->
+      <div class="caja-mando">
+        <span>MANO IZQ (VERTICAL)</span>
+        <button type="button" id="btn-arriba" class="btn-mando btn-vertical">▲ Arriba</button>
+        <button type="button" id="btn-abajo" class="btn-mando btn-vertical">▼ Abajo</button>
       </div>
 
-      <!-- Mano Derecha: Eje X -->
-      <div class="bloque-mando">
-        <span>Mano Der (Horizontal)</span>
-        <div class="fila-doble-mando">
-          <button type="button" class="btn-mando" id="btn-der-izq">◄</button>
-          <button type="button" class="btn-mando" id="btn-der-der">►</button>
+      <!-- MANO DERECHA: HORIZONTAL -->
+      <div class="caja-mando">
+        <span>MANO DER (HORIZONTAL)</span>
+        <div class="grupo-horizontal">
+          <button type="button" id="btn-izq" class="btn-mando btn-horizontal">◄</button>
+          <button type="button" id="btn-der" class="btn-mando btn-horizontal">►</button>
         </div>
       </div>
-    </div>
+    </section>
   </main>
 
   <script src="palancas.js"></script>
