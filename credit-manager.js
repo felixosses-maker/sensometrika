@@ -1,11 +1,7 @@
 /* ==========================================================================
    SENSOMETRIKA - GESTOR CENTRAL DE CRÉDITOS Y BLOQUEOS (credit-manager.js)
-   • Cuotas Dinámicas:
-     - Básico: 3 psicomotrices (1, 2 y 3) | 0 sensoriales
-     - Plus: 5 psicomotrices | 2 visuales | 0 auditivo
-     - Full: 8 psicomotrices | 4 sensoriales (visual y auditivo)
-     - B2B Empresa: 1 de 1 examen oficial por trabajador
-   • Bloqueo estricto al agotar cupos
+   • Cuotas Dinámicas y Bloqueo Estricto B2C / B2B
+   • Sincronización en tiempo real con menu.html y los módulos
    ========================================================================== */
 
 const CreditManager = {
@@ -18,15 +14,19 @@ const CreditManager = {
     if (!sesion) {
       sesion = {
         rol: 'particular',
-        planId: 'part_full',
-        nombrePlan: 'Pase Full Integral',
-        simulacionesConsumidas: { reactimetro: 0, palancas: 0, punteo: 0, visual: 0, auditivo: 0 }
+        planId: 'part_basico',
+        nombrePlan: 'Pase Básico Psicomotriz',
+        simulacionesConsumidas: { reactimetro: 0, palancas: 0, punteo: 0, visual: 0, auditivo: 0 },
+        demosCompletados: { reactimetro: false, palancas: false, punteo: false, visual: false, auditivo: false }
       };
       localStorage.setItem('sensometrika_sesion', JSON.stringify(sesion));
     }
 
     if (!sesion.simulacionesConsumidas) {
       sesion.simulacionesConsumidas = { reactimetro: 0, palancas: 0, punteo: 0, visual: 0, auditivo: 0 };
+    }
+    if (!sesion.demosCompletados) {
+      sesion.demosCompletados = { reactimetro: false, palancas: false, punteo: false, visual: false, auditivo: false };
     }
     return sesion;
   },
@@ -48,26 +48,21 @@ const CreditManager = {
   },
 
   obtenerLimiteModulo: function(moduloKey) {
-    if (this.esB2B()) return 1; // B2B: exactamente 1 examen oficial
+    if (this.esB2B()) return 1;
 
     const sesion = this.obtenerSesion();
     const plan = (sesion.planId || '').toLowerCase();
     const nombre = (sesion.nombrePlan || '').toLowerCase();
-
     const esSensorial = (moduloKey === 'visual' || moduloKey === 'auditivo');
 
-    // Detección robusta de Plan Full
     if (plan.includes('full') || nombre.includes('full')) {
       return esSensorial ? 4 : 8;
-    } 
-    // Detección robusta de Plan Plus
-    else if (plan.includes('plus') || nombre.includes('plus')) {
+    } else if (plan.includes('plus') || nombre.includes('plus')) {
       if (moduloKey === 'visual') return 2;
       if (moduloKey === 'auditivo') return 0;
       return 5;
-    } 
-    // Plan Básico
-    else {
+    } else {
+      // Plan Básico
       return esSensorial ? 0 : 3;
     }
   },
@@ -98,8 +93,7 @@ const CreditManager = {
       return false;
     }
 
-    const consumidas = this.obtenerConsumidas(moduloKey);
-    if (consumidas >= max) {
+    if (!this.puedeRendir(moduloKey)) {
       alert(`Has completado todas tus simulaciones (${max}/${max}) para este módulo.`);
       window.location.replace('menu.html');
       return false;
@@ -118,10 +112,18 @@ const CreditManager = {
   },
 
   demoYaRealizado: function(moduloKey) {
-    return localStorage.getItem(`sensometrika_${moduloKey}_demo_ok`) === 'true';
+    const sesion = this.obtenerSesion();
+    return Boolean(
+      (sesion.demosCompletados && sesion.demosCompletados[moduloKey]) ||
+      localStorage.getItem(`sensometrika_${moduloKey}_demo_ok`) === 'true'
+    );
   },
 
   marcarDemoCompletado: function(moduloKey) {
+    const sesion = this.obtenerSesion();
+    if (!sesion.demosCompletados) sesion.demosCompletados = {};
+    sesion.demosCompletados[moduloKey] = true;
+    this.guardarSesion(sesion);
     localStorage.setItem(`sensometrika_${moduloKey}_demo_ok`, 'true');
   },
 

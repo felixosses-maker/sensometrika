@@ -89,7 +89,7 @@
       background: #131d33;
     }
 
-    /* ESTILO DE BLOQUEO */
+    /* ESTILO CUANDO EL MÓDULO ESTÁ BLOQUEADO POR CUPO */
     .tarjeta-modulo.modulo-bloqueado {
       opacity: 0.42 !important;
       pointer-events: none !important;
@@ -164,7 +164,7 @@
         <strong id="menu-user-nombre">Mariela Carcamo Fernández</strong>
         <span id="menu-user-rut">RUT: 13.333.333-3</span>
       </div>
-      <span class="badge-plan-activo" id="menu-badge-plan">Pase Full Integral</span>
+      <span class="badge-plan-activo" id="menu-badge-plan">Pase Básico Psicomotriz</span>
     </div>
 
     <nav class="grilla-modulos">
@@ -175,7 +175,7 @@
           <p>Tiempo de reacción y frenado simple</p>
         </div>
         <div class="estado-modulo">
-          <span class="badge-contador" id="cont-reactimetro">Simulaciones: 0/8</span>
+          <span class="badge-contador" id="cont-reactimetro">Simulaciones: 0/3</span>
         </div>
       </a>
 
@@ -186,7 +186,7 @@
           <p>Coordinación motriz bimanual</p>
         </div>
         <div class="estado-modulo">
-          <span class="badge-contador" id="cont-palancas">Simulaciones: 0/8</span>
+          <span class="badge-contador" id="cont-palancas">Simulaciones: 0/3</span>
         </div>
       </a>
 
@@ -197,35 +197,35 @@
           <p>Ritmo y precisión viso-motora</p>
         </div>
         <div class="estado-modulo">
-          <span class="badge-contador" id="cont-punteo">Simulaciones: 0/8</span>
+          <span class="badge-contador" id="cont-punteo">Simulaciones: 0/3</span>
         </div>
       </a>
 
-      <!-- Módulo 4: Screening Visual -->
+      <!-- Módulo 4 -->
       <a href="visual.html" class="tarjeta-modulo" id="card-visual">
         <div class="info-modulo">
           <h3>Módulo 4: Screening Visual</h3>
           <p>Test Ishihara y Agudeza (Optotipo E)</p>
         </div>
         <div class="estado-modulo">
-          <span class="badge-contador" id="cont-visual">Simulaciones: 0/4</span>
+          <span class="badge-contador" id="cont-visual">🔒 No incluido</span>
         </div>
       </a>
 
-      <!-- Módulo 5: Tamizaje Auditivo -->
+      <!-- Módulo 5 -->
       <a href="audicion.html" class="tarjeta-modulo" id="card-auditivo">
         <div class="info-modulo">
           <h3>Módulo 5: Tamizaje Auditivo</h3>
           <p>Discriminación tonal biaural</p>
         </div>
         <div class="estado-modulo">
-          <span class="badge-contador" id="cont-auditivo">Simulaciones: 0/4</span>
+          <span class="badge-contador" id="cont-auditivo">🔒 No incluido</span>
         </div>
       </a>
     </nav>
 
     <a href="informe.html" class="btn-ver-informe">📊 Ver Informe y Dictamen Final</a>
-    <button type="button" class="btn-reiniciar-ciclo" onclick="reiniciarSimulacionActual()">Reiniciar corrida de prueba (Limpiar métricas en memoria)</button>
+    <button type="button" class="btn-reiniciar-ciclo" onclick="reiniciarSimulacionActual()">Reiniciar corrida de prueba (Limpiar métricas)</button>
   </div>
 
   <script>
@@ -258,34 +258,27 @@
         const consumidos = CreditManager.obtenerConsumidas(m.id);
 
         if (max === 0) {
-          // Módulo no incluido en el plan contratado
           if (tarjeta) {
             tarjeta.classList.add('modulo-bloqueado');
             tarjeta.removeAttribute('href');
-            tarjeta.style.pointerEvents = 'none';
           }
           if (contador) {
             contador.innerText = '🔒 No incluido';
             contador.classList.add('bloqueado');
           }
         } else if (consumidos >= max) {
-          // Cupo agotado exclusivamente para este módulo
           if (tarjeta) {
             tarjeta.classList.add('modulo-bloqueado');
             tarjeta.removeAttribute('href');
-            tarjeta.style.pointerEvents = 'none';
           }
           if (contador) {
-            contador.innerText = `${consumidos}/${max} (Bloqueado)`;
+            contador.innerText = `Simulaciones: ${consumidos}/${max} (Agotado)`;
             contador.classList.add('bloqueado');
           }
         } else {
-          // MÓDULO DISPONIBLE PARA ENTRAR
           if (tarjeta) {
             tarjeta.classList.remove('modulo-bloqueado');
             tarjeta.setAttribute('href', m.url);
-            tarjeta.style.pointerEvents = 'auto';
-            tarjeta.style.opacity = '1';
           }
           if (contador) {
             contador.innerText = `Simulaciones: ${consumidos}/${max}`;
