@@ -82,14 +82,15 @@
       justify-content: space-between;
       align-items: center;
       transition: border-color 0.2s, background-color 0.2s;
+      cursor: pointer;
     }
     .tarjeta-modulo:hover {
       border-color: #38bdf8;
       background: #131d33;
     }
 
-    /* ESTILO DE BLOQUEO ESTRICTO */
-    .modulo-bloqueado {
+    /* MÓDULO BLOQUEADO */
+    .tarjeta-modulo.modulo-bloqueado {
       opacity: 0.42 !important;
       pointer-events: none !important;
       cursor: not-allowed !important;
@@ -243,11 +244,11 @@
       }
 
       const modulos = [
-        { id: 'reactimetro', cardId: 'card-reactimetro', contId: 'cont-reactimetro' },
-        { id: 'palancas',    cardId: 'card-palancas',    contId: 'cont-palancas' },
-        { id: 'punteo',      cardId: 'card-punteo',      contId: 'cont-punteo' },
-        { id: 'visual',      cardId: 'card-visual',      contId: 'cont-visual' },
-        { id: 'auditivo',    cardId: 'card-auditivo',    contId: 'cont-auditivo' }
+        { id: 'reactimetro', cardId: 'card-reactimetro', contId: 'cont-reactimetro', url: 'reactimetro.html' },
+        { id: 'palancas',    cardId: 'card-palancas',    contId: 'cont-palancas',    url: 'palancas.html' },
+        { id: 'punteo',      cardId: 'card-punteo',      contId: 'cont-punteo',      url: 'punteo.html' },
+        { id: 'visual',      cardId: 'card-visual',      contId: 'cont-visual',      url: 'visual.html' },
+        { id: 'auditivo',    cardId: 'card-auditivo',    contId: 'cont-auditivo',    url: 'audicion.html' }
       ];
 
       modulos.forEach(m => {
@@ -257,30 +258,33 @@
         const consumidos = CreditManager.obtenerConsumidas(m.id);
 
         if (max === 0) {
-          // Módulo no incluido en el plan comprado
-          if (tarjeta) tarjeta.classList.add('modulo-bloqueado');
+          if (tarjeta) {
+            tarjeta.classList.add('modulo-bloqueado');
+            tarjeta.removeAttribute('href');
+          }
           if (contador) {
             contador.innerText = '🔒 No incluido';
             contador.classList.add('bloqueado');
           }
+        } else if (consumidos >= max) {
+          // Solo este módulo específico se bloquea
+          if (tarjeta) {
+            tarjeta.classList.add('modulo-bloqueado');
+            tarjeta.removeAttribute('href');
+          }
+          if (contador) {
+            contador.innerText = `${consumidos}/${max} (Bloqueado)`;
+            contador.classList.add('bloqueado');
+          }
         } else {
-          if (consumidos >= max) {
-            // BLOQUEO ESTRICTO POR CUPO AGOTADO
-            if (tarjeta) {
-              tarjeta.classList.add('modulo-bloqueado');
-              tarjeta.removeAttribute('href');
-            }
-            if (contador) {
-              contador.innerText = `${consumidos}/${max} (Bloqueado)`;
-              contador.classList.add('bloqueado');
-            }
-          } else {
-            // Módulo activo con cupo disponible
-            if (tarjeta) tarjeta.classList.remove('modulo-bloqueado');
-            if (contador) {
-              contador.innerText = `Simulaciones: ${consumidos}/${max}`;
-              contador.classList.remove('bloqueado');
-            }
+          // El módulo está activo y se puede ingresar de forma libre
+          if (tarjeta) {
+            tarjeta.classList.remove('modulo-bloqueado');
+            tarjeta.setAttribute('href', m.url);
+          }
+          if (contador) {
+            contador.innerText = `Simulaciones: ${consumidos}/${max}`;
+            contador.classList.remove('bloqueado');
           }
         }
       });

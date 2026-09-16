@@ -4,239 +4,209 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Sensometrika | Test de Palancas</title>
+  <script src="credit-manager.js"></script>
   <link rel="stylesheet" href="styles.css">
   <style>
-    .barra-superior {
-      width: 100%;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 8px;
-    }
-    .barra-superior a {
-      color: #94a3b8;
-      text-decoration: none;
-      font-size: 0.85rem;
-      font-weight: 600;
-    }
-    .btn-guia {
-      background: #0f172a;
-      border: 1px solid #38bdf8;
-      color: #38bdf8;
-      padding: 4px 8px;
-      border-radius: 6px;
-      font-size: 0.75rem;
-      cursor: pointer;
-      font-weight: 600;
-    }
-    .btn-guia:hover {
-      background: #1e293b;
-    }
-    .barra-conteo-b2c {
-      width: 100%;
+    body {
+      background-color: #0b1120;
+      color: #f1f5f9;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      margin: 0;
+      padding: 12px;
       display: flex;
       justify-content: center;
-      margin-bottom: 8px;
     }
-    .barra-calibracion {
-      background: #0f172a;
-      border: 1px solid #38bdf8;
-      border-radius: 8px;
-      padding: 8px 12px;
-      font-size: 0.78rem;
-      color: #94a3b8;
+    .tarjeta-palancas {
       width: 100%;
+      max-width: 440px;
+      background: #0f172a;
+      border: 1.5px solid #1e293b;
+      border-radius: 16px;
+      padding: 16px;
+      box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .header-modulo {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 10px;
-      box-sizing: border-box;
+      font-size: 0.8rem;
     }
-    .panel-metricas-palancas {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 8px;
-      width: 100%;
-      margin-bottom: 10px;
+    .header-modulo a {
+      color: #94a3b8;
+      text-decoration: none;
     }
-    .tarjeta-metrica-p {
-      background-color: #0f172a;
+    .badge-top {
+      color: #38bdf8;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+    }
+    .pila-estado {
+      background: #1e293b;
       border: 1px solid #334155;
-      padding: 8px 4px;
       border-radius: 8px;
+      padding: 8px 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.76rem;
+    }
+    .panel-metricas {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1.2fr;
+      gap: 8px;
       text-align: center;
     }
-    .tarjeta-metrica-p span { display: block; font-size: 0.7rem; color: #94a3b8; }
-    .tarjeta-metrica-p strong { font-size: 0.95rem; color: #38bdf8; }
-    #canvas-circuito {
-      background: #020617;
-      border: 2px solid #1e293b;
-      border-radius: 12px;
-      display: block;
-      margin: 0 auto 10px auto;
-      touch-action: none;
+    .caja-metrica {
+      background: #182235;
+      border: 1px solid #1e293b;
+      border-radius: 8px;
+      padding: 6px;
     }
-    .area-mandos {
+    .caja-metrica span {
+      display: block;
+      font-size: 0.62rem;
+      color: #94a3b8;
+      text-transform: uppercase;
+    }
+    .caja-metrica strong {
+      font-size: 0.85rem;
+      color: #38bdf8;
+    }
+    .canvas-contenedor {
+      width: 100%;
+      background: #090d16;
+      border: 1.5px solid #1e293b;
+      border-radius: 10px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 4px;
+      box-sizing: border-box;
+    }
+    canvas {
+      width: 100%;
+      height: 200px;
+      background: transparent;
+      display: block;
+    }
+    .btn-iniciar-test {
+      width: 100%;
+      height: 48px;
+      background: #0284c7;
+      color: #ffffff;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      font-weight: 800;
+      cursor: pointer;
+    }
+    .controles-palancas {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 12px;
-      width: 100%;
-      margin-top: 6px;
+      margin-top: 4px;
     }
-    .caja-mando {
-      background: #0f172a;
-      border: 1px solid #334155;
-      border-radius: 8px;
+    .bloque-mando {
+      background: #182235;
+      border: 1px solid #1e293b;
+      border-radius: 10px;
       padding: 8px;
       text-align: center;
     }
-    .caja-mando h4 {
-      margin: 0 0 6px 0;
-      font-size: 0.72rem;
+    .bloque-mando span {
+      display: block;
+      font-size: 0.65rem;
       color: #94a3b8;
+      font-weight: 700;
+      margin-bottom: 6px;
     }
     .btn-mando {
+      width: 100%;
+      height: 42px;
       background: #1e293b;
-      color: #fff;
-      border: 1px solid #475569;
+      border: 1px solid #334155;
+      color: #ffffff;
       border-radius: 6px;
-      padding: 10px;
+      font-weight: 800;
       font-size: 0.85rem;
-      font-weight: bold;
-      cursor: pointer;
-      user-select: none;
       touch-action: manipulation;
+      cursor: pointer;
+      margin-bottom: 4px;
     }
     .btn-mando:active {
       background: #0284c7;
       border-color: #38bdf8;
     }
-
-    /* Modal explicativo emergente */
-    .modal-flotante {
-      display: none;
-      position: fixed;
-      inset: 0;
-      background: rgba(2, 6, 23, 0.85);
-      backdrop-filter: blur(4px);
-      z-index: 999;
-      align-items: center;
-      justify-content: center;
-      padding: 16px;
-      box-sizing: border-box;
-    }
-    .modal-caja {
-      background: #0f172a;
-      border: 1.5px solid #38bdf8;
-      border-radius: 12px;
-      max-width: 380px;
-      width: 100%;
-      padding: 18px;
-      box-sizing: border-box;
-      color: #cbd5e1;
-      text-align: left;
-    }
-    .modal-caja h3 {
-      margin: 0 0 8px 0;
-      color: #38bdf8;
-      font-size: 1rem;
-    }
-    .modal-caja ul {
-      margin: 0 0 14px 0;
-      padding-left: 18px;
-      font-size: 0.8rem;
-      line-height: 1.45;
-    }
-    .modal-caja li {
-      margin-bottom: 6px;
+    .fila-doble-mando {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
     }
   </style>
 </head>
 <body>
-  <main class="contenedor">
-    <header class="barra-superior">
+  <main class="tarjeta-palancas">
+    <div class="header-modulo">
       <a href="menu.html">← Menú Principal</a>
-      <button class="btn-guia" id="btn-abrir-guia" type="button" onclick="abrirModalGuia()">❓ ¿Cómo funciona?</button>
-    </header>
-
-    <!-- Indicador dinámico de simulación oficial -->
-    <div id="caja-contador-simulacion" class="barra-conteo-b2c"></div>
-
-    <div class="barra-calibracion">
-      <span id="badge-modo">🟢 Demo Calibración (20 s)</span>
-      <span id="txt-tiempo-cabecera">Tiempo: <strong id="lbl-cronometro">20 s</strong></span>
+      <span class="badge-top">MÓDULO 2: PALANCAS</span>
     </div>
 
-    <section class="panel-metricas-palancas">
-      <div class="tarjeta-metrica-p">
+    <div class="pila-estado">
+      <span id="badge-modo-palancas" style="color: #38bdf8; font-weight: 700;">🟡 Calibración Técnica (Demo 20 s)</span>
+      <span id="txt-tiempo-palancas" style="color: #94a3b8;">Fase de Inducción</span>
+    </div>
+
+    <div class="panel-metricas">
+      <div class="caja-metrica">
         <span>Contactos</span>
-        <strong id="metrica-contactos" style="color:#ef4444;">0</strong>
+        <strong id="metrica-contactos" style="color: #ef4444;">0</strong>
       </div>
-      <div class="tarjeta-metrica-p">
+      <div class="caja-metrica">
         <span>T. Contacto</span>
-        <strong id="metrica-t-contacto">0.0 s</strong>
+        <strong id="metrica-tiempo-contacto">0.0 s</strong>
       </div>
-      <div class="tarjeta-metrica-p">
+      <div class="caja-metrica">
         <span>Circuito</span>
-        <strong id="metrica-circuito" style="font-size:0.8rem;">Calibración A</strong>
+        <strong id="metrica-circuito" style="font-size: 0.72rem;">Calibración</strong>
       </div>
-    </section>
-
-    <!-- Pista del circuito Canvas -->
-    <canvas id="canvas-circuito" width="340" height="180"></canvas>
-
-    <div id="panel-estado" style="font-size:0.8rem; color:#94a3b8; text-align:center; margin-bottom:8px;">
-      Usa los mandos inferiores para guiar el puntero
     </div>
 
-    <button id="btn-accion" class="btn-principal" style="margin-bottom:10px;">Iniciar Calibración (20 s)</button>
+    <div class="canvas-contenedor">
+      <canvas id="lienzo-palancas" width="320" height="200"></canvas>
+    </div>
 
-    <div id="zona-coordinacion-test" style="width:100%;"></div>
+    <p id="panel-estado" style="margin: 0; font-size: 0.75rem; color: #94a3b8; text-align: center; min-height: 18px;">
+      Presiona el botón para iniciar.
+    </p>
 
-    <!-- Mandos táctiles bimanuales -->
-    <section class="area-mandos">
-      <div class="caja-mando">
-        <h4>Mano Izq (Vertical)</h4>
-        <div style="display:flex; flex-direction:column; gap:6px;">
-          <button class="btn-mando" id="btn-arriba">▲ Arriba</button>
-          <button class="btn-mando" id="btn-abajo">▼ Abajo</button>
-        </div>
-      </div>
-      <div class="caja-mando">
-        <h4>Mano Der (Horizontal)</h4>
-        <div style="display:flex; gap:6px; justify-content:center; height: 100%; align-items: center;">
-          <button class="btn-mando" id="btn-izq" style="flex:1;">◄</button>
-          <button class="btn-mando" id="btn-der" style="flex:1;">►</button>
-        </div>
-      </div>
-    </section>
-  </main>
-
-  <!-- Modal explicativo de Palancas -->
-  <aside class="modal-flotante" id="modal-guia">
-    <div class="modal-caja">
-      <h3>❓ Protocolo Módulo 2: Test de Palancas</h3>
-      <ul>
-        <li><strong>Control bimanual:</strong> Usa la mano izquierda para mover el puntero de arriba a abajo y la derecha para avanzar hacia los lados[cite: 5].</li>
-        <li><strong>Canal metálico:</strong> Lleva el puntero amarillo hasta la meta verde sin tocar las paredes azules.</li>
-        <li><strong>Contactos y tiempo:</strong> Cada salida del canal suma errores y tiempo de contacto.</li>
-        <li><strong>Estándar legal D.S. N° 170:</strong> Máximo 3 toques completando el circuito en menos de 60 segundos[cite: 5].</li>
-      </ul>
-      <button type="button" class="btn-principal" onclick="cerrarModalGuia()" style="height: 38px; font-size: 0.85rem;">
-        Entendido
+    <div id="zona-coordinacion-palancas">
+      <button type="button" class="btn-iniciar-test" id="btn-iniciar-palancas">
+        Iniciar Calibración Guiada (Demo)
       </button>
     </div>
-  </aside>
 
-  <script src="credit-manager.js"></script>
+    <div class="controles-palancas">
+      <!-- Mano Izquierda (Vertical) -->
+      <div class="bloque-mando">
+        <span>Mano Izq (Vertical)</span>
+        <button type="button" class="btn-mando" id="btn-izq-arriba">▲ Arriba</button>
+        <button type="button" class="btn-mando" id="btn-izq-abajo">▼ Abajo</button>
+      </div>
+
+      <!-- Mano Derecha (Horizontal) -->
+      <div class="bloque-mando">
+        <span>Mano Der (Horizontal)</span>
+        <div class="fila-doble-mando" style="margin-top: 14px;">
+          <button type="button" class="btn-mando" id="btn-der-izq">◄</button>
+          <button type="button" class="btn-mando" id="btn-der-der">►</button>
+        </div>
+      </div>
+    </div>
+  </main>
+
   <script src="palancas.js"></script>
-  <script>
-    function abrirModalGuia() {
-      document.getElementById('modal-guia').style.display = 'flex';
-    }
-    function cerrarModalGuia() {
-      document.getElementById('modal-guia').style.display = 'none';
-    }
-  </script>
 </body>
 </html>
