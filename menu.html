@@ -88,8 +88,6 @@
       border-color: #38bdf8;
       background: #131d33;
     }
-
-    /* ESTILO CUANDO EL MÓDULO ESTÁ BLOQUEADO POR CUPO */
     .tarjeta-modulo.modulo-bloqueado {
       opacity: 0.42 !important;
       pointer-events: none !important;
@@ -162,7 +160,7 @@
     <div class="ficha-usuario-resumen">
       <div>
         <strong id="menu-user-nombre">Mariela Carcamo Fernández</strong>
-        <span id="menu-user-rut">RUT: 13.333.333-3</span>
+        <span id="menu-user-rut">RUT: 12.666.787-9</span>
       </div>
       <span class="badge-plan-activo" id="menu-badge-plan">Pase Básico Psicomotriz</span>
     </div>
@@ -233,7 +231,7 @@
       const sesion = CreditManager.obtenerSesion();
       const datosUser = JSON.parse(localStorage.getItem('sensometrika_datos_usuario')) || { 
         nombre: 'Mariela Carcamo Fernández', 
-        rut: '13.333.333-3' 
+        rut: '12.666.787-9' 
       };
 
       document.getElementById('menu-user-nombre').innerText = datosUser.nombre || 'Evaluado';
@@ -241,6 +239,27 @@
       if (sesion.nombrePlan) {
         document.getElementById('menu-badge-plan').innerText = sesion.nombrePlan;
         document.getElementById('lbl-subtitulo-plan').innerText = `Evaluación • ${sesion.nombrePlan}`;
+      }
+
+      // Sincronizar conteos desde CreditManager o desde los historiales locales acumulados
+      const histPal = JSON.parse(localStorage.getItem('sensometrika_historial_palancas')) || [];
+      const histPunt = JSON.parse(localStorage.getItem('sensometrika_historial_punteo')) || [];
+      const histReact = JSON.parse(localStorage.getItem('sensometrika_historial_reactimetro')) || [];
+
+      if (histPal.length > CreditManager.obtenerConsumidas('palancas')) {
+        for (let i = CreditManager.obtenerConsumidas('palancas'); i < histPal.length; i++) {
+          CreditManager.registrarConsumo('palancas');
+        }
+      }
+      if (histPunt.length > CreditManager.obtenerConsumidas('punteo')) {
+        for (let i = CreditManager.obtenerConsumidas('punteo'); i < histPunt.length; i++) {
+          CreditManager.registrarConsumo('punteo');
+        }
+      }
+      if (histReact.length > CreditManager.obtenerConsumidas('reactimetro')) {
+        for (let i = CreditManager.obtenerConsumidas('reactimetro'); i < histReact.length; i++) {
+          CreditManager.registrarConsumo('reactimetro');
+        }
       }
 
       const modulos = [
@@ -297,6 +316,7 @@
         ['reactimetro', 'palancas', 'punteo', 'visual', 'auditivo'].forEach(m => {
           localStorage.removeItem(`sensometrika_${m}`);
           localStorage.removeItem(`sensometrika_${m}_demo_ok`);
+          localStorage.removeItem(`sensometrika_historial_${m}`);
         });
 
         location.reload();

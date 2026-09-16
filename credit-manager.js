@@ -1,7 +1,7 @@
 /* ==========================================================================
-   SENSOMETRIKA - GESTOR CENTRAL DE CRÉDITOS Y BLOQUEOS (credit-manager.js)
-   • Cuotas Dinámicas y Bloqueo Estricto B2C / B2B
-   • Sincronización en tiempo real con menu.html y los módulos
+   SENSOMETRIKA - GESTOR CENTRAL DE CRÉDITOS Y CONTEO (credit-manager.js)
+   • 1 Demo de inducción + N Simulaciones Oficiales según Plan B2C
+   • Sincronización estricta con menu.html y bloqueo definitivo
    ========================================================================== */
 
 const CreditManager = {
@@ -33,6 +33,7 @@ const CreditManager = {
 
   guardarSesion: function(sesion) {
     localStorage.setItem('sensometrika_sesion', JSON.stringify(sesion));
+    // Sincronizar clave de respaldo
     localStorage.setItem('sensometrika_ejecuciones', JSON.stringify(sesion.simulacionesConsumidas));
   },
 
