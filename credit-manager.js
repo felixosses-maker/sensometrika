@@ -1,16 +1,20 @@
 /* ==========================================================================
    SENSOMETRIKA - GESTOR CENTRAL DE CRÉDITOS Y BLOQUEOS (credit-manager.js)
    • Cuotas Dinámicas:
-     - Básico: 3 simulaciones psicomotrices (1, 2 y 3)
-     - Plus: 5 psicomotrices / 2 visuales
-     - Full: 8 psicomotrices / 4 sensoriales (visual y auditivo)
+     - Básico: 3 psicomotrices (1, 2 y 3) | 0 sensoriales
+     - Plus: 5 psicomotrices | 2 visuales | 0 auditivo
+     - Full: 8 psicomotrices | 4 sensoriales (visual y auditivo)
      - B2B Empresa: 1 de 1 examen oficial por trabajador
-   • Bloqueo estricto al retroceder o agotar cupos
+   • Bloqueo estricto al agotar cupos
    ========================================================================== */
 
 const CreditManager = {
   obtenerSesion: function() {
-    let sesion = JSON.parse(localStorage.getItem('sensometrika_sesion'));
+    let sesion = null;
+    try {
+      sesion = JSON.parse(localStorage.getItem('sensometrika_sesion'));
+    } catch (e) {}
+
     if (!sesion) {
       sesion = {
         rol: 'particular',
@@ -20,6 +24,7 @@ const CreditManager = {
       };
       localStorage.setItem('sensometrika_sesion', JSON.stringify(sesion));
     }
+
     if (!sesion.simulacionesConsumidas) {
       sesion.simulacionesConsumidas = { reactimetro: 0, palancas: 0, punteo: 0, visual: 0, auditivo: 0 };
     }
@@ -28,7 +33,6 @@ const CreditManager = {
 
   guardarSesion: function(sesion) {
     localStorage.setItem('sensometrika_sesion', JSON.stringify(sesion));
-    // Sincronizar espejo para compatibilidad
     localStorage.setItem('sensometrika_ejecuciones', JSON.stringify(sesion.simulacionesConsumidas));
   },
 
@@ -38,24 +42,32 @@ const CreditManager = {
     return (
       sesion.rol === 'empresa' ||
       (sesion.planId && String(sesion.planId).startsWith('b2b')) ||
+      (datosUser.tipo === 'empresa') ||
       (datosUser.empresa && datosUser.empresa.toLowerCase() !== 'particular')
     );
   },
 
   obtenerLimiteModulo: function(moduloKey) {
-    if (this.esB2B()) return 1; // B2B es 1 de 1 por trabajador
+    if (this.esB2B()) return 1; // B2B: exactamente 1 examen oficial
 
     const sesion = this.obtenerSesion();
-    const planId = sesion.planId || 'part_basico';
+    const plan = (sesion.planId || '').toLowerCase();
+    const nombre = (sesion.nombrePlan || '').toLowerCase();
 
     const esSensorial = (moduloKey === 'visual' || moduloKey === 'auditivo');
 
-    if (planId.includes('full') || planId === 'part_full') {
+    // Detección robusta de Plan Full
+    if (plan.includes('full') || nombre.includes('full')) {
       return esSensorial ? 4 : 8;
-    } else if (planId.includes('plus') || planId === 'part_plus') {
-      return esSensorial ? 2 : 5;
-    } else {
-      // Plan Básico
+    } 
+    // Detección robusta de Plan Plus
+    else if (plan.includes('plus') || nombre.includes('plus')) {
+      if (moduloKey === 'visual') return 2;
+      if (moduloKey === 'auditivo') return 0;
+      return 5;
+    } 
+    // Plan Básico
+    else {
       return esSensorial ? 0 : 3;
     }
   },
@@ -72,16 +84,23 @@ const CreditManager = {
   },
 
   puedeRendir: function(moduloKey) {
-    const consumidas = this.obtenerConsumidas(moduloKey);
     const max = this.obtenerLimiteModulo(moduloKey);
+    if (max === 0) return false;
+    const consumidas = this.obtenerConsumidas(moduloKey);
     return consumidas < max;
   },
 
-  // BARRERA DE ENTRADA: Si intenta entrar tras haber agotado el cupo, bloquea y redirige
   validarAccesoOBloquear: function(moduloKey) {
-    if (!this.puedeRendir(moduloKey)) {
-      const max = this.obtenerLimiteModulo(moduloKey);
-      alert(`Has completado todas tus simulaciones (${max}/${max}) para este módulo. Serás redirigido al Menú Principal.`);
+    const max = this.obtenerLimiteModulo(moduloKey);
+    if (max === 0) {
+      alert('Este módulo no está incluido en tu plan contratado.');
+      window.location.replace('menu.html');
+      return false;
+    }
+
+    const consumidas = this.obtenerConsumidas(moduloKey);
+    if (consumidas >= max) {
+      alert(`Has completado todas tus simulaciones (${max}/${max}) para este módulo.`);
       window.location.replace('menu.html');
       return false;
     }

@@ -89,7 +89,7 @@
       background: #131d33;
     }
 
-    /* MÓDULO BLOQUEADO */
+    /* ESTILO DE BLOQUEO */
     .tarjeta-modulo.modulo-bloqueado {
       opacity: 0.42 !important;
       pointer-events: none !important;
@@ -201,7 +201,7 @@
         </div>
       </a>
 
-      <!-- Módulo 4 -->
+      <!-- Módulo 4: Screening Visual -->
       <a href="visual.html" class="tarjeta-modulo" id="card-visual">
         <div class="info-modulo">
           <h3>Módulo 4: Screening Visual</h3>
@@ -212,7 +212,7 @@
         </div>
       </a>
 
-      <!-- Módulo 5 -->
+      <!-- Módulo 5: Tamizaje Auditivo -->
       <a href="audicion.html" class="tarjeta-modulo" id="card-auditivo">
         <div class="info-modulo">
           <h3>Módulo 5: Tamizaje Auditivo</h3>
@@ -258,29 +258,34 @@
         const consumidos = CreditManager.obtenerConsumidas(m.id);
 
         if (max === 0) {
+          // Módulo no incluido en el plan contratado
           if (tarjeta) {
             tarjeta.classList.add('modulo-bloqueado');
             tarjeta.removeAttribute('href');
+            tarjeta.style.pointerEvents = 'none';
           }
           if (contador) {
             contador.innerText = '🔒 No incluido';
             contador.classList.add('bloqueado');
           }
         } else if (consumidos >= max) {
-          // Solo este módulo específico se bloquea
+          // Cupo agotado exclusivamente para este módulo
           if (tarjeta) {
             tarjeta.classList.add('modulo-bloqueado');
             tarjeta.removeAttribute('href');
+            tarjeta.style.pointerEvents = 'none';
           }
           if (contador) {
             contador.innerText = `${consumidos}/${max} (Bloqueado)`;
             contador.classList.add('bloqueado');
           }
         } else {
-          // El módulo está activo y se puede ingresar de forma libre
+          // MÓDULO DISPONIBLE PARA ENTRAR
           if (tarjeta) {
             tarjeta.classList.remove('modulo-bloqueado');
             tarjeta.setAttribute('href', m.url);
+            tarjeta.style.pointerEvents = 'auto';
+            tarjeta.style.opacity = '1';
           }
           if (contador) {
             contador.innerText = `Simulaciones: ${consumidos}/${max}`;
