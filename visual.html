@@ -4,125 +4,182 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Sensometrika | Tamizaje Visual</title>
+  <script src="credit-manager.js"></script>
   <link rel="stylesheet" href="styles.css">
   <style>
-    .barra-superior {
+    body {
+      background-color: #0b1120;
+      color: #f1f5f9;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      margin: 0;
+      padding: 12px;
+      display: flex;
+      justify-content: center;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    .tarjeta-visual {
       width: 100%;
+      max-width: 440px;
+      background: #0f172a;
+      border: 1.5px solid #1e293b;
+      border-radius: 16px;
+      padding: 16px;
+      box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .header-visual {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 8px;
+      font-size: 0.8rem;
     }
-    .barra-superior a {
+    .header-visual a {
       color: #94a3b8;
       text-decoration: none;
-      font-size: 0.85rem;
       font-weight: 600;
     }
-    .barra-conteo-b2c {
-      width: 100%;
-      display: flex;
-      justify-content: center;
-      margin-bottom: 8px;
+    .badge-top {
+      color: #38bdf8;
+      font-weight: 800;
+      letter-spacing: 0.5px;
     }
-    .caja-camara-estatus {
-      background: #0f172a;
-      border: 1.5px solid #334155;
-      border-radius: 12px;
+    .caja-camara {
+      background: #182235;
+      border: 1.5px solid #22c55e;
+      border-radius: 10px;
       padding: 8px 12px;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      width: 100%;
-      box-sizing: border-box;
-      margin-bottom: 10px;
+      gap: 10px;
     }
-    .visor-camara-oculto {
-      width: 60px;
-      height: 45px;
+    .preview-video {
+      width: 50px;
+      height: 38px;
       border-radius: 6px;
+      background: #090d16;
       object-fit: cover;
-      transform: scaleX(-1);
-      border: 2px solid #38bdf8;
+      border: 1px solid #334155;
     }
-    .distancia-correcta { border-color: #22c55e !important; }
-    .distancia-incorrecta { border-color: #ef4444 !important; }
-    .area-estimulo-visual {
-      background: #020617;
-      border: 2px solid #1e293b;
-      border-radius: 16px;
+    .info-distancia {
+      text-align: right;
+      font-size: 0.72rem;
+    }
+    .info-distancia strong {
+      display: block;
+      color: #4ade80;
+      font-size: 0.78rem;
+    }
+    .canvas-contenedor {
       width: 100%;
-      min-height: 220px;
+      height: 250px;
+      background: #090d16;
+      border: 1.5px solid #1e293b;
+      border-radius: 12px;
       display: flex;
       flex-direction: column;
-      align-items: center;
       justify-content: center;
+      align-items: center;
       padding: 12px;
       box-sizing: border-box;
-      margin-bottom: 12px;
+      position: relative;
+    }
+    #canvas-ishihara {
+      max-width: 170px;
+      max-height: 170px;
+      border-radius: 50%;
+      display: block;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.6);
+    }
+    #simbolo-optotipo {
+      display: none;
+      width: 140px;
+      height: 140px;
+      background: #ffffff;
+      border-radius: 12px;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.6);
+    }
+    .leyenda-distancia {
+      margin-top: 10px;
+      font-size: 0.72rem;
+      color: #94a3b8;
+      text-align: center;
+    }
+    .btn-iniciar-visual {
+      width: 100%;
+      height: 48px;
+      background: #0284c7;
+      color: #ffffff;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      font-weight: 800;
+      cursor: pointer;
     }
     .grilla-opciones {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 10px;
       width: 100%;
-      margin-bottom: 12px;
     }
-    .btn-opcion-vis {
-      background: #0f172a;
-      border: 1.5px solid #38bdf8;
-      color: #fff;
-      padding: 12px;
+    .btn-opcion-visual {
+      height: 48px;
+      background: #1e293b;
+      border: 1.5px solid #334155;
+      color: #ffffff;
       border-radius: 8px;
-      font-size: 1rem;
-      font-weight: bold;
+      font-weight: 800;
+      font-size: 0.95rem;
       cursor: pointer;
       touch-action: manipulation;
     }
-    .btn-opcion-vis:disabled {
-      opacity: 0.35;
-      border-color: #475569;
-      cursor: not-allowed;
+    .btn-opcion-visual:active {
+      background: #0284c7;
+      border-color: #38bdf8;
     }
   </style>
 </head>
 <body>
-  <main class="contenedor">
-    <header class="barra-superior">
+  <main class="tarjeta-visual">
+    <div class="header-visual">
       <a href="menu.html">← Menú Principal</a>
-      <span style="font-size: 0.8rem; color: #38bdf8; font-weight: 700;">MÓDULO 4: TAMIZAJE VISUAL</span>
-    </header>
+      <span class="badge-top">MÓDULO 4: TAMIZAJE VISUAL</span>
+    </div>
 
-    <!-- Indicador dinámico de simulación (1 de 3, 2 de 3, etc.) -->
-    <div id="caja-contador-simulacion" class="barra-conteo-b2c"></div>
-
-    <!-- Auditoría de distancia por cámara frontal -->
-    <section class="caja-camara-estatus" id="caja-camara">
-      <video id="video-camara" class="visor-camara-oculto" autoplay playsinline muted></video>
-      <div style="text-align: right;">
-        <span id="etiqueta-distancia" style="display:block; font-size: 0.75rem; color: #94a3b8;">Iniciando cámara...</span>
-        <strong id="estado-distancia" style="font-size: 0.85rem; color: #facc15;">Calibrando</strong>
-      </div>
-    </section>
-
-    <div class="area-estimulo-visual">
-      <canvas id="canvas-ishihara" width="200" height="200" style="display: none;"></canvas>
-      <div id="simbolo-optotipo" style="display: none; font-weight: 900; color: #ffffff; line-height: 1; user-select: none;">E</div>
-      <div id="panel-estado" style="color: #94a3b8; font-size: 0.85rem; text-align: center; margin-top: 6px;">
-        Sostén el dispositivo con el brazo extendido (~50 cm)[cite: 2, 6]
+    <!-- Caja de monitoreo óptico biométrico -->
+    <div class="caja-camara" id="caja-camara">
+      <video id="video-camara" class="preview-video" autoplay playsinline muted></video>
+      <div class="info-distancia">
+        <span id="etiqueta-distancia">✅ Distancia de lectura normal</span>
+        <strong id="estado-distancia">Normal</strong>
       </div>
     </div>
 
-    <!-- Botón inicial para Demo o Examen -->
-    <button id="btn-iniciar-visual" class="btn-principal" style="margin-bottom: 12px;">Iniciar Calibración Visual</button>
+    <!-- Contenedor central del test (Lámina o Letra E) -->
+    <div class="canvas-contenedor">
+      <canvas id="canvas-ishihara" width="180" height="180"></canvas>
+      <div id="simbolo-optotipo"></div>
+      <p class="leyenda-distancia" id="instruccion-pregunta">
+        Sostén el dispositivo con el brazo extendido (~50 cm)
+      </p>
+    </div>
 
-    <!-- Contenedor dinámico de opciones de respuesta -->
-    <div id="contenedor-opciones" class="grilla-opciones" style="display: none;"></div>
+    <!-- Zona de acción: botón inicial de inicio -->
+    <div id="zona-boton-inicio">
+      <button type="button" class="btn-iniciar-visual" id="btn-iniciar-visual" onclick="comenzarTamizajeVisual()">
+        Iniciar Calibración Visual
+      </button>
+    </div>
 
-    <div id="zona-coordinacion-visual" style="width: 100%;"></div>
+    <!-- Contenedor de respuestas (se activa tras pulsar Iniciar) -->
+    <div class="grilla-opciones" id="contenedor-opciones" style="display: none;"></div>
   </main>
 
-  <script src="credit-manager.js"></script>
   <script src="visual.js"></script>
 </body>
 </html>
