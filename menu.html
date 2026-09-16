@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Sensometrika | Panel de Módulos</title>
+  <script src="credit-manager.js"></script>
   <link rel="stylesheet" href="styles.css">
   <style>
     body {
@@ -24,7 +25,7 @@
     }
     .header-menu {
       text-align: center;
-      padding-bottom: 6px;
+      padding-bottom: 4px;
     }
     .header-menu h1 {
       margin: 0;
@@ -34,7 +35,7 @@
       letter-spacing: 0.5px;
     }
     .header-menu p {
-      margin: 4px 0 0 0;
+      margin: 3px 0 0 0;
       font-size: 0.76rem;
       color: #94a3b8;
     }
@@ -86,21 +87,22 @@
       border-color: #38bdf8;
       background: #131d33;
     }
+
+    /* ESTILO DE BLOQUEO ESTRICTO */
     .modulo-bloqueado {
-      opacity: 0.4;
-      pointer-events: none;
+      opacity: 0.42 !important;
+      pointer-events: none !important;
+      cursor: not-allowed !important;
       border-color: #334155 !important;
+      background: #090d16 !important;
     }
     .info-modulo h3 {
       margin: 0;
       font-size: 0.95rem;
       color: #ffffff;
-      display: flex;
-      align-items: center;
-      gap: 8px;
     }
     .info-modulo p {
-      margin: 4px 0 0 0;
+      margin: 3px 0 0 0;
       font-size: 0.72rem;
       color: #94a3b8;
     }
@@ -116,11 +118,12 @@
       color: #38bdf8;
       border: 1px solid #334155;
       display: inline-block;
+      white-space: nowrap;
     }
     .badge-contador.bloqueado {
-      background: rgba(239, 68, 68, 0.15);
-      color: #f87171;
-      border-color: #ef4444;
+      background: rgba(239, 68, 68, 0.15) !important;
+      color: #f87171 !important;
+      border-color: #ef4444 !important;
     }
     .btn-ver-informe {
       background: #0284c7;
@@ -197,7 +200,7 @@
         </div>
       </a>
 
-      <!-- Módulo 4: RUTA CORREGIDA DIRECTA A visual.html -->
+      <!-- Módulo 4 -->
       <a href="visual.html" class="tarjeta-modulo" id="card-visual">
         <div class="info-modulo">
           <h3>Módulo 4: Screening Visual</h3>
@@ -226,9 +229,11 @@
 
   <script>
     document.addEventListener('DOMContentLoaded', () => {
-      const sesion = JSON.parse(localStorage.getItem('sensometrika_sesion')) || { planId: 'part_full', nombrePlan: 'Pase Full Integral' };
-      const datosUser = JSON.parse(localStorage.getItem('sensometrika_datos_usuario')) || { nombre: 'Mariela Carcamo Fernández', rut: '13.333.333-3' };
-      const ejecuciones = JSON.parse(localStorage.getItem('sensometrika_ejecuciones')) || {};
+      const sesion = CreditManager.obtenerSesion();
+      const datosUser = JSON.parse(localStorage.getItem('sensometrika_datos_usuario')) || { 
+        nombre: 'Mariela Carcamo Fernández', 
+        rut: '13.333.333-3' 
+      };
 
       document.getElementById('menu-user-nombre').innerText = datosUser.nombre || 'Evaluado';
       document.getElementById('menu-user-rut').innerText = `RUT: ${datosUser.rut || '--'}`;
@@ -237,38 +242,44 @@
         document.getElementById('lbl-subtitulo-plan').innerText = `Evaluación • ${sesion.nombrePlan}`;
       }
 
-      // Cuotas por tipo de plan
-      const esFull = (sesion.planId && (sesion.planId.includes('full') || sesion.planId === 'part_full'));
-      const esPlus = (sesion.planId && (sesion.planId.includes('plus') || sesion.planId === 'part_plus'));
-      
-      const limitePsicomotriz = esFull ? 8 : (esPlus ? 5 : 3);
-      const limiteSensorial = esFull ? 4 : (esPlus ? 2 : 0);
-
-      // Mapeo dinámico de contadores
       const modulos = [
-        { id: 'reactimetro', contId: 'cont-reactimetro', cardId: 'card-reactimetro', max: limitePsicomotriz, permitido: true },
-        { id: 'palancas',    contId: 'cont-palancas',    cardId: 'card-palancas',    max: limitePsicomotriz, permitido: true },
-        { id: 'punteo',      contId: 'cont-punteo',      cardId: 'card-punteo',      max: limitePsicomotriz, permitido: true },
-        { id: 'visual',      contId: 'cont-visual',      cardId: 'card-visual',      max: limiteSensorial,   permitido: (esFull || esPlus) },
-        { id: 'auditivo',    contId: 'cont-auditivo',    cardId: 'card-auditivo',    max: limiteSensorial,   permitido: esFull }
+        { id: 'reactimetro', cardId: 'card-reactimetro', contId: 'cont-reactimetro' },
+        { id: 'palancas',    cardId: 'card-palancas',    contId: 'cont-palancas' },
+        { id: 'punteo',      cardId: 'card-punteo',      contId: 'cont-punteo' },
+        { id: 'visual',      cardId: 'card-visual',      contId: 'cont-visual' },
+        { id: 'auditivo',    cardId: 'card-auditivo',    contId: 'cont-auditivo' }
       ];
 
       modulos.forEach(m => {
         const tarjeta = document.getElementById(m.cardId);
         const contador = document.getElementById(m.contId);
-        const consumidos = ejecuciones[m.id] || 0;
+        const max = CreditManager.obtenerLimiteModulo(m.id);
+        const consumidos = CreditManager.obtenerConsumidas(m.id);
 
-        if (!m.permitido || m.max === 0) {
+        if (max === 0) {
+          // Módulo no incluido en el plan comprado
           if (tarjeta) tarjeta.classList.add('modulo-bloqueado');
-          if (contador) contador.innerText = '🔒 No incluido';
-        } else {
-          if (tarjeta) tarjeta.classList.remove('modulo-bloqueado');
           if (contador) {
-            contador.innerText = `Simulaciones: ${consumidos}/${m.max}`;
-            if (consumidos >= m.max) {
-              contador.innerText = `${consumidos}/${m.max} (Completo)`;
+            contador.innerText = '🔒 No incluido';
+            contador.classList.add('bloqueado');
+          }
+        } else {
+          if (consumidos >= max) {
+            // BLOQUEO ESTRICTO POR CUPO AGOTADO
+            if (tarjeta) {
+              tarjeta.classList.add('modulo-bloqueado');
+              tarjeta.removeAttribute('href');
+            }
+            if (contador) {
+              contador.innerText = `${consumidos}/${max} (Bloqueado)`;
               contador.classList.add('bloqueado');
-              if (tarjeta) tarjeta.classList.add('modulo-bloqueado');
+            }
+          } else {
+            // Módulo activo con cupo disponible
+            if (tarjeta) tarjeta.classList.remove('modulo-bloqueado');
+            if (contador) {
+              contador.innerText = `Simulaciones: ${consumidos}/${max}`;
+              contador.classList.remove('bloqueado');
             }
           }
         }
@@ -276,13 +287,16 @@
     });
 
     window.reiniciarSimulacionActual = function() {
-      if (confirm('¿Deseas reiniciar las métricas de esta corrida para probar de nuevo?')) {
-        localStorage.removeItem('sensometrika_reactimetro');
-        localStorage.removeItem('sensometrika_palancas');
-        localStorage.removeItem('sensometrika_punteo');
-        localStorage.removeItem('sensometrika_visual');
-        localStorage.removeItem('sensometrika_auditivo');
-        localStorage.removeItem('sensometrika_ejecuciones');
+      if (confirm('¿Deseas reiniciar las simulaciones consumidas y las métricas para una nueva prueba?')) {
+        const sesion = CreditManager.obtenerSesion();
+        sesion.simulacionesConsumidas = { reactimetro: 0, palancas: 0, punteo: 0, visual: 0, auditivo: 0 };
+        CreditManager.guardarSesion(sesion);
+
+        ['reactimetro', 'palancas', 'punteo', 'visual', 'auditivo'].forEach(m => {
+          localStorage.removeItem(`sensometrika_${m}`);
+          localStorage.removeItem(`sensometrika_${m}_demo_ok`);
+        });
+
         location.reload();
       }
     };

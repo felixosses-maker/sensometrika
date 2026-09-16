@@ -144,6 +144,20 @@
       background: #0284c7;
       border-color: #38bdf8;
     }
+
+    /* TARJETA DE CIERRE ARMÓNICA (SIN ALERT) */
+    .caja-cierre-audio {
+      display: none;
+      flex-direction: column;
+      gap: 12px;
+      text-align: center;
+    }
+    .resultado-pct {
+      font-size: 1.5rem;
+      font-weight: 900;
+      color: #38bdf8;
+      margin: 6px 0;
+    }
   </style>
 </head>
 <body>
@@ -156,28 +170,45 @@
     <!-- Píldora de Conteo Dinámica -->
     <div class="pildora-simulacion" id="lbl-pildora-conteo">Simulación Oficial: 1 de 4</div>
 
-    <!-- Pantalla de Requisitos -->
+    <!-- 1. Pantalla Inicial de Requisitos -->
     <div id="pantalla-inicio">
       <div class="box-requisito">
         <h4>🎧 Exigencia Técnica de Audífonos</h4>
-        <p>Para evaluar la separación biaural (oído izquierdo y derecho independientemente), es obligatorio el uso de audífonos estéreo conectados.</p>
+        <p>Para evaluar la separación binaural (oído izquierdo y derecho independientemente), es obligatorio el uso de audífonos estéreo conectados.</p>
         <label class="check-audifonos">
           <input type="checkbox" id="chk-audifonos" onchange="toggleIniciarPrueba()">
           <span>Tengo audífonos estéreo colocados</span>
         </label>
       </div>
       <p style="font-size: 0.75rem; color: #94a3b8; margin-bottom: 14px;">Marca la casilla para iniciar tu Simulación Oficial.</p>
-      <!-- Botón dinámico corregido: sin el texto duro (2 de 3) -->
       <button type="button" class="btn-accion-audio" id="btn-iniciar" disabled onclick="comenzarEvaluacionAuditiva()">Iniciar Simulación Oficial</button>
     </div>
 
-    <!-- Pantalla de Test Interactivo -->
+    <!-- 2. Pantalla de Test Interactivo -->
     <div id="pantalla-test" class="panel-prueba">
       <div class="indicador-onda" id="anim-onda">🔊</div>
       <p style="font-size: 0.85rem; color: #cbd5e1; margin: 0;" id="txt-instruccion-estimulo">Escuchando tono de frecuencia...</p>
       <div class="grilla-oidos">
         <button type="button" class="btn-oido" onclick="responderOido('IZQ')">👂 Oído Izquierdo</button>
         <button type="button" class="btn-oido" onclick="responderOido('DER')">Oído Derecho 👂</button>
+      </div>
+    </div>
+
+    <!-- 3. Pantalla de Finalización Armónica con Botones Inferiores -->
+    <div id="pantalla-cierre" class="caja-cierre-audio">
+      <div style="font-size: 2.5rem;" id="icono-resultado">✅</div>
+      <h3 style="color:#ffffff; margin: 0; font-size: 1.15rem;">¡Evaluación Auditiva Finalizada!</h3>
+      <div class="resultado-pct" id="txt-pct-resultado">100%</div>
+      <p style="color:#94a3b8; font-size:0.8rem; margin:0 0 16px 0;" id="txt-estado-resultado">Discriminación biaural en rango óptimo (APROBADO)</p>
+
+      <!-- BOTONES INFERIORES CLAROS Y ERGONÓMICOS -->
+      <div style="display: flex; flex-direction: column; gap: 10px;">
+        <a href="informe.html" style="display: flex; align-items: center; justify-content: center; width: 100%; height: 46px; background: #0284c7; color: #ffffff; text-decoration: none; border-radius: 8px; font-weight: 800; font-size: 0.9rem; box-shadow: 0 4px 14px rgba(2, 132, 199, 0.4);">
+          📊 Ver Informe y Dictamen Final →
+        </a>
+        <a href="menu.html" style="display: flex; align-items: center; justify-content: center; width: 100%; height: 42px; background: #1e293b; border: 1px solid #334155; color: #cbd5e1; text-decoration: none; border-radius: 8px; font-weight: 700; font-size: 0.85rem;">
+          ← Volver al Menú Principal
+        </a>
       </div>
     </div>
   </main>
@@ -189,14 +220,12 @@
     const totalEstimulos = 6;
     let ladoCorrecto = 'IZQ';
 
-    // Cargar cuota real y sincronizar textos
     const sesion = JSON.parse(localStorage.getItem('sensometrika_sesion')) || { planId: 'part_full' };
     const ejecuciones = JSON.parse(localStorage.getItem('sensometrika_ejecuciones')) || {};
     const intentosPrevios = ejecuciones.auditivo || 0;
     const limiteReal = (sesion.planId && sesion.planId.includes('plus')) ? 2 : 4;
     const intentoEnCurso = Math.min(intentosPrevios + 1, limiteReal);
 
-    // Sincronizar etiquetas dinámicas
     document.getElementById('lbl-pildora-conteo').innerText = `Simulación Oficial: ${intentoEnCurso} de ${limiteReal}`;
     document.getElementById('btn-iniciar').innerText = `Iniciar Simulación Oficial (${intentoEnCurso} de ${limiteReal})`;
 
@@ -254,19 +283,27 @@
       const pct = Math.round((aciertos / totalEstimulos) * 100);
       const aprobado = pct >= 75;
 
-      // Registrar métrica
+      // 1. Guardar resultado para el informe
       localStorage.setItem('sensometrika_auditivo', JSON.stringify({
         efectividad: pct,
         aprobado: aprobado,
         fecha: new Date().toISOString()
       }));
 
-      // Descontar intento
+      // 2. DESCUENTO REAL Y PERSISTENTE EN EL MENÚ
       ejecuciones.auditivo = intentoEnCurso;
       localStorage.setItem('sensometrika_ejecuciones', JSON.stringify(ejecuciones));
 
-      alert(`¡Evaluación Auditiva Finalizada!\nResultado: ${pct}% de acierto (${aprobado ? 'APROBADO' : 'OBSERVADO'})`);
-      window.location.href = 'informe.html';
+      // 3. MOSTRAR TARJETA DE CIERRE ARMÓNICA (SIN ALERT)
+      document.getElementById('pantalla-test').style.display = 'none';
+      const pantallaCierre = document.getElementById('pantalla-cierre');
+      pantallaCierre.style.display = 'flex';
+
+      document.getElementById('icono-resultado').innerText = aprobado ? '✅' : '⚠️';
+      document.getElementById('txt-pct-resultado').innerText = `${pct}% de acierto`;
+      document.getElementById('txt-estado-resultado').innerText = aprobado 
+        ? 'Discriminación biaural en rango óptimo (APROBADO)' 
+        : 'Discriminación disminuida en frecuencias medias (OBSERVADO)';
     }
   </script>
 </body>

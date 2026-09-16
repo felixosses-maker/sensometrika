@@ -1,9 +1,10 @@
 /* ==========================================================================
    SENSOMETRIKA - MÓDULO 1: REACTÍMETRO (reactimetro.js)
-   • Cuota dinámica (B2C: 3, 5, 8 | B2B: 1 de 1)
-   • 1 Demo de 5 estímulos único por módulo
-   • Textos formales adaptados por rol
+   • Validación y bloqueo estricto al retroceder o agotar cupos
+   • 1 Demo de inducción + Simulaciones Oficiales según Plan
+   • Descuento real en CreditManager sincronizado con menu.html
    ========================================================================== */
+
 const luzVerde = document.getElementById('luz-verde');
 const luzRoja = document.getElementById('luz-roja');
 const panelEstado = document.getElementById('panel-estado');
@@ -13,7 +14,7 @@ const metricaPromedio = document.getElementById('metrica-promedio');
 const metricaAnticipaciones = document.getElementById('metrica-anticipaciones');
 const badgeModo = document.getElementById('badge-modo');
 const txtTiempoCabecera = document.getElementById('txt-tiempo-cabecera');
-const zonaCoordinacion = document.getElementById('zona-coordinacion-test');
+const zonaCoordinacion = document.getElementById('zona-coordinacion-test') || document.getElementById('contenedor-accion');
 
 let modo = 'DEMO';
 let estado = 'INACTIVO';
@@ -25,43 +26,22 @@ let tiemposOficiales = [];
 let anticipacionesOficiales = 0;
 let contadorEnsayosDemo = 0;
 
-const MAX_ENSAYOS_DEMO = 5;
-const MAX_INTENTOS_OFICIALES = 10;
+const MAX_ENSAYOS_DEMO = 3;
+const MAX_INTENTOS_OFICIALES = 5;
 
+// BARRERA DE ENTRADA AL CARGAR LA PÁGINA
 window.addEventListener('DOMContentLoaded', () => {
-  CreditManager.pintarBadgeCabecera('caja-contador-simulacion', 'reactimetro');
-
-  if (!CreditManager.puedeRendir('reactimetro')) {
-    bloquearModuloPorCupo();
+  // Si retrocede con la flecha del navegador y ya agotó el cupo, se expulsa
+  if (!CreditManager.validarAccesoOBloquear('reactimetro')) {
     return;
   }
+
+  CreditManager.pintarBadgeCabecera('caja-contador-simulacion', 'reactimetro');
 
   if (CreditManager.demoYaRealizado('reactimetro')) {
     prepararVistaOficialDirecta();
   }
 });
-
-function bloquearModuloPorCupo() {
-  const esEmpresa = CreditManager.esB2B();
-  const max = CreditManager.obtenerLimiteModulo('reactimetro');
-  btnAccion.disabled = true;
-  btnAccion.style.opacity = '0.4';
-  btnAccion.innerText = esEmpresa ? 'Examen Oficial Realizado (Bloqueado)' : `Cupo Bloqueado (${max}/${max} Realizadas)`;
-  panelEstado.innerText = esEmpresa ? 'Ya completaste tu examen oficial de este módulo.' : `Has alcanzado el límite de ${max} simulaciones oficiales de tu Plan.`;
-  panelEstado.style.color = '#f87171';
-
-  zonaCoordinacion.innerHTML = `
-    <div style="background: #020617; border: 1.5px solid #dc2626; border-radius: 12px; padding: 16px; margin-top: 14px; text-align: center;">
-      <h3 style="color: #ef4444; margin: 0 0 6px 0;">Módulo Bloqueado</h3>
-      <p style="color: #94a3b8; font-size: 0.85rem; margin-bottom: 12px;">
-        ${esEmpresa ? 'Tu examen oficial de Reactímetro ya quedó registrado.' : 'Completaste todas las simulaciones de tu Plan en este módulo.'}
-      </p>
-      <a href="menu.html" class="btn-principal" style="display:inline-block; text-decoration:none; background:#0284c7; padding:10px 16px; border-radius:6px; color:#fff;">
-        Volver al Menú Principal
-      </a>
-    </div>
-  `;
-}
 
 function prepararVistaOficialDirecta() {
   modo = 'OFICIAL';
@@ -69,23 +49,32 @@ function prepararVistaOficialDirecta() {
   tiemposOficiales = [];
   anticipacionesOficiales = 0;
 
-  const esEmpresa = CreditManager.esB2B();
   const actual = CreditManager.obtenerNumeroSimulacionActual('reactimetro');
   const max = CreditManager.obtenerLimiteModulo('reactimetro');
+  const esEmpresa = CreditManager.esB2B();
 
-  badgeModo.innerText = esEmpresa ? '🔴 Examen Oficial B2B 1 de 1 (D.S. N° 170)' : `🔴 Simulación Oficial ${actual} de ${max} (D.S. N° 170)`;
-  badgeModo.style.color = '#38bdf8';
-  txtTiempoCabecera.innerHTML = 'Evaluación Activa (10 Estímulos)';
-  panelEstado.innerText = esEmpresa ? 'Listo para iniciar Examen Oficial B2B.' : `Listo para iniciar Simulación Oficial ${actual} de ${max}.`;
-  panelEstado.style.color = '#38bdf8';
+  if (badgeModo) {
+    badgeModo.innerText = esEmpresa 
+      ? '🔴 Examen Oficial B2B 1 de 1 (D.S. N° 170)' 
+      : `🔴 Simulación Oficial ${actual} de ${max} (D.S. N° 170)`;
+    badgeModo.style.color = '#38bdf8';
+  }
 
-  btnAccion.style.display = 'block';
-  btnAccion.innerText = esEmpresa ? 'Iniciar Examen Oficial (1 de 1)' : `Iniciar Simulación Oficial (${actual} de ${max})`;
-  btnAccion.style.backgroundColor = '#22c55e';
+  if (txtTiempoCabecera) txtTiempoCabecera.innerHTML = 'Evaluación Activa (5 Estímulos)';
+  if (panelEstado) {
+    panelEstado.innerText = `Listo para iniciar Simulación Oficial ${actual} de ${max}.`;
+    panelEstado.style.color = '#38bdf8';
+  }
+
+  if (btnAccion) {
+    btnAccion.style.display = 'block';
+    btnAccion.innerText = esEmpresa ? 'Iniciar Examen Oficial (1 de 1)' : `Iniciar Simulación Oficial (${actual} de ${max})`;
+    btnAccion.style.backgroundColor = '#22c55e';
+  }
 }
 
 function obtenerRetardoAleatorio() {
-  return Math.floor(Math.random() * (4200 - 1700 + 1)) + 1700;
+  return Math.floor(Math.random() * (4000 - 1800 + 1)) + 1800;
 }
 
 btnAccion.addEventListener('pointerdown', (e) => {
@@ -140,7 +129,7 @@ function registrarAnticipacion() {
     metricaAnticipaciones.innerText = anticipacionesOficiales;
   }
 
-  panelEstado.innerText = '¡Anticipación! Frenaste antes del cambio de luz';
+  panelEstado.innerText = '¡Anticipación! Frenaste antes de que encendiera la luz roja';
   panelEstado.style.color = '#f87171';
 
   btnAccion.innerText = 'Reintentar Estímulo';
@@ -158,18 +147,20 @@ function registrarFreno() {
   luzRoja.classList.remove('encendida');
   luzRoja.classList.add('apagada');
 
-  if (latencia <= 350) {
-    panelEstado.innerText = `${latencia} ms: Rango Óptimo - Nivel Profesional (Clase A)`;
+  const esEmpresa = CreditManager.esB2B();
+  const umbralFaena = 400; // Calibrado por latencia de pantallas móviles
+
+  if (latencia <= umbralFaena) {
+    panelEstado.innerText = `${latencia} ms: Rango Óptimo (Faena Crítica / Clase A)`;
     panelEstado.style.color = '#4ade80';
   } else if (latencia <= 450) {
-    panelEstado.innerText = `${latencia} ms: Aprobado - Particular (Clase B)`;
+    panelEstado.innerText = `${latencia} ms: Aprobado Clase B (Observación Técnica)`;
     panelEstado.style.color = '#facc15';
   } else {
-    panelEstado.innerText = `${latencia} ms: Fuera de rango municipal`;
+    panelEstado.innerText = `${latencia} ms: Fuera de Norma`;
     panelEstado.style.color = '#f87171';
   }
 
-  const esEmpresa = CreditManager.esB2B();
   const max = CreditManager.obtenerLimiteModulo('reactimetro');
 
   if (modo === 'DEMO') {
@@ -183,10 +174,10 @@ function registrarFreno() {
       CreditManager.marcarDemoCompletado('reactimetro');
       estado = 'PAUSA_ENTRE_FASES';
       const actual = CreditManager.obtenerNumeroSimulacionActual('reactimetro');
-      panelEstado.innerText = esEmpresa ? 'Demo completado. Listo para tu Examen Oficial 1 de 1.' : `Demo completado. Listo para Simulación Oficial ${actual} de ${max}.`;
+      panelEstado.innerText = `Calibración finalizada. Listo para Simulación Oficial ${actual} de ${max}.`;
       panelEstado.style.color = '#4ade80';
 
-      btnAccion.innerText = esEmpresa ? 'Iniciar Examen Oficial (1 de 1)' : `Iniciar Simulación Oficial (${actual} de ${max})`;
+      btnAccion.innerText = `Iniciar Simulación Oficial (${actual} de ${max})`;
       btnAccion.style.backgroundColor = '#22c55e';
     }
   } else {
@@ -213,60 +204,63 @@ function iniciarFaseOficial() {
 function finalizarSimulacionReactimetro(promedio) {
   btnAccion.style.display = 'none';
 
+  // DESCUENTO REAL Y REGISTRO EN EL GESTOR
   const consumidas = CreditManager.registrarConsumo('reactimetro');
   const max = CreditManager.obtenerLimiteModulo('reactimetro');
   const esEmpresa = CreditManager.esB2B();
-  const umbral = esEmpresa ? 350 : 450;
-  const aprobado = promedio <= umbral && anticipacionesOficiales <= 2;
+  const aprobado = promedio <= (esEmpresa ? 400 : 450) && anticipacionesOficiales <= 2;
 
   localStorage.setItem('sensometrika_reactimetro', JSON.stringify({
     tiempo: promedio,
     anticipaciones: anticipacionesOficiales,
-    aprobado: aprobado
+    aprobado: aprobado,
+    fecha: new Date().toISOString()
   }));
 
   CreditManager.pintarBadgeCabecera('caja-contador-simulacion', 'reactimetro');
   const agotado = consumidas >= max;
 
-  // Título corregido: '¡Examen Finalizado!' en B2B
-  const tituloCierre = esEmpresa ? '¡Examen Finalizado!' : `¡Simulación ${consumidas} de ${max} Finalizada!`;
-  const leyendaCierre = esEmpresa 
-    ? 'Evaluación oficial 1 de 1 registrada con éxito para la empresa.' 
-    : (agotado ? `Has completado tus ${max}/${max} simulaciones en este módulo.` : `Te restan ${max - consumidas} simulación(es) en este módulo.`);
+  const tituloCierre = esEmpresa 
+    ? '¡Examen Oficial Finalizado!' 
+    : `¡Simulación ${consumidas} de ${max} Finalizada!`;
+  
+  const leyendaCierre = esEmpresa
+    ? 'Evaluación registrada para la carpeta corporativa.'
+    : (agotado ? `Has completado el cupo total (${max}/${max}) de este módulo.` : `Te restan ${max - consumidas} simulación(es) disponibles.`);
 
   let bloqueBotones = '';
   if (!agotado && !esEmpresa) {
     bloqueBotones = `
-      <button onclick="repetirSimulacionReactimetro()" class="btn-principal" style="width:100%; height:44px; background-color:#22c55e; color:#fff; border-radius:6px; font-weight:bold; font-size:0.9rem; border:none; cursor:pointer; margin-bottom:8px;">
+      <button onclick="repetirSimulacionReactimetro()" style="width:100%; height:46px; background-color:#22c55e; color:#fff; border-radius:8px; font-weight:800; font-size:0.9rem; border:none; cursor:pointer; margin-bottom:8px;">
         🔄 Rendir Simulación ${consumidas + 1} de ${max} →
       </button>
-      <a href="palancas.html" style="display:flex; justify-content:center; align-items:center; text-decoration:none; height:40px; background-color:#0284c7; color:#fff; border-radius:6px; font-weight:bold; font-size:0.85rem;">
+      <a href="palancas.html" style="display:flex; justify-content:center; align-items:center; text-decoration:none; height:44px; background-color:#0284c7; color:#fff; border-radius:8px; font-weight:800; font-size:0.88rem;">
         Continuar a Módulo 2 (Palancas) →
       </a>
     `;
   } else {
     bloqueBotones = `
-      <a href="palancas.html" class="btn-principal" style="display:flex; justify-content:center; align-items:center; text-decoration:none; height:44px; background-color:#0284c7; color:#fff; border-radius:6px; font-weight:bold; font-size:0.9rem; margin-bottom:8px;">
+      <a href="palancas.html" style="display:flex; justify-content:center; align-items:center; text-decoration:none; height:46px; background-color:#0284c7; color:#fff; border-radius:8px; font-weight:800; font-size:0.9rem; margin-bottom:8px;">
         Continuar a Módulo 2 (Palancas) →
       </a>
     `;
   }
 
   zonaCoordinacion.innerHTML = `
-    <div style="background: #020617; border: 1.5px solid ${aprobado ? '#38bdf8' : '#ef4444'}; border-radius: 12px; padding: 16px; margin-top: 14px; text-align: center; width: 100%; box-sizing: border-box;">
-      <h3 style="color: ${aprobado ? '#4ade80' : '#f87171'}; margin: 0 0 6px 0; font-size: 1.1rem;">
+    <div style="background: #0f172a; border: 1.5px solid ${aprobado ? '#22c55e' : '#ef4444'}; border-radius: 14px; padding: 18px 16px; margin-top: 14px; text-align: center; width: 100%; box-sizing: border-box;">
+      <h3 style="color: ${aprobado ? '#4ade80' : '#f87171'}; margin: 0 0 6px 0; font-size: 1.15rem;">
         ${tituloCierre}
       </h3>
-      <p style="color: #94a3b8; font-size: 0.82rem; margin-bottom: 8px;">
+      <p style="color: #94a3b8; font-size: 0.85rem; margin-bottom: 6px;">
         Latencia promedio: <strong style="color: #ffffff;">${promedio} ms</strong> (${aprobado ? 'Aprobado' : 'Observado'})
       </p>
-      <p style="color: #38bdf8; font-size: 0.82rem; font-weight: bold; margin-bottom: 12px;">
+      <p style="color: #38bdf8; font-size: 0.82rem; font-weight: 700; margin-bottom: 14px;">
         ${leyendaCierre}
       </p>
       <div style="display: flex; flex-direction: column;">
         ${bloqueBotones}
-        <a href="menu.html" style="color: #64748b; font-size: 0.8rem; text-decoration: none; padding: 6px; margin-top: 4px;">
-          Volver al Menú Principal
+        <a href="menu.html" style="color: #64748b; font-size: 0.8rem; text-decoration: none; padding: 6px; margin-top: 6px;">
+          ← Volver al Menú Principal
         </a>
       </div>
     </div>
