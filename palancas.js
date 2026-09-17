@@ -1,8 +1,9 @@
 /* ==========================================================================
    SENSOMETRIKA - MÓDULO 2: TEST DE PALANCAS (palancas.js)
-   • Medición dual: Cantidad de toques y Tiempo acumulado en error
-   • Secuencia: Demo Calibración (20 s) ➔ Simulación Oficial (60 s)
-   • Conteo y persistencia sincronizada con CreditManager e informe.html
+   • 1 Botón unificado en DOM
+   • Cronómetro funcional en tiempo real (20 s Demo / 60 s Oficial)
+   • Conteo estricto 1, 2, 3... según Plan y descuento real en Menú Principal
+   • Medición dual: errores (toques) y tiempo acumulado en error (s)
    ========================================================================== */
 
 const canvas = document.getElementById('lienzo-palancas') || document.querySelector('canvas');
@@ -11,14 +12,14 @@ const ctx = canvas ? canvas.getContext('2d') : null;
 const elCronometro = document.getElementById('cronometro') || document.getElementById('lbl-crono-palancas');
 const elContactos = document.getElementById('contador-toques') || document.getElementById('metrica-contactos');
 const panelMensaje = document.getElementById('panel-estado');
-const badgeModo = document.getElementById('badge-modo-palancas') || document.querySelector('.badge-modo');
+const badgeModo = document.getElementById('badge-modo-palancas') || document.getElementById('txt-modo-palancas') || document.querySelector('.badge-modo');
 const txtCircuito = document.getElementById('metrica-circuito');
 const zonaControles = document.getElementById('zona-coordinacion-palancas');
 
-const btnArriba = document.getElementById('btn-izq-arriba') || document.getElementById('btn-arriba');
-const btnAbajo = document.getElementById('btn-izq-abajo') || document.getElementById('btn-abajo');
-const btnIzq = document.getElementById('btn-der-izq') || document.getElementById('btn-izq');
-const btnDer = document.getElementById('btn-der-der') || document.getElementById('btn-der');
+const btnArriba = document.getElementById('btn-arriba') || document.getElementById('btn-izq-arriba');
+const btnAbajo = document.getElementById('btn-abajo') || document.getElementById('btn-izq-abajo');
+const btnIzq = document.getElementById('btn-izq') || document.getElementById('btn-der-izq');
+const btnDer = document.getElementById('btn-der') || document.getElementById('btn-der-der');
 
 let btnIniciar = null;
 
@@ -34,14 +35,14 @@ let tocandoBorde = false;
 let inicioContactoTimestamp = 0;
 let tiempoTotalErrorMs = 0;
 
-// Puntero electromecánico
+// Puntero y físicas
 let puntero = { x: 38, y: 45, radio: 7, velocidad: 2.3 };
 let teclas = { arriba: false, abajo: false, izquierda: false, derecha: false };
 
-// Circuitos normativos (D.S. N° 170)
+// Circuitos normativos D.S. N° 170
 const CIRCUITOS = [
   {
-    nombre: "Trazado 1 (Demo)",
+    nombre: "Trazado 1",
     inicio: { x: 38, y: 45 },
     meta: { x: 290, y: 175, radio: 11 },
     puntos: [
@@ -73,18 +74,15 @@ const CIRCUITOS = [
 
 let circuitoActual = CIRCUITOS[0];
 
-window.addEventListener('DOMContentLoaded', () => {
-  inicializarModulo();
-});
-
 function inicializarModulo() {
   if (!canvas || !ctx) return;
 
   if (!canvas.width || canvas.width < 320) canvas.width = 340;
   if (!canvas.height || canvas.height < 200) canvas.height = 220;
 
-  unificarBotonIniciar();
+  gestionarBotonUnico();
 
+  // Comprobar cupo en CreditManager
   if (window.CreditManager) {
     CreditManager.pintarBadgeCabecera('caja-contador-simulacion', 'palancas');
 
@@ -92,16 +90,22 @@ function inicializarModulo() {
       bloquearModuloPorCupo();
       return;
     }
+
+    // Si ya completó la inducción técnica, pasa directo a la oficial que le toca
+    if (CreditManager.demoYaRealizado('palancas')) {
+      prepararFaseOficial();
+      return;
+    }
   }
 
   prepararFaseDemo();
 }
 
-function unificarBotonIniciar() {
-  const posiblesBotones = document.querySelectorAll('#btn-iniciar, #btn-iniciar-palancas');
-  if (posiblesBotones.length > 1) {
-    for (let i = 1; i < posiblesBotones.length; i++) {
-      posiblesBotones[i].remove();
+function gestionarBotonUnico() {
+  const todosLosBotones = document.querySelectorAll('#btn-iniciar, #btn-iniciar-palancas');
+  if (todosLosBotones.length > 1) {
+    for (let i = 1; i < todosLosBotones.length; i++) {
+      todosLosBotones[i].remove();
     }
   }
 
@@ -139,7 +143,7 @@ function prepararFaseDemo() {
   if (previo) previo.remove();
 
   if (badgeModo) {
-    badgeModo.innerText = '🟡 Calibración Técnica (Demo 20s)';
+    badgeModo.innerText = '🟡 Calibración Técnica (Demo 20s) Fase de Inducción';
     badgeModo.style.color = '#facc15';
   }
   if (txtCircuito) txtCircuito.innerText = 'Trazado 1';
@@ -187,7 +191,7 @@ function prepararFaseOficial() {
   if (elContactos) elContactos.innerText = '0';
 
   if (panelMensaje) {
-    panelMensaje.innerText = 'Evaluación Oficial: Recorre la pista sin rozar bordes (Máx. 3 toques / ≤ 2.0 s de error).';
+    panelMensaje.innerText = `Evaluación Oficial ${actual} de ${max}: Recorre sin tocar bordes (Máx. 3 contactos / ≤ 2.0 s error).`;
     panelMensaje.style.color = '#fbbf24';
   }
 
@@ -215,7 +219,7 @@ function iniciarRecorrido() {
 
   if (panelMensaje) {
     panelMensaje.innerText = (modo === 'DEMO')
-      ? 'Fase Calibración: Conduce el punto a la meta verde.'
+      ? 'Fase Calibración en curso: Mueve las palancas hacia la meta.'
       : 'Evaluación Oficial en curso: Mantén el pulso constante.';
     panelMensaje.style.color = '#38bdf8';
   }
@@ -252,7 +256,6 @@ function actualizar() {
       if (elContactos) elContactos.innerText = toques;
       if ('vibrate' in navigator) navigator.vibrate(40);
     } else {
-      // Acumular tiempo mientras sigue en contacto con el borde
       tiempoTotalErrorMs += (ahora - inicioContactoTimestamp);
       inicioContactoTimestamp = ahora;
     }
@@ -321,29 +324,33 @@ function finalizarPrueba(metaAlcanzada) {
 
   const duracionTotal = (modo === 'DEMO') ? 20 : 60;
   const tiempoUsado = duracionTotal - Math.max(0, tiempoRestante);
-  const tiempoErrorSegundos = (tiempoTotalErrorMs / 1000).toFixed(2);
+  const tiempoErrorSeg = (tiempoTotalErrorMs / 1000).toFixed(2);
   const max = window.CreditManager ? CreditManager.obtenerLimiteModulo('palancas') : 3;
 
   if (modo === 'DEMO') {
+    if (window.CreditManager) CreditManager.marcarDemoCompletado('palancas');
+    
     if (panelMensaje) {
-      panelMensaje.innerText = `Calibración finalizada: ${toques} toques (${tiempoErrorSegundos} s en error). Pasa a la prueba oficial.`;
+      panelMensaje.innerText = `Calibración finalizada: ${toques} contactos (${tiempoErrorSeg} s error). Inicia tu prueba oficial.`;
       panelMensaje.style.color = '#4ade80';
     }
     prepararFaseOficial();
   } else {
-    // Criterio normativo: meta completada, toques <= 3 y permanencia en error <= 2.5 s
-    const aprobado = metaAlcanzada && toques <= 3 && parseFloat(tiempoErrorSegundos) <= 2.5;
-    let efectividad = Math.max(0, 100 - (toques * 10) - Math.round(parseFloat(tiempoErrorSegundos) * 5));
-
+    // DESCUENTO FORMAL EN CREDITMANAGER (SINCRONIZA MENÚ PRINCIPAL)
     const consumidas = window.CreditManager ? CreditManager.registrarConsumo('palancas') : 1;
     const bloqueoTotal = consumidas >= max;
 
+    const aprobado = metaAlcanzada && toques <= 3 && parseFloat(tiempoErrorSeg) <= 2.5;
+    let efectividad = Math.max(0, 100 - (toques * 10) - Math.round(parseFloat(tiempoErrorSeg) * 5));
+
+    // Persistencia para informe.html
     localStorage.setItem('sensometrika_palancas', JSON.stringify({
-      toques: toques,
-      tiempoError: parseFloat(tiempoErrorSegundos),
+      toques,
+      tiempoError: parseFloat(tiempoErrorSeg),
       tiempo: tiempoUsado,
       porcentaje: efectividad,
-      aprobado: aprobado,
+      aprobado,
+      simulacionNumero: consumidas,
       fecha: new Date().toISOString()
     }));
 
@@ -353,12 +360,11 @@ function finalizarPrueba(metaAlcanzada) {
 
     if (panelMensaje) {
       panelMensaje.innerText = aprobado 
-        ? `¡Aprobado! ${tiempoUsado} s recorridos con ${toques} contactos (${tiempoErrorSegundos} s error).` 
-        : `Reprobado (${!metaAlcanzada ? 'Tiempo agotado' : `${toques} toques / ${tiempoErrorSegundos} s error`}).`;
+        ? `¡Aprobado! ${tiempoUsado} s recorridos con ${toques} contactos (${tiempoErrorSeg} s error).` 
+        : `Reprobado (${!metaAlcanzada ? 'Tiempo límite agotado' : `${toques} contactos / ${tiempoErrorSeg} s error`}).`;
       panelMensaje.style.color = aprobado ? '#4ade80' : '#f87171';
     }
 
-    // Ocultar botón de calibración para evitar duplicados visuales
     if (btnIniciar) btnIniciar.style.display = 'none';
 
     const contenedorDestino = zonaControles || panelMensaje.parentNode;
@@ -371,11 +377,11 @@ function finalizarPrueba(metaAlcanzada) {
         ¡Simulación ${consumidas} de ${max} Finalizada!
       </h3>
       <p style="color: #cbd5e1; font-size: 0.9rem; margin: 4px 0 10px 0;">
-        <strong>Errores:</strong> ${toques} toques &nbsp;|&nbsp; 
-        <strong>Permanencia en error:</strong> ${tiempoErrorSegundos} s
+        <strong>Errores:</strong> ${toques} contactos &nbsp;|&nbsp; 
+        <strong>Permanencia en error:</strong> ${tiempoErrorSeg} s
       </p>
       <p style="color: #94a3b8; font-size: 0.8rem; margin-bottom: 12px;">
-        ${bloqueoTotal ? `Has alcanzado el límite máximo de ${max}/${max} simulaciones.` : `Te restan ${max - consumidas} simulación(es) disponible(s).`}
+        ${bloqueoTotal ? `Has completado el límite de ${max}/${max} simulaciones.` : `Te restan ${max - consumidas} simulación(es) disponible(s).`}
       </p>
       <div style="display: flex; flex-direction: column; gap: 8px;">
         ${!bloqueoTotal ? `
@@ -532,3 +538,5 @@ window.addEventListener('keyup', (e) => {
   if (e.key === 'a' || e.key === 'A' || e.key === 'ArrowLeft') teclas.izquierda = false;
   if (e.key === 'd' || e.key === 'D' || e.key === 'ArrowRight') teclas.derecha = false;
 });
+
+window.addEventListener('DOMContentLoaded', inicializarModulo);
