@@ -1,106 +1,84 @@
 /* ==========================================================================
-   SENSOMETRIKA - MÓDULO 2: COORDINACIÓN BIMANUAL (palancas.js)
-   • Bloqueo estricto e instantáneo al agotar cupo (puerta de entrada)
-   • Calibración Demo obligatoria (20s) y Evaluación Oficial (60s, D.S. N° 170)
-   • Variación de circuitos por simulación sin mecanización
+   SENSOMETRIKA - MÓDULO 2: TEST DE PALANCAS (palancas.js)
+   • Renderizado estable con canvas de alto contraste
+   • 1 Demo de Calibración (20 s) + Simulaciones Oficiales (60 s)
+   • Bloqueo estricto al completar cupo
    ========================================================================== */
 
-const canvas = document.getElementById('lienzo-palancas');
+const canvas = document.getElementById('lienzo-palancas') || document.querySelector('canvas');
 const ctx = canvas ? canvas.getContext('2d') : null;
 
-const badgeModo = document.getElementById('badge-modo-palancas') || document.querySelector('.badge-modo');
-const panelEstado = document.getElementById('panel-estado');
-const txtTiempo = document.getElementById('metrica-tiempo-palancas') || document.getElementById('metrica-tiempo');
-const txtContactos = document.getElementById('metrica-contactos-palancas') || document.getElementById('metrica-contactos');
-const txtCircuito = document.getElementById('metrica-circuito');
-const btnIniciar = document.getElementById('btn-iniciar-palancas') || document.getElementById('btn-iniciar');
-const zonaControles = document.getElementById('zona-coordinacion-palancas') || document.querySelector('.zona-controles');
+const elCronometro = document.getElementById('cronometro') || document.getElementById('lbl-crono-palancas');
+const elContactos = document.getElementById('contador-toques') || document.getElementById('metrica-contactos');
+const panelMensaje = document.getElementById('panel-estado');
+const badgeModo = document.getElementById('badge-modo-palancas');
+const zonaControles = document.getElementById('zona-coordinacion-palancas');
 
-// Mandos
-const btnArr = document.getElementById('btn-arriba');
-const btnAba = document.getElementById('btn-abajo');
-const btnIzq = document.getElementById('btn-izq');
-const btnDer = document.getElementById('btn-der');
+const btnArriba = document.getElementById('btn-izq-arriba') || document.getElementById('btn-arriba');
+const btnAbajo = document.getElementById('btn-izq-abajo') || document.getElementById('btn-abajo');
+const btnIzq = document.getElementById('btn-der-izq') || document.getElementById('btn-izq');
+const btnDer = document.getElementById('btn-der-der') || document.getElementById('btn-der');
 
-let modo = 'DEMO'; // 'DEMO' u 'OFICIAL'
-let simulando = false;
-let animacionId = null;
-let temporizador = null;
+let btnIniciar = document.getElementById('btn-iniciar-palancas') || document.getElementById('btn-iniciar');
 
-let tiempoRestante = 20;
-let tiempoTotal = 20;
+let modo = 'DEMO';
+let juegoActivo = false;
 let toques = 0;
-let toquesEnDemora = 0;
-let contactoActivo = false;
+let tiempoRestante = 20;
+let intervaloTiempo = null;
+let animacionFrame = null;
+let tocandoBorde = false;
 
-// Estado del puntero
-let posX = 0;
-let posY = 0;
-const radioPuntero = 8;
-const velocidad = 2.4;
+// Puntero electromecánico
+let puntero = { x: 38, y: 45, radio: 7, velocidad: 2.3 };
+let teclas = { arriba: false, abajo: false, izquierda: false, derecha: false };
 
-let teclas = { arriba: false, abajo: false, izq: false, der: false };
-
-// Definición de circuitos
-const circuitos = [
+// Circuitos normativos D.S. N° 170
+const CIRCUITOS = [
   {
-    nombre: 'Trazado 1',
-    anchoPista: 26,
-    meta: { x: 340, y: 220, r: 14 },
-    trazarRuta: function(c) {
-      c.beginPath();
-      c.moveTo(50, 45);
-      c.lineTo(260, 45);
-      c.lineTo(260, 115);
-      c.lineTo(80, 115);
-      c.lineTo(80, 220);
-      c.lineTo(340, 220);
-      c.stroke();
-    },
-    inicio: { x: 50, y: 45 }
+    nombre: "Trazado 1",
+    inicio: { x: 38, y: 45 },
+    meta: { x: 290, y: 175, radio: 11 },
+    puntos: [
+      { x: 35, y: 45 },
+      { x: 250, y: 45 },
+      { x: 250, y: 110 },
+      { x: 75, y: 110 },
+      { x: 75, y: 175 },
+      { x: 295, y: 175 }
+    ],
+    anchoCanal: 30
   },
   {
-    nombre: 'Trazado 2',
-    anchoPista: 26,
-    meta: { x: 330, y: 210, r: 14 },
-    trazarRuta: function(c) {
-      c.beginPath();
-      c.moveTo(50, 45);
-      c.lineTo(130, 45);
-      c.lineTo(130, 210);
-      c.lineTo(230, 210);
-      c.lineTo(230, 45);
-      c.lineTo(330, 45);
-      c.lineTo(330, 210);
-      c.stroke();
-    },
-    inicio: { x: 50, y: 45 }
-  },
-  {
-    nombre: 'Trazado 3',
-    anchoPista: 26,
-    meta: { x: 340, y: 45, r: 14 },
-    trazarRuta: function(c) {
-      c.beginPath();
-      c.moveTo(50, 220);
-      c.lineTo(180, 220);
-      c.lineTo(180, 120);
-      c.lineTo(60, 120);
-      c.lineTo(60, 45);
-      c.lineTo(340, 45);
-      c.stroke();
-    },
-    inicio: { x: 50, y: 220 }
+    nombre: "Trazado 2",
+    inicio: { x: 38, y: 45 },
+    meta: { x: 290, y: 175, radio: 11 },
+    puntos: [
+      { x: 35, y: 45 },
+      { x: 140, y: 45 },
+      { x: 140, y: 140 },
+      { x: 230, y: 140 },
+      { x: 230, y: 60 },
+      { x: 295, y: 60 },
+      { x: 295, y: 175 }
+    ],
+    anchoCanal: 28
   }
 ];
 
-let circuitoActual = circuitos[0];
+let circuitoActual = CIRCUITOS[0];
 
-window.addEventListener('DOMContentLoaded', () => {
-  if (typeof CreditManager !== 'undefined') {
+function inicializarModulo() {
+  if (!canvas || !ctx) return;
+
+  if (!canvas.width || canvas.width < 320) canvas.width = 340;
+  if (!canvas.height || canvas.height < 200) canvas.height = 220;
+
+  crearBotonIniciarSiFalta();
+
+  if (window.CreditManager) {
     CreditManager.pintarBadgeCabecera('caja-contador-simulacion', 'palancas');
 
-    // BARRERA DE ENTRADA INMEDIATA: Bloqueo estricto
     if (!CreditManager.puedeRendir('palancas')) {
       bloquearModuloPorCupo();
       return;
@@ -112,362 +90,379 @@ window.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  prepararVistaDemo();
-});
+  modo = 'DEMO';
+  circuitoActual = CIRCUITOS[0];
+  puntero.x = circuitoActual.inicio.x;
+  puntero.y = circuitoActual.inicio.y;
+
+  if (panelMensaje) {
+    panelMensaje.innerText = 'Calibrando: Conduce el punto a la meta verde.';
+    panelMensaje.style.color = '#38bdf8';
+  }
+  if (btnIniciar) {
+    btnIniciar.style.display = 'block';
+    btnIniciar.style.backgroundColor = '#0284c7';
+    btnIniciar.innerText = 'Iniciar Calibración (20 s)';
+    btnIniciar.disabled = false;
+  }
+
+  renderizar();
+}
+
+function crearBotonIniciarSiFalta() {
+  btnIniciar = document.getElementById('btn-iniciar-palancas') || document.getElementById('btn-iniciar');
+  if (!btnIniciar) {
+    btnIniciar = document.createElement('button');
+    btnIniciar.id = 'btn-iniciar-palancas';
+    btnIniciar.style.cssText = 'width: 100%; height: 46px; border: none; border-radius: 8px; font-weight: 800; font-size: 0.95rem; color: #fff; background: #0284c7; margin: 12px 0; cursor: pointer; display: block;';
+    btnIniciar.innerText = 'Iniciar Calibración (20 s)';
+    
+    if (panelMensaje && panelMensaje.parentNode) {
+      panelMensaje.parentNode.insertBefore(btnIniciar, panelMensaje.nextSibling);
+    }
+  }
+
+  btnIniciar.onclick = (e) => {
+    e.preventDefault();
+    if (btnIniciar.disabled || juegoActivo) return;
+    iniciarRecorrido();
+  };
+}
 
 function bloquearModuloPorCupo() {
-  simulando = false;
-  cancelAnimationFrame(animacionId);
-  clearInterval(temporizador);
-
-  const max = (typeof CreditManager !== 'undefined') ? CreditManager.obtenerLimiteModulo('palancas') : 3;
-
+  const max = window.CreditManager ? CreditManager.obtenerLimiteModulo('palancas') : 3;
   if (btnIniciar) {
     btnIniciar.disabled = true;
+    btnIniciar.style.display = 'block';
     btnIniciar.style.opacity = '0.4';
     btnIniciar.style.backgroundColor = '#475569';
-    btnIniciar.innerText = `Cupo Bloqueado (${max}/${max} Realizadas)`;
+    btnIniciar.innerText = `Cupo Bloqueado (${max}/${max})`;
   }
   if (badgeModo) {
     badgeModo.innerText = `🔴 Simulación Oficial ${max} de ${max} (Bloqueado)`;
     badgeModo.style.color = '#f87171';
   }
-  if (panelEstado) {
-    panelEstado.innerText = `Has completado el límite de ${max} simulaciones para este módulo.`;
-    panelEstado.style.color = '#f87171';
+  if (panelMensaje) {
+    panelMensaje.innerText = `Has completado tus ${max} simulaciones permitidas para este módulo.`;
+    panelMensaje.style.color = '#f87171';
   }
-
-  deshabilitarControles();
-
-  // Reemplazo del área de acción por bloqueo inmediato
-  const areaBloqueo = zonaControles || panelEstado;
-  if (areaBloqueo) {
-    areaBloqueo.innerHTML = `
-      <div style="background: #020617; border: 1.5px solid #dc2626; border-radius: 12px; padding: 18px; margin-top: 14px; text-align: center; width: 100%; box-sizing: border-box;">
-        <h3 style="color: #ef4444; margin: 0 0 6px 0; font-size: 1.1rem;">Módulo Palancas Bloqueado (${max}/${max})</h3>
-        <p style="color: #94a3b8; font-size: 0.85rem; margin-bottom: 14px;">Completaste todas las simulaciones de tu Plan en este módulo.</p>
-        <div style="display:flex; flex-direction:column; gap:8px;">
-          <a href="punteo.html" style="display:flex; justify-content:center; align-items:center; height:42px; background:#0284c7; color:#fff; text-decoration:none; border-radius:6px; font-weight:bold; font-size:0.9rem;">
-            Continuar a Módulo 3 (Punteo) →
-          </a>
-          <a href="menu.html" style="color:#64748b; font-size:0.8rem; text-decoration:none; padding:4px;">
-            Volver al Menú Principal
-          </a>
-        </div>
-      </div>
-    `;
-  }
-}
-
-function prepararVistaDemo() {
-  modo = 'DEMO';
-  tiempoRestante = 20;
-  tiempoTotal = 20;
-  toques = 0;
-  circuitoActual = circuitos[0];
-
-  if (badgeModo) {
-    badgeModo.innerText = '🟡 Calibración Técnica (Demo 20 s)';
-    badgeModo.style.color = '#facc15';
-  }
-  if (panelEstado) {
-    panelEstado.innerText = 'Calibrando: Conduce el punto a la meta verde.';
-    panelEstado.style.color = '#4ade80';
-  }
-  if (txtTiempo) txtTiempo.innerText = `${tiempoRestante} s`;
-  if (txtContactos) txtContactos.innerText = `${toques}`;
-  if (txtCircuito) txtCircuito.innerText = circuitoActual.nombre;
-
-  if (btnIniciar) {
-    btnIniciar.style.display = 'block';
-    btnIniciar.disabled = false;
-    btnIniciar.style.opacity = '1';
-    btnIniciar.innerText = 'Iniciar Calibración (20 s)';
-    btnIniciar.style.backgroundColor = '#0284c7';
-  }
-
-  inicializarCanvas();
+  renderizar();
 }
 
 function prepararVistaOficial() {
   modo = 'OFICIAL';
-  tiempoRestante = 60;
-  tiempoTotal = 60;
-  toques = 0;
+  juegoActivo = false;
+  const actual = window.CreditManager ? CreditManager.obtenerNumeroSimulacionActual('palancas') : 1;
+  const max = window.CreditManager ? CreditManager.obtenerLimiteModulo('palancas') : 3;
 
-  const actual = (typeof CreditManager !== 'undefined') ? CreditManager.obtenerNumeroSimulacionActual('palancas') : 1;
-  const max = (typeof CreditManager !== 'undefined') ? CreditManager.obtenerLimiteModulo('palancas') : 3;
-
-  // Selección rotativa de trazado
-  circuitoActual = circuitos[(actual - 1) % circuitos.length];
+  circuitoActual = CIRCUITOS[1];
+  puntero.x = circuitoActual.inicio.x;
+  puntero.y = circuitoActual.inicio.y;
 
   if (badgeModo) {
-    badgeModo.innerText = `🔴 Simulación Oficial ${actual} de ${max}`;
+    badgeModo.innerText = `🔴 Simulación Oficial ${actual} de ${max} (D.S. N° 170)`;
     badgeModo.style.color = '#38bdf8';
   }
-  if (panelEstado) {
-    panelEstado.innerText = 'Evaluación oficial: Conduce sin tocar los bordes.';
-    panelEstado.style.color = '#38bdf8';
+  if (panelMensaje) {
+    panelMensaje.innerText = 'Evaluación Oficial: Recorre la pista sin tocar los bordes (Máx. 3 contactos).';
+    panelMensaje.style.color = '#fbbf24';
   }
-  if (txtTiempo) txtTiempo.innerText = `${tiempoRestante} s`;
-  if (txtContactos) txtContactos.innerText = `${toques}`;
-  if (txtCircuito) txtCircuito.innerText = circuitoActual.nombre;
-
   if (btnIniciar) {
     btnIniciar.style.display = 'block';
     btnIniciar.disabled = false;
     btnIniciar.style.opacity = '1';
-    btnIniciar.innerText = `Iniciar Simulación Oficial (${actual} de ${max})`;
     btnIniciar.style.backgroundColor = '#22c55e';
+    btnIniciar.innerText = `Iniciar Simulación Oficial (${actual} de ${max})`;
   }
+  if (elCronometro) elCronometro.innerText = '60 s';
 
-  inicializarCanvas();
+  renderizar();
 }
 
-function inicializarCanvas() {
-  if (!canvas || !ctx) return;
-  posX = circuitoActual.inicio.x;
-  posY = circuitoActual.inicio.y;
-  dibujarEscenario();
-}
-
-function dibujarEscenario() {
-  if (!ctx) return;
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-  // Cuadrícula de fondo
-  ctx.strokeStyle = '#1e293b';
-  ctx.lineWidth = 1;
-  for (let x = 0; x < canvas.width; x += 25) {
-    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke();
-  }
-  for (let y = 0; y < canvas.height; y += 25) {
-    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke();
-  }
-
-  // Pista de neón
-  ctx.lineCap = 'round';
-  ctx.lineJoin = 'round';
-  ctx.lineWidth = circuitoActual.anchoPista;
-  ctx.strokeStyle = '#0284c7';
-  circuitoActual.trazarRuta(ctx);
-
-  // Carril central
-  ctx.lineWidth = 2;
-  ctx.strokeStyle = '#1e1b4b';
-  ctx.setLineDash([4, 4]);
-  circuitoActual.trazarRuta(ctx);
-  ctx.setLineDash([]);
-
-  // Meta
-  ctx.beginPath();
-  ctx.arc(circuitoActual.meta.x, circuitoActual.meta.y, circuitoActual.meta.r, 0, Math.PI * 2);
-  ctx.fillStyle = '#22c55e';
-  ctx.shadowColor = '#22c55e';
-  ctx.shadowBlur = 8;
-  ctx.fill();
-  ctx.shadowBlur = 0;
-
-  // Puntero
-  ctx.beginPath();
-  ctx.arc(posX, posY, radioPuntero, 0, Math.PI * 2);
-  ctx.fillStyle = contactoActivo ? '#ef4444' : '#f59e0b';
-  ctx.shadowColor = contactoActivo ? '#ef4444' : '#f59e0b';
-  ctx.shadowBlur = 10;
-  ctx.fill();
-  ctx.shadowBlur = 0;
-}
-
-if (btnIniciar) {
-  btnIniciar.addEventListener('click', () => {
-    if (simulando) return;
-    comenzarPrueba();
-  });
-}
-
-function comenzarPrueba() {
-  simulando = true;
-  btnIniciar.style.display = 'none';
+function iniciarRecorrido() {
   toques = 0;
-  toquesEnDemora = 0;
-  contactoActivo = false;
+  tocandoBorde = false;
+  juegoActivo = true;
 
-  habilitarControles();
+  if (elContactos) elContactos.innerText = '0';
+  if (btnIniciar) btnIniciar.style.display = 'none';
 
-  temporizador = setInterval(() => {
+  tiempoRestante = (modo === 'DEMO') ? 20 : 60;
+  if (elCronometro) elCronometro.innerText = `${tiempoRestante} s`;
+
+  if (panelMensaje) {
+    panelMensaje.innerText = (modo === 'DEMO')
+      ? 'Fase Demo: Dirige el punto hacia la meta verde.'
+      : 'Evaluación en curso: Mantén el pulso sin tocar los bordes.';
+    panelMensaje.style.color = '#38bdf8';
+  }
+
+  clearInterval(intervaloTiempo);
+  intervaloTiempo = setInterval(() => {
     tiempoRestante--;
-    if (txtTiempo) txtTiempo.innerText = `${tiempoRestante} s`;
+    if (elCronometro) elCronometro.innerText = `${tiempoRestante} s`;
 
     if (tiempoRestante <= 0) {
-      clearInterval(temporizador);
       finalizarPrueba(false);
     }
   }, 1000);
 
-  bucleAnimacion();
+  actualizar();
 }
 
-function bucleAnimacion() {
-  if (!simulando) return;
+function actualizar() {
+  if (!juegoActivo) return;
 
-  actualizarPosicion();
-  verificarColision();
-  verificarMeta();
-  dibujarEscenario();
+  if (teclas.arriba) puntero.y -= puntero.velocidad;
+  if (teclas.abajo) puntero.y += puntero.velocidad;
+  if (teclas.izquierda) puntero.x -= puntero.velocidad;
+  if (teclas.derecha) puntero.x += puntero.velocidad;
 
-  animacionId = requestAnimationFrame(bucleAnimacion);
-}
+  const colisiona = evaluarContactoBorde(puntero.x, puntero.y);
 
-function actualizarPosicion() {
-  if (teclas.arriba) posY -= velocidad;
-  if (teclas.abajo) posY += velocidad;
-  if (teclas.izq) posX -= velocidad;
-  if (teclas.der) posX += velocidad;
-
-  // Límites del canvas
-  posX = Math.max(radioPuntero, Math.min(canvas.width - radioPuntero, posX));
-  posY = Math.max(radioPuntero, Math.min(canvas.height - radioPuntero, posY));
-}
-
-function verificarColision() {
-  if (!ctx) return;
-  // Detección de contacto con los bordes (pixel fuera de ruta azul/carril)
-  const pixel = ctx.getImageData(Math.round(posX), Math.round(posY), 1, 1).data;
-  const esPista = (pixel[0] === 2 && pixel[1] === 132 && pixel[2] === 199) || 
-                  (pixel[0] === 30 && pixel[1] === 27 && pixel[2] === 75) ||
-                  (pixel[0] === 34 && pixel[1] === 197 && pixel[2] === 94);
-
-  if (!esPista) {
-    if (!contactoActivo) {
-      contactoActivo = true;
+  if (colisiona) {
+    if (!tocandoBorde) {
+      tocandoBorde = true;
       toques++;
-      if (txtContactos) txtContactos.innerText = `${toques}`;
-      if ('vibrate' in navigator) navigator.vibrate(50);
+      if (elContactos) elContactos.innerText = toques;
+      if ('vibrate' in navigator) navigator.vibrate(40);
     }
-    toquesEnDemora += 0.016;
   } else {
-    contactoActivo = false;
+    tocandoBorde = false;
   }
-}
 
-function verificarMeta() {
-  const dx = posX - circuitoActual.meta.x;
-  const dy = posY - circuitoActual.meta.y;
-  const dist = Math.sqrt(dx * dx + dy * dy);
-
-  if (dist < circuitoActual.meta.r) {
-    clearInterval(temporizador);
+  const meta = circuitoActual.meta;
+  const distMeta = Math.hypot(puntero.x - meta.x, puntero.y - meta.y);
+  if (distMeta <= meta.radio + 4) {
     finalizarPrueba(true);
-  }
-}
-
-function finalizarPrueba(metaAlcanzada) {
-  simulando = false;
-  cancelAnimationFrame(animacionId);
-  deshabilitarControles();
-
-  const tiempoUsado = tiempoTotal - tiempoRestante;
-
-  if (modo === 'DEMO') {
-    if (typeof CreditManager !== 'undefined') {
-      CreditManager.marcarDemoCompletado('palancas');
-    }
-    if (panelEstado) {
-      panelEstado.innerText = 'Calibración concluida. Prepárate para la Simulación Oficial.';
-      panelEstado.style.color = '#4ade80';
-    }
-    prepararVistaOficial();
     return;
   }
 
-  // FASE OFICIAL
-  let consumidas = 1;
-  let max = 3;
-  if (typeof CreditManager !== 'undefined') {
-    consumidas = CreditManager.registrarConsumo('palancas');
-    max = CreditManager.obtenerLimiteModulo('palancas');
-    CreditManager.pintarBadgeCabecera('caja-contador-simulacion', 'palancas');
+  renderizar();
+  animacionFrame = requestAnimationFrame(actualizar);
+}
+
+function evaluarContactoBorde(px, py) {
+  const pts = circuitoActual.puntos;
+  const radioPuntero = puntero.radio;
+  const radioCanal = circuitoActual.anchoCanal / 2;
+
+  let minDis = Infinity;
+  for (let i = 0; i < pts.length - 1; i++) {
+    const d = distanciaPuntoASegmento(px, py, pts[i].x, pts[i].y, pts[i + 1].x, pts[i + 1].y);
+    if (d < minDis) minDis = d;
   }
+  return (minDis + radioPuntero) >= radioCanal;
+}
 
-  const aprobado = metaAlcanzada && toques <= 3;
-  const precision = Math.max(0, Math.round(100 - (toques * 10)));
+function distanciaPuntoASegmento(px, py, x1, y1, x2, y2) {
+  const A = px - x1;
+  const B = py - y1;
+  const C = x2 - x1;
+  const D = y2 - y1;
+  const dot = A * C + B * D;
+  const len_sq = C * C + D * D;
+  let param = -1;
+  if (len_sq !== 0) param = dot / len_sq;
 
-  localStorage.setItem('sensometrika_palancas', JSON.stringify({
-    toques: toques,
-    tiempoUsado: tiempoUsado,
-    meta: metaAlcanzada,
-    precision: precision,
-    aprobado: aprobado,
-    fecha: new Date().toISOString()
-  }));
-
-  const bloqueado = consumidas >= max;
-  const punteoTieneCupo = (typeof CreditManager !== 'undefined') ? CreditManager.puedeRendir('punteo') : false;
-
-  let enlaceSiguiente = '';
-  if (punteoTieneCupo) {
-    enlaceSiguiente = `
-      <a href="punteo.html" class="btn-principal" style="display:flex; justify-content:center; align-items:center; text-decoration:none; height:42px; background-color:#0284c7; color:#fff; border-radius:6px; font-weight:bold; font-size:0.9rem;">
-        Continuar a Módulo 3 (Punteo) →
-      </a>
-    `;
+  let xx, yy;
+  if (param < 0) {
+    xx = x1; yy = y1;
+  } else if (param > 1) {
+    xx = x2; yy = y2;
   } else {
-    enlaceSiguiente = `
-      <a href="menu.html" class="btn-principal" style="display:flex; justify-content:center; align-items:center; text-decoration:none; height:42px; background-color:#0284c7; color:#fff; border-radius:6px; font-weight:bold; font-size:0.9rem;">
-        Ver Menú Principal e Informe →
-      </a>
-    `;
+    xx = x1 + param * C;
+    yy = y1 + param * D;
   }
+  return Math.hypot(px - xx, py - yy);
+}
 
-  const contenedor = zonaControles || panelEstado;
-  contenedor.innerHTML = `
-    <div style="background: #020617; border: 1.5px solid ${aprobado ? '#22c55e' : '#ef4444'}; border-radius: 12px; padding: 18px; margin-top: 14px; text-align: center; width: 100%; box-sizing: border-box;">
-      <h3 style="color: ${aprobado ? '#4ade80' : '#f87171'}; margin: 0 0 6px 0; font-size: 1.1rem;">
-        ¡Simulación ${consumidas} de ${max} Finalizada!
-      </h3>
-      <p style="color: #94a3b8; font-size: 0.85rem; margin-bottom: 8px;">
-        Precisión: <strong style="color: #fff;">${precision}%</strong> (${toques} contactos en ${tiempoUsado} s)
-      </p>
-      <p style="color: #38bdf8; font-size: 0.82rem; font-weight: bold; margin-bottom: 12px;">
-        ${bloqueado ? `Has completado tus ${max}/${max} simulaciones en este módulo.` : `Te restan ${max - consumidas} simulación(es) en este módulo.`}
+function finalizarPrueba(metaAlcanzada) {
+  juegoActivo = false;
+  clearInterval(intervaloTiempo);
+  cancelAnimationFrame(animacionFrame);
+
+  const duracionTotal = (modo === 'DEMO') ? 20 : 60;
+  const tiempoUsado = duracionTotal - tiempoRestante;
+  const aprobado = metaAlcanzada && toques <= 3;
+  const max = window.CreditManager ? CreditManager.obtenerLimiteModulo('palancas') : 3;
+
+  if (modo === 'DEMO') {
+    if (window.CreditManager) CreditManager.marcarDemoCompletado('palancas');
+    const actual = window.CreditManager ? CreditManager.obtenerNumeroSimulacionActual('palancas') : 1;
+
+    if (panelMensaje) {
+      panelMensaje.innerText = `¡Calibración lista! Contactos: ${toques}. Inicia tu Simulación Oficial.`;
+      panelMensaje.style.color = '#4ade80';
+    }
+
+    if (btnIniciar) {
+      btnIniciar.style.display = 'block';
+      btnIniciar.disabled = false;
+      btnIniciar.style.backgroundColor = '#22c55e';
+      btnIniciar.innerText = `Iniciar Simulación Oficial (${actual} de ${max})`;
+    }
+    modo = 'OFICIAL';
+    circuitoActual = CIRCUITOS[1];
+    puntero.x = circuitoActual.inicio.x;
+    puntero.y = circuitoActual.inicio.y;
+  } else {
+    const consumidas = window.CreditManager ? CreditManager.registrarConsumo('palancas') : 1;
+    const bloqueoTotal = consumidas >= max;
+
+    localStorage.setItem('sensometrika_palancas', JSON.stringify({
+      toques,
+      tiempo: tiempoUsado,
+      aprobado,
+      fecha: new Date().toISOString()
+    }));
+
+    if (window.CreditManager) {
+      CreditManager.pintarBadgeCabecera('caja-contador-simulacion', 'palancas');
+    }
+
+    if (panelMensaje) {
+      panelMensaje.innerText = aprobado 
+        ? `¡Aprobado! Recorrido completado con ${toques} contactos en ${tiempoUsado} s.` 
+        : `Reprobado (${toques} contactos o tiempo agotado).`;
+      panelMensaje.style.color = aprobado ? '#4ade80' : '#f87171';
+    }
+
+    const contenedorDestino = zonaControles || panelMensaje.parentNode;
+    const panelFinal = document.createElement('div');
+    panelFinal.id = 'panel-final-palancas';
+    panelFinal.style.cssText = `background: #020617; border: 1.5px solid ${bloqueoTotal ? '#ef4444' : '#38bdf8'}; border-radius: 12px; padding: 16px; margin-top: 14px; text-align: center;`;
+    panelFinal.innerHTML = `
+      <h3 style="color: ${bloqueoTotal ? '#f87171' : '#4ade80'}; margin: 0 0 6px 0;">¡Simulación ${consumidas} de ${max} Finalizada!</h3>
+      <p style="color: #94a3b8; font-size: 0.85rem; margin-bottom: 12px;">
+        ${bloqueoTotal ? `Has completado el límite máximo de ${max}/${max} simulaciones.` : `Te restan ${max - consumidas} simulación(es) disponible(s).`}
       </p>
       <div style="display: flex; flex-direction: column; gap: 8px;">
-        ${!bloqueado ? `
+        ${!bloqueoTotal ? `
           <button onclick="location.reload()" style="height:42px; background:#22c55e; color:#fff; border:none; border-radius:6px; font-weight:bold; cursor:pointer;">
             🔄 Rendir Simulación ${consumidas + 1} de ${max} →
           </button>
         ` : ''}
-        ${enlaceSiguiente}
+        <a href="punteo.html" style="display:flex; justify-content:center; align-items:center; height:42px; background:#0284c7; color:#fff; text-decoration:none; border-radius:6px; font-weight:bold;">
+          Continuar a Módulo 3 (Punteo) →
+        </a>
         <a href="menu.html" style="color:#64748b; font-size:0.8rem; text-decoration:none; padding:4px;">
           Volver al Menú Principal
         </a>
       </div>
-    </div>
-  `;
+    `;
+
+    const previo = document.getElementById('panel-final-palancas');
+    if (previo) previo.remove();
+    contenedorDestino.appendChild(panelFinal);
+
+    if (bloqueoTotal) {
+      bloquearModuloPorCupo();
+    }
+  }
+
+  renderizar();
 }
 
-// Control de pulsadores táctiles
-function configurarBoton(elemento, direccion) {
-  if (!elemento) return;
-  const activar = (e) => { e.preventDefault(); if (simulando) teclas[direccion] = true; };
+function renderizar() {
+  if (!ctx || !canvas) return;
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  ctx.fillStyle = '#050b14';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  ctx.strokeStyle = 'rgba(30, 41, 59, 0.4)';
+  ctx.lineWidth = 1;
+  for (let x = 0; x < canvas.width; x += 20) {
+    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke();
+  }
+  for (let y = 0; y < canvas.height; y += 20) {
+    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke();
+  }
+
+  const pts = circuitoActual.puntos;
+
+  ctx.strokeStyle = '#0284c7';
+  ctx.lineWidth = circuitoActual.anchoCanal + 4;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  ctx.beginPath();
+  ctx.moveTo(pts[0].x, pts[0].y);
+  for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i].x, pts[i].y);
+  ctx.stroke();
+
+  ctx.strokeStyle = '#0b1329';
+  ctx.lineWidth = circuitoActual.anchoCanal - 2;
+  ctx.beginPath();
+  ctx.moveTo(pts[0].x, pts[0].y);
+  for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i].x, pts[i].y);
+  ctx.stroke();
+
+  ctx.strokeStyle = 'rgba(56, 189, 248, 0.35)';
+  ctx.lineWidth = 1.5;
+  ctx.setLineDash([5, 5]);
+  ctx.beginPath();
+  ctx.moveTo(pts[0].x, pts[0].y);
+  for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i].x, pts[i].y);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  const meta = circuitoActual.meta;
+  ctx.beginPath();
+  ctx.arc(meta.x, meta.y, meta.radio, 0, Math.PI * 2);
+  ctx.fillStyle = '#22c55e';
+  ctx.shadowColor = '#22c55e';
+  ctx.shadowBlur = 10;
+  ctx.fill();
+  ctx.shadowBlur = 0;
+  ctx.strokeStyle = '#ffffff';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  ctx.beginPath();
+  ctx.arc(puntero.x, puntero.y, puntero.radio, 0, Math.PI * 2);
+  ctx.fillStyle = tocandoBorde ? '#ef4444' : '#eab308';
+  ctx.shadowColor = tocandoBorde ? '#ef4444' : '#eab308';
+  ctx.shadowBlur = 12;
+  ctx.fill();
+  ctx.shadowBlur = 0;
+  ctx.strokeStyle = '#ffffff';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+}
+
+function vincularBoton(btn, direccion) {
+  if (!btn) return;
+  const activar = (e) => { 
+    e.preventDefault(); 
+    if (!juegoActivo) iniciarRecorrido();
+    teclas[direccion] = true; 
+  };
   const desactivar = (e) => { e.preventDefault(); teclas[direccion] = false; };
-
-  elemento.addEventListener('pointerdown', activar);
-  elemento.addEventListener('pointerup', desactivar);
-  elemento.addEventListener('pointerleave', desactivar);
-  elemento.addEventListener('pointercancel', desactivar);
+  btn.addEventListener('pointerdown', activar);
+  btn.addEventListener('pointerup', desactivar);
+  btn.addEventListener('pointerleave', desactivar);
+  btn.addEventListener('touchstart', activar, { passive: false });
+  btn.addEventListener('touchend', desactivar, { passive: false });
 }
 
-configurarBoton(btnArr, 'arriba');
-configurarBoton(btnAba, 'abajo');
-configurarBoton(btnIzq, 'izq');
-configurarBoton(btnDer, 'der');
+vincularBoton(btnArriba, 'arriba');
+vincularBoton(btnAbajo, 'abajo');
+vincularBoton(btnIzq, 'izquierda');
+vincularBoton(btnDer, 'derecha');
 
-function habilitarControles() {
-  [btnArr, btnAba, btnIzq, btnDer].forEach(b => { if (b) b.disabled = false; });
-}
+window.addEventListener('keydown', (e) => {
+  if (e.key === 'w' || e.key === 'W' || e.key === 'ArrowUp') teclas.arriba = true;
+  if (e.key === 's' || e.key === 'S' || e.key === 'ArrowDown') teclas.abajo = true;
+  if (e.key === 'a' || e.key === 'A' || e.key === 'ArrowLeft') teclas.izquierda = true;
+  if (e.key === 'd' || e.key === 'D' || e.key === 'ArrowRight') teclas.derecha = true;
+});
 
-function deshabilitarControles() {
-  teclas = { arriba: false, abajo: false, izq: false, der: false };
-  [btnArr, btnAba, btnIzq, btnDer].forEach(b => { if (b) b.disabled = true; });
-}
+window.addEventListener('keyup', (e) => {
+  if (e.key === 'w' || e.key === 'W' || e.key === 'ArrowUp') teclas.arriba = false;
+  if (e.key === 's' || e.key === 'S' || e.key === 'ArrowDown') teclas.abajo = false;
+  if (e.key === 'a' || e.key === 'A' || e.key === 'ArrowLeft') teclas.izquierda = false;
+  if (e.key === 'd' || e.key === 'D' || e.key === 'ArrowRight') teclas.derecha = false;
+});
+
+window.addEventListener('DOMContentLoaded', inicializarModulo);
