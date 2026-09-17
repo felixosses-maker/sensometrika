@@ -3,201 +3,262 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Sensometrika | Reactímetro</title>
+  <title>Módulo 1: Reactímetro | Sensometrika</title>
   <link rel="stylesheet" href="styles.css">
   <style>
-    .barra-superior {
+    body {
+      background-color: #0b1329;
+      color: #f8fafc;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      margin: 0;
+      padding: 12px;
+      display: flex;
+      justify-content: center;
+      box-sizing: border-box;
+      user-select: none;
+    }
+    .contenedor-app {
       width: 100%;
+      max-width: 440px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .cabecera-nav {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 8px;
+      padding: 4px 0;
     }
-    .barra-superior a {
+    .btn-nav-retroceso {
       color: #94a3b8;
       text-decoration: none;
       font-size: 0.85rem;
       font-weight: 600;
     }
-    .btn-guia {
-      background: #0f172a;
-      border: 1px solid #38bdf8;
-      color: #38bdf8;
-      padding: 4px 8px;
-      border-radius: 6px;
-      font-size: 0.75rem;
-      cursor: pointer;
-      font-weight: 600;
-    }
-    .btn-guia:hover {
+    .btn-ayuda-modal {
       background: #1e293b;
+      color: #38bdf8;
+      border: 1px solid #0284c7;
+      border-radius: 6px;
+      padding: 5px 10px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 4px;
     }
     .barra-conteo-b2c {
       width: 100%;
       display: flex;
       justify-content: center;
-      margin-bottom: 8px;
+      margin-bottom: 2px;
     }
-    .barra-calibracion {
-      background: #0f172a;
-      border: 1px solid #38bdf8;
-      border-radius: 8px;
-      padding: 8px 12px;
-      font-size: 0.78rem;
-      color: #94a3b8;
-      width: 100%;
+    .tarjeta-modulo {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 12px;
+      padding: 12px 14px;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 12px;
-      box-sizing: border-box;
+      font-size: 0.8rem;
     }
-    .semaforo-caja {
-      background-color: #020617;
-      padding: 16px;
-      border-radius: 40px;
+    .caja-semaforo {
+      background: #020617;
+      border: 2px solid #334155;
+      border-radius: 28px;
+      padding: 18px 24px;
       display: flex;
-      gap: 20px;
-      border: 3px solid #334155;
-      margin: 10px auto;
       justify-content: center;
+      align-items: center;
+      gap: 20px;
+      margin: 8px auto;
       width: fit-content;
     }
     .luz {
-      width: 70px;
-      height: 70px;
+      width: 65px;
+      height: 65px;
       border-radius: 50%;
-      transition: opacity 0.1s ease, box-shadow 0.1s ease;
+      transition: opacity 0.15s ease;
     }
-    .verde { background-color: #22c55e; }
-    .roja { background-color: #ef4444; }
-    .apagada { opacity: 0.15; box-shadow: none; }
-    .verde.encendida { opacity: 1; box-shadow: 0 0 25px #22c55e; }
-    .roja.encendida { opacity: 1; box-shadow: 0 0 30px #ef4444; }
-    .panel-resultados {
+    .luz-verde {
+      background-color: #22c55e;
+      opacity: 0.2;
+    }
+    .luz-roja {
+      background-color: #ef4444;
+      opacity: 0.2;
+    }
+    .luz.encendida {
+      opacity: 1;
+      box-shadow: 0 0 24px currentColor;
+    }
+    .panel-feedback {
+      min-height: 24px;
+      font-size: 0.85rem;
+      text-align: center;
+      font-weight: 500;
+    }
+    .btn-accion-freno {
+      width: 100%;
+      height: 52px;
+      border-radius: 8px;
+      border: none;
+      font-size: 1rem;
+      font-weight: bold;
+      color: #ffffff;
+      cursor: pointer;
+    }
+    .rejilla-metricas {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
       gap: 8px;
-      margin: 14px 0;
-      width: 100%;
+      margin-top: 6px;
     }
     .tarjeta-metrica {
-      background-color: #0f172a;
-      border: 1px solid #334155;
-      padding: 10px 6px;
+      background: #0f172a;
+      border: 1px solid #1e293b;
       border-radius: 8px;
+      padding: 10px 4px;
       text-align: center;
     }
-    .tarjeta-metrica span { display: block; font-size: 0.7rem; color: #94a3b8; }
-    .tarjeta-metrica strong { font-size: 0.95rem; color: #38bdf8; }
-
-    /* Modal emergente de instrucciones */
-    .modal-flotante {
+    .tarjeta-metrica .etiqueta {
+      font-size: 0.7rem;
+      color: #94a3b8;
+      display: block;
+      margin-bottom: 4px;
+    }
+    .tarjeta-metrica .valor {
+      font-size: 0.95rem;
+      font-weight: bold;
+      color: #38bdf8;
+    }
+    .btn-forzar-demo {
+      background: transparent;
+      border: 1px dashed #475569;
+      color: #94a3b8;
+      border-radius: 6px;
+      padding: 6px 12px;
+      font-size: 0.75rem;
+      cursor: pointer;
+      text-align: center;
+      margin: 4px auto 0;
+      display: inline-block;
+    }
+    .btn-forzar-demo:hover {
+      border-color: #38bdf8;
+      color: #38bdf8;
+    }
+    /* Modal de Ayuda Corporativo */
+    .modal-fondo {
       display: none;
       position: fixed;
       inset: 0;
-      background: rgba(2, 6, 23, 0.85);
-      backdrop-filter: blur(4px);
+      background-color: rgba(2, 6, 23, 0.85);
       z-index: 999;
-      align-items: center;
       justify-content: center;
+      align-items: center;
       padding: 16px;
       box-sizing: border-box;
     }
-    .modal-caja {
-      background: #0f172a;
-      border: 1.5px solid #38bdf8;
+    .modal-contenido {
+      background-color: #0f172a;
+      border: 1px solid #334155;
       border-radius: 12px;
-      max-width: 380px;
+      max-width: 420px;
       width: 100%;
-      padding: 18px;
+      padding: 20px;
       box-sizing: border-box;
-      color: #cbd5e1;
-      text-align: left;
-    }
-    .modal-caja h3 {
-      margin: 0 0 8px 0;
-      color: #38bdf8;
-      font-size: 1rem;
-    }
-    .modal-caja ul {
-      margin: 0 0 14px 0;
-      padding-left: 18px;
-      font-size: 0.8rem;
-      line-height: 1.45;
-    }
-    .modal-caja li {
-      margin-bottom: 6px;
+      color: #f8fafc;
     }
   </style>
 </head>
 <body>
-  <main class="contenedor">
-    <header class="barra-superior">
-      <a href="menu.html">← Menú Principal</a>
-      <button class="btn-guia" type="button" onclick="abrirModalGuia()">❓ ¿Cómo funciona?</button>
-    </header>
-
-    <!-- Indicador dinámico de simulación oficial -->
-    <div id="caja-contador-simulacion" class="barra-conteo-b2c"></div>
-
-    <div class="barra-calibracion">
-      <span id="badge-modo">🟢 Demo Calibración (Ensayo Libre)</span>
-      <span id="txt-tiempo-cabecera">Fase de Práctica</span>
-    </div>
-
-    <section class="semaforo-caja">
-      <div id="luz-verde" class="luz verde apagada"></div>
-      <div id="luz-roja" class="luz roja apagada"></div>
-    </section>
-
-    <div id="panel-estado" class="estado">Presiona "Iniciar Calibración" para comenzar</div>
-
-    <button id="btn-accion" class="btn-principal">Iniciar Calibración</button>
-
-    <section class="panel-resultados">
-      <div class="tarjeta-metrica">
-        <span>Último Tiempo</span>
-        <strong id="metrica-tiempo">-- ms</strong>
-      </div>
-      <div class="tarjeta-metrica">
-        <span>Promedio</span>
-        <strong id="metrica-promedio">-- ms</strong>
-      </div>
-      <div class="tarjeta-metrica">
-        <span>Anticipaciones</span>
-        <strong id="metrica-anticipaciones">0</strong>
-      </div>
-    </section>
-
-    <div id="zona-coordinacion-test" style="width: 100%;"></div>
-  </main>
-
-  <!-- Modal explicativo del Reactímetro sin etiquetas residuales -->
-  <aside class="modal-flotante" id="modal-guia">
-    <div class="modal-caja">
-      <h3>❓ Protocolo Módulo 1: Reactímetro</h3>
-      <ul>
-        <li><strong>Estímulo:</strong> La luz verde permanecerá encendida un tiempo aleatorio e impredecible.</li>
-        <li><strong>Freno inmediato:</strong> Presiona el botón <strong>«¡FRENAR!»</strong> únicamente en el instante en que la luz cambie a <strong>ROJA</strong>.</li>
-        <li><strong>Anticipaciones:</strong> Si pulsas antes de que aparezca la luz roja, contará como falsa alarma (máximo 2 permitidas en la norma D.S. N° 170).</li>
-        <li><strong>Estándar legal:</strong> Promedio requerido ≤ 450 ms para Clase B municipal y ≤ 350 ms para faena minera/forestal (Clase A).</li>
-      </ul>
-      <button type="button" class="btn-principal" onclick="cerrarModalGuia()" style="height: 38px; font-size: 0.85rem;">
-        Entendido
+  <div class="contenedor-app">
+    <!-- Barra superior con botón ¿Cómo funciona? -->
+    <div class="cabecera-nav">
+      <a href="menu.html" class="btn-nav-retroceso">← Menú Principal</a>
+      <button id="btn-abrir-ayuda" class="btn-ayuda-modal" type="button">
+        ❓ ¿Cómo funciona?
       </button>
     </div>
-  </aside>
+
+    <!-- Indicador dinámico de Simulación -->
+    <div id="caja-contador-simulacion" class="barra-conteo-b2c"></div>
+
+    <div class="tarjeta-modulo">
+      <span id="badge-modo" style="color: #38bdf8; font-weight: bold;">🔴 Evaluación Oficial (D.S. N° 170)</span>
+      <span id="txt-tiempo-cabecera" style="color: #94a3b8;">Evaluación Activa</span>
+    </div>
+
+    <div class="caja-semaforo">
+      <div id="luz-verde" class="luz luz-verde"></div>
+      <div id="luz-roja" class="luz luz-roja"></div>
+    </div>
+
+    <div id="panel-estado" class="panel-feedback"></div>
+
+    <div id="zona-boton-principal">
+      <button id="btn-accion" class="btn-accion-freno" style="background-color: #0284c7;">
+        Iniciar Calibración
+      </button>
+    </div>
+
+    <div id="zona-coordinacion-test"></div>
+
+    <div style="text-align: center;">
+      <button id="btn-recalibrar-demo" class="btn-forzar-demo" type="button">
+        🔄 Repetir Calibración (Demo)
+      </button>
+    </div>
+
+    <div class="rejilla-metricas">
+      <div class="tarjeta-metrica">
+        <span class="etiqueta">Último Tiempo</span>
+        <span id="metrica-tiempo" class="valor">-- ms</span>
+      </div>
+      <div class="tarjeta-metrica">
+        <span class="etiqueta">Promedio</span>
+        <span id="metrica-promedio" class="valor">-- ms</span>
+      </div>
+      <div class="tarjeta-metrica">
+        <span class="etiqueta">Anticipaciones</span>
+        <span id="metrica-anticipaciones" class="valor">0</span>
+      </div>
+    </div>
+
+    <div style="text-align: center; margin-top: 8px;">
+      <button id="btn-reset-debug" style="background: none; border: none; color: #475569; font-size: 0.72rem; text-decoration: underline; cursor: pointer;">
+        Restablecer cupo de prueba a 0 (Debug)
+      </button>
+    </div>
+  </div>
+
+  <!-- Modal explicativo "¿Cómo funciona?" -->
+  <div id="modal-ayuda" class="modal-fondo">
+    <div class="modal-contenido">
+      <h3 style="color: #38bdf8; margin: 0 0 10px 0; font-size: 1.1rem;">
+        ¿Cómo funciona el Reactímetro?
+      </h3>
+      <p style="font-size: 0.82rem; color: #94a3b8; line-height: 1.45; margin-bottom: 12px;">
+        Esta prueba mide tu velocidad de reacción simple y capacidad de respuesta ante emergencias conforme al <strong>D.S. N° 170</strong>.
+      </p>
+      <ul style="font-size: 0.8rem; color: #cbd5e1; line-height: 1.5; padding-left: 18px; margin-bottom: 16px;">
+        <li>Mantén el pulgar preparado sin tapar el semáforo.</li>
+        <li>La luz verde permanecerá encendida durante un tiempo variable.</li>
+        <li><strong>Frena únicamente cuando se encienda la luz ROJA</strong>.</li>
+        <li>No intentes adivinar el cambio: pulsar antes contará como anticipación.</li>
+        <li>Umbral de aprobación: <strong>&le; 450 ms</strong> (Particular Clase B) o <strong>&le; 350 ms</strong> (Faena / Clase A).</li>
+      </ul>
+      <button id="btn-cerrar-ayuda" style="width: 100%; height: 38px; background: #0284c7; color: #fff; border: none; border-radius: 6px; font-weight: bold; cursor: pointer;">
+        Entendido, volver a la prueba
+      </button>
+    </div>
+  </div>
 
   <script src="credit-manager.js"></script>
   <script src="reactimetro.js"></script>
-  <script>
-    function abrirModalGuia() {
-      document.getElementById('modal-guia').style.display = 'flex';
-    }
-    function cerrarModalGuia() {
-      document.getElementById('modal-guia').style.display = 'none';
-    }
-  </script>
 </body>
 </html>
