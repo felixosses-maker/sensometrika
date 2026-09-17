@@ -1,7 +1,7 @@
 /* ==========================================================================
-   SENSOMETRIKA - GESTOR CENTRAL DE CRÉDITOS Y CONTEO (credit-manager.js)
-   • 1 Demo de inducción + N Simulaciones Oficiales según Plan B2C
-   • Sincronización estricta con menu.html y bloqueo definitivo
+   SENSOMETRIKA - GESTOR CENTRAL DE CRÉDITOS Y BLOQUEO ESTRICTO (credit-manager.js)
+   • Evita desbordes de cuota (limita estrictamente a 3, 5 u 8)
+   • Bloqueo preventivo en puerta para todos los módulos
    ========================================================================== */
 
 const CreditManager = {
@@ -33,7 +33,6 @@ const CreditManager = {
 
   guardarSesion: function(sesion) {
     localStorage.setItem('sensometrika_sesion', JSON.stringify(sesion));
-    // Sincronizar clave de respaldo
     localStorage.setItem('sensometrika_ejecuciones', JSON.stringify(sesion.simulacionesConsumidas));
   },
 
@@ -43,8 +42,7 @@ const CreditManager = {
     return (
       sesion.rol === 'empresa' ||
       (sesion.planId && String(sesion.planId).startsWith('b2b')) ||
-      (datosUser.tipo === 'empresa') ||
-      (datosUser.empresa && datosUser.empresa.toLowerCase() !== 'particular')
+      (datosUser.tipo === 'empresa')
     );
   },
 
@@ -70,7 +68,15 @@ const CreditManager = {
 
   obtenerConsumidas: function(moduloKey) {
     const sesion = this.obtenerSesion();
-    return (sesion.simulacionesConsumidas && sesion.simulacionesConsumidas[moduloKey]) || 0;
+    const max = this.obtenerLimiteModulo(moduloKey);
+    let valor = (sesion.simulacionesConsumidas && sesion.simulacionesConsumidas[moduloKey]) || 0;
+    // Saneo anti-desborde: nunca puede devolver más del límite del plan
+    if (valor > max) {
+      valor = max;
+      sesion.simulacionesConsumidas[moduloKey] = max;
+      this.guardarSesion(sesion);
+    }
+    return valor;
   },
 
   obtenerNumeroSimulacionActual: function(moduloKey) {
@@ -93,9 +99,8 @@ const CreditManager = {
       window.location.replace('menu.html');
       return false;
     }
-
     if (!this.puedeRendir(moduloKey)) {
-      alert(`Has completado todas tus simulaciones (${max}/${max}) para este módulo.`);
+      alert(`Has completado el cupo total (${max}/${max}) para este módulo.`);
       window.location.replace('menu.html');
       return false;
     }
@@ -104,10 +109,12 @@ const CreditManager = {
 
   registrarConsumo: function(moduloKey) {
     const sesion = this.obtenerSesion();
+    const max = this.obtenerLimiteModulo(moduloKey);
     if (!sesion.simulacionesConsumidas) {
       sesion.simulacionesConsumidas = { reactimetro: 0, palancas: 0, punteo: 0, visual: 0, auditivo: 0 };
     }
-    sesion.simulacionesConsumidas[moduloKey] = (sesion.simulacionesConsumidas[moduloKey] || 0) + 1;
+    const actuales = sesion.simulacionesConsumidas[moduloKey] || 0;
+    sesion.simulacionesConsumidas[moduloKey] = Math.min(actuales + 1, max);
     this.guardarSesion(sesion);
     return sesion.simulacionesConsumidas[moduloKey];
   },
