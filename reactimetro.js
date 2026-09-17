@@ -1,9 +1,9 @@
 /* ==========================================================================
    SENSOMETRIKA - MÓDULO 1: REACTÍMETRO (reactimetro.js)
    • 3 ensayos de Calibración Técnica (Demo)
-   • 7 estímulos oficiales a ciegas (sin contadores numéricos que causen ansiedad)
-   • Botón ¿Cómo funciona? + Repetir calibración manual
-   • Descuento real en CreditManager y bloqueo al llegar a la cuota del plan
+   • 7 estímulos oficiales a ciegas (promedio representativo D.S. N° 170)
+   • Baremos: Particular <= 450 ms | Faena/Empresa <= 350 ms
+   • Transición blindada: no ofrece módulos agotados
    ========================================================================== */
 
 const luzVerde = document.getElementById('luz-verde');
@@ -15,14 +15,7 @@ const metricaPromedio = document.getElementById('metrica-promedio');
 const metricaAnticipaciones = document.getElementById('metrica-anticipaciones');
 const badgeModo = document.getElementById('badge-modo');
 const txtTiempoCabecera = document.getElementById('txt-tiempo-cabecera');
-const zonaCoordinacion = document.getElementById('zona-coordinacion-test');
-const btnRecalibrarDemo = document.getElementById('btn-recalibrar-demo');
-const btnResetDebug = document.getElementById('btn-reset-debug');
-
-// Elementos del Modal de Ayuda
-const modalAyuda = document.getElementById('modal-ayuda');
-const btnAbrirAyuda = document.getElementById('btn-abrir-ayuda');
-const btnCerrarAyuda = document.getElementById('btn-cerrar-ayuda');
+const zonaCoordinacion = document.getElementById('zona-coordinacion-test') || document.getElementById('contenedor-accion');
 
 let modo = 'DEMO';
 let estado = 'INACTIVO';
@@ -33,45 +26,8 @@ let tiemposDemo = [];
 let tiemposOficiales = [];
 let anticipacionesOficiales = 0;
 
-// Parámetros definidos: 3 ensayos libres y 7 oficiales a ciegas
 const MAX_ENSAYOS_DEMO = 3;
 const MAX_INTENTOS_OFICIALES = 7;
-
-// Control del Modal
-if (btnAbrirAyuda && modalAyuda) {
-  btnAbrirAyuda.addEventListener('click', () => {
-    modalAyuda.style.display = 'flex';
-  });
-}
-if (btnCerrarAyuda && modalAyuda) {
-  btnCerrarAyuda.addEventListener('click', () => {
-    modalAyuda.style.display = 'none';
-  });
-}
-
-// Botón de Calibración Manual (permite repetir el Demo cuando el usuario quiera)
-if (btnRecalibrarDemo) {
-  btnRecalibrarDemo.addEventListener('click', () => {
-    clearTimeout(temporizadorVerde);
-    luzVerde.classList.remove('encendida');
-    luzRoja.classList.remove('encendida');
-    zonaCoordinacion.innerHTML = '';
-    iniciarFaseDemo();
-  });
-}
-
-// Botón Reset Debug para desarrollo
-if (btnResetDebug) {
-  btnResetDebug.addEventListener('click', () => {
-    localStorage.removeItem('sensometrika_demo_reactimetro');
-    const sesion = JSON.parse(localStorage.getItem('sensometrika_sesion')) || {};
-    if (sesion.simulacionesConsumidas) {
-      sesion.simulacionesConsumidas['reactimetro'] = 0;
-      localStorage.setItem('sensometrika_sesion', JSON.stringify(sesion));
-    }
-    location.reload();
-  });
-}
 
 window.addEventListener('DOMContentLoaded', () => {
   if (typeof CreditManager !== 'undefined') {
@@ -88,39 +44,26 @@ window.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  iniciarFaseDemo();
-});
-
-function iniciarFaseDemo() {
   modo = 'DEMO';
   estado = 'INACTIVO';
-  tiemposDemo = [];
-
-  if (badgeModo) {
-    badgeModo.innerText = '🟡 Calibración Técnica (Demo)';
-    badgeModo.style.color = '#facc15';
-  }
+  if (badgeModo) badgeModo.innerText = '🟡 Calibración Técnica (Demo)';
   if (txtTiempoCabecera) txtTiempoCabecera.innerText = 'Fase de Práctica';
-
   panelEstado.innerText = 'Presiona el botón para iniciar la calibración';
   panelEstado.style.color = '#38bdf8';
-
-  btnAccion.style.display = 'block';
-  btnAccion.disabled = false;
   btnAccion.innerText = 'Iniciar Calibración';
   btnAccion.style.backgroundColor = '#0284c7';
-}
+});
 
 function bloquearModuloPorCupo() {
   const max = (typeof CreditManager !== 'undefined') ? CreditManager.obtenerLimiteModulo('reactimetro') : 3;
   btnAccion.disabled = true;
   btnAccion.style.opacity = '0.4';
   btnAccion.innerText = `Cupo Bloqueado (${max}/${max})`;
-  panelEstado.innerText = `Has completado el límite de ${max} simulaciones oficiales.`;
+  panelEstado.innerText = `Has alcanzado el límite de ${max} simulaciones oficiales de tu Plan.`;
   panelEstado.style.color = '#f87171';
 
   zonaCoordinacion.innerHTML = `
-    <div style="background: #020617; border: 1.5px solid #dc2626; border-radius: 12px; padding: 16px; margin-top: 14px; text-align: center;">
+    <div style="background: #020617; border: 1.5px solid #dc2626; border-radius: 12px; padding: 16px; margin-top: 14px; text-align: center; width: 100%; box-sizing: border-box;">
       <h3 style="color: #ef4444; margin: 0 0 6px 0;">Módulo Bloqueado (${max} de ${max})</h3>
       <p style="color: #94a3b8; font-size: 0.85rem; margin-bottom: 12px;">Completaste todas las simulaciones de tu Plan en este módulo.</p>
       <a href="menu.html" style="display:inline-block; text-decoration:none; background:#0284c7; padding:10px 16px; border-radius:6px; color:#fff; font-weight:bold; font-size:0.9rem;">
@@ -139,18 +82,15 @@ function prepararVistaOficialDirecta() {
   const actual = (typeof CreditManager !== 'undefined') ? CreditManager.obtenerNumeroSimulacionActual('reactimetro') : 1;
   const max = (typeof CreditManager !== 'undefined') ? CreditManager.obtenerLimiteModulo('reactimetro') : 3;
 
-  if (badgeModo) {
-    badgeModo.innerText = `🔴 Simulación Oficial ${actual} de ${max} (D.S. N° 170)`;
-    badgeModo.style.color = '#38bdf8';
-  }
-  if (txtTiempoCabecera) txtTiempoCabecera.innerText = 'Evaluación Activa';
-
-  panelEstado.innerText = 'Atento a la señal luminosa';
+  if (badgeModo) badgeModo.innerText = `🔴 Simulación Oficial ${actual} de ${max} (D.S. N° 170)`;
+  if (txtTiempoCabecera) txtTiempoCabecera.innerText = 'Evaluación Activa (7 Estímulos)';
+  panelEstado.innerText = `Listo para iniciar Simulación Oficial ${actual} de ${max}.`;
   panelEstado.style.color = '#38bdf8';
 
   btnAccion.style.display = 'block';
   btnAccion.disabled = false;
-  btnAccion.innerText = 'Iniciar Simulación Oficial';
+  btnAccion.style.opacity = '1';
+  btnAccion.innerText = `Iniciar Simulación Oficial (${actual} de ${max})`;
   btnAccion.style.backgroundColor = '#22c55e';
 }
 
@@ -222,13 +162,23 @@ function registrarFreno() {
   luzRoja.classList.remove('encendida');
 
   if (metricaTiempo) metricaTiempo.innerText = `${latencia} ms`;
-  panelEstado.innerText = ''; // Sin texto intermedio numérico
+
+  if (latencia <= 350) {
+    panelEstado.innerText = `${latencia} ms: Rango Óptimo - Profesional (Clase A)`;
+    panelEstado.style.color = '#4ade80';
+  } else if (latencia <= 450) {
+    panelEstado.innerText = `${latencia} ms: Aprobado - Particular (Clase B)`;
+    panelEstado.style.color = '#facc15';
+  } else {
+    panelEstado.innerText = `${latencia} ms: Fuera de rango municipal`;
+    panelEstado.style.color = '#f87171';
+  }
 
   if (modo === 'DEMO') {
     tiemposDemo.push(latencia);
 
     if (tiemposDemo.length < MAX_ENSAYOS_DEMO) {
-      btnAccion.innerText = 'Siguiente Ensayo Demo';
+      btnAccion.innerText = `Siguiente Ensayo Demo (${tiemposDemo.length + 1}/${MAX_ENSAYOS_DEMO})`;
       btnAccion.style.backgroundColor = '#0284c7';
     } else {
       if (typeof CreditManager !== 'undefined') {
@@ -238,7 +188,9 @@ function registrarFreno() {
       panelEstado.innerText = 'Calibración completada. Presiona abajo para iniciar la evaluación oficial.';
       panelEstado.style.color = '#4ade80';
 
-      btnAccion.innerText = 'Iniciar Simulación Oficial';
+      const actual = (typeof CreditManager !== 'undefined') ? CreditManager.obtenerNumeroSimulacionActual('reactimetro') : 1;
+      const max = (typeof CreditManager !== 'undefined') ? CreditManager.obtenerLimiteModulo('reactimetro') : 3;
+      btnAccion.innerText = `Iniciar Simulación Oficial (${actual} de ${max})`;
       btnAccion.style.backgroundColor = '#22c55e';
     }
   } else {
@@ -248,7 +200,6 @@ function registrarFreno() {
     );
     if (metricaPromedio) metricaPromedio.innerText = `${promedio} ms`;
 
-    // Ejecución a ciegas: el botón muestra únicamente texto de acción
     if (tiemposOficiales.length < MAX_INTENTOS_OFICIALES) {
       btnAccion.innerText = 'Siguiente Estímulo';
       btnAccion.style.backgroundColor = '#0284c7';
@@ -268,11 +219,13 @@ function finalizarSimulacionReactimetro(promedio) {
 
   let consumidas = 1;
   let rol = 'particular';
+  let max = 3;
 
   if (typeof CreditManager !== 'undefined') {
     consumidas = CreditManager.registrarConsumo('reactimetro');
     const sesion = CreditManager.obtenerSesion();
     rol = sesion.rol || 'particular';
+    max = CreditManager.obtenerLimiteModulo('reactimetro');
     CreditManager.pintarBadgeCabecera('caja-contador-simulacion', 'reactimetro');
   }
 
@@ -286,8 +239,32 @@ function finalizarSimulacionReactimetro(promedio) {
     fecha: new Date().toISOString()
   }));
 
-  const max = (typeof CreditManager !== 'undefined') ? CreditManager.obtenerLimiteModulo('reactimetro') : 3;
   const bloqueado = consumidas >= max;
+
+  // Verificación estricta: ¿Palancas o Punteo tienen saldo disponible?
+  const palancasTieneCupo = (typeof CreditManager !== 'undefined') ? CreditManager.puedeRendir('palancas') : false;
+  const punteoTieneCupo = (typeof CreditManager !== 'undefined') ? CreditManager.puedeRendir('punteo') : false;
+
+  let enlaceSiguiente = '';
+  if (palancasTieneCupo) {
+    enlaceSiguiente = `
+      <a href="palancas.html" class="btn-principal" style="display:flex; justify-content:center; align-items:center; text-decoration:none; height:42px; background-color:#0284c7; color:#fff; border-radius:6px; font-weight:bold; font-size:0.9rem;">
+        Continuar a Módulo 2 (Palancas) →
+      </a>
+    `;
+  } else if (punteoTieneCupo) {
+    enlaceSiguiente = `
+      <a href="punteo.html" class="btn-principal" style="display:flex; justify-content:center; align-items:center; text-decoration:none; height:42px; background-color:#0284c7; color:#fff; border-radius:6px; font-weight:bold; font-size:0.9rem;">
+        Continuar a Módulo 3 (Punteo) →
+      </a>
+    `;
+  } else {
+    enlaceSiguiente = `
+      <a href="menu.html" class="btn-principal" style="display:flex; justify-content:center; align-items:center; text-decoration:none; height:42px; background-color:#0284c7; color:#fff; border-radius:6px; font-weight:bold; font-size:0.9rem;">
+        Ver Menú Principal e Informe →
+      </a>
+    `;
+  }
 
   const contenedor = zonaCoordinacion || panelEstado;
   contenedor.innerHTML = `
@@ -295,18 +272,19 @@ function finalizarSimulacionReactimetro(promedio) {
       <h3 style="color: ${aprobado ? '#4ade80' : '#f87171'}; margin: 0 0 6px 0; font-size: 1.1rem;">
         ¡Simulación ${consumidas} de ${max} Finalizada!
       </h3>
-      <p style="color: #94a3b8; font-size: 0.85rem; margin-bottom: 12px;">
+      <p style="color: #94a3b8; font-size: 0.85rem; margin-bottom: 8px;">
         Latencia promedio: <strong style="color: #fff;">${promedio} ms</strong> (${aprobado ? 'Aprobado' : 'Observado'})
+      </p>
+      <p style="color: #38bdf8; font-size: 0.82rem; font-weight: bold; margin-bottom: 12px;">
+        ${bloqueado ? `Has completado el cupo de ${max}/${max} simulaciones en este módulo.` : `Te restan ${max - consumidas} simulación(es) en este módulo.`}
       </p>
       <div style="display: flex; flex-direction: column; gap: 8px;">
         ${!bloqueado ? `
-          <button onclick="location.reload()" style="height:42px; background:#22c55e; color:#fff; border:none; border-radius:6px; font-weight:bold; cursor:pointer;">
+          <button onclick="repetirSimulacionReactimetro()" style="height:42px; background:#22c55e; color:#fff; border:none; border-radius:6px; font-weight:bold; cursor:pointer;">
             🔄 Rendir Simulación ${consumidas + 1} de ${max} →
           </button>
         ` : ''}
-        <a href="palancas.html" style="display:flex; justify-content:center; align-items:center; height:42px; background:#0284c7; color:#fff; text-decoration:none; border-radius:6px; font-weight:bold;">
-          Continuar a Módulo 2 (Palancas) →
-        </a>
+        ${enlaceSiguiente}
         <a href="menu.html" style="color:#64748b; font-size:0.8rem; text-decoration:none; padding:4px;">
           Volver al Menú Principal
         </a>
@@ -314,3 +292,11 @@ function finalizarSimulacionReactimetro(promedio) {
     </div>
   `;
 }
+
+window.repetirSimulacionReactimetro = function() {
+  zonaCoordinacion.innerHTML = '';
+  metricaTiempo.innerText = '-- ms';
+  metricaPromedio.innerText = '-- ms';
+  metricaAnticipaciones.innerText = '0';
+  prepararVistaOficialDirecta();
+};
