@@ -1,8 +1,8 @@
 /* ==========================================================================
    SENSOMETRIKA - MÓDULO 2: TEST DE PALANCAS (palancas.js)
-   • Renderizado estable con canvas de alto contraste
-   • 1 Demo de Calibración (20 s) + Simulaciones Oficiales (60 s)
-   • Bloqueo estricto al completar cupo
+   • Medición dual: Cantidad de toques y Tiempo acumulado en error
+   • Secuencia: Demo Calibración (20 s) ➔ Simulación Oficial (60 s)
+   • Conteo y persistencia sincronizada con CreditManager e informe.html
    ========================================================================== */
 
 const canvas = document.getElementById('lienzo-palancas') || document.querySelector('canvas');
@@ -11,7 +11,8 @@ const ctx = canvas ? canvas.getContext('2d') : null;
 const elCronometro = document.getElementById('cronometro') || document.getElementById('lbl-crono-palancas');
 const elContactos = document.getElementById('contador-toques') || document.getElementById('metrica-contactos');
 const panelMensaje = document.getElementById('panel-estado');
-const badgeModo = document.getElementById('badge-modo-palancas');
+const badgeModo = document.getElementById('badge-modo-palancas') || document.querySelector('.badge-modo');
+const txtCircuito = document.getElementById('metrica-circuito');
 const zonaControles = document.getElementById('zona-coordinacion-palancas');
 
 const btnArriba = document.getElementById('btn-izq-arriba') || document.getElementById('btn-arriba');
@@ -19,24 +20,28 @@ const btnAbajo = document.getElementById('btn-izq-abajo') || document.getElement
 const btnIzq = document.getElementById('btn-der-izq') || document.getElementById('btn-izq');
 const btnDer = document.getElementById('btn-der-der') || document.getElementById('btn-der');
 
-let btnIniciar = document.getElementById('btn-iniciar-palancas') || document.getElementById('btn-iniciar');
+let btnIniciar = null;
 
-let modo = 'DEMO';
+let modo = 'DEMO'; // 'DEMO' u 'OFICIAL'
 let juegoActivo = false;
 let toques = 0;
 let tiempoRestante = 20;
 let intervaloTiempo = null;
 let animacionFrame = null;
+
+// Telemetría de error
 let tocandoBorde = false;
+let inicioContactoTimestamp = 0;
+let tiempoTotalErrorMs = 0;
 
 // Puntero electromecánico
 let puntero = { x: 38, y: 45, radio: 7, velocidad: 2.3 };
 let teclas = { arriba: false, abajo: false, izquierda: false, derecha: false };
 
-// Circuitos normativos D.S. N° 170
+// Circuitos normativos (D.S. N° 170)
 const CIRCUITOS = [
   {
-    nombre: "Trazado 1",
+    nombre: "Trazado 1 (Demo)",
     inicio: { x: 38, y: 45 },
     meta: { x: 290, y: 175, radio: 11 },
     puntos: [
@@ -50,7 +55,7 @@ const CIRCUITOS = [
     anchoCanal: 30
   },
   {
-    nombre: "Trazado 2",
+    nombre: "Trazado Oficial",
     inicio: { x: 38, y: 45 },
     meta: { x: 290, y: 175, radio: 11 },
     puntos: [
@@ -68,13 +73,17 @@ const CIRCUITOS = [
 
 let circuitoActual = CIRCUITOS[0];
 
+window.addEventListener('DOMContentLoaded', () => {
+  inicializarModulo();
+});
+
 function inicializarModulo() {
   if (!canvas || !ctx) return;
 
   if (!canvas.width || canvas.width < 320) canvas.width = 340;
   if (!canvas.height || canvas.height < 200) canvas.height = 220;
 
-  crearBotonIniciarSiFalta();
+  unificarBotonIniciar();
 
   if (window.CreditManager) {
     CreditManager.pintarBadgeCabecera('caja-contador-simulacion', 'palancas');
@@ -83,39 +92,25 @@ function inicializarModulo() {
       bloquearModuloPorCupo();
       return;
     }
+  }
 
-    if (CreditManager.demoYaRealizado('palancas')) {
-      prepararVistaOficial();
-      return;
+  prepararFaseDemo();
+}
+
+function unificarBotonIniciar() {
+  const posiblesBotones = document.querySelectorAll('#btn-iniciar, #btn-iniciar-palancas');
+  if (posiblesBotones.length > 1) {
+    for (let i = 1; i < posiblesBotones.length; i++) {
+      posiblesBotones[i].remove();
     }
   }
 
-  modo = 'DEMO';
-  circuitoActual = CIRCUITOS[0];
-  puntero.x = circuitoActual.inicio.x;
-  puntero.y = circuitoActual.inicio.y;
+  btnIniciar = document.getElementById('btn-iniciar') || document.getElementById('btn-iniciar-palancas');
 
-  if (panelMensaje) {
-    panelMensaje.innerText = 'Calibrando: Conduce el punto a la meta verde.';
-    panelMensaje.style.color = '#38bdf8';
-  }
-  if (btnIniciar) {
-    btnIniciar.style.display = 'block';
-    btnIniciar.style.backgroundColor = '#0284c7';
-    btnIniciar.innerText = 'Iniciar Calibración (20 s)';
-    btnIniciar.disabled = false;
-  }
-
-  renderizar();
-}
-
-function crearBotonIniciarSiFalta() {
-  btnIniciar = document.getElementById('btn-iniciar-palancas') || document.getElementById('btn-iniciar');
   if (!btnIniciar) {
     btnIniciar = document.createElement('button');
-    btnIniciar.id = 'btn-iniciar-palancas';
+    btnIniciar.id = 'btn-iniciar';
     btnIniciar.style.cssText = 'width: 100%; height: 46px; border: none; border-radius: 8px; font-weight: 800; font-size: 0.95rem; color: #fff; background: #0284c7; margin: 12px 0; cursor: pointer; display: block;';
-    btnIniciar.innerText = 'Iniciar Calibración (20 s)';
     
     if (panelMensaje && panelMensaje.parentNode) {
       panelMensaje.parentNode.insertBefore(btnIniciar, panelMensaje.nextSibling);
@@ -129,58 +124,86 @@ function crearBotonIniciarSiFalta() {
   };
 }
 
-function bloquearModuloPorCupo() {
-  const max = window.CreditManager ? CreditManager.obtenerLimiteModulo('palancas') : 3;
-  if (btnIniciar) {
-    btnIniciar.disabled = true;
-    btnIniciar.style.display = 'block';
-    btnIniciar.style.opacity = '0.4';
-    btnIniciar.style.backgroundColor = '#475569';
-    btnIniciar.innerText = `Cupo Bloqueado (${max}/${max})`;
-  }
+function prepararFaseDemo() {
+  modo = 'DEMO';
+  juegoActivo = false;
+  toques = 0;
+  tiempoTotalErrorMs = 0;
+  tocandoBorde = false;
+  circuitoActual = CIRCUITOS[0];
+  puntero.x = circuitoActual.inicio.x;
+  puntero.y = circuitoActual.inicio.y;
+  tiempoRestante = 20;
+
+  const previo = document.getElementById('panel-final-palancas');
+  if (previo) previo.remove();
+
   if (badgeModo) {
-    badgeModo.innerText = `🔴 Simulación Oficial ${max} de ${max} (Bloqueado)`;
-    badgeModo.style.color = '#f87171';
+    badgeModo.innerText = '🟡 Calibración Técnica (Demo 20s)';
+    badgeModo.style.color = '#facc15';
   }
+  if (txtCircuito) txtCircuito.innerText = 'Trazado 1';
+  if (elCronometro) elCronometro.innerText = '20 s';
+  if (elContactos) elContactos.innerText = '0';
+
   if (panelMensaje) {
-    panelMensaje.innerText = `Has completado tus ${max} simulaciones permitidas para este módulo.`;
-    panelMensaje.style.color = '#f87171';
+    panelMensaje.innerText = 'Calibrando: Conduce el punto a la meta verde.';
+    panelMensaje.style.color = '#38bdf8';
   }
+
+  if (btnIniciar) {
+    btnIniciar.style.display = 'block';
+    btnIniciar.disabled = false;
+    btnIniciar.style.backgroundColor = '#0284c7';
+    btnIniciar.innerText = 'Iniciar Calibración (20 s)';
+  }
+
   renderizar();
 }
 
-function prepararVistaOficial() {
+function prepararFaseOficial() {
   modo = 'OFICIAL';
   juegoActivo = false;
-  const actual = window.CreditManager ? CreditManager.obtenerNumeroSimulacionActual('palancas') : 1;
-  const max = window.CreditManager ? CreditManager.obtenerLimiteModulo('palancas') : 3;
-
+  toques = 0;
+  tiempoTotalErrorMs = 0;
+  tocandoBorde = false;
   circuitoActual = CIRCUITOS[1];
   puntero.x = circuitoActual.inicio.x;
   puntero.y = circuitoActual.inicio.y;
+  tiempoRestante = 60;
+
+  const previo = document.getElementById('panel-final-palancas');
+  if (previo) previo.remove();
+
+  const actual = window.CreditManager ? CreditManager.obtenerNumeroSimulacionActual('palancas') : 1;
+  const max = window.CreditManager ? CreditManager.obtenerLimiteModulo('palancas') : 3;
 
   if (badgeModo) {
     badgeModo.innerText = `🔴 Simulación Oficial ${actual} de ${max} (D.S. N° 170)`;
     badgeModo.style.color = '#38bdf8';
   }
+  if (txtCircuito) txtCircuito.innerText = 'Trazado Oficial';
+  if (elCronometro) elCronometro.innerText = '60 s';
+  if (elContactos) elContactos.innerText = '0';
+
   if (panelMensaje) {
-    panelMensaje.innerText = 'Evaluación Oficial: Recorre la pista sin tocar los bordes (Máx. 3 contactos).';
+    panelMensaje.innerText = 'Evaluación Oficial: Recorre la pista sin rozar bordes (Máx. 3 toques / ≤ 2.0 s de error).';
     panelMensaje.style.color = '#fbbf24';
   }
+
   if (btnIniciar) {
     btnIniciar.style.display = 'block';
     btnIniciar.disabled = false;
-    btnIniciar.style.opacity = '1';
     btnIniciar.style.backgroundColor = '#22c55e';
     btnIniciar.innerText = `Iniciar Simulación Oficial (${actual} de ${max})`;
   }
-  if (elCronometro) elCronometro.innerText = '60 s';
 
   renderizar();
 }
 
 function iniciarRecorrido() {
   toques = 0;
+  tiempoTotalErrorMs = 0;
   tocandoBorde = false;
   juegoActivo = true;
 
@@ -192,8 +215,8 @@ function iniciarRecorrido() {
 
   if (panelMensaje) {
     panelMensaje.innerText = (modo === 'DEMO')
-      ? 'Fase Demo: Dirige el punto hacia la meta verde.'
-      : 'Evaluación en curso: Mantén el pulso sin tocar los bordes.';
+      ? 'Fase Calibración: Conduce el punto a la meta verde.'
+      : 'Evaluación Oficial en curso: Mantén el pulso constante.';
     panelMensaje.style.color = '#38bdf8';
   }
 
@@ -219,16 +242,25 @@ function actualizar() {
   if (teclas.derecha) puntero.x += puntero.velocidad;
 
   const colisiona = evaluarContactoBorde(puntero.x, puntero.y);
+  const ahora = performance.now();
 
   if (colisiona) {
     if (!tocandoBorde) {
       tocandoBorde = true;
+      inicioContactoTimestamp = ahora;
       toques++;
       if (elContactos) elContactos.innerText = toques;
       if ('vibrate' in navigator) navigator.vibrate(40);
+    } else {
+      // Acumular tiempo mientras sigue en contacto con el borde
+      tiempoTotalErrorMs += (ahora - inicioContactoTimestamp);
+      inicioContactoTimestamp = ahora;
     }
   } else {
-    tocandoBorde = false;
+    if (tocandoBorde) {
+      tiempoTotalErrorMs += (ahora - inicioContactoTimestamp);
+      tocandoBorde = false;
+    }
   }
 
   const meta = circuitoActual.meta;
@@ -282,38 +314,36 @@ function finalizarPrueba(metaAlcanzada) {
   clearInterval(intervaloTiempo);
   cancelAnimationFrame(animacionFrame);
 
+  if (tocandoBorde) {
+    tiempoTotalErrorMs += (performance.now() - inicioContactoTimestamp);
+    tocandoBorde = false;
+  }
+
   const duracionTotal = (modo === 'DEMO') ? 20 : 60;
-  const tiempoUsado = duracionTotal - tiempoRestante;
-  const aprobado = metaAlcanzada && toques <= 3;
+  const tiempoUsado = duracionTotal - Math.max(0, tiempoRestante);
+  const tiempoErrorSegundos = (tiempoTotalErrorMs / 1000).toFixed(2);
   const max = window.CreditManager ? CreditManager.obtenerLimiteModulo('palancas') : 3;
 
   if (modo === 'DEMO') {
-    if (window.CreditManager) CreditManager.marcarDemoCompletado('palancas');
-    const actual = window.CreditManager ? CreditManager.obtenerNumeroSimulacionActual('palancas') : 1;
-
     if (panelMensaje) {
-      panelMensaje.innerText = `¡Calibración lista! Contactos: ${toques}. Inicia tu Simulación Oficial.`;
+      panelMensaje.innerText = `Calibración finalizada: ${toques} toques (${tiempoErrorSegundos} s en error). Pasa a la prueba oficial.`;
       panelMensaje.style.color = '#4ade80';
     }
-
-    if (btnIniciar) {
-      btnIniciar.style.display = 'block';
-      btnIniciar.disabled = false;
-      btnIniciar.style.backgroundColor = '#22c55e';
-      btnIniciar.innerText = `Iniciar Simulación Oficial (${actual} de ${max})`;
-    }
-    modo = 'OFICIAL';
-    circuitoActual = CIRCUITOS[1];
-    puntero.x = circuitoActual.inicio.x;
-    puntero.y = circuitoActual.inicio.y;
+    prepararFaseOficial();
   } else {
+    // Criterio normativo: meta completada, toques <= 3 y permanencia en error <= 2.5 s
+    const aprobado = metaAlcanzada && toques <= 3 && parseFloat(tiempoErrorSegundos) <= 2.5;
+    let efectividad = Math.max(0, 100 - (toques * 10) - Math.round(parseFloat(tiempoErrorSegundos) * 5));
+
     const consumidas = window.CreditManager ? CreditManager.registrarConsumo('palancas') : 1;
     const bloqueoTotal = consumidas >= max;
 
     localStorage.setItem('sensometrika_palancas', JSON.stringify({
-      toques,
+      toques: toques,
+      tiempoError: parseFloat(tiempoErrorSegundos),
       tiempo: tiempoUsado,
-      aprobado,
+      porcentaje: efectividad,
+      aprobado: aprobado,
       fecha: new Date().toISOString()
     }));
 
@@ -323,27 +353,37 @@ function finalizarPrueba(metaAlcanzada) {
 
     if (panelMensaje) {
       panelMensaje.innerText = aprobado 
-        ? `¡Aprobado! Recorrido completado con ${toques} contactos en ${tiempoUsado} s.` 
-        : `Reprobado (${toques} contactos o tiempo agotado).`;
+        ? `¡Aprobado! ${tiempoUsado} s recorridos con ${toques} contactos (${tiempoErrorSegundos} s error).` 
+        : `Reprobado (${!metaAlcanzada ? 'Tiempo agotado' : `${toques} toques / ${tiempoErrorSegundos} s error`}).`;
       panelMensaje.style.color = aprobado ? '#4ade80' : '#f87171';
     }
+
+    // Ocultar botón de calibración para evitar duplicados visuales
+    if (btnIniciar) btnIniciar.style.display = 'none';
 
     const contenedorDestino = zonaControles || panelMensaje.parentNode;
     const panelFinal = document.createElement('div');
     panelFinal.id = 'panel-final-palancas';
-    panelFinal.style.cssText = `background: #020617; border: 1.5px solid ${bloqueoTotal ? '#ef4444' : '#38bdf8'}; border-radius: 12px; padding: 16px; margin-top: 14px; text-align: center;`;
+    panelFinal.style.cssText = `background: #020617; border: 1.5px solid ${aprobado ? '#22c55e' : '#ef4444'}; border-radius: 12px; padding: 16px; margin: 14px 0; text-align: center; width: 100%; box-sizing: border-box;`;
+    
     panelFinal.innerHTML = `
-      <h3 style="color: ${bloqueoTotal ? '#f87171' : '#4ade80'}; margin: 0 0 6px 0;">¡Simulación ${consumidas} de ${max} Finalizada!</h3>
-      <p style="color: #94a3b8; font-size: 0.85rem; margin-bottom: 12px;">
-        ${bloqueoTotal ? `Has completado el límite máximo de ${max}/${max} simulaciones.` : `Te restan ${max - consumidas} simulación(es) disponible(s).`}
+      <h3 style="color: ${aprobado ? '#4ade80' : '#f87171'}; margin: 0 0 6px 0;">
+        ¡Simulación ${consumidas} de ${max} Finalizada!
+      </h3>
+      <p style="color: #cbd5e1; font-size: 0.9rem; margin: 4px 0 10px 0;">
+        <strong>Errores:</strong> ${toques} toques &nbsp;|&nbsp; 
+        <strong>Permanencia en error:</strong> ${tiempoErrorSegundos} s
+      </p>
+      <p style="color: #94a3b8; font-size: 0.8rem; margin-bottom: 12px;">
+        ${bloqueoTotal ? `Has alcanzado el límite máximo de ${max}/${max} simulaciones.` : `Te restan ${max - consumidas} simulación(es) disponible(s).`}
       </p>
       <div style="display: flex; flex-direction: column; gap: 8px;">
         ${!bloqueoTotal ? `
-          <button onclick="location.reload()" style="height:42px; background:#22c55e; color:#fff; border:none; border-radius:6px; font-weight:bold; cursor:pointer;">
+          <button onclick="prepararFaseOficialDirecta()" style="height:42px; background:#22c55e; color:#fff; border:none; border-radius:6px; font-weight:bold; cursor:pointer; font-size:0.9rem;">
             🔄 Rendir Simulación ${consumidas + 1} de ${max} →
           </button>
         ` : ''}
-        <a href="punteo.html" style="display:flex; justify-content:center; align-items:center; height:42px; background:#0284c7; color:#fff; text-decoration:none; border-radius:6px; font-weight:bold;">
+        <a href="punteo.html" style="display:flex; justify-content:center; align-items:center; height:42px; background:#0284c7; color:#fff; text-decoration:none; border-radius:6px; font-weight:bold; font-size:0.9rem;">
           Continuar a Módulo 3 (Punteo) →
         </a>
         <a href="menu.html" style="color:#64748b; font-size:0.8rem; text-decoration:none; padding:4px;">
@@ -354,13 +394,36 @@ function finalizarPrueba(metaAlcanzada) {
 
     const previo = document.getElementById('panel-final-palancas');
     if (previo) previo.remove();
-    contenedorDestino.appendChild(panelFinal);
+    contenedorDestino.prepend(panelFinal);
 
     if (bloqueoTotal) {
       bloquearModuloPorCupo();
     }
   }
 
+  renderizar();
+}
+
+window.prepararFaseOficialDirecta = function() {
+  const panel = document.getElementById('panel-final-palancas');
+  if (panel) panel.remove();
+  prepararFaseOficial();
+};
+
+function bloquearModuloPorCupo() {
+  const max = window.CreditManager ? CreditManager.obtenerLimiteModulo('palancas') : 3;
+  if (btnIniciar) {
+    btnIniciar.disabled = true;
+    btnIniciar.style.display = 'none';
+  }
+  if (badgeModo) {
+    badgeModo.innerText = `🔴 Simulación Oficial ${max} de ${max} (Bloqueado)`;
+    badgeModo.style.color = '#f87171';
+  }
+  if (panelMensaje) {
+    panelMensaje.innerText = `Has completado tus ${max} simulaciones permitidas para este módulo.`;
+    panelMensaje.style.color = '#f87171';
+  }
   renderizar();
 }
 
@@ -435,10 +498,15 @@ function vincularBoton(btn, direccion) {
   if (!btn) return;
   const activar = (e) => { 
     e.preventDefault(); 
-    if (!juegoActivo) iniciarRecorrido();
+    if (!juegoActivo && btnIniciar && btnIniciar.style.display !== 'none') {
+      iniciarRecorrido();
+    }
     teclas[direccion] = true; 
   };
-  const desactivar = (e) => { e.preventDefault(); teclas[direccion] = false; };
+  const desactivar = (e) => { 
+    e.preventDefault(); 
+    teclas[direccion] = false; 
+  };
   btn.addEventListener('pointerdown', activar);
   btn.addEventListener('pointerup', desactivar);
   btn.addEventListener('pointerleave', desactivar);
@@ -464,5 +532,3 @@ window.addEventListener('keyup', (e) => {
   if (e.key === 'a' || e.key === 'A' || e.key === 'ArrowLeft') teclas.izquierda = false;
   if (e.key === 'd' || e.key === 'D' || e.key === 'ArrowRight') teclas.derecha = false;
 });
-
-window.addEventListener('DOMContentLoaded', inicializarModulo);
