@@ -4,310 +4,328 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Sensometrika | Tamizaje Auditivo</title>
-  <script src="credit-manager.js"></script>
-  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="css/estilos.css">
   <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
       background-color: #0b1120;
-      color: #f1f5f9;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      margin: 0;
-      padding: 16px;
+      color: #f8fafc;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      min-height: 100vh;
       display: flex;
       justify-content: center;
       align-items: center;
-      min-height: 100vh;
-      box-sizing: border-box;
+      padding: 16px;
+      user-select: none;
+      -webkit-user-select: none;
     }
-    .tarjeta-audicion {
+
+    /* GABINETE IDÉNTICO A REACTÍMETRO Y MÓDULOS ANTERIORES */
+    .modulo-contenedor {
       width: 100%;
-      max-width: 440px;
+      max-width: 480px;
       background: #0f172a;
-      border: 1.5px solid #1e293b;
+      border: 1px solid #1e293b;
       border-radius: 16px;
-      padding: 24px;
-      box-sizing: border-box;
-      text-align: center;
+      padding: 20px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
     }
-    .header-audicion {
+
+    .cabecera-modulo {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 14px;
     }
-    .header-audicion a {
+    .link-volver {
       color: #94a3b8;
       text-decoration: none;
-      font-size: 0.8rem;
+      font-size: 0.85rem;
+      font-weight: 600;
+      transition: color 0.2s;
     }
-    .badge-modulo {
-      color: #38bdf8;
-      font-weight: 800;
-      font-size: 0.76rem;
-      letter-spacing: 0.5px;
+    .link-volver:hover { color: #38bdf8; }
+
+    .btn-ayuda-modal {
+      background: rgba(239, 68, 68, 0.1);
+      border: 1px solid #ef4444;
+      color: #f87171;
+      padding: 5px 12px;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: bold;
+      cursor: pointer;
     }
-    .pildora-simulacion {
-      background: #0284c7;
-      color: #fff;
-      display: inline-block;
-      padding: 4px 14px;
-      border-radius: 20px;
+
+    .badge-estado-pill {
       font-size: 0.8rem;
       font-weight: 700;
-      margin-bottom: 16px;
+      color: #facc15;
+      text-align: center;
+      background: rgba(250, 204, 21, 0.1);
+      border: 1px solid rgba(250, 204, 21, 0.25);
+      padding: 6px 14px;
+      border-radius: 20px;
+      align-self: center;
     }
-    .box-requisito {
-      background: #182235;
+
+    .placa-induccion {
+      background: #0b1329;
+      border: 1px solid #38bdf8;
+      border-radius: 8px;
+      padding: 10px 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.78rem;
+    }
+
+    /* ÁREA VISUAL ACÚSTICA */
+    .contenedor-animacion-audio {
+      background: #020617;
+      border: 2px solid #1e293b;
+      border-radius: 12px;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 180px;
+      position: relative;
+    }
+
+    .icono-audifonos {
+      font-size: 3.2rem;
+      margin-bottom: 8px;
+      filter: drop-shadow(0 0 15px rgba(56, 189, 248, 0.3));
+      animation: pulsoSuave 2s infinite ease-in-out;
+    }
+
+    @keyframes pulsoSuave {
+      0%, 100% { transform: scale(1); opacity: 0.9; }
+      50% { transform: scale(1.08); opacity: 1; }
+    }
+
+    .instruccion-fase {
+      text-align: center;
+      font-size: 0.85rem;
+      color: #94a3b8;
+      min-height: 20px;
+    }
+
+    /* REQUISITO EXCLUYENTE: CASILLA DE AUDÍFONOS */
+    .caja-gatekeeper-audifonos {
+      background: #0b1329;
       border: 1.5px solid #f59e0b;
       border-radius: 10px;
-      padding: 14px;
-      text-align: left;
-      margin-bottom: 18px;
-    }
-    .box-requisito h4 {
-      margin: 0 0 6px 0;
-      color: #f59e0b;
-      font-size: 0.85rem;
+      padding: 12px 14px;
       display: flex;
-      align-items: center;
-      gap: 6px;
+      flex-direction: column;
+      gap: 8px;
     }
-    .box-requisito p {
-      margin: 0 0 12px 0;
-      font-size: 0.75rem;
-      color: #cbd5e1;
-      line-height: 1.35;
-    }
-    .check-audifonos {
+    .check-fila {
       display: flex;
       align-items: center;
       gap: 10px;
       cursor: pointer;
-      font-size: 0.8rem;
-      color: #ffffff;
-      font-weight: 600;
     }
-    .check-audifonos input {
+    .check-fila input[type="checkbox"] {
       width: 18px;
       height: 18px;
-      accent-color: #0284c7;
+      accent-color: #22c55e;
+      cursor: pointer;
+      flex-shrink: 0;
     }
-    .btn-accion-audio {
+    .check-fila span {
+      font-size: 0.82rem;
+      color: #f8fafc;
+      font-weight: 600;
+      line-height: 1.35;
+    }
+
+    .btn-accion-unico {
       width: 100%;
       height: 48px;
-      background: #16a34a;
+      background-color: #0284c7;
       color: #ffffff;
       border: none;
       border-radius: 8px;
       font-size: 0.95rem;
-      font-weight: 800;
+      font-weight: 700;
       cursor: pointer;
-      transition: opacity 0.2s;
+      transition: background-color 0.2s, opacity 0.2s;
     }
-    .btn-accion-audio:disabled {
+    .btn-accion-unico:disabled {
       opacity: 0.4;
       cursor: not-allowed;
+      background-color: #1e293b;
     }
-    .panel-prueba {
+
+    /* MANDOS BINAURALES IZQ / DER */
+    .grilla-oidos {
       display: none;
-      flex-direction: column;
-      gap: 14px;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      width: 100%;
     }
-    .indicador-onda {
-      width: 80px;
-      height: 80px;
-      margin: 10px auto;
-      border-radius: 50%;
-      background: rgba(56, 189, 248, 0.1);
-      border: 2px dashed #38bdf8;
+
+    .btn-oido {
+      height: 64px;
+      background: #1e293b;
+      border: 1.5px solid #334155;
+      color: #f8fafc;
+      font-size: 0.92rem;
+      font-weight: bold;
+      border-radius: 8px;
+      cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 2rem;
+      gap: 8px;
+      transition: all 0.15s;
     }
-    .grilla-oidos {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-      margin-top: 10px;
-    }
-    .btn-oido {
-      height: 54px;
-      background: #1e293b;
-      border: 1.5px solid #334155;
-      color: #ffffff;
-      border-radius: 8px;
-      font-weight: 800;
-      font-size: 0.9rem;
-      cursor: pointer;
-    }
-    .btn-oido:active {
+    .btn-oido:hover:not(:disabled) {
       background: #0284c7;
       border-color: #38bdf8;
     }
-    .caja-cierre-audio {
-      display: none;
-      flex-direction: column;
-      gap: 12px;
+    .btn-oido:active:not(:disabled) {
+      transform: scale(0.97);
+    }
+    .btn-oido:disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+    }
+
+    .panel-metricas-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-top: 4px;
+    }
+    .tarjeta-cifra {
+      background: #131d35;
+      padding: 8px 4px;
+      border-radius: 8px;
       text-align: center;
+      border: 1px solid #1e293b;
     }
-    .resultado-pct {
-      font-size: 1.5rem;
-      font-weight: 900;
+    .tarjeta-cifra span {
+      display: block;
+      font-size: 0.65rem;
+      color: #94a3b8;
+      text-transform: uppercase;
+      font-weight: bold;
+    }
+    .tarjeta-cifra strong {
+      font-size: 0.95rem;
       color: #38bdf8;
-      margin: 6px 0;
     }
+
+    .modal-telon {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(2, 6, 23, 0.85);
+      z-index: 100;
+      backdrop-filter: blur(4px);
+      justify-content: center;
+      align-items: center;
+      padding: 16px;
+    }
+    .modal-caja {
+      background: #0f172a;
+      border: 1.5px solid #38bdf8;
+      border-radius: 12px;
+      padding: 20px;
+      max-width: 400px;
+      width: 100%;
+    }
+    .modal-caja h3 { margin-top: 0; color: #38bdf8; font-size: 1.05rem; margin-bottom: 8px; }
+    .modal-caja p, .modal-caja li { font-size: 0.82rem; color: #cbd5e1; line-height: 1.45; }
+    .modal-caja ul { padding-left: 18px; margin: 8px 0; }
   </style>
 </head>
 <body>
-  <main class="tarjeta-audicion">
-    <div class="header-audicion">
-      <a href="menu.html">← Menú Principal</a>
-      <span class="badge-modulo">MÓDULO 5: AUDITIVO</span>
+
+  <main class="modulo-contenedor">
+    <header class="cabecera-modulo">
+      <a href="menu.html" class="link-volver">← Menú Principal</a>
+      <button id="btn-abrir-ayuda" class="btn-ayuda-modal" type="button">? ¿Cómo funciona?</button>
+    </header>
+
+    <div id="badge-modo" class="badge-estado-pill">🟡 Calibración Acústica (Demo)</div>
+
+    <div class="placa-induccion">
+      <span id="txt-placa-modo" style="color: #facc15; font-weight: 700;">🟡 Calibración Biaural</span>
+      <span id="txt-placa-sub" style="color: #94a3b8;">Canales Estéreo</span>
     </div>
 
-    <!-- Píldora de Conteo Dinámica -->
-    <div class="pildora-simulacion" id="lbl-pildora-conteo">Simulación Oficial: 1 de 4</div>
-
-    <!-- 1. Pantalla Inicial de Requisitos -->
-    <div id="pantalla-inicio">
-      <div class="box-requisito">
-        <h4>🎧 Exigencia Técnica de Audífonos</h4>
-        <p>Para evaluar la separación binaural (oído izquierdo y derecho independientemente), es obligatorio el uso de audífonos estéreo conectados.</p>
-        <label class="check-audifonos">
-          <input type="checkbox" id="chk-audifonos" onchange="toggleIniciarPrueba()">
-          <span>Tengo audífonos estéreo colocados</span>
-        </label>
-      </div>
-      <p style="font-size: 0.75rem; color: #94a3b8; margin-bottom: 14px;">Marca la casilla para iniciar tu Simulación Oficial.</p>
-      <button type="button" class="btn-accion-audio" id="btn-iniciar" disabled onclick="comenzarEvaluacionAuditiva()">Iniciar Simulación Oficial</button>
-    </div>
-
-    <!-- 2. Pantalla de Test Interactivo -->
-    <div id="pantalla-test" class="panel-prueba">
-      <div class="indicador-onda" id="anim-onda">🔊</div>
-      <p style="font-size: 0.85rem; color: #cbd5e1; margin: 0;" id="txt-instruccion-estimulo">Escuchando tono de frecuencia...</p>
-      <div class="grilla-oidos">
-        <button type="button" class="btn-oido" onclick="responderOido('IZQ')">👂 Oído Izquierdo</button>
-        <button type="button" class="btn-oido" onclick="responderOido('DER')">Oído Derecho 👂</button>
+    <div class="contenedor-animacion-audio">
+      <div class="icono-audifonos" id="anim-onda">🎧</div>
+      <div id="txt-estado-audio" style="font-size: 0.9rem; font-weight: bold; color: #38bdf8; text-align:center;">
+        Verifica tus audífonos estéreo
       </div>
     </div>
 
-    <!-- 3. Pantalla de Finalización Armónica -->
-    <div id="pantalla-cierre" class="caja-cierre-audio">
-      <div style="font-size: 2.5rem;" id="icono-resultado">✅</div>
-      <h3 style="color:#ffffff; margin: 0; font-size: 1.15rem;">¡Evaluación Auditiva Finalizada!</h3>
-      <div class="resultado-pct" id="txt-pct-resultado">100%</div>
-      <p style="color:#94a3b8; font-size:0.8rem; margin:0 0 16px 0;" id="txt-estado-resultado">Discriminación biaural en rango óptimo (APROBADO)</p>
-
-      <div style="display: flex; flex-direction: column; gap: 10px;">
-        <a href="informe.html" style="display: flex; align-items: center; justify-content: center; width: 100%; height: 46px; background: #0284c7; color: #ffffff; text-decoration: none; border-radius: 8px; font-weight: 800; font-size: 0.9rem; box-shadow: 0 4px 14px rgba(2, 132, 199, 0.4);">
-          📊 Ver Informe y Dictamen Final →
-        </a>
-        <a href="menu.html" style="display: flex; align-items: center; justify-content: center; width: 100%; height: 42px; background: #1e293b; border: 1px solid #334155; color: #cbd5e1; text-decoration: none; border-radius: 8px; font-weight: 700; font-size: 0.85rem;">
-          ← Volver al Menú Principal
-        </a>
-      </div>
+    <!-- CASILLA DE VERIFICACIÓN OBLIGATORIA (GATEKEEPER) -->
+    <div class="caja-gatekeeper-audifonos" id="caja-gatekeeper">
+      <label class="check-fila">
+        <input type="checkbox" id="chk-audifonos">
+        <span>Confirmo que tengo audífonos estéreo conectados, colocados y con volumen medio.</span>
+      </label>
     </div>
+
+    <div id="panel-instruccion" class="instruccion-fase">
+      Marca la casilla de confirmación para habilitar la prueba sonora.
+    </div>
+
+    <button id="btn-iniciar-audio" class="btn-accion-unico" type="button" disabled>
+      Iniciar Calibración Acústica (Demo)
+    </button>
+
+    <!-- BOTONERA DE RESPUESTA BINAURAL -->
+    <div id="grilla-discriminacion" class="grilla-oidos">
+      <button id="btn-oido-izq" class="btn-oido" type="button">◀ Oído Izquierdo</button>
+      <button id="btn-oido-der" class="btn-oido" type="button">Oído Derecho ▶</button>
+    </div>
+
+    <section class="panel-metricas-3">
+      <div class="tarjeta-cifra">
+        <span>Frecuencia</span>
+        <strong id="metrica-frecuencia">1000 Hz</strong>
+      </div>
+      <div class="tarjeta-cifra">
+        <span>Estímulo</span>
+        <strong id="metrica-paso" style="color: #4ade80;">-- / --</strong>
+      </div>
+      <div class="tarjeta-cifra">
+        <span>Efectividad</span>
+        <strong id="metrica-efectividad">100%</strong>
+      </div>
+    </section>
+
+    <div id="zona-coordinacion-audio" style="width: 100%;"></div>
   </main>
 
-  <script>
-    let audioCtx = null;
-    let estimuloActual = 0;
-    let aciertos = 0;
-    const totalEstimulos = 6;
-    let ladoCorrecto = 'IZQ';
+  <div id="modal-guia" class="modal-telon">
+    <div class="modal-caja">
+      <h3>Instrucciones: Tamizaje Auditivo</h3>
+      <p>Evalúa la discriminación tonal biaural según la normativa D.S. N° 170[cite: 8]:</p>
+      <ul>
+        <li><strong>Uso obligatorio de audífonos:</strong> Los altavoces de tu dispositivo anulan la separación estéreo[cite: 3, 5, 8].</li>
+        <li><strong>Fase Demo:</strong> 2 tonos de prueba para comprobar que escuchas por ambos lados[cite: 7].</li>
+        <li><strong>Evaluación Oficial:</strong> 6 tonos puros en frecuencias clínicas (500 a 4000 Hz) con pausas aleatorias[cite: 2, 7, 8].</li>
+        <li>Presiona rápidamente <strong>Oído Izquierdo</strong> u <strong>Oído Derecho</strong> según el lado por donde percibas el sonido[cite: 8].</li>
+      </ul>
+      <button id="btn-cerrar-ayuda" type="button" style="width: 100%; height: 38px; background: #0284c7; color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; margin-top: 8px;">
+        Entendido
+      </button>
+    </div>
+  </div>
 
-    window.addEventListener('DOMContentLoaded', () => {
-      // 1. Validar acceso por saldo mediante CreditManager
-      if (typeof CreditManager !== 'undefined') {
-        if (!CreditManager.validarAccesoOBloquear('auditivo')) return;
-        const actual = CreditManager.obtenerNumeroSimulacionActual('auditivo');
-        const max = CreditManager.obtenerLimiteModulo('auditivo');
-        document.getElementById('lbl-pildora-conteo').innerText = `Simulación Oficial: ${actual} de ${max}`;
-        document.getElementById('btn-iniciar').innerText = `Iniciar Simulación Oficial (${actual} de ${max})`;
-      }
-    });
-
-    function toggleIniciarPrueba() {
-      const chk = document.getElementById('chk-audifonos');
-      document.getElementById('btn-iniciar').disabled = !chk.checked;
-    }
-
-    function emitirTonoBiaural(lado) {
-      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      if (audioCtx.state === 'suspended') audioCtx.resume();
-
-      const osc = audioCtx.createOscillator();
-      const panner = audioCtx.createStereoPanner();
-      const gain = audioCtx.createGain();
-
-      panner.pan.value = (lado === 'IZQ') ? -1 : 1;
-      osc.frequency.value = 1000;
-      osc.type = 'sine';
-
-      gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.8);
-
-      osc.connect(panner);
-      panner.connect(gain);
-      gain.connect(audioCtx.destination);
-
-      osc.start();
-      osc.stop(audioCtx.currentTime + 0.8);
-    }
-
-    function comenzarEvaluacionAuditiva() {
-      document.getElementById('pantalla-inicio').style.display = 'none';
-      document.getElementById('pantalla-test').style.display = 'flex';
-      siguienteEstimulo();
-    }
-
-    function siguienteEstimulo() {
-      if (estimuloActual >= totalEstimulos) {
-        finalizarPrueba();
-        return;
-      }
-      ladoCorrecto = (Math.random() > 0.5) ? 'DER' : 'IZQ';
-      document.getElementById('txt-instruccion-estimulo').innerText = `Estímulo ${estimuloActual + 1} de ${totalEstimulos}...`;
-      setTimeout(() => {
-        emitirTonoBiaural(ladoCorrecto);
-      }, 500);
-    }
-
-    function responderOido(ladoPulsado) {
-      if (ladoPulsado === ladoCorrecto) aciertos++;
-      estimuloActual++;
-      siguienteEstimulo();
-    }
-
-    function finalizarPrueba() {
-      const pct = Math.round((aciertos / totalEstimulos) * 100);
-      const aprobado = pct >= 75;
-
-      // Guardar métrica para el informe
-      localStorage.setItem('sensometrika_auditivo', JSON.stringify({
-        efectividad: pct,
-        aprobado: aprobado,
-        fecha: new Date().toISOString()
-      }));
-
-      // REGISTRO Y DESCUENTO ESTRICTO EN CREDITMANAGER
-      if (typeof CreditManager !== 'undefined') {
-        CreditManager.registrarConsumo('auditivo');
-      }
-
-      // Despliegue de resultados armónico
-      document.getElementById('pantalla-test').style.display = 'none';
-      const pantallaCierre = document.getElementById('pantalla-cierre');
-      pantallaCierre.style.display = 'flex';
-
-      document.getElementById('icono-resultado').innerText = aprobado ? '✅' : '⚠️';
-      document.getElementById('txt-pct-resultado').innerText = `${pct}% de acierto`;
-      document.getElementById('txt-estado-resultado').innerText = aprobado 
-        ? 'Discriminación biaural en rango óptimo (APROBADO)' 
-        : 'Discriminación disminuida en frecuencias medias (OBSERVADO)';
-    }
-  </script>
+  <script src="credit-manager.js"></script>
+  <script src="audicion.js"></script>
 </body>
 </html>

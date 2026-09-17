@@ -4,164 +4,293 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Sensometrika | Tamizaje Visual</title>
-  <script src="credit-manager.js"></script>
-  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="css/estilos.css">
   <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
       background-color: #0b1120;
-      color: #f1f5f9;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      margin: 0;
-      padding: 12px;
+      color: #f8fafc;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      min-height: 100vh;
       display: flex;
       justify-content: center;
-      user-select: none;
-      -webkit-user-select: none;
-    }
-    .tarjeta-visual {
-      width: 100%;
-      max-width: 440px;
-      background: #0f172a;
-      border: 1.5px solid #1e293b;
-      border-radius: 16px;
+      align-items: center;
       padding: 16px;
-      box-sizing: border-box;
+      user-select: none;
+    }
+
+    .modulo-contenedor {
+      width: 100%;
+      max-width: 480px;
+      background: #0f172a;
+      border: 1px solid #1e293b;
+      border-radius: 16px;
+      padding: 20px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
       display: flex;
       flex-direction: column;
       gap: 12px;
     }
-    .header-visual {
+
+    .cabecera-modulo {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      font-size: 0.8rem;
     }
-    .header-visual a {
+    .link-volver {
       color: #94a3b8;
       text-decoration: none;
+      font-size: 0.85rem;
       font-weight: 600;
+      transition: color 0.2s;
     }
-    .badge-top {
-      color: #38bdf8;
-      font-weight: 800;
-      letter-spacing: 0.5px;
-    }
-    .caja-camara {
-      background: #182235;
-      border: 1.5px solid #22c55e;
-      border-radius: 10px;
-      padding: 8px 12px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 10px;
-    }
-    .preview-video {
-      width: 50px;
-      height: 38px;
+    .link-volver:hover { color: #38bdf8; }
+
+    .btn-ayuda-modal {
+      background: rgba(239, 68, 68, 0.1);
+      border: 1px solid #ef4444;
+      color: #f87171;
+      padding: 5px 12px;
       border-radius: 6px;
-      background: #090d16;
-      object-fit: cover;
-      border: 1px solid #334155;
+      font-size: 0.75rem;
+      font-weight: bold;
+      cursor: pointer;
     }
-    .info-distancia {
-      text-align: right;
-      font-size: 0.72rem;
+
+    .badge-estado-pill {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: #facc15;
+      text-align: center;
+      background: rgba(250, 204, 21, 0.1);
+      border: 1px solid rgba(250, 204, 21, 0.25);
+      padding: 6px 14px;
+      border-radius: 20px;
+      align-self: center;
     }
-    .info-distancia strong {
-      display: block;
-      color: #4ade80;
+
+    .placa-induccion {
+      background: #0b1329;
+      border: 1px solid #38bdf8;
+      border-radius: 8px;
+      padding: 10px 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
       font-size: 0.78rem;
     }
-    .canvas-contenedor {
-      width: 100%;
-      min-height: 240px;
-      background: #090d16;
-      border: 1.5px solid #1e293b;
+
+    .contenedor-estimulo-visual {
+      background: #020617;
+      border: 2px solid #1e293b;
       border-radius: 12px;
+      padding: 12px;
       display: flex;
       flex-direction: column;
-      justify-content: center;
       align-items: center;
-      padding: 14px;
-      box-sizing: border-box;
+      justify-content: center;
+      min-height: 230px;
+      position: relative;
     }
-    #canvas-ishihara {
-      max-width: 170px;
-      max-height: 170px;
-      border-radius: 50%;
+
+    .video-feed-preview {
+      width: 55px;
+      height: 42px;
+      object-fit: cover;
+      border-radius: 4px;
+      border: 1px solid #22c55e;
+      position: absolute;
+      top: 8px;
+      left: 8px;
+      background: #000;
+      transform: scaleX(-1);
+    }
+
+    .status-distancia-cam {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      font-size: 0.7rem;
+      color: #22c55e;
+      font-weight: bold;
+      background: rgba(34, 197, 94, 0.1);
+      padding: 4px 8px;
+      border-radius: 4px;
+      border: 1px solid rgba(34, 197, 94, 0.3);
+    }
+
+    canvas#lienzo-visual {
+      background: transparent;
+      border-radius: 8px;
       display: block;
-      box-shadow: 0 4px 14px rgba(0,0,0,0.6);
+      margin: 10px 0;
     }
-    #simbolo-optotipo {
-      display: none;
-      width: 140px;
-      height: 140px;
-      background: #ffffff;
-      border-radius: 12px;
-      align-items: center;
-      justify-content: center;
-      box-shadow: 0 4px 14px rgba(0,0,0,0.6);
-    }
-    .leyenda-pregunta {
-      margin-top: 12px;
-      font-size: 0.78rem;
-      color: #cbd5e1;
+
+    .instruccion-pregunta {
+      font-size: 0.85rem;
+      color: #38bdf8;
       text-align: center;
-      font-weight: 600;
+      min-height: 20px;
     }
-    .grilla-opciones {
+
+    .grilla-opciones-visual {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 10px;
       width: 100%;
     }
-    .btn-opcion-visual {
-      height: 50px;
+
+    .btn-opcion-resp {
+      height: 44px;
       background: #1e293b;
-      border: 1.5px solid #334155;
-      color: #ffffff;
+      border: 1px solid #334155;
+      color: #f8fafc;
+      font-size: 0.95rem;
+      font-weight: bold;
       border-radius: 8px;
-      font-weight: 800;
-      font-size: 1rem;
       cursor: pointer;
-      touch-action: manipulation;
+      transition: all 0.15s;
     }
-    .btn-opcion-visual:active {
+    .btn-opcion-resp:hover {
       background: #0284c7;
       border-color: #38bdf8;
     }
+
+    .btn-control-principal {
+      width: 100%;
+      height: 46px;
+      background-color: #22c55e;
+      color: #ffffff;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      font-weight: 700;
+      cursor: pointer;
+      margin-top: 6px;
+      display: none;
+    }
+
+    .panel-metricas-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-top: 4px;
+    }
+    .tarjeta-cifra {
+      background: #131d35;
+      padding: 8px 4px;
+      border-radius: 8px;
+      text-align: center;
+      border: 1px solid #1e293b;
+    }
+    .tarjeta-cifra span {
+      display: block;
+      font-size: 0.65rem;
+      color: #94a3b8;
+      text-transform: uppercase;
+      font-weight: bold;
+    }
+    .tarjeta-cifra strong {
+      font-size: 0.95rem;
+      color: #38bdf8;
+    }
+
+    .modal-telon {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(2, 6, 23, 0.85);
+      z-index: 100;
+      backdrop-filter: blur(4px);
+      justify-content: center;
+      align-items: center;
+      padding: 16px;
+    }
+    .modal-caja {
+      background: #0f172a;
+      border: 1.5px solid #38bdf8;
+      border-radius: 12px;
+      padding: 20px;
+      max-width: 400px;
+      width: 100%;
+    }
+    .modal-caja h3 { margin-top: 0; color: #38bdf8; font-size: 1.05rem; margin-bottom: 8px; }
+    .modal-caja p, .modal-caja li { font-size: 0.82rem; color: #cbd5e1; line-height: 1.45; }
+    .modal-caja ul { padding-left: 18px; margin: 8px 0; }
   </style>
 </head>
 <body>
-  <main class="tarjeta-visual">
-    <div class="header-visual">
-      <a href="menu.html">← Menú Principal</a>
-      <span class="badge-top">MÓDULO 4: TAMIZAJE VISUAL</span>
+
+  <main class="modulo-contenedor">
+    <header class="cabecera-modulo">
+      <a href="menu.html" class="link-volver">← Menú Principal</a>
+      <button id="btn-abrir-ayuda" class="btn-ayuda-modal" type="button">? ¿Cómo funciona?</button>
+    </header>
+
+    <div id="badge-modo" class="badge-estado-pill">🟡 Calibración Técnica (Demo)</div>
+
+    <div class="placa-induccion">
+      <span id="txt-placa-titulo" style="color: #facc15; font-weight: 700;">🟡 Calibración Biométrica</span>
+      <span style="color: #94a3b8;">Distancia Facial: <strong id="txt-distancia-label" style="color: #4ade80;">Normal</strong></span>
     </div>
 
-    <!-- Caja de monitoreo óptico biométrico -->
-    <div class="caja-camara" id="caja-camara">
-      <video id="video-camara" class="preview-video" autoplay playsinline muted></video>
-      <div class="info-distancia">
-        <span id="etiqueta-distancia">✅ Distancia de lectura normal</span>
-        <strong id="estado-distancia">Normal</strong>
+    <div class="contenedor-estimulo-visual">
+      <video id="video-camara" class="video-feed-preview" autoplay playsinline muted></video>
+      <canvas id="canvas-procesamiento-camara" width="80" height="60" style="display:none;"></canvas>
+      
+      <div id="indicador-distancia" class="status-distancia-cam">✔ Distancia Óptima</div>
+      
+      <canvas id="lienzo-visual" width="180" height="180"></canvas>
+
+      <div id="txt-pregunta" class="instruccion-pregunta">Demo 1 de 2: ¿Qué número ves en el círculo?</div>
+    </div>
+
+    <div id="zona-botones-respuestas" class="grilla-opciones-visual">
+      <button class="btn-opcion-resp" type="button"></button>
+      <button class="btn-opcion-resp" type="button"></button>
+      <button class="btn-opcion-resp" type="button"></button>
+      <button class="btn-opcion-resp" type="button"></button>
+    </div>
+
+    <button id="btn-iniciar-oficial" class="btn-control-principal" type="button">
+      Iniciar Simulación Oficial (1 de 4)
+    </button>
+
+    <section class="panel-metricas-3">
+      <div class="tarjeta-cifra">
+        <span>Fase Actual</span>
+        <strong id="metrica-fase">Demo</strong>
       </div>
-    </div>
+      <div class="tarjeta-cifra">
+        <span>Aciertos</span>
+        <strong id="metrica-aciertos" style="color: #4ade80;">0 / 2</strong>
+      </div>
+      <div class="tarjeta-cifra">
+        <span>Efectividad</span>
+        <strong id="metrica-efectividad">100%</strong>
+      </div>
+    </section>
 
-    <!-- Contenedor central del test (Lámina o Letra E) -->
-    <div class="canvas-contenedor" id="contenedor-central">
-      <canvas id="canvas-ishihara" width="180" height="180"></canvas>
-      <div id="simbolo-optotipo"></div>
-      <p class="leyenda-pregunta" id="instruccion-pregunta">
-        Cargando lámina...
-      </p>
-    </div>
-
-    <!-- Contenedor de respuestas activo desde el primer instante -->
-    <div class="grilla-opciones" id="contenedor-opciones"></div>
+    <div id="zona-coordinacion-test" style="width: 100%;"></div>
   </main>
 
+  <div id="modal-guia" class="modal-telon">
+    <div class="modal-caja">
+      <h3>Instrucciones: Tamizaje Visual</h3>
+      <p>Evalúa dos componentes sensoriales reglamentarios (D.S. N° 170):</p>
+      <ul>
+        <li><strong>Fase Demo (2 Ensayos):</strong> Calibración para comprobar la distancia y responder sin gasto de intentos.</li>
+        <li><strong>Visión Cromática (Test de Ishihara):</strong> Identifica el número entre los círculos de colores.</li>
+        <li><strong>Agudeza Visual (Optotipo E):</strong> Indica la dirección de las barras de la letra 'E'[cite: 16].</li>
+        <li>El sistema bloqueará las opciones si te acercas a menos de 45 cm de la pantalla[cite: 16].</li>
+      </ul>
+      <button id="btn-cerrar-ayuda" type="button" style="width: 100%; height: 38px; background: #0284c7; color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; margin-top: 8px;">
+        Entendido
+      </button>
+    </div>
+  </div>
+
+  <script src="credit-manager.js"></script>
   <script src="visual.js"></script>
 </body>
 </html>

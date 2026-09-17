@@ -1,399 +1,416 @@
 /* ==========================================================================
-   SENSOMETRIKA - MÓDULO 3: TEST DE PUNTEO DE LAHY (punteo.js)
-   • Flujo descendente vertical (de arriba hacia abajo)
-   • 4 Columnas alternadas (izquierda y derecha) para obligar el uso bimanual
-   • Franja dorada horizontal de inserción reglamentaria
-   • 1 Demo de 15 s + Simulación Oficial de 30 s con avance al Informe
+   SENSOMETRIKA - MÓDULO 3: TEST DE PUNTEO LAHY (punteo.js)
+   • Detección geométrica calibrada para impacto certero (Aciertos y Errores)
+   • Conteo estricto de dianas acertadas, omisiones al cruzar y toques en falso
+   • Demo 15s -> Evaluación Oficial 30s
+   • Integración y descuento con CreditManager
    ========================================================================== */
 
-const canvas = document.getElementById('lienzo-punteo') || document.getElementById('canvas-punteo') || document.querySelector('canvas');
-const ctx = canvas ? canvas.getContext('2d') : null;
+const canvas = document.getElementById('lienzo-punteo');
+const ctx = canvas.getContext('2d');
 
-const badgeModo = document.getElementById('badge-modo-punteo') || document.getElementById('badge-modo') || document.querySelector('.badge-modo');
-const elCronometro = document.getElementById('cronometro-punteo') || document.getElementById('lbl-crono-punteo') || document.getElementById('lbl-cronometro');
-const elAciertos = document.getElementById('contador-aciertos') || document.getElementById('metrica-aciertos');
-const elFallos = document.getElementById('contador-errores') || document.getElementById('contador-fallos') || document.getElementById('metrica-fallos');
-const elEfectividad = document.getElementById('metrica-efectividad');
-const panelMensaje = document.getElementById('panel-estado');
-const zonaAcciones = document.getElementById('zona-coordinacion-punteo') || document.getElementById('contenedor-accion');
+const badgeModo = document.getElementById('badge-modo-punteo');
+const txtPlacaModo = document.getElementById('txt-placa-modo');
+const txtPlacaSub = document.getElementById('txt-placa-sub');
+const panelEstado = document.getElementById('panel-estado');
+const btnAccion = document.getElementById('btn-accion-punteo');
+const zonaCoordinacion = document.getElementById('zona-coordinacion-punteo');
 
-let btnAccion = document.getElementById('btn-iniciar-punteo') || document.getElementById('btn-accion-punteo') || document.getElementById('btn-iniciar');
+const metricaAciertos = document.getElementById('metrica-aciertos');
+const metricaErrores = document.getElementById('metrica-errores');
+const metricaEfectividad = document.getElementById('metrica-efectividad');
 
-let modo = 'DEMO'; // 'DEMO' u 'OFICIAL'
-let juegoActivo = false;
-let tiempoRestante = 15;
-let intervaloTiempo = null;
+// Modal
+const modalGuia = document.getElementById('modal-guia');
+const btnAbrirAyuda = document.getElementById('btn-abrir-ayuda');
+const btnCerrarAyuda = document.getElementById('btn-cerrar-ayuda');
+
+if (btnAbrirAyuda) btnAbrirAyuda.onclick = () => modalGuia.style.display = 'flex';
+if (btnCerrarAyuda) btnCerrarAyuda.onclick = () => modalGuia.style.display = 'none';
+
+// Parámetros de la franja dorada (Zona de acierto reglamentaria)
+const FRANJA = {
+  y: 110,
+  h: 46
+};
+
+// 4 Carriles equidistantes
+const CARRILES = [60, 130, 210, 280];
+
+let fase = 'DEMO'; // 'DEMO', 'PAUSA_OFICIAL', 'OFICIAL', 'FINALIZADO'
+let enEjecucion = false;
+let relojInterval = null;
 let animacionFrame = null;
 
+let tiempoRestante = 15;
 let aciertos = 0;
-let fallos = 0;
-let orificios = [];
-let velocidadTambor = 2.4;
+let errores = 0;
+let circulos = [];
+let ultimoSpawn = 0;
+const cadenciaSpawn = 650; // Cadencia de aparición
 
-// Franja horizontal reglamentaria de inserción
-let franjaY = 140;
-let franjaAlto = 48;
-
-function inicializarPunteo() {
-  if (!canvas || !ctx) return;
-
-  // Ajuste de proporciones verticales de cabina
-  if (!canvas.width || canvas.width < 320) canvas.width = 340;
-  if (!canvas.height || canvas.height < 240) canvas.height = 250;
-
-  franjaY = Math.round(canvas.height * 0.60);
-  franjaAlto = 46;
-
-  btnAccion = document.getElementById('btn-iniciar-punteo') || document.getElementById('btn-accion-punteo') || document.getElementById('btn-iniciar');
-  if (btnAccion) {
-    btnAccion.onclick = function(e) {
-      e.preventDefault();
-      if (juegoActivo) return;
-      arrancarPrueba();
-    };
-  }
-
-  // Soporte multitáctil y mouse en pantalla
-  canvas.onpointerdown = function(e) {
-    e.preventDefault();
-    if (!juegoActivo) return;
-    registrarPunteo(e);
-  };
-
+window.addEventListener('DOMContentLoaded', () => {
   if (typeof CreditManager !== 'undefined') {
-    CreditManager.pintarBadgeCabecera('caja-contador-simulacion', 'punteo');
     if (!CreditManager.puedeRendir('punteo')) {
-      bloquearCupoPunteo();
+      bloquearModuloPorCupo();
       return;
     }
   }
 
-  prepararModoDemo();
+  configurarDemo();
+  dibujarEscena();
+});
+
+function bloquearModuloPorCupo() {
+  const max = typeof CreditManager !== 'undefined' ? CreditManager.obtenerLimiteModulo('punteo') : 8;
+  badgeModo.innerText = `Cupo Agotado (${max} de ${max})`;
+  badgeModo.style.color = '#f87171';
+  btnAccion.disabled = true;
+  btnAccion.style.opacity = '0.35';
+  btnAccion.innerText = `Cupo Bloqueado (${max}/${max})`;
+  panelEstado.innerText = `Has completado el límite de ${max} simulaciones autorizadas para este módulo.`;
+  panelEstado.style.color = '#f87171';
+
+  zonaCoordinacion.innerHTML = `
+    <div style="background:#090e1c; border:1px solid #ef4444; border-radius:10px; padding:14px; text-align:center; margin-top:8px;">
+      <a href="menu.html" style="color:#38bdf8; text-decoration:none; font-weight:bold;">Volver al Menú Principal</a>
+    </div>
+  `;
 }
 
-function prepararModoDemo() {
-  modo = 'DEMO';
-  juegoActivo = false;
+function configurarDemo() {
+  fase = 'DEMO';
   tiempoRestante = 15;
   aciertos = 0;
-  fallos = 0;
+  errores = 0;
+  circulos = [];
 
-  if (badgeModo) {
-    badgeModo.innerText = '🟡 Calibración Técnica (Demo 15s)';
-    badgeModo.style.color = '#facc15';
-  }
-  if (elCronometro) elCronometro.innerText = '15 s';
-  if (elAciertos) elAciertos.innerText = '0';
-  if (elFallos) elFallos.innerText = '0';
-  if (elEfectividad) elEfectividad.innerText = '-- %';
+  badgeModo.innerText = '🟡 Calibración Rítmica (Demo 15s)';
+  badgeModo.style.color = '#facc15';
+  badgeModo.style.background = 'rgba(250, 204, 21, 0.1)';
+  badgeModo.style.borderColor = 'rgba(250, 204, 21, 0.25)';
 
-  if (panelMensaje) {
-    panelMensaje.innerText = 'Modo Calibración: Usa ambas manos para tocar los círculos en la franja central.';
-    panelMensaje.style.color = '#38bdf8';
-  }
+  txtPlacaModo.innerText = '🟡 Calibración Rítmica';
+  txtPlacaModo.style.color = '#facc15';
+  txtPlacaSub.innerText = 'Fase de Inducción (15 s)';
 
-  if (btnAccion) {
-    btnAccion.style.display = 'block';
-    btnAccion.disabled = false;
-    btnAccion.style.backgroundColor = '#0284c7';
-    btnAccion.innerText = 'Iniciar Calibración (15 s)';
-  }
+  panelEstado.innerText = 'Presiona el botón para habituarte al ritmo del tambor.';
+  panelEstado.style.color = '#94a3b8';
 
-  orificios = generarOrificiosDescendentes();
-  renderizarTambor();
+  btnAccion.style.display = 'block';
+  btnAccion.style.backgroundColor = '#0284c7';
+  btnAccion.innerText = 'Iniciar Calibración (15 s)';
+
+  actualizarTableroMetricas();
 }
 
-// Genera orificios que caen de arriba a abajo por columnas izquierda/derecha
-function generarOrificiosDescendentes() {
-  const lista = [];
-  // 4 columnas verticales: 2 para mano izquierda y 2 para mano derecha
-  const columnasX = [
-    Math.round(canvas.width * 0.18),
-    Math.round(canvas.width * 0.38),
-    Math.round(canvas.width * 0.62),
-    Math.round(canvas.width * 0.82)
-  ];
-
-  let yActual = -30;
-  for (let i = 0; i < 45; i++) {
-    // Alterna columnas obligando el cambio de mano
-    const colX = columnasX[Math.floor(Math.random() * columnasX.length)];
-    const separacion = Math.floor(Math.random() * (110 - 75 + 1)) + 75;
-    yActual -= separacion;
-
-    lista.push({
-      x: colX,
-      y: yActual,
-      radio: 13,
-      acertado: false,
-      fallado: false
-    });
-  }
-  return lista;
-}
-
-function arrancarPrueba() {
-  juegoActivo = true;
+function configurarOficial() {
+  fase = 'OFICIAL';
+  tiempoRestante = 30;
   aciertos = 0;
-  fallos = 0;
-  if (elAciertos) elAciertos.innerText = '0';
-  if (elFallos) elFallos.innerText = '0';
-  if (elEfectividad) elEfectividad.innerText = '-- %';
+  errores = 0;
+  circulos = [];
 
-  if (btnAccion) btnAccion.style.display = 'none';
+  const num = typeof CreditManager !== 'undefined' ? CreditManager.obtenerNumeroSimulacionActual('punteo') : 1;
+  const max = typeof CreditManager !== 'undefined' ? CreditManager.obtenerLimiteModulo('punteo') : 8;
 
-  tiempoRestante = (modo === 'DEMO') ? 15 : 30;
-  if (elCronometro) elCronometro.innerText = `${tiempoRestante} s`;
+  badgeModo.innerText = `🔴 Simulación Oficial: ${num} de ${max}`;
+  badgeModo.style.color = '#38bdf8';
+  badgeModo.style.background = 'rgba(56, 189, 248, 0.1)';
+  badgeModo.style.borderColor = 'rgba(56, 189, 248, 0.25)';
 
-  if (panelMensaje) {
-    panelMensaje.innerText = (modo === 'DEMO') 
-      ? 'Calibrando: Usa pulgar izquierdo y derecho al cruzar la franja.' 
-      : 'Evaluación oficial activa: Mantén el ritmo bimanual.';
-    panelMensaje.style.color = '#4ade80';
+  txtPlacaModo.innerText = '🔴 Evaluación Activa';
+  txtPlacaModo.style.color = '#38bdf8';
+  txtPlacaSub.innerText = '30 s Oficiales';
+
+  panelEstado.innerText = 'Evaluación Oficial: Toca los círculos dentro de la franja dorada.';
+  panelEstado.style.color = '#38bdf8';
+
+  btnAccion.style.display = 'none';
+
+  actualizarTableroMetricas();
+  iniciarBuclePrueba();
+}
+
+btnAccion.addEventListener('click', () => {
+  if (fase === 'DEMO') {
+    btnAccion.style.display = 'none';
+    iniciarBuclePrueba();
+  } else if (fase === 'PAUSA_OFICIAL') {
+    configurarOficial();
   }
+});
 
-  orificios = generarOrificiosDescendentes();
+function iniciarBuclePrueba() {
+  enEjecucion = true;
+  ultimoSpawn = performance.now();
 
-  clearInterval(intervaloTiempo);
-  intervaloTiempo = setInterval(() => {
+  clearInterval(relojInterval);
+  relojInterval = setInterval(() => {
+    if (!enEjecucion) return;
     tiempoRestante--;
-    if (elCronometro) elCronometro.innerText = `${tiempoRestante} s`;
+
+    if (fase === 'DEMO') {
+      txtPlacaSub.innerText = `Tiempo restante: ${tiempoRestante} s`;
+    } else {
+      txtPlacaSub.innerText = `Tiempo restante: ${tiempoRestante} s`;
+    }
 
     if (tiempoRestante <= 0) {
-      terminarPruebaPunteo();
+      concluirPrueba();
     }
   }, 1000);
 
   cancelAnimationFrame(animacionFrame);
-  bucleTambor();
+  bucleAnimacion(performance.now());
 }
 
-function bucleTambor() {
-  if (!juegoActivo) return;
+function bucleAnimacion(ahora) {
+  if (!enEjecucion) return;
 
-  // Los círculos se desplazan verticalmente hacia abajo
-  for (let i = 0; i < orificios.length; i++) {
-    const o = orificios[i];
-    o.y += velocidadTambor;
+  if (ahora - ultimoSpawn > cadenciaSpawn) {
+    generarCirculo();
+    ultimoSpawn = ahora;
+  }
 
-    // Si cruza la franja dorada hacia abajo sin ser pulsado, es fallo
-    if (!o.acertado && !o.fallado && (o.y - o.radio > (franjaY + franjaAlto))) {
-      o.fallado = true;
-      fallos++;
-      if (elFallos) elFallos.innerText = fallos;
-      actualizarMetricaEfectividad();
+  actualizarFisicaCirculos();
+  dibujarEscena();
+
+  animacionFrame = requestAnimationFrame(bucleAnimacion);
+}
+
+function generarCirculo() {
+  const carril = CARRILES[Math.floor(Math.random() * CARRILES.length)];
+  circulos.push({
+    x: carril,
+    y: -15,
+    radio: 12,
+    velocidad: 2.7,
+    estado: 'activo' // 'activo', 'acertado', 'fallado'
+  });
+}
+
+function actualizarFisicaCirculos() {
+  for (let i = 0; i < circulos.length; i++) {
+    const c = circulos[i];
+    c.y += c.velocidad;
+
+    // Si el círculo superó por completo la franja dorada sin haber sido tocado -> OMISIÓN
+    if (c.estado === 'activo' && c.y > (FRANJA.y + FRANJA.h + c.radio)) {
+      c.estado = 'fallado';
+      errores++;
+      actualizarTableroMetricas();
     }
   }
 
-  renderizarTambor();
-  animacionFrame = requestAnimationFrame(bucleTambor);
+  // Filtrar los que salen del lienzo
+  circulos = circulos.filter(c => c.y < canvas.height + 25);
 }
 
-function registrarPunteo(e) {
+function actualizarTableroMetricas() {
+  metricaAciertos.innerText = aciertos;
+  metricaErrores.innerText = errores;
+
+  const total = aciertos + errores;
+  const efectividad = total > 0 ? Math.round((aciertos / total) * 100) : 100;
+  metricaEfectividad.innerText = `${efectividad}%`;
+
+  if (efectividad >= 80) {
+    metricaEfectividad.style.color = '#38bdf8';
+  } else {
+    metricaEfectividad.style.color = '#f87171';
+  }
+}
+
+// CAPTURA DE IMPACTO DIRECTA Y CALIBRADA
+function procesarImpacto(evento) {
+  if (!enEjecucion) return;
+  evento.preventDefault();
+
   const rect = canvas.getBoundingClientRect();
-  const clickX = (e.clientX - rect.left) * (canvas.width / rect.width);
-  const clickY = (e.clientY - rect.top) * (canvas.height / rect.height);
+  const escalaX = canvas.width / rect.width;
+  const escalaY = canvas.height / rect.height;
 
-  // El toque es válido únicamente dentro de la franja dorada horizontal
-  if (clickY < franjaY || clickY > (franjaY + franjaAlto)) {
-    fallos++;
-    if (elFallos) elFallos.innerText = fallos;
-    actualizarMetricaEfectividad();
-    return;
-  }
+  const clienteX = evento.touches ? evento.touches[0].clientX : evento.clientX;
+  const clienteY = evento.touches ? evento.touches[0].clientY : evento.clientY;
 
-  let acerto = false;
-  for (let i = 0; i < orificios.length; i++) {
-    const o = orificios[i];
-    const d = Math.hypot(clickX - o.x, clickY - o.y);
-    if (d <= o.radio + 12 && !o.acertado) {
-      o.acertado = true;
-      aciertos++;
-      acerto = true;
-      if (elAciertos) elAciertos.innerText = aciertos;
-      if ('vibrate' in navigator) navigator.vibrate(30);
-      actualizarMetricaEfectividad();
-      break;
+  const toqX = (clienteX - rect.left) * escalaX;
+  const toqY = (clienteY - rect.top) * escalaY;
+
+  let impactoExitoso = false;
+
+  // Tolerancia de contacto amplia (22px de radio de toque)
+  const radioTolerancia = 22;
+
+  for (let i = 0; i < circulos.length; i++) {
+    const c = circulos[i];
+    if (c.estado === 'activo') {
+      const dist = Math.hypot(toqX - c.x, toqY - c.y);
+
+      // El círculo es acertado si el toque está cerca y dentro de la franja dorada
+      const dentroDeZona = (c.y + c.radio >= FRANJA.y - 6) && (c.y - c.radio <= FRANJA.y + FRANJA.h + 6);
+
+      if (dist <= (c.radio + radioTolerancia) && dentroDeZona) {
+        c.estado = 'acertado';
+        aciertos++;
+        impactoExitoso = true;
+        if ('vibrate' in navigator) navigator.vibrate(25);
+        break;
+      }
     }
   }
 
-  if (!acerto) {
-    fallos++;
-    if (elFallos) elFallos.innerText = fallos;
-    actualizarMetricaEfectividad();
+  // Si el toque fue en falso (fuera de tiempo o al vacío) -> ERROR POR IMPRECISIÓN
+  if (!impactoExitoso) {
+    errores++;
+    if ('vibrate' in navigator) navigator.vibrate(50);
   }
+
+  actualizarTableroMetricas();
 }
 
-function actualizarMetricaEfectividad() {
-  const total = aciertos + fallos;
-  const pct = total > 0 ? Math.round((aciertos / total) * 100) : 0;
-  if (elEfectividad) elEfectividad.innerText = `${pct} %`;
-}
+canvas.addEventListener('pointerdown', procesarImpacto);
 
-function terminarPruebaPunteo() {
-  juegoActivo = false;
-  clearInterval(intervaloTiempo);
+function concluirPrueba() {
+  enEjecucion = false;
+  clearInterval(relojInterval);
   cancelAnimationFrame(animacionFrame);
 
-  const total = aciertos + fallos;
-  const efectividad = total > 0 ? Math.round((aciertos / total) * 100) : 0;
-  const max = (typeof CreditManager !== 'undefined') ? CreditManager.obtenerLimiteModulo('punteo') : 3;
+  const total = aciertos + errores;
+  const efectividad = total > 0 ? Math.round((aciertos / total) * 100) : 100;
 
-  if (modo === 'DEMO') {
-    modo = 'OFICIAL';
-    const actual = (typeof CreditManager !== 'undefined') ? CreditManager.obtenerNumeroSimulacionActual('punteo') : 1;
+  if (fase === 'DEMO') {
+    fase = 'PAUSA_OFICIAL';
+    txtPlacaSub.innerText = 'Calibración Completada';
+    panelEstado.innerText = `Calibración lista: ${aciertos} aciertos y ${errores} errores (${efectividad}% efectividad).`;
+    panelEstado.style.color = '#4ade80';
 
-    if (badgeModo) {
-      badgeModo.innerText = `🔴 Simulación Oficial ${actual} de ${max}`;
-      badgeModo.style.color = '#38bdf8';
-    }
-    if (elCronometro) elCronometro.innerText = '30 s';
-    if (panelMensaje) {
-      panelMensaje.innerText = `¡Calibración terminada! (${efectividad}% efectividad). Inicia tu examen oficial.`;
-      panelMensaje.style.color = '#4ade80';
-    }
+    const num = typeof CreditManager !== 'undefined' ? CreditManager.obtenerNumeroSimulacionActual('punteo') : 1;
+    const max = typeof CreditManager !== 'undefined' ? CreditManager.obtenerLimiteModulo('punteo') : 8;
 
-    btnAccion = document.getElementById('btn-iniciar-punteo') || document.getElementById('btn-accion-punteo') || document.getElementById('btn-iniciar');
-    if (btnAccion) {
-      btnAccion.style.display = 'block';
-      btnAccion.style.backgroundColor = '#22c55e';
-      btnAccion.innerText = `Iniciar Simulación Oficial (${actual} de ${max})`;
-    }
-
-    orificios = generarOrificiosDescendentes();
-    renderizarTambor();
+    btnAccion.style.display = 'block';
+    btnAccion.innerText = `Iniciar Simulación Oficial (${num} de ${max})`;
+    btnAccion.style.backgroundColor = '#22c55e';
   } else {
-    const consumidas = (typeof CreditManager !== 'undefined') ? CreditManager.registrarConsumo('punteo') : 1;
-    const aprobado = efectividad >= 80 && aciertos >= 12;
-    const motivoFalla = !aprobado ? (efectividad < 80 ? `Baja efectividad (${efectividad}%)` : 'Pocos aciertos') : 'Aprobado';
+    fase = 'FINALIZADO';
+    finalizarExamenOficial(efectividad);
+  }
+}
 
-    localStorage.setItem('sensometrika_punteo', JSON.stringify({
-      aciertos,
-      fallos,
-      efectividad,
-      aprobado,
-      fecha: new Date().toISOString()
-    }));
+function finalizarExamenOficial(efectividad) {
+  let consumidas = 1;
+  if (typeof CreditManager !== 'undefined') {
+    consumidas = CreditManager.registrarConsumo('punteo');
+  }
 
-    let historial = JSON.parse(localStorage.getItem('sensometrika_historial_punteo')) || [];
-    historial.push({
-      simulacion: consumidas,
-      aciertos,
-      porcentaje: efectividad,
-      aprobado,
-      motivoFalla
-    });
-    localStorage.setItem('sensometrika_historial_punteo', JSON.stringify(historial));
+  const max = typeof CreditManager !== 'undefined' ? CreditManager.obtenerLimiteModulo('punteo') : 8;
+  const aprobado = efectividad >= 80;
 
-    if (typeof CreditManager !== 'undefined') {
-      CreditManager.pintarBadgeCabecera('caja-contador-simulacion', 'punteo');
-    }
+  // Persistir resultados
+  localStorage.setItem('sensometrika_punteo', JSON.stringify({
+    aciertos: aciertos,
+    errores: errores,
+    efectividad: efectividad,
+    porcentaje: efectividad,
+    aprobado: aprobado,
+    fecha: new Date().toISOString()
+  }));
 
-    const sesion = (typeof CreditManager !== 'undefined') ? CreditManager.obtenerSesion() : {};
-    const modulos = sesion.modulosPermitidos || ['reactimetro', 'palancas', 'punteo'];
-    const tieneVisual = modulos.includes('visual');
-    const siguienteUrl = tieneVisual ? 'visual.html' : 'informe.html';
-    const siguienteTxt = tieneVisual ? 'Continuar a Módulo 4 (Visual) →' : '📊 Ver Informe y Resultados Finales →';
+  let historial = JSON.parse(localStorage.getItem('sensometrika_historial_punteo')) || [];
+  historial.push({
+    simulacion: consumidas,
+    aciertos: aciertos,
+    errores: errores,
+    efectividad: efectividad,
+    aprobado: aprobado,
+    motivoFalla: !aprobado ? `Baja efectividad (${efectividad}% < 80%)` : 'Aprobado'
+  });
+  localStorage.setItem('sensometrika_historial_punteo', JSON.stringify(historial));
 
-    const contenedor = zonaAcciones || (panelMensaje && panelMensaje.parentNode);
-    const card = document.createElement('div');
-    card.style.cssText = 'background: #0f172a; border: 1.5px solid #22c55e; border-radius: 12px; padding: 16px; margin-top: 14px; text-align: center; width: 100%; box-sizing: border-box;';
-    card.innerHTML = `
-      <h3 style="color: ${aprobado ? '#4ade80' : '#f87171'}; margin: 0 0 6px 0;">¡Simulación ${consumidas} de ${max} Finalizada!</h3>
-      <p style="color: #cbd5e1; font-size: 0.9rem; margin: 4px 0 10px 0;">
-        Efectividad: <strong style="color: #38bdf8;">${efectividad}%</strong> (${aciertos} aciertos / ${fallos} fallos)
+  btnAccion.style.display = 'none';
+  panelEstado.innerText = `Evaluación Finalizada: ${efectividad}% de efectividad (${aprobado ? 'Aprobado' : 'Observado'})`;
+  panelEstado.style.color = aprobado ? '#4ade80' : '#f87171';
+
+  // Verificar salto a Visual o Informe según el plan
+  const sesion = JSON.parse(localStorage.getItem('sensometrika_sesion')) || {};
+  const planId = String(sesion.planId || '').toLowerCase();
+  const modPerm = sesion.modulosPermitidos || [];
+  const incluyeVisual = modPerm.includes('visual') || planId.includes('plus') || planId.includes('full') || planId.includes('integral');
+
+  const urlSiguiente = incluyeVisual ? 'visual.html' : 'informe.html';
+  const textoBotonSiguiente = incluyeVisual ? 'Continuar a Módulo 4 (Tamizaje Visual) →' : '📊 Ver Informe y Dictamen Final →';
+
+  zonaCoordinacion.innerHTML = `
+    <div style="background:#090e1c; border:1.5px solid ${aprobado ? '#22c55e' : '#ef4444'}; border-radius:12px; padding:16px; text-align:center; margin-top:8px;">
+      <h3 style="color:${aprobado ? '#4ade80' : '#f87171'}; margin:0 0 6px 0; font-size:1.05rem;">
+        ¡Simulación ${consumidas} de ${max} Finalizada!
+      </h3>
+      <p style="color:#94a3b8; font-size:0.85rem; margin:0 0 12px 0;">
+        Aciertos: <strong style="color:#4ade80;">${aciertos}</strong> &nbsp;|&nbsp; 
+        Errores: <strong style="color:#f87171;">${errores}</strong> &nbsp;|&nbsp; 
+        Efectividad: <strong style="color:#38bdf8;">${efectividad}%</strong>
       </p>
-      <div style="display: flex; flex-direction: column; gap: 8px;">
-        ${consumidas < max ? `
-          <button onclick="location.reload()" style="height:42px; background:#22c55e; color:#fff; border:none; border-radius:6px; font-weight:bold; cursor:pointer;">
-            🔄 Rendir Simulación ${consumidas + 1} de ${max} →
-          </button>
-        ` : ''}
-        <a href="${siguienteUrl}" style="display:flex; justify-content:center; align-items:center; height:42px; background:#0284c7; color:#fff; text-decoration:none; border-radius:6px; font-weight:bold;">
-          ${siguienteTxt}
+      <div style="display:flex; flex-direction:column; gap:8px;">
+        <a href="${urlSiguiente}" style="display:flex; justify-content:center; align-items:center; height:42px; background:#0284c7; color:#fff; text-decoration:none; border-radius:8px; font-weight:bold; font-size:0.92rem;">
+          ${textoBotonSiguiente}
         </a>
         <a href="menu.html" style="color:#64748b; font-size:0.8rem; text-decoration:none; padding:4px;">
           Volver al Menú Principal
         </a>
       </div>
-    `;
-    if (contenedor) {
-      contenedor.innerHTML = '';
-      contenedor.appendChild(card);
-    }
-  }
+    </div>
+  `;
 }
 
-function bloquearCupoPunteo() {
-  const max = (typeof CreditManager !== 'undefined') ? CreditManager.obtenerLimiteModulo('punteo') : 3;
-  if (badgeModo) {
-    badgeModo.innerText = `🔴 Simulación ${max} de ${max} (Bloqueado)`;
-    badgeModo.style.color = '#f87171';
-  }
-  if (panelMensaje) {
-    panelMensaje.innerText = `Has completado el límite de ${max} simulaciones para este módulo.`;
-    panelMensaje.style.color = '#f87171';
-  }
-  if (btnAccion) btnAccion.style.display = 'none';
-}
-
-function renderizarTambor() {
-  if (!ctx || !canvas) return;
+function dibujarEscena() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  // Fondo del tambor
-  ctx.fillStyle = '#050b14';
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-  // Carriles verticales sutiles
+  // Carriles verticales guía
   ctx.strokeStyle = 'rgba(30, 41, 59, 0.4)';
   ctx.lineWidth = 1;
-  const colX = [canvas.width * 0.18, canvas.width * 0.38, canvas.width * 0.62, canvas.width * 0.82];
-  colX.forEach(x => {
+  CARRILES.forEach(x => {
     ctx.beginPath();
     ctx.moveTo(x, 0);
     ctx.lineTo(x, canvas.height);
     ctx.stroke();
   });
 
-  // Franja dorada horizontal de inserción reglamentaria
+  // Franja dorada de impacto
   ctx.fillStyle = 'rgba(234, 179, 8, 0.12)';
-  ctx.fillRect(0, franjaY, canvas.width, franjaAlto);
-  ctx.strokeStyle = '#eab308';
-  ctx.lineWidth = 1.5;
-  ctx.strokeRect(0, franjaY, canvas.width, franjaAlto);
+  ctx.fillRect(10, FRANJA.y, canvas.width - 20, FRANJA.h);
 
-  // Línea guía central punteada
-  ctx.strokeStyle = 'rgba(234, 179, 8, 0.6)';
-  ctx.lineWidth = 1.5;
-  ctx.setLineDash([5, 5]);
+  ctx.strokeStyle = '#eab308';
+  ctx.lineWidth = 1.8;
+  ctx.strokeRect(10, FRANJA.y, canvas.width - 20, FRANJA.h);
+
+  // Línea central segmentada
+  ctx.strokeStyle = 'rgba(234, 179, 8, 0.4)';
+  ctx.lineWidth = 1;
+  ctx.setLineDash([4, 4]);
   ctx.beginPath();
-  ctx.moveTo(0, franjaY + franjaAlto / 2);
-  ctx.lineTo(canvas.width, franjaY + franjaAlto / 2);
+  ctx.moveTo(10, FRANJA.y + (FRANJA.h / 2));
+  ctx.lineTo(canvas.width - 10, FRANJA.y + (FRANJA.h / 2));
   ctx.stroke();
   ctx.setLineDash([]);
 
-  // Orificios móviles que descienden
-  for (let i = 0; i < orificios.length; i++) {
-    const o = orificios[i];
-    if (o.y + o.radio < 0 || o.y - o.radio > canvas.height) continue;
-
+  // Círculos móviles
+  circulos.forEach(c => {
     ctx.beginPath();
-    ctx.arc(o.x, o.y, o.radio, 0, Math.PI * 2);
+    ctx.arc(c.x, c.y, c.radio, 0, Math.PI * 2);
 
-    if (o.acertado) {
-      ctx.fillStyle = '#eab308'; // Dorado si fue tocado a tiempo en la franja
-    } else if (o.fallado) {
-      ctx.fillStyle = '#ef4444'; // Rojo si pasó de largo sin toque
+    if (c.estado === 'acertado') {
+      ctx.fillStyle = 'rgba(34, 197, 94, 0.35)';
+      ctx.strokeStyle = '#22c55e';
+    } else if (c.estado === 'fallado') {
+      ctx.fillStyle = 'rgba(239, 68, 68, 0.85)';
+      ctx.strokeStyle = '#ffffff';
     } else {
-      ctx.fillStyle = '#22c55e'; // Verde listo para pulsar
+      ctx.fillStyle = '#22c55e';
+      ctx.strokeStyle = '#ffffff';
     }
 
-    ctx.fill();
-    ctx.strokeStyle = '#ffffff';
     ctx.lineWidth = 2;
+    ctx.fill();
     ctx.stroke();
-  }
+  });
 }
-
-window.addEventListener('DOMContentLoaded', inicializarPunteo);

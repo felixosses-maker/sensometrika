@@ -1,145 +1,221 @@
 /* ==========================================================================
    SENSOMETRIKA - MÓDULO 5: TAMIZAJE AUDITIVO (audicion.js)
-   • 1 Demo de comprobación biaural de canales estéreo
-   • Conteo y bloqueo 1/3, 2/3 y 3/3 mediante CreditManager
-   • Variación aleatoria anti-memorización de pausas, frecuencias y lados
+   • Gatekeeper con checkbox obligatorio de audífonos estéreo
+   • Desbloqueo activo del motor Web Audio API (AudioContext)
+   • Batería aleatoria anti-memorización (500 a 4000 Hz)
+   • Fase Demo (2 tonos) -> Fase Oficial (6 tonos)
+   • Descuento estricto en CreditManager y salida directa a informe.html
    ========================================================================== */
+
 const chkAudifonos = document.getElementById('chk-audifonos');
 const btnIniciar = document.getElementById('btn-iniciar-audio');
-const panelEstado = document.getElementById('panel-estado');
-const zonaBotones = document.getElementById('zona-botones-oidos');
+const cajaGatekeeper = document.getElementById('caja-gatekeeper');
+const panelInstruccion = document.getElementById('panel-instruccion');
+const grillaDiscriminacion = document.getElementById('grilla-discriminacion');
 const btnIzq = document.getElementById('btn-oido-izq');
 const btnDer = document.getElementById('btn-oido-der');
-const cajaAviso = document.getElementById('caja-aviso-audifonos');
+const txtEstadoAudio = document.getElementById('txt-estado-audio');
+
+const badgeModo = document.getElementById('badge-modo');
+const txtPlacaModo = document.getElementById('txt-placa-modo');
+const txtPlacaSub = document.getElementById('txt-placa-sub');
+
+const metricaFrecuencia = document.getElementById('metrica-frecuencia');
+const metricaPaso = document.getElementById('metrica-paso');
+const metricaEfectividad = document.getElementById('metrica-efectividad');
 const zonaCoordinacion = document.getElementById('zona-coordinacion-audio');
 
-let modo = 'DEMO'; // 'DEMO' u 'OFICIAL'
+// Modal
+const modalGuia = document.getElementById('modal-guia');
+const btnAbrirAyuda = document.getElementById('btn-abrir-ayuda');
+const btnCerrarAyuda = document.getElementById('btn-cerrar-ayuda');
+
+if (btnAbrirAyuda) btnAbrirAyuda.onclick = () => modalGuia.style.display = 'flex';
+if (btnCerrarAyuda) btnCerrarAyuda.onclick = () => modalGuia.style.display = 'none';
+
 let audioCtx = null;
-let indiceTono = 0;
+let fase = 'DEMO'; // 'DEMO', 'PAUSA_OFICIAL', 'OFICIAL', 'FINALIZADO'
+let bateriaActiva = [];
+let pasoActual = 0;
 let aciertos = 0;
-let tonoActivo = null;
 let esperandoRespuesta = false;
-let bateriaTonos = [];
+let timeoutFallo = null;
 
 const FRECUENCIAS = [500, 1000, 2000, 4000];
 
 window.addEventListener('DOMContentLoaded', () => {
-  CreditManager.pintarBadgeCabecera('caja-contador-simulacion', 'auditivo');
-
-  if (!CreditManager.puedeRendir('auditivo')) {
-    bloquearModuloPorCupo();
-    return;
+  if (typeof CreditManager !== 'undefined') {
+    if (!CreditManager.puedeRendir('auditivo')) {
+      bloquearModuloPorCupo();
+      return;
+    }
   }
 
-  if (CreditManager.demoYaRealizado('auditivo')) {
-    prepararVistaOficialDirecta();
-  }
+  configurarDemo();
 });
 
 function bloquearModuloPorCupo() {
-  btnIniciar.disabled = true;
-  btnIniciar.style.opacity = '0.4';
-  btnIniciar.innerText = 'Cupo Bloqueado (3/3 Realizadas)';
-  panelEstado.innerText = 'Has alcanzado el límite de 3 simulaciones oficiales para este módulo.';
-  panelEstado.style.color = '#f87171';
-  cajaAviso.style.display = 'none';
+  const max = typeof CreditManager !== 'undefined' ? CreditManager.obtenerLimiteModulo('auditivo') : 4;
+  badgeModo.innerText = `Cupo Agotado (${max} de ${max})`;
+  badgeModo.style.color = '#f87171';
+  cajaGatekeeper.style.display = 'none';
+  btnIniciar.style.display = 'none';
+  panelInstruccion.innerText = 'Has completado tus simulaciones autorizadas para este módulo.';
+  panelInstruccion.style.color = '#f87171';
 
   zonaCoordinacion.innerHTML = `
-    <div style="background: #020617; border: 1.5px solid #dc2626; border-radius: 12px; padding: 16px; margin-top: 14px; text-align: center;">
-      <h3 style="color: #ef4444; margin: 0 0 6px 0;">Módulo Bloqueado (3 de 3)</h3>
-      <p style="color: #94a3b8; font-size: 0.85rem; margin-bottom: 12px;">Completaste todas las simulaciones de tu Plan.</p>
-      <a href="menu.html" class="btn-principal" style="display:inline-block; text-decoration:none; background:#0284c7; padding:10px 16px; border-radius:6px; color:#fff;">
-        Volver al Menú Principal
+    <div style="background:#090e1c; border:1px solid #ef4444; border-radius:10px; padding:14px; text-align:center; margin-top:8px;">
+      <a href="informe.html" style="display:flex; justify-content:center; align-items:center; height:42px; background:#0284c7; color:#fff; text-decoration:none; border-radius:6px; font-weight:bold; margin-bottom:8px;">
+        📊 Ver Informe y Dictamen Final →
       </a>
+      <a href="menu.html" style="color:#64748b; font-size:0.8rem; text-decoration:none;">Volver al Menú Principal</a>
     </div>
   `;
 }
 
-function prepararVistaOficialDirecta() {
-  modo = 'OFICIAL';
-  const numSim = CreditManager.obtenerNumeroSimulacionActual('auditivo');
-  panelEstado.innerText = 'Marca la casilla para iniciar tu Simulación Oficial.';
-  panelEstado.style.color = '#38bdf8';
-  btnIniciar.innerText = `Iniciar Simulación Oficial (${numSim} de 3)`;
-}
-
+// 1. GATEKEEPER Y ACTIVACIÓN DEL BOTÓN
 chkAudifonos.addEventListener('change', () => {
   if (chkAudifonos.checked) {
     btnIniciar.disabled = false;
-    btnIniciar.style.opacity = '1';
-    btnIniciar.style.backgroundColor = (modo === 'OFICIAL') ? '#22c55e' : '#0284c7';
+    panelInstruccion.innerText = (fase === 'DEMO') 
+      ? 'Presiona para iniciar los 2 tonos de calibración.' 
+      : 'Presiona para iniciar tu evaluación oficial.';
+    panelInstruccion.style.color = '#38bdf8';
   } else {
     btnIniciar.disabled = true;
-    btnIniciar.style.opacity = '0.5';
+    panelInstruccion.innerText = 'Marca la casilla de confirmación para habilitar la prueba sonora.';
+    panelInstruccion.style.color = '#94a3b8';
   }
 });
 
-function generarBateriaAleatoria() {
-  const lados = ['IZQ', 'DER'];
+// 2. CONFIGURACIÓN DE FASE DEMO
+function configurarDemo() {
+  fase = 'DEMO';
+  pasoActual = 0;
+  aciertos = 0;
+
+  badgeModo.innerText = '🟡 Calibración Acústica (Demo)';
+  badgeModo.style.color = '#facc15';
+  badgeModo.style.background = 'rgba(250, 204, 21, 0.1)';
+  badgeModo.style.borderColor = 'rgba(250, 204, 21, 0.25)';
+
+  txtPlacaModo.innerText = '🟡 Calibración Biaural';
+  txtPlacaModo.style.color = '#facc15';
+  txtPlacaSub.innerText = '2 Tonos de Ensayo';
+
+  metricaFrecuencia.innerText = '1000 Hz';
+  metricaPaso.innerText = '0 / 2';
+  metricaEfectividad.innerText = '100%';
+
+  cajaGatekeeper.style.display = 'flex';
+  chkAudifonos.checked = false;
+  btnIniciar.disabled = true;
+  btnIniciar.style.display = 'block';
+  btnIniciar.style.backgroundColor = '#0284c7';
+  btnIniciar.innerText = 'Iniciar Calibración Acústica (Demo)';
+
+  grillaDiscriminacion.style.display = 'none';
+}
+
+// 3. GENERADOR ESTOCÁSTICO ANTI-MEMORIZACIÓN
+function generarBateria(cantidad) {
   const lista = [];
-  const cantidad = (modo === 'DEMO') ? 2 : 6;
+  const lados = ['IZQ', 'DER'];
 
   for (let i = 0; i < cantidad; i++) {
-    const f = FRECUENCIAS[Math.floor(Math.random() * FRECUENCIAS.length)];
+    const freq = FRECUENCIAS[Math.floor(Math.random() * FRECUENCIAS.length)];
     const lado = lados[Math.floor(Math.random() * lados.length)];
-    const pausaPrevia = Math.floor(Math.random() * (2600 - 1400 + 1)) + 1400; // Silencio estocástico
-    lista.push({ freq: f, pan: lado === 'IZQ' ? -1 : 1, ladoCorrecto: lado, retardo: pausaPrevia });
+    const pausaPrevia = Math.floor(Math.random() * 1200) + 1400; // 1.4 a 2.6 s
+    lista.push({ freq, lado, pausaPrevia });
   }
   return lista;
 }
 
+// 4. INICIO DE LA PRUEBA (DESBLOQUEA AUDIO API)
 btnIniciar.addEventListener('click', () => {
+  // Inicialización explícita dentro del gesto del usuario para evitar bloqueo del navegador
   if (!audioCtx) {
-    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+    audioCtx = new AudioContextClass();
   }
   if (audioCtx.state === 'suspended') {
     audioCtx.resume();
   }
 
-  cajaAviso.style.display = 'none';
+  cajaGatekeeper.style.display = 'none';
   btnIniciar.style.display = 'none';
-  zonaBotones.style.display = 'grid';
+  grillaDiscriminacion.style.display = 'grid';
 
-  indiceTono = 0;
+  pasoActual = 0;
   aciertos = 0;
-  bateriaTonos = generarBateriaAleatoria();
-  lanzarSiguienteEstimulo();
+  bateriaActiva = (fase === 'DEMO') ? generarBateria(2) : generarBateria(6);
+
+  metricaPaso.innerText = `0 / ${bateriaActiva.length}`;
+  lanzarEstimulo();
 });
 
-function lanzarSiguienteEstimulo() {
+// 5. EMISIÓN DE TONOS Y PANTALLA
+function lanzarEstimulo() {
+  if (pasoActual >= bateriaActiva.length) {
+    if (fase === 'DEMO') {
+      concluirDemo();
+    } else {
+      finalizarPruebaAuditiva();
+    }
+    return;
+  }
+
   esperandoRespuesta = false;
   btnIzq.disabled = true;
   btnDer.disabled = true;
-  panelEstado.innerText = 'Atento... escuchando silencio ambiental';
-  panelEstado.style.color = '#94a3b8';
 
-  const t = bateriaTonos[indiceTono];
+  const t = bateriaActiva[pasoActual];
+  metricaFrecuencia.innerText = `${t.freq} Hz`;
+  metricaPaso.innerText = `${pasoActual + 1} / ${bateriaActiva.length}`;
+
+  txtEstadoAudio.innerText = 'Atento... escuchando silencio';
+  txtEstadoAudio.style.color = '#94a3b8';
+  panelInstruccion.innerText = 'Escuchando ambiente...';
+  panelInstruccion.style.color = '#94a3b8';
 
   setTimeout(() => {
-    emitirTonoPuro(t.freq, t.pan, 0.45);
-    panelEstado.innerText = '¿En qué oído escuchaste el tono?';
-    panelEstado.style.color = '#38bdf8';
+    reproducirTonoPuro(t.freq, t.lado);
+
     esperandoRespuesta = true;
     btnIzq.disabled = false;
     btnDer.disabled = false;
-  }, t.retardo);
+
+    txtEstadoAudio.innerText = '¿En qué oído percibiste el sonido?';
+    txtEstadoAudio.style.color = '#38bdf8';
+    panelInstruccion.innerText = 'Presiona Oído Izquierdo u Oído Derecho';
+    panelInstruccion.style.color = '#38bdf8';
+
+    // Ventana de 3.5 segundos para responder
+    clearTimeout(timeoutFallo);
+    timeoutFallo = setTimeout(() => {
+      if (esperandoRespuesta) {
+        registrarRespuesta('NINGUNO');
+      }
+    }, 3500);
+  }, t.pausaPrevia);
 }
 
-function emitirTonoPuro(frecuencia, paneo, duracion) {
+function reproducirTonoPuro(freq, lado) {
+  if (!audioCtx) return;
+
   const osc = audioCtx.createOscillator();
   const gain = audioCtx.createGain();
+  const panner = audioCtx.createStereoPanner ? audioCtx.createStereoPanner() : null;
 
   osc.type = 'sine';
-  osc.frequency.setValueAtTime(frecuencia, audioCtx.currentTime);
+  osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
 
-  gain.gain.setValueAtTime(0, audioCtx.currentTime);
-  gain.gain.linearRampToValueAtTime(0.2, audioCtx.currentTime + 0.05);
-  gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duracion);
+  gain.gain.setValueAtTime(0.001, audioCtx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.25, audioCtx.currentTime + 0.1);
+  gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.85);
 
-  // Paneo binaural
-  if (audioCtx.createStereoPanner) {
-    const panner = audioCtx.createStereoPanner();
-    panner.pan.setValueAtTime(paneo, audioCtx.currentTime);
+  if (panner) {
+    panner.pan.setValueAtTime(lado === 'IZQ' ? -1.0 : 1.0, audioCtx.currentTime);
     osc.connect(gain);
     gain.connect(panner);
     panner.connect(audioCtx.destination);
@@ -148,81 +224,121 @@ function emitirTonoPuro(frecuencia, paneo, duracion) {
     gain.connect(audioCtx.destination);
   }
 
-  osc.start();
-  osc.stop(audioCtx.currentTime + duracion);
+  osc.start(audioCtx.currentTime);
+  osc.stop(audioCtx.currentTime + 0.9);
 }
 
-function registrarRespuestaOido(ladoPresionado) {
+function registrarRespuesta(ladoElegido) {
   if (!esperandoRespuesta) return;
+  clearTimeout(timeoutFallo);
   esperandoRespuesta = false;
 
-  const t = bateriaTonos[indiceTono];
-  if (ladoPresionado === t.ladoCorrecto) aciertos++;
+  btnIzq.disabled = true;
+  btnDer.disabled = true;
 
-  indiceTono++;
-  if (indiceTono < bateriaTonos.length) {
-    lanzarSiguienteEstimulo();
-  } else {
-    finalizarTestAuditivo();
-  }
+  const t = bateriaActiva[pasoActual];
+  const acerto = (ladoElegido === t.lado);
+
+  if (acerto) aciertos++;
+  pasoActual++;
+
+  const pct = Math.round((aciertos / pasoActual) * 100);
+  metricaEfectividad.innerText = `${pct}%`;
+
+  txtEstadoAudio.innerText = acerto ? '✔ Tono Reconocido' : '✖ Estímulo No Percibido o Incorrecto';
+  txtEstadoAudio.style.color = acerto ? '#4ade80' : '#f87171';
+
+  setTimeout(lanzarEstimulo, 800);
 }
 
-btnIzq.addEventListener('click', () => registrarRespuestaOido('IZQ'));
-btnDer.addEventListener('click', () => registrarRespuestaOido('DER'));
+btnIzq.onclick = () => registrarRespuesta('IZQ');
+btnDer.onclick = () => registrarRespuesta('DER');
 
-function finalizarTestAuditivo() {
-  zonaBotones.style.display = 'none';
+// 6. PAUSA TÉCNICA ENTRE FASES
+function concluirDemo() {
+  fase = 'PAUSA_OFICIAL';
+  grillaDiscriminacion.style.display = 'none';
 
-  if (modo === 'DEMO') {
-    CreditManager.marcarDemoCompletado('auditivo');
-    const numSim = CreditManager.obtenerNumeroSimulacionActual('auditivo');
-    panelEstado.innerText = `Calibración estéreo lista. Pasa a Simulación Oficial ${numSim} de 3.`;
-    panelEstado.style.color = '#4ade80';
+  const num = typeof CreditManager !== 'undefined' ? CreditManager.obtenerNumeroSimulacionActual('auditivo') : 1;
+  const max = typeof CreditManager !== 'undefined' ? CreditManager.obtenerLimiteModulo('auditivo') : 4;
 
-    cajaAviso.style.display = 'block';
-    chkAudifonos.checked = false;
-    btnIniciar.style.display = 'block';
-    btnIniciar.disabled = true;
-    btnIniciar.style.opacity = '0.5';
-    btnIniciar.innerText = `Iniciar Simulación Oficial (${numSim} de 3)`;
-    btnIniciar.style.backgroundColor = '#22c55e';
-    modo = 'OFICIAL';
-  } else {
-    const efectividad = Math.round((aciertos / 6) * 100);
-    const aprobado = efectividad >= 80;
-    const consumidas = CreditManager.registrarConsumo('auditivo');
+  badgeModo.innerText = `🔴 Simulación Oficial: ${num} de ${max}`;
+  badgeModo.style.color = '#38bdf8';
+  badgeModo.style.background = 'rgba(56, 189, 248, 0.1)';
+  badgeModo.style.borderColor = 'rgba(56, 189, 248, 0.25)';
 
-    localStorage.setItem('sensometrika_auditivo', JSON.stringify({
-      aciertos,
-      efectividad,
-      aprobado
-    }));
+  txtPlacaModo.innerText = '🔴 Evaluación Activa';
+  txtPlacaModo.style.color = '#38bdf8';
+  txtPlacaSub.innerText = '6 Tonos Clínicos';
 
-    CreditManager.pintarBadgeCabecera('caja-contador-simulacion', 'auditivo');
-    const bloqueoTotal = consumidas >= CreditManager.LIMITE_SIMULACIONES;
+  txtEstadoAudio.innerText = '¡Calibración estéreo completada!';
+  txtEstadoAudio.style.color = '#4ade80';
 
-    panelEstado.innerText = 'Tamizaje Auditivo Oficial completado.';
+  cajaGatekeeper.style.display = 'flex';
+  chkAudifonos.checked = false;
 
-    zonaCoordinacion.innerHTML = `
-      <div style="background: #020617; border: 1.5px solid ${aprobado ? '#38bdf8' : '#ef4444'}; border-radius: 12px; padding: 16px; margin-top: 14px; text-align: center; width: 100%; box-sizing: border-box;">
-        <h3 style="color: ${aprobado ? '#4ade80' : '#f87171'}; margin: 0 0 6px 0; font-size: 1.1rem;">
-          ¡Simulación ${consumidas}/3 Finalizada!
-        </h3>
-        <p style="color: #94a3b8; font-size: 0.82rem; margin-bottom: 8px;">
-          Efectividad auditiva: <strong style="color: #fff;">${efectividad}%</strong> (${aprobado ? 'Sin Alertas' : 'Observado'})
-        </p>
-        <p style="color: #38bdf8; font-size: 0.82rem; font-weight: bold; margin-bottom: 12px;">
-          ${bloqueoTotal ? 'Has alcanzado el límite de 3/3 simulaciones de este módulo.' : `Te restan ${3 - consumidas} simulación(es) en este módulo.`}
-        </p>
-        <div style="display: flex; flex-direction: column; gap: 8px;">
-          <a href="informe.html" class="btn-principal" style="display:flex; justify-content:center; align-items:center; text-decoration:none; height:44px; background-color:#0284c7; color:#fff; border-radius:6px; font-weight:bold; font-size:0.9rem;">
-            📊 Ver Informe de Evaluación Consolidado →
-          </a>
-          <a href="menu.html" style="color:#64748b; font-size:0.8rem; text-decoration:none; padding:6px;">
-            Volver al Menú Principal
-          </a>
-        </div>
-      </div>
-    `;
+  btnIniciar.style.display = 'block';
+  btnIniciar.disabled = true;
+  btnIniciar.style.backgroundColor = '#22c55e';
+  btnIniciar.innerText = `Iniciar Simulación Oficial (${num} de ${max})`;
+
+  panelInstruccion.innerText = 'Vuelve a confirmar tus audífonos para iniciar el examen oficial.';
+  panelInstruccion.style.color = '#94a3b8';
+}
+
+// 7. FINALIZACIÓN Y REGISTRO EN CREDITMANAGER
+function finalizarPruebaAuditiva() {
+  fase = 'FINALIZADO';
+  grillaDiscriminacion.style.display = 'none';
+
+  let consumidas = 1;
+  if (typeof CreditManager !== 'undefined') {
+    consumidas = CreditManager.registrarConsumo('auditivo');
   }
+
+  const max = typeof CreditManager !== 'undefined' ? CreditManager.obtenerLimiteModulo('auditivo') : 4;
+  const pct = Math.round((aciertos / bateriaActiva.length) * 100);
+  const aprobado = pct >= 80;
+
+  localStorage.setItem('sensometrika_auditivo', JSON.stringify({
+    efectividad: pct,
+    porcentaje: pct,
+    aciertos: aciertos,
+    total: bateriaActiva.length,
+    aprobado: aprobado,
+    fecha: new Date().toISOString()
+  }));
+
+  let historial = JSON.parse(localStorage.getItem('sensometrika_historial_audicion')) || [];
+  historial.push({
+    simulacion: consumidas,
+    efectividad: pct,
+    aprobado: aprobado
+  });
+  localStorage.setItem('sensometrika_historial_audicion', JSON.stringify(historial));
+
+  txtEstadoAudio.innerText = `Evaluación Finalizada: ${pct}% de discriminación`;
+  txtEstadoAudio.style.color = aprobado ? '#4ade80' : '#f87171';
+  panelInstruccion.innerText = aprobado ? 'Audición normal sin alteraciones referenciales' : 'Observado: Frecuencias no percibidas';
+  panelInstruccion.style.color = aprobado ? '#4ade80' : '#f87171';
+
+  zonaCoordinacion.innerHTML = `
+    <div style="background:#090e1c; border:1.5px solid ${aprobado ? '#22c55e' : '#ef4444'}; border-radius:12px; padding:16px; text-align:center; margin-top:8px;">
+      <h3 style="color:${aprobado ? '#4ade80' : '#f87171'}; margin:0 0 6px 0; font-size:1.05rem;">
+        ¡Simulación ${consumidas} de ${max} Finalizada!
+      </h3>
+      <p style="color:#94a3b8; font-size:0.85rem; margin:0 0 12px 0;">
+        Efectividad Global: <strong style="color:#38bdf8;">${pct}%</strong> &nbsp;|&nbsp; 
+        Aciertos: <strong style="color:#fff;">${aciertos}/${bateriaActiva.length}</strong>
+      </p>
+      <div style="display:flex; flex-direction:column; gap:8px;">
+        <a href="informe.html" style="display:flex; justify-content:center; align-items:center; height:42px; background:#0284c7; color:#fff; text-decoration:none; border-radius:8px; font-weight:bold; font-size:0.92rem;">
+          📊 Ver Informe y Dictamen Final →
+        </a>
+        <a href="menu.html" style="color:#64748b; font-size:0.8rem; text-decoration:none; padding:4px;">
+          Volver al Menú Principal
+        </a>
+      </div>
+    </div>
+  `;
 }
