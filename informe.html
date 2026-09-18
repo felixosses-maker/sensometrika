@@ -3,82 +3,39 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Sensometrika | Dashboard Diagnóstico</title>
-  <link rel="stylesheet" href="styles.css">
-
+  <title>Sensometrika | Informe Diagnóstico B2C</title>
   <style>
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-    body {
-      background-color: #0b1120;
-      color: #f1f5f9;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      margin: 0;
-      padding: 16px;
-      display: flex;
-      justify-content: center;
-      min-height: 100vh;
-    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+    body { background-color: #060b14; color: #f8fafc; padding: 16px; min-height: 100vh; }
+    .contenedor-informe { max-width: 480px; margin: 0 auto; display: flex; flex-direction: column; gap: 12px; }
 
-    .dashboard-contenedor {
-      width: 100%;
-      max-width: 480px;
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-      margin: auto 0;
-    }
-
-    /* Respaldo */
     .banner-respaldo {
-      background: rgba(16, 185, 129, 0.12);
-      border: 1px solid #10b981;
+      background: rgba(2, 132, 199, 0.1);
+      border: 1px solid rgba(56, 189, 248, 0.3);
       border-radius: 8px;
-      padding: 9px 12px;
-      font-size: 0.74rem;
-      color: #34d399;
+      padding: 8px 12px;
+      font-size: 0.75rem;
+      color: #bae6fd;
       display: flex;
       justify-content: space-between;
       align-items: center;
     }
-    .banner-respaldo strong { color: #ffffff; }
+    .subtitulo-evaluado { font-size: 0.78rem; color: #94a3b8; }
+    .subtitulo-evaluado strong { color: #f8fafc; }
 
-    /* Datos Evaluado */
-    .datos-evaluado {
-      display: flex;
-      justify-content: space-between;
-      font-size: 0.76rem;
-      color: #94a3b8;
-      padding: 0 4px;
-    }
-    .datos-evaluado strong { color: #ffffff; }
-
-    /* Estado de avance */
     .banner-estado {
       border-radius: 8px;
       padding: 10px;
-      text-align: center;
-      font-weight: 800;
       font-size: 0.85rem;
+      font-weight: 800;
+      text-align: center;
       letter-spacing: 0.5px;
     }
-    .estado-alerta {
-      background: rgba(245, 158, 11, 0.15);
-      border: 1.5px solid #f59e0b;
-      color: #fbbf24;
-    }
-    .estado-optimo {
-      background: rgba(34, 197, 94, 0.15);
-      border: 1.5px solid #22c55e;
-      color: #4ade80;
-    }
+    .banner-completado { background: rgba(34, 197, 94, 0.15); border: 1px solid #22c55e; color: #4ade80; }
+    .banner-curso { background: rgba(245, 158, 11, 0.15); border: 1px solid #f59e0b; color: #fbbf24; }
 
-    /* Filas de Módulos */
-    .tarjeta-fila {
-      background: #0f172a;
+    .tarjeta-modulo-resumen {
+      background: #0d1527;
       border: 1px solid #1e293b;
       border-radius: 10px;
       padding: 12px 14px;
@@ -86,403 +43,340 @@
       justify-content: space-between;
       align-items: center;
     }
-    .nombre-modulo {
-      font-size: 0.8rem;
-      color: #e2e8f0;
-      font-weight: 600;
-    }
-    .res-modulo {
-      font-size: 0.88rem;
-      color: #ffffff;
-      font-weight: 700;
-      margin-right: 10px;
-    }
-    .badge-estado {
-      font-size: 0.7rem;
-      font-weight: 800;
-      padding: 4px 8px;
-      border-radius: 5px;
-      text-transform: uppercase;
-      letter-spacing: 0.3px;
-    }
-    .st-optimo { background: rgba(34, 197, 94, 0.2); border: 1px solid #22c55e; color: #4ade80; }
-    .st-observado { background: rgba(249, 115, 22, 0.2); border: 1px solid #f97316; color: #fb923c; }
-    .st-pendiente { background: rgba(100, 116, 139, 0.2); border: 1px solid #64748b; color: #94a3b8; }
+    .titulo-mod { font-size: 0.82rem; font-weight: 700; color: #e2e8f0; }
+    .valor-metric { font-size: 0.95rem; font-weight: 800; color: #38bdf8; }
+    .badge-eval { padding: 4px 10px; border-radius: 6px; font-size: 0.72rem; font-weight: 800; }
+    .badge-optimo { background: rgba(34, 197, 94, 0.15); color: #4ade80; border: 1px solid #22c55e; }
+    .badge-observado { background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid #ef4444; }
+    .badge-pendiente { background: rgba(100, 116, 139, 0.2); color: #94a3b8; border: 1px solid #475569; }
 
-    /* Curva Gráfica */
-    .caja-grafico {
-      background: #0f172a;
+    /* Curva Gráfica SVG */
+    .seccion-grafica {
+      background: #0d1527;
       border: 1px solid #1e293b;
       border-radius: 10px;
       padding: 12px;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
     }
-    .caja-grafico-cabecera {
+    .cabecera-grafica {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      font-size: 0.74rem;
-      font-weight: 700;
-      color: #e2e8f0;
+      margin-bottom: 8px;
     }
-    .leyenda {
-      display: flex;
-      gap: 8px;
-      font-size: 0.65rem;
-    }
-    .leyenda span { display: flex; align-items: center; gap: 3px; }
-    .dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; }
+    .cabecera-grafica h4 { font-size: 0.8rem; color: #e2e8f0; }
+    .leyenda-grafica { display: flex; gap: 8px; font-size: 0.68rem; }
+    .punto-leyenda { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 3px; }
 
-    /* Matriz */
-    .caja-matriz {
-      background: #0f172a;
+    /* Matriz de Simulaciones */
+    .seccion-tabla {
+      background: #0d1527;
       border: 1px solid #1e293b;
       border-radius: 10px;
       padding: 12px;
       overflow-x: auto;
     }
-    .tabla-matriz {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 0.7rem;
-    }
-    .tabla-matriz th, .tabla-matriz td {
-      padding: 6px 4px;
-      text-align: center;
-      border-bottom: 1px solid #1e293b;
+    table { width: 100%; border-collapse: collapse; font-size: 0.75rem; text-align: left; }
+    th { padding: 6px 8px; color: #94a3b8; border-bottom: 1px solid #1e293b; font-weight: 600; }
+    td { padding: 8px; border-bottom: 1px solid rgba(255, 255, 255, 0.05); color: #cbd5e1; }
+    .td-centro { text-align: center; }
+
+    .tarjeta-consejos {
+      background: #0d1527;
+      border: 1px solid #1e293b;
+      border-radius: 10px;
+      padding: 12px 14px;
+      font-size: 0.76rem;
       color: #94a3b8;
+      line-height: 1.45;
     }
-    .tabla-matriz td:first-child { text-align: left; color: #e2e8f0; font-weight: 600; white-space: nowrap; }
-    .val-destacado { color: #34d399; font-weight: 700; }
+    .tarjeta-consejos strong { color: #f8fafc; }
+    .tarjeta-consejos ul { padding-left: 16px; margin-top: 6px; display: flex; flex-direction: column; gap: 4px; }
 
     .btn-volver {
       background: #0284c7;
-      color: #ffffff;
+      color: #fff;
       border: none;
-      height: 44px;
       border-radius: 8px;
-      font-weight: 800;
-      font-size: 0.88rem;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      padding: 14px;
+      font-size: 0.92rem;
+      font-weight: 700;
+      text-align: center;
       text-decoration: none;
+      display: block;
       margin-top: 4px;
     }
+    .btn-volver:hover { background: #0369a1; }
   </style>
 </head>
 <body>
-
-  <main class="dashboard-contenedor">
-    <!-- Respaldo Superior -->
+  <div class="contenedor-informe">
     <div class="banner-respaldo">
-      <span>🛡️ Respaldo Oficial: RUT <strong id="rut-evaluado">--</strong></span>
-      <span>Copia enviada al correo</span>
+      <span>🛡️ Respaldo Oficial: RUT <strong id="lbl-rut-respaldo">--</strong></span>
+      <span style="color: #38bdf8;">Copia enviada al correo</span>
     </div>
 
-    <!-- Datos Postulante -->
-    <div class="datos-evaluado">
-      <span>Postulante: <strong id="nombre-evaluado">--</strong></span>
-      <span>Licencia: <strong>Clase B / D.S. N° 170</strong></span>
+    <div class="subtitulo-evaluado">
+      Postulante: <strong id="lbl-nombre-evaluado">--</strong> | Licencia: <strong>Clase B / D.S. N° 170</strong>
     </div>
 
-    <!-- Banner Dinámico de Módulos -->
-    <div class="banner-estado estado-alerta" id="banner-dictamen">
+    <div class="banner-estado banner-curso" id="banner-estado-general">
       EVALUACIÓN EN CURSO (0/3 MÓDULOS RENDIDOS)
     </div>
 
-    <!-- 1. Reactímetro -->
-    <div class="tarjeta-fila">
-      <span class="nombre-modulo">1. Reactímetro (Tiempo de Frenado):</span>
-      <div style="display: flex; align-items: center;">
-        <span class="res-modulo" id="val-react">--</span>
-        <span class="badge-estado st-pendiente" id="badge-react">PENDIENTE</span>
+    <!-- Módulo 1 -->
+    <div class="tarjeta-modulo-resumen" id="tarjeta-resumen-react">
+      <div class="titulo-mod">1. Reactímetro (Tiempo de Frenado):</div>
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <span class="valor-metric" id="res-val-react">--</span>
+        <span class="badge-eval badge-pendiente" id="res-badge-react">PENDIENTE</span>
       </div>
     </div>
 
-    <!-- 2. Palancas -->
-    <div class="tarjeta-fila">
-      <span class="nombre-modulo">2. Palancas (Coordinación Bimanual):</span>
-      <div style="display: flex; align-items: center;">
-        <span class="res-modulo" id="val-pal">--</span>
-        <span class="badge-estado st-pendiente" id="badge-pal">PENDIENTE</span>
+    <!-- Módulo 2 -->
+    <div class="tarjeta-modulo-resumen" id="tarjeta-resumen-pal">
+      <div class="titulo-mod">2. Palancas (Coordinación Bimanual):</div>
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <span class="valor-metric" id="res-val-pal">--</span>
+        <span class="badge-eval badge-pendiente" id="res-badge-pal">PENDIENTE</span>
       </div>
     </div>
 
-    <!-- 3. Punteo -->
-    <div class="tarjeta-fila">
-      <span class="nombre-modulo">3. Punteo (Ritmo y Precisión Lahy):</span>
-      <div style="display: flex; align-items: center;">
-        <span class="res-modulo" id="val-punt">--</span>
-        <span class="badge-estado st-pendiente" id="badge-punt">PENDIENTE</span>
+    <!-- Módulo 3 -->
+    <div class="tarjeta-modulo-resumen" id="tarjeta-resumen-punt">
+      <div class="titulo-mod">3. Punteo (Ritmo y Precisión Lahy):</div>
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <span class="valor-metric" id="res-val-punt">--</span>
+        <span class="badge-eval badge-pendiente" id="res-badge-punt">PENDIENTE</span>
       </div>
     </div>
 
-    <!-- Curva Gráfica Dinámica -->
-    <div class="caja-grafico">
-      <div class="caja-grafico-cabecera">
-        <span>📈 Curva de Aprendizaje y Evolución</span>
-        <div class="leyenda">
-          <span><i class="dot" style="background:#38bdf8;"></i> Reactímetro</span>
-          <span><i class="dot" style="background:#4ade80;"></i> Palancas</span>
-          <span><i class="dot" style="background:#f59e0b;"></i> Punteo</span>
+    <!-- Módulo 4: Visual -->
+    <div class="tarjeta-modulo-resumen" id="tarjeta-resumen-vis" style="display: none;">
+      <div class="titulo-mod">4. Screening Visual (Agudeza / Ishihara):</div>
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <span class="valor-metric" id="res-val-vis">--</span>
+        <span class="badge-eval badge-pendiente" id="res-badge-vis">PENDIENTE</span>
+      </div>
+    </div>
+
+    <!-- Módulo 5: Auditivo -->
+    <div class="tarjeta-modulo-resumen" id="tarjeta-resumen-aud" style="display: none;">
+      <div class="titulo-mod">5. Tamizaje Auditivo (Audiometría Tonal):</div>
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <span class="valor-metric" id="res-val-aud">--</span>
+        <span class="badge-eval badge-pendiente" id="res-badge-aud">PENDIENTE</span>
+      </div>
+    </div>
+
+    <!-- Curva Gráfica SVG -->
+    <div class="seccion-grafica">
+      <div class="cabecera-grafica">
+        <h4>📈 Curva de Aprendizaje y Evolución</h4>
+        <div class="leyenda-grafica">
+          <span style="color: #38bdf8;"><span class="punto-leyenda" style="background:#38bdf8;"></span>Reactímetro</span>
+          <span style="color: #4ade80;"><span class="punto-leyenda" style="background:#4ade80;"></span>Palancas</span>
+          <span style="color: #f59e0b;"><span class="punto-leyenda" style="background:#f59e0b;"></span>Punteo</span>
         </div>
       </div>
-      <svg id="svg-curva-b2c" viewBox="0 0 440 90" style="width: 100%; height: 85px; background: #020617; border-radius: 6px; border: 1px solid #1e293b;"></svg>
+      <svg id="svg-curvas" width="100%" height="80" viewBox="0 0 400 80">
+        <line x1="20" y1="70" x2="380" y2="70" stroke="#1e293b" stroke-width="1"/>
+        <line x1="20" y1="20" x2="380" y2="20" stroke="#1e293b" stroke-width="1" stroke-dasharray="3,3"/>
+      </svg>
     </div>
 
-    <!-- Matriz de Historial -->
-    <div class="caja-matriz">
-      <table class="tabla-matriz">
+    <!-- Matriz Dinámica -->
+    <div class="seccion-tabla">
+      <table>
         <thead>
-          <tr>
+          <tr id="tr-encabezados-matriz">
             <th>Módulo</th>
-            <th>S1</th>
-            <th>S2</th>
-            <th>S3</th>
+            <th class="td-centro">S1</th>
+            <th class="td-centro">S2</th>
+            <th class="td-centro">S3</th>
             <th>Diagnóstico Específico</th>
           </tr>
         </thead>
-        <tbody id="cuerpo-matriz-b2c">
-          <!-- Inyectado por JS -->
-        </tbody>
+        <tbody id="tbody-matriz"></tbody>
       </table>
     </div>
 
+    <div class="tarjeta-consejos">
+      <div style="color: #38bdf8; font-weight: 700; margin-bottom: 4px;">💡 Recomendaciones para la Evaluación Municipal:</div>
+      <ul>
+        <li><strong>Frenado:</strong> Descansa el talón en el suelo y pivota únicamente la punta del pie al activarse la señal roja.</li>
+        <li><strong>Palancas:</strong> Apoya los antebrazos sobre la mesa para evitar temblores involuntarios y sostener la trayectoria.</li>
+        <li><strong>Punteo:</strong> Si pierdes una perforación, no te detengas; continúa con la siguiente manteniendo la cadencia de pulso.</li>
+      </ul>
+    </div>
+
     <a href="menu.html" class="btn-volver">← Volver al Menú Principal</a>
-  </main>
+  </div>
 
   <script>
     document.addEventListener('DOMContentLoaded', () => {
       const sesion = JSON.parse(localStorage.getItem('sensometrika_sesion')) || {};
-      const datosUser = JSON.parse(localStorage.getItem('sensometrika_datos_usuario')) || {};
+      const user = JSON.parse(localStorage.getItem('sensometrika_datos_usuario')) || {};
 
-      // 1. Identidad
-      const nombre = datosUser.nombre || sesion.nombreEvaluado || 'JUAN PEREZ REYES';
-      const rut = datosUser.rut || sesion.rutEvaluado || '12.444.565-7';
-      document.getElementById('nombre-evaluado').innerText = nombre.toUpperCase();
-      document.getElementById('rut-evaluado').innerText = rut;
+      if (sesion.rol === 'empresa' || (sesion.planId && String(sesion.planId).toLowerCase().includes('b2b'))) {
+        window.location.href = 'informe-b2b.html';
+        return;
+      }
 
-      // 2. Lectura estricta sin fallback ficticio
-      const rReact = JSON.parse(localStorage.getItem('sensometrika_reactimetro')) || null;
-      const rPal = JSON.parse(localStorage.getItem('sensometrika_palancas')) || null;
-      const rPunt = JSON.parse(localStorage.getItem('sensometrika_punteo')) || null;
+      document.getElementById('lbl-nombre-evaluado').innerText = (user.nombre || sesion.nombre || 'Felix Osses Martinez').toUpperCase();
+      document.getElementById('lbl-rut-respaldo').innerText = user.rut || sesion.rut || '13.777.234-3';
+
+      let totalModulosContratados = 3;
+      let maxSimulaciones = 3;
+      const planId = String(sesion.planId || '').toLowerCase();
+
+      if (planId.includes('plus')) {
+        totalModulosContratados = 4;
+        maxSimulaciones = 5;
+        document.getElementById('tarjeta-resumen-vis').style.display = 'flex';
+      } else if (planId.includes('full')) {
+        totalModulosContratados = 5;
+        maxSimulaciones = 8;
+        document.getElementById('tarjeta-resumen-vis').style.display = 'flex';
+        document.getElementById('tarjeta-resumen-aud').style.display = 'flex';
+      }
+
+      let thCols = '<th>Módulo</th>';
+      for (let i = 1; i <= maxSimulaciones; i++) {
+        thCols += `<th class="td-centro">S${i}</th>`;
+      }
+      thCols += '<th>Diagnóstico Específico</th>';
+      document.getElementById('tr-encabezados-matriz').innerHTML = thCols;
 
       const hReact = JSON.parse(localStorage.getItem('sensometrika_historial_reactimetro')) || [];
       const hPal = JSON.parse(localStorage.getItem('sensometrika_historial_palancas')) || [];
       const hPunt = JSON.parse(localStorage.getItem('sensometrika_historial_punteo')) || [];
+      const hVis = JSON.parse(localStorage.getItem('sensometrika_historial_visual')) || [];
+      const hAud = JSON.parse(localStorage.getItem('sensometrika_historial_auditivo')) || [];
 
-      let modulosCompletados = 0;
+      let modulosRendidos = 0;
 
       // Reactímetro
-      const reactRendido = (rReact && (rReact.tiempo || rReact.promedio)) || hReact.length > 0;
-      if (reactRendido) {
-        modulosCompletados++;
-        const t = Number(rReact ? (rReact.tiempo || rReact.promedio) : hReact[hReact.length - 1].tiempo);
-        document.getElementById('val-react').innerText = `${t} ms`;
-        const b = document.getElementById('badge-react');
-        if (t <= 400) {
-          b.innerText = 'ÓPTIMO';
-          b.className = 'badge-estado st-optimo';
-        } else if (t <= 450) {
-          b.innerText = 'CUMPLE';
-          b.className = 'badge-estado st-optimo';
-        } else {
-          b.innerText = 'OBSERVADO';
-          b.className = 'badge-estado st-observado';
-        }
-      } else {
-        document.getElementById('val-react').innerText = '--';
-        document.getElementById('badge-react').innerText = 'PENDIENTE';
-        document.getElementById('badge-react').className = 'badge-estado st-pendiente';
+      if (hReact.length > 0) {
+        modulosRendidos++;
+        const suma = hReact.reduce((acc, c) => acc + (Number(c.tiempo) || 0), 0);
+        const prom = Math.round(suma / hReact.length);
+        document.getElementById('res-val-react').innerText = `${prom} ms`;
+        const badge = document.getElementById('res-badge-react');
+        badge.innerText = prom <= 450 ? 'ÓPTIMO' : 'OBSERVADO';
+        badge.className = `badge-eval ${prom <= 450 ? 'badge-optimo' : 'badge-observado'}`;
       }
 
       // Palancas
-      const palRendido = (rPal && (rPal.porcentaje !== undefined || rPal.efectividad !== undefined)) || hPal.length > 0;
-      if (palRendido) {
-        modulosCompletados++;
-        const pct = Number(rPal ? (rPal.porcentaje ?? rPal.efectividad) : (hPal[hPal.length - 1].porcentaje ?? hPal[hPal.length - 1].efectividad));
-        document.getElementById('val-pal').innerText = `${pct}%`;
-        const b = document.getElementById('badge-pal');
-        if (pct >= 70) {
-          b.innerText = 'ÓPTIMO';
-          b.className = 'badge-estado st-optimo';
-        } else {
-          b.innerText = 'OBSERVADO';
-          b.className = 'badge-estado st-observado';
-        }
-      } else {
-        document.getElementById('val-pal').innerText = '--';
-        document.getElementById('badge-pal').innerText = 'PENDIENTE';
-        document.getElementById('badge-pal').className = 'badge-estado st-pendiente';
+      if (hPal.length > 0) {
+        modulosRendidos++;
+        const sumaPct = hPal.reduce((acc, c) => acc + (Number(c.efectividad !== undefined ? c.efectividad : c.porcentaje) || 0), 0);
+        const promPct = Math.round(sumaPct / hPal.length);
+        const ultimo = hPal[hPal.length - 1];
+        const segError = ultimo.tiempoError !== undefined ? ultimo.tiempoError : (ultimo.tiempo !== undefined ? ultimo.tiempo : 0);
+        document.getElementById('res-val-pal').innerText = `${promPct}% (${segError}s error)`;
+        const badge = document.getElementById('res-badge-pal');
+        badge.innerText = promPct >= 75 ? 'ÓPTIMO' : 'OBSERVADO';
+        badge.className = `badge-eval ${promPct >= 75 ? 'badge-optimo' : 'badge-observado'}`;
       }
 
       // Punteo
-      const puntRendido = (rPunt && (rPunt.efectividad !== undefined || rPunt.porcentaje !== undefined)) || hPunt.length > 0;
-      if (puntRendido) {
-        modulosCompletados++;
-        const pct = Number(rPunt ? (rPunt.efectividad ?? rPunt.porcentaje) : (hPunt[hPunt.length - 1].efectividad ?? hPunt[hPunt.length - 1].porcentaje));
-        document.getElementById('val-punt').innerText = `${pct}%`;
-        const b = document.getElementById('badge-punt');
-        if (pct >= 80) {
-          b.innerText = 'ÓPTIMO';
-          b.className = 'badge-estado st-optimo';
-        } else {
-          b.innerText = 'OBSERVADO';
-          b.className = 'badge-estado st-observado';
+      if (hPunt.length > 0) {
+        modulosRendidos++;
+        const suma = hPunt.reduce((acc, c) => acc + (Number(c.efectividad !== undefined ? c.efectividad : c.porcentaje) || 0), 0);
+        const prom = Math.round(suma / hPunt.length);
+        document.getElementById('res-val-punt').innerText = `${prom}%`;
+        const badge = document.getElementById('res-badge-punt');
+        badge.innerText = prom >= 80 ? 'ÓPTIMO' : 'OBSERVADO';
+        badge.className = `badge-eval ${prom >= 80 ? 'badge-optimo' : 'badge-observado'}`;
+      }
+
+      // Visual
+      if (totalModulosContratados >= 4 && hVis.length > 0) {
+        modulosRendidos++;
+        const ult = hVis[hVis.length - 1];
+        const val = ult.porcentaje || ult.efectividad || 100;
+        document.getElementById('res-val-vis').innerText = `${val}%`;
+        const badge = document.getElementById('res-badge-vis');
+        badge.innerText = val >= 80 ? 'ÓPTIMO' : 'OBSERVADO';
+        badge.className = `badge-eval ${val >= 80 ? 'badge-optimo' : 'badge-observado'}`;
+      }
+
+      // Auditivo
+      if (totalModulosContratados === 5 && hAud.length > 0) {
+        modulosRendidos++;
+        const ult = hAud[hAud.length - 1];
+        const val = ult.porcentaje || ult.efectividad || 100;
+        document.getElementById('res-val-aud').innerText = `${val}%`;
+        const badge = document.getElementById('res-badge-aud');
+        badge.innerText = val >= 75 ? 'ÓPTIMO' : 'OBSERVADO';
+        badge.className = `badge-eval ${val >= 75 ? 'badge-optimo' : 'badge-observado'}`;
+      }
+
+      // Banner General
+      const banner = document.getElementById('banner-estado-general');
+      if (modulosRendidos >= totalModulosContratados) {
+        banner.className = 'banner-estado banner-completado';
+        banner.innerText = `EVALUACIÓN COMPLETADA (${totalModulosContratados}/${totalModulosContratados} MÓDULOS RENDIDOS)`;
+      } else {
+        banner.className = 'banner-estado banner-curso';
+        banner.innerText = `EVALUACIÓN EN CURSO (${modulosRendidos}/${totalModulosContratados} MÓDULOS RENDIDOS)`;
+      }
+
+      // Matriz Dinámica
+      const generarFila = (nombre, hist, sufijo, validador) => {
+        let fila = `<tr><td><strong>${nombre}</strong></td>`;
+        for (let i = 0; i < maxSimulaciones; i++) {
+          if (hist && hist[i]) {
+            const it = hist[i];
+            const val = it.tiempo !== undefined ? it.tiempo : (it.efectividad !== undefined ? it.efectividad : it.porcentaje);
+            fila += `<td class="td-centro" style="color:#f8fafc; font-weight:600;">${val}${sufijo}</td>`;
+          } else {
+            fila += `<td class="td-centro" style="color:#475569;">--</td>`;
+          }
         }
-      } else {
-        document.getElementById('val-punt').innerText = '--';
-        document.getElementById('badge-punt').innerText = 'PENDIENTE';
-        document.getElementById('badge-punt').className = 'badge-estado st-pendiente';
-      }
+        fila += `<td>${validador(hist)}</td></tr>`;
+        return fila;
+      };
 
-      // 3. Banner
-      const banner = document.getElementById('banner-dictamen');
-      if (modulosCompletados === 3) {
-        banner.className = 'banner-estado estado-optimo';
-        banner.innerText = 'EVALUACIÓN COMPLETADA (3/3 MÓDULOS RENDIDOS)';
-      } else {
-        banner.className = 'banner-estado estado-alerta';
-        banner.innerText = `EVALUACIÓN EN CURSO (${modulosCompletados}/3 MÓDULOS RENDIDOS)`;
-      }
+      const diagReact = (h) => !h || h.length === 0 ? '<span style="color:#64748b;">Pendiente de rendición</span>' : (h[h.length - 1].tiempo <= 450 ? '<span style="color:#4ade80;">✓ En norma</span>' : '<span style="color:#f87171;">⚠ Latencia elevada</span>');
+      const diagPct = (h, corte) => !h || h.length === 0 ? '<span style="color:#64748b;">Pendiente de rendición</span>' : ((h[h.length - 1].efectividad || h[h.length - 1].porcentaje) >= corte ? '<span style="color:#4ade80;">✓ En norma</span>' : '<span style="color:#f87171;">⚠ Requiere práctica</span>');
 
-      // 4. Matriz
-      renderizarMatrizLimpia(hReact, hPal, hPunt, rReact, rPal, rPunt, reactRendido, palRendido, puntRendido);
+      let htmlFilas = '';
+      htmlFilas += generarFila('1. Reactímetro', hReact, ' ms', diagReact);
+      htmlFilas += generarFila('2. Palancas', hPal, '%', (h) => diagPct(h, 75));
+      htmlFilas += generarFila('3. Punteo', hPunt, '%', (h) => diagPct(h, 80));
+      if (totalModulosContratados >= 4) htmlFilas += generarFila('4. Screening Visual', hVis, '%', (h) => diagPct(h, 80));
+      if (totalModulosContratados === 5) htmlFilas += generarFila('5. Tamizaje Auditivo', hAud, '%', (h) => diagPct(h, 75));
 
-      // 5. SVG
-      renderizarCurvaSVG(hReact, hPal, hPunt, rReact, reactRendido, palRendido, puntRendido);
+      document.getElementById('tbody-matriz').innerHTML = htmlFilas;
+
+      // Curva SVG
+      const svg = document.getElementById('svg-curvas');
+      const trazarCurva = (hist, color, normalizar) => {
+        if (!hist || hist.length === 0) return;
+        const totalPuntos = Math.min(hist.length, maxSimulaciones);
+        const espaciado = 340 / (maxSimulaciones - 1 || 1);
+        let puntos = [];
+        for (let i = 0; i < totalPuntos; i++) {
+          const x = 30 + (i * espaciado);
+          const val = normalizar(hist[i]);
+          const y = 65 - (val * 0.45);
+          puntos.push({ x, y });
+        }
+        if (puntos.length > 1) {
+          let d = `M ${puntos[0].x} ${puntos[0].y}`;
+          for (let i = 1; i < puntos.length; i++) d += ` L ${puntos[i].x} ${puntos[i].y}`;
+          svg.innerHTML += `<path d="${d}" fill="none" stroke="${color}" stroke-width="2.5" stroke-linecap="round"/>`;
+        }
+        puntos.forEach(p => {
+          svg.innerHTML += `<circle cx="${p.x}" cy="${p.y}" r="3.5" fill="${color}"/>`;
+        });
+      };
+
+      trazarCurva(hReact, '#38bdf8', it => Math.max(0, Math.min(100, (550 - (it.tiempo || 400)) / 2.5)));
+      trazarCurva(hPal, '#4ade80', it => it.efectividad !== undefined ? it.efectividad : it.porcentaje || 50);
+      trazarCurva(hPunt, '#f59e0b', it => it.efectividad !== undefined ? it.efectividad : it.porcentaje || 50);
     });
-
-    function renderizarMatrizLimpia(hReact, hPal, hPunt, rReact, rPal, rPunt, reactRendido, palRendido, puntRendido) {
-      const tbody = document.getElementById('cuerpo-matriz-b2c');
-
-      // Reactímetro
-      let s1R = '--', s2R = '--', s3R = '--', diagR = 'Pendiente de rendición', colR = '#64748b';
-      if (reactRendido) {
-        if (hReact.length > 0) {
-          s1R = hReact[0] ? `${hReact[0].tiempo} ms` : '--';
-          s2R = hReact[1] ? `${hReact[1].tiempo} ms` : '--';
-          s3R = hReact[2] ? `${hReact[2].tiempo} ms` : '--';
-        } else if (rReact) {
-          s1R = `${rReact.tiempo || rReact.promedio} ms`;
-        }
-        const valFinal = Number(rReact ? (rReact.tiempo || rReact.promedio) : hReact[hReact.length - 1].tiempo);
-        diagR = valFinal <= 450 ? '✓ En norma' : '⚠️ Latencia alta';
-        colR = valFinal <= 450 ? '#4ade80' : '#fb923c';
-      }
-
-      // Palancas
-      let s1P = '--', s2P = '--', s3P = '--', diagP = 'Pendiente de rendición', colP = '#64748b';
-      if (palRendido) {
-        if (hPal.length > 0) {
-          s1P = (hPal[0] && (hPal[0].porcentaje ?? hPal[0].efectividad) !== undefined) ? `${hPal[0].porcentaje ?? hPal[0].efectividad}%` : '--';
-          s2P = (hPal[1] && (hPal[1].porcentaje ?? hPal[1].efectividad) !== undefined) ? `${hPal[1].porcentaje ?? hPal[1].efectividad}%` : '--';
-          s3P = (hPal[2] && (hPal[2].porcentaje ?? hPal[2].efectividad) !== undefined) ? `${hPal[2].porcentaje ?? hPal[2].efectividad}%` : '--';
-        } else if (rPal && (rPal.porcentaje !== undefined || rPal.efectividad !== undefined)) {
-          s1P = `${rPal.porcentaje ?? rPal.efectividad}%`;
-        }
-        const valFinal = Number(rPal ? (rPal.porcentaje ?? rPal.efectividad) : (hPal[hPal.length - 1].porcentaje ?? hPal[hPal.length - 1].efectividad));
-        diagP = valFinal >= 70 ? '✓ En norma' : `⚠️ ${rPal?.toques || 2} toques / error`;
-        colP = valFinal >= 70 ? '#4ade80' : '#fb923c';
-      }
-
-      // Punteo
-      let s1U = '--', s2U = '--', s3U = '--', diagU = 'Pendiente de rendición', colU = '#64748b';
-      if (puntRendido) {
-        if (hPunt.length > 0) {
-          s1U = (hPunt[0] && (hPunt[0].efectividad ?? hPunt[0].porcentaje) !== undefined) ? `${hPunt[0].efectividad ?? hPunt[0].porcentaje}%` : '--';
-          s2U = (hPunt[1] && (hPunt[1].efectividad ?? hPunt[1].porcentaje) !== undefined) ? `${hPunt[1].efectividad ?? hPunt[1].porcentaje}%` : '--';
-          s3U = (hPunt[2] && (hPunt[2].efectividad ?? hPunt[2].porcentaje) !== undefined) ? `${hPunt[2].efectividad ?? hPunt[2].porcentaje}%` : '--';
-        } else if (rPunt && (rPunt.efectividad !== undefined || rPunt.porcentaje !== undefined)) {
-          s1U = `${rPunt.efectividad ?? rPunt.porcentaje}%`;
-        }
-        const valFinal = Number(rPunt ? (rPunt.efectividad ?? rPunt.porcentaje) : (hPunt[hPunt.length - 1].efectividad ?? hPunt[hPunt.length - 1].porcentaje));
-        diagU = valFinal >= 80 ? '✓ En norma' : `⚠️ Efectividad (${valFinal}%)`;
-        colU = valFinal >= 80 ? '#4ade80' : '#fb923c';
-      }
-
-      tbody.innerHTML = `
-        <tr>
-          <td>1. Reactímetro</td>
-          <td>${s1R}</td>
-          <td>${s2R}</td>
-          <td class="${s3R !== '--' ? 'val-destacado' : ''}">${s3R}</td>
-          <td style="color:${colR};">${diagR}</td>
-        </tr>
-        <tr>
-          <td>2. Palancas</td>
-          <td>${s1P}</td>
-          <td>${s2P}</td>
-          <td class="${s3P !== '--' ? 'val-destacado' : ''}">${s3P}</td>
-          <td style="color:${colP};">${diagP}</td>
-        </tr>
-        <tr>
-          <td>3. Punteo</td>
-          <td>${s1U}</td>
-          <td>${s2U}</td>
-          <td class="${s3U !== '--' ? 'val-destacado' : ''}">${s3U}</td>
-          <td style="color:${colU};">${diagU}</td>
-        </tr>
-      `;
-    }
-
-    function renderizarCurvaSVG(hReact, hPal, hPunt, rReact, reactRendido, palRendido, puntRendido) {
-      const svg = document.getElementById('svg-curva-b2c');
-      if (!svg) return;
-
-      let html = `
-        <line x1="20" y1="20" x2="420" y2="20" stroke="#1e293b" stroke-dasharray="3,3" />
-        <line x1="20" y1="45" x2="420" y2="45" stroke="#1e293b" stroke-dasharray="3,3" />
-        <line x1="20" y1="70" x2="420" y2="70" stroke="#1e293b" stroke-dasharray="3,3" />
-      `;
-
-      if (reactRendido) {
-        if (hReact.length > 1) {
-          let pts = hReact.slice(0, 3).map((item, idx) => ({
-            x: 60 + (idx * 120),
-            y: Math.min(80, Math.max(15, (item.tiempo / 1500) * 80))
-          }));
-          let d = `M ${pts[0].x} ${pts[0].y}`;
-          pts.slice(1).forEach(p => d += ` L ${p.x} ${p.y}`);
-          html += `<path d="${d}" fill="none" stroke="#38bdf8" stroke-width="2.5" />`;
-          pts.forEach(p => html += `<circle cx="${p.x}" cy="${p.y}" r="4" fill="#38bdf8" />`);
-        } else {
-          html += `<circle cx="60" cy="65" r="4" fill="#38bdf8" />`;
-        }
-      }
-
-      if (palRendido && hPal.length > 0) {
-        let pts = hPal.slice(0, 3).map((item, idx) => ({
-          x: 60 + (idx * 120),
-          y: 85 - (((item.porcentaje ?? item.efectividad) / 100) * 70)
-        }));
-        if (pts.length > 1) {
-          let d = `M ${pts[0].x} ${pts[0].y}`;
-          pts.slice(1).forEach(p => d += ` L ${p.x} ${p.y}`);
-          html += `<path d="${d}" fill="none" stroke="#4ade80" stroke-width="2.5" />`;
-        }
-        pts.forEach(p => html += `<circle cx="${p.x}" cy="${p.y}" r="4" fill="#4ade80" />`);
-      }
-
-      if (puntRendido && hPunt.length > 0) {
-        let pts = hPunt.slice(0, 3).map((item, idx) => ({
-          x: 60 + (idx * 120),
-          y: 85 - (((item.efectividad ?? item.porcentaje) / 100) * 70)
-        }));
-        if (pts.length > 1) {
-          let d = `M ${pts[0].x} ${pts[0].y}`;
-          pts.slice(1).forEach(p => d += ` L ${p.x} ${p.y}`);
-          html += `<path d="${d}" fill="none" stroke="#f59e0b" stroke-width="2.5" />`;
-        }
-        pts.forEach(p => html += `<circle cx="${p.x}" cy="${p.y}" r="4" fill="#f59e0b" />`);
-      }
-
-      svg.innerHTML = html;
-    }
   </script>
 </body>
 </html>
