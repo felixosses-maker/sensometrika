@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Sensometrika | Informe de Diagnóstico</title>
+  <link rel="stylesheet" href="styles.css">
+  
+  <!-- Librerías de soporte exclusivo B2B -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <style>
+    body {
+      background-color: #0b1120;
+      color: #f1f5f9;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      margin: 0;
+      padding: 16px;
+      display: flex;
+      justify-content: center;
+      min-height: 100vh;
+      box-sizing: border-box;
+    }
+
+    /* ==========================================================
+       VISTA 1: B2C (PARTICULARES) - SOLO EN PANTALLA (DARK UI)
+       ========================================================== */
+    .contenedor-b2c {
+      width: 100%;
+      max-width: 480px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      margin: auto 0;
+    }
+    .cabecera-b2c {
+      text-align: center;
+      margin-bottom: 2px;
+    }
+    .cabecera-b2c h1 {
+      font-size: 1.45rem;
+      font-weight: 900;
+      color: #ffffff;
+      margin: 0;
+      letter-spacing: -0.5px;
+    }
+    .cabecera-b2c span {
+      font-size: 0.76rem;
+      color: #38bdf8;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+    }
+    .alerta-despacho-b2c {
+      background: #042f2e;
+      border: 1px solid #14b8a6;
+      border-radius: 8px;
+      padding: 10px 12px;
+      font-size: 0.78rem;
+      color: #5eead4;
+      line-height: 1.4;
+    }
+    .tarjeta-resumen-b2c {
+      background: #0f172a;
+      border: 1px solid #1e293b;
+      border-radius: 12px;
+      padding: 16px;
+      box-sizing: border-box;
+    }
+    .badge-semaforo-b2c {
+      padding: 12px;
+      border-radius: 8px;
+      font-weight: 800;
+      font-size: 0.92rem;
+      text-align: center;
+      margin-bottom: 14px;
+      letter-spacing: 0.4px;
+    }
+    .b2c-aprobado { background: rgba(34, 197, 94, 0.15); border: 1.5px solid #22c55e; color: #4ade80; }
+    .b2c-observado { background: rgba(245, 158, 11, 0.15); border: 1.5px solid #f59e0b; color: #fbbf24; }
+    .b2c-reprobado { background: rgba(239, 68, 68, 0.15); border: 1.5px solid #ef4444; color: #f87171; }
+
+    .tabla-metricas-b2c {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.84rem;
+      margin-top: 4px;
+    }
+    .tabla-metricas-b2c td {
+      border-bottom: 1px solid #1e293b;
+      padding: 9px 0;
+      color: #cbd5e1;
+      vertical-align: middle;
+    }
+    .tabla-metricas-b2c tr:last-child td {
+      border-bottom: none;
+    }
+    .tabla-metricas-b2c td strong {
+      color: #ffffff;
+      font-size: 0.88rem;
+    }
+    .badge-mini {
+      display: inline-block;
+      font-size: 0.70rem;
+      font-weight: 800;
+      padding: 3px 8px;
+      border-radius: 4px;
+      text-align: center;
+    }
+    .mini-cumple { background: #064e3b; color: #6ee7b7; border: 1px solid #059669; }
+    .mini-obs { background: #78350f; color: #fde68a; border: 1px solid #d97706; }
+    .mini-fallo { background: #7f1d1d; color: #fca5a5; border: 1px solid #dc2626; }
+
+    /* TABLA DINÁMICA DE SIMULACIONES (S1, S2, S3...) */
+    .tabla-desglose-scroll {
+      width: 100%;
+      overflow-x: auto;
+      background: #090e1a;
+      border: 1px solid #1e293b;
+      border-radius: 8px;
+      margin-top: 8px;
+    }
+    .tabla-desglose-sims {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.75rem;
+      min-width: 440px;
+    }
+    .tabla-desglose-sims th {
+      background: #1e293b;
+      color: #94a3b8;
+      padding: 6px 4px;
+      font-size: 0.68rem;
+      text-align: center;
+      border: 1px solid #334155;
+    }
+    .tabla-desglose-sims td {
+      border: 1px solid #334155;
+      padding: 6px 4px;
+      text-align: center;
+      color: #e2e8f0;
+    }
+
+    .btn-retorno-b2c {
+      width: 100%;
+      height: 44px;
+      background: #0284c7;
+      color: #ffffff;
+      border: none;
+      border-radius: 8px;
+      font-weight: 800;
+      font-size: 0.9rem;
+      cursor: pointer;
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-sizing: border-box;
+    }
+
+    /* ==========================================================
+       VISTA 2: B2B (EMPRESAS) - CERTIFICADO FORMAL A4 CON QR
+       ========================================================== */
+    .hoja-informe-b2b {
+      width: 100%;
+      max-width: 520px;
+      background: #ffffff;
+      color: #1e293b;
+      border-radius: 12px;
+      padding: 20px;
+      box-sizing: border-box;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+      margin: auto 0;
+    }
+    .cabecera-logo-b2b {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 2px solid #0f172a;
+      padding-bottom: 10px;
+      margin-bottom: 12px;
+    }
+    .caja-qr-b2b {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    #contenedor-qr {
+      width: 70px;
+      height: 70px;
+      padding: 4px;
+      background: #ffffff;
+      border-radius: 6px;
+      border: 1px solid #cbd5e1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    #contenedor-qr img, #contenedor-qr canvas {
+      width: 70px !important;
+      height: 70px !important;
+    }
+    .alerta-despacho-b2b {
+      background: #f0fdf4;
+      border: 1px solid #86efac;
+      border-radius: 8px;
+      padding: 8px 10px;
+      font-size: 0.74rem;
+      color: #166534;
+      margin-bottom: 12px;
+    }
+    .grilla-datos-filiacion-b2b {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px 12px;
+      font-size: 0.78rem;
+      margin-bottom: 12px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid #e2e8f0;
+    }
+    .grilla-datos-filiacion-b2b span { color: #64748b; display: block; font-size: 0.68rem; }
+    .grilla-datos-filiacion-b2b strong { color: #0f172a; }
+    .caja-dictamen-b2b {
+      border: 1.5px solid #22c55e;
+      background: #f0fdf4;
+      color: #15803d;
+      border-radius: 8px;
+      padding: 8px;
+      text-align: center;
+      font-size: 0.82rem;
+      font-weight: 800;
+      margin-bottom: 12px;
+    }
+    .tabla-normativa-b2b {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.75rem;
+      margin-bottom: 12px;
+    }
+    .tabla-normativa-b2b th {
+      background: #f8fafc;
+      color: #475569;
+      border: 1px solid #cbd5e1;
+      padding: 6px 4px;
+      text-align: left;
+    }
+    .tabla-normativa-b2b td {
+      border: 1px solid #cbd5e1;
+      padding: 6px 4px;
+      color: #1e293b;
+    }
+    .caja-firmas-b2b {
+      width: 100%;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin: 14px 0 10px;
+      text-align: center;
+    }
+    .celda-firma { display: flex; flex-direction: column; justify-content: flex-end; align-items: center; }
+    .linea-firma { width: 100%; border-top: 1px solid #0f172a; margin-top: 6px; padding-top: 4px; }
+  </style>
+</head>
+<body>
+
+  <!-- ==========================================================
+       VISTA 1: B2C (PARTICULARES) - SOLO EN PANTALLA
+       ========================================================== -->
+  <main id="seccion-vista-b2c" class="contenedor-b2c" style="display: none;">
+    <header class="cabecera-b2c">
+      <h1>Sensometrika</h1>
+      <span id="b2c-nombre-plan-badge">DIAGNÓSTICO EN PANTALLA (B2C)</span>
+    </header>
+
+    <div id="b2c-alerta-envio" class="alerta-despacho-b2c">
+      📨 <strong>Copia de Respaldo Enviada:</strong> Tus resultados fueron remitidos a <strong id="b2c-correo-usuario">correo@usuario.cl</strong>
+    </div>
+
+    <!-- TARJETA 1: RESULTADOS CONSOLIDADOS -->
+    <section class="tarjeta-resumen-b2c">
+      <div style="font-size: 0.78rem; color: #94a3b8; margin-bottom: 10px;">
+        Postulante: <strong id="b2c-nombre-usuario" style="color: #fff;">--</strong> • RUT: <strong id="b2c-rut-usuario" style="color: #38bdf8;">--</strong>
+      </div>
+
+      <!-- Semáforo Municipal -->
+      <div id="b2c-badge-semaforo" class="badge-semaforo-b2c b2c-aprobado">
+        ESTADO: NIVEL ÓPTIMO / APTO EXAMEN MUNICIPAL
+      </div>
+
+      <!-- Tabla de Marcas (Palancas en % estricto) -->
+      <table class="tabla-metricas-b2c">
+        <tr>
+          <td>1. Reactímetro (Freno):</td>
+          <td style="text-align: right;"><strong id="b2c-val-react">-- ms</strong></td>
+          <td style="text-align: right; width: 90px;"><span id="b2c-badge-react" class="badge-mini mini-cumple">--</span></td>
+        </tr>
+        <tr>
+          <td>2. Palancas (Coordinación):</td>
+          <td style="text-align: right;"><strong id="b2c-val-pal">-- %</strong></td>
+          <td style="text-align: right;"><span id="b2c-badge-pal" class="badge-mini mini-cumple">--</span></td>
+        </tr>
+        <tr>
+          <td>3. Punteo (Ritmo Lahy):</td>
+          <td style="text-align: right;"><strong id="b2c-val-punt">-- %</strong></td>
+          <td style="text-align: right;"><span id="b2c-badge-punt" class="badge-mini mini-cumple">--</span></td>
+        </tr>
+        <tr id="b2c-fila-vis" style="display: none;">
+          <td>4. Tamizaje Visual:</td>
+          <td style="text-align: right;"><strong id="b2c-val-vis">-- %</strong></td>
+          <td style="text-align: right;"><span id="b2c-badge-vis" class="badge-mini mini-cumple">--</span></td>
+        </tr>
+        <tr id="b2c-fila-aud" style="display: none;">
+          <td>5. Tamizaje Auditivo:</td>
+          <td style="text-align: right;"><strong id="b2c-val-aud">-- %</strong></td>
+          <td style="text-align: right;"><span id="b2c-badge-aud" class="badge-mini mini-cumple">--</span></td>
+        </tr>
+      </table>
+    </section>
+
+    <!-- TARJETA 2: DESGLOSE DINÁMICO POR SIMULACIÓN (S1, S2, S3...) -->
+    <section class="tarjeta-resumen-b2c">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+        <strong style="color: #38bdf8; font-size: 0.82rem;">📈 Curva de Intentos y Falla Específica</strong>
+        <small id="b2c-subtitulo-cuota" style="color: #94a3b8; font-size: 0.68rem;">D.S. N° 170</small>
+      </div>
+
+      <div class="tabla-desglose-scroll">
+        <table class="tabla-desglose-sims">
+          <thead id="b2c-thead-desglose">
+            <!-- Inyectado por JS -->
+          </thead>
+          <tbody id="b2c-tbody-desglose">
+            <!-- Inyectado por JS -->
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- TARJETA 3: CONSEJOS MUNICIPALES -->
+    <section class="tarjeta-resumen-b2c" style="font-size: 0.78rem; line-height: 1.45; color: #cbd5e1;">
+      <strong style="color: #38bdf8; display: block; margin-bottom: 8px;">💡 Consejos para Rendir en la Municipalidad:</strong>
+      <ul style="margin: 0; padding-left: 16px;">
+        <li><strong>Frenado:</strong> Apoya firme el talón y mueve solo la punta del pie ante la luz roja para ganar reflejo[cite: 1, 3].</li>
+        <li><strong>Coordinación:</strong> Mantén los codos apoyados para amortiguar el pulso natural de las manos[cite: 1, 3].</li>
+        <li><strong>Punteo:</strong> Si saltas una perforación, sigue con la siguiente sin detener el ritmo[cite: 1, 3].</li>
+      </ul>
+    </section>
+
+    <a href="menu.html" class="btn-retorno-b2c">
+      ← Volver al Menú Principal
+    </a>
+  </main>
+
+
+  <!-- ==========================================================
+       VISTA 2: B2B (EMPRESAS) - CERTIFICADO FORMAL CON QR
+       ========================================================== -->
+  <main id="seccion-vista-b2b" class="hoja-informe-b2b" style="display: none;">
+    <header class="cabecera-logo-b2b">
+      <div>
+        <h2 style="font-size: 1.15rem; color: #0f172a; margin: 0; font-weight: 900;">SENSOMETRIKA SpA</h2>
+        <span style="font-size: 0.68rem; color: #0284c7; font-weight: 700;">GABINETE SENSOTÉCNICO LABORAL • D.S. N° 170 MTT</span>
+      </div>
+      <div class="caja-qr-b2b">
+        <div id="contenedor-qr"></div>
+        <span style="font-size: 0.55rem; color: #64748b; font-weight: 700; margin-top: 4px;">VERIFICACIÓN</span>
+      </div>
+    </header>
+
+    <div class="alerta-despacho-b2b">
+      📨 <strong>Certificado Oficial Emitido:</strong> Notificado a: <span id="b2b-correo-apr">prevencion@empresa.cl</span>
+    </div>
+
+    <section class="grilla-datos-filiacion-b2b">
+      <div><span>Trabajador Evaluado:</span><strong id="b2b-nombre-trabajador">--</strong></div>
+      <div><span>RUT Trabajador:</span><strong id="b2b-rut-trabajador">--</strong></div>
+      <div><span>Folio Verificación:</span><strong id="b2b-folio">--</strong></div>
+      <div><span>Fecha y Hora:</span><strong id="b2b-fecha">--</strong></div>
+      <div style="grid-column: 1 / -1;"><span>Empresa:</span><strong id="b2b-empresa">--</strong></div>
+    </section>
+
+    <div class="caja-dictamen-b2b" id="b2b-caja-dictamen">
+      DICTAMEN: APTO ESTÁNDAR FAENA CRÍTICA (NIVEL ÓPTIMO)
+    </div>
+
+    <table class="tabla-normativa-b2b">
+      <thead>
+        <tr>
+          <th>Módulo Evaluado</th>
+          <th>Estándar (DS 170)</th>
+          <th>Resultado</th>
+          <th>Evaluación</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>1. Reactímetro</strong></td>
+          <td>≤ 350 / 400 ms</td>
+          <td id="b2b-res-react" style="font-weight: 700;">-- ms</td>
+          <td style="text-align: center;"><span id="b2b-badge-react" class="badge-mini mini-cumple">CUMPLE</span></td>
+        </tr>
+        <tr>
+          <td><strong>2. Palancas</strong></td>
+          <td>≥ 70% precisión</td>
+          <td id="b2b-res-pal">-- %</td>
+          <td style="text-align: center;"><span id="b2b-badge-pal" class="badge-mini mini-cumple">CUMPLE</span></td>
+        </tr>
+        <tr>
+          <td><strong>3. Punteo</strong></td>
+          <td>≥ 80% efectividad</td>
+          <td id="b2b-res-punt">-- %</td>
+          <td style="text-align: center;"><span id="b2b-badge-punt" class="badge-mini mini-cumple">CUMPLE</span></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <section class="caja-firmas-b2b">
+      <div class="celda-firma">
+        <div style="height: 40px; display:flex; align-items:flex-end;">
+          <span style="font-size: 0.65rem; color: #94a3b8; font-style: italic;">Rúbrica registrada en plataforma</span>
+        </div>
+        <div class="linea-firma">
+          <strong id="b2b-pie-nombre-trabajador" style="font-size: 0.72rem; display: block;">--</strong>
+          <span style="font-size: 0.65rem; color: #0284c7; font-weight: 700;">Firma del Trabajador Evaluado</span>
+        </div>
+      </div>
+      <div class="celda-firma">
+        <div style="height: 40px; display:flex; align-items:center;">
+          <span style="font-size: 0.65rem; color: #16a34a; font-weight: 800;">✓ V°B° VALIDADO EN PLATAFORMA</span>
+        </div>
+        <div class="linea-firma">
+          <strong style="font-size: 0.72rem; display: block;">Mariela Cárcamo Fernández</strong>
+          <span style="font-size: 0.65rem; color: #64748b;">Supervisión APR / Mandante</span>
+        </div>
+      </div>
+    </section>
+
+    <a href="menu.html" class="btn-retorno-b2c" style="margin-top: 10px;">
+      ← Volver al Menú Principal
+    </a>
+  </main>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const sesion = JSON.parse(localStorage.getItem('sensometrika_sesion')) || {};
+      const datosUser = JSON.parse(localStorage.getItem('sensometrika_datos_usuario')) || {};
+      const planEmpresa = JSON.parse(localStorage.getItem('sensometrika_plan_empresa')) || {};
+
+      // BIFURCACIÓN ESTRICTA: Solo es B2B si es cuenta empresa
+      const esB2B = (
+        sesion.rol === 'empresa' || 
+        datosUser.tipo === 'empresa' || 
+        (sesion.planId && String(sesion.planId).toLowerCase().startsWith('b2b'))
+      );
+
+      // Lectura de resultados
+      const rReact = JSON.parse(localStorage.getItem('sensometrika_reactimetro')) || {};
+      const rPal = JSON.parse(localStorage.getItem('sensometrika_palancas')) || {};
+      const rPunt = JSON.parse(localStorage.getItem('sensometrika_punteo')) || {};
+      const rVis = JSON.parse(localStorage.getItem('sensometrika_visual')) || null;
+      const rAud = JSON.parse(localStorage.getItem('sensometrika_auditivo')) || null;
+
+      const tReact = Number(rReact.tiempo || 0);
+
+      // Palancas exclusivamente en porcentaje
+      let pctPal = 0;
+      if (rPal.porcentaje !== undefined) {
+        pctPal = Number(rPal.porcentaje);
+      } else if (rPal.toques !== undefined) {
+        pctPal = Math.max(0, 100 - (Number(rPal.toques) * 10));
+      }
+
+      // Punteo en porcentaje
+      let pctPunt = 0;
+      if (rPunt.efectividad !== undefined) {
+        pctPunt = Number(rPunt.efectividad);
+      } else if (rPunt.aciertos !== undefined) {
+        pctPunt = Math.min(100, Math.round((Number(rPunt.aciertos) / 30) * 100));
+      }
+
+      /* ==========================================================
+         CASO 1: B2C (PARTICULARES) - EN PANTALLA CON S1, S2, S3...
+         ========================================================== */
+      if (!esB2B) {
+        document.getElementById('seccion-vista-b2c').style.display = 'flex';
+        document.getElementById('seccion-vista-b2b').style.display = 'none';
+
+        if (sesion.nombrePlan) {
+          document.getElementById('b2c-nombre-plan-badge').innerText = sesion.nombrePlan.toUpperCase();
+        }
+
+        document.getElementById('b2c-nombre-usuario').innerText = datosUser.nombre || sesion.nombreEvaluado || 'Felix Osses Martinez';
+        document.getElementById('b2c-rut-usuario').innerText = datosUser.rut || sesion.rutEvaluado || '13.777.234-3';
+        document.getElementById('b2c-correo-usuario').innerText = datosUser.correo || sesion.email || 'felix.osses@gmail.com';
+
+        // 1. Reactímetro
+        if (tReact > 0) {
+          document.getElementById('b2c-val-react').innerText = `${tReact} ms`;
+          const bReact = document.getElementById('b2c-badge-react');
+          if (tReact <= 400) {
+            bReact.innerText = 'ÓPTIMO';
+            bReact.className = 'badge-mini mini-cumple';
+          } else if (tReact <= 450) {
+            bReact.innerText = 'CUMPLE';
+            bReact.className = 'badge-mini mini-obs';
+          } else {
+            bReact.innerText = 'OBSERVADO';
+            bReact.className = 'badge-mini mini-fallo';
+          }
+        }
+
+        // 2. Palancas (% estricto)
+        if (rPal.toques !== undefined || rPal.porcentaje !== undefined) {
+          document.getElementById('b2c-val-pal').innerText = `${pctPal}%`;
+          const bPal = document.getElementById('b2c-badge-pal');
+          if (pctPal >= 70) {
+            bPal.innerText = 'CUMPLE';
+            bPal.className = 'badge-mini mini-cumple';
+          } else {
+            bPal.innerText = 'OBSERVADO';
+            bPal.className = 'badge-mini mini-fallo';
+          }
+        }
+
+        // 3. Punteo (%)
+        if (rPunt.aciertos !== undefined || rPunt.efectividad !== undefined) {
+          document.getElementById('b2c-val-punt').innerText = `${pctPunt}%`;
+          const bPunt = document.getElementById('b2c-badge-punt');
+          if (pctPunt >= 80) {
+            bPunt.innerText = 'CUMPLE';
+            bPunt.className = 'badge-mini mini-cumple';
+          } else {
+            bPunt.innerText = 'OBSERVADO';
+            bPunt.className = 'badge-mini mini-fallo';
+          }
+        }
+
+        // Módulos opcionales
+        const permitidos = sesion.modulosPermitidos || ['reactimetro', 'palancas', 'punteo'];
+        if (permitidos.includes('visual') && rVis) {
+          document.getElementById('b2c-fila-vis').style.display = 'table-row';
+          document.getElementById('b2c-val-vis').innerText = `${rVis.efectividad || 100}%`;
+          const bVis = document.getElementById('b2c-badge-vis');
+          bVis.innerText = rVis.aprobado ? 'CUMPLE' : 'OBSERVADO';
+          bVis.className = 'badge-mini ' + (rVis.aprobado ? 'mini-cumple' : 'mini-fallo');
+        }
+        if (permitidos.includes('auditivo') && rAud) {
+          document.getElementById('b2c-fila-aud').style.display = 'table-row';
+          document.getElementById('b2c-val-aud').innerText = `${rAud.efectividad || 100}%`;
+          const bAud = document.getElementById('b2c-badge-aud');
+          bAud.innerText = rAud.aprobado ? 'CUMPLE' : 'OBSERVADO';
+          bAud.className = 'badge-mini ' + (rAud.aprobado ? 'mini-cumple' : 'mini-fallo');
+        }
+
+        // Semáforo general
+        const semaforo = document.getElementById('b2c-badge-semaforo');
+        const reactOk = tReact > 0 && tReact <= 450;
+        const palOk = pctPal >= 70;
+        const puntOk = (rPunt.aciertos === undefined && rPunt.efectividad === undefined) || pctPunt >= 80;
+
+        if (reactOk && palOk && puntOk) {
+          semaforo.className = 'badge-semaforo-b2c b2c-aprobado';
+          semaforo.innerText = 'ESTADO: NIVEL ÓPTIMO / PREPARADO PARA APROBAR';
+        } else if (reactOk && (pctPal < 70 || pctPunt < 80)) {
+          semaforo.className = 'badge-semaforo-b2c b2c-observado';
+          semaforo.innerText = 'ESTADO: OBSERVADO / REQUIERE PRÁCTICA PREVENTIVA';
+        } else {
+          semaforo.className = 'badge-semaforo-b2c b2c-reprobado';
+          semaforo.innerText = 'ESTADO: FUERA DE NORMA / REQUIERE ENTRENAMIENTO';
+        }
+
+        // Renderizado dinámico de la matriz adaptativa (S1, S2, S3...)
+        renderizarDesgloseB2C(sesion);
+
+      } 
+      /* ==========================================================
+         CASO 2: B2B (EMPRESAS) - CERTIFICADO A4 FORMAL CON QR
+         ========================================================== */
+      else {
+        document.getElementById('seccion-vista-b2c').style.display = 'none';
+        document.getElementById('seccion-vista-b2b').style.display = 'block';
+
+        const nombre = datosUser.nombre || sesion.nombreEvaluado || 'Trabajador Faena';
+        const rut = datosUser.rut || sesion.rutEvaluado || '--';
+        const empresa = planEmpresa.razonSocial || sesion.razonSocial || 'Empresa Mandante';
+        const correoAPR = (planEmpresa.responsable && planEmpresa.responsable.correo) || sesion.correoInformes || 'prevencion@empresa.cl';
+
+        document.getElementById('b2b-nombre-trabajador').innerText = nombre;
+        document.getElementById('b2b-rut-trabajador').innerText = rut;
+        document.getElementById('b2b-empresa').innerText = empresa;
+        document.getElementById('b2b-correo-apr').innerText = correoAPR;
+
+        let folio = sessionStorage.getItem('sensometrika_folio_b2b');
+        if (!folio) {
+          folio = 'SMK-' + Math.floor(100000 + Math.random() * 900000);
+          sessionStorage.setItem('sensometrika_folio_b2b', folio);
+        }
+        document.getElementById('b2b-folio').innerText = folio;
+
+        const ahora = new Date();
+        document.getElementById('b2b-fecha').innerText = ahora.toLocaleDateString('es-CL') + ' ' + ahora.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' });
+
+        document.getElementById('b2b-res-react').innerText = `${tReact} ms`;
+        document.getElementById('b2b-res-pal').innerText = `${pctPal}%`;
+        document.getElementById('b2b-res-punt').innerText = `${pctPunt}%`;
+
+        document.getElementById('b2b-pie-nombre-trabajador').innerText = nombre;
+
+        const contenedorQR = document.getElementById('contenedor-qr');
+        if (contenedorQR && typeof QRCode !== 'undefined') {
+          contenedorQR.innerHTML = '';
+          const esLocal = (window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost');
+          const base = esLocal ? 'https://sensometrika.vercel.app' : window.location.origin;
+          new QRCode(contenedorQR, {
+            text: `${base}/validar.html?folio=${folio}`,
+            width: 70,
+            height: 70,
+            colorDark: "#000000",
+            colorLight: "#ffffff",
+            correctLevel: QRCode.CorrectLevel.L
+          });
+        }
+      }
+    });
+
+    // RENDERIZADO DINÁMICO DE S1, S2, S3... SEGÚN CUOTA B2C
+    function renderizarDesgloseB2C(sesion) {
+      const thead = document.getElementById('b2c-thead-desglose');
+      const tbody = document.getElementById('b2c-tbody-desglose');
+      if (!thead || !tbody) return;
+
+      let cuota = 3;
+      const planId = String(sesion.planId || '').toLowerCase();
+      if (planId.includes('full')) cuota = 8;
+      else if (planId.includes('plus') || planId.includes('semi')) cuota = 5;
+
+      const subCuota = document.getElementById('b2c-subtitulo-cuota');
+      if (subCuota) subCuota.innerText = `Plan con ${cuota} simulaciones incluidas`;
+
+      // 1. Cabecera adaptativa
+      let htmlThead = `<tr><th style="text-align:left; padding-left:6px;">Módulo</th>`;
+      for (let i = 1; i <= cuota; i++) {
+        htmlThead += `<th>S${i}</th>`;
+      }
+      htmlThead += `<th style="text-align:left; padding-left:6px;">Diagnóstico de Falla</th></tr>`;
+      thead.innerHTML = htmlThead;
+
+      // 2. Cargar historiales
+      const hReact = JSON.parse(localStorage.getItem('sensometrika_historial_reactimetro')) || [];
+      const hPal = JSON.parse(localStorage.getItem('sensometrika_historial_palancas')) || [];
+      const hPunt = JSON.parse(localStorage.getItem('sensometrika_historial_punteo')) || [];
+
+      if (hReact.length === 0) {
+        const r = JSON.parse(localStorage.getItem('sensometrika_reactimetro'));
+        if (r && r.tiempo) hReact.push({ simulacion: 1, tiempo: r.tiempo, aprobado: r.tiempo <= 450, motivoFalla: r.tiempo > 450 ? 'Latencia sobre 450 ms' : 'Aprobado' });
+      }
+      if (hPal.length === 0) {
+        const p = JSON.parse(localStorage.getItem('sensometrika_palancas'));
+        if (p) hPal.push({ simulacion: 1, toques: p.toques || 0, aprobado: (p.toques || 0) <= 3, motivoFalla: (p.toques || 0) > 3 ? 'Toques excedidos' : 'Aprobado' });
+      }
+      if (hPunt.length === 0) {
+        const pt = JSON.parse(localStorage.getItem('sensometrika_punteo'));
+        if (pt) hPunt.push({ simulacion: 1, efectividad: pt.efectividad || 100, aprobado: (pt.efectividad || 100) >= 80, motivoFalla: (pt.efectividad || 100) < 80 ? 'Efectividad < 80%' : 'Aprobado' });
+      }
+
+      const celdaDinamica = (item, unidad) => {
+        if (!item) return `<td style="color:#475569; font-size:0.70rem;">--</td>`;
+        const color = item.aprobado ? '#4ade80' : '#f87171';
+        const bg = item.aprobado ? 'rgba(34,197,94,0.12)' : 'rgba(239,68,68,0.2)';
+        const val = (item.tiempo !== undefined) ? item.tiempo : ((item.porcentaje !== undefined) ? item.porcentaje : ((item.toques !== undefined) ? Math.max(0, 100 - item.toques * 10) : item.efectividad));
+        return `
+          <td style="padding:4px;">
+            <span style="display:inline-block; padding:1px 5px; border-radius:4px; font-weight:700; background:${bg}; color:${color}; font-size:0.70rem;">
+              ${val}${unidad}
+            </span>
+          </td>
+        `;
+      };
+
+      const obtenerDiagnostico = (historial) => {
+        if (!historial || historial.length === 0) return '<span style="color:#64748b;">Pendiente</span>';
+        const fallas = historial.filter(h => !h.aprobado);
+        if (fallas.length === 0) {
+          return '<span style="color:#4ade80; font-weight:600;">✓ Estable en los ensayos</span>';
+        }
+        const f = fallas[fallas.length - 1];
+        return `<span style="color:#f87171; font-weight:600;">Falla en S${f.simulacion}: ${f.motivoFalla}</span>`;
+      };
+
+      let htmlTbody = '';
+      // Reactímetro
+      htmlTbody += `<tr><td style="text-align:left; font-weight:700; padding:5px 6px;">1. Reactímetro</td>`;
+      for (let i = 0; i < cuota; i++) htmlTbody += celdaDinamica(hReact[i], ' ms');
+      htmlTbody += `<td style="text-align:left; padding:5px 6px; font-size:0.70rem;">${obtenerDiagnostico(hReact)}</td></tr>`;
+
+      // Palancas
+      htmlTbody += `<tr><td style="text-align:left; font-weight:700; padding:5px 6px;">2. Palancas</td>`;
+      for (let i = 0; i < cuota; i++) htmlTbody += celdaDinamica(hPal[i], '%');
+      htmlTbody += `<td style="text-align:left; padding:5px 6px; font-size:0.70rem;">${obtenerDiagnostico(hPal)}</td></tr>`;
+
+      // Punteo
+      htmlTbody += `<tr><td style="text-align:left; font-weight:700; padding:5px 6px;">3. Punteo</td>`;
+      for (let i = 0; i < cuota; i++) htmlTbody += celdaDinamica(hPunt[i], '%');
+      htmlTbody += `<td style="text-align:left; padding:5px 6px; font-size:0.70rem;">${obtenerDiagnostico(hPunt)}</td></tr>`;
+
+      tbody.innerHTML = htmlTbody;
+    }
+  </script>
+</body>
+</html>
