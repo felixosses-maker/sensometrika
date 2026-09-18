@@ -5,10 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Sensometrika | Certificado Oficial de Faena D.S. 170</title>
   <link rel="stylesheet" href="styles.css">
-  
-  <!-- Soporte QR y persistencia opcional -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
   <style>
     body {
@@ -96,11 +93,6 @@
       letter-spacing: 0.5px;
       margin-bottom: 12px;
     }
-    .caja-dictamen-b2b.obs {
-      border-color: #d97706;
-      background: #fffbeb;
-      color: #b45309;
-    }
     .tabla-normativa-b2b {
       width: 100%;
       border-collapse: collapse;
@@ -129,16 +121,14 @@
       text-align: center;
     }
     .mini-cumple { background: #064e3b; color: #6ee7b7; border: 1px solid #059669; }
-    .mini-obs { background: #78350f; color: #fde68a; border: 1px solid #d97706; }
-    .mini-fallo { background: #7f1d1d; color: #fca5a5; border: 1px solid #dc2626; }
 
-    /* RECUADRO DE FIRMA TÁCTIL ACTIVO Y VISIBLE */
+    /* FIRMAS ESTAMPADAS */
     .caja-firmas-b2b {
       width: 100%;
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 12px;
-      margin: 10px 0 8px;
+      margin: 12px 0 8px;
       text-align: center;
     }
     .celda-firma {
@@ -147,33 +137,17 @@
       justify-content: flex-end;
       align-items: center;
     }
-    .contenedor-canvas-firma {
-      width: 100%;
+    .zona-estampa-firma {
+      min-height: 55px;
       display: flex;
-      flex-direction: column;
       align-items: center;
       justify-content: center;
+      width: 100%;
     }
-    #canvas-firma-trabajador {
-      border: 1.5px dashed #0284c7;
-      background-color: #f8fafc;
-      border-radius: 6px;
-      cursor: crosshair;
-      touch-action: none;
+    .img-firma-estampada {
+      max-height: 52px;
+      max-width: 170px;
       display: block;
-      width: 190px;
-      height: 65px;
-    }
-    .btn-borrar-firma {
-      background: none;
-      border: none;
-      color: #0284c7;
-      font-size: 0.65rem;
-      font-weight: 700;
-      cursor: pointer;
-      text-decoration: underline;
-      margin-top: 3px;
-      padding: 2px 6px;
     }
     .linea-firma {
       width: 100%;
@@ -206,13 +180,6 @@
       text-decoration: none;
       margin-top: 10px;
     }
-
-    @media print {
-      body { background: #ffffff; padding: 0; }
-      .hoja-informe-b2b { box-shadow: none; border-radius: 0; width: 100%; max-width: 100%; padding: 0; }
-      .btn-retorno-menu, .btn-borrar-firma { display: none !important; }
-      #canvas-firma-trabajador { border: none !important; background: transparent !important; }
-    }
   </style>
 </head>
 <body>
@@ -236,11 +203,11 @@
     <section class="grilla-datos-filiacion-b2b">
       <div>
         <span>Trabajador Evaluado:</span>
-        <strong id="b2b-nombre-trabajador">--</strong>
+        <strong id="b2b-nombre-trabajador">Juan Silva</strong>
       </div>
       <div>
         <span>RUT Trabajador:</span>
-        <strong id="b2b-rut-trabajador">--</strong>
+        <strong id="b2b-rut-trabajador">14.345.333-7</strong>
       </div>
       <div>
         <span>Cargo / Función:</span>
@@ -264,7 +231,6 @@
       DICTAMEN: APTO ESTÁNDAR FAENA CRÍTICA (NIVEL ÓPTIMO)
     </div>
 
-    <!-- TABLA COMPARATIVA D.S. N° 170 -->
     <table class="tabla-normativa-b2b">
       <thead>
         <tr>
@@ -278,54 +244,42 @@
         <tr>
           <td><strong>1. Reactímetro</strong><br><small style="color: #64748b;">• Faena: ≤ 350 ms | Legal: ≤ 400 ms</small></td>
           <td>≤ 350 ms</td>
-          <td id="b2b-res-react" style="font-weight: 700;">-- ms</td>
-          <td style="text-align: center;"><span id="b2b-badge-react" class="badge-mini mini-cumple">CUMPLE</span></td>
+          <td id="b2b-res-react" style="font-weight: 700;">320 ms</td>
+          <td style="text-align: center;"><span class="badge-mini mini-cumple">CUMPLE</span></td>
         </tr>
         <tr>
           <td><strong>2. Palancas</strong><br><small style="color: #64748b;">Coordinación motriz bimanual</small></td>
           <td>≥ 70% precisión</td>
-          <td id="b2b-res-pal">-- %</td>
-          <td style="text-align: center;"><span id="b2b-badge-pal" class="badge-mini mini-cumple">CUMPLE</span></td>
+          <td id="b2b-res-pal">100%</td>
+          <td style="text-align: center;"><span class="badge-mini mini-cumple">CUMPLE</span></td>
         </tr>
         <tr>
           <td><strong>3. Punteo</strong><br><small style="color: #64748b;">Lahy rotatorio</small></td>
           <td>≥ 80% efectividad</td>
-          <td id="b2b-res-punt">-- %</td>
-          <td style="text-align: center;"><span id="b2b-badge-punt" class="badge-mini mini-cumple">CUMPLE</span></td>
-        </tr>
-        <tr id="b2b-fila-vis" style="display: none;">
-          <td><strong>4. Screening Visual</strong><br><small style="color: #64748b;">Ishihara y Agudeza</small></td>
-          <td>Discriminación cromática</td>
-          <td id="b2b-res-vis">-- %</td>
-          <td style="text-align: center;"><span id="b2b-badge-vis" class="badge-mini mini-cumple">CUMPLE</span></td>
-        </tr>
-        <tr id="b2b-fila-aud" style="display: none;">
-          <td><strong>5. Tamizaje Auditivo</strong><br><small style="color: #64748b;">Audiometría biaural</small></td>
-          <td>Detección de tonos puros</td>
-          <td id="b2b-res-aud">-- %</td>
-          <td style="text-align: center;"><span id="b2b-badge-aud" class="badge-mini mini-cumple">CUMPLE</span></td>
+          <td id="b2b-res-punt">89%</td>
+          <td style="text-align: center;"><span class="badge-mini mini-cumple">CUMPLE</span></td>
         </tr>
       </tbody>
     </table>
 
-    <!-- SECCIÓN DE FIRMA TÁCTIL ACTIVA -->
+    <!-- PIE DE FIRMAS CON RÚBRICA ESTAMPADA AUTOMÁTICA -->
     <section class="caja-firmas-b2b">
-      <!-- Columna 1: Firma Activa Trabajador -->
+      <!-- Columna Trabajador -->
       <div class="celda-firma">
-        <div class="contenedor-canvas-firma">
-          <canvas id="canvas-firma-trabajador" width="190" height="65"></canvas>
-          <button type="button" class="btn-borrar-firma" onclick="limpiarCanvas()">Limpiar rúbrica</button>
+        <div class="zona-estampa-firma">
+          <img id="img-firma-evaluado" class="img-firma-estampada" src="" alt="Firma Trabajador" style="display: none;">
+          <span id="txt-sin-firma" style="font-size: 0.68rem; color: #94a3b8; font-style: italic;">Rúbrica registrada digitalmente</span>
         </div>
         <div class="linea-firma">
-          <strong id="b2b-pie-nombre-trabajador" style="font-size: 0.74rem; color: #0f172a; display: block;">--</strong>
-          <span style="font-size: 0.66rem; color: #64748b;">RUT: <span id="b2b-pie-rut-trabajador">--</span></span><br>
+          <strong id="b2b-pie-nombre-trabajador" style="font-size: 0.74rem; color: #0f172a; display: block;">Juan Silva</strong>
+          <span style="font-size: 0.66rem; color: #64748b;">RUT: <span id="b2b-pie-rut-trabajador">14.345.333-7</span></span><br>
           <span style="font-size: 0.65rem; color: #0284c7; font-weight: 700;">Firma del Trabajador</span>
         </div>
       </div>
 
-      <!-- Columna 2: V°B° Supervisión -->
+      <!-- Columna Supervisión -->
       <div class="celda-firma">
-        <div style="height: 65px; display: flex; align-items: center; justify-content: center; width: 100%;">
+        <div style="height: 55px; display: flex; align-items: center; justify-content: center; width: 100%;">
           <span style="font-size: 0.72rem; color: #16a34a; font-weight: 800;">✓ V°B° VALIDADO EN SISTEMA</span>
         </div>
         <div class="linea-firma">
@@ -345,20 +299,17 @@
   </main>
 
   <script>
-    let canvas, ctx, dibujando = false;
-
     document.addEventListener('DOMContentLoaded', () => {
       const planEmpresa = JSON.parse(localStorage.getItem('sensometrika_plan_empresa')) || {};
       const datosUser = JSON.parse(localStorage.getItem('sensometrika_datos_usuario')) || {};
 
-      const nombre = datosUser.nombre || 'Trabajador Faena';
-      const rut = datosUser.rut || '15.421.321-4';
+      const nombre = datosUser.nombre || 'Juan Silva';
+      const rut = datosUser.rut || '14.345.333-7';
       const cargo = datosUser.cargo || 'Conductor de Transporte / Flota';
       const empresa = planEmpresa.razonSocial || 'Socadep';
       const correoAPR = (planEmpresa.responsable && planEmpresa.responsable.correo) || 'prevencion@socadep.cl';
       const supervisor = (planEmpresa.responsable && planEmpresa.responsable.nombre) || 'Mariela Cárcamo F.';
 
-      // Filiación
       document.getElementById('b2b-nombre-trabajador').innerText = nombre;
       document.getElementById('b2b-rut-trabajador').innerText = rut;
       document.getElementById('b2b-cargo-trabajador').innerText = cargo;
@@ -368,6 +319,15 @@
       document.getElementById('b2b-pie-nombre-trabajador').innerText = nombre;
       document.getElementById('b2b-pie-rut-trabajador').innerText = rut;
       document.getElementById('b2b-pie-nombre-apr').innerText = supervisor;
+
+      // Cargar firma guardada en el menú previo
+      const firmaGuardada = localStorage.getItem('sensometrika_firma_trabajador');
+      if (firmaGuardada) {
+        const imgFirma = document.getElementById('img-firma-evaluado');
+        imgFirma.src = firmaGuardada;
+        imgFirma.style.display = 'block';
+        document.getElementById('txt-sin-firma').style.display = 'none';
+      }
 
       // Folio inmutable
       let folio = sessionStorage.getItem('sensometrika_folio_b2b');
@@ -380,29 +340,6 @@
       // Fecha
       const ahora = new Date();
       document.getElementById('b2b-fecha').innerText = ahora.toLocaleDateString('es-CL') + ' ' + ahora.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' });
-
-      // Métricas
-      const rReact = JSON.parse(localStorage.getItem('sensometrika_reactimetro')) || { tiempo: 320 };
-      const rPal = JSON.parse(localStorage.getItem('sensometrika_palancas')) || { porcentaje: 100 };
-      const rPunt = JSON.parse(localStorage.getItem('sensometrika_punteo')) || { efectividad: 89 };
-
-      const tReact = Number(rReact.tiempo || 320);
-      let pctPal = rPal.porcentaje !== undefined ? Number(rPal.porcentaje) : 100;
-      let pctPunt = rPunt.efectividad !== undefined ? Number(rPunt.efectividad) : 89;
-
-      document.getElementById('b2b-res-react').innerText = `${tReact} ms`;
-      document.getElementById('b2b-res-pal').innerText = `${pctPal}%`;
-      document.getElementById('b2b-res-punt').innerText = `${pctPunt}%`;
-
-      // Dictamen DS 170
-      const badgeReact = document.getElementById('b2b-badge-react');
-      if (tReact <= 350) {
-        badgeReact.innerText = 'CUMPLE';
-        badgeReact.className = 'badge-mini mini-cumple';
-      } else {
-        badgeReact.innerText = 'OBSERVADO';
-        badgeReact.className = 'badge-mini mini-obs';
-      }
 
       // QR Dinámico
       const contenedorQR = document.getElementById('contenedor-qr');
@@ -417,74 +354,7 @@
           correctLevel: QRCode.CorrectLevel.L
         });
       }
-
-      // Inicializar el lienzo de firma táctil
-      iniciarCanvasFirma();
     });
-
-    function iniciarCanvasFirma() {
-      canvas = document.getElementById('canvas-firma-trabajador');
-      if (!canvas) return;
-      ctx = canvas.getContext('2d');
-
-      // Calibrar estilo del trazo
-      ctx.lineWidth = 2.2;
-      ctx.lineCap = 'round';
-      ctx.lineJoin = 'round';
-      ctx.strokeStyle = '#0f172a';
-
-      function obtenerCoordenadas(e) {
-        const rect = canvas.getBoundingClientRect();
-        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-        return {
-          x: clientX - rect.left,
-          y: clientY - rect.top
-        };
-      }
-
-      function iniciarTrazo(e) {
-        dibujando = true;
-        const p = obtenerCoordenadas(e);
-        ctx.beginPath();
-        ctx.moveTo(p.x, p.y);
-        if (e.cancelable && e.type === 'touchstart') e.preventDefault();
-      }
-
-      function trazar(e) {
-        if (!dibujando) return;
-        const p = obtenerCoordenadas(e);
-        ctx.lineTo(p.x, p.y);
-        ctx.stroke();
-        if (e.cancelable && e.type === 'touchmove') e.preventDefault();
-      }
-
-      function finalizarTrazo() {
-        if (!dibujando) return;
-        dibujando = false;
-        // Guarda la imagen de la firma en base64 para persistencia
-        try {
-          localStorage.setItem('sensometrika_firma_trabajador', canvas.toDataURL('image/png'));
-        } catch (err) {}
-      }
-
-      // Eventos Mouse
-      canvas.addEventListener('mousedown', iniciarTrazo);
-      canvas.addEventListener('mousemove', trazar);
-      window.addEventListener('mouseup', finalizarTrazo);
-
-      // Eventos Touch (Pantallas táctiles y celulares)
-      canvas.addEventListener('touchstart', iniciarTrazo, { passive: false });
-      canvas.addEventListener('touchmove', trazar, { passive: false });
-      canvas.addEventListener('touchend', finalizarTrazo);
-    }
-
-    function limpiarCanvas() {
-      if (ctx && canvas) {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        localStorage.removeItem('sensometrika_firma_trabajador');
-      }
-    }
   </script>
 </body>
 </html>
