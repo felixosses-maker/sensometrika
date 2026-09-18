@@ -3,80 +3,110 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Sensometrika | Panel de Evaluación</title>
+  <title>Sensometrika | Panel de Control</title>
   <link rel="stylesheet" href="styles.css">
   <style>
     body {
       background-color: #0b1120;
-      color: #f1f5f9;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      color: #f8fafc;
       margin: 0;
       padding: 16px;
       display: flex;
       justify-content: center;
       min-height: 100vh;
       box-sizing: border-box;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     }
     .contenedor-menu {
       width: 100%;
-      max-width: 440px;
+      max-width: 480px;
       display: flex;
       flex-direction: column;
       gap: 14px;
-      margin: auto 0;
     }
-    .cabecera-menu {
+    .cabecera-logo {
       text-align: center;
       margin-bottom: 4px;
     }
-    .cabecera-menu h1 {
+    .cabecera-logo h1 {
       font-size: 1.5rem;
-      font-weight: 900;
       color: #38bdf8;
+      letter-spacing: 1px;
       margin: 0;
-      letter-spacing: 0.5px;
+      text-transform: uppercase;
     }
-    .cabecera-menu p {
+    .cabecera-logo p {
       font-size: 0.78rem;
       color: #94a3b8;
-      margin: 4px 0 0 0;
+      margin-top: 4px;
     }
-    .tarjeta-usuario {
+
+    /* Caja de Identidad / Filiación */
+    .caja-filiacion {
       background: #0f172a;
       border: 1px solid #1e293b;
       border-radius: 12px;
-      padding: 14px 16px;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .caja-filiacion-header {
       display: flex;
       justify-content: space-between;
-      align-items: flex-start;
-    }
-    .usuario-info strong {
-      font-size: 0.95rem;
-      color: #ffffff;
-      display: block;
-    }
-    .usuario-info span {
-      font-size: 0.75rem;
-      color: #64748b;
-      display: block;
-      margin-top: 2px;
+      align-items: center;
     }
     .badge-plan {
-      background: rgba(34, 197, 94, 0.15);
-      border: 1px solid #22c55e;
-      color: #4ade80;
-      font-size: 0.72rem;
-      font-weight: 800;
-      padding: 4px 8px;
+      background: rgba(16, 185, 129, 0.15);
+      border: 1px solid #10b981;
+      color: #34d399;
+      font-size: 0.7rem;
+      font-weight: 700;
+      padding: 3px 8px;
       border-radius: 6px;
-      white-space: nowrap;
     }
+    .campo-filiacion {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .campo-filiacion label {
+      font-size: 0.72rem;
+      color: #94a3b8;
+    }
+    .campo-filiacion input, .campo-filiacion select {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 6px;
+      padding: 8px 10px;
+      color: #ffffff;
+      font-size: 0.85rem;
+      outline: none;
+    }
+    .campo-filiacion input:focus {
+      border-color: #38bdf8;
+    }
+
+    /* Cuadro Estándar D.S. 170 */
+    .cuadro-tecnico {
+      background: #0f172a;
+      border: 1px solid #1e293b;
+      border-radius: 10px;
+      padding: 12px;
+      font-size: 0.76rem;
+      color: #94a3b8;
+      line-height: 1.4;
+    }
+    .cuadro-tecnico strong { color: #f1f5f9; }
+    .cuadro-tecnico span { color: #4ade80; font-weight: 700; }
+
+    /* Lista de Módulos */
     .lista-modulos {
       display: flex;
       flex-direction: column;
       gap: 10px;
     }
-    .tarjeta-modulo {
+    .tarjeta-modulo-acceso {
       background: #0f172a;
       border: 1px solid #1e293b;
       border-radius: 10px;
@@ -88,192 +118,284 @@
       color: inherit;
       transition: border-color 0.2s, transform 0.1s;
     }
-    .tarjeta-modulo:active {
-      transform: scale(0.99);
+    .tarjeta-modulo-acceso:active {
+      transform: scale(0.98);
     }
-    .modulo-titulos strong {
-      display: block;
-      font-size: 0.9rem;
-      color: #ffffff;
+    .tarjeta-modulo-acceso.bloqueado {
+      opacity: 0.45;
+      pointer-events: none;
     }
-    .modulo-titulos span {
-      display: block;
-      font-size: 0.72rem;
+    .info-modulo h3 {
+      font-size: 0.88rem;
+      margin: 0 0 4px 0;
+      color: #e2e8f0;
+    }
+    .info-modulo p {
+      font-size: 0.74rem;
       color: #94a3b8;
-      margin-top: 2px;
+      margin: 0;
     }
-    .badge-simulaciones {
-      background: #0369a1;
-      color: #e0f2fe;
-      font-size: 0.75rem;
+    .badge-contador {
+      background: rgba(56, 189, 248, 0.15);
+      border: 1px solid #0284c7;
+      color: #38bdf8;
+      font-size: 0.72rem;
       font-weight: 700;
       padding: 4px 10px;
       border-radius: 6px;
       white-space: nowrap;
     }
-    .modulo-bloqueado {
-      opacity: 0.6;
-      border-color: #334155;
-      cursor: not-allowed;
-    }
-    .modulo-bloqueado .badge-simulaciones {
-      background: #1e293b;
-      color: #64748b;
-    }
-    .btn-informe-accion {
+
+    /* Botón Final */
+    .btn-salida-final {
       width: 100%;
-      height: 48px;
+      height: 46px;
       border: none;
-      border-radius: 8px;
-      font-weight: 800;
-      font-size: 0.92rem;
+      border-radius: 10px;
+      color: #ffffff;
+      font-size: 0.9rem;
+      font-weight: 700;
       cursor: pointer;
-      text-decoration: none;
       display: flex;
       align-items: center;
       justify-content: center;
+      text-decoration: none;
       box-sizing: border-box;
-      margin-top: 4px;
+      margin-top: 6px;
       transition: opacity 0.2s;
     }
-    .btn-b2c {
-      background: #0284c7;
-      color: #ffffff;
+    .btn-salida-final:hover { opacity: 0.9; }
+
+    /* Consentimiento y Footer */
+    .check-consentimiento {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      font-size: 0.72rem;
+      color: #94a3b8;
+      line-height: 1.35;
+      padding: 0 4px;
     }
-    .btn-b2b {
-      background: #16a34a;
-      color: #ffffff;
+    .check-consentimiento input {
+      margin-top: 2px;
+      cursor: pointer;
+    }
+    .enlace-reset {
+      text-align: center;
+      font-size: 0.74rem;
+      color: #64748b;
+      cursor: pointer;
+      text-decoration: underline;
+      margin-top: 8px;
     }
   </style>
 </head>
 <body>
 
-  <main class="contenedor-menu">
-    <header class="cabecera-menu">
+  <div class="contenedor-menu">
+    <header class="cabecera-logo">
       <h1>SENSOMETRIKA</h1>
       <p>Plataforma de Control Psicomotor y Sensorial</p>
     </header>
 
-    <section class="tarjeta-usuario">
-      <div class="usuario-info">
-        <span style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.5px; color: #38bdf8;" id="txt-tipo-evaluado">👤 DATOS DEL EVALUADO (PARTICULAR)</span>
-        <strong id="menu-lbl-nombre">Felix Osses Martinez</strong>
-        <span id="menu-lbl-rut">RUT: 13.777.234-3</span>
-        <span id="menu-lbl-correo">Correo: felix.osses@gmail.com</span>
+    <!-- FICHA DE EVALUADO -->
+    <section class="caja-filiacion">
+      <div class="caja-filiacion-header">
+        <span style="font-size: 0.78rem; font-weight: 700; color: #38bdf8;" id="txt-rol-titulo">👤 DATOS DEL EVALUADO (PARTICULAR)</span>
+        <span class="badge-plan" id="etiqueta-plan">Plan Particular</span>
       </div>
-      <div class="badge-plan" id="menu-badge-plan">Plan Particular</div>
+
+      <div class="campo-filiacion" id="fila-empresa" style="display: none;">
+        <label>Empresa / Mandante:</label>
+        <input type="text" id="input-empresa" readonly>
+      </div>
+
+      <div class="campo-filiacion">
+        <label id="lbl-nombre">Nombre Completo:</label>
+        <input type="text" id="input-nombre" placeholder="Nombre completo...">
+      </div>
+
+      <div class="campo-filiacion">
+        <label id="lbl-rut">RUT:</label>
+        <input type="text" id="input-rut" placeholder="Ej: 12.345.678-9">
+      </div>
+
+      <div class="campo-filiacion" id="fila-correo" style="display: none;">
+        <label>Correo Electrónico:</label>
+        <input type="email" id="input-correo" placeholder="correo@ejemplo.com">
+      </div>
+
+      <div class="campo-filiacion" id="fila-cargo" style="display: none;">
+        <label>Cargo / Función en Faena:</label>
+        <select id="select-cargo">
+          <option value="Conductor de Transporte / Flota">Conductor de Transporte / Flota</option>
+          <option value="Operador Maquinaria Forestal / Cosecha">Operador Maquinaria Forestal / Cosecha</option>
+          <option value="Operador Maquinaria Pesada / Movimiento de Tierra">Operador Maquinaria Pesada</option>
+        </select>
+      </div>
+
+      <div class="check-consentimiento" id="caja-check-terminos" style="display: none;">
+        <input type="checkbox" id="chk-terminos">
+        <label for="chk-terminos">Declaro conocer el protocolo técnico del D.S. N° 170 y autorizo la auditoría de aptitud.</label>
+      </div>
     </section>
 
-    <nav class="lista-modulos">
-      <!-- Módulo 1: Reactímetro -->
-      <a href="reactimetro.html" class="tarjeta-modulo" id="card-mod-react">
-        <div class="modulo-titulos">
-          <strong>Módulo 1: Reactímetro</strong>
-          <span>Tiempo de reacción y frenado simple</span>
+    <!-- RESUMEN TÉCNICO NORMATIVO -->
+    <section class="cuadro-tecnico">
+      <div style="font-weight: 700; color: #38bdf8; margin-bottom: 6px;">🛡️ Estándar Técnico D.S. N° 170 MTT / Faena</div>
+      <div>• <strong>Reactímetro:</strong> <span>≤ 350 ms</span> faena / profesional (<span>≤ 450 ms</span> Particular).</div>
+      <div>• <strong>Palancas:</strong> <span>≤ 3 toques</span> permanencia bimanual en 60 s.</div>
+      <div>• <strong>Punteo:</strong> <span>≥ 80%</span> ritmo y coordinación visomotriz continua.</div>
+    </section>
+
+    <!-- LISTA DE MÓDULOS -->
+    <main class="lista-modulos" id="contenedor-tarjetas-modulos">
+      <!-- Módulo 1 -->
+      <a href="reactimetro.html" class="tarjeta-modulo-acceso" id="link-mod-react">
+        <div class="info-modulo">
+          <h3>Módulo 1: Reactímetro</h3>
+          <p>Tiempo de reacción y frenado simple</p>
         </div>
-        <span class="badge-simulaciones" id="badge-count-react">Simulaciones: 0/3</span>
+        <div class="badge-contador" id="badge-react">Simulaciones: 0/3</div>
       </a>
 
-      <!-- Módulo 2: Palancas -->
-      <a href="palancas.html" class="tarjeta-modulo" id="card-mod-pal">
-        <div class="modulo-titulos">
-          <strong>Módulo 2: Palancas</strong>
-          <span>Coordinación motriz bimanual</span>
+      <!-- Módulo 2 -->
+      <a href="palancas.html" class="tarjeta-modulo-acceso" id="link-mod-pal">
+        <div class="info-modulo">
+          <h3>Módulo 2: Palancas</h3>
+          <p>Coordinación motriz bimanual</p>
         </div>
-        <span class="badge-simulaciones" id="badge-count-pal">Simulaciones: 0/3</span>
+        <div class="badge-contador" id="badge-pal">Simulaciones: 0/3</div>
       </a>
 
-      <!-- Módulo 3: Punteo -->
-      <a href="punteo.html" class="tarjeta-modulo" id="card-mod-punt">
-        <div class="modulo-titulos">
-          <strong>Módulo 3: Punteo</strong>
-          <span>Precisión visomotriz y ritmo sostenido</span>
+      <!-- Módulo 3 -->
+      <a href="punteo.html" class="tarjeta-modulo-acceso" id="link-mod-punt">
+        <div class="info-modulo">
+          <h3>Módulo 3: Punteo</h3>
+          <p>Precisión visomotriz y ritmo sostenido</p>
         </div>
-        <span class="badge-simulaciones" id="badge-count-punt">Simulaciones: 0/3</span>
+        <div class="badge-contador" id="badge-punt">Simulaciones: 0/3</div>
       </a>
 
-      <!-- Módulos Adicionales (Visual / Auditivo) -->
-      <a href="visual.html" class="tarjeta-modulo" id="card-mod-vis" style="display: none;">
-        <div class="modulo-titulos">
-          <strong>Módulo 4: Tamizaje Visual</strong>
-          <span>Agudeza visual y discriminación de color</span>
+      <!-- Módulo 4: Visual (Opcional) -->
+      <a href="visual.html" class="tarjeta-modulo-acceso" id="link-mod-vis" style="display: none;">
+        <div class="info-modulo">
+          <h3>Módulo 4: Screening Visual</h3>
+          <p>Láminas Ishihara y agudeza visual</p>
         </div>
-        <span class="badge-simulaciones" id="badge-count-vis">Simulaciones: 0/2</span>
+        <div class="badge-contador" id="badge-vis">Simulaciones: 0/1</div>
       </a>
 
-      <a href="audicion.html" class="tarjeta-modulo" id="card-mod-aud" style="display: none;">
-        <div class="modulo-titulos">
-          <strong>Módulo 5: Tamizaje Auditivo</strong>
-          <span>Audiometría tonal referencial</span>
+      <!-- Módulo 5: Auditivo (Opcional) -->
+      <a href="audicion.html" class="tarjeta-modulo-acceso" id="link-mod-aud" style="display: none;">
+        <div class="info-modulo">
+          <h3>Módulo 5: Tamizaje Auditivo</h3>
+          <p>Tonos biaurales y audiometría básica</p>
         </div>
-        <span class="badge-simulaciones" id="badge-count-aud">Simulaciones: 0/2</span>
+        <div class="badge-contador" id="badge-aud">Simulaciones: 0/1</div>
       </a>
-    </nav>
+    </main>
 
-    <!-- Botón Adaptativo de Salida hacia el Informe -->
-    <a href="informe.html" id="btn-ir-informe" class="btn-informe-accion btn-b2c">
+    <!-- BOTÓN FINAL ADAPTATIVO -->
+    <a href="informe.html" id="btn-accion-informe" class="btn-salida-final" style="background: #0284c7;">
       📋 Ver Diagnóstico en Pantalla →
     </a>
-  </main>
 
+    <div class="enlace-reset" onclick="cerrarSesionCompleta()">
+      ✕ Cerrar Sesión / Probar Nuevo Usuario
+    </div>
+  </div>
+
+  <script src="credit-manager.js"></script>
   <script>
     document.addEventListener('DOMContentLoaded', () => {
       const sesion = JSON.parse(localStorage.getItem('sensometrika_sesion')) || {};
       const datosUser = JSON.parse(localStorage.getItem('sensometrika_datos_usuario')) || {};
       const planEmpresa = JSON.parse(localStorage.getItem('sensometrika_plan_empresa')) || {};
 
-      // BIFURCACIÓN ESTRICTA: Sólo es empresa si está explícitamente indicado
       const esB2B = (
         sesion.rol === 'empresa' || 
         datosUser.tipo === 'empresa' || 
-        (sesion.planId && String(sesion.planId).toLowerCase().startsWith('b2b'))
+        (sesion.planId && String(sesion.planId).toLowerCase().includes('b2b'))
       );
 
-      // Carga de Identidad
-      const nombre = datosUser.nombre || sesion.nombreEvaluado || 'Felix Osses Martinez';
-      const rut = datosUser.rut || sesion.rutEvaluado || '13.777.234-3';
-      const correo = datosUser.correo || sesion.email || 'felix.osses@gmail.com';
+      const btnFinal = document.getElementById('btn-accion-informe');
 
-      document.getElementById('menu-lbl-nombre').innerText = nombre;
-      document.getElementById('menu-lbl-rut').innerText = `RUT: ${rut}`;
-      document.getElementById('menu-lbl-correo').innerText = `Correo: ${correo}`;
+      if (!esB2B) {
+        // === MODO PARTICULAR (B2C) ===
+        document.getElementById('txt-rol-titulo').innerText = '👤 DATOS DEL EVALUADO (PARTICULAR)';
+        document.getElementById('etiqueta-plan').innerText = 'Plan Particular';
+        document.getElementById('fila-empresa').style.display = 'none';
+        document.getElementById('fila-cargo').style.display = 'none';
+        document.getElementById('caja-check-terminos').style.display = 'none';
 
-      const btnInforme = document.getElementById('btn-ir-informe');
-      if (esB2B) {
-        document.getElementById('txt-tipo-evaluado').innerText = '🏢 TRABAJADOR ASIGNADO (FAENA)';
-        document.getElementById('menu-badge-plan').innerText = 'Plan Empresa';
-        btnInforme.className = 'btn-informe-accion btn-b2b';
-        btnInforme.innerHTML = '📄 Ver y Validar Informe Formal →';
+        const nombre = datosUser.nombre || sesion.nombreEvaluado || 'Felix Osses Martinez';
+        const rut = datosUser.rut || sesion.rutEvaluado || '13.777.234-3';
+        const correo = datosUser.email || sesion.email || 'felix.osses@gmail.com';
+
+        document.getElementById('input-nombre').value = nombre;
+        document.getElementById('input-rut').value = rut;
+        document.getElementById('input-nombre').readOnly = true;
+        document.getElementById('input-rut').readOnly = true;
+
+        if (correo) {
+          document.getElementById('fila-correo').style.display = 'flex';
+          document.getElementById('input-correo').value = correo;
+          document.getElementById('input-correo').readOnly = true;
+        }
+
+        // Configuración botón B2C: Diagnóstico en pantalla (Azul)
+        btnFinal.innerHTML = '📋 Ver Diagnóstico en Pantalla →';
+        btnFinal.style.background = '#0284c7';
       } else {
-        document.getElementById('txt-tipo-evaluado').innerText = '👤 DATOS DEL EVALUADO (PARTICULAR)';
-        document.getElementById('menu-badge-plan').innerText = sesion.nombrePlan || 'Plan Particular';
-        btnInforme.className = 'btn-informe-accion btn-b2c';
-        btnInforme.innerHTML = '📋 Ver Diagnóstico en Pantalla →';
+        // === MODO EMPRESA (B2B) ===
+        document.getElementById('txt-rol-titulo').innerText = '🏢 TRABAJADOR EN EVALUACIÓN (FAENA)';
+        document.getElementById('etiqueta-plan').innerText = 'Estándar Empresa';
+        document.getElementById('etiqueta-plan').style.borderColor = '#38bdf8';
+        document.getElementById('etiqueta-plan').style.color = '#38bdf8';
+        document.getElementById('fila-empresa').style.display = 'flex';
+        document.getElementById('fila-cargo').style.display = 'flex';
+        document.getElementById('caja-check-terminos').style.display = 'flex';
+
+        const empresa = planEmpresa.razonSocial || sesion.razonSocial || 'Socadep';
+        document.getElementById('input-empresa').value = empresa;
+
+        const nombreTrabajador = datosUser.nombre || sesion.nombreEvaluado || '';
+        const rutTrabajador = datosUser.rut || sesion.rutEvaluado || '';
+        document.getElementById('input-nombre').value = nombreTrabajador;
+        document.getElementById('input-rut').value = rutTrabajador;
+
+        btnFinal.innerHTML = '📄 Ver y Validar Informe Formal →';
+        btnFinal.style.background = '#16a34a';
       }
 
-      // Cuota según Plan (Default: 3 para Básico)
-      let cuota = 3;
-      if (sesion.planId === 'part_plus') cuota = 5;
-      if (sesion.planId === 'part_full') cuota = 8;
+      // Sincronizar contadores de simulaciones
+      const cReact = typeof CreditManager !== 'undefined' ? CreditManager.obtenerConteoSimulaciones('reactimetro') : (JSON.parse(localStorage.getItem('sensometrika_historial_reactimetro')) || []).length;
+      const cPal = typeof CreditManager !== 'undefined' ? CreditManager.obtenerConteoSimulaciones('palancas') : (JSON.parse(localStorage.getItem('sensometrika_historial_palancas')) || []).length;
+      const cPunt = typeof CreditManager !== 'undefined' ? CreditManager.obtenerConteoSimulaciones('punteo') : (JSON.parse(localStorage.getItem('sensometrika_historial_punteo')) || []).length;
 
-      // Lectura de Historiales Dinámicos
-      const hReact = JSON.parse(localStorage.getItem('sensometrika_historial_reactimetro')) || [];
-      const hPal = JSON.parse(localStorage.getItem('sensometrika_historial_palancas')) || [];
-      const hPunt = JSON.parse(localStorage.getItem('sensometrika_historial_punteo')) || [];
+      const cuotaB2C = (sesion.planId === 'full' || sesion.planId === 'b2c_full') ? 8 : ((sesion.planId === 'plus' || sesion.planId === 'b2c_plus') ? 5 : 3);
+      const cuota = esB2B ? 1 : cuotaB2C;
 
-      document.getElementById('badge-count-react').innerText = `Simulaciones: ${hReact.length}/${cuota}`;
-      document.getElementById('badge-count-pal').innerText = `Simulaciones: ${hPal.length}/${cuota}`;
-      document.getElementById('badge-count-punt').innerText = `Simulaciones: ${hPunt.length}/${cuota}`;
+      document.getElementById('badge-react').innerText = `Simulaciones: ${Math.min(cReact, cuota)}/${cuota}`;
+      document.getElementById('badge-pal').innerText = `Simulaciones: ${Math.min(cPal, cuota)}/${cuota}`;
+      document.getElementById('badge-punt').innerText = `Simulaciones: ${Math.min(cPunt, cuota)}/${cuota}`;
 
-      // Mostrar módulos visual y auditivo si el plan lo contempla
-      const permitidos = sesion.modulosPermitidos || ['reactimetro', 'palancas', 'punteo'];
-      if (permitidos.includes('visual')) {
-        document.getElementById('card-mod-vis').style.display = 'flex';
-      }
-      if (permitidos.includes('auditivo')) {
-        document.getElementById('card-mod-aud').style.display = 'flex';
+      // Mostrar sensoriales si el plan lo contempla
+      const tieneSensoriales = (sesion.planId && (sesion.planId.includes('full') || sesion.planId.includes('semi')));
+      if (tieneSensoriales) {
+        document.getElementById('link-mod-vis').style.display = 'flex';
+        document.getElementById('link-mod-aud').style.display = 'flex';
       }
     });
+
+    function cerrarSesionCompleta() {
+      if (confirm('¿Deseas reiniciar la sesión para probar con otro usuario?')) {
+        localStorage.clear();
+        sessionStorage.clear();
+        window.location.href = 'checkout.html';
+      }
+    }
   </script>
 </body>
 </html>

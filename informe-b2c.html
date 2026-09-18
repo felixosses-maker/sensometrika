@@ -3,14 +3,15 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Sensometrika | Informe de Desempeño Psicosensométrico</title>
+  <title>Sensometrika | Dashboard Diagnóstico</title>
   <link rel="stylesheet" href="styles.css">
-  
-  <!-- Librerías de soporte para B2B -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
   <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
     body {
       background-color: #0b1120;
       color: #f1f5f9;
@@ -20,624 +21,468 @@
       display: flex;
       justify-content: center;
       min-height: 100vh;
-      box-sizing: border-box;
     }
 
-    /* ==========================================================
-       VISTA 1: B2C (PARTICULARES) - SOLO EN PANTALLA (DARK UI)
-       ========================================================== */
-    .contenedor-b2c {
+    .dashboard-contenedor {
       width: 100%;
       max-width: 480px;
       display: flex;
       flex-direction: column;
-      gap: 14px;
+      gap: 12px;
       margin: auto 0;
     }
-    .cabecera-b2c {
-      text-align: center;
-      margin-bottom: 2px;
-    }
-    .cabecera-b2c h1 {
-      font-size: 1.5rem;
-      font-weight: 900;
-      color: #ffffff;
-      margin: 0;
-      letter-spacing: -0.5px;
-    }
-    .cabecera-b2c span {
-      font-size: 0.78rem;
-      color: #38bdf8;
-      font-weight: 700;
-      letter-spacing: 0.5px;
-    }
-    .alerta-despacho-b2c {
-      background: #042f2e;
-      border: 1px solid #14b8a6;
+
+    /* Respaldo */
+    .banner-respaldo {
+      background: rgba(16, 185, 129, 0.12);
+      border: 1px solid #10b981;
       border-radius: 8px;
-      padding: 10px 12px;
-      font-size: 0.76rem;
-      color: #5eead4;
-      line-height: 1.4;
-    }
-    .tarjeta-resumen-b2c {
-      background: #0f172a;
-      border: 1px solid #1e293b;
-      border-radius: 12px;
-      padding: 16px;
-      box-sizing: border-box;
-    }
-    .badge-semaforo-b2c {
-      padding: 12px;
-      border-radius: 8px;
-      font-weight: 800;
-      font-size: 0.92rem;
-      text-align: center;
-      margin-bottom: 14px;
-      letter-spacing: 0.5px;
-    }
-    .b2c-aprobado { background: rgba(34, 197, 94, 0.15); border: 1.5px solid #22c55e; color: #4ade80; }
-    .b2c-observado { background: rgba(245, 158, 11, 0.15); border: 1.5px solid #f59e0b; color: #fbbf24; }
-    .b2c-reprobado { background: rgba(239, 68, 68, 0.15); border: 1.5px solid #ef4444; color: #f87171; }
-
-    .tabla-metricas-b2c {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 0.82rem;
-    }
-    .tabla-metricas-b2c td {
-      border-bottom: 1px solid #1e293b;
-      padding: 8px 0;
-      color: #cbd5e1;
-      vertical-align: middle;
-    }
-    .tabla-metricas-b2c tr:last-child td {
-      border-bottom: none;
-    }
-    .tabla-metricas-b2c td strong {
-      color: #ffffff;
-      font-size: 0.88rem;
-    }
-    .badge-mini {
-      display: inline-block;
-      font-size: 0.7rem;
-      font-weight: 800;
-      padding: 3px 8px;
-      border-radius: 4px;
-      text-align: center;
-    }
-    .mini-cumple { background: #064e3b; color: #86efac; border: 1px solid #059669; }
-    .mini-obs { background: #78350f; color: #fde68a; border: 1px solid #d97706; }
-    .mini-fallo { background: #7f1d1d; color: #fca5a5; border: 1px solid #dc2626; }
-
-    /* TABLA DE EVOLUCIÓN S1, S2, S3 */
-    .tabla-evolucion {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 0.78rem;
-      margin-top: 6px;
-    }
-    .tabla-evolucion th {
-      color: #94a3b8;
-      border-bottom: 1px solid #334155;
-      padding: 6px 4px;
-      text-align: center;
-      font-weight: 700;
-    }
-    .tabla-evolucion td {
-      border-bottom: 1px solid #1e293b;
-      padding: 8px 4px;
-      vertical-align: middle;
-    }
-
-    .btn-retorno-b2c {
-      width: 100%;
-      height: 44px;
-      background: #0284c7;
-      color: #ffffff;
-      border: none;
-      border-radius: 8px;
-      font-weight: 800;
-      font-size: 0.9rem;
-      cursor: pointer;
-      text-decoration: none;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      box-sizing: border-box;
-    }
-
-    /* ==========================================================
-       VISTA 2: B2B (EMPRESAS) - CERTIFICADO FORMAL DE FAENA
-       ========================================================== */
-    .hoja-informe-b2b {
-      width: 100%;
-      max-width: 480px;
-      background: #ffffff;
-      color: #1e293b;
-      border-radius: 12px;
-      padding: 18px;
-      box-sizing: border-box;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-      margin: auto 0;
-    }
-    .cabecera-logo-b2b {
+      padding: 9px 12px;
+      font-size: 0.74rem;
+      color: #34d399;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      border-bottom: 2px solid #0f172a;
-      padding-bottom: 8px;
-      margin-bottom: 10px;
     }
-    .caja-qr-b2b {
+    .banner-respaldo strong { color: #ffffff; }
+
+    /* Datos Evaluado */
+    .datos-evaluado {
       display: flex;
-      flex-direction: column;
+      justify-content: space-between;
+      font-size: 0.76rem;
+      color: #94a3b8;
+      padding: 0 4px;
+    }
+    .datos-evaluado strong { color: #ffffff; }
+
+    /* Estado de avance */
+    .banner-estado {
+      border-radius: 8px;
+      padding: 10px;
+      text-align: center;
+      font-weight: 800;
+      font-size: 0.85rem;
+      letter-spacing: 0.5px;
+    }
+    .estado-alerta {
+      background: rgba(245, 158, 11, 0.15);
+      border: 1.5px solid #f59e0b;
+      color: #fbbf24;
+    }
+    .estado-optimo {
+      background: rgba(34, 197, 94, 0.15);
+      border: 1.5px solid #22c55e;
+      color: #4ade80;
+    }
+
+    /* Filas de Módulos */
+    .tarjeta-fila {
+      background: #0f172a;
+      border: 1px solid #1e293b;
+      border-radius: 10px;
+      padding: 12px 14px;
+      display: flex;
+      justify-content: space-between;
       align-items: center;
     }
-    #contenedor-qr {
-      width: 68px;
-      height: 68px;
-      padding: 3px;
-      background: #ffffff;
-      border-radius: 6px;
-      border: 1px solid #cbd5e1;
+    .nombre-modulo {
+      font-size: 0.8rem;
+      color: #e2e8f0;
+      font-weight: 600;
+    }
+    .res-modulo {
+      font-size: 0.88rem;
+      color: #ffffff;
+      font-weight: 700;
+      margin-right: 10px;
+    }
+    .badge-estado {
+      font-size: 0.7rem;
+      font-weight: 800;
+      padding: 4px 8px;
+      border-radius: 5px;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+    .st-optimo { background: rgba(34, 197, 94, 0.2); border: 1px solid #22c55e; color: #4ade80; }
+    .st-observado { background: rgba(249, 115, 22, 0.2); border: 1px solid #f97316; color: #fb923c; }
+    .st-pendiente { background: rgba(100, 116, 139, 0.2); border: 1px solid #64748b; color: #94a3b8; }
+
+    /* Curva Gráfica */
+    .caja-grafico {
+      background: #0f172a;
+      border: 1px solid #1e293b;
+      border-radius: 10px;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .caja-grafico-cabecera {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.74rem;
+      font-weight: 700;
+      color: #e2e8f0;
+    }
+    .leyenda {
+      display: flex;
+      gap: 8px;
+      font-size: 0.65rem;
+    }
+    .leyenda span { display: flex; align-items: center; gap: 3px; }
+    .dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; }
+
+    /* Matriz */
+    .caja-matriz {
+      background: #0f172a;
+      border: 1px solid #1e293b;
+      border-radius: 10px;
+      padding: 12px;
+      overflow-x: auto;
+    }
+    .tabla-matriz {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.7rem;
+    }
+    .tabla-matriz th, .tabla-matriz td {
+      padding: 6px 4px;
+      text-align: center;
+      border-bottom: 1px solid #1e293b;
+      color: #94a3b8;
+    }
+    .tabla-matriz td:first-child { text-align: left; color: #e2e8f0; font-weight: 600; white-space: nowrap; }
+    .val-destacado { color: #34d399; font-weight: 700; }
+
+    .btn-volver {
+      background: #0284c7;
+      color: #ffffff;
+      border: none;
+      height: 44px;
+      border-radius: 8px;
+      font-weight: 800;
+      font-size: 0.88rem;
+      cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
-    }
-    #contenedor-qr img, #contenedor-qr canvas {
-      width: 68px !important;
-      height: 68px !important;
-    }
-    .alerta-despacho-b2b {
-      background: #f0fdf4;
-      border: 1px solid #86efac;
-      border-radius: 8px;
-      padding: 8px 10px;
-      font-size: 0.74rem;
-      color: #166534;
-      margin-bottom: 10px;
-      line-height: 1.35;
-    }
-    .grilla-datos-filiacion-b2b {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 6px 10px;
-      font-size: 0.76rem;
-      margin-bottom: 10px;
-      padding-bottom: 8px;
-      border-bottom: 1px solid #e2e8f0;
-    }
-    .grilla-datos-filiacion-b2b span { color: #64748b; display: block; font-size: 0.66rem; }
-    .grilla-datos-filiacion-b2b strong { color: #0f172a; }
-    .caja-dictamen-b2b {
-      border: 1.5px solid #22c55e;
-      background: #f0fdf4;
-      color: #15803d;
-      border-radius: 8px;
-      padding: 8px;
-      text-align: center;
-      font-size: 0.80rem;
-      font-weight: 800;
-      margin-bottom: 10px;
-    }
-    .tabla-normativa-b2b {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 0.74rem;
-      margin-bottom: 12px;
-    }
-    .tabla-normativa-b2b th {
-      background: #f8fafc;
-      color: #475569;
-      border: 1px solid #cbd5e1;
-      padding: 6px 4px;
-      text-align: left;
-    }
-    .tabla-normativa-b2b td {
-      border: 1px solid #cbd5e1;
-      padding: 6px 4px;
-      color: #1e293b;
-      vertical-align: middle;
-    }
-    .caja-firmas-b2b {
-      width: 100%;
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 14px;
-      margin: 12px 0 8px;
-      text-align: center;
-    }
-    .celda-firma { display: flex; flex-direction: column; justify-content: flex-end; align-items: center; }
-    .linea-firma { width: 100%; border-top: 1px solid #0f172a; margin-top: 4px; padding-top: 4px; }
-    .clausula-legal-b2b {
-      font-size: 0.60rem;
-      color: #64748b;
-      line-height: 1.35;
-      border-top: 1px solid #e2e8f0;
-      padding-top: 6px;
-      text-align: justify;
+      text-decoration: none;
+      margin-top: 4px;
     }
   </style>
 </head>
 <body>
 
-  <!-- ==========================================================
-       VISTA 1: B2C (PARTICULARES) - SOLO EN PANTALLA
-       ========================================================== -->
-  <main id="seccion-vista-b2c" class="contenedor-b2c" style="display: none;">
-    <header class="cabecera-b2c">
-      <h1>Sensometrika</h1>
-      <span id="b2c-nombre-plan-badge">DIAGNÓSTICO EN PANTALLA (B2C)</span>
-    </header>
-
-    <div id="b2c-alerta-envio" class="alerta-despacho-b2c">
-      📨 <strong>Copia de Respaldo Remitida:</strong> Tus resultados oficiales fueron enviados a <strong id="b2c-correo-usuario">correo@usuario.cl</strong>
+  <main class="dashboard-contenedor">
+    <!-- Respaldo Superior -->
+    <div class="banner-respaldo">
+      <span>🛡️ Respaldo Oficial: RUT <strong id="rut-evaluado">--</strong></span>
+      <span>Copia enviada al correo</span>
     </div>
 
-    <!-- TARJETA 1: PONDERADOS / PROMEDIOS DE RENDIMIENTO -->
-    <section class="tarjeta-resumen-b2c">
-      <div style="font-size: 0.78rem; color: #94a3b8; margin-bottom: 8px;">
-        Postulante: <strong id="b2c-nombre-usuario" style="color: #fff;">--</strong> • RUT: <strong id="b2c-rut-usuario" style="color: #38bdf8;">--</strong>
-      </div>
+    <!-- Datos Postulante -->
+    <div class="datos-evaluado">
+      <span>Postulante: <strong id="nombre-evaluado">--</strong></span>
+      <span>Licencia: <strong>Clase B / D.S. N° 170</strong></span>
+    </div>
 
-      <!-- Semáforo Municipal -->
-      <div id="b2c-badge-semaforo" class="badge-semaforo-b2c b2c-aprobado">
-        ESTADO: APTO PARA EXAMEN MUNICIPAL
-      </div>
+    <!-- Banner Dinámico de Módulos -->
+    <div class="banner-estado estado-alerta" id="banner-dictamen">
+      EVALUACIÓN EN CURSO (0/3 MÓDULOS RENDIDOS)
+    </div>
 
-      <!-- Marcas Consolidadas (Promedios Oficiales) -->
-      <table class="tabla-metricas-b2c">
-        <tr>
-          <td>1. Reactímetro (Promedio Frenado):</td>
-          <td style="text-align: right;"><strong id="b2c-val-react">-- ms</strong></td>
-          <td style="text-align: right; width: 85px;"><span id="b2c-badge-react" class="badge-mini mini-cumple">CUMPLE</span></td>
-        </tr>
-        <tr>
-          <td>2. Palancas (Promedio Precisión):</td>
-          <td style="text-align: right;"><strong id="b2c-val-pal">-- %</strong></td>
-          <td style="text-align: right;"><span id="b2c-badge-pal" class="badge-mini mini-cumple">CUMPLE</span></td>
-        </tr>
-        <tr>
-          <td>3. Punteo (Promedio Ritmo Lahy):</td>
-          <td style="text-align: right;"><strong id="b2c-val-punt">-- %</strong></td>
-          <td style="text-align: right;"><span id="b2c-badge-punt" class="badge-mini mini-cumple">CUMPLE</span></td>
-        </tr>
+    <!-- 1. Reactímetro -->
+    <div class="tarjeta-fila">
+      <span class="nombre-modulo">1. Reactímetro (Tiempo de Frenado):</span>
+      <div style="display: flex; align-items: center;">
+        <span class="res-modulo" id="val-react">--</span>
+        <span class="badge-estado st-pendiente" id="badge-react">PENDIENTE</span>
+      </div>
+    </div>
+
+    <!-- 2. Palancas -->
+    <div class="tarjeta-fila">
+      <span class="nombre-modulo">2. Palancas (Coordinación Bimanual):</span>
+      <div style="display: flex; align-items: center;">
+        <span class="res-modulo" id="val-pal">--</span>
+        <span class="badge-estado st-pendiente" id="badge-pal">PENDIENTE</span>
+      </div>
+    </div>
+
+    <!-- 3. Punteo -->
+    <div class="tarjeta-fila">
+      <span class="nombre-modulo">3. Punteo (Ritmo y Precisión Lahy):</span>
+      <div style="display: flex; align-items: center;">
+        <span class="res-modulo" id="val-punt">--</span>
+        <span class="badge-estado st-pendiente" id="badge-punt">PENDIENTE</span>
+      </div>
+    </div>
+
+    <!-- Curva Gráfica Dinámica -->
+    <div class="caja-grafico">
+      <div class="caja-grafico-cabecera">
+        <span>📈 Curva de Aprendizaje y Evolución</span>
+        <div class="leyenda">
+          <span><i class="dot" style="background:#38bdf8;"></i> Reactímetro</span>
+          <span><i class="dot" style="background:#4ade80;"></i> Palancas</span>
+          <span><i class="dot" style="background:#f59e0b;"></i> Punteo</span>
+        </div>
+      </div>
+      <svg id="svg-curva-b2c" viewBox="0 0 440 90" style="width: 100%; height: 85px; background: #020617; border-radius: 6px; border: 1px solid #1e293b;"></svg>
+    </div>
+
+    <!-- Matriz de Historial -->
+    <div class="caja-matriz">
+      <table class="tabla-matriz">
+        <thead>
+          <tr>
+            <th>Módulo</th>
+            <th>S1</th>
+            <th>S2</th>
+            <th>S3</th>
+            <th>Diagnóstico Específico</th>
+          </tr>
+        </thead>
+        <tbody id="cuerpo-matriz-b2c">
+          <!-- Inyectado por JS -->
+        </tbody>
       </table>
-    </section>
-
-    <!-- TARJETA 2: EVOLUCIÓN SIMULACIÓN A SIMULACIÓN (S1, S2, S3...) -->
-    <section class="tarjeta-resumen-b2c">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-        <strong style="color: #38bdf8; font-size: 0.85rem;">📈 Curva de Evolución por Simulación</strong>
-        <span style="font-size: 0.7rem; color: #94a3b8;">Desglose de intentos</span>
-      </div>
-      <div style="overflow-x: auto;">
-        <table class="tabla-evolucion">
-          <thead>
-            <tr id="thead-tr-simulaciones">
-              <th style="text-align: left;">Módulo</th>
-              <th>S1</th>
-              <th>S2</th>
-              <th>S3</th>
-              <th style="text-align: right;">Diagnóstico</th>
-            </tr>
-          </thead>
-          <tbody id="tbody-evolucion-simulaciones">
-            <!-- Dinámico por JS -->
-          </tbody>
-        </table>
-      </div>
-    </section>
-
-    <!-- TARJETA 3: CONSEJOS TÉCNICOS MUNICIPALES -->
-    <section class="tarjeta-resumen-b2c" style="font-size: 0.76rem; line-height: 1.45; color: #cbd5e1;">
-      <strong style="color: #38bdf8; display: block; margin-bottom: 6px;">💡 Consejos para Rendir en la Municipalidad:</strong>
-      <ul style="margin: 0; padding-left: 16px;">
-        <li><strong>Frenado:</strong> Apoya firme el talón y mueve solo la punta del pie ante la luz roja para ganar reflejo[cite: 1, 3].</li>
-        <li><strong>Coordinación:</strong> Mantén los codos apoyados para amortiguar el pulso bimanual[cite: 1, 3].</li>
-        <li><strong>Punteo:</strong> Si saltas una perforación, sigue con la siguiente sin detener el ritmo[cite: 1, 3].</li>
-      </ul>
-    </section>
-
-    <a href="menu.html" class="btn-retorno-b2c">
-      ← Volver al Menú Principal
-    </a>
-  </main>
-
-
-  <!-- ==========================================================
-       VISTA 2: B2B (EMPRESAS) - CERTIFICADO FORMAL CON QR
-       ========================================================== -->
-  <main id="seccion-vista-b2b" class="hoja-informe-b2b" style="display: none;">
-    <header class="cabecera-logo-b2b">
-      <div>
-        <h2 style="font-size: 1.15rem; color: #0f172a; margin: 0; font-weight: 900;">SENSOMETRIKA SpA</h2>
-        <span style="font-size: 0.66rem; color: #0284c7; font-weight: 700;">GABINETE SENSOTÉCNICO LABORAL • D.S. N° 170 MTT</span>
-      </div>
-      <div class="caja-qr-b2b">
-        <div id="contenedor-qr"></div>
-        <span style="font-size: 0.55rem; color: #64748b; font-weight: 700; margin-top: 3px;">VERIFICACIÓN</span>
-      </div>
-    </header>
-
-    <div class="alerta-despacho-b2b">
-      📨 <strong>Certificado Oficial Emitido:</strong> Notificado a la supervisión técnica: <span id="b2b-correo-apr">prevencion@socadep.cl</span>[cite: 1, 3]
     </div>
 
-    <section class="grilla-datos-filiacion-b2b">
-      <div><span>Trabajador Evaluado:</span><strong id="b2b-nombre-trabajador">--</strong></div>
-      <div><span>RUT Trabajador:</span><strong id="b2b-rut-trabajador">--</strong></div>
-      <div><span>Folio Verificación:</span><strong id="b2b-folio">--</strong></div>
-      <div><span>Fecha y Hora:</span><strong id="b2b-fecha">--</strong></div>
-      <div style="grid-column: 1 / -1;"><span>Empresa:</span><strong id="b2b-empresa">--</strong></div>
-    </section>
-
-    <div class="caja-dictamen-b2b" id="b2b-caja-dictamen">
-      DICTAMEN: APTO ESTÁNDAR FAENA CRÍTICA (NIVEL ÓPTIMO)
-    </div>
-
-    <table class="tabla-normativa-b2b">
-      <thead>
-        <tr>
-          <th>Módulo Evaluado</th>
-          <th>Estándar (DS 170)</th>
-          <th>Resultado Oficial</th>
-          <th>Evaluación</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td><strong>1. Reactímetro</strong><br><small style="color:#64748b;">Faena: ≤ 400 ms</small></td>
-          <td>≤ 400 / 450 ms</td>
-          <td id="b2b-res-react" style="font-weight: 700;">-- ms</td>
-          <td style="text-align: center;"><span id="b2b-badge-react" class="badge-mini mini-cumple">CUMPLE</span></td>
-        </tr>
-        <tr>
-          <td><strong>2. Palancas</strong><br><small style="color:#64748b;">Coordinación bimanual</small></td>
-          <td>≤ 3 toques en 60 s</td>
-          <td id="b2b-res-pal">-- %</td>
-          <td style="text-align: center;"><span id="b2b-badge-pal" class="badge-mini mini-cumple">CUMPLE</span></td>
-        </tr>
-        <tr>
-          <td><strong>3. Punteo</strong><br><small style="color:#64748b;">Lahy rotatorio</small></td>
-          <td>≥ 80% efectividad</td>
-          <td id="b2b-res-punt">-- %</td>
-          <td style="text-align: center;"><span id="b2b-badge-punt" class="badge-mini mini-cumple">CUMPLE</span></td>
-        </tr>
-      </tbody>
-    </table>
-
-    <section class="caja-firmas-b2b">
-      <div class="celda-firma">
-        <div style="height: 38px; display:flex; align-items:flex-end;">
-          <span style="font-size: 0.62rem; color: #94a3b8; font-style: italic;">Rúbrica registrada en plataforma</span>
-        </div>
-        <div class="linea-firma">
-          <strong id="b2b-pie-nombre-trabajador" style="font-size: 0.72rem; display: block;">--</strong>
-          <span style="font-size: 0.62rem; color: #64748b;">RUT: <span id="b2b-pie-rut-trabajador">--</span></span><br>
-          <span style="font-size: 0.62rem; color: #0284c7; font-weight: 700;">Firma del Trabajador Evaluado</span>
-        </div>
-      </div>
-      <div class="celda-firma">
-        <div style="height: 38px; display:flex; align-items:center;">
-          <span style="font-size: 0.62rem; color: #16a34a; font-weight: 800;">✓ V°B° CONCERNIDO EN PLATAFORMA</span>
-        </div>
-        <div class="linea-firma">
-          <strong style="font-size: 0.72rem; display: block;">Mariela Cárcamo Fernández</strong>
-          <span style="font-size: 0.62rem; color: #64748b;">RUT: 12.222.222-2</span><br>
-          <span style="font-size: 0.62rem; color: #64748b;">Supervisión Técnica / APR Mandante</span>
-        </div>
-      </div>
-    </section>
-
-    <footer class="clausula-legal-b2b">
-      <strong>Cláusula de Responsabilidad Técnica:</strong> Documento electrónico emitido conforme a los requerimientos técnicos de la Ley de Tránsito N° 18.290 y el D.S. N° 170 MTT[cite: 1, 3].
-    </footer>
-
-    <a href="menu.html" class="btn-retorno-b2c" style="margin-top: 10px;">
-      ← Volver al Menú Principal
-    </a>
+    <a href="menu.html" class="btn-volver">← Volver al Menú Principal</a>
   </main>
 
-
-  <!-- ==========================================================
-       CONTROL DE BIFURCACIÓN Y CÁLCULO DE MÉTRICAS DINÁMICAS
-       ========================================================== -->
   <script>
     document.addEventListener('DOMContentLoaded', () => {
       const sesion = JSON.parse(localStorage.getItem('sensometrika_sesion')) || {};
       const datosUser = JSON.parse(localStorage.getItem('sensometrika_datos_usuario')) || {};
-      const planEmpresa = JSON.parse(localStorage.getItem('sensometrika_plan_empresa')) || {};
 
-      // BIFURCACIÓN ESTRICTA: Sólo B2B si es rol corporativo explícito
-      const esB2B = (
-        sesion.rol === 'empresa' || 
-        datosUser.tipo === 'empresa' || 
-        (sesion.planId && String(sesion.planId).toLowerCase().startsWith('b2b'))
-      );
+      // 1. Identidad
+      const nombre = datosUser.nombre || sesion.nombreEvaluado || 'JUAN PEREZ REYES';
+      const rut = datosUser.rut || sesion.rutEvaluado || '12.444.565-7';
+      document.getElementById('nombre-evaluado').innerText = nombre.toUpperCase();
+      document.getElementById('rut-evaluado').innerText = rut;
 
-      // Carga de Historiales de Simulaciones
+      // 2. Lectura estricta sin fallback ficticio
+      const rReact = JSON.parse(localStorage.getItem('sensometrika_reactimetro')) || null;
+      const rPal = JSON.parse(localStorage.getItem('sensometrika_palancas')) || null;
+      const rPunt = JSON.parse(localStorage.getItem('sensometrika_punteo')) || null;
+
       const hReact = JSON.parse(localStorage.getItem('sensometrika_historial_reactimetro')) || [];
       const hPal = JSON.parse(localStorage.getItem('sensometrika_historial_palancas')) || [];
       const hPunt = JSON.parse(localStorage.getItem('sensometrika_historial_punteo')) || [];
 
-      // Resultados unitarios directos (fallback)
-      const rReact = JSON.parse(localStorage.getItem('sensometrika_reactimetro')) || {};
-      const rPal = JSON.parse(localStorage.getItem('sensometrika_palancas')) || {};
-      const rPunt = JSON.parse(localStorage.getItem('sensometrika_punteo')) || {};
+      let modulosCompletados = 0;
 
-      // Función para calcular promedios
-      const calcularPromedio = (arr, clave) => {
-        if (!arr || arr.length === 0) return 0;
-        const suma = arr.reduce((acc, item) => acc + Number(item[clave] || 0), 0);
-        return Math.round(suma / arr.length);
-      };
-
-      // 1. Promedio Reactímetro
-      let avgReact = calcularPromedio(hReact, 'tiempo');
-      if (avgReact === 0 && rReact.tiempo) avgReact = Number(rReact.tiempo);
-
-      // 2. Promedio Palancas (% estricto)
-      let avgPal = calcularPromedio(hPal, 'porcentaje');
-      if (avgPal === 0) {
-        if (rPal.porcentaje !== undefined) avgPal = Number(rPal.porcentaje);
-        else if (rPal.toques !== undefined) avgPal = Math.max(0, 100 - (Number(rPal.toques) * 10));
-      }
-
-      // 3. Promedio Punteo (%)
-      let avgPunt = calcularPromedio(hPunt, 'efectividad');
-      if (avgPunt === 0) {
-        if (rPunt.efectividad !== undefined) avgPunt = Number(rPunt.efectividad);
-        else if (rPunt.aciertos !== undefined) avgPunt = Math.min(100, Math.round((Number(rPunt.aciertos) / 30) * 100));
-      }
-
-      /* ==========================================================
-         CASO 1: B2C (PARTICULARES) - SOLO PANTALLA OSCURA
-         ========================================================== */
-      if (!esB2B) {
-        document.getElementById('seccion-vista-b2c').style.display = 'flex';
-        document.getElementById('seccion-vista-b2b').style.display = 'none';
-
-        if (sesion.nombrePlan) {
-          document.getElementById('b2c-nombre-plan-badge').innerText = sesion.nombrePlan.toUpperCase();
-        }
-
-        document.getElementById('b2c-nombre-usuario').innerText = datosUser.nombre || sesion.nombreEvaluado || 'Felix Osses Martinez';
-        document.getElementById('b2c-rut-usuario').innerText = datosUser.rut || sesion.rutEvaluado || '13.777.234-3';
-        document.getElementById('b2c-correo-usuario').innerText = datosUser.correo || sesion.email || 'felix.osses@gmail.com';
-
-        // Llenar tarjeta superior con promedios consolidados
-        if (avgReact > 0) {
-          document.getElementById('b2c-val-react').innerText = `${avgReact} ms`;
-          const bReact = document.getElementById('b2c-badge-react');
-          if (avgReact <= 400) { bReact.innerText = 'ÓPTIMO'; bReact.className = 'badge-mini mini-cumple'; }
-          else if (avgReact <= 450) { bReact.innerText = 'CUMPLE'; bReact.className = 'badge-mini mini-obs'; }
-          else { bReact.innerText = 'OBSERVADO'; bReact.className = 'badge-mini mini-fallo'; }
-        }
-
-        if (avgPal > 0 || rPal.toques !== undefined) {
-          document.getElementById('b2c-val-pal').innerText = `${avgPal}%`;
-          const bPal = document.getElementById('b2c-badge-pal');
-          if (avgPal >= 70) { bPal.innerText = 'CUMPLE'; bPal.className = 'badge-mini mini-cumple'; }
-          else { bPal.innerText = 'OBSERVADO'; bPal.className = 'badge-mini mini-fallo'; }
-        }
-
-        if (avgPunt > 0 || rPunt.aciertos !== undefined) {
-          document.getElementById('b2c-val-punt').innerText = `${avgPunt}%`;
-          const bPunt = document.getElementById('b2c-badge-punt');
-          if (avgPunt >= 80) { bPunt.innerText = 'CUMPLE'; bPunt.className = 'badge-mini mini-cumple'; }
-          else { bPunt.innerText = 'OBSERVADO'; bPunt.className = 'badge-mini mini-fallo'; }
-        }
-
-        // Semáforo Global
-        const semaforo = document.getElementById('b2c-badge-semaforo');
-        const reactOk = avgReact > 0 && avgReact <= 450;
-        const palOk = avgPal >= 70;
-        const puntOk = (avgPunt === 0 && hPunt.length === 0) || avgPunt >= 80;
-
-        if (reactOk && palOk && puntOk) {
-          semaforo.className = 'badge-semaforo-b2c b2c-aprobado';
-          semaforo.innerText = 'ESTADO: APTO PARA EXAMEN MUNICIPAL';
-        } else if (reactOk && (avgPal < 70 || avgPunt < 80)) {
-          semaforo.className = 'badge-semaforo-b2c b2c-observado';
-          semaforo.innerText = 'ESTADO: OBSERVADO / REQUIERE PRÁCTICA PREVENTIVA';
+      // Reactímetro
+      const reactRendido = (rReact && (rReact.tiempo || rReact.promedio)) || hReact.length > 0;
+      if (reactRendido) {
+        modulosCompletados++;
+        const t = Number(rReact ? (rReact.tiempo || rReact.promedio) : hReact[hReact.length - 1].tiempo);
+        document.getElementById('val-react').innerText = `${t} ms`;
+        const b = document.getElementById('badge-react');
+        if (t <= 400) {
+          b.innerText = 'ÓPTIMO';
+          b.className = 'badge-estado st-optimo';
+        } else if (t <= 450) {
+          b.innerText = 'CUMPLE';
+          b.className = 'badge-estado st-optimo';
         } else {
-          semaforo.className = 'badge-semaforo-b2c b2c-reprobado';
-          semaforo.innerText = 'ESTADO: FUERA DE NORMA / REQUIERE ENTRENAMIENTO';
+          b.innerText = 'OBSERVADO';
+          b.className = 'badge-estado st-observado';
         }
+      } else {
+        document.getElementById('val-react').innerText = '--';
+        document.getElementById('badge-react').innerText = 'PENDIENTE';
+        document.getElementById('badge-react').className = 'badge-estado st-pendiente';
+      }
 
-        // Renderizado Dinámico de la Tabla de Evolución S1, S2, S3...
-        let numCols = 3;
-        if (sesion.planId === 'part_plus') numCols = 5;
-        if (sesion.planId === 'part_full') numCols = 8;
-
-        const theadTr = document.getElementById('thead-tr-simulaciones');
-        let headerHtml = `<th style="text-align: left;">Módulo</th>`;
-        for (let i = 1; i <= numCols; i++) {
-          headerHtml += `<th>S${i}</th>`;
+      // Palancas
+      const palRendido = (rPal && (rPal.porcentaje !== undefined || rPal.efectividad !== undefined)) || hPal.length > 0;
+      if (palRendido) {
+        modulosCompletados++;
+        const pct = Number(rPal ? (rPal.porcentaje ?? rPal.efectividad) : (hPal[hPal.length - 1].porcentaje ?? hPal[hPal.length - 1].efectividad));
+        document.getElementById('val-pal').innerText = `${pct}%`;
+        const b = document.getElementById('badge-pal');
+        if (pct >= 70) {
+          b.innerText = 'ÓPTIMO';
+          b.className = 'badge-estado st-optimo';
+        } else {
+          b.innerText = 'OBSERVADO';
+          b.className = 'badge-estado st-observado';
         }
-        headerHtml += `<th style="text-align: right;">Diagnóstico</th>`;
-        theadTr.innerHTML = headerHtml;
+      } else {
+        document.getElementById('val-pal').innerText = '--';
+        document.getElementById('badge-pal').innerText = 'PENDIENTE';
+        document.getElementById('badge-pal').className = 'badge-estado st-pendiente';
+      }
 
-        const formatearCelda = (item, unidad) => {
-          if (!item) return `<td style="text-align: center; color: #475569;">--</td>`;
-          const val = item.tiempo || item.porcentaje || item.efectividad || item.toques || 0;
-          const ok = item.aprobado !== undefined ? item.aprobado : true;
-          const bg = ok ? 'rgba(34, 197, 94, 0.15)' : 'rgba(239, 68, 68, 0.2)';
-          const col = ok ? '#4ade80' : '#f87171';
-          return `<td style="text-align: center;"><span style="background:${bg}; color:${col}; padding:2px 5px; border-radius:4px; font-weight:700;">${val}${unidad}</span></td>`;
-        };
+      // Punteo
+      const puntRendido = (rPunt && (rPunt.efectividad !== undefined || rPunt.porcentaje !== undefined)) || hPunt.length > 0;
+      if (puntRendido) {
+        modulosCompletados++;
+        const pct = Number(rPunt ? (rPunt.efectividad ?? rPunt.porcentaje) : (hPunt[hPunt.length - 1].efectividad ?? hPunt[hPunt.length - 1].porcentaje));
+        document.getElementById('val-punt').innerText = `${pct}%`;
+        const b = document.getElementById('badge-punt');
+        if (pct >= 80) {
+          b.innerText = 'ÓPTIMO';
+          b.className = 'badge-estado st-optimo';
+        } else {
+          b.innerText = 'OBSERVADO';
+          b.className = 'badge-estado st-observado';
+        }
+      } else {
+        document.getElementById('val-punt').innerText = '--';
+        document.getElementById('badge-punt').innerText = 'PENDIENTE';
+        document.getElementById('badge-punt').className = 'badge-estado st-pendiente';
+      }
 
-        const renderFila = (titulo, historial, unidad, valorFallback) => {
-          let fila = `<tr><td><strong>${titulo}</strong></td>`;
-          for (let i = 0; i < numCols; i++) {
-            let item = historial[i];
-            if (!item && i === 0 && valorFallback > 0) {
-              item = { tiempo: valorFallback, porcentaje: valorFallback, efectividad: valorFallback, aprobado: true };
-            }
-            fila += formatearCelda(item, unidad);
-          }
-          const sinFallas = historial.every(h => h.aprobado !== false);
-          const diag = historial.length === 0 ? '<span style="color:#64748b;">Pendiente</span>' : (sinFallas ? '<span style="color:#4ade80; font-weight:700;">En Norma</span>' : '<span style="color:#f87171; font-weight:700;">Observado</span>');
-          fila += `<td style="text-align: right;">${diag}</td></tr>`;
-          return fila;
-        };
+      // 3. Banner
+      const banner = document.getElementById('banner-dictamen');
+      if (modulosCompletados === 3) {
+        banner.className = 'banner-estado estado-optimo';
+        banner.innerText = 'EVALUACIÓN COMPLETADA (3/3 MÓDULOS RENDIDOS)';
+      } else {
+        banner.className = 'banner-estado estado-alerta';
+        banner.innerText = `EVALUACIÓN EN CURSO (${modulosCompletados}/3 MÓDULOS RENDIDOS)`;
+      }
 
-        const tbody = document.getElementById('tbody-evolucion-simulaciones');
-        tbody.innerHTML = 
-          renderFila('1. Reactímetro', hReact, ' ms', avgReact) +
-          renderFila('2. Palancas', hPal, '%', avgPal) +
-          renderFila('3. Punteo', hPunt, '%', avgPunt);
+      // 4. Matriz
+      renderizarMatrizLimpia(hReact, hPal, hPunt, rReact, rPal, rPunt, reactRendido, palRendido, puntRendido);
 
-      } 
-      /* ==========================================================
-         CASO 2: B2B (EMPRESAS) - CERTIFICADO A4 FORMAL
-         ========================================================== */
-      else {
-        document.getElementById('seccion-vista-b2c').style.display = 'none';
-        document.getElementById('seccion-vista-b2b').style.display = 'block';
+      // 5. SVG
+      renderizarCurvaSVG(hReact, hPal, hPunt, rReact, reactRendido, palRendido, puntRendido);
+    });
 
-        const nombre = datosUser.nombre || sesion.nombreEvaluado || 'Alejandro Perez';
-        const rut = datosUser.rut || sesion.rutEvaluado || '13.334.455-7';
-        const empresa = planEmpresa.razonSocial || sesion.razonSocial || 'Socadep';
-        const correoAPR = (planEmpresa.responsable && planEmpresa.responsable.correo) || sesion.correoInformes || 'felix.osses@gmail.com';
+    function renderizarMatrizLimpia(hReact, hPal, hPunt, rReact, rPal, rPunt, reactRendido, palRendido, puntRendido) {
+      const tbody = document.getElementById('cuerpo-matriz-b2c');
 
-        document.getElementById('b2b-nombre-trabajador').innerText = nombre;
-        document.getElementById('b2b-rut-trabajador').innerText = rut;
-        document.getElementById('b2b-empresa').innerText = empresa;
-        document.getElementById('b2b-correo-apr').innerText = correoAPR;
+      // Reactímetro
+      let s1R = '--', s2R = '--', s3R = '--', diagR = 'Pendiente de rendición', colR = '#64748b';
+      if (reactRendido) {
+        if (hReact.length > 0) {
+          s1R = hReact[0] ? `${hReact[0].tiempo} ms` : '--';
+          s2R = hReact[1] ? `${hReact[1].tiempo} ms` : '--';
+          s3R = hReact[2] ? `${hReact[2].tiempo} ms` : '--';
+        } else if (rReact) {
+          s1R = `${rReact.tiempo || rReact.promedio} ms`;
+        }
+        const valFinal = Number(rReact ? (rReact.tiempo || rReact.promedio) : hReact[hReact.length - 1].tiempo);
+        diagR = valFinal <= 450 ? '✓ En norma' : '⚠️ Latencia alta';
+        colR = valFinal <= 450 ? '#4ade80' : '#fb923c';
+      }
 
-        let folio = sessionStorage.getItem('sensometrika_folio_b2b') || 'SMK-774497';
-        document.getElementById('b2b-folio').innerText = folio;
+      // Palancas
+      let s1P = '--', s2P = '--', s3P = '--', diagP = 'Pendiente de rendición', colP = '#64748b';
+      if (palRendido) {
+        if (hPal.length > 0) {
+          s1P = (hPal[0] && (hPal[0].porcentaje ?? hPal[0].efectividad) !== undefined) ? `${hPal[0].porcentaje ?? hPal[0].efectividad}%` : '--';
+          s2P = (hPal[1] && (hPal[1].porcentaje ?? hPal[1].efectividad) !== undefined) ? `${hPal[1].porcentaje ?? hPal[1].efectividad}%` : '--';
+          s3P = (hPal[2] && (hPal[2].porcentaje ?? hPal[2].efectividad) !== undefined) ? `${hPal[2].porcentaje ?? hPal[2].efectividad}%` : '--';
+        } else if (rPal && (rPal.porcentaje !== undefined || rPal.efectividad !== undefined)) {
+          s1P = `${rPal.porcentaje ?? rPal.efectividad}%`;
+        }
+        const valFinal = Number(rPal ? (rPal.porcentaje ?? rPal.efectividad) : (hPal[hPal.length - 1].porcentaje ?? hPal[hPal.length - 1].efectividad));
+        diagP = valFinal >= 70 ? '✓ En norma' : `⚠️ ${rPal?.toques || 2} toques / error`;
+        colP = valFinal >= 70 ? '#4ade80' : '#fb923c';
+      }
 
-        const ahora = new Date();
-        document.getElementById('b2b-fecha').innerText = ahora.toLocaleDateString('es-CL') + ' ' + ahora.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' });
+      // Punteo
+      let s1U = '--', s2U = '--', s3U = '--', diagU = 'Pendiente de rendición', colU = '#64748b';
+      if (puntRendido) {
+        if (hPunt.length > 0) {
+          s1U = (hPunt[0] && (hPunt[0].efectividad ?? hPunt[0].porcentaje) !== undefined) ? `${hPunt[0].efectividad ?? hPunt[0].porcentaje}%` : '--';
+          s2U = (hPunt[1] && (hPunt[1].efectividad ?? hPunt[1].porcentaje) !== undefined) ? `${hPunt[1].efectividad ?? hPunt[1].porcentaje}%` : '--';
+          s3U = (hPunt[2] && (hPunt[2].efectividad ?? hPunt[2].porcentaje) !== undefined) ? `${hPunt[2].efectividad ?? hPunt[2].porcentaje}%` : '--';
+        } else if (rPunt && (rPunt.efectividad !== undefined || rPunt.porcentaje !== undefined)) {
+          s1U = `${rPunt.efectividad ?? rPunt.porcentaje}%`;
+        }
+        const valFinal = Number(rPunt ? (rPunt.efectividad ?? rPunt.porcentaje) : (hPunt[hPunt.length - 1].efectividad ?? hPunt[hPunt.length - 1].porcentaje));
+        diagU = valFinal >= 80 ? '✓ En norma' : `⚠️ Efectividad (${valFinal}%)`;
+        colU = valFinal >= 80 ? '#4ade80' : '#fb923c';
+      }
 
-        document.getElementById('b2b-res-react').innerText = `${avgReact || 318} ms`;
-        document.getElementById('b2b-res-pal').innerText = `${avgPal || 100}%`;
-        document.getElementById('b2b-res-punt').innerText = `${avgPunt || 100}%`;
+      tbody.innerHTML = `
+        <tr>
+          <td>1. Reactímetro</td>
+          <td>${s1R}</td>
+          <td>${s2R}</td>
+          <td class="${s3R !== '--' ? 'val-destacado' : ''}">${s3R}</td>
+          <td style="color:${colR};">${diagR}</td>
+        </tr>
+        <tr>
+          <td>2. Palancas</td>
+          <td>${s1P}</td>
+          <td>${s2P}</td>
+          <td class="${s3P !== '--' ? 'val-destacado' : ''}">${s3P}</td>
+          <td style="color:${colP};">${diagP}</td>
+        </tr>
+        <tr>
+          <td>3. Punteo</td>
+          <td>${s1U}</td>
+          <td>${s2U}</td>
+          <td class="${s3U !== '--' ? 'val-destacado' : ''}">${s3U}</td>
+          <td style="color:${colU};">${diagU}</td>
+        </tr>
+      `;
+    }
 
-        document.getElementById('b2b-pie-nombre-trabajador').innerText = nombre;
-        document.getElementById('b2b-pie-rut-trabajador').innerText = rut;
+    function renderizarCurvaSVG(hReact, hPal, hPunt, rReact, reactRendido, palRendido, puntRendido) {
+      const svg = document.getElementById('svg-curva-b2c');
+      if (!svg) return;
 
-        // Generación de QR B2B
-        const contenedorQR = document.getElementById('contenedor-qr');
-        if (contenedorQR && typeof QRCode !== 'undefined') {
-          contenedorQR.innerHTML = '';
-          const esLocal = (window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost');
-          const base = esLocal ? 'https://sensometrika.vercel.app' : window.location.origin;
-          new QRCode(contenedorQR, {
-            text: `${base}/validar.html?folio=${folio}`,
-            width: 68,
-            height: 68,
-            colorDark: "#000000",
-            colorLight: "#ffffff",
-            correctLevel: QRCode.CorrectLevel.L
-          });
+      let html = `
+        <line x1="20" y1="20" x2="420" y2="20" stroke="#1e293b" stroke-dasharray="3,3" />
+        <line x1="20" y1="45" x2="420" y2="45" stroke="#1e293b" stroke-dasharray="3,3" />
+        <line x1="20" y1="70" x2="420" y2="70" stroke="#1e293b" stroke-dasharray="3,3" />
+      `;
+
+      if (reactRendido) {
+        if (hReact.length > 1) {
+          let pts = hReact.slice(0, 3).map((item, idx) => ({
+            x: 60 + (idx * 120),
+            y: Math.min(80, Math.max(15, (item.tiempo / 1500) * 80))
+          }));
+          let d = `M ${pts[0].x} ${pts[0].y}`;
+          pts.slice(1).forEach(p => d += ` L ${p.x} ${p.y}`);
+          html += `<path d="${d}" fill="none" stroke="#38bdf8" stroke-width="2.5" />`;
+          pts.forEach(p => html += `<circle cx="${p.x}" cy="${p.y}" r="4" fill="#38bdf8" />`);
+        } else {
+          html += `<circle cx="60" cy="65" r="4" fill="#38bdf8" />`;
         }
       }
-    });
+
+      if (palRendido && hPal.length > 0) {
+        let pts = hPal.slice(0, 3).map((item, idx) => ({
+          x: 60 + (idx * 120),
+          y: 85 - (((item.porcentaje ?? item.efectividad) / 100) * 70)
+        }));
+        if (pts.length > 1) {
+          let d = `M ${pts[0].x} ${pts[0].y}`;
+          pts.slice(1).forEach(p => d += ` L ${p.x} ${p.y}`);
+          html += `<path d="${d}" fill="none" stroke="#4ade80" stroke-width="2.5" />`;
+        }
+        pts.forEach(p => html += `<circle cx="${p.x}" cy="${p.y}" r="4" fill="#4ade80" />`);
+      }
+
+      if (puntRendido && hPunt.length > 0) {
+        let pts = hPunt.slice(0, 3).map((item, idx) => ({
+          x: 60 + (idx * 120),
+          y: 85 - (((item.efectividad ?? item.porcentaje) / 100) * 70)
+        }));
+        if (pts.length > 1) {
+          let d = `M ${pts[0].x} ${pts[0].y}`;
+          pts.slice(1).forEach(p => d += ` L ${p.x} ${p.y}`);
+          html += `<path d="${d}" fill="none" stroke="#f59e0b" stroke-width="2.5" />`;
+        }
+        pts.forEach(p => html += `<circle cx="${p.x}" cy="${p.y}" r="4" fill="#f59e0b" />`);
+      }
+
+      svg.innerHTML = html;
+    }
   </script>
 </body>
 </html>
