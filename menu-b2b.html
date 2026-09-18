@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Sensometrika B2B • Portal de Evaluación Laboral</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-dark: #090d16;
+      --card-bg: #111827;
+      --card-border: #1f2937;
+      --text-main: #f3f4f6;
+      --text-muted: #9ca3af;
+      --radius: 12px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
+    body {
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      padding: 20px 14px;
+    }
+    .container {
+      width: 100%;
+      max-width: 480px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .header-b2b { text-align: center; }
+    .header-b2b h1 { font-size: 1.4rem; font-weight: 800; color: #38bdf8; }
+    .header-b2b p { font-size: 0.78rem; color: #94a3b8; }
+    
+    .card-empresa {
+      background: #0f172a;
+      border: 1px solid #334155;
+      border-radius: var(--radius);
+      padding: 14px;
+      font-size: 0.8rem;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+    .card-empresa span { color: #64748b; display: block; font-size: 0.7rem; }
+    .card-empresa strong { color: #38bdf8; }
+
+    .card-trabajador {
+      background: #111827;
+      border: 1.5px solid #0284c7;
+      border-radius: var(--radius);
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .card-trabajador h3 { font-size: 0.88rem; color: #38bdf8; text-transform: uppercase; }
+    .campo-form label { font-size: 0.75rem; color: #cbd5e1; font-weight: 600; display: block; margin-bottom: 4px; }
+    .campo-form input {
+      width: 100%;
+      background: #0b1120;
+      border: 1px solid #334155;
+      color: #fff;
+      padding: 9px 12px;
+      border-radius: 8px;
+      font-size: 0.88rem;
+    }
+    .btn-habilitar {
+      background: #0284c7;
+      color: #fff;
+      border: none;
+      padding: 12px;
+      border-radius: 8px;
+      font-weight: 700;
+      font-size: 0.88rem;
+      cursor: pointer;
+      margin-top: 4px;
+    }
+
+    .lista-modulos { display: flex; flex-direction: column; gap: 10px; }
+    .tarjeta-modulo {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius);
+      padding: 14px;
+      text-decoration: none;
+      color: inherit;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .modulo-bloqueado { opacity: 0.35; pointer-events: none; filter: grayscale(0.9); }
+    .badge-estado {
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 4px 8px;
+      border-radius: 6px;
+      background: rgba(2, 132, 199, 0.15);
+      border: 1px solid #0284c7;
+      color: #38bdf8;
+    }
+    .badge-ok { background: rgba(34, 197, 94, 0.15); border-color: #22c55e; color: #4ade80; }
+
+    .btn-informe {
+      background: #16a34a;
+      color: #fff;
+      padding: 14px;
+      border-radius: 8px;
+      font-weight: 800;
+      font-size: 0.92rem;
+      text-align: center;
+      text-decoration: none;
+      display: block;
+      margin-top: 8px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header class="header-b2b">
+      <h1>SENSOMETRIKA B2B</h1>
+      <p>Gabinete Sensotécnico Laboral • D.S. N° 170</p>
+    </header>
+
+    <!-- Ficha de la Empresa y Supervisor -->
+    <section class="card-empresa">
+      <div>
+        <span>EMPRESA MANDANTE / FAENA:</span>
+        <strong id="b2b-txt-empresa">Cargando...</strong>
+      </div>
+      <div>
+        <span>SUPERVISOR APR:</span>
+        <strong id="b2b-txt-supervisor">--</strong>
+      </div>
+    </section>
+
+    <!-- Registro del Trabajador -->
+    <section class="card-trabajador" id="box-registro-trabajador">
+      <h3>📋 Registro del Trabajador Evaluado</h3>
+      <div class="campo-form">
+        <label>Nombre Completo del Trabajador *</label>
+        <input type="text" id="b2b-trabajador-nombre" placeholder="Ej: Juan Morales Soto">
+      </div>
+      <div class="campo-form">
+        <label>RUT del Trabajador *</label>
+        <input type="text" id="b2b-trabajador-rut" placeholder="Ej: 14.333.222-1">
+      </div>
+      <button class="btn-habilitar" onclick="validarTrabajadorB2B()">
+        ✓ Validar Consentimiento y Habilitar Evaluación
+      </button>
+    </section>
+
+    <!-- Modulos Oficiales B2B (1 Intento Oficial) -->
+    <main class="lista-modulos" id="contenedor-modulos-b2b">
+      <a href="reactimetro.html" class="tarjeta-modulo modulo-bloqueado" id="b2b-mod-reactimetro">
+        <div>
+          <h4 style="font-size: 0.9rem;">Módulo 1: Reactímetro</h4>
+          <p style="font-size: 0.75rem; color: #94a3b8;">Frenado simple (≤ 350 ms faena)</p>
+        </div>
+        <span class="badge-estado" id="badge-b2b-react">0/1</span>
+      </a>
+
+      <a href="palancas.html" class="tarjeta-modulo modulo-bloqueado" id="b2b-mod-palancas">
+        <div>
+          <h4 style="font-size: 0.9rem;">Módulo 2: Palancas</h4>
+          <p style="font-size: 0.75rem; color: #94a3b8;">Coordinación motriz bimanual</p>
+        </div>
+        <span class="badge-estado" id="badge-b2b-pal">0/1</span>
+      </a>
+
+      <a href="punteo.html" class="tarjeta-modulo modulo-bloqueado" id="b2b-mod-punteo">
+        <div>
+          <h4 style="font-size: 0.9rem;">Módulo 3: Punteo</h4>
+          <p style="font-size: 0.75rem; color: #94a3b8;">Ritmo sostenido Lahy</p>
+        </div>
+        <span class="badge-estado" id="badge-b2b-punt">0/1</span>
+      </a>
+    </main>
+
+    <a href="informe-b2b.html" class="btn-informe" id="btn-ver-informe-b2b" style="display: none;">
+      📑 Ver y Emitir Certificado Formal B2B →
+    </a>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const planEmpresa = JSON.parse(localStorage.getItem('sensometrika_plan_empresa')) || {};
+      const datosUser = JSON.parse(localStorage.getItem('sensometrika_datos_usuario')) || {};
+
+      document.getElementById('b2b-txt-empresa').innerText = planEmpresa.razonSocial || 'Empresa Registrada';
+      document.getElementById('b2b-txt-supervisor').innerText = planEmpresa.responsable || 'Supervisión APR';
+
+      if (datosUser.nombre && datosUser.rut && datosUser.tipo === 'trabajador_b2b') {
+        document.getElementById('box-registro-trabajador').style.display = 'none';
+        liberarModulosB2B();
+      }
+      actualizarEstadoExamenesB2B();
+    });
+
+    function validarTrabajadorB2B() {
+      const nom = document.getElementById('b2b-trabajador-nombre').value.trim();
+      const rut = document.getElementById('b2b-trabajador-rut').value.trim();
+
+      if (!nom || !rut) {
+        alert('Ingrese el Nombre Completo y RUT del trabajador.');
+        return;
+      }
+
+      localStorage.setItem('sensometrika_datos_usuario', JSON.stringify({
+        nombre: nom,
+        rut: rut,
+        tipo: 'trabajador_b2b'
+      }));
+
+      document.getElementById('box-registro-trabajador').style.display = 'none';
+      liberarModulosB2B();
+    }
+
+    function liberarModulosB2B() {
+      ['b2b-mod-reactimetro', 'b2b-mod-palancas', 'b2b-mod-punteo'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.classList.remove('modulo-bloqueado');
+      });
+    }
+
+    function actualizarEstadoExamenesB2B() {
+      const r = localStorage.getItem('sensometrika_reactimetro');
+      const p = localStorage.getItem('sensometrika_palancas');
+      const pu = localStorage.getItem('sensometrika_punteo');
+
+      if (r) {
+        const b = document.getElementById('badge-b2b-react');
+        b.innerText = '✓ Evaluado';
+        b.className = 'badge-estado badge-ok';
+      }
+      if (p) {
+        const b = document.getElementById('badge-b2b-pal');
+        b.innerText = '✓ Evaluado';
+        b.className = 'badge-estado badge-ok';
+      }
+      if (pu) {
+        const b = document.getElementById('badge-b2b-punt');
+        b.innerText = '✓ Evaluado';
+        b.className = 'badge-estado badge-ok';
+      }
+
+      if (r && p && pu) {
+        document.getElementById('btn-ver-informe-b2b').style.display = 'block';
+      }
+    }
+  </script>
+</body>
+</html>
