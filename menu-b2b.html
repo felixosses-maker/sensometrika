@@ -19,7 +19,7 @@
     }
     .contenedor-menu-b2b {
       width: 100%;
-      max-width: 460px;
+      max-width: 480px;
       display: flex;
       flex-direction: column;
       gap: 12px;
@@ -51,6 +51,16 @@
       font-weight: 800;
       padding: 2px 8px;
       border-radius: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .tag-empresa.pro {
+      background: #7c3aed;
+      color: #ede9fe;
+    }
+    .tag-empresa.enterprise {
+      background: #059669;
+      color: #ecfdf5;
     }
     .campo-fijo {
       margin-bottom: 8px;
@@ -97,30 +107,61 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
+      transition: all 0.2s ease;
     }
     .tarjeta-modulo.completado {
       border-color: #059669;
       background: #064e3b22;
     }
+    .tarjeta-modulo.bloqueado {
+      opacity: 0.55;
+      background: #090e17;
+      border-style: dashed;
+      border-color: #334155;
+    }
     .info-mod h4 {
       margin: 0;
       font-size: 0.84rem;
       color: #ffffff;
+      display: flex;
+      align-items: center;
+      gap: 6px;
     }
     .info-mod span {
       font-size: 0.7rem;
       color: #94a3b8;
+      display: block;
+      margin-top: 2px;
     }
     .badge-estado {
       font-size: 0.7rem;
       font-weight: 800;
-      padding: 3px 8px;
+      padding: 4px 10px;
       border-radius: 4px;
+      user-select: none;
     }
-    .estado-listo { background: #064e3b; color: #6ee7b7; }
-    .estado-rendir { background: #0284c7; color: #ffffff; cursor: pointer; text-decoration: none; }
+    .estado-listo {
+      background: #064e3b;
+      color: #6ee7b7;
+      border: 1px solid #059669;
+    }
+    .estado-rendir {
+      background: #0284c7;
+      color: #ffffff;
+      cursor: pointer;
+      text-decoration: none;
+      transition: background 0.2s;
+    }
+    .estado-rendir:hover {
+      background: #0369a1;
+    }
+    .estado-bloqueado {
+      background: #334155;
+      color: #94a3b8;
+      cursor: not-allowed;
+    }
     
-    /* RECUADRO DE FIRMA EN EL PORTAL PREVIO */
+    /* RECUADRO DE FIRMA */
     .caja-firma-previa {
       background: #020617;
       border: 1.5px dashed #0284c7;
@@ -196,7 +237,7 @@
     <section class="tarjeta-panel">
       <div class="badge-b2b-header">
         <strong>🏢 EVALUACIÓN OFICIAL FAENA (B2B)</strong>
-        <span class="tag-empresa">PLAN EMPRESA</span>
+        <span class="tag-empresa" id="tag-plan-display">PLAN BÁSICO</span>
       </div>
 
       <div class="campo-fijo">
@@ -236,33 +277,62 @@
       </div>
     </section>
 
-    <!-- MÓDULOS -->
+    <!-- MÓDULOS DE EVALUACIÓN SEGÚN PLAN B2B -->
     <section class="tarjeta-panel">
-      <div class="tarjeta-modulo" id="card-mod-1">
+      <!-- Módulos Psicomotores Base (Todos los planes) -->
+      <div class="tarjeta-modulo" id="card-mod-1" data-min-plan="basico">
         <div class="info-mod">
           <h4>Módulo 1: Reactímetro</h4>
           <span>Tiempo de reacción y frenado simple</span>
         </div>
-        <div><span class="badge-estado estado-rendir" onclick="iniciarModulo('reactimetro.html')">Iniciar (1/1)</span></div>
+        <div id="btn-container-mod-1">
+          <span class="badge-estado estado-rendir" onclick="iniciarModulo('reactimetro.html')">Iniciar (1/1)</span>
+        </div>
       </div>
 
-      <div class="tarjeta-modulo" id="card-mod-2">
+      <div class="tarjeta-modulo" id="card-mod-2" data-min-plan="basico">
         <div class="info-mod">
           <h4>Módulo 2: Palancas</h4>
           <span>Coordinación motriz bimanual</span>
         </div>
-        <div><span class="badge-estado estado-rendir" onclick="iniciarModulo('palancas.html')">Iniciar (1/1)</span></div>
+        <div id="btn-container-mod-2">
+          <span class="badge-estado estado-rendir" onclick="iniciarModulo('palancas.html')">Iniciar (1/1)</span>
+        </div>
       </div>
 
-      <div class="tarjeta-modulo" id="card-mod-3">
+      <div class="tarjeta-modulo" id="card-mod-3" data-min-plan="basico">
         <div class="info-mod">
           <h4>Módulo 3: Punteo</h4>
           <span>Precisión visomotriz y ritmo sostenido</span>
         </div>
-        <div><span class="badge-estado estado-rendir" onclick="iniciarModulo('punteo.html')">Iniciar (1/1)</span></div>
+        <div id="btn-container-mod-3">
+          <span class="badge-estado estado-rendir" onclick="iniciarModulo('punteo.html')">Iniciar (1/1)</span>
+        </div>
       </div>
 
-      <!-- RECTÁNGULO DE FIRMA DEL TRABAJADOR AQUÍ -->
+      <!-- Módulo Visual (Plan Pro o Superior) -->
+      <div class="tarjeta-modulo" id="card-mod-4" data-min-plan="pro">
+        <div class="info-mod">
+          <h4>Módulo 4: Evaluación Visual <span>👁️</span></h4>
+          <span>Agudeza visual, campimetría y colores</span>
+        </div>
+        <div id="btn-container-mod-4">
+          <span class="badge-estado estado-rendir" onclick="iniciarModulo('visual.html')">Iniciar (1/1)</span>
+        </div>
+      </div>
+
+      <!-- Módulo Auditivo (Plan Enterprise) -->
+      <div class="tarjeta-modulo" id="card-mod-5" data-min-plan="enterprise">
+        <div class="info-mod">
+          <h4>Módulo 5: Audiometría Ocupacional <span>🎧</span></h4>
+          <span>Discriminación tonal y frecuencias límite</span>
+        </div>
+        <div id="btn-container-mod-5">
+          <span class="badge-estado estado-rendir" onclick="iniciarModulo('audiometria.html')">Iniciar (1/1)</span>
+        </div>
+      </div>
+
+      <!-- RECTÁNGULO DE FIRMA DEL TRABAJADOR -->
       <div class="caja-firma-previa" id="bloque-firma-portal">
         <p>✍️ FIRMA DIGITAL DEL EVALUADO (DIBUJE CON EL DEDO O MOUSE):</p>
         <canvas id="canvas-firma-menu" width="280" height="90"></canvas>
@@ -276,6 +346,19 @@
   </main>
 
   <script>
+    // Niveles de Plan
+    const PLAN_NIVELES = {
+      'basico': 1,
+      'basic': 1,
+      'starter': 1,
+      'pro': 2,
+      'profesional': 2,
+      'estandar': 2,
+      'enterprise': 3,
+      'full': 3,
+      'total': 3
+    };
+
     let canvas, ctx, dibujando = false, tieneFirma = false;
 
     document.addEventListener('DOMContentLoaded', () => {
@@ -286,6 +369,7 @@
       const planEmpresa = JSON.parse(localStorage.getItem('sensometrika_plan_empresa')) || {};
       const datosUser = JSON.parse(localStorage.getItem('sensometrika_datos_usuario')) || {};
 
+      // Cargar datos institucionales
       if (planEmpresa.razonSocial) document.getElementById('b2b-fijo-empresa').innerText = planEmpresa.razonSocial;
       if (planEmpresa.responsable && planEmpresa.responsable.nombre) {
         document.getElementById('b2b-fijo-supervisor').innerText = planEmpresa.responsable.nombre;
@@ -293,8 +377,68 @@
       if (datosUser.nombre) document.getElementById('b2b-input-nombre').value = datosUser.nombre;
       if (datosUser.rut) document.getElementById('b2b-input-rut').value = datosUser.rut;
 
+      // Evaluar y desbloquear módulos según plan
+      const tipoPlan = (planEmpresa.tipoPlan || planEmpresa.plan || 'basico').toLowerCase().trim();
+      configurarModulosSegunPlan(tipoPlan);
+
+      // Verificar pruebas ya rendidas para este trabajador
+      revisarPruebasCompletadas();
+
       iniciarPadFirmaPortal();
     });
+
+    function configurarModulosSegunPlan(plan) {
+      const nivelActual = PLAN_NIVELES[plan] || 1;
+      const tagDisplay = document.getElementById('tag-plan-display');
+
+      if (nivelActual >= 3) {
+        tagDisplay.innerText = 'PLAN ENTERPRISE';
+        tagDisplay.className = 'tag-empresa enterprise';
+      } else if (nivelActual === 2) {
+        tagDisplay.innerText = 'PLAN PRO SENSORIAL';
+        tagDisplay.className = 'tag-empresa pro';
+      } else {
+        tagDisplay.innerText = 'PLAN BÁSICO MOTOR';
+        tagDisplay.className = 'tag-empresa';
+      }
+
+      // Procesar módulos
+      const modulos = document.querySelectorAll('.tarjeta-modulo');
+      modulos.forEach(mod => {
+        const minPlan = mod.getAttribute('data-min-plan') || 'basico';
+        const nivelRequerido = PLAN_NIVELES[minPlan] || 1;
+        const btnContainer = mod.querySelector('div:last-child');
+
+        if (nivelActual < nivelRequerido) {
+          mod.classList.add('bloqueado');
+          const planRequeridoTexto = nivelRequerido === 2 ? 'Plan Pro' : 'Plan Enterprise';
+          btnContainer.innerHTML = `<span class="badge-estado estado-bloqueado" title="No disponible en su plan">🔒 Requiere ${planRequeridoTexto}</span>`;
+        }
+      });
+    }
+
+    function revisarPruebasCompletadas() {
+      const resultados = JSON.parse(localStorage.getItem('sensometrika_resultados')) || {};
+      
+      const checkModulo = (cardId, keyResultado) => {
+        const card = document.getElementById(cardId);
+        if (!card || card.classList.contains('bloqueado')) return;
+
+        if (resultados[keyResultado] || localStorage.getItem(`sensometrika_${keyResultado}`)) {
+          card.classList.add('completado');
+          const container = card.querySelector('div:last-child');
+          if (container) {
+            container.innerHTML = `<span class="badge-estado estado-listo">✓ Completado</span>`;
+          }
+        }
+      };
+
+      checkModulo('card-mod-1', 'reactimetro');
+      checkModulo('card-mod-2', 'palancas');
+      checkModulo('card-mod-3', 'punteo');
+      checkModulo('card-mod-4', 'visual');
+      checkModulo('card-mod-5', 'audiometria');
+    }
 
     function iniciarPadFirmaPortal() {
       canvas = document.getElementById('canvas-firma-menu');
@@ -305,7 +449,6 @@
       ctx.lineJoin = 'round';
       ctx.strokeStyle = '#0f172a';
 
-      // Si ya existía firma previa guardada, dibujarla
       const firmaPrevia = localStorage.getItem('sensometrika_firma_trabajador');
       if (firmaPrevia) {
         const img = new Image();
