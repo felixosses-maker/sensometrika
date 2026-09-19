@@ -45,7 +45,6 @@
       flex-direction: column;
     }
 
-    /* Cabecera */
     .header-bar {
       display: flex;
       justify-content: space-between;
@@ -82,7 +81,6 @@
       color: #ffffff;
     }
 
-    /* Badges de Estado */
     .badge-wrap {
       display: flex;
       flex-direction: column;
@@ -125,7 +123,6 @@
       color: var(--text-muted);
     }
 
-    /* Lienzo */
     .screen-wrap {
       width: 100%;
       background: #040711;
@@ -150,7 +147,6 @@
       min-height: 1.2rem;
     }
 
-    /* Controles */
     .controls-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -204,7 +200,6 @@
       border-color: var(--accent);
     }
 
-    /* Botones de Acción */
     .btn-action {
       width: 100%;
       padding: 13px;
@@ -253,7 +248,6 @@
       cursor: not-allowed;
     }
 
-    /* Telemetría */
     .stats-bar {
       display: grid;
       grid-template-columns: 1fr 1fr 1fr;
@@ -281,7 +275,6 @@
     .danger-val { color: var(--danger); }
     .success-val { color: var(--success); }
 
-    /* Modal */
     .modal-backdrop {
       display: none;
       position: fixed;
@@ -343,10 +336,10 @@
   </div>
 
   <div class="badge-wrap">
-    <span class="badge-pill" id="badgeSimulation">🟡 Calibración Bimanual (Demo 20s)</span>
+    <span class="badge-pill" id="badgeSimulation">🟡 Calibración Bimanual (Demo 1 - 20s)</span>
     <div class="status-box">
       <span class="status-left" id="statusLeft">🟡 Calibración Técnica</span>
-      <span class="status-right" id="statusRight">Fase de Inducción (20 s)</span>
+      <span class="status-right" id="statusRight">Inducción Previa (20 s)</span>
     </div>
   </div>
 
@@ -354,7 +347,7 @@
     <canvas id="gameCanvas" width="340" height="220"></canvas>
   </div>
 
-  <div class="instruction" id="lblInstruction">Presiona "Iniciar Calibración" para habituarte a los mandos.</div>
+  <div class="instruction" id="lblInstruction">Presiona "Iniciar Calibración" para sincronizar tus manos antes de la Simulación 1.</div>
 
   <div class="controls-grid">
     <div class="ctrl-col">
@@ -403,7 +396,7 @@
         <li><strong>Mano Izquierda:</strong> Control vertical (▲ Arriba / ▼ Abajo).</li>
         <li><strong>Mano Derecha:</strong> Control horizontal (◄ Izquierda / ► Derecha).</li>
       </ul>
-      <p><strong>Pistas Dinámicas:</strong> Cada recorrido cambia automáticamente para evitar memorización visual.</p>
+      <p><strong>Secuencia con Calibración:</strong> Antes de cada simulación oficial dispondrás de una fase Demo de 20 segundos para habituarte al trazado.</p>
       <p><strong>Objetivo:</strong> Lleva el cursor hasta la meta (<strong>FIN</strong>). Cada contacto con las paredes enciende el camino en rojo y penaliza tu efectividad.</p>
     </div>
     <button class="modal-close-btn" id="btnCloseHelp">Entendido</button>
@@ -411,7 +404,6 @@
 </div>
 
 <script>
-  // CLAVES COMPARTIDAS CON MENU.HTML E INFORME.HTML
   const STORAGE_RESULT_KEY = 'sensometrika_palancas';
   const STORAGE_HISTORY_KEY = 'sensometrika_historial_palancas';
   const STORAGE_SESSION_KEY = 'sensometrika_sesion';
@@ -420,7 +412,6 @@
   let currentMode = 'demo'; // 'demo' o 'official'
   let simulationIndex = 1;
 
-  // Sincronización multi-formato compatible con menu.html
   function syncMenuSimulationCount(count) {
     localStorage.setItem('simulaciones_palancas', count.toString());
 
@@ -441,12 +432,9 @@
     }
   }
 
-  // Detección estricta del contador real de menu.html
   function getMenuSimulationCount() {
-    // 1. Si no existe sensometrika_palancas, la prueba fue reseteada desde menu.html
     const hasResult = localStorage.getItem(STORAGE_RESULT_KEY);
 
-    // 2. Verificar sesion global
     try {
       const sesionRaw = localStorage.getItem(STORAGE_SESSION_KEY);
       if (sesionRaw) {
@@ -460,13 +448,10 @@
       }
     } catch(e) {}
 
-    // 3. Verificar clave directa
     const direct = parseInt(localStorage.getItem('simulaciones_palancas'), 10);
     if (!isNaN(direct)) return direct;
 
-    // Si no hay resultado ni sesión, está en 0
     if (!hasResult) return 0;
-
     return 0;
   }
 
@@ -601,53 +586,63 @@
   let contactsCount = 0;
   let wasInContact = false;
 
-  // RESTAURACIÓN LIMPIA Y SIN BLOQUEOS HUÉRFANOS
+  // Actualiza textos, badges y botones según el modo y la simulación
+  function updateUIState() {
+    const triggerBtn = document.getElementById('btnTrigger');
+    const badge = document.getElementById('badgeSimulation');
+    const statusLeft = document.getElementById('statusLeft');
+    const statusRight = document.getElementById('statusRight');
+    const instruction = document.getElementById('lblInstruction');
+
+    if (simulationIndex > 3) {
+      badge.innerText = `Simulación Oficial: 3 de 3`;
+      statusLeft.innerText = "🏆 Evaluación Completada";
+      statusRight.innerText = "Límite Alcanzado (3/3)";
+      instruction.innerText = "Has completado las 3 simulaciones oficiales permitidas para este módulo.";
+      triggerBtn.innerText = "Simulaciones Agotadas (3/3)";
+      triggerBtn.disabled = true;
+      return;
+    }
+
+    if (currentMode === 'demo') {
+      badge.innerText = `🟡 Calibración Bimanual (Demo ${simulationIndex} - 20s)`;
+      statusLeft.innerText = `🟡 Calibración Técnica`;
+      statusRight.innerText = `Inducción Previa (20 s)`;
+      instruction.innerText = `Presiona "Iniciar Calibración" para sincronizar tus manos antes de la Simulación ${simulationIndex}.`;
+      triggerBtn.innerText = `Iniciar Calibración (20 s)`;
+      triggerBtn.disabled = false;
+      document.getElementById('valTime').innerText = `20 s`;
+    } else {
+      badge.innerText = `Simulación Oficial: ${simulationIndex} de 3`;
+      statusLeft.innerText = `🟢 Simulación Oficial ${simulationIndex}`;
+      statusRight.innerText = `Evaluación Oficial (60 s)`;
+      instruction.innerText = `Presiona "Iniciar Simulación" para comenzar la Simulación Oficial ${simulationIndex}.`;
+      triggerBtn.innerText = `Iniciar Simulación ${simulationIndex} (60 s)`;
+      triggerBtn.disabled = false;
+      document.getElementById('valTime').innerText = `60 s`;
+    }
+  }
+
   function restoreUI() {
     const completedCount = getMenuSimulationCount();
-    const triggerBtn = document.getElementById('btnTrigger');
-    const nextBtn = document.getElementById('btnNextModule');
 
-    // CASO 1: Menú reseteado a 0 (Limpiar memoria) -> INICIO LIMPIO OBLIGATORIO
     if (completedCount === 0) {
-      // Limpiar residuos antiguos de memoria local
       localStorage.removeItem(STORAGE_HISTORY_KEY);
       localStorage.removeItem(STORAGE_RESULT_KEY);
       localStorage.removeItem('sensometrika_palancas_state');
 
       currentMode = 'demo';
       simulationIndex = 1;
-      document.getElementById('badgeSimulation').innerText = `🟡 Calibración Bimanual (Demo 20s)`;
-      document.getElementById('statusLeft').innerText = `🟡 Calibración Técnica`;
-      document.getElementById('statusRight').innerText = `Fase de Inducción (20 s)`;
-      document.getElementById('lblInstruction').innerText = `Presiona "Iniciar Calibración" para habituarte a los mandos.`;
-      triggerBtn.innerText = `Iniciar Calibración (20 s)`;
-      triggerBtn.disabled = false;
-      nextBtn.disabled = false;
-    }
-    // CASO 2: Límite completado (3/3)
-    else if (completedCount >= 3) {
+    } else if (completedCount >= 3) {
       currentMode = 'official';
       simulationIndex = 4;
-      document.getElementById('badgeSimulation').innerText = `Simulación Oficial: 3 de 3`;
-      document.getElementById('statusLeft').innerText = "🏆 Evaluación Completada";
-      document.getElementById('statusRight').innerText = "Límite Alcanzado (3/3)";
-      document.getElementById('lblInstruction').innerText = "Has completado las 3 simulaciones oficiales permitidas para este módulo.";
-      triggerBtn.innerText = "Simulaciones Agotadas (3/3)";
-      triggerBtn.disabled = true;
-      nextBtn.disabled = false;
-    }
-    // CASO 3: En progreso (1/3 o 2/3)
-    else {
-      currentMode = 'official';
+    } else {
+      // Si ya rindió por ejemplo S1, le toca el Demo de S2
+      currentMode = 'demo';
       simulationIndex = completedCount + 1;
-      document.getElementById('badgeSimulation').innerText = `Simulación Oficial: ${simulationIndex} de 3`;
-      document.getElementById('statusLeft').innerText = `🟢 Simulación ${simulationIndex}`;
-      document.getElementById('statusRight').innerText = "Evaluación Oficial (60 s)";
-      document.getElementById('lblInstruction').innerText = `Presiona Iniciar para realizar la Simulación ${simulationIndex}.`;
-      triggerBtn.innerText = `Iniciar Simulación ${simulationIndex} (60 s)`;
-      triggerBtn.disabled = false;
-      nextBtn.disabled = false;
     }
+
+    updateUIState();
   }
 
   function initView() {
@@ -684,11 +679,11 @@
     document.getElementById('btnNextModule').disabled = true;
 
     if (currentMode === 'demo') {
-      document.getElementById('lblInstruction').innerText = "Fase Demo: Conduce hasta el punto FIN antes de agotar el tiempo.";
-      document.getElementById('statusLeft').innerText = "🟡 Modo Calibración";
+      document.getElementById('lblInstruction').innerText = `Demo ${simulationIndex}: Habitúate al circuito antes de la prueba oficial.`;
+      document.getElementById('statusLeft').innerText = `🟡 Calibración Demo ${simulationIndex}`;
       document.getElementById('statusRight').innerText = "En curso...";
     } else {
-      document.getElementById('lblInstruction').innerText = `Simulación ${simulationIndex}: Mantén la esfera dentro del carril hasta el punto FIN.`;
+      document.getElementById('lblInstruction').innerText = `Simulación ${simulationIndex}: Mantén la esfera dentro del carril hasta FIN.`;
       document.getElementById('statusLeft').innerText = `🟢 Simulación ${simulationIndex}`;
       document.getElementById('statusRight').innerText = "En curso...";
     }
@@ -712,45 +707,38 @@
     const timeSpent = maxTime - timeLeft;
     const accuracy = totalFrames > 0 ? Math.max(0, Math.round(((totalFrames - contactFrames) / totalFrames) * 100)) : 100;
 
+    // FLUJO: De Demo -> pasa a Oficial de la misma simulación
     if (currentMode === 'demo') {
-      document.getElementById('statusLeft').innerText = "🟢 Calibración Lista";
-      document.getElementById('statusRight').innerText = "Completada";
-      document.getElementById('lblInstruction').innerText = reachedGoal 
-        ? "¡Meta alcanzada en Calibración! Pista lista para la prueba oficial."
-        : "Tiempo de Calibración finalizado. Procede a las pruebas oficiales.";
-      
       currentMode = 'official';
-      triggerBtn.disabled = false;
-      triggerBtn.innerText = "Iniciar Prueba Oficial (60 s)";
+      updateUIState();
+      
+      document.getElementById('lblInstruction').innerText = reachedGoal 
+        ? `¡Calibración completada! Circuito listo para la Simulación Oficial ${simulationIndex}.`
+        : `Calibración finalizada. Todo listo para la Simulación Oficial ${simulationIndex}.`;
       
       generateRandomTrack();
       cursor.x = START_POINT.x;
       cursor.y = START_POINT.y;
-    } else {
+    } 
+    // FLUJO: De Oficial -> se registra y pasa al Demo de la siguiente
+    else {
       recordAttemptData(contactsCount, timeSpent, accuracy);
 
       if (simulationIndex < 3) {
         simulationIndex++;
-        document.getElementById('badgeSimulation').innerText = `Simulación Oficial: ${simulationIndex} de 3`;
-        document.getElementById('statusLeft').innerText = `🟡 Listo para Simulación ${simulationIndex}`;
-        document.getElementById('statusRight').innerText = "Evaluación Oficial (60 s)";
+        currentMode = 'demo'; // Vuelve a modo demo para la nueva simulación
+        updateUIState();
+
         document.getElementById('lblInstruction').innerText = reachedGoal 
-          ? `¡Meta alcanzada! Simulación ${simulationIndex - 1} guardada. Pista lista para la siguiente.`
-          : `Tiempo concluido. Simulación ${simulationIndex - 1} guardada.`;
-        
-        triggerBtn.disabled = false;
-        triggerBtn.innerText = `Iniciar Simulación ${simulationIndex} (60 s)`;
+          ? `¡Meta alcanzada! Simulación ${simulationIndex - 1} registrada. Inicia la Calibración para la Simulación ${simulationIndex}.`
+          : `Simulación ${simulationIndex - 1} registrada. Inicia la Calibración para la Simulación ${simulationIndex}.`;
 
         generateRandomTrack();
         cursor.x = START_POINT.x;
         cursor.y = START_POINT.y;
       } else {
         simulationIndex = 4;
-        document.getElementById('statusLeft').innerText = "🏆 Evaluación Completada";
-        document.getElementById('statusRight').innerText = "Límite Alcanzado (3/3)";
-        document.getElementById('lblInstruction').innerText = "Has completado las 3 simulaciones oficiales. Datos registrados en tu informe.";
-        triggerBtn.innerText = "Simulaciones Agotadas (3/3)";
-        triggerBtn.disabled = true;
+        updateUIState();
       }
     }
 
