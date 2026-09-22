@@ -37,10 +37,23 @@ module.exports = async function handler(req, res) {
   };
 
   try {
-    // ACCIÓN 1: GENERAR LINK
+    // -------------------------------------------------------------
+    // ACCIÓN 1: GENERAR LINK DE ACCESO (DEMO 6 MIN, B2C, B2B)
+    // -------------------------------------------------------------
     if (action === 'create') {
       const generatedToken = crypto.randomUUID();
-      const minutes = type === 'demo' ? (duration_minutes || 10) : (duration_minutes || 2880);
+      const tipoToken = type || 'demo';
+      
+      // DEMO FIJADO EN 6 MINUTOS POR DEFECTO
+      let minutes = 6;
+      if (tipoToken === 'b2c') {
+        minutes = duration_minutes || 2880; // 48 horas
+      } else if (tipoToken === 'b2b') {
+        minutes = duration_minutes || 4320; // 72 horas
+      } else if (duration_minutes && Number(duration_minutes) > 0) {
+        minutes = Number(duration_minutes);
+      }
+
       const expiresAt = new Date(Date.now() + minutes * 60 * 1000).toISOString();
 
       const response = await fetch(`${SUPABASE_URL}/rest/v1/access_tokens`, {
@@ -51,7 +64,7 @@ module.exports = async function handler(req, res) {
         },
         body: JSON.stringify({
           token: generatedToken,
-          type: type || 'b2c',
+          type: tipoToken,
           email: email || null,
           metadata: metadata || {},
           expires_at: expiresAt
@@ -64,20 +77,24 @@ module.exports = async function handler(req, res) {
         throw new Error(data.message || 'Error al insertar token en Supabase');
       }
 
-      const baseUrl = process.env.FRONTEND_URL || 'https://sensometrika.vercel.app';
-      const path = type === 'demo' ? '/demo.html' : '/evaluacion.html';
-      const link = `${baseUrl}${path}?token=${generatedToken}`;
+      const rawUrl = process.env.FRONTEND_URL || 'https://sensometrika.vercel.app';
+      const cleanDomain = rawUrl.replace(/\/$/, '');
+      const path = tipoToken === 'demo' ? '/demo.html' : '/demo.html';
+      const link = `${cleanDomain}${path}?token=${generatedToken}`;
 
       return res.status(200).json({
         success: true,
         link,
         token: generatedToken,
-        type: type || 'b2c',
+        type: tipoToken,
+        duration_minutes: minutes,
         expires_at: expiresAt
       });
     }
 
-    // ACCIÓN 2: VALIDAR Y CONSUMIR TOKEN
+    // -------------------------------------------------------------
+    // ACCIÓN 2: VALIDAR Y CONSUMIR TOKEN ATÓMICAMENTE
+    // -------------------------------------------------------------
     if (action === 'validate') {
       if (!token) {
         return res.status(400).json({ success: false, error: 'Token requerido' });
