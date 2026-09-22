@@ -169,7 +169,7 @@
       width: 100%;
       height: auto;
       background: transparent;
-      cursor: crosshair;
+      cursor: pointer;
     }
 
     .instruccion-panel {
@@ -210,6 +210,28 @@
       background-color: #1e293b;
       color: #475569;
       cursor: not-allowed;
+    }
+
+    /* BOTÓN TÁCTIL ALTERNATIVO INFERIOR */
+    .btn-puntear-accion {
+      width: 100%;
+      background: #1e293b;
+      color: #38bdf8;
+      border: 1px solid #334155;
+      border-radius: 10px;
+      padding: 14px;
+      font-size: 1rem;
+      font-weight: 800;
+      cursor: pointer;
+      touch-action: manipulation;
+      letter-spacing: 0.5px;
+      transition: background-color 0.08s ease, border-color 0.08s ease;
+    }
+
+    .btn-puntear-accion:active {
+      background: #0284c7;
+      color: #ffffff;
+      border-color: #38bdf8;
     }
 
     /* TABLERO DE MÉTRICAS */
@@ -330,15 +352,20 @@
           <path d="M50 10 A40 40 0 0 1 90 50" stroke="#ffffff" stroke-width="4.5" stroke-linecap="round"/>
           <path d="M50 90 A40 40 0 0 1 10 50" stroke="#ffffff" stroke-width="4.5" stroke-linecap="round"/>
         </svg>
-        <canvas id="lienzo-punteo" width="430" height="240"></canvas>
+        <canvas id="lienzo-punteo" width="430" height="250"></canvas>
       </div>
 
       <p class="instruccion-panel" id="txt-instruccion">
-        Presiona "Iniciar Calibración" para sincronizar tus pulsaciones con la diana rítmica.
+        Toca la esfera justo cuando pase dentro de la franja dorada.
       </p>
 
       <button type="button" class="btn-calibrar" id="btn-iniciar">
         Iniciar Calibración Demo (15 s)
+      </button>
+
+      <!-- BOTÓN DE IMPACTO TÁCTIL INFERIOR -->
+      <button type="button" class="btn-puntear-accion" id="btnPuntear">
+        ¡PUNTEAR AQUÍ / ESPACIO!
       </button>
 
       <!-- MÉTRICAS INFERIORES -->
@@ -369,13 +396,14 @@
         <span style="cursor: pointer;" id="modalCloseX">✕</span>
       </div>
       <div class="modal-body">
-        <p>Esta prueba evalúa la <strong>velocidad motriz, precisión visomotora y resistencia a la fatiga</strong>.</p>
+        <p>Esta prueba evalúa la <strong>coordinación visomotriz, sincronización rítmica y precisión de impacto</strong>.</p>
         <ul>
-          <li>Aparecerá un blanco móvil/pulsante en el visor.</li>
-          <li>Pulsa con precisión dentro de cada objetivo antes de que cambie de posición.</li>
-          <li>Los toques fuera de la diana reducen tu porcentaje de efectividad.</li>
+          <li>Las esferas descenderán rítmicamente por los canales.</li>
+          <li>Debes pulsar la pantalla, el botón inferior o la barra espaciadora <strong>justo cuando la esfera cruce la franja dorada</strong>.</li>
+          <li><strong>Verde:</strong> Acierto dentro de la zona objetivo.</li>
+          <li><strong>Rojo:</strong> Pulsación fuera de tiempo o esfera que se escapa sin pulsar.</li>
         </ul>
-        <p><strong>Estructura:</strong> 1 Calibración Demo (15 s) de inducción + 3 Simulaciones Oficiales (30 s c/u).</p>
+        <p><strong>Estructura:</strong> 1 Calibración Demo (15 s) + 3 Simulaciones Oficiales (30 s c/u).</p>
       </div>
       <button type="button" class="modal-close-btn" id="btnModalClose">Entendido</button>
     </div>
@@ -399,13 +427,13 @@
       const btnVolver = document.getElementById('btnBack');
       if (btnVolver) btnVolver.href = urlMenu;
 
-      // 2. Parámetros exactos: 1 Demo + 3 Oficiales
+      // 2. Parámetros exactos: 1 Demo + 3 Simulaciones
       const TOTAL_SIMULACIONES = (sesion.limiteSimulaciones && Number(sesion.limiteSimulaciones) > 0)
         ? Number(sesion.limiteSimulaciones)
         : (esB2B ? 1 : 3);
 
-      const TIEMPO_DEMO = 15;      // 15 segundos para la única demo
-      const TIEMPO_OFICIAL = 30;   // 30 segundos por simulación oficial
+      const TIEMPO_DEMO = 15;
+      const TIEMPO_OFICIAL = 30;
 
       const canvas = document.getElementById('lienzo-punteo');
       const ctx = canvas.getContext('2d');
@@ -416,21 +444,25 @@
       const txtEfectividad = document.getElementById('txt-efectividad');
       const txtInstruccion = document.getElementById('txt-instruccion');
       const btnIniciar = document.getElementById('btn-iniciar');
+      const btnPuntear = document.getElementById('btnPuntear');
 
       let fase = 'DEMO'; // 'DEMO', 'OFICIAL', 'BLOQUEADO'
       let activo = false;
       let relojInterval = null;
       let animFrame = null;
-      let objetivoTimer = null;
+      let generadorInterval = null;
 
       let tiempoRestante = TIEMPO_DEMO;
       let aciertos = 0;
       let fallos = 0;
-      let totalIntentos = 0;
       let simulacionOficialActual = 1;
 
-      // Objetivo
-      let target = { x: 215, y: 120, r: 24, visible: true, activo: false };
+      // Configuración de carriles y zona dorada
+      const CARRILES = [85, 170, 255, 345];
+      const ZONA_DORADA = { y: 175, alto: 38 }; // Rectángulo de captura
+      const RADIO_BOLA = 13;
+      let bolas = [];
+      let velocidadCaida = 2.4;
 
       // Recuperar simulaciones previas
       const simPrevias = parseInt(localStorage.getItem('simulaciones_punteo')) || 0;
@@ -448,16 +480,17 @@
       function prepararDemo() {
         fase = 'DEMO';
         tiempoRestante = TIEMPO_DEMO;
+        velocidadCaida = 2.2;
         aciertos = 0;
         fallos = 0;
-        totalIntentos = 0;
+        bolas = [];
 
         badgeModo.innerText = '🟡 Calibración Demo (1 Sesión)';
         badgeModo.className = 'badge-fase';
         txtTiempo.innerText = `${TIEMPO_DEMO} s`;
         txtAciertos.innerText = '0';
         txtEfectividad.innerText = '-- %';
-        txtInstruccion.innerText = 'Presiona "Iniciar Calibración" para sincronizar tus pulsaciones con la diana rítmica.';
+        txtInstruccion.innerText = 'Toca la esfera o presiona el botón cuando pase dentro del rectángulo dorado.';
 
         btnIniciar.style.display = 'block';
         btnIniciar.disabled = false;
@@ -469,16 +502,17 @@
         fase = 'OFICIAL';
         simulacionOficialActual = numSim;
         tiempoRestante = TIEMPO_OFICIAL;
+        velocidadCaida = 2.7 + (numSim * 0.15); // Incremento ligero de dificultad por nivel
         aciertos = 0;
         fallos = 0;
-        totalIntentos = 0;
+        bolas = [];
 
         badgeModo.innerText = `🔴 Simulación Oficial ${numSim} de ${TOTAL_SIMULACIONES} (D.S. N° 170)`;
         badgeModo.className = 'badge-fase oficial';
         txtTiempo.innerText = `${TIEMPO_OFICIAL} s`;
         txtAciertos.innerText = '0';
         txtEfectividad.innerText = '-- %';
-        txtInstruccion.innerText = `Evaluación Oficial ${numSim}: Pulsa dentro de cada círculo con precisión rítmica.`;
+        txtInstruccion.innerText = `Evaluación Oficial ${numSim}: Impacta las esferas dentro del margen dorado con cadencia rítmica.`;
 
         btnIniciar.style.display = 'block';
         btnIniciar.disabled = false;
@@ -505,9 +539,10 @@
 
       function iniciarPrueba() {
         activo = true;
-        reposicionarObjetivo();
-
+        bolas = [];
         clearInterval(relojInterval);
+        clearInterval(generadorInterval);
+
         relojInterval = setInterval(() => {
           if (!activo) return;
           tiempoRestante--;
@@ -515,79 +550,151 @@
           if (tiempoRestante <= 0) concluir();
         }, 1000);
 
-        programarSiguienteObjetivo();
-      }
-
-      function programarSiguienteObjetivo() {
-        if (!activo) return;
-        clearTimeout(objetivoTimer);
-        const cadencia = fase === 'DEMO' ? 1200 : 950;
-        objetivoTimer = setTimeout(() => {
+        // Generación rítmica de esferas descendentes
+        const cadencia = fase === 'DEMO' ? 950 : 750;
+        generadorInterval = setInterval(() => {
           if (!activo) return;
-          reposicionarObjetivo();
-          programarSiguienteObjetivo();
+          crearBola();
         }, cadencia);
+
+        cancelAnimationFrame(animFrame);
+        bucleJuego();
       }
 
-      function reposicionarObjetivo() {
-        const margen = 36;
-        target.r = fase === 'DEMO' ? 24 : 20;
-        target.x = Math.random() * (canvas.width - margen * 2) + margen;
-        target.y = Math.random() * (canvas.height - margen * 2) + margen;
-        target.activo = true;
-        dibujar();
+      function crearBola() {
+        const carrilX = CARRILES[Math.floor(Math.random() * CARRILES.length)];
+        bolas.push({
+          x: carrilX,
+          y: -RADIO_BOLA,
+          estado: 'normal', // 'normal', 'acierto', 'fallo', 'escapada'
+          timerAnim: 0
+        });
       }
 
-      canvas.addEventListener('pointerdown', (e) => {
+      function bucleJuego() {
         if (!activo) return;
-        e.preventDefault();
 
+        // Mover bolas hacia abajo
+        for (let i = bolas.length - 1; i >= 0; i--) {
+          const b = bolas[i];
+          b.y += velocidadCaida;
+
+          // Si pasó la zona dorada sin ser tocada
+          if (b.estado === 'normal' && b.y > (ZONA_DORADA.y + ZONA_DORADA.alto + RADIO_BOLA)) {
+            b.estado = 'fallo';
+            fallos++;
+            actualizarMetricas();
+          }
+
+          // Eliminar bolas fuera del lienzo tras su animación
+          if (b.y > canvas.height + 25) {
+            bolas.splice(i, 1);
+          }
+        }
+
+        dibujar();
+        animFrame = requestAnimationFrame(bucleJuego);
+      }
+
+      // Procesar toque o pulsación
+      function registrarImpacto(clickX, clickY) {
+        if (!activo) return;
+
+        // Buscar si hay una bola dentro de la franja dorada
+        let impactada = null;
+
+        if (clickX !== undefined && clickY !== undefined) {
+          // Si el clic fue directo en el canvas, buscar la bola más cercana
+          for (let b of bolas) {
+            if (b.estado === 'normal') {
+              const d = Math.hypot(clickX - b.x, clickY - b.y);
+              if (d <= RADIO_BOLA + 16) {
+                impactada = b;
+                break;
+              }
+            }
+          }
+        }
+
+        // Si se usó botón de punteo o teclado, buscar la bola más baja dentro o cerca de la zona dorada
+        if (!impactada) {
+          const candidatas = bolas.filter(b => b.estado === 'normal' && b.y >= (ZONA_DORADA.y - 15) && b.y <= (ZONA_DORADA.y + ZONA_DORADA.alto + 15));
+          if (candidatas.length > 0) {
+            candidatas.sort((a, b) => b.y - a.y);
+            impactada = candidatas[0];
+          }
+        }
+
+        if (impactada) {
+          // Evaluar si está dentro del rectángulo dorado
+          const centroY = impactada.y;
+          const dentroZona = centroY >= ZONA_DORADA.y && centroY <= (ZONA_DORADA.y + ZONA_DORADA.alto);
+
+          if (dentroZona) {
+            impactada.estado = 'acierto';
+            aciertos++;
+            if ('vibrate' in navigator) navigator.vibrate(30);
+          } else {
+            impactada.estado = 'fallo';
+            fallos++;
+          }
+        } else {
+          // Pulsación al aire sin bola
+          fallos++;
+        }
+
+        actualizarMetricas();
+      }
+
+      function actualizarMetricas() {
+        txtAciertos.innerText = aciertos;
+        const total = aciertos + fallos;
+        const pct = total > 0 ? Math.round((aciertos / total) * 100) : 0;
+        txtEfectividad.innerText = `${pct} %`;
+      }
+
+      // Eventos de entrada
+      canvas.addEventListener('pointerdown', (e) => {
+        e.preventDefault();
         const rect = canvas.getBoundingClientRect();
         const scaleX = canvas.width / rect.width;
         const scaleY = canvas.height / rect.height;
         const clickX = (e.clientX - rect.left) * scaleX;
         const clickY = (e.clientY - rect.top) * scaleY;
-
-        totalIntentos++;
-        const dist = Math.hypot(clickX - target.x, clickY - target.y);
-
-        if (dist <= target.r && target.activo) {
-          aciertos++;
-          target.activo = false;
-          if ('vibrate' in navigator) navigator.vibrate(25);
-          animarImpacto(clickX, clickY, true);
-        } else {
-          fallos++;
-          animarImpacto(clickX, clickY, false);
-        }
-
-        txtAciertos.innerText = aciertos;
-        const pct = totalIntentos > 0 ? Math.round((aciertos / totalIntentos) * 100) : 0;
-        txtEfectividad.innerText = `${pct} %`;
-
-        reposicionarObjetivo();
-        programarSiguienteObjetivo();
+        registrarImpacto(clickX, clickY);
       });
 
-      function animarImpacto(x, y, exito) {
-        ctx.save();
-        ctx.beginPath();
-        ctx.arc(x, y, 14, 0, Math.PI * 2);
-        ctx.strokeStyle = exito ? '#38bdf8' : '#ef4444';
-        ctx.lineWidth = 2.5;
-        ctx.stroke();
-        ctx.restore();
+      btnPuntear.addEventListener('pointerdown', (e) => {
+        e.preventDefault();
+        registrarImpacto();
+      });
+
+      window.addEventListener('keydown', (e) => {
+        if (e.code === 'Space' || e.key === ' ' || e.code === 'Enter') {
+          e.preventDefault();
+          if (estadoBotonInicioVisible()) {
+            btnIniciar.click();
+          } else {
+            registrarImpacto();
+          }
+        }
+      });
+
+      function estadoBotonInicioVisible() {
+        return btnIniciar && btnIniciar.style.display !== 'none' && !btnIniciar.disabled;
       }
 
       function concluir() {
         activo = false;
         clearInterval(relojInterval);
-        clearTimeout(objetivoTimer);
+        clearInterval(generadorInterval);
+        cancelAnimationFrame(animFrame);
 
-        const efectividadFinal = totalIntentos > 0 ? Math.round((aciertos / totalIntentos) * 100) : 0;
+        const total = aciertos + fallos;
+        const efectividadFinal = total > 0 ? Math.round((aciertos / total) * 100) : 0;
 
         if (fase === 'DEMO') {
-          txtInstruccion.innerText = `Calibración finalizada: ${aciertos} aciertos (${efectividadFinal}% efectividad). Pulsa para iniciar la Simulación Oficial 1.`;
+          txtInstruccion.innerText = `Calibración finalizada: ${aciertos} aciertos (${efectividadFinal}% efectividad). Pulsa para iniciar Simulación Oficial 1.`;
           prepararOficial(1);
         } else {
           guardarResultadoOficial(efectividadFinal);
@@ -611,7 +718,7 @@
           intento: simCount,
           aciertos: aciertos,
           fallos: fallos,
-          intentos: totalIntentos,
+          intentos: aciertos + fallos,
           efectividad: efectividad,
           aprobado: aprobado,
           fecha: new Date().toISOString()
@@ -621,7 +728,7 @@
         localStorage.setItem('sensometrika_punteo', JSON.stringify({
           aciertos: aciertos,
           fallos: fallos,
-          intentos: totalIntentos,
+          intentos: aciertos + fallos,
           efectividad: efectividad,
           aprobado: aprobado,
           simulaciones: Math.min(TOTAL_SIMULACIONES, simCount),
@@ -712,32 +819,64 @@
       function dibujar() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-        // Cuadrícula técnica
-        ctx.strokeStyle = 'rgba(30, 41, 59, 0.4)';
-        ctx.lineWidth = 0.5;
-        for (let x = 0; x < canvas.width; x += 22) {
-          ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke();
-        }
-        for (let y = 0; y < canvas.height; y += 22) {
-          ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke();
-        }
-
-        // Diana / Blanco
-        if (target.activo) {
-          // Anillo exterior
+        // Guías verticales (carriles)
+        ctx.strokeStyle = 'rgba(30, 41, 59, 0.45)';
+        ctx.lineWidth = 1;
+        ctx.setLineDash([4, 4]);
+        for (let x of CARRILES) {
           ctx.beginPath();
-          ctx.arc(target.x, target.y, target.r, 0, Math.PI * 2);
-          ctx.fillStyle = 'rgba(56, 189, 248, 0.15)';
-          ctx.fill();
-          ctx.strokeStyle = '#38bdf8';
-          ctx.lineWidth = 2.5;
+          ctx.moveTo(x, 0);
+          ctx.lineTo(x, canvas.height);
           ctx.stroke();
+        }
+        ctx.setLineDash([]);
 
-          // Centro
+        // RECTÁNGULO DORADO (Zona de captura rítmica)
+        ctx.fillStyle = 'rgba(234, 179, 8, 0.12)';
+        ctx.fillRect(10, ZONA_DORADA.y, canvas.width - 20, ZONA_DORADA.alto);
+
+        ctx.strokeStyle = '#eab308';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(10, ZONA_DORADA.y, canvas.width - 20, ZONA_DORADA.alto);
+
+        // Texto guía sutil de la zona dorada
+        ctx.fillStyle = 'rgba(234, 179, 8, 0.4)';
+        ctx.font = 'bold 9px sans-serif';
+        ctx.fillText('ZONA DE IMPACTO RÍTMICO', 18, ZONA_DORADA.y + 14);
+
+        // Dibujar las esferas que caen
+        for (let b of bolas) {
           ctx.beginPath();
-          ctx.arc(target.x, target.y, target.r * 0.4, 0, Math.PI * 2);
-          ctx.fillStyle = '#00e5ff';
-          ctx.fill();
+          ctx.arc(b.x, b.y, RADIO_BOLA, 0, Math.PI * 2);
+
+          if (b.estado === 'acierto') {
+            // VERDE SI SE LOGRÓ EL IMPACTO CORRECTO
+            ctx.fillStyle = '#10b981';
+            ctx.fill();
+            ctx.strokeStyle = '#34d399';
+            ctx.lineWidth = 2.5;
+            ctx.stroke();
+          } else if (b.estado === 'fallo') {
+            // ROJO SI SE FALLÓ O SE ESCAPÓ
+            ctx.fillStyle = '#ef4444';
+            ctx.fill();
+            ctx.strokeStyle = '#f87171';
+            ctx.lineWidth = 2.5;
+            ctx.stroke();
+          } else {
+            // ESFERA REGULAR (Celeste metálico Sensometrika)
+            ctx.fillStyle = '#38bdf8';
+            ctx.fill();
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            // Brillo superior
+            ctx.beginPath();
+            ctx.arc(b.x - 3, b.y - 3, 3, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+            ctx.fill();
+          }
         }
       }
 

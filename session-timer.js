@@ -1,11 +1,11 @@
 /**
- * Sensometrika - Gestor de Sesión y Temporizador de Acceso
+ * Sensometrika - Gestor de Sesión y Cronómetro de Alto Contraste
  */
 (async function initSessionManager() {
   const urlParams = new URLSearchParams(window.location.search);
   const tokenUrl = urlParams.get('token');
 
-  // 1. Si viene un token en la URL, se valida y consume contra el backend
+  // 1. Si viene un token en la URL, validar contra el backend
   if (tokenUrl) {
     try {
       const res = await fetch('/api/access', {
@@ -29,12 +29,10 @@
         return;
       }
 
-      // Guardar sesión autorizada
       sessionStorage.setItem('smk_token', tokenUrl);
       sessionStorage.setItem('smk_type', data.type || 'demo');
       sessionStorage.setItem('smk_expires_at', data.expires_at);
 
-      // Limpiar el parámetro de la barra de URL para evitar revalidación en recargas (F5)
       window.history.replaceState({}, document.title, window.location.pathname);
     } catch (err) {
       console.error('Error al contactar api/access:', err);
@@ -44,7 +42,7 @@
     }
   }
 
-  // 2. Comprobar existencia de sesión activa
+  // 2. Verificar existencia de sesión activa
   const tokenActivo = sessionStorage.getItem('smk_token');
   const expiraString = sessionStorage.getItem('smk_expires_at');
 
@@ -56,7 +54,7 @@
 
   const expiraTimestamp = new Date(expiraString).getTime();
 
-  // 3. Crear el widget visual del temporizador si no existe en el DOM
+  // 3. Inyectar widget visual prominente en la esquina superior derecha
   let timerWidget = document.getElementById('smk-session-timer-widget');
   if (!timerWidget) {
     timerWidget = document.createElement('div');
@@ -64,32 +62,43 @@
     timerWidget.style.cssText = `
       position: fixed;
       top: 14px;
-      right: 14px;
-      z-index: 99999;
-      background: rgba(15, 23, 42, 0.92);
-      border: 1px solid rgba(56, 189, 248, 0.35);
-      border-radius: 10px;
-      padding: 6px 14px;
-      color: #f8fafc;
-      font-family: system-ui, -apple-system, sans-serif;
-      font-size: 12px;
+      right: 18px;
+      z-index: 999999;
+      background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(7, 13, 24, 0.95));
+      border: 2px solid rgba(56, 189, 248, 0.6);
+      border-radius: 12px;
+      padding: 8px 18px;
+      color: #ffffff;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       display: flex;
       align-items: center;
-      gap: 8px;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.4);
-      backdrop-filter: blur(4px);
+      gap: 12px;
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.6), 0 0 15px rgba(56, 189, 248, 0.25);
+      backdrop-filter: blur(8px);
+      user-select: none;
     `;
     timerWidget.innerHTML = `
-      <span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:#10b981; animation: pulse 1.5s infinite;"></span>
-      <span style="font-weight:600; color:#94a3b8; text-transform:uppercase; letter-spacing:0.5px;">DEMO:</span>
-      <span id="smk-timer-display" style="font-family:monospace; font-weight:700; color:#38bdf8; font-size:13px;">--:--</span>
+      <div style="display:flex; flex-direction:column; align-items:flex-start; line-height: 1.1;">
+        <span style="font-size: 9.5px; font-weight: 800; color: #94a3b8; letter-spacing: 1.2px; text-transform: uppercase;">
+          TIEMPO DEMO
+        </span>
+        <div style="display:flex; align-items:center; gap:6px; margin-top:2px;">
+          <span id="smk-pulse-dot" style="display:inline-block; width:10px; height:10px; border-radius:50%; background:#10b981; box-shadow: 0 0 8px #10b981;"></span>
+          <span style="font-size: 11px; font-weight: 700; color: #38bdf8;">RESTANTE</span>
+        </div>
+      </div>
+      <div style="height: 28px; width: 1px; background: rgba(51, 65, 85, 0.7);"></div>
+      <span id="smk-timer-display" style="font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 22px; font-weight: 900; color: #38bdf8; letter-spacing: 1.5px; text-shadow: 0 0 10px rgba(56, 189, 248, 0.5);">
+        --:--
+      </span>
     `;
     document.body.appendChild(timerWidget);
   }
 
   const display = document.getElementById('smk-timer-display');
+  const dot = document.getElementById('smk-pulse-dot');
 
-  // 4. Intervalo de actualización de cuenta regresiva
+  // 4. Actualización continua
   function actualizarContador() {
     const restanteMs = expiraTimestamp - Date.now();
 
@@ -110,7 +119,15 @@
     if (display) {
       display.textContent = `${textoMin}:${textoSeg}`;
       if (minutos < 2) {
-        display.style.color = '#ef4444'; // Alerta roja cuando queda poco tiempo
+        // Alerta roja de urgencia
+        display.style.color = '#ef4444';
+        display.style.textShadow = '0 0 12px rgba(239, 68, 68, 0.7)';
+        timerWidget.style.borderColor = 'rgba(239, 68, 68, 0.8)';
+        timerWidget.style.boxShadow = '0 8px 25px rgba(0, 0, 0, 0.7), 0 0 18px rgba(239, 68, 68, 0.4)';
+        if (dot) {
+          dot.style.background = '#ef4444';
+          dot.style.boxShadow = '0 0 8px #ef4444';
+        }
       }
     }
   }
