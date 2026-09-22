@@ -1,11 +1,11 @@
 /**
  * Sensometrika - Servicio Serverless de Despacho de Correos (Resend API)
- * Incluye generación automática de tokens de acceso para B2C y Demo
+ * Generación automática de tokens, URL con slash garantizado y codificación limpia
  */
 const crypto = require('crypto');
 
 module.exports = async (req, res) => {
-  // Encabezados CORS
+  // Configuración de encabezados CORS
   res.setHeader('Access-Control-Allow-Credentials', true);
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,POST');
@@ -26,27 +26,45 @@ module.exports = async (req, res) => {
 
   const SUPABASE_URL = process.env.SUPABASE_URL;
   const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  const FRONTEND_URL = (process.env.FRONTEND_URL || 'https://sensometrika.vercel.app').replace(/\/$/, '');
+
+  // Sanitización de dominio asegurando que no termine en slash
+  let rawUrl = process.env.FRONTEND_URL || 'https://sensometrika.vercel.app';
+  let cleanDomain = 'https://sensometrika.vercel.app';
+  const matchUrl = rawUrl.match(/https?:\/\/[^\s\]\)\'\"\/]+/);
+  if (matchUrl) {
+    cleanDomain = matchUrl[0];
+  }
 
   try {
-    let { tipo, email, nombre, enlace, detalles } = req.body || {};
+    let { tipo, email, nombre, enlace, detalles, duracion_minutos } = req.body || {};
 
     if (!email) {
       return res.status(400).json({ error: 'Falta parámetro obligatorio: email.' });
     }
 
-    // 1. Determinar y construir la URL limpia
+    // 1. Determinar duración y tipo de token
+    const tipoToken = (tipo === 'demo' || tipo === 'b2b') ? tipo : 'b2c';
+    let minutosVigencia = 2880; // 48 horas default B2C
+
+    if (tipoToken === 'demo') {
+      minutosVigencia = 10;
+    } else if (tipoToken === 'b2b') {
+      minutosVigencia = 4320; // 72 horas
+    }
+
+    if (duracion_minutos && Number(duracion_minutos) > 0) {
+      minutosVigencia = Number(duracion_minutos);
+    }
+
+    // 2. Construir la URL limpia garantizando el slash "/"
     let enlaceFinal = '';
 
-    // Si ya viene un enlace con token válido y limpio
     if (typeof enlace === 'string' && enlace.includes('?token=')) {
-      enlaceFinal = enlace.trim();
+      const matchCustom = enlace.match(/https?:\/\/[^\s\]\)\'\"]+/);
+      enlaceFinal = matchCustom ? matchCustom[0] : enlace.trim();
     } else {
-      // Generar token en Supabase
       const generatedToken = crypto.randomUUID();
-      const tipoToken = tipo === 'b2b' ? 'b2b' : (tipo === 'demo' ? 'demo' : 'b2c');
-      const minutes = tipoToken === 'demo' ? 10 : (tipoToken === 'b2b' ? 4320 : 2880);
-      const expiresAt = new Date(Date.now() + minutes * 60 * 1000).toISOString();
+      const expiresAt = new Date(Date.now() + minutosVigencia * 60 * 1000).toISOString();
 
       if (SUPABASE_URL && SUPABASE_KEY) {
         try {
@@ -71,7 +89,8 @@ module.exports = async (req, res) => {
         }
       }
 
-      enlaceFinal = `${FRONTEND_URL}/demo.html?token=${generatedToken}`;
+      // SLASH EXPLÍCITO ANTES DE demo.html
+      enlaceFinal = `${cleanDomain}/demo.html?token=${generatedToken}`;
     }
 
     const destinatarioNombre = nombre || (tipo === 'b2b' ? 'Supervisión Técnica' : 'Postulante');
@@ -137,8 +156,8 @@ module.exports = async (req, res) => {
         </html>
       `;
     } else {
-      const nombrePlan = (detalles && detalles.nombrePlan) ? detalles.nombrePlan : 'Pase de Evaluación Psicomotriz';
-      const vigencia = (detalles && detalles.vigencia) ? detalles.vigencia : 'Vigencia activa';
+      const nombrePlan = (detalles && detalles.nombrePlan) ? detalles.nombrePlan : (tipoToken === 'demo' ? 'Pase de Demostración' : 'Pase Psicomotriz (3 Sim)');
+      const vigenciaTexto = (detalles && detalles.vigencia) ? detalles.vigencia : (tipoToken === 'demo' ? '10 minutos' : '48 horas');
 
       asunto = `Tu Enlace de Acceso: Evaluación Psicotécnica — Sensometrika`;
       htmlContent = `
@@ -160,7 +179,7 @@ module.exports = async (req, res) => {
               
               <h2 style="font-size: 18px; margin: 0 0 12px 0; color: #ffffff;">¡Hola, ${destinatarioNombre}!</h2>
               <p style="font-size: 13px; line-height: 1.6; color: #94a3b8; margin: 0 0 20px 0;">
-                Tu acceso para <strong style="color: #ffffff;">${nombrePlan}</strong> ha sido activado exitosamente (${vigencia}). Ya puedes ingresar al simulador para preparar tu examen psicotécnico de licencia de conducir o faena laboral.
+                Tu acceso para <strong style="color: #ffffff;">${nombrePlan}</strong> ha sido activado exitosamente (${vigenciaTexto}). Ya puedes ingresar al simulador para preparar tu examen psicotécnico de licencia de conducir o faena laboral.
               </p>
 
               <div style="background: #131b2e; border: 1px solid #1e293b; border-radius: 12px; padding: 22px; text-align: center; margin-bottom: 24px;">
