@@ -91,6 +91,48 @@
     td { padding: 8px; border-bottom: 1px solid rgba(255, 255, 255, 0.05); color: #cbd5e1; }
     .td-centro { text-align: center; }
 
+    /* Bloque de Interpretación en Palabras */
+    .tarjeta-interpretacion {
+      background: #09101f;
+      border: 1px solid #1e293b;
+      border-left: 4px solid #38bdf8;
+      border-radius: 10px;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .tarjeta-interpretacion h4 {
+      font-size: 0.85rem;
+      font-weight: 800;
+      color: #38bdf8;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .dictamen-global-texto {
+      font-size: 0.82rem;
+      font-weight: 700;
+      padding: 8px 10px;
+      border-radius: 6px;
+      line-height: 1.4;
+    }
+    .dictamen-optimo { background: rgba(34, 197, 94, 0.12); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.3); }
+    .dictamen-alerta { background: rgba(245, 158, 11, 0.12); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); }
+    .dictamen-critico { background: rgba(239, 68, 68, 0.12); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); }
+
+    .analisis-modulos-texto {
+      font-size: 0.76rem;
+      color: #cbd5e1;
+      line-height: 1.5;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      margin-top: 4px;
+    }
+    .analisis-modulos-texto span strong { color: #f8fafc; }
+
+    /* Recomendaciones */
     .tarjeta-consejos {
       background: #0d1527;
       border: 1px solid #1e293b;
@@ -228,6 +270,17 @@
       </table>
     </div>
 
+    <!-- BLOQUE DE INTERPRETACIÓN PERICIAL EN PALABRAS -->
+    <div class="tarjeta-interpretacion" id="bloque-interpretacion-pericial">
+      <h4>🔍 Diagnóstico e Interpretación del Rendimiento</h4>
+      <div id="txt-dictamen-global" class="dictamen-global-texto dictamen-alerta">
+        Evaluando consistencia de las pruebas realizadas...
+      </div>
+      <div class="analisis-modulos-texto" id="txt-desglose-interpretativo">
+        <!-- Generado dinámicamente según promedios -->
+      </div>
+    </div>
+
     <!-- Recomendaciones -->
     <div class="tarjeta-consejos">
       <div style="color: #38bdf8; font-weight: 700; margin-bottom: 4px;">💡 Recomendaciones para la Evaluación Municipal:</div>
@@ -256,7 +309,7 @@
         return;
       }
 
-      // 1. DETECCIÓN INTELIGENTE DE MODO DEMO
+      // 1. DETECCIÓN DE MODO DEMO
       const urlParams = new URLSearchParams(window.location.search);
       const tokenLocal = localStorage.getItem('sensometrika_demo_token');
       const esModoDemo = (
@@ -265,14 +318,13 @@
         sesion.rol === 'demo' ||
         sesion.tipo === 'demo' ||
         (sesion.planId && String(sesion.planId).toLowerCase().includes('demo')) ||
-        (tokenLocal && !user.rut) // Proviene de acceso rápido demo sin formulario
+        (tokenLocal && !user.rut)
       );
 
       const bannerRespaldo = document.getElementById('banner-respaldo-box');
       const btnVolver = document.getElementById('btn-volver-pantalla');
 
       if (esModoDemo) {
-        // VISTA ANONIMIZADA DEMO: Ocultar nombre y RUT real
         bannerRespaldo.className = 'banner-respaldo demo';
         document.getElementById('txt-respaldo-rut').innerHTML = '🧪 <strong>Sesión de Demostración Activa</strong>';
         document.getElementById('txt-respaldo-estado').innerHTML = '<span style="color:#facc15;">Sin Validez Legal</span>';
@@ -280,13 +332,11 @@
         document.getElementById('lbl-nombre-evaluado').innerText = 'USUARIO EN PRUEBA (MODO DEMO)';
         document.getElementById('lbl-licencia-tipo').innerText = 'Ensayo Técnico / Fines Pedagógicos';
 
-        // Redirigir botón de retorno al portal de demo
         if (btnVolver) {
           btnVolver.href = 'demo.html';
           btnVolver.innerText = '← Volver a Pruebas Demo';
         }
       } else {
-        // VISTA PARTICULAR PAGADA (B2C)
         document.getElementById('lbl-nombre-evaluado').innerText = (user.nombre || sesion.nombre || 'PARTICULAR REGISTRADO').toUpperCase();
         document.getElementById('lbl-rut-respaldo').innerText = user.rut || sesion.rut || '11.111.111-1';
         if (btnVolver) {
@@ -295,7 +345,7 @@
         }
       }
 
-      // 2. Configuración de Cuotas según Plan
+      // 2. Configuración de Cuotas
       let totalModulosContratados = 3;
       let maxSimulaciones = 3;
       const planId = String(sesion.planId || '').toLowerCase();
@@ -325,7 +375,6 @@
       const hVis = JSON.parse(localStorage.getItem('sensometrika_historial_visual')) || [];
       const hAud = JSON.parse(localStorage.getItem('sensometrika_historial_auditivo')) || [];
 
-      // Función normalizadora de Palancas
       const normalizarPalancas = (item) => {
         if (!item) return { porcentaje: 0, error: 0 };
         let pct = 0;
@@ -342,21 +391,24 @@
         return { porcentaje: Math.round(pct), error: Number(err) };
       };
 
-      // Contadores de progreso
       let modulosConAlMenosUnIntento = 0;
       let modulosCompletamenteFinalizados = 0;
+
+      let promReactFinal = null;
+      let promPalFinal = null;
+      let promPuntFinal = null;
 
       // --- Módulo 1: Reactímetro ---
       if (hReact.length > 0) {
         modulosConAlMenosUnIntento++;
         if (hReact.length >= maxSimulaciones) modulosCompletamenteFinalizados++;
         const suma = hReact.reduce((acc, c) => acc + (Number(c.tiempo) || 0), 0);
-        const prom = Math.round(suma / hReact.length);
-        document.getElementById('res-val-react').innerText = `${prom} ms`;
+        promReactFinal = Math.round(suma / hReact.length);
+        document.getElementById('res-val-react').innerText = `${promReactFinal} ms`;
         document.getElementById('sub-prom-react').innerText = `Promedio de ${hReact.length} simulación(es)`;
         const badge = document.getElementById('res-badge-react');
-        badge.innerText = prom <= 450 ? 'ÓPTIMO' : 'OBSERVADO';
-        badge.className = `badge-eval ${prom <= 450 ? 'badge-optimo' : 'badge-observado'}`;
+        badge.innerText = promReactFinal <= 450 ? 'ÓPTIMO' : 'OBSERVADO';
+        badge.className = `badge-eval ${promReactFinal <= 450 ? 'badge-optimo' : 'badge-observado'}`;
       }
 
       // --- Módulo 2: Palancas ---
@@ -370,14 +422,14 @@
           sumaPct += norm.porcentaje;
           sumaErr += norm.error;
         });
-        const promPct = Math.round(sumaPct / hPal.length);
+        promPalFinal = Math.round(sumaPct / hPal.length);
         const promErr = (sumaErr / hPal.length).toFixed(1);
 
-        document.getElementById('res-val-pal').innerText = `${promPct}% (${promErr}s error)`;
+        document.getElementById('res-val-pal').innerText = `${promPalFinal}% (${promErr}s error)`;
         document.getElementById('sub-prom-pal').innerText = `Promedio de ${hPal.length} simulación(es)`;
         const badge = document.getElementById('res-badge-pal');
-        badge.innerText = promPct >= 75 ? 'ÓPTIMO' : 'OBSERVADO';
-        badge.className = `badge-eval ${promPct >= 75 ? 'badge-optimo' : 'badge-observado'}`;
+        badge.innerText = promPalFinal >= 75 ? 'ÓPTIMO' : 'OBSERVADO';
+        badge.className = `badge-eval ${promPalFinal >= 75 ? 'badge-optimo' : 'badge-observado'}`;
       }
 
       // --- Módulo 3: Punteo ---
@@ -385,49 +437,17 @@
         modulosConAlMenosUnIntento++;
         if (hPunt.length >= maxSimulaciones) modulosCompletamenteFinalizados++;
         const suma = hPunt.reduce((acc, c) => acc + (Number(c.efectividad !== undefined ? c.efectividad : c.porcentaje) || 0), 0);
-        const prom = Math.round(suma / hPunt.length);
-        document.getElementById('res-val-punt').innerText = `${prom}%`;
+        promPuntFinal = Math.round(suma / hPunt.length);
+        document.getElementById('res-val-punt').innerText = `${promPuntFinal}%`;
         document.getElementById('sub-prom-punt').innerText = `Promedio de ${hPunt.length} simulación(es)`;
         const badge = document.getElementById('res-badge-punt');
-        badge.innerText = prom >= 80 ? 'ÓPTIMO' : 'OBSERVADO';
-        badge.className = `badge-eval ${prom >= 80 ? 'badge-optimo' : 'badge-observado'}`;
+        badge.innerText = promPuntFinal >= 80 ? 'ÓPTIMO' : 'OBSERVADO';
+        badge.className = `badge-eval ${promPuntFinal >= 80 ? 'badge-optimo' : 'badge-observado'}`;
       }
 
-      // --- Módulo 4: Visual ---
-      if (totalModulosContratados >= 4 && hVis.length > 0) {
-        modulosConAlMenosUnIntento++;
-        if (hVis.length >= maxSimulaciones) modulosCompletamenteFinalizados++;
-        const suma = hVis.reduce((acc, c) => acc + (Number(c.porcentaje || c.efectividad) || 100), 0);
-        const prom = Math.round(suma / hVis.length);
-        document.getElementById('res-val-vis').innerText = `${prom}%`;
-        document.getElementById('sub-prom-vis').innerText = `Promedio de ${hVis.length} simulación(es)`;
-        const badge = document.getElementById('res-badge-vis');
-        badge.innerText = prom >= 80 ? 'ÓPTIMO' : 'OBSERVADO';
-        badge.className = `badge-eval ${prom >= 80 ? 'badge-optimo' : 'badge-observado'}`;
-      }
-
-      // --- Módulo 5: Auditivo ---
-      if (totalModulosContratados === 5 && hAud.length > 0) {
-        modulosConAlMenosUnIntento++;
-        if (hAud.length >= maxSimulaciones) modulosCompletamenteFinalizados++;
-        const suma = hAud.reduce((acc, c) => acc + (Number(c.porcentaje || c.efectividad) || 100), 0);
-        const prom = Math.round(suma / hAud.length);
-        document.getElementById('res-val-aud').innerText = `${prom}%`;
-        document.getElementById('sub-prom-aud').innerText = `Promedio de ${hAud.length} simulación(es)`;
-        const badge = document.getElementById('res-badge-aud');
-        badge.innerText = prom >= 75 ? 'ÓPTIMO' : 'OBSERVADO';
-        badge.className = `badge-eval ${prom >= 75 ? 'badge-optimo' : 'badge-observado'}`;
-      }
-
-      // 4. Banner Global con Detección Inteligente de Avance
+      // 4. Banner Global
       const banner = document.getElementById('banner-estado-general');
-      const minSimulacionesRealizadas = Math.min(
-        hReact.length, 
-        hPal.length, 
-        hPunt.length, 
-        totalModulosContratados >= 4 ? (hVis.length || 0) : maxSimulaciones,
-        totalModulosContratados === 5 ? (hAud.length || 0) : maxSimulaciones
-      );
+      const minSimulacionesRealizadas = Math.min(hReact.length, hPal.length, hPunt.length);
 
       if (modulosCompletamenteFinalizados >= totalModulosContratados) {
         banner.className = 'banner-estado banner-completado';
@@ -497,12 +517,49 @@
       htmlFilas += generarFilaReact();
       htmlFilas += generarFilaPalancas();
       htmlFilas += generarFilaGenerica('3. Punteo', hPunt, 80);
-      if (totalModulosContratados >= 4) htmlFilas += generarFilaGenerica('4. Screening Visual', hVis, 80);
-      if (totalModulosContratados === 5) htmlFilas += generarFilaGenerica('5. Tamizaje Auditivo', hAud, 75);
-
       document.getElementById('tbody-matriz').innerHTML = htmlFilas;
 
-      // 6. Curva Gráfica SVG
+      // 6. MOTOR DE INTERPRETACIÓN PERICIAL EN PALABRAS
+      const boxDictamen = document.getElementById('txt-dictamen-global');
+      const boxDesglose = document.getElementById('txt-desglose-interpretativo');
+
+      if (modulosConAlMenosUnIntento === 0) {
+        boxDictamen.className = 'dictamen-global-texto dictamen-alerta';
+        boxDictamen.innerHTML = '🕒 <strong>EVALUACIÓN PENDIENTE:</strong> No se registran simulaciones concluidas. Inicie los módulos para emitir el perfil psicomotor.';
+        boxDesglose.innerHTML = '<span>Rinda al menos un intento por prueba para obtener el análisis pericial de aptitud.</span>';
+      } else {
+        const reactAprobado = promReactFinal !== null ? promReactFinal <= 450 : true;
+        const palAprobado = promPalFinal !== null ? promPalFinal >= 75 : true;
+        const puntAprobado = promPuntFinal !== null ? promPuntFinal >= 80 : true;
+
+        const todoAprobado = reactAprobado && palAprobado && puntAprobado;
+        const alLimite = (promReactFinal && promReactFinal > 410 && promReactFinal <= 450) || (promPalFinal && promPalFinal >= 75 && promPalFinal <= 80);
+
+        if (todoAprobado && !alLimite) {
+          boxDictamen.className = 'dictamen-global-texto dictamen-optimo';
+          boxDictamen.innerHTML = '🟢 <strong>CONDICIÓN PSICOMOTRIZ ÓPTIMA:</strong> Tus tiempos de frenado y coordinación bimanual superan holgadamente las exigencias del D.S. N° 170 MTT. Cuentas con un perfil apto para el examen municipal.';
+        } else if (todoAprobado && alLimite) {
+          boxDictamen.className = 'dictamen-global-texto dictamen-alerta';
+          boxDictamen.innerHTML = '🟡 <strong>CONDICIÓN EN NORMA CON PRECAUCIÓN:</strong> Apruebas el estándar legal de Clase B, pero tus márgenes de respuesta están cercanos al límite permitido. Te sugerimos asegurar serenidad en la prueba oficial.';
+        } else {
+          boxDictamen.className = 'dictamen-global-texto dictamen-critico';
+          boxDictamen.innerHTML = '🔴 <strong>OBSERVACIÓN TÉCNICA PREVENTIVA:</strong> Se detectaron valores fuera de norma en uno o más módulos. Si rindieras hoy en el gabinete municipal, la prueba quedaría observada. Requiere práctica correctiva.';
+        }
+
+        let lineasDetalle = '';
+        if (promReactFinal !== null) {
+          lineasDetalle += `<span>• <strong>Reactímetro (${promReactFinal} ms):</strong> ${promReactFinal <= 350 ? 'Excelente velocidad refleja (nivel profesional).' : (promReactFinal <= 450 ? 'Tiempo en norma legal (≤ 450 ms). Controla la ansiedad para evitar anticipaciones.' : 'Latencia elevada (> 450 ms). Se recomienda mejorar la atención al estímulo rojo.')}</span>`;
+        }
+        if (promPalFinal !== null) {
+          lineasDetalle += `<span>• <strong>Palancas (${promPalFinal}%):</strong> ${promPalFinal >= 85 ? 'Coordinación bimanual sobresaliente y trazado fluido.' : (promPalFinal >= 75 ? 'Control aceptable. Procura desacelerar en curvas sinuosas para no rozar bordes.' : 'Baja precisión en trayectoria. Apoya firmemente los antebrazos para estabilizar el pulso.')}</span>`;
+        }
+        if (promPuntFinal !== null) {
+          lineasDetalle += `<span>• <strong>Punteo (${promPuntFinal}%):</strong> ${promPuntFinal >= 80 ? 'Sincronización rítmica y precisión viso-motriz en norma.' : 'Desincronización con el ritmo impuesto. Mantén cadencia constante sin dudar al fallar un punto.'}</span>`;
+        }
+        boxDesglose.innerHTML = lineasDetalle;
+      }
+
+      // 7. Curva Gráfica SVG
       const svg = document.getElementById('svg-curvas');
       const trazarCurva = (hist, color, extractor) => {
         if (!hist || hist.length === 0) return;
