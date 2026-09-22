@@ -1,6 +1,9 @@
 /**
  * Sensometrika - Servicio Serverless de Despacho de Correos (Resend API)
+ * Incluye generación automática de tokens de acceso para B2C y Demo
  */
+const crypto = require('crypto');
+
 module.exports = async (req, res) => {
   // Encabezados CORS
   res.setHeader('Access-Control-Allow-Credentials', true);
@@ -16,19 +19,61 @@ module.exports = async (req, res) => {
     return res.status(405).json({ error: 'Método no permitido. Utilice POST.' });
   }
 
-  // Lectura segura de la API Key desde las variables de entorno de Vercel
   const RESEND_API_KEY = process.env.RESEND_API_KEY;
-
   if (!RESEND_API_KEY) {
-    console.error('RESEND_API_KEY no está configurada en las variables de entorno.');
     return res.status(500).json({ error: 'Falta configurar RESEND_API_KEY en el servidor.' });
   }
 
-  try {
-    const { tipo, email, nombre, enlace, detalles } = req.body;
+  const SUPABASE_URL = process.env.SUPABASE_URL;
+  const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const FRONTEND_URL = process.env.FRONTEND_URL || 'https://sensometrika.vercel.app';
 
-    if (!email || !enlace) {
-      return res.status(400).json({ error: 'Faltan parámetros obligatorios: email y enlace.' });
+  try {
+    let { tipo, email, nombre, enlace, detalles } = req.body;
+
+    if (!email) {
+      return res.status(400).json({ error: 'Falta parámetro obligatorio: email.' });
+    }
+
+    // 1. Si el enlace viene sin token o no se envió, generar token automático en Supabase
+    let enlaceFinal = enlace || '';
+    if (!enlaceFinal.includes('?token=')) {
+      if (SUPABASE_URL && SUPABASE_KEY) {
+        try {
+          const generatedToken = crypto.randomUUID();
+          const tipoToken = tipo === 'b2b' ? 'b2b' : (tipo === 'demo' ? 'demo' : 'b2c');
+          const minutes = tipoToken === 'demo' ? 10 : (tipoToken === 'b2b' ? 4320 : 2880); // 10 min demo / 48h o 72h
+          const expiresAt = new Date(Date.now() + minutes * 60 * 1000).toISOString();
+
+          const supaRes = await fetch(`${SUPABASE_URL}/rest/v1/access_tokens`, {
+            method: 'POST',
+            headers: {
+              'apikey': SUPABASE_KEY,
+              'Authorization': `Bearer ${SUPABASE_KEY}`,
+              'Content-Type': 'application/json',
+              'Prefer': 'return=representation'
+            },
+            body: JSON.stringify({
+              token: generatedToken,
+              type: tipoToken,
+              email: email,
+              metadata: detalles || {},
+              expires_at: expiresAt
+            })
+          });
+
+          if (supaRes.ok) {
+            const rutaDestino = (tipoToken === 'demo' || (enlaceFinal && enlaceFinal.includes('demo.html'))) ? '/demo.html' : '/demo.html';
+            enlaceFinal = `${FRONTEND_URL}${rutaDestino}?token=${generatedToken}`;
+          }
+        } catch (tokenErr) {
+          console.error('Error generando token automático:', tokenErr);
+        }
+      }
+    }
+
+    if (!enlaceFinal) {
+      enlaceFinal = `${FRONTEND_URL}/demo.html`;
     }
 
     const destinatarioNombre = nombre || (tipo === 'b2b' ? 'Supervisión Técnica' : 'Postulante');
@@ -45,16 +90,17 @@ module.exports = async (req, res) => {
 
       asunto = `Acceso Corporativo Activo: Evaluaciones Sensométricas — ${razonSocial}`;
       htmlContent = `
-        <div style="background-color: #0b0f19; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #ffffff; padding: 30px 15px;">
+        <!DOCTYPE html>
+        <html>
+        <head><meta charset="utf-8"></head>
+        <body style="background-color: #0b0f19; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #ffffff; padding: 30px 15px; margin:0;">
           <div style="max-width: 580px; margin: 0 auto; background: #0f172a; border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 16px; overflow: hidden; box-shadow: 0 15px 35px rgba(0,0,0,0.6);">
             
-            <!-- Cabecera Oficial -->
             <div style="padding: 24px; text-align: center; border-bottom: 1px solid #1e293b; background: #070d18;">
               <h1 style="margin: 0; font-size: 20px; font-weight: 900; letter-spacing: 2px; color: #ffffff;">SENSOMETRIKA <span style="color: #38bdf8; font-size: 14px;">SpA</span></h1>
               <p style="margin: 4px 0 0 0; font-size: 10px; color: #94a3b8; letter-spacing: 1.5px; text-transform: uppercase;">Gabinete Sensotécnico Laboral • D.S. Nº 170 MTT</p>
             </div>
 
-            <!-- Contenido -->
             <div style="padding: 28px 24px;">
               <span style="display: inline-block; padding: 4px 12px; background: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.4); border-radius: 20px; color: #38bdf8; font-size: 11px; font-weight: 700; text-transform: uppercase; margin-bottom: 14px;">
                 Plan Corporativo Activado
@@ -65,20 +111,18 @@ module.exports = async (req, res) => {
                 Confirmamos la habilitación del pack de evaluaciones para <strong style="color: #ffffff;">${razonSocial}</strong> (RUT: ${rutEmpresa}) con un total de <strong>${cupos} evaluación(es)</strong> asignada(s).
               </p>
 
-              <!-- Tarjeta de Enlace -->
               <div style="background: #131b2e; border: 1px solid #1e293b; border-radius: 12px; padding: 20px; text-align: center; margin-bottom: 24px;">
                 <p style="font-size: 12px; color: #cbd5e1; margin: 0 0 14px 0; font-weight: 600;">
                   Enlace directo para distribución a trabajadores (WhatsApp / Correo):
                 </p>
-                <a href="${enlace}" style="display: inline-block; background: #0284c7; color: #ffffff; text-decoration: none; font-weight: 800; font-size: 14px; padding: 13px 26px; border-radius: 10px; box-shadow: 0 4px 15px rgba(2, 132, 199, 0.4);">
+                <a href="${enlaceFinal}" style="display: inline-block; background: #0284c7; color: #ffffff; text-decoration: none; font-weight: 800; font-size: 14px; padding: 13px 26px; border-radius: 10px; box-shadow: 0 4px 15px rgba(2, 132, 199, 0.4);">
                   Acceder a la Evaluación Faena →
                 </a>
                 <p style="font-size: 10.5px; color: #64748b; margin: 12px 0 0 0; word-break: break-all;">
-                  ${enlace}
+                  ${enlaceFinal}
                 </p>
               </div>
 
-              <!-- Instructivo Técnico -->
               <div style="background: #090e1a; border-radius: 10px; padding: 16px; font-size: 12px; color: #94a3b8; line-height: 1.5;">
                 <strong style="color: #38bdf8; display: block; margin-bottom: 6px;">📋 Protocolo de Rendición:</strong>
                 • Cada trabajador ingresa con la razón social precargada y bloqueada.<br>
@@ -87,34 +131,35 @@ module.exports = async (req, res) => {
               </div>
             </div>
 
-            <!-- Footer -->
             <div style="padding: 16px; text-align: center; border-top: 1px solid #1e293b; background: #070d18; font-size: 10px; color: #64748b;">
               Sensometrika SpA • Plataforma de Certificación Laboral y Psicotécnica Automatizada<br>
               Chillán, Región de Ñuble, Chile.
             </div>
 
           </div>
-        </div>
+        </body>
+        </html>
       `;
     } else {
       // -------------------------------------------------------------
-      // PLANTILLA B2C: PARTICULAR (ENSAYO / PASE INTENSIVO)
+      // PLANTILLA B2C / DEMO: PARTICULAR
       // -------------------------------------------------------------
-      const nombrePlan = (detalles && detalles.nombrePlan) ? detalles.nombrePlan : 'Pase Psicomotriz';
+      const nombrePlan = (detalles && detalles.nombrePlan) ? detalles.nombrePlan : 'Pase de Evaluación Psicomotriz';
       const vigencia = (detalles && detalles.vigencia) ? detalles.vigencia : 'Vigencia activa';
 
       asunto = `Tu Enlace de Acceso: Evaluación Psicotécnica — Sensometrika`;
       htmlContent = `
-        <div style="background-color: #0b0f19; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #ffffff; padding: 30px 15px;">
+        <!DOCTYPE html>
+        <html>
+        <head><meta charset="utf-8"></head>
+        <body style="background-color: #0b0f19; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #ffffff; padding: 30px 15px; margin:0;">
           <div style="max-width: 580px; margin: 0 auto; background: #0f172a; border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 16px; overflow: hidden; box-shadow: 0 15px 35px rgba(0,0,0,0.6);">
             
-            <!-- Cabecera Oficial -->
             <div style="padding: 24px; text-align: center; border-bottom: 1px solid #1e293b; background: #070d18;">
               <h1 style="margin: 0; font-size: 20px; font-weight: 900; letter-spacing: 2px; color: #ffffff;">SENSOMETRIKA <span style="color: #38bdf8; font-size: 14px;">SpA</span></h1>
               <p style="margin: 4px 0 0 0; font-size: 10px; color: #94a3b8; letter-spacing: 1.5px; text-transform: uppercase;">Gabinete Sensotécnico Laboral • D.S. Nº 170 MTT</p>
             </div>
 
-            <!-- Contenido -->
             <div style="padding: 28px 24px;">
               <span style="display: inline-block; padding: 4px 12px; background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.4); border-radius: 20px; color: #34d399; font-size: 11px; font-weight: 700; text-transform: uppercase; margin-bottom: 14px;">
                 Acceso Habilitado
@@ -125,18 +170,16 @@ module.exports = async (req, res) => {
                 Tu acceso para <strong style="color: #ffffff;">${nombrePlan}</strong> ha sido activado exitosamente (${vigencia}). Ya puedes ingresar al simulador para preparar tu examen psicotécnico de licencia de conducir o faena laboral.
               </p>
 
-              <!-- Botón Principal -->
               <div style="background: #131b2e; border: 1px solid #1e293b; border-radius: 12px; padding: 22px; text-align: center; margin-bottom: 24px;">
-                <a href="${enlace}" style="display: inline-block; background: #0284c7; color: #ffffff; text-decoration: none; font-weight: 800; font-size: 14px; padding: 13px 28px; border-radius: 10px; box-shadow: 0 4px 15px rgba(2, 132, 199, 0.4);">
+                <a href="${enlaceFinal}" style="display: inline-block; background: #0284c7; color: #ffffff; text-decoration: none; font-weight: 800; font-size: 14px; padding: 13px 28px; border-radius: 10px; box-shadow: 0 4px 15px rgba(2, 132, 199, 0.4);">
                   Comenzar Evaluación Ahora →
                 </a>
                 <p style="font-size: 11px; color: #64748b; margin: 14px 0 0 0; word-break: break-all;">
-                  Si el botón no abre, copia y pega este enlace en tu navegador:<br>
-                  <span style="color: #38bdf8;">${enlace}</span>
+                  Si el botón no abre, haz clic directo en este enlace seguro:<br>
+                  <a href="${enlaceFinal}" style="color: #38bdf8; text-decoration: underline;">${enlaceFinal}</a>
                 </p>
               </div>
 
-              <!-- Recomendaciones Técnicas -->
               <div style="background: #090e1a; border-radius: 10px; padding: 16px; font-size: 12px; color: #94a3b8; line-height: 1.5;">
                 <strong style="color: #38bdf8; display: block; margin-bottom: 6px;">💡 Recomendaciones Técnicas:</strong>
                 • Rendir en un lugar iluminado y libre de distracciones.<br>
@@ -145,21 +188,19 @@ module.exports = async (req, res) => {
               </div>
             </div>
 
-            <!-- Footer -->
             <div style="padding: 16px; text-align: center; border-top: 1px solid #1e293b; background: #070d18; font-size: 10px; color: #64748b;">
               Sensometrika SpA • Plataforma de Certificación Laboral y Psicotécnica Automatizada<br>
               Chillán, Región de Ñuble, Chile.
             </div>
 
           </div>
-        </div>
+        </body>
+        </html>
       `;
     }
 
-    // Remitente de prueba en Resend Sandbox
     const remitente = process.env.EMAIL_FROM || 'Sensometrika <onboarding@resend.dev>';
 
-    // Llamada HTTPS directa a Resend
     const resendResponse = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: {
@@ -187,7 +228,8 @@ module.exports = async (req, res) => {
     return res.status(200).json({
       success: true,
       id: data.id,
-      destinatario: email
+      destinatario: email,
+      enlaceGenerado: enlaceFinal
     });
 
   } catch (error) {
