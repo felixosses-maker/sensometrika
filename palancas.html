@@ -124,14 +124,15 @@
     .contenedor-canvas {
       position: relative;
       width: 100%;
-      height: 220px;
-      background-color: #080f1d;
+      height: 230px;
+      background-color: #050b14;
       border: 1px solid #1e293b;
-      border-radius: 12px;
+      border-radius: 14px;
       overflow: hidden;
       display: flex;
       justify-content: center;
       align-items: center;
+      box-shadow: inset 0 2px 10px rgba(0,0,0,0.6);
     }
     canvas {
       width: 100%;
@@ -199,7 +200,7 @@
       font-weight: 800;
     }
 
-    /* MANDOS BIMANUALES EJE X / EJE Y */
+    /* MANDOS BIMANUALES */
     .contenedor-bimanual {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -276,7 +277,7 @@
       </div>
 
       <div class="contenedor-canvas">
-        <canvas id="lienzo-palancas" width="340" height="220"></canvas>
+        <canvas id="lienzo-palancas" width="360" height="230"></canvas>
       </div>
 
       <p class="instruccion-sub" id="panel-estado">
@@ -302,7 +303,7 @@
         </div>
       </div>
 
-      <!-- Mandos de control -->
+      <!-- Mandos bimanuales -->
       <div class="contenedor-bimanual">
         <div class="caja-mando">
           <span>Mano Izquierda (Eje X)</span>
@@ -384,35 +385,54 @@
       let enContacto = false;
       let ultimoMuestreo = 0;
 
-      let puntero = { x: 35, y: 35, radio: 6.5, velocidad: 2.3 };
-      let teclas = { arriba: false, abajo: false, izquierda: false, derecha: false };
+      let px = 40, py = 50;
+      const radioPuntero = 7.0;
+      const vel = 2.4;
+      let teclas = { arriba: false, abajo: false, izq: false, der: false };
 
-      // BANCO DE CIRCUITOS CALIBRADOS
+      // BANCO DE CIRCUITOS CONTINUOS DE ALTA RESOLUCIÓN
       const BANCO_CIRCUITOS = [
         {
           nombre: "Trazado Bayoneta",
-          inicio: { x: 35, y: 155 },
-          meta: { x: 280, y: 45, radio: 11 },
-          tramos: [
-            { x: 20, y: 140, w: 110, h: 32 },
-            { x: 100, y: 65, w: 32, h: 90 },
-            { x: 100, y: 65, w: 105, h: 32 },
-            { x: 180, y: 65, w: 32, h: 100 },
-            { x: 180, y: 140, w: 90, h: 32 },
-            { x: 250, y: 35, w: 32, h: 135 }
+          inicio: { x: 45, y: 175 },
+          meta: { x: 315, y: 55, r: 14 },
+          ancho: 34,
+          puntos: [
+            { x: 45, y: 175 },
+            { x: 140, y: 175 },
+            { x: 140, y: 80 },
+            { x: 230, y: 80 },
+            { x: 230, y: 175 },
+            { x: 315, y: 175 },
+            { x: 315, y: 55 }
           ]
         },
         {
           nombre: "Trazado Escalera",
-          inicio: { x: 35, y: 35 },
-          meta: { x: 275, y: 175, radio: 11 },
-          tramos: [
-            { x: 20, y: 20, w: 75, h: 32 },
-            { x: 63, y: 20, w: 32, h: 90 },
-            { x: 63, y: 78, w: 125, h: 32 },
-            { x: 156, y: 78, w: 32, h: 82 },
-            { x: 156, y: 128, w: 140, h: 32 },
-            { x: 264, y: 128, w: 35, h: 75 }
+          inicio: { x: 45, y: 55 },
+          meta: { x: 315, y: 180, r: 14 },
+          ancho: 34,
+          puntos: [
+            { x: 45, y: 55 },
+            { x: 150, y: 55 },
+            { x: 150, y: 115 },
+            { x: 235, y: 115 },
+            { x: 235, y: 180 },
+            { x: 315, y: 180 }
+          ]
+        },
+        {
+          nombre: "Trazado Zigzag",
+          inicio: { x: 45, y: 55 },
+          meta: { x: 55, y: 185, r: 14 },
+          ancho: 34,
+          puntos: [
+            { x: 45, y: 55 },
+            { x: 315, y: 55 },
+            { x: 315, y: 120 },
+            { x: 150, y: 120 },
+            { x: 150, y: 185 },
+            { x: 55, y: 185 }
           ]
         }
       ];
@@ -435,14 +455,14 @@
         badgeModo.innerText = `🔴 Simulación Oficial ${TOTAL_SIMULACIONES} de ${TOTAL_SIMULACIONES} (Bloqueado)`;
         badgeModo.className = 'badge-fase oficial';
         panelMensaje.innerText = `Has completado tus ${TOTAL_SIMULACIONES} simulaciones oficiales permitidas.`;
-        renderizar();
+        dibujar();
       }
 
       function prepararFaseDemo() {
         fase = 'DEMO';
         circuitoActual = BANCO_CIRCUITOS[0];
-        puntero.x = circuitoActual.inicio.x;
-        puntero.y = circuitoActual.inicio.y;
+        px = circuitoActual.inicio.x;
+        py = circuitoActual.inicio.y;
         tiempoRestante = 20;
         toques = 0;
         tiempoErrorMs = 0;
@@ -460,15 +480,15 @@
         btnIniciar.disabled = false;
         btnIniciar.style.backgroundColor = '#0284c7';
         btnIniciar.innerText = 'Iniciar Calibración (20 s)';
-        renderizar();
+        dibujar();
       }
 
       function prepararFaseOficial(numSim) {
         fase = 'OFICIAL';
         simOficialActual = numSim - 1;
         circuitoActual = BANCO_CIRCUITOS[simOficialActual % BANCO_CIRCUITOS.length];
-        puntero.x = circuitoActual.inicio.x;
-        puntero.y = circuitoActual.inicio.y;
+        px = circuitoActual.inicio.x;
+        py = circuitoActual.inicio.y;
         tiempoRestante = 60;
         toques = 0;
         tiempoErrorMs = 0;
@@ -486,17 +506,12 @@
         btnIniciar.disabled = false;
         btnIniciar.style.backgroundColor = '#10b981';
         btnIniciar.innerText = `Iniciar Simulación Oficial (${numSim}/${TOTAL_SIMULACIONES})`;
-        renderizar();
+        dibujar();
       }
 
       btnIniciar.addEventListener('click', () => {
-        if (fase === 'DEMO') {
-          btnIniciar.style.display = 'none';
-          iniciarBucle();
-        } else if (fase === 'OFICIAL') {
-          btnIniciar.style.display = 'none';
-          iniciarBucle();
-        }
+        btnIniciar.style.display = 'none';
+        iniciarBucle();
       });
 
       function iniciarBucle() {
@@ -511,41 +526,56 @@
         }, 1000);
 
         cancelAnimationFrame(animLoop);
-        bucleAnimacion();
+        bucleFisicas();
       }
 
-      function bucleAnimacion() {
+      function bucleFisicas() {
         if (!juegoActivo) return;
-        actualizarPosicion();
-        verificarColisiones();
-        renderizar();
-        animLoop = requestAnimationFrame(bucleAnimacion);
+
+        if (teclas.arriba) py -= vel;
+        if (teclas.abajo) py += vel;
+        if (teclas.izq) px -= vel;
+        if (teclas.der) px += vel;
+
+        px = Math.max(radioPuntero + 2, Math.min(canvas.width - radioPuntero - 2, px));
+        py = Math.max(radioPuntero + 2, Math.min(canvas.height - radioPuntero - 2, py));
+
+        evaluarColision();
+        evaluarMeta();
+        dibujar();
+
+        animLoop = requestAnimationFrame(bucleFisicas);
       }
 
-      function actualizarPosicion() {
-        if (teclas.arriba) puntero.y -= puntero.velocidad;
-        if (teclas.abajo) puntero.y += puntero.velocidad;
-        if (teclas.izquierda) puntero.x -= puntero.velocidad;
-        if (teclas.derecha) puntero.x += puntero.velocidad;
+      function distanciaPuntoASegmento(x, y, x1, y1, x2, y2) {
+        const A = x - x1, B = y - y1, C = x2 - x1, D = y2 - y1;
+        const dot = A * C + B * D;
+        const lenSq = C * C + D * D;
+        let param = -1;
+        if (lenSq !== 0) param = dot / lenSq;
 
-        puntero.x = Math.max(puntero.radio, Math.min(canvas.width - puntero.radio, puntero.x));
-        puntero.y = Math.max(puntero.radio, Math.min(canvas.height - puntero.radio, puntero.y));
+        let xx, yy;
+        if (param < 0) { xx = x1; yy = y1; }
+        else if (param > 1) { xx = x2; yy = y2; }
+        else { xx = x1 + param * C; yy = y1 + param * D; }
+
+        return Math.hypot(x - xx, y - yy);
       }
 
-      function estaDentroDePista(x, y) {
-        return circuitoActual.tramos.some(t => (
-          x - puntero.radio >= t.x &&
-          x + puntero.radio <= t.x + t.w &&
-          y - puntero.radio >= t.y &&
-          y + puntero.radio <= t.y + t.h
-        ));
-      }
+      function evaluarColision() {
+        const pts = circuitoActual.puntos;
+        const radioCanal = circuitoActual.ancho / 2;
+        let minDist = Infinity;
 
-      function verificarColisiones() {
+        for (let i = 0; i < pts.length - 1; i++) {
+          const d = distanciaPuntoASegmento(px, py, pts[i].x, pts[i].y, pts[i+1].x, pts[i+1].y);
+          if (d < minDist) minDist = d;
+        }
+
+        const contactoActual = (minDist + radioPuntero) >= radioCanal;
         const ahora = performance.now();
-        const dentro = estaDentroDePista(puntero.x, puntero.y);
 
-        if (!dentro) {
+        if (contactoActual) {
           if (!enContacto) {
             enContacto = true;
             toques++;
@@ -558,9 +588,12 @@
           enContacto = false;
         }
         ultimoMuestreo = ahora;
+      }
 
+      function evaluarMeta() {
         const m = circuitoActual.meta;
-        if (puntero.x >= m.x - 14 && puntero.x <= m.x + 14 && puntero.y >= m.y - 14 && puntero.y <= m.y + 14) {
+        const dist = Math.hypot(px - m.x, py - m.y);
+        if (dist <= m.r + 2) {
           finalizarRecorrido(true);
         }
       }
@@ -669,14 +702,15 @@
         }
       }
 
-      function renderizar() {
-        if (!ctx || !canvas) return;
+      function dibujar() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-        ctx.fillStyle = '#080f1d';
+
+        // Fondo oscuro del gabinete
+        ctx.fillStyle = '#060c18';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-        // Cuadrícula técnica de fondo
-        ctx.strokeStyle = 'rgba(30, 41, 59, 0.4)';
+        // Cuadrícula técnica suave de ingeniería
+        ctx.strokeStyle = 'rgba(30, 41, 59, 0.35)';
         ctx.lineWidth = 0.5;
         for (let x = 0; x < canvas.width; x += 22) {
           ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke();
@@ -685,32 +719,53 @@
           ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke();
         }
 
-        // Trazados
-        ctx.fillStyle = '#0f172a';
-        circuitoActual.tramos.forEach(t => ctx.fillRect(t.x, t.y, t.w, t.h));
+        const pts = circuitoActual.puntos;
 
-        // Bordes de la pista
+        // 1. CANAL EXTERNO NEÓN (Borde continuo limpio sin cortes)
         ctx.strokeStyle = enContacto ? '#ef4444' : '#0284c7';
-        ctx.lineWidth = 2.5;
-        circuitoActual.tramos.forEach(t => ctx.strokeRect(t.x, t.y, t.w, t.h));
+        ctx.lineWidth = circuitoActual.ancho + 4;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.beginPath();
+        ctx.moveTo(pts[0].x, pts[0].y);
+        for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i].x, pts[i].y);
+        ctx.stroke();
 
-        // Meta verde
+        // 2. INTERIOR DE LA PISTA (Oscuro profundo continuo)
+        ctx.strokeStyle = '#0b1329';
+        ctx.lineWidth = circuitoActual.ancho - 2;
+        ctx.beginPath();
+        ctx.moveTo(pts[0].x, pts[0].y);
+        for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i].x, pts[i].y);
+        ctx.stroke();
+
+        // 3. LÍNEA GUÍA CENTRAL (Segmentada cian luminosa)
+        ctx.strokeStyle = 'rgba(56, 189, 248, 0.4)';
+        ctx.lineWidth = 1.4;
+        ctx.setLineDash([5, 5]);
+        ctx.beginPath();
+        ctx.moveTo(pts[0].x, pts[0].y);
+        for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i].x, pts[i].y);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        // 4. META VERDE BRILLANTE
         const m = circuitoActual.meta;
         ctx.beginPath();
-        ctx.arc(m.x, m.y, m.radio, 0, Math.PI * 2);
+        ctx.arc(m.x, m.y, m.r, 0, Math.PI * 2);
         ctx.fillStyle = '#22c55e';
         ctx.fill();
         ctx.strokeStyle = '#ffffff';
-        ctx.lineWidth = 2;
+        ctx.lineWidth = 2.5;
         ctx.stroke();
 
-        // Puntero electromecánico
+        // 5. PUNTERO MÓVIL ELECTROMECÁNICO
         ctx.beginPath();
-        ctx.arc(puntero.x, puntero.y, puntero.radio, 0, Math.PI * 2);
+        ctx.arc(px, py, radioPuntero, 0, Math.PI * 2);
         ctx.fillStyle = enContacto ? '#ef4444' : '#facc15';
         ctx.fill();
-        ctx.lineWidth = 2;
         ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 2.5;
         ctx.stroke();
       }
 
@@ -725,8 +780,21 @@
       }
       enlazar(btnArriba, 'arriba');
       enlazar(btnAbajo, 'abajo');
-      enlazar(btnIzq, 'izquierda');
-      enlazar(btnDer, 'derecha');
+      enlazar(btnIzq, 'izq');
+      enlazar(btnDer, 'der');
+
+      window.addEventListener('keydown', (e) => {
+        if (['ArrowUp', 'w', 'W'].includes(e.key)) { e.preventDefault(); teclas.arriba = true; }
+        if (['ArrowDown', 's', 'S'].includes(e.key)) { e.preventDefault(); teclas.abajo = true; }
+        if (['ArrowLeft', 'a', 'A'].includes(e.key)) { e.preventDefault(); teclas.izq = true; }
+        if (['ArrowRight', 'd', 'D'].includes(e.key)) { e.preventDefault(); teclas.der = true; }
+      });
+      window.addEventListener('keyup', (e) => {
+        if (['ArrowUp', 'w', 'W'].includes(e.key)) teclas.arriba = false;
+        if (['ArrowDown', 's', 'S'].includes(e.key)) teclas.abajo = false;
+        if (['ArrowLeft', 'a', 'A'].includes(e.key)) teclas.izq = false;
+        if (['ArrowRight', 'd', 'D'].includes(e.key)) teclas.der = false;
+      });
     })();
   </script>
 
