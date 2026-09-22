@@ -91,7 +91,7 @@
     td { padding: 8px; border-bottom: 1px solid rgba(255, 255, 255, 0.05); color: #cbd5e1; }
     .td-centro { text-align: center; }
 
-    /* Bloque de Interpretación en Palabras */
+    /* Bloque de Interpretación */
     .tarjeta-interpretacion {
       background: #09101f;
       border: 1px solid #1e293b;
@@ -262,7 +262,6 @@
             <th>Módulo</th>
             <th class="td-centro">S1</th>
             <th class="td-centro">S2</th>
-            <th class="td-centro">S3</th>
             <th>Diagnóstico Específico</th>
           </tr>
         </thead>
@@ -276,9 +275,7 @@
       <div id="txt-dictamen-global" class="dictamen-global-texto dictamen-alerta">
         Evaluando consistencia de las pruebas realizadas...
       </div>
-      <div class="analisis-modulos-texto" id="txt-desglose-interpretativo">
-        <!-- Generado dinámicamente según promedios -->
-      </div>
+      <div class="analisis-modulos-texto" id="txt-desglose-interpretativo"></div>
     </div>
 
     <!-- Recomendaciones -->
@@ -303,7 +300,6 @@
         user = JSON.parse(localStorage.getItem('sensometrika_datos_usuario')) || {};
       } catch (e) {}
 
-      // Redirección desatendida para B2B corporativo
       if (sesion.rol === 'empresa' || (sesion.planId && String(sesion.planId).toLowerCase().includes('b2b'))) {
         window.location.href = 'informe-b2b.html';
         return;
@@ -345,20 +341,22 @@
         }
       }
 
-      // 2. Configuración de Cuotas
+      // 2. CONFIGURACIÓN DE CUOTAS (DEMO = 2 SIMULACIONES, BÁSICO = 3, PLUS = 5, FULL = 8)
       let totalModulosContratados = 3;
-      let maxSimulaciones = 3;
+      let maxSimulaciones = esModoDemo ? 2 : 3;
       const planId = String(sesion.planId || '').toLowerCase();
 
-      if (!esModoDemo && planId.includes('plus')) {
-        totalModulosContratados = 4;
-        maxSimulaciones = 5;
-        document.getElementById('tarjeta-resumen-vis').style.display = 'flex';
-      } else if (!esModoDemo && planId.includes('full')) {
-        totalModulosContratados = 5;
-        maxSimulaciones = 8;
-        document.getElementById('tarjeta-resumen-vis').style.display = 'flex';
-        document.getElementById('tarjeta-resumen-aud').style.display = 'flex';
+      if (!esModoDemo) {
+        if (planId.includes('plus')) {
+          totalModulosContratados = 4;
+          maxSimulaciones = 5;
+          document.getElementById('tarjeta-resumen-vis').style.display = 'flex';
+        } else if (planId.includes('full')) {
+          totalModulosContratados = 5;
+          maxSimulaciones = 8;
+          document.getElementById('tarjeta-resumen-vis').style.display = 'flex';
+          document.getElementById('tarjeta-resumen-aud').style.display = 'flex';
+        }
       }
 
       let thCols = '<th>Módulo</th>';
@@ -402,10 +400,10 @@
       if (hReact.length > 0) {
         modulosConAlMenosUnIntento++;
         if (hReact.length >= maxSimulaciones) modulosCompletamenteFinalizados++;
-        const suma = hReact.reduce((acc, c) => acc + (Number(c.tiempo) || 0), 0);
-        promReactFinal = Math.round(suma / hReact.length);
+        const suma = hReact.slice(0, maxSimulaciones).reduce((acc, c) => acc + (Number(c.tiempo) || 0), 0);
+        promReactFinal = Math.round(suma / Math.min(hReact.length, maxSimulaciones));
         document.getElementById('res-val-react').innerText = `${promReactFinal} ms`;
-        document.getElementById('sub-prom-react').innerText = `Promedio de ${hReact.length} simulación(es)`;
+        document.getElementById('sub-prom-react').innerText = `Promedio de ${Math.min(hReact.length, maxSimulaciones)} simulación(es)`;
         const badge = document.getElementById('res-badge-react');
         badge.innerText = promReactFinal <= 450 ? 'ÓPTIMO' : 'OBSERVADO';
         badge.className = `badge-eval ${promReactFinal <= 450 ? 'badge-optimo' : 'badge-observado'}`;
@@ -417,16 +415,17 @@
         if (hPal.length >= maxSimulaciones) modulosCompletamenteFinalizados++;
         let sumaPct = 0;
         let sumaErr = 0;
-        hPal.forEach(it => {
-          const norm = normalizarPalancas(it);
+        const totalTomadas = Math.min(hPal.length, maxSimulaciones);
+        for (let i = 0; i < totalTomadas; i++) {
+          const norm = normalizarPalancas(hPal[i]);
           sumaPct += norm.porcentaje;
           sumaErr += norm.error;
-        });
-        promPalFinal = Math.round(sumaPct / hPal.length);
-        const promErr = (sumaErr / hPal.length).toFixed(1);
+        }
+        promPalFinal = Math.round(sumaPct / totalTomadas);
+        const promErr = (sumaErr / totalTomadas).toFixed(1);
 
         document.getElementById('res-val-pal').innerText = `${promPalFinal}% (${promErr}s error)`;
-        document.getElementById('sub-prom-pal').innerText = `Promedio de ${hPal.length} simulación(es)`;
+        document.getElementById('sub-prom-pal').innerText = `Promedio de ${totalTomadas} simulación(es)`;
         const badge = document.getElementById('res-badge-pal');
         badge.innerText = promPalFinal >= 75 ? 'ÓPTIMO' : 'OBSERVADO';
         badge.className = `badge-eval ${promPalFinal >= 75 ? 'badge-optimo' : 'badge-observado'}`;
@@ -436,10 +435,11 @@
       if (hPunt.length > 0) {
         modulosConAlMenosUnIntento++;
         if (hPunt.length >= maxSimulaciones) modulosCompletamenteFinalizados++;
-        const suma = hPunt.reduce((acc, c) => acc + (Number(c.efectividad !== undefined ? c.efectividad : c.porcentaje) || 0), 0);
-        promPuntFinal = Math.round(suma / hPunt.length);
+        const totalTomadas = Math.min(hPunt.length, maxSimulaciones);
+        const suma = hPunt.slice(0, totalTomadas).reduce((acc, c) => acc + (Number(c.efectividad !== undefined ? c.efectividad : c.porcentaje) || 0), 0);
+        promPuntFinal = Math.round(suma / totalTomadas);
         document.getElementById('res-val-punt').innerText = `${promPuntFinal}%`;
-        document.getElementById('sub-prom-punt').innerText = `Promedio de ${hPunt.length} simulación(es)`;
+        document.getElementById('sub-prom-punt').innerText = `Promedio de ${totalTomadas} simulación(es)`;
         const badge = document.getElementById('res-badge-punt');
         badge.innerText = promPuntFinal >= 80 ? 'ÓPTIMO' : 'OBSERVADO';
         badge.className = `badge-eval ${promPuntFinal >= 80 ? 'badge-optimo' : 'badge-observado'}`;
@@ -454,7 +454,7 @@
         banner.innerText = `EVALUACIÓN COMPLETADA (${totalModulosContratados}/${totalModulosContratados} MÓDULOS FINALIZADOS)`;
       } else if (minSimulacionesRealizadas > 0) {
         banner.className = 'banner-estado banner-curso';
-        banner.innerText = `EVALUACIÓN EN CURSO (RONDA ${minSimulacionesRealizadas} DE ${maxSimulaciones} COMPLETADA • ${modulosConAlMenosUnIntento}/${totalModulosContratados} MÓDULOS RENDIDOS)`;
+        banner.innerText = `EVALUACIÓN EN CURSO (RONDA ${Math.min(minSimulacionesRealizadas, maxSimulaciones)} DE ${maxSimulaciones} COMPLETADA • ${modulosConAlMenosUnIntento}/${totalModulosContratados} MÓDULOS RENDIDOS)`;
       } else {
         banner.className = 'banner-estado banner-curso';
         banner.innerText = `EVALUACIÓN EN CURSO (${modulosConAlMenosUnIntento}/${totalModulosContratados} MÓDULOS RENDIDOS)`;
@@ -519,14 +519,14 @@
       htmlFilas += generarFilaGenerica('3. Punteo', hPunt, 80);
       document.getElementById('tbody-matriz').innerHTML = htmlFilas;
 
-      // 6. MOTOR DE INTERPRETACIÓN PERICIAL EN PALABRAS
+      // 6. MOTOR DE INTERPRETACIÓN PERICIAL
       const boxDictamen = document.getElementById('txt-dictamen-global');
       const boxDesglose = document.getElementById('txt-desglose-interpretativo');
 
       if (modulosConAlMenosUnIntento === 0) {
         boxDictamen.className = 'dictamen-global-texto dictamen-alerta';
         boxDictamen.innerHTML = '🕒 <strong>EVALUACIÓN PENDIENTE:</strong> No se registran simulaciones concluidas. Inicie los módulos para emitir el perfil psicomotor.';
-        boxDesglose.innerHTML = '<span>Rinda al menos un intento por prueba para obtener el análisis pericial de aptitud.</span>';
+        boxDesglose.innerHTML = '<span>Rinda las simulaciones para obtener el análisis pericial de aptitud.</span>';
       } else {
         const reactAprobado = promReactFinal !== null ? promReactFinal <= 450 : true;
         const palAprobado = promPalFinal !== null ? promPalFinal >= 75 : true;
