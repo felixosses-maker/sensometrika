@@ -20,7 +20,14 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
+      transition: all 0.2s ease;
     }
+    .banner-respaldo.demo {
+      background: rgba(234, 179, 8, 0.1);
+      border-color: rgba(250, 204, 21, 0.4);
+      color: #fef08a;
+    }
+
     .subtitulo-evaluado { font-size: 0.78rem; color: #94a3b8; }
     .subtitulo-evaluado strong { color: #f8fafc; }
 
@@ -115,13 +122,13 @@
 <body>
 
   <div class="contenedor-informe">
-    <div class="banner-respaldo">
-      <span>🛡️ Respaldo Oficial: RUT <strong id="lbl-rut-respaldo">--</strong></span>
-      <span style="color: #38bdf8;">Copia enviada al correo</span>
+    <div class="banner-respaldo" id="banner-respaldo-box">
+      <span id="txt-respaldo-rut">🛡️ Respaldo Oficial: RUT <strong id="lbl-rut-respaldo">--</strong></span>
+      <span id="txt-respaldo-estado" style="color: #38bdf8;">Copia enviada al correo</span>
     </div>
 
     <div class="subtitulo-evaluado">
-      Postulante: <strong id="lbl-nombre-evaluado">--</strong> | Licencia: <strong>Clase B / D.S. N° 170</strong>
+      Postulante: <strong id="lbl-nombre-evaluado">--</strong> | Licencia: <strong id="lbl-licencia-tipo">Clase B / D.S. N° 170</strong>
     </div>
 
     <!-- Banner General Dinámico -->
@@ -231,32 +238,73 @@
       </ul>
     </div>
 
-    <a href="menu.html" class="btn-volver">← Volver al Menú Principal</a>
+    <a href="menu.html" class="btn-volver" id="btn-volver-pantalla">← Volver al Menú Principal</a>
   </div>
 
   <script>
     document.addEventListener('DOMContentLoaded', () => {
-      const sesion = JSON.parse(localStorage.getItem('sensometrika_sesion')) || {};
-      const user = JSON.parse(localStorage.getItem('sensometrika_datos_usuario')) || {};
+      let sesion = {};
+      let user = {};
+      try {
+        sesion = JSON.parse(localStorage.getItem('sensometrika_sesion')) || {};
+        user = JSON.parse(localStorage.getItem('sensometrika_datos_usuario')) || {};
+      } catch (e) {}
 
+      // Redirección desatendida para B2B corporativo
       if (sesion.rol === 'empresa' || (sesion.planId && String(sesion.planId).toLowerCase().includes('b2b'))) {
         window.location.href = 'informe-b2b.html';
         return;
       }
 
-      document.getElementById('lbl-nombre-evaluado').innerText = (user.nombre || sesion.nombre || 'FELIX OSSES MARTINEZ').toUpperCase();
-      document.getElementById('lbl-rut-respaldo').innerText = user.rut || sesion.rut || '13.741.882-7';
+      // 1. DETECCIÓN INTELIGENTE DE MODO DEMO
+      const urlParams = new URLSearchParams(window.location.search);
+      const tokenLocal = localStorage.getItem('sensometrika_demo_token');
+      const esModoDemo = (
+        urlParams.get('mode') === 'demo' || 
+        urlParams.get('demo') === 'true' ||
+        sesion.rol === 'demo' ||
+        sesion.tipo === 'demo' ||
+        (sesion.planId && String(sesion.planId).toLowerCase().includes('demo')) ||
+        (tokenLocal && !user.rut) // Proviene de acceso rápido demo sin formulario
+      );
 
-      // 1. Configuración de Cuotas según Plan
+      const bannerRespaldo = document.getElementById('banner-respaldo-box');
+      const btnVolver = document.getElementById('btn-volver-pantalla');
+
+      if (esModoDemo) {
+        // VISTA ANONIMIZADA DEMO: Ocultar nombre y RUT real
+        bannerRespaldo.className = 'banner-respaldo demo';
+        document.getElementById('txt-respaldo-rut').innerHTML = '🧪 <strong>Sesión de Demostración Activa</strong>';
+        document.getElementById('txt-respaldo-estado').innerHTML = '<span style="color:#facc15;">Sin Validez Legal</span>';
+
+        document.getElementById('lbl-nombre-evaluado').innerText = 'USUARIO EN PRUEBA (MODO DEMO)';
+        document.getElementById('lbl-licencia-tipo').innerText = 'Ensayo Técnico / Fines Pedagógicos';
+
+        // Redirigir botón de retorno al portal de demo
+        if (btnVolver) {
+          btnVolver.href = 'demo.html';
+          btnVolver.innerText = '← Volver a Pruebas Demo';
+        }
+      } else {
+        // VISTA PARTICULAR PAGADA (B2C)
+        document.getElementById('lbl-nombre-evaluado').innerText = (user.nombre || sesion.nombre || 'PARTICULAR REGISTRADO').toUpperCase();
+        document.getElementById('lbl-rut-respaldo').innerText = user.rut || sesion.rut || '11.111.111-1';
+        if (btnVolver) {
+          btnVolver.href = 'menu.html';
+          btnVolver.innerText = '← Volver al Menú Principal';
+        }
+      }
+
+      // 2. Configuración de Cuotas según Plan
       let totalModulosContratados = 3;
       let maxSimulaciones = 3;
       const planId = String(sesion.planId || '').toLowerCase();
 
-      if (planId.includes('plus')) {
+      if (!esModoDemo && planId.includes('plus')) {
         totalModulosContratados = 4;
         maxSimulaciones = 5;
         document.getElementById('tarjeta-resumen-vis').style.display = 'flex';
-      } else if (planId.includes('full')) {
+      } else if (!esModoDemo && planId.includes('full')) {
         totalModulosContratados = 5;
         maxSimulaciones = 8;
         document.getElementById('tarjeta-resumen-vis').style.display = 'flex';
@@ -270,7 +318,7 @@
       thCols += '<th>Diagnóstico Específico</th>';
       document.getElementById('tr-encabezados-matriz').innerHTML = thCols;
 
-      // 2. Historiales Reales
+      // 3. Historiales Reales
       const hReact = JSON.parse(localStorage.getItem('sensometrika_historial_reactimetro')) || [];
       const hPal = JSON.parse(localStorage.getItem('sensometrika_historial_palancas')) || [];
       const hPunt = JSON.parse(localStorage.getItem('sensometrika_historial_punteo')) || [];
@@ -371,7 +419,7 @@
         badge.className = `badge-eval ${prom >= 75 ? 'badge-optimo' : 'badge-observado'}`;
       }
 
-      // 3. Banner Global con Detección Inteligente de Avance
+      // 4. Banner Global con Detección Inteligente de Avance
       const banner = document.getElementById('banner-estado-general');
       const minSimulacionesRealizadas = Math.min(
         hReact.length, 
@@ -392,7 +440,7 @@
         banner.innerText = `EVALUACIÓN EN CURSO (${modulosConAlMenosUnIntento}/${totalModulosContratados} MÓDULOS RENDIDOS)`;
       }
 
-      // 4. Matriz Dinámica
+      // 5. Matriz Dinámica
       const generarFilaReact = () => {
         let fila = `<tr><td><strong>1. Reactímetro</strong></td>`;
         for (let i = 0; i < maxSimulaciones; i++) {
@@ -454,7 +502,7 @@
 
       document.getElementById('tbody-matriz').innerHTML = htmlFilas;
 
-      // 5. Curva Gráfica SVG
+      // 6. Curva Gráfica SVG
       const svg = document.getElementById('svg-curvas');
       const trazarCurva = (hist, color, extractor) => {
         if (!hist || hist.length === 0) return;
