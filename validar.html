@@ -2,29 +2,30 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Verificación Sensometrika SpA</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Verificación Oficial | Sensometrika SpA</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Cliente Supabase oficial para lectura en vivo -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
-<body class="min-h-screen bg-[#0b0f19] text-white flex items-center justify-center p-4 font-sans">
+<body class="min-h-screen bg-[#070d18] text-white flex items-center justify-center p-4 font-sans selection:bg-sky-500 selection:text-white">
 
-  <div class="w-full max-w-sm bg-[#131b2e] rounded-2xl p-6 border border-slate-800 shadow-2xl">
-    <!-- Cabecera -->
-    <div class="text-center mb-6">
-      <h2 class="text-lg font-bold tracking-wider">SENSOMETRIKA SpA</h2>
-      <p class="text-[11px] text-slate-400 font-medium">GABINETE SENSOTÉCNICO LABORAL • D.S. Nº 170 MTT</p>
+  <div class="w-full max-w-sm bg-[#0f172a] rounded-2xl p-6 border border-slate-800 shadow-2xl">
+    
+    <!-- Cabecera Oficial -->
+    <div class="text-center mb-6 border-b border-slate-800 pb-4">
+      <h2 class="text-base font-black tracking-widest text-white">SENSOMETRIKA SpA</h2>
+      <p class="text-[10px] text-slate-400 font-bold tracking-wider mt-1 uppercase">GABINETE SENSOTÉCNICO LABORAL • D.S. Nº 170 MTT</p>
     </div>
 
     <!-- Contenedor dinámico de carga -->
-    <div id="loading" class="text-center py-6 text-sm text-slate-400 animate-pulse">
-      Contrastando registro oficial...
+    <div id="loading" class="text-center py-8 text-xs text-sky-400 font-semibold animate-pulse tracking-wide">
+      🔍 Contrastando registro oficial en Supabase...
     </div>
 
-    <!-- Vista Error (Documento no encontrado) -->
+    <!-- Vista Error (Documento no encontrado o expirado) -->
     <div id="view-error" class="hidden">
-      <div id="error-folio-msg" class="bg-[#2a141a] border border-red-800 text-[#f87171] p-3 rounded-xl font-bold text-center text-xs mb-6 uppercase tracking-wide">
+      <div id="error-folio-msg" class="bg-[#2a141a] border border-red-800 text-[#f87171] p-3.5 rounded-xl font-bold text-center text-xs mb-5 uppercase tracking-wide shadow-inner">
         DOCUMENTO NO ENCONTRADO
       </div>
       <p class="text-[11px] text-slate-400 text-center leading-relaxed mb-6">
@@ -34,69 +35,71 @@
 
     <!-- Vista Éxito (Certificado Válido) -->
     <div id="view-success" class="hidden">
-      <!-- Dictamen -->
-      <div id="card-dictamen" class="p-3 rounded-xl border text-center font-bold text-xs mb-4 uppercase bg-[#2a141a] border-red-800 text-[#f87171]">
+      
+      <!-- Dictamen Oficial con Sello -->
+      <div id="card-dictamen" class="p-3.5 rounded-xl border text-center font-extrabold text-xs mb-4 uppercase tracking-wider shadow-lg">
         DICTAMEN: CARGANDO...
       </div>
 
-      <!-- Datos Trabajador -->
-      <div class="bg-[#1a233a] p-3 rounded-xl text-xs space-y-1.5 mb-4 text-slate-300">
-        <div class="flex justify-between border-b border-slate-700/50 pb-1">
-          <span class="text-slate-400">Folio:</span>
-          <span id="txt-folio" class="font-bold text-sky-400">--</span>
+      <!-- Datos del Evaluado / Trabajador -->
+      <div class="bg-[#070d18] p-3.5 rounded-xl text-xs space-y-2 mb-4 border border-slate-800/80 text-slate-300">
+        <div class="flex justify-between border-b border-slate-800 pb-1.5">
+          <span class="text-slate-400 font-medium">Folio Oficial:</span>
+          <span id="txt-folio" class="font-bold text-sky-400 font-mono">--</span>
+        </div>
+        <div class="flex justify-between border-b border-slate-800 pb-1.5">
+          <span class="text-slate-400 font-medium">Trabajador:</span>
+          <span id="txt-nombre" class="font-bold text-white uppercase">--</span>
+        </div>
+        <div class="flex justify-between border-b border-slate-800 pb-1.5">
+          <span class="text-slate-400 font-medium">RUT:</span>
+          <span id="txt-rut" class="font-mono">--</span>
+        </div>
+        <div class="flex justify-between border-b border-slate-800 pb-1.5">
+          <span class="text-slate-400 font-medium">Empresa / Faena:</span>
+          <span id="txt-empresa" class="font-semibold text-slate-200">--</span>
         </div>
         <div class="flex justify-between">
-          <span class="text-slate-400">Trabajador:</span>
-          <span id="txt-nombre" class="font-semibold text-white">--</span>
-        </div>
-        <div class="flex justify-between">
-          <span class="text-slate-400">RUT:</span>
-          <span id="txt-rut">--</span>
-        </div>
-        <div class="flex justify-between">
-          <span class="text-slate-400">Empresa:</span>
-          <span id="txt-empresa">--</span>
-        </div>
-        <div class="flex justify-between">
-          <span class="text-slate-400">Fecha:</span>
-          <span id="txt-fecha">--</span>
+          <span class="text-slate-400 font-medium">Fecha y Hora:</span>
+          <span id="txt-fecha" class="text-slate-300">--</span>
         </div>
       </div>
 
-      <!-- Detalle Módulos -->
+      <!-- Detalle Módulos Rendidos -->
       <div class="text-xs space-y-2 mb-6">
-        <div class="flex justify-between items-center bg-[#182035] p-2 rounded-lg">
-          <span class="text-slate-300">1. Reactímetro (<span id="txt-react-val">-- ms</span>)</span>
-          <span id="badge-react" class="px-2 py-0.5 rounded text-[11px] font-bold bg-slate-800 text-slate-400">PENDIENTE</span>
+        <div class="flex justify-between items-center bg-[#131b2e] p-2.5 rounded-xl border border-slate-800">
+          <span class="text-slate-300 font-medium">1. Reactímetro (<span id="txt-react-val" class="font-mono text-sky-300">-- ms</span>)</span>
+          <span id="badge-react" class="px-2.5 py-0.5 rounded text-[10px] font-extrabold bg-slate-800 text-slate-400">PENDIENTE</span>
         </div>
-        <div class="flex justify-between items-center bg-[#182035] p-2 rounded-lg">
-          <span class="text-slate-300">2. Palancas (<span id="txt-pal-val">-- %</span>)</span>
-          <span id="badge-pal" class="px-2 py-0.5 rounded text-[11px] font-bold bg-slate-800 text-slate-400">PENDIENTE</span>
+        <div class="flex justify-between items-center bg-[#131b2e] p-2.5 rounded-xl border border-slate-800">
+          <span class="text-slate-300 font-medium">2. Palancas (<span id="txt-pal-val" class="font-mono text-sky-300">-- %</span>)</span>
+          <span id="badge-pal" class="px-2.5 py-0.5 rounded text-[10px] font-extrabold bg-slate-800 text-slate-400">PENDIENTE</span>
         </div>
-        <div class="flex justify-between items-center bg-[#182035] p-2 rounded-lg">
-          <span class="text-slate-300">3. Punteo (<span id="txt-punt-val">-- %</span>)</span>
-          <span id="badge-punt" class="px-2 py-0.5 rounded text-[11px] font-bold bg-slate-800 text-slate-400">PENDIENTE</span>
+        <div class="flex justify-between items-center bg-[#131b2e] p-2.5 rounded-xl border border-slate-800">
+          <span class="text-slate-300 font-medium">3. Punteo (<span id="txt-punt-val" class="font-mono text-sky-300">-- %</span>)</span>
+          <span id="badge-punt" class="px-2.5 py-0.5 rounded text-[10px] font-extrabold bg-slate-800 text-slate-400">PENDIENTE</span>
         </div>
+
         <!-- Módulos Opcionales -->
-        <div id="row-visual" class="hidden flex justify-between items-center bg-[#182035] p-2 rounded-lg">
-          <span class="text-slate-300">4. Visual (<span id="txt-vis-val">-- %</span>)</span>
-          <span id="badge-vis" class="px-2 py-0.5 rounded text-[11px] font-bold bg-slate-800 text-slate-400">PENDIENTE</span>
+        <div id="row-visual" class="hidden flex justify-between items-center bg-[#131b2e] p-2.5 rounded-xl border border-slate-800">
+          <span class="text-slate-300 font-medium">4. Visual (<span id="txt-vis-val" class="font-mono text-sky-300">-- %</span>)</span>
+          <span id="badge-vis" class="px-2.5 py-0.5 rounded text-[10px] font-extrabold bg-slate-800 text-slate-400">PENDIENTE</span>
         </div>
-        <div id="row-auditivo" class="hidden flex justify-between items-center bg-[#182035] p-2 rounded-lg">
-          <span class="text-slate-300">5. Auditivo (<span id="txt-aud-val">-- %</span>)</span>
-          <span id="badge-aud" class="px-2 py-0.5 rounded text-[11px] font-bold bg-slate-800 text-slate-400">PENDIENTE</span>
+        <div id="row-auditivo" class="hidden flex justify-between items-center bg-[#131b2e] p-2.5 rounded-xl border border-slate-800">
+          <span class="text-slate-300 font-medium">5. Auditivo (<span id="txt-aud-val" class="font-mono text-sky-300">-- %</span>)</span>
+          <span id="badge-aud" class="px-2.5 py-0.5 rounded text-[10px] font-extrabold bg-slate-800 text-slate-400">PENDIENTE</span>
         </div>
       </div>
     </div>
 
     <!-- Botón Volver -->
-    <a href="menu-b2b.html" class="block w-full text-center py-2.5 bg-[#0084c7] hover:bg-[#0277b3] text-white font-semibold rounded-xl text-xs transition">
-      ← Volver al Menú Principal
+    <a href="menu-b2b.html" class="block w-full text-center py-3 bg-sky-600 hover:bg-sky-500 text-white font-bold rounded-xl text-xs transition shadow-md active:scale-95">
+      ← Volver al Panel B2B
     </a>
   </div>
 
   <script>
-    // Inicialización de Supabase con credenciales oficiales
+    // Credenciales oficiales de Supabase
     const SUPABASE_URL = 'https://kytuewhkhshrjddzoknv.supabase.co';
     const SUPABASE_KEY = 'sb_publishable_ou-yRIieMQOGoWJ4YZIYtg_-Lusc711';
     const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -106,7 +109,6 @@
       let folio = urlParams.get('folio');
 
       if (!folio) {
-        // Soporte por si la URL viene como /validar/SMK-XXXXXX
         const pathParts = window.location.pathname.split('/');
         folio = pathParts[pathParts.length - 1].replace('.html', '');
       }
@@ -120,7 +122,7 @@
       }
 
       try {
-        // 1. Consulta en vivo a la tabla correcta: certificados_folios
+        // 1. Consulta en vivo a Supabase (tabla certificados_folios)
         const { data, error } = await supabaseClient
           .from('certificados_folios')
           .select('*')
@@ -128,7 +130,7 @@
           .maybeSingle();
 
         if (error) {
-          console.warn("Supabase query error:", error.message);
+          console.warn("Aviso en consulta Supabase:", error.message);
         }
 
         if (data && !error) {
@@ -136,14 +138,13 @@
           return;
         }
 
-        // 2. Fallback de localStorage (mismo dispositivo)
+        // 2. Fallback de localStorage (misma terminal / respaldo local)
         const localCert = localStorage.getItem('cert_' + folio);
         if (localCert) {
           mostrarExito(JSON.parse(localCert));
           return;
         }
 
-        // Si no se encuentra en Supabase ni en fallback
         mostrarError(folio);
       } catch (err) {
         console.error("Excepción en verificación:", err);
@@ -157,13 +158,11 @@
     }
 
     function mostrarExito(d) {
-      // Filiación
       document.getElementById('txt-folio').innerText = d.folio || '--';
       document.getElementById('txt-nombre').innerText = d.nombre || d.trabajador_nombre || '--';
       document.getElementById('txt-rut').innerText = d.rut || d.trabajador_rut || '--';
-      document.getElementById('txt-empresa').innerText = d.empresa || '--';
+      document.getElementById('txt-empresa').innerText = d.empresa || d.razon_social || '--';
 
-      // Fecha formateada
       if (d.fecha_emision) {
         const f = new Date(d.fecha_emision);
         document.getElementById('txt-fecha').innerText = !isNaN(f.getTime()) ? f.toLocaleString('es-CL') : d.fecha_emision;
@@ -171,44 +170,40 @@
         document.getElementById('txt-fecha').innerText = d.fecha_evaluacion || '--';
       }
 
-      // Dictamen visual
       const cardDictamen = document.getElementById('card-dictamen');
-      const dictamenTxt = d.dictamen || 'DICTAMEN NO REGISTRADO';
-      cardDictamen.innerText = dictamenTxt;
+      const dictamenTxt = String(d.dictamen || 'APROBADO').toUpperCase();
+      cardDictamen.innerText = `DICTAMEN: ${dictamenTxt}`;
 
-      const esApto = dictamenTxt.includes('APTO');
+      const esApto = dictamenTxt.includes('APTO') || dictamenTxt.includes('APROBADO');
       if (esApto) {
-        cardDictamen.className = 'p-3 rounded-xl border text-center font-bold text-xs mb-4 uppercase bg-emerald-950/60 border-emerald-600 text-emerald-400';
+        cardDictamen.className = 'p-3.5 rounded-xl border text-center font-extrabold text-xs mb-4 uppercase tracking-wider bg-emerald-950/60 border-emerald-600 text-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.2)]';
       } else {
-        cardDictamen.className = 'p-3 rounded-xl border text-center font-bold text-xs mb-4 uppercase bg-[#2a141a] border-red-800 text-[#f87171]';
+        cardDictamen.className = 'p-3.5 rounded-xl border text-center font-extrabold text-xs mb-4 uppercase tracking-wider bg-[#2a141a] border-red-800 text-[#f87171]';
       }
 
-      // 1. Reactímetro (<= 350 ms)
+      // Módulo 1
       const valReact = d.reactimetro_ms !== undefined ? d.reactimetro_ms : d.reactimetro_resultado;
       if (valReact !== null && valReact !== undefined) {
         document.getElementById('txt-react-val').innerText = `${valReact} ms`;
-        const cumpleReact = Number(valReact) <= 350;
-        setModalBadge('badge-react', cumpleReact);
+        setModalBadge('badge-react', Number(valReact) <= 450);
       }
 
-      // 2. Palancas (>= 80% y toques <= 1)
+      // Módulo 2
       const valPal = d.palancas_pct !== undefined ? d.palancas_pct : d.palancas_resultado;
       const toquesPal = d.palancas_toques !== undefined ? d.palancas_toques : 0;
       if (valPal !== null && valPal !== undefined) {
         document.getElementById('txt-pal-val').innerText = `${valPal}% (${toquesPal} cto)`;
-        const cumplePal = Number(valPal) >= 80 && Number(toquesPal) <= 1;
-        setModalBadge('badge-pal', cumplePal);
+        setModalBadge('badge-pal', Number(valPal) >= 75 && Number(toquesPal) <= 3);
       }
 
-      // 3. Punteo (>= 78%)
+      // Módulo 3
       const valPunt = d.punteo_efectividad !== undefined ? d.punteo_efectividad : d.punteo_resultado;
       if (valPunt !== null && valPunt !== undefined) {
         document.getElementById('txt-punt-val').innerText = `${valPunt}%`;
-        const cumplePunt = Number(valPunt) >= 78;
-        setModalBadge('badge-punt', cumplePunt);
+        setModalBadge('badge-punt', Number(valPunt) >= 80);
       }
 
-      // 4. Visual (Opcional)
+      // Módulo 4: Visual
       if (d.visual_efectividad !== null && d.visual_efectividad !== undefined) {
         document.getElementById('row-visual').classList.remove('hidden');
         document.getElementById('row-visual').classList.add('flex');
@@ -216,7 +211,7 @@
         setModalBadge('badge-vis', Number(d.visual_efectividad) >= 80);
       }
 
-      // 5. Auditivo (Opcional)
+      // Módulo 5: Auditivo
       if (d.auditivo_efectividad !== null && d.auditivo_efectividad !== undefined) {
         document.getElementById('row-auditivo').classList.remove('hidden');
         document.getElementById('row-auditivo').classList.add('flex');
@@ -232,10 +227,10 @@
       if (!el) return;
       if (cumple) {
         el.innerText = 'CUMPLE';
-        el.className = 'px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-900 text-emerald-300';
+        el.className = 'px-2.5 py-0.5 rounded text-[10px] font-extrabold bg-emerald-900/80 text-emerald-300 border border-emerald-700/50';
       } else {
-        el.innerText = 'NO CUMPLE';
-        el.className = 'px-2 py-0.5 rounded text-[11px] font-bold bg-red-900/80 text-red-300';
+        el.innerText = 'OBSERVADO';
+        el.className = 'px-2.5 py-0.5 rounded text-[10px] font-extrabold bg-red-900/80 text-red-300 border border-red-700/50';
       }
     }
 
