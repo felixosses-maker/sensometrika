@@ -385,18 +385,19 @@
       let enContacto = false;
       let ultimoMuestreo = 0;
 
-      let px = 40, py = 50;
-      const radioPuntero = 7.0;
+      // CALIBRACIÓN DE PRECISIÓN: Puntero de 5.5 px para canal de 25 px
+      let px = 45, py = 50;
+      const radioPuntero = 5.5;
       const vel = 2.4;
       let teclas = { arriba: false, abajo: false, izq: false, der: false };
 
-      // BANCO DE CIRCUITOS CONTINUOS DE ALTA RESOLUCIÓN
+      // BANCO DE CIRCUITOS CALIBRADOS A 25 PX DE ANCHO
       const BANCO_CIRCUITOS = [
         {
           nombre: "Trazado Bayoneta",
           inicio: { x: 45, y: 175 },
-          meta: { x: 315, y: 55, r: 14 },
-          ancho: 34,
+          meta: { x: 315, y: 55, r: 12 },
+          ancho: 25,
           puntos: [
             { x: 45, y: 175 },
             { x: 140, y: 175 },
@@ -410,8 +411,8 @@
         {
           nombre: "Trazado Escalera",
           inicio: { x: 45, y: 55 },
-          meta: { x: 315, y: 180, r: 14 },
-          ancho: 34,
+          meta: { x: 315, y: 180, r: 12 },
+          ancho: 25,
           puntos: [
             { x: 45, y: 55 },
             { x: 150, y: 55 },
@@ -424,8 +425,8 @@
         {
           nombre: "Trazado Zigzag",
           inicio: { x: 45, y: 55 },
-          meta: { x: 55, y: 185, r: 14 },
-          ancho: 34,
+          meta: { x: 55, y: 185, r: 12 },
+          ancho: 25,
           puntos: [
             { x: 45, y: 55 },
             { x: 315, y: 55 },
@@ -705,11 +706,11 @@
       function dibujar() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-        // Fondo oscuro del gabinete
+        // Fondo oscuro de gabinete
         ctx.fillStyle = '#060c18';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-        // Cuadrícula técnica suave de ingeniería
+        // Cuadrícula técnica sutil
         ctx.strokeStyle = 'rgba(30, 41, 59, 0.35)';
         ctx.lineWidth = 0.5;
         for (let x = 0; x < canvas.width; x += 22) {
@@ -721,7 +722,7 @@
 
         const pts = circuitoActual.puntos;
 
-        // 1. CANAL EXTERNO NEÓN (Borde continuo limpio sin cortes)
+        // 1. CANAL EXTERNO NEÓN (Ceñido a 25px de ancho)
         ctx.strokeStyle = enContacto ? '#ef4444' : '#0284c7';
         ctx.lineWidth = circuitoActual.ancho + 4;
         ctx.lineCap = 'round';
@@ -731,7 +732,7 @@
         for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i].x, pts[i].y);
         ctx.stroke();
 
-        // 2. INTERIOR DE LA PISTA (Oscuro profundo continuo)
+        // 2. INTERIOR DE LA PISTA
         ctx.strokeStyle = '#0b1329';
         ctx.lineWidth = circuitoActual.ancho - 2;
         ctx.beginPath();
@@ -739,33 +740,33 @@
         for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i].x, pts[i].y);
         ctx.stroke();
 
-        // 3. LÍNEA GUÍA CENTRAL (Segmentada cian luminosa)
-        ctx.strokeStyle = 'rgba(56, 189, 248, 0.4)';
-        ctx.lineWidth = 1.4;
-        ctx.setLineDash([5, 5]);
+        // 3. GUÍA CENTRAL SEGMENTADA
+        ctx.strokeStyle = 'rgba(56, 189, 248, 0.35)';
+        ctx.lineWidth = 1.2;
+        ctx.setLineDash([4, 4]);
         ctx.beginPath();
         ctx.moveTo(pts[0].x, pts[0].y);
         for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i].x, pts[i].y);
         ctx.stroke();
         ctx.setLineDash([]);
 
-        // 4. META VERDE BRILLANTE
+        // 4. META VERDE
         const m = circuitoActual.meta;
         ctx.beginPath();
         ctx.arc(m.x, m.y, m.r, 0, Math.PI * 2);
         ctx.fillStyle = '#22c55e';
         ctx.fill();
         ctx.strokeStyle = '#ffffff';
-        ctx.lineWidth = 2.5;
+        ctx.lineWidth = 2;
         ctx.stroke();
 
-        // 5. PUNTERO MÓVIL ELECTROMECÁNICO
+        // 5. PUNTERO ELECTROMECÁNICO DE PRECISIÓN (Radio 5.5 px)
         ctx.beginPath();
         ctx.arc(px, py, radioPuntero, 0, Math.PI * 2);
         ctx.fillStyle = enContacto ? '#ef4444' : '#facc15';
         ctx.fill();
         ctx.strokeStyle = '#ffffff';
-        ctx.lineWidth = 2.5;
+        ctx.lineWidth = 2;
         ctx.stroke();
       }
 
@@ -784,10 +785,10 @@
       enlazar(btnDer, 'der');
 
       window.addEventListener('keydown', (e) => {
-        if (['ArrowUp', 'w', 'W'].includes(e.key)) { e.preventDefault(); teclas.arriba = true; }
-        if (['ArrowDown', 's', 'S'].includes(e.key)) { e.preventDefault(); teclas.abajo = true; }
-        if (['ArrowLeft', 'a', 'A'].includes(e.key)) { e.preventDefault(); teclas.izq = true; }
-        if (['ArrowRight', 'd', 'D'].includes(e.key)) { e.preventDefault(); teclas.der = true; }
+        if (['ArrowUp', 'w', 'W'].includes(e.key)) teclas.arriba = true;
+        if (['ArrowDown', 's', 'S'].includes(e.key)) teclas.abajo = true;
+        if (['ArrowLeft', 'a', 'A'].includes(e.key)) teclas.izq = true;
+        if (['ArrowRight', 'd', 'D'].includes(e.key)) teclas.der = true;
       });
       window.addEventListener('keyup', (e) => {
         if (['ArrowUp', 'w', 'W'].includes(e.key)) teclas.arriba = false;
