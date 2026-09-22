@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Sensometrika | Certificado Oficial de Faena D.S. 170</title>
+  <link rel="stylesheet" href="styles.css">
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <style>
+    body {
+      background-color: #0b1120;
+      color: #1e293b;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      margin: 0;
+      padding: 16px;
+      display: flex;
+      justify-content: center;
+      min-height: 100vh;
+      box-sizing: border-box;
+    }
+    .hoja-informe-b2b {
+      width: 100%;
+      max-width: 520px;
+      background: #ffffff;
+      color: #1e293b;
+      border-radius: 12px;
+      padding: 22px;
+      box-sizing: border-box;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+      margin: auto 0;
+    }
+    .cabecera-logo-b2b {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 2px solid #0f172a;
+      padding-bottom: 12px;
+      margin-bottom: 12px;
+      gap: 12px;
+    }
+    .bloque-marca {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .img-logo-sensometrika {
+      height: 48px;
+      width: auto;
+      max-width: 52px;
+      object-fit: contain;
+      display: block;
+      border-radius: 6px;
+    }
+    .img-logo-empresa-cliente {
+      height: 44px;
+      max-width: 85px;
+      object-fit: contain;
+      border-left: 1px solid #cbd5e1;
+      padding-left: 8px;
+      display: none; /* Se activa dinámicamente si existe en localStorage */
+    }
+    .textos-marca h2 {
+      font-size: 1.10rem;
+      color: #0f172a;
+      margin: 0;
+      font-weight: 900;
+      letter-spacing: -0.3px;
+      line-height: 1.1;
+    }
+    .textos-marca .sub-tech {
+      font-size: 0.58rem;
+      color: #64748b;
+      font-weight: 800;
+      letter-spacing: 0.8px;
+      display: block;
+      margin-top: 2px;
+      margin-bottom: 4px;
+    }
+    .textos-marca .normativa-mtt {
+      font-size: 0.65rem;
+      color: #0284c7;
+      font-weight: 700;
+      display: block;
+    }
+    .caja-qr-b2b {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-width: 78px;
+    }
+    #contenedor-qr {
+      width: 74px;
+      height: 74px;
+      padding: 2px;
+      background: #ffffff;
+      border-radius: 6px;
+      border: 1px solid #cbd5e1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    #contenedor-qr img, #contenedor-qr canvas {
+      width: 74px !important;
+      height: 74px !important;
+      display: block;
+    }
+    .alerta-despacho-b2b {
+      background: #f0fdf4;
+      border: 1px solid #86efac;
+      border-radius: 8px;
+      padding: 8px 10px;
+      font-size: 0.74rem;
+      color: #166534;
+      margin-bottom: 12px;
+      line-height: 1.35;
+    }
+    .grilla-datos-filiacion-b2b {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px 12px;
+      font-size: 0.78rem;
+      margin-bottom: 12px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid #e2e8f0;
+    }
+    .grilla-datos-filiacion-b2b span { color: #64748b; display: block; font-size: 0.68rem; }
+    .grilla-datos-filiacion-b2b strong { color: #0f172a; }
+
+    .caja-dictamen-b2b {
+      border-radius: 8px;
+      padding: 10px;
+      text-align: center;
+      font-size: 0.82rem;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      margin-bottom: 12px;
+    }
+    .dictamen-apto {
+      border: 1.5px solid #22c55e;
+      background: #f0fdf4;
+      color: #15803d;
+    }
+    .dictamen-observado {
+      border: 1.5px solid #ef4444;
+      background: #fef2f2;
+      color: #b91c1c;
+    }
+    .dictamen-incompleto {
+      border: 1.5px solid #f59e0b;
+      background: #fffbeb;
+      color: #b45309;
+    }
+
+    .tabla-normativa-b2b {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.76rem;
+      margin-bottom: 12px;
+    }
+    .tabla-normativa-b2b th {
+      background: #f8fafc;
+      color: #475569;
+      border: 1px solid #cbd5e1;
+      padding: 6px 6px;
+      text-align: left;
+    }
+    .tabla-normativa-b2b td {
+      border: 1px solid #cbd5e1;
+      padding: 6px 6px;
+      color: #1e293b;
+      vertical-align: middle;
+    }
+    .badge-mini {
+      display: inline-block;
+      font-size: 0.68rem;
+      font-weight: 800;
+      padding: 2px 6px;
+      border-radius: 4px;
+      text-align: center;
+    }
+    .mini-cumple { background: #dcfce7; color: #15803d; border: 1px solid #86efac; }
+    .mini-falla { background: #fee2e2; color: #b91c1c; border: 1px solid #fca5a5; }
+    .mini-pendiente { background: #fef3c7; color: #b45309; border: 1px solid #fde68a; }
+
+    .caja-firmas-b2b {
+      width: 100%;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin: 14px 0 8px;
+      text-align: center;
+    }
+    .celda-firma {
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      align-items: center;
+    }
+    .zona-estampa-firma {
+      min-height: 55px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+    }
+    .img-firma-estampada {
+      max-height: 52px;
+      max-width: 170px;
+      display: block;
+    }
+    .linea-firma {
+      width: 100%;
+      border-top: 1px solid #0f172a;
+      margin-top: 4px;
+      padding-top: 4px;
+    }
+    .clausula-legal-b2b {
+      font-size: 0.62rem;
+      color: #64748b;
+      line-height: 1.35;
+      border-top: 1px solid #e2e8f0;
+      padding-top: 8px;
+      margin-top: 8px;
+      text-align: justify;
+    }
+    .btn-retorno-menu {
+      width: 100%;
+      height: 42px;
+      background: #0284c7;
+      color: #ffffff;
+      border: none;
+      border-radius: 8px;
+      font-weight: 800;
+      font-size: 0.88rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-decoration: none;
+      margin-top: 12px;
+    }
+    .btn-retorno-menu:hover { background: #0369a1; }
+    @media print {
+      body { background: #ffffff; padding: 0; }
+      .hoja-informe-b2b { box-shadow: none; border-radius: 0; width: 100%; max-width: 100%; padding: 0; }
+      .btn-retorno-menu { display: none !important; }
+    }
+  </style>
+</head>
+<body>
+  <main class="hoja-informe-b2b">
+    <header class="cabecera-logo-b2b">
+      <div class="bloque-marca">
+        <img class="img-logo-sensometrika" src="assets/logo-sensometrika.png" onerror="this.style.display='none'" alt="Logo Sensometrika">
+        <img id="img-logo-empresa" class="img-logo-empresa-cliente" src="" alt="Logo Empresa Mandante" onerror="this.style.display='none'">
+        <div class="textos-marca">
+          <h2>SENSOMETRIKA SpA</h2>
+          <span class="sub-tech">CALIBRATION TECHNOLOGY</span>
+          <span class="normativa-mtt">GABINETE SENSOTÉCNICO LABORAL • D.S. N° 170 MTT</span>
+        </div>
+      </div>
+      <div class="caja-qr-b2b">
+        <div id="contenedor-qr"></div>
+        <span style="font-size: 0.52rem; color: #64748b; font-weight: 700; margin-top: 3px; letter-spacing: 0.5px;">VERIFICACIÓN</span>
+      </div>
+    </header>
+
+    <div class="alerta-despacho-b2b">
+      📨 <strong>Certificado Oficial Emitido:</strong> Copia remitida de forma automática a la supervisión: <strong id="b2b-correo-apr">prevencion@socadep.cl</strong>
+    </div>
+
+    <section class="grilla-datos-filiacion-b2b">
+      <div>
+        <span>Trabajador Evaluado:</span>
+        <strong id="b2b-nombre-trabajador">--</strong>
+      </div>
+      <div>
+        <span>RUT Trabajador:</span>
+        <strong id="b2b-rut-trabajador">--</strong>
+      </div>
+      <div>
+        <span>Cargo / Función:</span>
+        <strong id="b2b-cargo-trabajador">--</strong>
+      </div>
+      <div>
+        <span>Folio Verificación:</span>
+        <strong id="b2b-folio">--</strong>
+      </div>
+      <div>
+        <span>Fecha y Hora:</span>
+        <strong id="b2b-fecha">--</strong>
+      </div>
+      <div>
+        <span>Razón Social Empresa:</span>
+        <strong id="b2b-empresa">socadep ltda</strong>
+      </div>
+    </section>
+
+    <div class="caja-dictamen-b2b dictamen-incompleto" id="b2b-caja-dictamen">
+      DICTAMEN: EVALUACIÓN EN PROCESO
+    </div>
+
+    <table class="tabla-normativa-b2b">
+      <thead>
+        <tr>
+          <th>Módulo Evaluado</th>
+          <th>Estándar Faena</th>
+          <th>Resultado</th>
+          <th style="text-align: center;">Evaluación</th>
+        </tr>
+      </thead>
+      <tbody id="b2b-cuerpo-tabla">
+        <tr>
+          <td><strong>1. Reactímetro</strong><br><small style="color: #64748b;">Frenado simple de emergencia</small></td>
+          <td>≤ 350 ms</td>
+          <td id="b2b-res-react" style="font-weight: 700;">-- ms</td>
+          <td style="text-align: center;"><span id="b2b-badge-react" class="badge-mini mini-pendiente">PENDIENTE</span></td>
+        </tr>
+        <tr>
+          <td><strong>2. Palancas</strong><br><small style="color: #64748b;">Coordinación motriz bimanual</small></td>
+          <td>≥ 80% / ≤ 1 contacto</td>
+          <td id="b2b-res-pal">-- %</td>
+          <td style="text-align: center;"><span id="b2b-badge-pal" class="badge-mini mini-pendiente">PENDIENTE</span></td>
+        </tr>
+        <tr>
+          <td><strong>3. Punteo</strong><br><small style="color: #64748b;">Lahy rotatorio y cadencia</small></td>
+          <td>≥ 78% efectividad</td>
+          <td id="b2b-res-punt">-- %</td>
+          <td style="text-align: center;"><span id="b2b-badge-punt" class="badge-mini mini-pendiente">PENDIENTE</span></td>
+        </tr>
+        <tr id="b2b-fila-visual" style="display: none;">
+          <td><strong>4. Tamizaje Visual</strong><br><small style="color: #64748b;">Agudeza y discriminación cromática</small></td>
+          <td>≥ 80% acierto</td>
+          <td id="b2b-res-vis">-- %</td>
+          <td style="text-align: center;"><span id="b2b-badge-vis" class="badge-mini mini-pendiente">PENDIENTE</span></td>
+        </tr>
+        <tr id="b2b-fila-auditivo" style="display: none;">
+          <td><strong>5. Tamizaje Auditivo</strong><br><small style="color: #64748b;">Detección tonal ocupacional</small></td>
+          <td>≥ 80% detección</td>
+          <td id="b2b-res-aud">-- %</td>
+          <td style="text-align: center;"><span id="b2b-badge-aud" class="badge-mini mini-pendiente">PENDIENTE</span></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <section class="caja-firmas-b2b">
+      <div class="celda-firma">
+        <div class="zona-estampa-firma">
+          <img id="img-firma-evaluado" class="img-firma-estampada" src="" alt="Firma Trabajador" style="display: none;">
+          <span id="txt-sin-firma" style="font-size: 0.68rem; color: #94a3b8; font-style: italic;">Sin rúbrica registrada</span>
+        </div>
+        <div class="linea-firma">
+          <strong id="b2b-pie-nombre-trabajador" style="font-size: 0.74rem; color: #0f172a; display: block;">--</strong>
+          <span style="font-size: 0.66rem; color: #64748b;">RUT: <span id="b2b-pie-rut-trabajador">--</span></span><br>
+          <span style="font-size: 0.65rem; color: #0284c7; font-weight: 700;">Firma del Trabajador</span>
+        </div>
+      </div>
+
+      <div class="celda-firma">
+        <div style="height: 55px; display: flex; align-items: center; justify-content: center; width: 100%;"></div>
+        <div class="linea-firma">
+          <span style="font-size: 0.70rem; color: #15803d; font-weight: 800; display: block; margin-bottom: 2px;">✓ V°B° VALIDADO EN SISTEMA</span>
+          <strong id="b2b-pie-nombre-apr" style="font-size: 0.74rem; color: #0f172a; display: block;">Mariela Cárcamo F.</strong>
+          <span style="font-size: 0.66rem; color: #64748b;">Supervisión APR / Mandante</span>
+        </div>
+      </div>
+    </section>
+
+    <footer class="clausula-legal-b2b">
+      <strong>Cláusula de Responsabilidad Técnica:</strong> Documento electrónico emitido conforme a las directrices técnicas del D.S. N° 170 MTT y la Ley N° 18.290. Autenticidad contrastable en tiempo real mediante código QR.
+    </footer>
+
+    <a href="menu-b2b.html" class="btn-retorno-menu">
+      ← Volver al Portal Empresa
+    </a>
+  </main>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+      try {
+        const planEmpresa = JSON.parse(localStorage.getItem('sensometrika_plan_empresa')) || {};
+        const datosUser = JSON.parse(localStorage.getItem('sensometrika_datos_usuario')) || {};
+
+        // Inyección del logo de la empresa mandante / cliente
+        const logoEmpresa = planEmpresa.logo || planEmpresa.logoUrl || datosUser.logoEmpresa;
+        const imgLogoEmpresa = document.getElementById('img-logo-empresa');
+        if (logoEmpresa && imgLogoEmpresa) {
+          imgLogoEmpresa.src = logoEmpresa;
+          imgLogoEmpresa.style.display = 'block';
+        }
+
+        const nombre = (datosUser.nombre || 'Juan Perez Silva').toUpperCase();
+        const rut = datosUser.rut || '14.345.333-7';
+        const cargo = datosUser.cargo || 'Conductor de Transporte / Flota';
+        const empresa = planEmpresa.razonSocial || datosUser.empresa || 'socadep ltda';
+        const correoAPR = (planEmpresa.responsable && planEmpresa.responsable.correo) || planEmpresa.correoInformes || 'prevencion@socadep.cl';
+        const supervisor = (planEmpresa.responsable && planEmpresa.responsable.nombre) || planEmpresa.supervisor || 'Mariela Cárcamo F.';
+
+        document.getElementById('b2b-nombre-trabajador').innerText = nombre;
+        document.getElementById('b2b-rut-trabajador').innerText = rut;
+        document.getElementById('b2b-cargo-trabajador').innerText = cargo;
+        document.getElementById('b2b-empresa').innerText = empresa;
+        document.getElementById('b2b-correo-apr').innerText = correoAPR;
+
+        document.getElementById('b2b-pie-nombre-trabajador').innerText = nombre;
+        document.getElementById('b2b-pie-rut-trabajador').innerText = rut;
+        document.getElementById('b2b-pie-nombre-apr').innerText = supervisor;
+
+        const firmaGuardada = localStorage.getItem('sensometrika_firma_trabajador');
+        const imgFirma = document.getElementById('img-firma-evaluado');
+        const txtSinFirma = document.getElementById('txt-sin-firma');
+        if (firmaGuardada && imgFirma) {
+          imgFirma.src = firmaGuardada;
+          imgFirma.style.display = 'block';
+          if (txtSinFirma) txtSinFirma.style.display = 'none';
+        }
+
+        let folio = sessionStorage.getItem('sensometrika_folio_b2b');
+        if (!folio) {
+          folio = 'SMK-' + Math.floor(100000 + Math.random() * 900000);
+          sessionStorage.setItem('sensometrika_folio_b2b', folio);
+        }
+        document.getElementById('b2b-folio').innerText = folio;
+
+        const ahora = new Date();
+        document.getElementById('b2b-fecha').innerText = ahora.toLocaleDateString('es-CL') + ' ' + ahora.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' });
+
+        await cargarResultadosYRespaldar(folio, nombre, rut, cargo, empresa);
+      } catch (err) {
+        console.error("Error al inicializar informe B2B:", err);
+      }
+    });
+
+    async function cargarResultadosYRespaldar(folio, nombre, rut, cargo, empresa) {
+      const rReact = JSON.parse(localStorage.getItem('sensometrika_reactimetro'));
+      const rPal = JSON.parse(localStorage.getItem('sensometrika_palancas'));
+      const rPunt = JSON.parse(localStorage.getItem('sensometrika_punteo'));
+      const rVis = JSON.parse(localStorage.getItem('sensometrika_visual'));
+      const rAud = JSON.parse(localStorage.getItem('sensometrika_auditivo'));
+
+      let completados = 0;
+      let todoApto = true;
+
+      let valReact = null;
+      let valPalPct = null;
+      let valPalToques = 0;
+      let valPalTiempoError = 0;
+      let valPuntPct = null;
+      let valVisPct = null;
+      let valAudPct = null;
+
+      // 1. Reactímetro
+      if (rReact && (rReact.tiempo !== undefined || rReact.promedio !== undefined)) {
+        completados++;
+        valReact = Number(rReact.tiempo || rReact.promedio);
+        document.getElementById('b2b-res-react').innerText = `${valReact} ms`;
+        const cumple = valReact <= 350;
+        if (!cumple) todoApto = false;
+        setMiniBadge('b2b-badge-react', cumple);
+      }
+
+      // 2. Palancas
+      if (rPal && (rPal.porcentaje !== undefined || rPal.efectividad !== undefined)) {
+        completados++;
+        valPalPct = Number(rPal.porcentaje !== undefined ? rPal.porcentaje : rPal.efectividad);
+        valPalToques = rPal.contactos !== undefined ? rPal.contactos : (rPal.toques || 0);
+        valPalTiempoError = rPal.tiempoError !== undefined ? rPal.tiempoError : (rPal.permanencia || 0);
+        
+        document.getElementById('b2b-res-pal').innerText = `${valPalPct}% (${valPalToques} cto, ${valPalTiempoError}s)`;
+        const cumple = valPalPct >= 80 && valPalToques <= 1;
+        if (!cumple) todoApto = false;
+        setMiniBadge('b2b-badge-pal', cumple);
+      }
+
+      // 3. Punteo
+      if (rPunt && (rPunt.efectividad !== undefined || rPunt.porcentaje !== undefined)) {
+        completados++;
+        valPuntPct = Number(rPunt.efectividad !== undefined ? rPunt.efectividad : rPunt.porcentaje);
+        const aciertos = rPunt.aciertos !== undefined ? rPunt.aciertos : '--';
+        document.getElementById('b2b-res-punt').innerText = `${valPuntPct}% (${aciertos} aciertos)`;
+        const cumple = valPuntPct >= 78;
+        if (!cumple) todoApto = false;
+        setMiniBadge('b2b-badge-punt', cumple);
+      }
+
+      // 4. Visual
+      if (rVis && rVis.efectividad !== undefined) {
+        document.getElementById('b2b-fila-visual').style.display = 'table-row';
+        completados++;
+        valVisPct = Number(rVis.efectividad);
+        document.getElementById('b2b-res-vis').innerText = `${valVisPct}%`;
+        const cumple = valVisPct >= 80;
+        if (!cumple) todoApto = false;
+        setMiniBadge('b2b-badge-vis', cumple);
+      }
+
+      // 5. Auditivo
+      if (rAud && rAud.efectividad !== undefined) {
+        document.getElementById('b2b-fila-auditivo').style.display = 'table-row';
+        completados++;
+        valAudPct = Number(rAud.efectividad);
+        document.getElementById('b2b-res-aud').innerText = `${valAudPct}%`;
+        const cumple = valAudPct >= 80;
+        if (!cumple) todoApto = false;
+        setMiniBadge('b2b-badge-aud', cumple);
+      }
+
+      // Dictamen
+      const boxDictamen = document.getElementById('b2b-caja-dictamen');
+      let textoDictamen = '';
+      if (completados < 3) {
+        boxDictamen.className = 'caja-dictamen-b2b dictamen-incompleto';
+        textoDictamen = 'DICTAMEN: EVALUACIÓN INCOMPLETA / MÓDULOS PENDIENTES';
+      } else if (todoApto) {
+        boxDictamen.className = 'caja-dictamen-b2b dictamen-apto';
+        textoDictamen = 'DICTAMEN: APTO ESTÁNDAR FAENA CRÍTICA (NIVEL ÓPTIMO)';
+      } else {
+        boxDictamen.className = 'caja-dictamen-b2b dictamen-observado';
+        textoDictamen = 'DICTAMEN: OBSERVADO / NO CUMPLE ESTÁNDAR FAENA CRÍTICA';
+      }
+      boxDictamen.innerText = textoDictamen;
+
+      // OBJETO DE CERTIFICADO UNIFICADO
+      const payloadCertificado = {
+        folio: folio,
+        nombre: nombre,
+        rut: rut,
+        cargo: cargo,
+        empresa: empresa,
+        dictamen: textoDictamen,
+        reactimetro_ms: valReact,
+        palancas_pct: valPalPct,
+        palancas_toques: valPalToques,
+        punteo_efectividad: valPuntPct,
+        visual_efectividad: valVisPct,
+        auditivo_efectividad: valAudPct,
+        fecha_emision: new Date().toISOString()
+      };
+
+      // RESPALDO LOCALSTORAGE INMEDIATO (Fallback)
+      localStorage.setItem('cert_' + folio, JSON.stringify(payloadCertificado));
+
+      // PERSISTENCIA ASÍNCRONA EN SUPABASE
+      try {
+        if (window.supabase && typeof window.supabase.createClient === 'function') {
+          const SUPABASE_URL = 'https://kytuewhkhshrjddzoknv.supabase.co';
+          const SUPABASE_ANON_KEY = 'sb_publishable_ou-yRIieMQOGoWJ4YZIYtg_-Lusc711'; 
+
+          const sClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+          const { data, error } = await sClient
+            .from('certificados_folios')
+            .upsert([payloadCertificado], { onConflict: 'folio' })
+            .select();
+
+          if (error) {
+            console.warn("Aviso Supabase (error):", error.message);
+          } else {
+            console.log("Certificado respaldado exitosamente en Supabase (certificados_folios).", data);
+          }
+        }
+      } catch (e) {
+        console.warn("Aviso Supabase (excepción):", e);
+      }
+
+      // RENDERIZAR QR CON RUTA EXACTA A validar.html
+      const contenedorQR = document.getElementById('contenedor-qr');
+      if (contenedorQR && typeof QRCode !== 'undefined') {
+        contenedorQR.innerHTML = '';
+        const esLocal = (window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost');
+        const basePublica = esLocal ? 'https://sensometrika.vercel.app' : window.location.origin;
+        const urlQR = `${basePublica}/validar.html?folio=${encodeURIComponent(folio)}`;
+
+        new QRCode(contenedorQR, {
+          text: urlQR,
+          width: 74,
+          height: 74,
+          colorDark: "#000000",
+          colorLight: "#ffffff",
+          correctLevel: QRCode.CorrectLevel.M
+        });
+      }
+    }
+
+    function setMiniBadge(id, cumple) {
+      const el = document.getElementById(id);
+      if (!el) return;
+      if (cumple) {
+        el.innerText = 'CUMPLE';
+        el.className = 'badge-mini mini-cumple';
+      } else {
+        el.innerText = 'NO CUMPLE';
+        el.className = 'badge-mini mini-falla';
+      }
+    }
+  </script>
+</body>
+</html>

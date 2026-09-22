@@ -1,0 +1,973 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>SENSOMETRIKA | Test de Palancas Bimanual</title>
+  <link rel="stylesheet" href="styles.css">
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    body {
+      background-color: #070d18;
+      color: #ffffff;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 14px 12px 28px;
+      -webkit-tap-highlight-color: transparent;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+
+    .app-container {
+      width: 100%;
+      max-width: 440px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    /* ENCABEZADO OFICIAL DE MARCA SVG */
+    .sensometrika-brand-header {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      margin-top: 4px;
+      margin-bottom: 4px;
+      text-align: center;
+    }
+
+    .brand-svg-iso {
+      width: 52px;
+      height: 52px;
+      margin-bottom: 6px;
+      filter: drop-shadow(0 0 10px rgba(56, 189, 248, 0.45));
+    }
+
+    .brand-title {
+      margin: 0;
+      font-size: 1.25rem;
+      font-weight: 800;
+      letter-spacing: 2px;
+      color: #ffffff;
+      text-transform: uppercase;
+      line-height: 1.1;
+    }
+
+    .brand-subtitle {
+      font-size: 0.65rem;
+      font-weight: 600;
+      letter-spacing: 1.8px;
+      color: #94a3b8;
+      margin-top: 3px;
+      text-transform: uppercase;
+    }
+
+    /* TARJETA PRINCIPAL DEL MÓDULO */
+    .modulo-card-container {
+      background-color: #0b1324;
+      border: 1px solid #1e293b;
+      border-radius: 16px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.6);
+    }
+
+    .nav-top-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .link-volver {
+      color: #94a3b8;
+      text-decoration: none;
+      font-size: 0.82rem;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      cursor: pointer;
+    }
+
+    .link-volver:hover, .link-volver:active {
+      color: #38bdf8;
+    }
+
+    .btn-help {
+      background: rgba(56, 189, 248, 0.1);
+      border: 1px solid rgba(56, 189, 248, 0.35);
+      color: #38bdf8;
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 0.72rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .badge-fase {
+      display: inline-block;
+      background: rgba(250, 204, 21, 0.12);
+      border: 1px solid rgba(250, 204, 21, 0.35);
+      color: #facc15;
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 5px 14px;
+      border-radius: 20px;
+      margin: 0 auto;
+      text-align: center;
+      letter-spacing: 0.3px;
+    }
+
+    .badge-fase.oficial {
+      background: rgba(56, 189, 248, 0.12);
+      border-color: rgba(56, 189, 248, 0.35);
+      color: #38bdf8;
+    }
+
+    /* VISOR CANVAS CON MARCA DE AGUA VECTORIAL */
+    .canvas-wrapper {
+      position: relative;
+      width: 100%;
+      background-color: #070d18;
+      border: 1px solid #1e293b;
+      border-radius: 12px;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      touch-action: none;
+    }
+
+    .marca-agua-svg {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 145px;
+      height: 145px;
+      opacity: 0.08;
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    #lienzo-palancas {
+      position: relative;
+      z-index: 2;
+      display: block;
+      width: 100%;
+      height: auto;
+      background: transparent;
+    }
+
+    .instruccion-panel {
+      text-align: center;
+      font-size: 0.8rem;
+      color: #94a3b8;
+      line-height: 1.4;
+      margin: 0;
+      min-height: 2.2rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .btn-calibrar {
+      width: 100%;
+      background-color: #0284c7;
+      color: #ffffff;
+      border: none;
+      border-radius: 10px;
+      padding: 13px;
+      font-size: 0.95rem;
+      font-weight: 700;
+      cursor: pointer;
+      touch-action: manipulation;
+      transition: background-color 0.15s ease, transform 0.05s ease;
+    }
+
+    .btn-calibrar:hover {
+      background-color: #0369a1;
+    }
+
+    .btn-calibrar:active {
+      transform: scale(0.98);
+    }
+
+    .btn-calibrar:disabled {
+      background-color: #1e293b;
+      color: #475569;
+      cursor: not-allowed;
+    }
+
+    /* TABLERO DE MÉTRICAS */
+    .metricas-inferiores-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 8px;
+      background-color: #070b14;
+      border: 1px solid #1e293b;
+      border-radius: 10px;
+      padding: 10px 8px;
+      text-align: center;
+    }
+
+    .col-metrica span {
+      display: block;
+      font-size: 0.65rem;
+      color: #94a3b8;
+      text-transform: uppercase;
+      margin-bottom: 2px;
+      font-weight: 600;
+    }
+
+    .col-metrica strong {
+      display: block;
+      font-size: 0.95rem;
+      color: #ffffff;
+    }
+
+    /* MANDOS TÁCTILES BIMANUALES */
+    .mandos-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 2px;
+    }
+
+    .mando-caja {
+      background: #070b14;
+      border: 1px solid #1e293b;
+      border-radius: 10px;
+      padding: 8px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .mando-caja span {
+      font-size: 0.68rem;
+      color: #94a3b8;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+
+    .mando-botones-row {
+      display: flex;
+      gap: 8px;
+      width: 100%;
+    }
+
+    .btn-mando {
+      flex: 1;
+      height: 48px;
+      background: #1e293b;
+      border: 1px solid #334155;
+      color: #f1f5f9;
+      border-radius: 8px;
+      font-size: 1.25rem;
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      touch-action: manipulation;
+      cursor: pointer;
+      transition: background-color 0.1s ease, border-color 0.1s ease;
+    }
+
+    .btn-mando:active {
+      background: #0284c7;
+      border-color: #38bdf8;
+    }
+
+    /* MODAL DE AYUDA */
+    .modal-backdrop {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(3, 6, 15, 0.85);
+      backdrop-filter: blur(5px);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+    .modal-backdrop.open { display: flex; }
+    .modal-card {
+      background: #0f172a;
+      border: 1px solid rgba(56, 189, 248, 0.4);
+      border-radius: 14px;
+      max-width: 400px;
+      width: 100%;
+      padding: 20px;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.9);
+    }
+    .modal-title {
+      font-size: 1rem;
+      font-weight: 700;
+      color: #38bdf8;
+      margin-bottom: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .modal-body {
+      font-size: 0.82rem;
+      color: #cbd5e1;
+      line-height: 1.5;
+    }
+    .modal-body p { margin-bottom: 8px; }
+    .modal-body ul { margin-left: 18px; margin-bottom: 8px; }
+    .modal-body li { margin-bottom: 4px; }
+    .modal-close-btn {
+      width: 100%;
+      margin-top: 14px;
+      padding: 11px;
+      background: #0284c7;
+      border: none;
+      border-radius: 8px;
+      color: white;
+      font-weight: 700;
+      font-size: 0.85rem;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+  <main class="app-container">
+
+    <!-- ENCABEZADO DE MARCA VECTORIAL -->
+    <header class="sensometrika-brand-header">
+      <svg class="brand-svg-iso" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="50" cy="50" r="10" fill="#00e5ff" />
+        <path d="M50 30 A20 20 0 0 1 70 50 A20 20 0 0 1 50 70" stroke="#ffffff" stroke-width="4.5" stroke-linecap="round"/>
+        <path d="M50 20 A30 30 0 0 1 80 50 A30 30 0 0 1 50 80" stroke="#ffffff" stroke-width="4.5" stroke-linecap="round"/>
+        <path d="M50 10 A40 40 0 0 1 90 50" stroke="#ffffff" stroke-width="4.5" stroke-linecap="round"/>
+        <path d="M50 90 A40 40 0 0 1 10 50" stroke="#ffffff" stroke-width="4.5" stroke-linecap="round"/>
+        <path d="M50 70 A20 20 0 0 1 30 50 A20 20 0 0 1 50 30" stroke="#00e5ff" stroke-width="3" stroke-linecap="round"/>
+      </svg>
+      <h1 class="brand-title">SENSOMETRIKA</h1>
+      <span class="brand-subtitle">CALIBRATION TECHNOLOGY</span>
+    </header>
+
+    <section class="modulo-card-container">
+      
+      <div class="nav-top-row">
+        <a href="menu.html" class="link-volver" id="btnBack">← Menú Principal</a>
+        <button type="button" class="btn-help" id="btnHelp">? ¿Cómo funciona?</button>
+      </div>
+
+      <div style="text-align: center;">
+        <span class="badge-fase" id="badge-modo">🟡 Calibración Técnica (Demo 20s)</span>
+      </div>
+
+      <!-- VISOR CANVAS CON MARCA DE AGUA SVG -->
+      <div class="canvas-wrapper">
+        <svg class="marca-agua-svg" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="50" cy="50" r="10" fill="#ffffff" />
+          <path d="M50 30 A20 20 0 0 1 70 50 A20 20 0 0 1 50 70" stroke="#ffffff" stroke-width="4" stroke-linecap="round"/>
+          <path d="M50 20 A30 30 0 0 1 80 50 A30 30 0 0 1 50 80" stroke="#ffffff" stroke-width="4" stroke-linecap="round"/>
+          <path d="M50 10 A40 40 0 0 1 90 50" stroke="#ffffff" stroke-width="4" stroke-linecap="round"/>
+          <path d="M50 90 A40 40 0 0 1 10 50" stroke="#ffffff" stroke-width="4" stroke-linecap="round"/>
+        </svg>
+        <canvas id="lienzo-palancas" width="430" height="240"></canvas>
+      </div>
+
+      <p class="instruccion-panel" id="txt-instruccion">
+        Calibrando: Conduce el punto a la meta verde sin tocar los bordes.
+      </p>
+
+      <button type="button" class="btn-calibrar" id="btn-iniciar">
+        Iniciar Calibración (20 s)
+      </button>
+
+      <!-- METRICAS INFERIORES -->
+      <div class="metricas-inferiores-grid">
+        <div class="col-metrica">
+          <span>Tiempo</span>
+          <strong style="color:#38bdf8;" id="txt-tiempo">20 s</strong>
+        </div>
+        <div class="col-metrica">
+          <span>Contactos</span>
+          <strong style="color:#f87171;" id="txt-contactos">0</strong>
+        </div>
+        <div class="col-metrica">
+          <span>Circuito</span>
+          <strong style="color:#cbd5e1; font-size: 0.78rem;" id="txt-circuito">Trazado Inducción</strong>
+        </div>
+      </div>
+
+      <!-- MANDOS TÁCTILES BIMANUALES -->
+      <div class="mandos-grid" id="seccion-mandos">
+        <div class="mando-caja">
+          <span>Mano Izquierda (Eje X)</span>
+          <div class="mando-botones-row">
+            <button type="button" class="btn-mando" id="btn-izq">◄</button>
+            <button type="button" class="btn-mando" id="btn-der">►</button>
+          </div>
+        </div>
+        <div class="mando-caja">
+          <span>Mano Derecha (Eje Y)</span>
+          <div class="mando-botones-row">
+            <button type="button" class="btn-mando" id="btn-arriba">▲</button>
+            <button type="button" class="btn-mando" id="btn-abajo">▼</button>
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- MODAL DE AYUDA -->
+  <div class="modal-backdrop" id="modalGuia">
+    <div class="modal-card">
+      <div class="modal-title">
+        <span>Test de Palancas Bimanual (D.S. 170)</span>
+        <span style="cursor: pointer;" id="modalCloseX">✕</span>
+      </div>
+      <div class="modal-body">
+        <p>Este test evalúa la <strong>coordinación motriz disociada de ambas manos</strong> bajo estándar normativo.</p>
+        <ul>
+          <li><strong>Mano izquierda:</strong> Desplaza el punto horizontalmente (Eje X).</li>
+          <li><strong>Mano derecha:</strong> Desplaza el punto verticalmente (Eje Y).</li>
+          <li>Conduce el puntero por el canal sin tocar las paredes hasta la meta verde.</li>
+        </ul>
+        <p><strong>Fase Demo:</strong> 20 segundos libres de adaptación antes de las simulaciones oficiales.</p>
+      </div>
+      <button type="button" class="modal-close-btn" id="btnModalClose">Entendido</button>
+    </div>
+  </div>
+
+  <!-- MOTOR TOTALMENTE AUTÓNOMO Y DINÁMICO DE PALANCAS -->
+  <script>
+    (function() {
+      // 1. Detección dinámica del Plan y Límite de Simulaciones
+      const urlParams = new URLSearchParams(window.location.search);
+      let sesion = {};
+      try {
+        sesion = JSON.parse(localStorage.getItem('sensometrika_sesion')) || {};
+      } catch(e) {}
+
+      const esB2B = urlParams.get('mode') === 'b2b' || sesion.rol === 'empresa';
+      const urlMenu = esB2B ? 'menu-b2b.html' : 'menu.html';
+      const btnVolver = document.getElementById('btnBack');
+      if (btnVolver) btnVolver.href = urlMenu;
+
+      // Determinación automática del límite (Básico: 3 | Plus: 5 | Full: 8 | B2B: 1)
+      function calcularLimitePlan() {
+        if (esB2B) return 1;
+        if (sesion.limiteSimulaciones && Number(sesion.limiteSimulaciones) > 0) {
+          return Number(sesion.limiteSimulaciones);
+        }
+        const planStr = String(sesion.planId || sesion.nivel || sesion.plan || '').toLowerCase();
+        if (planStr.includes('full') || planStr.includes('8')) return 8;
+        if (planStr.includes('plus') || planStr.includes('5')) return 5;
+        return 3;
+      }
+
+      const TOTAL_SIMULACIONES = calcularLimitePlan();
+
+      const canvas = document.getElementById('lienzo-palancas');
+      const ctx = canvas.getContext('2d');
+
+      const badgeModo = document.getElementById('badge-modo');
+      const txtContactos = document.getElementById('txt-contactos');
+      const txtTiempo = document.getElementById('txt-tiempo');
+      const txtCircuito = document.getElementById('txt-circuito');
+      const txtInstruccion = document.getElementById('txt-instruccion');
+      const btnIniciar = document.getElementById('btn-iniciar');
+
+      const btnArriba = document.getElementById('btn-arriba');
+      const btnAbajo = document.getElementById('btn-abajo');
+      const btnIzq = document.getElementById('btn-izq');
+      const btnDer = document.getElementById('btn-der');
+
+      let fase = 'DEMO'; // 'DEMO', 'OFICIAL'
+      let activo = false;
+      let relojInterval = null;
+      let animFrame = null;
+
+      let tiempoRestante = 20;
+      let toques = 0;
+      let tiempoErrorMs = 0;
+      let instanteContacto = null;
+      let enError = false;
+
+      let simulacionOficialActual = 1;
+
+      // Puntero y físicas
+      let px = 45, py = 50;
+      const radioPuntero = 7.5;
+      const vel = 2.6;
+      const teclas = { arriba: false, abajo: false, izq: false, der: false };
+
+      const PISTA_DEMO = {
+        nombre: "Trazado Inducción",
+        inicio: { x: 50, y: 55 },
+        meta: { x: 380, y: 185, r: 13 },
+        ancho: 34,
+        puntos: [
+          { x: 50, y: 55 }, { x: 320, y: 55 }, { x: 320, y: 120 },
+          { x: 100, y: 120 }, { x: 100, y: 185 }, { x: 380, y: 185 }
+        ]
+      };
+
+      const BANCO_OFICIAL = [
+        {
+          nombre: "Trazado Escalera",
+          inicio: { x: 50, y: 55 },
+          meta: { x: 380, y: 190, r: 13 },
+          ancho: 32,
+          puntos: [
+            { x: 50, y: 55 }, { x: 180, y: 55 }, { x: 180, y: 130 },
+            { x: 280, y: 130 }, { x: 280, y: 70 }, { x: 380, y: 70 }, { x: 380, y: 190 }
+          ]
+        },
+        {
+          nombre: "Trazado Bayoneta",
+          inicio: { x: 50, y: 185 },
+          meta: { x: 380, y: 55, r: 13 },
+          ancho: 32,
+          puntos: [
+            { x: 50, y: 185 }, { x: 160, y: 185 }, { x: 160, y: 90 },
+            { x: 280, y: 90 }, { x: 280, y: 185 }, { x: 380, y: 185 }, { x: 380, y: 55 }
+          ]
+        },
+        {
+          nombre: "Trazado Zigzag",
+          inicio: { x: 50, y: 55 },
+          meta: { x: 60, y: 195, r: 13 },
+          ancho: 32,
+          puntos: [
+            { x: 50, y: 55 }, { x: 370, y: 55 }, { x: 370, y: 125 },
+            { x: 160, y: 125 }, { x: 160, y: 195 }, { x: 60, y: 195 }
+          ]
+        }
+      ];
+
+      let circuitoActivo = PISTA_DEMO;
+
+      // 2. Recuperar progreso previo guardado
+      const simPrevias = parseInt(localStorage.getItem('simulaciones_palancas')) || 0;
+      if (simPrevias > 0 && simPrevias < TOTAL_SIMULACIONES) {
+        simulacionOficialActual = simPrevias + 1;
+        prepararOficial(simulacionOficialActual);
+      } else if (simPrevias >= TOTAL_SIMULACIONES) {
+        simulacionOficialActual = TOTAL_SIMULACIONES;
+        prepararModuloBloqueado();
+      } else {
+        prepararDemo();
+      }
+      dibujar();
+
+      function prepararDemo() {
+        fase = 'DEMO';
+        circuitoActivo = PISTA_DEMO;
+        tiempoRestante = 20;
+        toques = 0;
+        tiempoErrorMs = 0;
+        enError = false;
+        px = circuitoActivo.inicio.x;
+        py = circuitoActivo.inicio.y;
+
+        badgeModo.innerText = '🟡 Calibración Técnica (Demo 20s)';
+        badgeModo.className = 'badge-fase';
+        txtContactos.innerText = '0';
+        txtTiempo.innerText = '20 s';
+        txtCircuito.innerText = circuitoActivo.nombre;
+        txtInstruccion.innerText = 'Calibrando: Conduce el punto a la meta verde sin tocar los bordes.';
+
+        btnIniciar.style.display = 'block';
+        btnIniciar.disabled = false;
+        btnIniciar.style.backgroundColor = '#0284c7';
+        btnIniciar.innerText = 'Iniciar Calibración (20 s)';
+      }
+
+      function prepararOficial(numSim) {
+        fase = 'OFICIAL';
+        simulacionOficialActual = numSim;
+        circuitoActivo = BANCO_OFICIAL[(numSim - 1) % BANCO_OFICIAL.length];
+        tiempoRestante = 60;
+        toques = 0;
+        tiempoErrorMs = 0;
+        enError = false;
+        px = circuitoActivo.inicio.x;
+        py = circuitoActivo.inicio.y;
+
+        badgeModo.innerText = `🔴 Simulación Oficial ${numSim} de ${TOTAL_SIMULACIONES} (D.S. N° 170)`;
+        badgeModo.className = 'badge-fase oficial';
+        txtContactos.innerText = '0';
+        txtTiempo.innerText = '60 s';
+        txtCircuito.innerText = circuitoActivo.nombre;
+        txtInstruccion.innerText = 'Evaluación Oficial: Recorre la pista con ambos pulgares hasta la meta.';
+
+        btnIniciar.style.display = 'block';
+        btnIniciar.disabled = false;
+        btnIniciar.style.backgroundColor = '#10b981';
+        btnIniciar.innerText = `Iniciar Simulación Oficial (${numSim}/${TOTAL_SIMULACIONES})`;
+      }
+
+      function prepararModuloBloqueado() {
+        fase = 'BLOQUEADO';
+        badgeModo.innerText = `🔴 Cupo Completado (${TOTAL_SIMULACIONES} de ${TOTAL_SIMULACIONES})`;
+        badgeModo.className = 'badge-fase oficial';
+        txtInstruccion.innerText = `Has completado el límite de ${TOTAL_SIMULACIONES} simulaciones oficiales de tu Plan.`;
+        btnIniciar.style.display = 'block';
+        btnIniciar.disabled = true;
+        btnIniciar.innerText = `Completado (${TOTAL_SIMULACIONES}/${TOTAL_SIMULACIONES})`;
+        btnIniciar.style.backgroundColor = '#475569';
+      }
+
+      btnIniciar.addEventListener('click', () => {
+        if (fase === 'BLOQUEADO') return;
+        btnIniciar.style.display = 'none';
+        iniciarLoop();
+      });
+
+      function iniciarLoop() {
+        activo = true;
+        clearInterval(relojInterval);
+        relojInterval = setInterval(() => {
+          if (!activo) return;
+          tiempoRestante--;
+          txtTiempo.innerText = `${tiempoRestante} s`;
+          if (tiempoRestante <= 0) concluir(false);
+        }, 1000);
+
+        cancelAnimationFrame(animFrame);
+        bucleFisicas();
+      }
+
+      function bucleFisicas() {
+        if (!activo) return;
+
+        if (teclas.arriba) py -= vel;
+        if (teclas.abajo) py += vel;
+        if (teclas.izq) px -= vel;
+        if (teclas.der) px += vel;
+
+        px = Math.max(radioPuntero + 2, Math.min(canvas.width - radioPuntero - 2, px));
+        py = Math.max(radioPuntero + 2, Math.min(canvas.height - radioPuntero - 2, py));
+
+        evaluarColision();
+        evaluarMeta();
+        dibujar();
+
+        animFrame = requestAnimationFrame(bucleFisicas);
+      }
+
+      function distanciaPuntoASegmento(px, py, x1, y1, x2, y2) {
+        const A = px - x1, B = py - y1, C = x2 - x1, D = y2 - y1;
+        const dot = A * C + B * D;
+        const lenSq = C * C + D * D;
+        let param = -1;
+        if (lenSq !== 0) param = dot / lenSq;
+        let xx, yy;
+        if (param < 0) { xx = x1; yy = y1; }
+        else if (param > 1) { xx = x2; yy = y2; }
+        else { xx = x1 + param * C; yy = y1 + param * D; }
+        return Math.hypot(px - xx, py - yy);
+      }
+
+      function evaluarColision() {
+        const pts = circuitoActivo.puntos;
+        const radioCanal = circuitoActivo.ancho / 2;
+        let minDist = Infinity;
+
+        for (let i = 0; i < pts.length - 1; i++) {
+          const d = distanciaPuntoASegmento(px, py, pts[i].x, pts[i].y, pts[i+1].x, pts[i+1].y);
+          if (d < minDist) minDist = d;
+        }
+
+        const enContacto = (minDist + radioPuntero) >= radioCanal;
+        const ahora = performance.now();
+
+        if (enContacto) {
+          if (!enError) {
+            enError = true;
+            toques++;
+            txtContactos.innerText = toques;
+            instanteContacto = ahora;
+            if ('vibrate' in navigator) navigator.vibrate(35);
+          } else {
+            tiempoErrorMs += (ahora - instanteContacto);
+            instanteContacto = ahora;
+          }
+        } else {
+          if (enError) {
+            tiempoErrorMs += (ahora - instanteContacto);
+            enError = false;
+            instanteContacto = null;
+          }
+        }
+      }
+
+      function evaluarMeta() {
+        const meta = circuitoActivo.meta;
+        const d = Math.hypot(px - meta.x, py - meta.y);
+        if (d <= meta.r + 3) concluir(true);
+      }
+
+      function concluir(metaAlcanzada) {
+        activo = false;
+        clearInterval(relojInterval);
+        cancelAnimationFrame(animFrame);
+
+        if (enError && instanteContacto) {
+          tiempoErrorMs += (performance.now() - instanteContacto);
+          enError = false;
+        }
+
+        const segError = (tiempoErrorMs / 1000).toFixed(2);
+
+        if (fase === 'DEMO') {
+          txtInstruccion.innerText = `Calibración finalizada: ${toques} contactos (${segError} s en borde). Pulsa para iniciar Simulación Oficial 1.`;
+          prepararOficial(1);
+        } else {
+          guardarResultadoOficial(metaAlcanzada, segError);
+        }
+      }
+
+      function guardarResultadoOficial(metaAlcanzada, segError) {
+        let simCount = parseInt(localStorage.getItem('simulaciones_palancas')) || 0;
+        simCount++;
+        localStorage.setItem('simulaciones_palancas', Math.min(TOTAL_SIMULACIONES, simCount));
+
+        const tiempoUsado = 60 - Math.max(0, tiempoRestante);
+        const penalizacionToques = toques * 8;
+        const penalizacionTiempoError = Math.round(parseFloat(segError) * 3);
+        const efectividad = Math.max(10, Math.min(100, 100 - penalizacionToques - penalizacionTiempoError));
+        const aprobado = metaAlcanzada && toques <= 4 && parseFloat(segError) <= 3.0;
+
+        let historial = [];
+        try {
+          historial = JSON.parse(localStorage.getItem('sensometrika_historial_palancas')) || [];
+        } catch(e) { historial = []; }
+
+        historial.push({
+          simulacion: simCount,
+          intento: simCount,
+          toques: toques,
+          tiempo: tiempoUsado,
+          tiempoError: parseFloat(segError),
+          permanencia: parseFloat(segError),
+          efectividad: efectividad,
+          porcentaje: efectividad,
+          aprobado: aprobado,
+          fecha: new Date().toISOString()
+        });
+        localStorage.setItem('sensometrika_historial_palancas', JSON.stringify(historial));
+
+        localStorage.setItem('sensometrika_palancas', JSON.stringify({
+          toques: toques,
+          tiempoError: parseFloat(segError),
+          permanencia: parseFloat(segError),
+          efectividad: efectividad,
+          porcentaje: efectividad,
+          aprobado: aprobado,
+          simulaciones: Math.min(TOTAL_SIMULACIONES, simCount),
+          fecha: new Date().toISOString()
+        }));
+
+        mostrarModalResultados(simCount, toques, segError, efectividad, aprobado);
+      }
+
+      function mostrarModalResultados(simNum, contactosVal, segErrorVal, efectividadVal, aprobado) {
+        const esUltima = simNum >= TOTAL_SIMULACIONES;
+
+        const modalPrevio = document.getElementById('modalResultadoPalancas');
+        if (modalPrevio) modalPrevio.remove();
+
+        const modalHtml = `
+          <div id="modalResultadoPalancas" style="position: fixed; inset: 0; background: rgba(5, 8, 18, 0.88); backdrop-filter: blur(6px); display: flex; align-items: center; justify-content: center; z-index: 9999; padding: 16px;">
+            <div style="background: #0f172a; border: 1px solid #1e293b; border-radius: 18px; width: 100%; max-width: 380px; padding: 24px; text-align: center; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.5); color: #f8fafc;">
+              
+              <h3 style="color: #ffffff; margin: 0 0 4px 0; font-size: 1.25rem; font-weight: 700;">Simulación Finalizada</h3>
+              <p style="color: #38bdf8; margin: 0 0 16px 0; font-size: 0.85rem; font-weight: 500;">
+                Simulación ${simNum} de ${TOTAL_SIMULACIONES}
+              </p>
+
+              <div style="margin-bottom: 18px;">
+                <span style="display: inline-block; padding: 4px 18px; border-radius: 6px; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.05em; background: ${aprobado ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.15)'}; border: 1px solid ${aprobado ? '#10b981' : '#ef4444'}; color: ${aprobado ? '#34d399' : '#f87171'};">
+                  ${aprobado ? 'APROBADO' : 'OBSERVADO'}
+                </span>
+              </div>
+
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; background: #090e1a; border: 1px solid #1e293b; border-radius: 12px; padding: 14px 12px; margin-bottom: 20px; text-align: left;">
+                <div>
+                  <span style="display: block; font-size: 0.7rem; color: #94a3b8; margin-bottom: 2px;">Contactos</span>
+                  <strong style="color: #f1f5f9; font-size: 0.95rem;">${contactosVal}</strong>
+                </div>
+                <div>
+                  <span style="display: block; font-size: 0.7rem; color: #94a3b8; margin-bottom: 2px;">Tiempo en Borde</span>
+                  <strong style="color: #f1f5f9; font-size: 0.95rem;">${segErrorVal} s</strong>
+                </div>
+                <div>
+                  <span style="display: block; font-size: 0.7rem; color: #94a3b8; margin-bottom: 2px;">Efectividad</span>
+                  <strong style="color: #38bdf8; font-size: 0.95rem;">${efectividadVal}%</strong>
+                </div>
+                <div>
+                  <span style="display: block; font-size: 0.7rem; color: #94a3b8; margin-bottom: 2px;">Modo Evaluado</span>
+                  <strong style="color: #f1f5f9; font-size: 0.8rem;">${esB2B ? 'B2B EMPRESA' : 'B2C PARTICULAR'}</strong>
+                </div>
+              </div>
+
+              <div style="display: flex; flex-direction: column; gap: 10px;">
+                ${!esUltima ? `
+                  <button id="btnContinuarPal" style="width: 100%; background: #0284c7; color: #ffffff; border: none; border-radius: 10px; padding: 12px; font-weight: 600; cursor: pointer; font-size: 0.9rem;">
+                    Iniciar Simulación Oficial (${simNum + 1}/${TOTAL_SIMULACIONES})
+                  </button>
+                ` : `
+                  <button onclick="window.location.href='punteo.html'" style="width: 100%; background: #0284c7; color: #ffffff; border: none; border-radius: 10px; padding: 12px; font-weight: 600; cursor: pointer; font-size: 0.9rem;">
+                    Completado · Continuar a Punteo →
+                  </button>
+                `}
+
+                ${!esUltima ? `
+                  <button onclick="window.location.href='punteo.html'" style="width: 100%; background: transparent; color: #38bdf8; border: 1px solid #0284c7; border-radius: 10px; padding: 10px; font-weight: 600; cursor: pointer; font-size: 0.85rem;">
+                    Pasar al Siguiente Módulo (Punteo) →
+                  </button>
+                ` : ''}
+
+                <div style="margin: 2px 0;">
+                  <button onclick="window.location.href='informe.html'" style="background: transparent; color: #38bdf8; border: none; cursor: pointer; font-size: 0.8rem; text-decoration: underline; padding: 4px;">
+                    Ver Informe en Pantalla
+                  </button>
+                </div>
+
+                <button onclick="window.location.href='${urlMenu}'" style="width: 100%; background: #1e293b; color: #cbd5e1; border: 1px solid #334155; border-radius: 10px; padding: 10px; font-weight: 500; cursor: pointer; font-size: 0.85rem;">
+                  Volver al Menú Principal
+                </button>
+              </div>
+
+            </div>
+          </div>
+        `;
+
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+        const btnContinuar = document.getElementById('btnContinuarPal');
+        if (btnContinuar) {
+          btnContinuar.addEventListener('click', () => {
+            document.getElementById('modalResultadoPalancas').remove();
+            prepararOficial(simNum + 1);
+            dibujar();
+          });
+        }
+      }
+
+      function dibujar() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // Guía técnica
+        ctx.strokeStyle = 'rgba(30, 41, 59, 0.4)';
+        ctx.lineWidth = 0.5;
+        for (let x = 0; x < canvas.width; x += 22) {
+          ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke();
+        }
+        for (let y = 0; y < canvas.height; y += 22) {
+          ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke();
+        }
+
+        const pts = circuitoActivo.puntos;
+
+        // Canal exterior
+        ctx.strokeStyle = enError ? '#ef4444' : '#0284c7';
+        ctx.lineWidth = circuitoActivo.ancho + 4;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.beginPath();
+        ctx.moveTo(pts[0].x, pts[0].y);
+        for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i].x, pts[i].y);
+        ctx.stroke();
+
+        // Interior canal
+        ctx.strokeStyle = '#090e1c';
+        ctx.lineWidth = circuitoActivo.ancho - 2;
+        ctx.beginPath();
+        ctx.moveTo(pts[0].x, pts[0].y);
+        for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i].x, pts[i].y);
+        ctx.stroke();
+
+        // Eje central
+        ctx.strokeStyle = 'rgba(56, 189, 248, 0.4)';
+        ctx.lineWidth = 1.4;
+        ctx.setLineDash([5, 5]);
+        ctx.beginPath();
+        ctx.moveTo(pts[0].x, pts[0].y);
+        for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i].x, pts[i].y);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        // Meta verde
+        const meta = circuitoActivo.meta;
+        ctx.beginPath();
+        ctx.arc(meta.x, meta.y, meta.r, 0, Math.PI * 2);
+        ctx.fillStyle = '#22c55e';
+        ctx.fill();
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        // Puntero
+        ctx.beginPath();
+        ctx.arc(px, py, radioPuntero, 0, Math.PI * 2);
+        ctx.fillStyle = enError ? '#ef4444' : '#facc15';
+        ctx.fill();
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+      }
+
+      function enlazar(btn, dir) {
+        if (!btn) return;
+        const on = (e) => { e.preventDefault(); teclas[dir] = true; };
+        const off = (e) => { e.preventDefault(); teclas[dir] = false; };
+        btn.addEventListener('pointerdown', on);
+        btn.addEventListener('pointerup', off);
+        btn.addEventListener('pointerleave', off);
+        btn.addEventListener('pointercancel', off);
+      }
+
+      enlazar(btnArriba, 'arriba');
+      enlazar(btnAbajo, 'abajo');
+      enlazar(btnIzq, 'izq');
+      enlazar(btnDer, 'der');
+
+      window.addEventListener('keydown', (e) => {
+        if (['ArrowUp', 'w', 'W'].includes(e.key)) { e.preventDefault(); teclas.arriba = true; }
+        if (['ArrowDown', 's', 'S'].includes(e.key)) { e.preventDefault(); teclas.abajo = true; }
+        if (['ArrowLeft', 'a', 'A'].includes(e.key)) { e.preventDefault(); teclas.izq = true; }
+        if (['ArrowRight', 'd', 'D'].includes(e.key)) { e.preventDefault(); teclas.der = true; }
+      });
+
+      window.addEventListener('keyup', (e) => {
+        if (['ArrowUp', 'w', 'W'].includes(e.key)) teclas.arriba = false;
+        if (['ArrowDown', 's', 'S'].includes(e.key)) teclas.abajo = false;
+        if (['ArrowLeft', 'a', 'A'].includes(e.key)) teclas.izq = false;
+        if (['ArrowRight', 'd', 'D'].includes(e.key)) teclas.der = false;
+      });
+
+      // Modal de ayuda
+      const modal = document.getElementById('modalGuia');
+      document.getElementById('btnHelp').onclick = () => modal.classList.add('open');
+      document.getElementById('modalCloseX').onclick = () => modal.classList.remove('open');
+      document.getElementById('btnModalClose').onclick = () => modal.classList.remove('open');
+    })();
+  </script>
+</body>
+</html>

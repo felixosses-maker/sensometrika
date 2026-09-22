@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Sensometrika | Informe Diagnóstico B2C</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { background-color: #060b14; color: #f8fafc; padding: 16px; min-height: 100vh; }
+    .contenedor-informe { max-width: 480px; margin: 0 auto; display: flex; flex-direction: column; gap: 12px; }
+
+    /* Barra Superior */
+    .banner-respaldo {
+      background: rgba(2, 132, 199, 0.1);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      border-radius: 8px;
+      padding: 8px 12px;
+      font-size: 0.75rem;
+      color: #bae6fd;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .subtitulo-evaluado { font-size: 0.78rem; color: #94a3b8; }
+    .subtitulo-evaluado strong { color: #f8fafc; }
+
+    /* Estado Global */
+    .banner-estado {
+      border-radius: 8px;
+      padding: 10px;
+      font-size: 0.85rem;
+      font-weight: 800;
+      text-align: center;
+      letter-spacing: 0.5px;
+    }
+    .banner-completado { background: rgba(34, 197, 94, 0.15); border: 1px solid #22c55e; color: #4ade80; }
+    .banner-curso { background: rgba(245, 158, 11, 0.15); border: 1px solid #f59e0b; color: #fbbf24; }
+
+    /* Tarjetas de Resumen */
+    .tarjeta-modulo-resumen {
+      background: #0d1527;
+      border: 1px solid #1e293b;
+      border-radius: 10px;
+      padding: 12px 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .titulo-mod { font-size: 0.82rem; font-weight: 700; color: #e2e8f0; }
+    .sub-promedio { font-size: 0.7rem; color: #64748b; font-weight: 500; display: block; margin-top: 2px; }
+    .valor-metric { font-size: 0.95rem; font-weight: 800; color: #38bdf8; text-align: right; }
+    .badge-eval { padding: 4px 10px; border-radius: 6px; font-size: 0.72rem; font-weight: 800; white-space: nowrap; }
+    .badge-optimo { background: rgba(34, 197, 94, 0.15); color: #4ade80; border: 1px solid #22c55e; }
+    .badge-observado { background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid #ef4444; }
+    .badge-pendiente { background: rgba(100, 116, 139, 0.2); color: #94a3b8; border: 1px solid #475569; }
+
+    /* Curva Gráfica SVG */
+    .seccion-grafica {
+      background: #0d1527;
+      border: 1px solid #1e293b;
+      border-radius: 10px;
+      padding: 12px;
+    }
+    .cabecera-grafica {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    .cabecera-grafica h4 { font-size: 0.8rem; color: #e2e8f0; }
+    .leyenda-grafica { display: flex; gap: 8px; font-size: 0.68rem; }
+    .punto-leyenda { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 3px; }
+
+    /* Matriz de Simulaciones */
+    .seccion-tabla {
+      background: #0d1527;
+      border: 1px solid #1e293b;
+      border-radius: 10px;
+      padding: 12px;
+      overflow-x: auto;
+    }
+    table { width: 100%; border-collapse: collapse; font-size: 0.75rem; text-align: left; }
+    th { padding: 6px 8px; color: #94a3b8; border-bottom: 1px solid #1e293b; font-weight: 600; }
+    td { padding: 8px; border-bottom: 1px solid rgba(255, 255, 255, 0.05); color: #cbd5e1; }
+    .td-centro { text-align: center; }
+
+    .tarjeta-consejos {
+      background: #0d1527;
+      border: 1px solid #1e293b;
+      border-radius: 10px;
+      padding: 12px 14px;
+      font-size: 0.76rem;
+      color: #94a3b8;
+      line-height: 1.45;
+    }
+    .tarjeta-consejos strong { color: #f8fafc; }
+    .tarjeta-consejos ul { padding-left: 16px; margin-top: 6px; display: flex; flex-direction: column; gap: 4px; }
+
+    .btn-volver {
+      background: #0284c7;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 14px;
+      font-size: 0.92rem;
+      font-weight: 700;
+      text-align: center;
+      text-decoration: none;
+      display: block;
+      margin-top: 4px;
+    }
+    .btn-volver:hover { background: #0369a1; }
+  </style>
+</head>
+<body>
+
+  <div class="contenedor-informe">
+    <div class="banner-respaldo">
+      <span>🛡️ Respaldo Oficial: RUT <strong id="lbl-rut-respaldo">--</strong></span>
+      <span style="color: #38bdf8;">Copia enviada al correo</span>
+    </div>
+
+    <div class="subtitulo-evaluado">
+      Postulante: <strong id="lbl-nombre-evaluado">--</strong> | Licencia: <strong>Clase B / D.S. N° 170</strong>
+    </div>
+
+    <!-- Banner General Dinámico -->
+    <div class="banner-estado banner-curso" id="banner-estado-general">
+      EVALUACIÓN EN CURSO
+    </div>
+
+    <!-- Módulo 1 -->
+    <div class="tarjeta-modulo-resumen" id="tarjeta-resumen-react">
+      <div>
+        <div class="titulo-mod">1. Reactímetro (Tiempo de Frenado):</div>
+        <span class="sub-promedio" id="sub-prom-react">Sin simulaciones</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <span class="valor-metric" id="res-val-react">--</span>
+        <span class="badge-eval badge-pendiente" id="res-badge-react">PENDIENTE</span>
+      </div>
+    </div>
+
+    <!-- Módulo 2 -->
+    <div class="tarjeta-modulo-resumen" id="tarjeta-resumen-pal">
+      <div>
+        <div class="titulo-mod">2. Palancas (Coordinación Bimanual):</div>
+        <span class="sub-promedio" id="sub-prom-pal">Sin simulaciones</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <span class="valor-metric" id="res-val-pal">--</span>
+        <span class="badge-eval badge-pendiente" id="res-badge-pal">PENDIENTE</span>
+      </div>
+    </div>
+
+    <!-- Módulo 3 -->
+    <div class="tarjeta-modulo-resumen" id="tarjeta-resumen-punt">
+      <div>
+        <div class="titulo-mod">3. Punteo (Ritmo y Precisión Lahy):</div>
+        <span class="sub-promedio" id="sub-prom-punt">Sin simulaciones</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <span class="valor-metric" id="res-val-punt">--</span>
+        <span class="badge-eval badge-pendiente" id="res-badge-punt">PENDIENTE</span>
+      </div>
+    </div>
+
+    <!-- Módulo 4: Visual -->
+    <div class="tarjeta-modulo-resumen" id="tarjeta-resumen-vis" style="display: none;">
+      <div>
+        <div class="titulo-mod">4. Screening Visual (Agudeza / Ishihara):</div>
+        <span class="sub-promedio" id="sub-prom-vis">Sin simulaciones</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <span class="valor-metric" id="res-val-vis">--</span>
+        <span class="badge-eval badge-pendiente" id="res-badge-vis">PENDIENTE</span>
+      </div>
+    </div>
+
+    <!-- Módulo 5: Auditivo -->
+    <div class="tarjeta-modulo-resumen" id="tarjeta-resumen-aud" style="display: none;">
+      <div>
+        <div class="titulo-mod">5. Tamizaje Auditivo (Audiometría Tonal):</div>
+        <span class="sub-promedio" id="sub-prom-aud">Sin simulaciones</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <span class="valor-metric" id="res-val-aud">--</span>
+        <span class="badge-eval badge-pendiente" id="res-badge-aud">PENDIENTE</span>
+      </div>
+    </div>
+
+    <!-- Curva Gráfica SVG -->
+    <div class="seccion-grafica">
+      <div class="cabecera-grafica">
+        <h4>📈 Curva de Aprendizaje y Evolución</h4>
+        <div class="leyenda-grafica">
+          <span style="color: #38bdf8;"><span class="punto-leyenda" style="background:#38bdf8;"></span>Reactímetro</span>
+          <span style="color: #4ade80;"><span class="punto-leyenda" style="background:#4ade80;"></span>Palancas</span>
+          <span style="color: #f59e0b;"><span class="punto-leyenda" style="background:#f59e0b;"></span>Punteo</span>
+        </div>
+      </div>
+      <svg id="svg-curvas" width="100%" height="80" viewBox="0 0 400 80">
+        <line x1="20" y1="70" x2="380" y2="70" stroke="#1e293b" stroke-width="1"/>
+        <line x1="20" y1="20" x2="380" y2="20" stroke="#1e293b" stroke-width="1" stroke-dasharray="3,3"/>
+      </svg>
+    </div>
+
+    <!-- Matriz Dinámica -->
+    <div class="seccion-tabla">
+      <table>
+        <thead>
+          <tr id="tr-encabezados-matriz">
+            <th>Módulo</th>
+            <th class="td-centro">S1</th>
+            <th class="td-centro">S2</th>
+            <th class="td-centro">S3</th>
+            <th>Diagnóstico Específico</th>
+          </tr>
+        </thead>
+        <tbody id="tbody-matriz"></tbody>
+      </table>
+    </div>
+
+    <!-- Recomendaciones -->
+    <div class="tarjeta-consejos">
+      <div style="color: #38bdf8; font-weight: 700; margin-bottom: 4px;">💡 Recomendaciones para la Evaluación Municipal:</div>
+      <ul>
+        <li><strong>Frenado:</strong> Descansa el talón en el suelo y pivota únicamente la punta del pie al activarse la señal roja.</li>
+        <li><strong>Palancas:</strong> Apoya los antebrazos sobre la mesa para evitar temblores involuntarios y sostener la trayectoria.</li>
+        <li><strong>Punteo:</strong> Si pierdes una perforación, no te detengas; continúa con la siguiente manteniendo la cadencia de pulso.</li>
+      </ul>
+    </div>
+
+    <a href="menu.html" class="btn-volver">← Volver al Menú Principal</a>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const sesion = JSON.parse(localStorage.getItem('sensometrika_sesion')) || {};
+      const user = JSON.parse(localStorage.getItem('sensometrika_datos_usuario')) || {};
+
+      if (sesion.rol === 'empresa' || (sesion.planId && String(sesion.planId).toLowerCase().includes('b2b'))) {
+        window.location.href = 'informe-b2b.html';
+        return;
+      }
+
+      document.getElementById('lbl-nombre-evaluado').innerText = (user.nombre || sesion.nombre || 'FELIX OSSES MARTINEZ').toUpperCase();
+      document.getElementById('lbl-rut-respaldo').innerText = user.rut || sesion.rut || '13.741.882-7';
+
+      // 1. Configuración de Cuotas según Plan
+      let totalModulosContratados = 3;
+      let maxSimulaciones = 3;
+      const planId = String(sesion.planId || '').toLowerCase();
+
+      if (planId.includes('plus')) {
+        totalModulosContratados = 4;
+        maxSimulaciones = 5;
+        document.getElementById('tarjeta-resumen-vis').style.display = 'flex';
+      } else if (planId.includes('full')) {
+        totalModulosContratados = 5;
+        maxSimulaciones = 8;
+        document.getElementById('tarjeta-resumen-vis').style.display = 'flex';
+        document.getElementById('tarjeta-resumen-aud').style.display = 'flex';
+      }
+
+      let thCols = '<th>Módulo</th>';
+      for (let i = 1; i <= maxSimulaciones; i++) {
+        thCols += `<th class="td-centro">S${i}</th>`;
+      }
+      thCols += '<th>Diagnóstico Específico</th>';
+      document.getElementById('tr-encabezados-matriz').innerHTML = thCols;
+
+      // 2. Historiales Reales
+      const hReact = JSON.parse(localStorage.getItem('sensometrika_historial_reactimetro')) || [];
+      const hPal = JSON.parse(localStorage.getItem('sensometrika_historial_palancas')) || [];
+      const hPunt = JSON.parse(localStorage.getItem('sensometrika_historial_punteo')) || [];
+      const hVis = JSON.parse(localStorage.getItem('sensometrika_historial_visual')) || [];
+      const hAud = JSON.parse(localStorage.getItem('sensometrika_historial_auditivo')) || [];
+
+      // Función normalizadora de Palancas
+      const normalizarPalancas = (item) => {
+        if (!item) return { porcentaje: 0, error: 0 };
+        let pct = 0;
+        let err = item.tiempoError !== undefined ? item.tiempoError : (item.tiempoContacto !== undefined ? item.tiempoContacto : 0);
+
+        if (item.porcentaje !== undefined && item.porcentaje > 15) {
+          pct = Number(item.porcentaje);
+        } else if (item.efectividad !== undefined && item.efectividad > 15) {
+          pct = Number(item.efectividad);
+        } else {
+          const toques = Number(item.toques !== undefined ? item.toques : (item.porcentaje || item.efectividad || 0));
+          pct = Math.max(10, Math.min(100, 100 - (toques * 8) - Math.round(Number(err) * 3)));
+        }
+        return { porcentaje: Math.round(pct), error: Number(err) };
+      };
+
+      // Contadores de progreso
+      let modulosConAlMenosUnIntento = 0;
+      let modulosCompletamenteFinalizados = 0;
+
+      // --- Módulo 1: Reactímetro ---
+      if (hReact.length > 0) {
+        modulosConAlMenosUnIntento++;
+        if (hReact.length >= maxSimulaciones) modulosCompletamenteFinalizados++;
+        const suma = hReact.reduce((acc, c) => acc + (Number(c.tiempo) || 0), 0);
+        const prom = Math.round(suma / hReact.length);
+        document.getElementById('res-val-react').innerText = `${prom} ms`;
+        document.getElementById('sub-prom-react').innerText = `Promedio de ${hReact.length} simulación(es)`;
+        const badge = document.getElementById('res-badge-react');
+        badge.innerText = prom <= 450 ? 'ÓPTIMO' : 'OBSERVADO';
+        badge.className = `badge-eval ${prom <= 450 ? 'badge-optimo' : 'badge-observado'}`;
+      }
+
+      // --- Módulo 2: Palancas ---
+      if (hPal.length > 0) {
+        modulosConAlMenosUnIntento++;
+        if (hPal.length >= maxSimulaciones) modulosCompletamenteFinalizados++;
+        let sumaPct = 0;
+        let sumaErr = 0;
+        hPal.forEach(it => {
+          const norm = normalizarPalancas(it);
+          sumaPct += norm.porcentaje;
+          sumaErr += norm.error;
+        });
+        const promPct = Math.round(sumaPct / hPal.length);
+        const promErr = (sumaErr / hPal.length).toFixed(1);
+
+        document.getElementById('res-val-pal').innerText = `${promPct}% (${promErr}s error)`;
+        document.getElementById('sub-prom-pal').innerText = `Promedio de ${hPal.length} simulación(es)`;
+        const badge = document.getElementById('res-badge-pal');
+        badge.innerText = promPct >= 75 ? 'ÓPTIMO' : 'OBSERVADO';
+        badge.className = `badge-eval ${promPct >= 75 ? 'badge-optimo' : 'badge-observado'}`;
+      }
+
+      // --- Módulo 3: Punteo ---
+      if (hPunt.length > 0) {
+        modulosConAlMenosUnIntento++;
+        if (hPunt.length >= maxSimulaciones) modulosCompletamenteFinalizados++;
+        const suma = hPunt.reduce((acc, c) => acc + (Number(c.efectividad !== undefined ? c.efectividad : c.porcentaje) || 0), 0);
+        const prom = Math.round(suma / hPunt.length);
+        document.getElementById('res-val-punt').innerText = `${prom}%`;
+        document.getElementById('sub-prom-punt').innerText = `Promedio de ${hPunt.length} simulación(es)`;
+        const badge = document.getElementById('res-badge-punt');
+        badge.innerText = prom >= 80 ? 'ÓPTIMO' : 'OBSERVADO';
+        badge.className = `badge-eval ${prom >= 80 ? 'badge-optimo' : 'badge-observado'}`;
+      }
+
+      // --- Módulo 4: Visual ---
+      if (totalModulosContratados >= 4 && hVis.length > 0) {
+        modulosConAlMenosUnIntento++;
+        if (hVis.length >= maxSimulaciones) modulosCompletamenteFinalizados++;
+        const suma = hVis.reduce((acc, c) => acc + (Number(c.porcentaje || c.efectividad) || 100), 0);
+        const prom = Math.round(suma / hVis.length);
+        document.getElementById('res-val-vis').innerText = `${prom}%`;
+        document.getElementById('sub-prom-vis').innerText = `Promedio de ${hVis.length} simulación(es)`;
+        const badge = document.getElementById('res-badge-vis');
+        badge.innerText = prom >= 80 ? 'ÓPTIMO' : 'OBSERVADO';
+        badge.className = `badge-eval ${prom >= 80 ? 'badge-optimo' : 'badge-observado'}`;
+      }
+
+      // --- Módulo 5: Auditivo ---
+      if (totalModulosContratados === 5 && hAud.length > 0) {
+        modulosConAlMenosUnIntento++;
+        if (hAud.length >= maxSimulaciones) modulosCompletamenteFinalizados++;
+        const suma = hAud.reduce((acc, c) => acc + (Number(c.porcentaje || c.efectividad) || 100), 0);
+        const prom = Math.round(suma / hAud.length);
+        document.getElementById('res-val-aud').innerText = `${prom}%`;
+        document.getElementById('sub-prom-aud').innerText = `Promedio de ${hAud.length} simulación(es)`;
+        const badge = document.getElementById('res-badge-aud');
+        badge.innerText = prom >= 75 ? 'ÓPTIMO' : 'OBSERVADO';
+        badge.className = `badge-eval ${prom >= 75 ? 'badge-optimo' : 'badge-observado'}`;
+      }
+
+      // 3. Banner Global con Detección Inteligente de Avance
+      const banner = document.getElementById('banner-estado-general');
+      const minSimulacionesRealizadas = Math.min(
+        hReact.length, 
+        hPal.length, 
+        hPunt.length, 
+        totalModulosContratados >= 4 ? (hVis.length || 0) : maxSimulaciones,
+        totalModulosContratados === 5 ? (hAud.length || 0) : maxSimulaciones
+      );
+
+      if (modulosCompletamenteFinalizados >= totalModulosContratados) {
+        banner.className = 'banner-estado banner-completado';
+        banner.innerText = `EVALUACIÓN COMPLETADA (${totalModulosContratados}/${totalModulosContratados} MÓDULOS FINALIZADOS)`;
+      } else if (minSimulacionesRealizadas > 0) {
+        banner.className = 'banner-estado banner-curso';
+        banner.innerText = `EVALUACIÓN EN CURSO (RONDA ${minSimulacionesRealizadas} DE ${maxSimulaciones} COMPLETADA • ${modulosConAlMenosUnIntento}/${totalModulosContratados} MÓDULOS RENDIDOS)`;
+      } else {
+        banner.className = 'banner-estado banner-curso';
+        banner.innerText = `EVALUACIÓN EN CURSO (${modulosConAlMenosUnIntento}/${totalModulosContratados} MÓDULOS RENDIDOS)`;
+      }
+
+      // 4. Matriz Dinámica
+      const generarFilaReact = () => {
+        let fila = `<tr><td><strong>1. Reactímetro</strong></td>`;
+        for (let i = 0; i < maxSimulaciones; i++) {
+          if (hReact[i]) {
+            fila += `<td class="td-centro" style="color:#f8fafc; font-weight:600;">${hReact[i].tiempo} ms</td>`;
+          } else {
+            fila += `<td class="td-centro" style="color:#475569;">--</td>`;
+          }
+        }
+        const diag = hReact.length === 0 ? '<span style="color:#64748b;">Pendiente de rendición</span>' : (hReact[hReact.length - 1].tiempo <= 450 ? '<span style="color:#4ade80;">✓ En norma</span>' : '<span style="color:#f87171;">⚠ Latencia elevada</span>');
+        fila += `<td>${diag}</td></tr>`;
+        return fila;
+      };
+
+      const generarFilaPalancas = () => {
+        let fila = `<tr><td><strong>2. Palancas</strong></td>`;
+        for (let i = 0; i < maxSimulaciones; i++) {
+          if (hPal[i]) {
+            const norm = normalizarPalancas(hPal[i]);
+            fila += `<td class="td-centro" style="color:#f8fafc; font-weight:600;">${norm.porcentaje}%</td>`;
+          } else {
+            fila += `<td class="td-centro" style="color:#475569;">--</td>`;
+          }
+        }
+        let diag = '<span style="color:#64748b;">Pendiente de rendición</span>';
+        if (hPal.length > 0) {
+          const ult = normalizarPalancas(hPal[hPal.length - 1]);
+          diag = ult.porcentaje >= 75 ? '<span style="color:#4ade80;">✓ En norma</span>' : '<span style="color:#f87171;">⚠ Requiere práctica</span>';
+        }
+        fila += `<td>${diag}</td></tr>`;
+        return fila;
+      };
+
+      const generarFilaGenerica = (nombre, hist, umbral) => {
+        let fila = `<tr><td><strong>${nombre}</strong></td>`;
+        for (let i = 0; i < maxSimulaciones; i++) {
+          if (hist[i]) {
+            const val = hist[i].efectividad !== undefined ? hist[i].efectividad : (hist[i].porcentaje || 100);
+            fila += `<td class="td-centro" style="color:#f8fafc; font-weight:600;">${val}%</td>`;
+          } else {
+            fila += `<td class="td-centro" style="color:#475569;">--</td>`;
+          }
+        }
+        let diag = '<span style="color:#64748b;">Pendiente de rendición</span>';
+        if (hist.length > 0) {
+          const val = hist[hist.length - 1].efectividad !== undefined ? hist[hist.length - 1].efectividad : (hist[hist.length - 1].porcentaje || 100);
+          diag = val >= umbral ? '<span style="color:#4ade80;">✓ En norma</span>' : '<span style="color:#f87171;">⚠ Requiere práctica</span>';
+        }
+        fila += `<td>${diag}</td></tr>`;
+        return fila;
+      };
+
+      let htmlFilas = '';
+      htmlFilas += generarFilaReact();
+      htmlFilas += generarFilaPalancas();
+      htmlFilas += generarFilaGenerica('3. Punteo', hPunt, 80);
+      if (totalModulosContratados >= 4) htmlFilas += generarFilaGenerica('4. Screening Visual', hVis, 80);
+      if (totalModulosContratados === 5) htmlFilas += generarFilaGenerica('5. Tamizaje Auditivo', hAud, 75);
+
+      document.getElementById('tbody-matriz').innerHTML = htmlFilas;
+
+      // 5. Curva Gráfica SVG
+      const svg = document.getElementById('svg-curvas');
+      const trazarCurva = (hist, color, extractor) => {
+        if (!hist || hist.length === 0) return;
+        const totalPuntos = Math.min(hist.length, maxSimulaciones);
+        const espaciado = 340 / (maxSimulaciones - 1 || 1);
+        let puntos = [];
+        for (let i = 0; i < totalPuntos; i++) {
+          const x = 30 + (i * espaciado);
+          const val = extractor(hist[i]);
+          const y = 65 - (val * 0.45);
+          puntos.push({ x, y });
+        }
+        if (puntos.length > 1) {
+          let d = `M ${puntos[0].x} ${puntos[0].y}`;
+          for (let i = 1; i < puntos.length; i++) d += ` L ${puntos[i].x} ${puntos[i].y}`;
+          svg.innerHTML += `<path d="${d}" fill="none" stroke="${color}" stroke-width="2.5" stroke-linecap="round"/>`;
+        }
+        puntos.forEach(p => {
+          svg.innerHTML += `<circle cx="${p.x}" cy="${p.y}" r="3.5" fill="${color}"/>`;
+        });
+      };
+
+      trazarCurva(hReact, '#38bdf8', it => Math.max(0, Math.min(100, (550 - (it.tiempo || 400)) / 2.5)));
+      trazarCurva(hPal, '#4ade80', it => normalizarPalancas(it).porcentaje);
+      trazarCurva(hPunt, '#f59e0b', it => it.efectividad !== undefined ? it.efectividad : it.porcentaje || 50);
+    });
+  </script>
+</body>
+</html>
