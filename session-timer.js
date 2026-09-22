@@ -1,16 +1,15 @@
 /**
- * Sensometrika - Gestor de Sesión Demo & Temporizador de Alto Rendimiento
+ * Sensometrika - Gestor de Sesión Demo & Reset de Intentos por Token
  */
 (async function initSessionManager() {
   const urlParams = new URLSearchParams(window.location.search);
   const tokenUrl = urlParams.get('token');
 
-  // Helper para construir el modal integrado corporativo
+  // Modal corporativo integrado
   function mostrarModalAviso(titulo, subtitulo, textoBtn, urlDestino) {
     const modalId = 'smk-modal-aviso';
     if (document.getElementById(modalId)) return;
 
-    // Pausar cualquier interacción en segundo plano
     const overlay = document.createElement('div');
     overlay.id = modalId;
     overlay.style.cssText = `
@@ -88,7 +87,7 @@
     });
   }
 
-  // 1. Si viene token en URL, validar contra el backend
+  // 1. Si viene un token nuevo en URL, validar y resetear intentos de módulos anteriores
   if (tokenUrl) {
     try {
       const res = await fetch('/api/access', {
@@ -100,7 +99,7 @@
       const data = await res.json();
 
       if (!res.ok || !data.success) {
-        let msg = 'El enlace de acceso ingresado no es válido o ya no existe en el sistema.';
+        let msg = 'El enlace de acceso ingresado no es válido o ya no existe.';
         if (data.error === 'TOKEN_EXPIRED') {
           msg = 'Este enlace demo superó los 10 minutos de vigencia permitidos.';
         } else if (data.error === 'TOKEN_ALREADY_USED') {
@@ -111,38 +110,50 @@
         return;
       }
 
+      // Guardar nueva sesión
       sessionStorage.setItem('smk_token', tokenUrl);
       sessionStorage.setItem('smk_type', data.type || 'demo');
       sessionStorage.setItem('smk_expires_at', data.expires_at);
-      sessionStorage.removeItem('smk_session_expired'); // Limpiar estado previo
+      sessionStorage.removeItem('smk_session_expired');
+
+      // RESETEAR CONTADORES LOCALES PARA EL NUEVO TOKEN
+      localStorage.removeItem('simulaciones_palancas');
+      localStorage.removeItem('simulaciones_reactimetro');
+      localStorage.removeItem('simulaciones_punteo');
+      localStorage.removeItem('sensometrika_palancas');
+      localStorage.removeItem('sensometrika_reactimetro');
+      localStorage.removeItem('sensometrika_punteo');
+      localStorage.removeItem('sensometrika_historial_palancas');
+      localStorage.removeItem('sensometrika_historial_reactimetro');
+      localStorage.removeItem('sensometrika_historial_punteo');
 
       window.history.replaceState({}, document.title, window.location.pathname);
     } catch (err) {
       console.error('Error al contactar api/access:', err);
-      mostrarModalAviso('Error de Red', 'No pudimos contrastar el token. Verifica tu conexión.', 'Volver a Intentar', 'index.html');
+      mostrarModalAviso('Error de Red', 'No fue posible validar la autorización.', 'Reintentar', 'index.html');
       return;
     }
   }
 
-  // 2. Verificar estado de expiración reciente
+  // 2. Verificar estado de expiración
   if (sessionStorage.getItem('smk_session_expired') === 'true') {
     mostrarModalAviso(
       'Sesión Demo Finalizada',
-      'Tu tiempo de evaluación de prueba (10 min) ha concluido. Adquiere tu plan para continuar practicando sin límites y emitir tus informes oficiales.',
+      'Tu tiempo de evaluación de prueba (10 min) ha concluido. Adquiere tu plan para continuar practicando sin límites.',
       'Ver Planes y Precios →',
       'index.html#planes'
     );
     return;
   }
 
-  // 3. Verificar si existe credencial activa
+  // 3. Comprobar credencial de sesión activa
   const tokenActivo = sessionStorage.getItem('smk_token');
   const expiraString = sessionStorage.getItem('smk_expires_at');
 
   if (!tokenActivo || !expiraString) {
     mostrarModalAviso(
       'Acceso Restringido',
-      'Para ingresar a los módulos de evaluación psicotécnica se requiere un pase demo activo o un plan habilitado.',
+      'Para ingresar a los módulos de evaluación se requiere un pase demo activo.',
       'Ir al Inicio →',
       'index.html'
     );
@@ -151,7 +162,7 @@
 
   const expiraTimestamp = new Date(expiraString).getTime();
 
-  // 4. Crear widget flotante de cronómetro si no existe
+  // 4. Widget flotante de cronómetro
   let timerWidget = document.getElementById('smk-session-timer-widget');
   if (!timerWidget) {
     timerWidget = document.createElement('div');
@@ -195,7 +206,7 @@
   const display = document.getElementById('smk-timer-display');
   const dot = document.getElementById('smk-pulse-dot');
 
-  // 5. Ciclo de cuenta regresiva
+  // 5. Cuenta regresiva
   function tick() {
     const restanteMs = expiraTimestamp - Date.now();
 
@@ -207,12 +218,10 @@
         dot.style.boxShadow = '0 0 8px #ef4444';
       }
 
-      // Marcar sesión expirada
       sessionStorage.setItem('smk_session_expired', 'true');
       sessionStorage.removeItem('smk_token');
       sessionStorage.removeItem('smk_expires_at');
 
-      // Modal inmediato de finalización
       mostrarModalAviso(
         'Sesión Demo Finalizada',
         'Has completado tus 10 minutos de prueba. Para continuar evaluando y emitir informes con validez oficial conforme al D.S. N° 170, adquiere tu plan de evaluaciones.',
