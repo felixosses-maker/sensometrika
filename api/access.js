@@ -1,14 +1,7 @@
-const { createClient } = require('@supabase/supabase-js');
 const crypto = require('crypto');
 
-// Inicialización del cliente Supabase con privilegios de backend
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-);
-
 module.exports = async function handler(req, res) {
-  // Configuración de encabezados CORS para peticiones desde el frontend
+  // Encabezados CORS
   res.setHeader('Access-Control-Allow-Credentials', 'true');
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
@@ -17,42 +10,59 @@ module.exports = async function handler(req, res) {
     'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version'
   );
 
-  // Respuesta preflight para CORS
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
   }
 
-  // Restricción a método POST
   if (req.method !== 'POST') {
     return res.status(405).json({ success: false, error: 'Método no permitido' });
   }
 
   const { action, token, type, email, metadata, duration_minutes } = req.body || {};
 
+  const SUPABASE_URL = process.env.SUPABASE_URL;
+  const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!SUPABASE_URL || !SUPABASE_KEY) {
+    return res.status(500).json({
+      success: false,
+      error: 'Variables de entorno de Supabase no configuradas en Vercel'
+    });
+  }
+
+  const headers = {
+    'apikey': SUPABASE_KEY,
+    'Authorization': `Bearer ${SUPABASE_KEY}`,
+    'Content-Type': 'application/json'
+  };
+
   try {
-    // -------------------------------------------------------------
-    // ACCIÓN 1: GENERAR LINK (B2C, B2B o Demo 10 min)
-    // -------------------------------------------------------------
+    // ACCIÓN 1: GENERAR LINK
     if (action === 'create') {
       const generatedToken = crypto.randomUUID();
-      
-      // Duración: 10 min para demo, o el valor indicado (default 48 horas = 2880 min)
       const minutes = type === 'demo' ? (duration_minutes || 10) : (duration_minutes || 2880);
       const expiresAt = new Date(Date.now() + minutes * 60 * 1000).toISOString();
 
-      const { data, error } = await supabase
-        .from('access_tokens')
-        .insert({
+      const response = await fetch(`${SUPABASE_URL}/rest/v1/access_tokens`, {
+        method: 'POST',
+        headers: {
+          ...headers,
+          'Prefer': 'return=representation'
+        },
+        body: JSON.stringify({
           token: generatedToken,
           type: type || 'b2c',
           email: email || null,
           metadata: metadata || {},
-          expires_at: expiresAt,
+          expires_at: expiresAt
         })
-        .select()
-        .single();
+      });
 
-      if (error) throw error;
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Error al insertar token en Supabase');
+      }
 
       const baseUrl = process.env.FRONTEND_URL || 'https://sensometrika.vercel.app';
       const path = type === 'demo' ? '/demo.html' : '/evaluacion.html';
@@ -62,25 +72,28 @@ module.exports = async function handler(req, res) {
         success: true,
         link,
         token: generatedToken,
-        type: data.type,
-        expires_at: expiresAt,
+        type: type || 'b2c',
+        expires_at: expiresAt
       });
     }
 
-    // -------------------------------------------------------------
-    // ACCIÓN 2: VALIDAR Y QUEMAR EL TOKEN AL INGRESAR
-    // -------------------------------------------------------------
+    // ACCIÓN 2: VALIDAR Y CONSUMIR TOKEN
     if (action === 'validate') {
       if (!token) {
         return res.status(400).json({ success: false, error: 'Token requerido' });
       }
 
-      // Consumo seguro y atómico mediante la función RPC en Supabase
-      const { data, error } = await supabase.rpc('consume_access_token', {
-        p_token: token,
+      const response = await fetch(`${SUPABASE_URL}/rest/v1/rpc/consume_access_token`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ p_token: token })
       });
 
-      if (error) throw error;
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Error al ejecutar RPC en Supabase');
+      }
 
       if (!data.success) {
         return res.status(403).json(data);
