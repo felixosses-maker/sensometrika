@@ -1,22 +1,23 @@
 /**
- * Sensometrika - Gestor de Sesión con Modal Nativo Integrado
+ * Sensometrika - Gestor de Sesión Demo & Temporizador de Alto Rendimiento
  */
 (async function initSessionManager() {
   const urlParams = new URLSearchParams(window.location.search);
   const tokenUrl = urlParams.get('token');
 
-  // Función para mostrar modal visual integrado con el diseño de Sensometrika
-  function mostrarModalAviso(titulo, subtitulo, textoBtn, callback) {
+  // Helper para construir el modal integrado corporativo
+  function mostrarModalAviso(titulo, subtitulo, textoBtn, urlDestino) {
     const modalId = 'smk-modal-aviso';
     if (document.getElementById(modalId)) return;
 
+    // Pausar cualquier interacción en segundo plano
     const overlay = document.createElement('div');
     overlay.id = modalId;
     overlay.style.cssText = `
       position: fixed;
       inset: 0;
-      background: rgba(3, 7, 18, 0.90);
-      backdrop-filter: blur(8px);
+      background: rgba(3, 7, 18, 0.94);
+      backdrop-filter: blur(10px);
       z-index: 9999999;
       display: flex;
       align-items: center;
@@ -28,54 +29,52 @@
     overlay.innerHTML = `
       <div style="
         background: #0f172a;
-        border: 1px solid rgba(56, 189, 248, 0.4);
+        border: 1px solid rgba(56, 189, 248, 0.45);
         border-radius: 20px;
-        max-width: 400px;
+        max-width: 420px;
         width: 100%;
-        padding: 26px 24px;
+        padding: 28px 24px;
         text-align: center;
-        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8), 0 0 25px rgba(56, 189, 248, 0.15);
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.9), 0 0 30px rgba(56, 189, 248, 0.2);
         color: #ffffff;
-        animation: smkFadeIn 0.25s ease-out;
       ">
-        <div style="display: flex; justify-content: center; margin-bottom: 14px;">
+        <div style="display: flex; justify-content: center; margin-bottom: 16px;">
           <div style="
-            width: 52px;
-            height: 52px;
+            width: 56px;
+            height: 56px;
             border-radius: 50%;
             background: rgba(56, 189, 248, 0.12);
-            border: 1px solid rgba(56, 189, 248, 0.3);
+            border: 1px solid rgba(56, 189, 248, 0.35);
             display: flex;
             align-items: center;
             justify-content: center;
             color: #38bdf8;
-            font-size: 24px;
+            font-size: 26px;
           ">
             ⏱️
           </div>
         </div>
 
-        <h3 style="font-size: 1.25rem; font-weight: 800; color: #ffffff; margin: 0 0 6px 0; letter-spacing: 0.5px;">
+        <h3 style="font-size: 1.3rem; font-weight: 800; color: #ffffff; margin: 0 0 8px 0; letter-spacing: 0.5px;">
           ${titulo}
         </h3>
         
-        <p style="font-size: 0.85rem; color: #94a3b8; line-height: 1.5; margin: 0 0 20px 0;">
+        <p style="font-size: 0.88rem; color: #94a3b8; line-height: 1.55; margin: 0 0 22px 0;">
           ${subtitulo}
         </p>
 
         <button id="smk-btn-modal-accion" style="
           width: 100%;
           background: #0284c7;
-          hover: background: #0369a1;
           color: #ffffff;
           border: none;
           border-radius: 12px;
-          padding: 12px;
-          font-size: 0.9rem;
+          padding: 13px;
+          font-size: 0.92rem;
           font-weight: 700;
           cursor: pointer;
-          transition: transform 0.1s ease, background 0.15s ease;
-          box-shadow: 0 4px 12px rgba(2, 132, 199, 0.3);
+          transition: all 0.15s ease;
+          box-shadow: 0 4px 14px rgba(2, 132, 199, 0.35);
         ">
           ${textoBtn}
         </button>
@@ -84,10 +83,8 @@
 
     document.body.appendChild(overlay);
 
-    const btn = document.getElementById('smk-btn-modal-accion');
-    btn.addEventListener('click', () => {
-      overlay.remove();
-      if (typeof callback === 'function') callback();
+    document.getElementById('smk-btn-modal-accion').addEventListener('click', () => {
+      window.location.href = urlDestino;
     });
   }
 
@@ -103,48 +100,58 @@
       const data = await res.json();
 
       if (!res.ok || !data.success) {
-        let msg = 'Enlace de acceso no válido o no encontrado.';
+        let msg = 'El enlace de acceso ingresado no es válido o ya no existe en el sistema.';
         if (data.error === 'TOKEN_EXPIRED') {
-          msg = 'El enlace de acceso ha expirado (tiempo límite superado).';
+          msg = 'Este enlace demo superó los 10 minutos de vigencia permitidos.';
         } else if (data.error === 'TOKEN_ALREADY_USED') {
-          msg = 'Este enlace ya fue utilizado previamente.';
+          msg = 'Este enlace ya fue activado previamente.';
         }
 
-        mostrarModalAviso('Acceso Denegado', msg, 'Volver al Inicio', () => {
-          sessionStorage.clear();
-          window.location.href = 'index.html';
-        });
+        mostrarModalAviso('Enlace Inválido o Expirado', msg, 'Ver Planes de Evaluación →', 'index.html#planes');
         return;
       }
 
       sessionStorage.setItem('smk_token', tokenUrl);
       sessionStorage.setItem('smk_type', data.type || 'demo');
       sessionStorage.setItem('smk_expires_at', data.expires_at);
+      sessionStorage.removeItem('smk_session_expired'); // Limpiar estado previo
 
       window.history.replaceState({}, document.title, window.location.pathname);
     } catch (err) {
       console.error('Error al contactar api/access:', err);
-      mostrarModalAviso('Error de Conexión', 'No fue posible validar la autorización de acceso.', 'Reintentar', () => {
-        window.location.href = 'index.html';
-      });
+      mostrarModalAviso('Error de Red', 'No pudimos contrastar el token. Verifica tu conexión.', 'Volver a Intentar', 'index.html');
       return;
     }
   }
 
-  // 2. Verificar existencia de sesión activa
+  // 2. Verificar estado de expiración reciente
+  if (sessionStorage.getItem('smk_session_expired') === 'true') {
+    mostrarModalAviso(
+      'Sesión Demo Finalizada',
+      'Tu tiempo de evaluación de prueba (10 min) ha concluido. Adquiere tu plan para continuar practicando sin límites y emitir tus informes oficiales.',
+      'Ver Planes y Precios →',
+      'index.html#planes'
+    );
+    return;
+  }
+
+  // 3. Verificar si existe credencial activa
   const tokenActivo = sessionStorage.getItem('smk_token');
   const expiraString = sessionStorage.getItem('smk_expires_at');
 
   if (!tokenActivo || !expiraString) {
-    mostrarModalAviso('Acceso Restringido', 'Debe ingresar mediante un enlace demo o credencial autorizada.', 'Ir al Inicio', () => {
-      window.location.href = 'index.html';
-    });
+    mostrarModalAviso(
+      'Acceso Restringido',
+      'Para ingresar a los módulos de evaluación psicotécnica se requiere un pase demo activo o un plan habilitado.',
+      'Ir al Inicio →',
+      'index.html'
+    );
     return;
   }
 
   const expiraTimestamp = new Date(expiraString).getTime();
 
-  // 3. Inyectar widget visual prominente en la esquina superior derecha
+  // 4. Crear widget flotante de cronómetro si no existe
   let timerWidget = document.getElementById('smk-session-timer-widget');
   if (!timerWidget) {
     timerWidget = document.createElement('div');
@@ -188,8 +195,8 @@
   const display = document.getElementById('smk-timer-display');
   const dot = document.getElementById('smk-pulse-dot');
 
-  // 4. Actualización continua
-  function actualizarContador() {
+  // 5. Ciclo de cuenta regresiva
+  function tick() {
     const restanteMs = expiraTimestamp - Date.now();
 
     if (restanteMs <= 0) {
@@ -200,15 +207,17 @@
         dot.style.boxShadow = '0 0 8px #ef4444';
       }
 
-      // Detener y mostrar modal integrado del simulador
+      // Marcar sesión expirada
+      sessionStorage.setItem('smk_session_expired', 'true');
+      sessionStorage.removeItem('smk_token');
+      sessionStorage.removeItem('smk_expires_at');
+
+      // Modal inmediato de finalización
       mostrarModalAviso(
         'Sesión Demo Finalizada',
         'Has completado tus 10 minutos de prueba. Para continuar evaluando y emitir informes con validez oficial conforme al D.S. N° 170, adquiere tu plan de evaluaciones.',
         'Ver Planes y Precios →',
-        () => {
-          sessionStorage.clear();
-          window.location.href = 'index.html#planes';
-        }
+        'index.html#planes'
       );
       return;
     }
@@ -233,6 +242,6 @@
     }
   }
 
-  actualizarContador();
-  const intervalo = setInterval(actualizarContador, 1000);
+  tick();
+  const intervalo = setInterval(tick, 1000);
 })();
