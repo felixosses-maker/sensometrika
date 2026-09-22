@@ -1,11 +1,97 @@
 /**
- * Sensometrika - Gestor de Sesión y Cronómetro de Alto Contraste
+ * Sensometrika - Gestor de Sesión con Modal Nativo Integrado
  */
 (async function initSessionManager() {
   const urlParams = new URLSearchParams(window.location.search);
   const tokenUrl = urlParams.get('token');
 
-  // 1. Si viene un token en la URL, validar contra el backend
+  // Función para mostrar modal visual integrado con el diseño de Sensometrika
+  function mostrarModalAviso(titulo, subtitulo, textoBtn, callback) {
+    const modalId = 'smk-modal-aviso';
+    if (document.getElementById(modalId)) return;
+
+    const overlay = document.createElement('div');
+    overlay.id = modalId;
+    overlay.style.cssText = `
+      position: fixed;
+      inset: 0;
+      background: rgba(3, 7, 18, 0.90);
+      backdrop-filter: blur(8px);
+      z-index: 9999999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    `;
+
+    overlay.innerHTML = `
+      <div style="
+        background: #0f172a;
+        border: 1px solid rgba(56, 189, 248, 0.4);
+        border-radius: 20px;
+        max-width: 400px;
+        width: 100%;
+        padding: 26px 24px;
+        text-align: center;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8), 0 0 25px rgba(56, 189, 248, 0.15);
+        color: #ffffff;
+        animation: smkFadeIn 0.25s ease-out;
+      ">
+        <div style="display: flex; justify-content: center; margin-bottom: 14px;">
+          <div style="
+            width: 52px;
+            height: 52px;
+            border-radius: 50%;
+            background: rgba(56, 189, 248, 0.12);
+            border: 1px solid rgba(56, 189, 248, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #38bdf8;
+            font-size: 24px;
+          ">
+            ⏱️
+          </div>
+        </div>
+
+        <h3 style="font-size: 1.25rem; font-weight: 800; color: #ffffff; margin: 0 0 6px 0; letter-spacing: 0.5px;">
+          ${titulo}
+        </h3>
+        
+        <p style="font-size: 0.85rem; color: #94a3b8; line-height: 1.5; margin: 0 0 20px 0;">
+          ${subtitulo}
+        </p>
+
+        <button id="smk-btn-modal-accion" style="
+          width: 100%;
+          background: #0284c7;
+          hover: background: #0369a1;
+          color: #ffffff;
+          border: none;
+          border-radius: 12px;
+          padding: 12px;
+          font-size: 0.9rem;
+          font-weight: 700;
+          cursor: pointer;
+          transition: transform 0.1s ease, background 0.15s ease;
+          box-shadow: 0 4px 12px rgba(2, 132, 199, 0.3);
+        ">
+          ${textoBtn}
+        </button>
+      </div>
+    `;
+
+    document.body.appendChild(overlay);
+
+    const btn = document.getElementById('smk-btn-modal-accion');
+    btn.addEventListener('click', () => {
+      overlay.remove();
+      if (typeof callback === 'function') callback();
+    });
+  }
+
+  // 1. Si viene token en URL, validar contra el backend
   if (tokenUrl) {
     try {
       const res = await fetch('/api/access', {
@@ -23,9 +109,11 @@
         } else if (data.error === 'TOKEN_ALREADY_USED') {
           msg = 'Este enlace ya fue utilizado previamente.';
         }
-        alert(msg);
-        sessionStorage.clear();
-        window.location.href = 'index.html';
+
+        mostrarModalAviso('Acceso Denegado', msg, 'Volver al Inicio', () => {
+          sessionStorage.clear();
+          window.location.href = 'index.html';
+        });
         return;
       }
 
@@ -36,8 +124,9 @@
       window.history.replaceState({}, document.title, window.location.pathname);
     } catch (err) {
       console.error('Error al contactar api/access:', err);
-      alert('Error de conectividad al verificar credencial de acceso.');
-      window.location.href = 'index.html';
+      mostrarModalAviso('Error de Conexión', 'No fue posible validar la autorización de acceso.', 'Reintentar', () => {
+        window.location.href = 'index.html';
+      });
       return;
     }
   }
@@ -47,8 +136,9 @@
   const expiraString = sessionStorage.getItem('smk_expires_at');
 
   if (!tokenActivo || !expiraString) {
-    alert('Acceso restringido: Ingrese con un enlace demo o credencial autorizada.');
-    window.location.href = 'index.html';
+    mostrarModalAviso('Acceso Restringido', 'Debe ingresar mediante un enlace demo o credencial autorizada.', 'Ir al Inicio', () => {
+      window.location.href = 'index.html';
+    });
     return;
   }
 
@@ -105,9 +195,21 @@
     if (restanteMs <= 0) {
       clearInterval(intervalo);
       if (display) display.textContent = '00:00';
-      alert('Tu sesión de prueba de 10 minutos ha finalizado.');
-      sessionStorage.clear();
-      window.location.href = 'index.html';
+      if (dot) {
+        dot.style.background = '#ef4444';
+        dot.style.boxShadow = '0 0 8px #ef4444';
+      }
+
+      // Detener y mostrar modal integrado del simulador
+      mostrarModalAviso(
+        'Sesión Demo Finalizada',
+        'Has completado tus 10 minutos de prueba. Para continuar evaluando y emitir informes con validez oficial conforme al D.S. N° 170, adquiere tu plan de evaluaciones.',
+        'Ver Planes y Precios →',
+        () => {
+          sessionStorage.clear();
+          window.location.href = 'index.html#planes';
+        }
+      );
       return;
     }
 
@@ -119,7 +221,6 @@
     if (display) {
       display.textContent = `${textoMin}:${textoSeg}`;
       if (minutos < 2) {
-        // Alerta roja de urgencia
         display.style.color = '#ef4444';
         display.style.textShadow = '0 0 12px rgba(239, 68, 68, 0.7)';
         timerWidget.style.borderColor = 'rgba(239, 68, 68, 0.8)';
