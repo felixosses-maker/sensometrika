@@ -26,26 +26,31 @@ module.exports = async (req, res) => {
 
   const SUPABASE_URL = process.env.SUPABASE_URL;
   const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  const FRONTEND_URL = process.env.FRONTEND_URL || 'https://sensometrika.vercel.app';
+  const FRONTEND_URL = (process.env.FRONTEND_URL || 'https://sensometrika.vercel.app').replace(/\/$/, '');
 
   try {
-    let { tipo, email, nombre, enlace, detalles } = req.body;
+    let { tipo, email, nombre, enlace, detalles } = req.body || {};
 
     if (!email) {
       return res.status(400).json({ error: 'Falta parámetro obligatorio: email.' });
     }
 
-    // 1. Si el enlace viene sin token o no se envió, generar token automático en Supabase
-    let enlaceFinal = enlace || '';
-    if (!enlaceFinal.includes('?token=')) {
+    // 1. Determinar y construir la URL limpia
+    let enlaceFinal = '';
+
+    // Si ya viene un enlace con token válido y limpio
+    if (typeof enlace === 'string' && enlace.includes('?token=')) {
+      enlaceFinal = enlace.trim();
+    } else {
+      // Generar token en Supabase
+      const generatedToken = crypto.randomUUID();
+      const tipoToken = tipo === 'b2b' ? 'b2b' : (tipo === 'demo' ? 'demo' : 'b2c');
+      const minutes = tipoToken === 'demo' ? 10 : (tipoToken === 'b2b' ? 4320 : 2880);
+      const expiresAt = new Date(Date.now() + minutes * 60 * 1000).toISOString();
+
       if (SUPABASE_URL && SUPABASE_KEY) {
         try {
-          const generatedToken = crypto.randomUUID();
-          const tipoToken = tipo === 'b2b' ? 'b2b' : (tipo === 'demo' ? 'demo' : 'b2c');
-          const minutes = tipoToken === 'demo' ? 10 : (tipoToken === 'b2b' ? 4320 : 2880); // 10 min demo / 48h o 72h
-          const expiresAt = new Date(Date.now() + minutes * 60 * 1000).toISOString();
-
-          const supaRes = await fetch(`${SUPABASE_URL}/rest/v1/access_tokens`, {
+          await fetch(`${SUPABASE_URL}/rest/v1/access_tokens`, {
             method: 'POST',
             headers: {
               'apikey': SUPABASE_KEY,
@@ -61,19 +66,12 @@ module.exports = async (req, res) => {
               expires_at: expiresAt
             })
           });
-
-          if (supaRes.ok) {
-            const rutaDestino = (tipoToken === 'demo' || (enlaceFinal && enlaceFinal.includes('demo.html'))) ? '/demo.html' : '/demo.html';
-            enlaceFinal = `${FRONTEND_URL}${rutaDestino}?token=${generatedToken}`;
-          }
         } catch (tokenErr) {
-          console.error('Error generando token automático:', tokenErr);
+          console.error('Error insertando token en Supabase:', tokenErr);
         }
       }
-    }
 
-    if (!enlaceFinal) {
-      enlaceFinal = `${FRONTEND_URL}/demo.html`;
+      enlaceFinal = `${FRONTEND_URL}/demo.html?token=${generatedToken}`;
     }
 
     const destinatarioNombre = nombre || (tipo === 'b2b' ? 'Supervisión Técnica' : 'Postulante');
@@ -81,9 +79,6 @@ module.exports = async (req, res) => {
     let htmlContent = '';
 
     if (tipo === 'b2b') {
-      // -------------------------------------------------------------
-      // PLANTILLA B2B: EMPRESA / SUPERVISOR / APR
-      // -------------------------------------------------------------
       const razonSocial = (detalles && detalles.razonSocial) ? detalles.razonSocial : 'Empresa Cliente';
       const rutEmpresa = (detalles && detalles.rutEmpresa) ? detalles.rutEmpresa : '--';
       const cupos = (detalles && detalles.cupos) ? detalles.cupos : '1';
@@ -115,11 +110,12 @@ module.exports = async (req, res) => {
                 <p style="font-size: 12px; color: #cbd5e1; margin: 0 0 14px 0; font-weight: 600;">
                   Enlace directo para distribución a trabajadores (WhatsApp / Correo):
                 </p>
-                <a href="${enlaceFinal}" style="display: inline-block; background: #0284c7; color: #ffffff; text-decoration: none; font-weight: 800; font-size: 14px; padding: 13px 26px; border-radius: 10px; box-shadow: 0 4px 15px rgba(2, 132, 199, 0.4);">
+                <a href="${enlaceFinal}" target="_blank" style="display: inline-block; background: #0284c7; color: #ffffff; text-decoration: none; font-weight: 800; font-size: 14px; padding: 13px 26px; border-radius: 10px; box-shadow: 0 4px 15px rgba(2, 132, 199, 0.4);">
                   Acceder a la Evaluación Faena →
                 </a>
-                <p style="font-size: 10.5px; color: #64748b; margin: 12px 0 0 0; word-break: break-all;">
-                  ${enlaceFinal}
+                <p style="font-size: 11px; color: #64748b; margin: 14px 0 0 0; word-break: break-all;">
+                  Si el botón no abre, copia y pega este enlace directo:<br>
+                  <a href="${enlaceFinal}" target="_blank" style="color: #38bdf8; text-decoration: underline;">${enlaceFinal}</a>
                 </p>
               </div>
 
@@ -141,9 +137,6 @@ module.exports = async (req, res) => {
         </html>
       `;
     } else {
-      // -------------------------------------------------------------
-      // PLANTILLA B2C / DEMO: PARTICULAR
-      // -------------------------------------------------------------
       const nombrePlan = (detalles && detalles.nombrePlan) ? detalles.nombrePlan : 'Pase de Evaluación Psicomotriz';
       const vigencia = (detalles && detalles.vigencia) ? detalles.vigencia : 'Vigencia activa';
 
@@ -171,12 +164,12 @@ module.exports = async (req, res) => {
               </p>
 
               <div style="background: #131b2e; border: 1px solid #1e293b; border-radius: 12px; padding: 22px; text-align: center; margin-bottom: 24px;">
-                <a href="${enlaceFinal}" style="display: inline-block; background: #0284c7; color: #ffffff; text-decoration: none; font-weight: 800; font-size: 14px; padding: 13px 28px; border-radius: 10px; box-shadow: 0 4px 15px rgba(2, 132, 199, 0.4);">
+                <a href="${enlaceFinal}" target="_blank" style="display: inline-block; background: #0284c7; color: #ffffff; text-decoration: none; font-weight: 800; font-size: 14px; padding: 13px 28px; border-radius: 10px; box-shadow: 0 4px 15px rgba(2, 132, 199, 0.4);">
                   Comenzar Evaluación Ahora →
                 </a>
                 <p style="font-size: 11px; color: #64748b; margin: 14px 0 0 0; word-break: break-all;">
                   Si el botón no abre, haz clic directo en este enlace seguro:<br>
-                  <a href="${enlaceFinal}" style="color: #38bdf8; text-decoration: underline;">${enlaceFinal}</a>
+                  <a href="${enlaceFinal}" target="_blank" style="color: #38bdf8; text-decoration: underline;">${enlaceFinal}</a>
                 </p>
               </div>
 
