@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sensometrika - Centro de Mando Unificado</title>
+    <!-- Librería Chart.js para el gráfico de conexión -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --primary-color: #3b82f6;
+            --success-color: #22c55e;
+            --warning-color: #f59e0b;
+            --danger-color: #ef4444;
+            --b2b-color: #8b5cf6;       
+            --b2c-color: #06b6d4;       
+            --bg-color: #0f172a;        
+            --card-bg: #1e293b;         
+            --text-main: #f8fafc;       
+            --text-muted: #94a3b8;      
+            --border-color: #334155;    
+            --input-bg: #0f172a;        
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1300px;
+            margin: 0 auto;
+        }
+
+        /* Cabecera */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--card-bg);
+            padding: 20px 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border-color);
+            margin-bottom: 20px;
+        }
+
+        .header-brand {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .header-brand img {
+            height: 45px;
+            width: auto;
+            object-fit: contain;
+            border-radius: 6px;
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 24px;
+            color: var(--primary-color);
+            letter-spacing: 0.5px;
+        }
+
+        /* Barra de Estado de Servicios Cloud (NUEVO) */
+        .cloud-status-bar {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .service-badge {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            padding: 12px 15px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .service-indicator {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        .dot-ok { background-color: var(--success-color); box-shadow: 0 0 8px rgba(34, 197, 94, 0.4); }
+        .dot-warn { background-color: var(--warning-color); box-shadow: 0 0 8px rgba(245, 158, 11, 0.4); }
+
+        /* Sistema de Pestañas */
+        .tabs-nav {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .tab-btn {
+            background-color: var(--card-bg);
+            color: var(--text-muted);
+            border: 1px solid var(--border-color);
+            padding: 12px 25px;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .tab-btn.active-b2b { background-color: var(--b2b-color); color: white; border-color: var(--b2b-color); }
+        .tab-btn.active-b2c { background-color: var(--b2c-color); color: #0f172a; border-color: var(--b2c-color); }
+
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        /* Cuadrícula Principal */
+        .grid-dashboard {
+            display: grid;
+            grid-template-columns: 1.2fr 0.8fr;
+            gap: 25px;
+            margin-bottom: 25px;
+        }
+
+        @media (max-width: 900px) {
+            .grid-dashboard { grid-template-columns: 1fr; }
+        }
+
+        .card {
+            background: var(--card-bg);
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border-color);
+            margin-bottom: 25px;
+        }
+
+        .card h2 {
+            margin-top: 0;
+            font-size: 18px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 10px;
+            color: var(--text-main);
+        }
+
+        /* Formulario */
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 5px; color: var(--text-muted); }
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%; padding: 11px; background-color: var(--input-bg);
+            border: 1px solid var(--border-color); border-radius: 6px; font-size: 14px;
+            color: var(--text-main); box-sizing: border-box; font-family: inherit;
+        }
+        .form-group textarea { resize: vertical; height: 90px; }
+
+        .btn-b2b { background-color: var(--b2b-color); color: white; border: none; padding: 12px; border-radius: 6px; font-weight: 600; cursor: pointer; width: 100%; }
+        .btn-b2c { background-color: var(--b2c-color); color: #0f172a; border: none; padding: 12px; border-radius: 6px; font-weight: 700; cursor: pointer; width: 100%; }
+        .btn-b2b:hover, .btn-b2c:hover { opacity: 0.9; }
+
+        /* Métricas */
+        .metrics-container { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .metric-box { background: #0f172a; padding: 20px; border-radius: 8px; text-align: center; border: 1px solid var(--border-color); }
+        .metric-value { font-size: 32px; font-weight: bold; color: var(--primary-color); margin-bottom: 5px; }
+        .metric-label { font-size: 13px; color: var(--text-muted); }
+
+        /* Tabla */
+        .table-container { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; text-align: left; font-size: 14px; }
+        th, td { padding: 12px 15px; border-bottom: 1px solid var(--border-color); }
+        th { background-color: #0f172a; color: var(--text-muted); font-weight: 600; }
+        tr:hover { background-color: rgba(255, 255, 255, 0.02); }
+        .status-completed { color: var(--success-color); font-weight: 500; }
+        .status-pending { color: var(--warning-color); font-weight: 500; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <!-- Cabecera -->
+        <header>
+            <div class="header-brand">
+                <img src="logo.jpg" alt="Sensometrika Logo">
+                <h1>Centro de Mando Unificado</h1>
+            </div>
+            <div style="text-align: right;">
+                <span id="currentPing" style="font-size: 14px; font-weight: bold; color: var(--success-color);">-- ms</span>
+                <div style="font-size: 11px; color: var(--text-muted);">Latencia en vivo</div>
+            </div>
+        </header>
+
+        <!-- Barra de Estado de Servicios Cloud y Gráfico Compacto -->
+        <div class="cloud-status-bar">
+            <div class="service-badge">
+                <span>Vercel (Front)</span>
+                <span class="service-indicator"><span class="dot dot-ok"></span> <strong style="color:var(--success-color)">OK</strong></span>
+            </div>
+            <div class="service-badge">
+                <span>Supabase (DB)</span>
+                <span class="service-indicator"><span class="dot dot-ok"></span> <strong style="color:var(--success-color)">OK</strong></span>
+            </div>
+            <div class="service-badge">
+                <span>GitHub (Repo)</span>
+                <span class="service-indicator"><span class="dot dot-ok"></span> <strong style="color:var(--success-color)">OK</strong></span>
+            </div>
+            <div class="service-badge">
+                <span>Mails (B2B/B2C)</span>
+                <span class="service-indicator"><span class="dot dot-ok"></span> <strong style="color:var(--success-color)">OK</strong></span>
+            </div>
+        </div>
+
+        <!-- Módulo de Gráfico de Red Compacto -->
+        <div class="card" style="padding: 12px 20px; margin-bottom: 20px;">
+            <div style="height: 70px; position: relative;">
+                <canvas id="networkChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Pestañas de Navegación -->
+        <div class="tabs-nav">
+            <button id="btnTabB2B" class="tab-btn active-b2b" onclick="switchTab('b2b')">Módulo Corporativo (B2B)</button>
+            <button id="btnTabB2C" class="tab-btn" onclick="switchTab('b2c')">Módulo Particular / Masivo (B2C)</button>
+        </div>
+
+        <!-- VISTA B2B -->
+        <div id="contentB2B" class="tab-content active">
+            <div class="grid-dashboard">
+                <div class="card" style="border-top: 4px solid var(--b2b-color); margin-bottom:0;">
+                    <h2>Gestión Corporativa y Envíos Masivos</h2>
+                    <div class="form-group">
+                        <label for="b2bCompany">Nombre de la Empresa / Cliente</label>
+                        <input type="text" id="b2bCompany" placeholder="Ej. Minera & Transportes Ltda.">
+                    </div>
+                    <div class="form-group">
+                        <label for="b2bTestType">Tipo de Evaluación Requerida</label>
+                        <select id="b2bTestType">
+                            <option value="completa">Batería Psicotécnica Completa (Conducción Industrial)</option>
+                            <option value="reaccion">Tiempos de Reacción y Frenado</option>
+                            <option value="bimanual">Coordinación Bimanual Avanzada</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="b2bEmails">Correos Electrónicos (Uno por línea)</label>
+                        <textarea id="b2bEmails" placeholder="trabajador1@empresa.cl&#10;trabajador2@empresa.cl"></textarea>
+                    </div>
+                    <button class="btn-b2b" onclick="ejecutarEnvioMasivoB2B()">Iniciar Envío Masivo B2B</button>
+                </div>
+
+                <div class="card" style="margin-bottom:0;">
+                    <h2>Métricas B2B en Tiempo Real</h2>
+                    <div class="metrics-container" style="margin-bottom: 20px;">
+                        <div class="metric-box">
+                            <div class="metric-value" style="color: var(--b2b-color);">24</div>
+                            <div class="metric-label">Empresas Activas</div>
+                        </div>
+                        <div class="metric-box">
+                            <div class="metric-value" style="color: var(--b2b-color);">142</div>
+                            <div class="metric-label">Demos B2B Enviadas</div>
+                        </div>
+                    </div>
+                    <div class="card" style="background: #0f172a; padding: 15px; margin: 0;">
+                        <h3 style="margin-top:0; font-size:14px; color:var(--text-muted);">Estado de Correos Masivos</h3>
+                        <p style="font-size: 13px; margin-bottom: 5px;">Cola de salida: <strong>Sincronizada</strong></p>
+                        <p style="font-size: 13px; margin: 0;">Último lote: 15 correos despachados con éxito.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- VISTA B2C -->
+        <div id="contentB2C" class="tab-content">
+            <div class="grid-dashboard">
+                <div class="card" style="border-top: 4px solid var(--b2c-color); margin-bottom:0;">
+                    <h2>Generación de Acceso Directo (B2C)</h2>
+                    <div class="form-group">
+                        <label for="b2cName">Nombre del Evaluado</label>
+                        <input type="text" id="b2cName" placeholder="Ej. Andrea Morales">
+                    </div>
+                    <div class="form-group">
+                        <label for="b2cEmail">Correo del Cliente</label>
+                        <input type="email" id="b2cEmail" placeholder="andrea@correo.cl">
+                    </div>
+                    <div class="form-group">
+                        <label for="b2cTest">Prueba Solicitada</label>
+                        <select id="b2cTest">
+                            <option value="standard">Test Psicotécnico Standard</option>
+                            <option value="rapida">Evaluación de Reflejos Rápida</option>
+                        </select>
+                    </div>
+                    <button class="btn-b2c" onclick="generarLinkB2C()">Generar Link B2C Inmediato</button>
+                </div>
+
+                <div class="card" style="margin-bottom:0;">
+                    <h2>Métricas B2C</h2>
+                    <div class="metrics-container">
+                        <div class="metric-box">
+                            <div class="metric-value" style="color: var(--b2c-color);">89</div>
+                            <div class="metric-label">Accesos B2C Hoy</div>
+                        </div>
+                        <div class="metric-box">
+                            <div class="metric-value" style="color: var(--b2c-color);">94%</div>
+                            <div class="metric-label">Tasa de Completitud</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Historial Unificado -->
+        <div class="card" style="margin-top: 25px;">
+            <h2>Historial General Unificado (B2B y B2C)</h2>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Fecha / Hora</th>
+                            <th>Segmento</th>
+                            <th>Entidad / Cliente</th>
+                            <th>Destinos / Evaluado</th>
+                            <th>Prueba</th>
+                            <th>Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>22/09/2026 - 14:10</td>
+                            <td><span style="color: var(--b2b-color); font-weight: bold;">B2B</span></td>
+                            <td>Minera Andina</td>
+                            <td>15 correos en lote</td>
+                            <td>Batería Psicotécnica Completa</td>
+                            <td><span class="status-completed">Enviado / Lote OK</span></td>
+                        </tr>
+                        <tr>
+                            <td>22/09/2026 - 13:05</td>
+                            <td><span style="color: var(--b2c-color); font-weight: bold;">B2C</span></td>
+                            <td>Particular</td>
+                            <td>Pedro Valenzuela</td>
+                            <td>Test Psicotécnico Standard</td>
+                            <td><span class="status-pending">Pendiente de Ingreso</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts de Control -->
+    <script>
+        function switchTab(type) {
+            const btnB2B = document.getElementById('btnTabB2B');
+            const btnB2C = document.getElementById('btnTabB2C');
+            const contentB2B = document.getElementById('contentB2B');
+            const contentB2C = document.getElementById('contentB2C');
+
+            if(type === 'b2b') {
+                btnB2B.className = 'tab-btn active-b2b';
+                btnB2C.className = 'tab-btn';
+                contentB2B.className = 'tab-content active';
+                contentB2C.className = 'tab-content';
+            } else {
+                btnB2B.className = 'tab-btn';
+                btnB2C.className = 'tab-btn active-b2c';
+                contentB2B.className = 'tab-content';
+                contentB2C.className = 'tab-content active';
+            }
+        }
+
+        function ejecutarEnvioMasivoB2B() {
+            const company = document.getElementById('b2bCompany').value;
+            const emailsText = document.getElementById('b2bEmails').value;
+            if(!company || !emailsText) { alert('Ingrese empresa y correos.'); return; }
+            alert(`Lote B2B preparado para ${company}.`);
+        }
+
+        function generarLinkB2C() {
+            const name = document.getElementById('b2cName').value;
+            if(!name) { alert('Ingrese el nombre.'); return; }
+            alert(`Link B2C generado para ${name}.`);
+        }
+
+        // Gráfico compacto a 0.3s
+        const ctx = document.getElementById('networkChart').getContext('2d');
+        const networkChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: ['', '', '', '', '', '', '', '', '', ''],
+                datasets: [{
+                    label: 'Latencia (ms)',
+                    data: [22, 24, 23, 25, 24, 26, 23, 25, 24, 25],
+                    borderColor: '#22c55e',
+                    backgroundColor: 'rgba(34, 197, 94, 0.1)',
+                    borderWidth: 2,
+                    tension: 0.4,
+                    fill: true,
+                    pointRadius: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                animation: false,
+                scales: {
+                    y: { beginAtZero: true, max: 60, grid: { color: 'rgba(51, 65, 85, 0.3)' }, ticks: { color: '#94a3b8', font: { size: 9 } } },
+                    x: { grid: { display: false }, ticks: { display: false } }
+                },
+                plugins: { legend: { display: false } }
+            }
+        });
+
+        setInterval(() => {
+            const randomPing = Math.floor(Math.random() * (35 - 16 + 1)) + 16;
+            const data = networkChart.data.datasets[0].data;
+            data.shift();
+            data.push(randomPing);
+            
+            document.getElementById('currentPing').textContent = randomPing + ' ms';
+            if(randomPing > 40) {
+                networkChart.data.datasets[0].borderColor = '#f59e0b';
+                document.getElementById('currentPing').style.color = '#f59e0b';
+            } else {
+                networkChart.data.datasets[0].borderColor = '#22c55e';
+                document.getElementById('currentPing').style.color = '#22c55e';
+            }
+            networkChart.update();
+        }, 300);
+    </script>
+</body>
+</html>

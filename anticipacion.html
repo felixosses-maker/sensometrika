@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>SENSOMETRIKA | Módulo: Velocidad de Anticipación</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    body {
+      background-color: #070d18;
+      color: #ffffff;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 16px 12px 28px;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .app-container {
+      width: 100%;
+      max-width: 440px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    /* ENCABEZADO OFICIAL DE MARCA */
+    .sensometrika-brand-header {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      margin-top: 4px;
+      margin-bottom: 6px;
+      text-align: center;
+    }
+    .brand-svg-iso {
+      width: 50px;
+      height: 50px;
+      margin-bottom: 6px;
+      filter: drop-shadow(0 0 12px rgba(56, 189, 248, 0.45));
+    }
+    .brand-title {
+      margin: 0;
+      font-size: 1.25rem;
+      font-weight: 800;
+      letter-spacing: 2px;
+      color: #ffffff;
+      text-transform: uppercase;
+      line-height: 1.1;
+    }
+    .brand-subtitle {
+      font-size: 0.65rem;
+      font-weight: 600;
+      letter-spacing: 1.8px;
+      color: #94a3b8;
+      margin-top: 3px;
+      text-transform: uppercase;
+    }
+
+    /* TARJETA PRINCIPAL */
+    .modulo-card-container {
+      background-color: #0b1324;
+      border: 1px solid #1e293b;
+      border-radius: 16px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.6);
+    }
+    .nav-top-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .link-volver {
+      color: #94a3b8;
+      text-decoration: none;
+      font-size: 0.82rem;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .link-volver:hover, .link-volver:active {
+      color: #38bdf8;
+    }
+
+    /* BOTÓN CÓMO FUNCIONA */
+    .btn-como-funciona {
+      background: #0c182e;
+      border: 1px solid #1e3a6d;
+      color: #38bdf8;
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 5px 11px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .btn-como-funciona:hover, .btn-como-funciona:active {
+      background: #13274c;
+      border-color: #38bdf8;
+    }
+
+    .badge-fase {
+      display: inline-block;
+      background: rgba(250, 204, 21, 0.12);
+      border: 1px solid rgba(250, 204, 21, 0.35);
+      color: #facc15;
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 5px 14px;
+      border-radius: 20px;
+      margin: 0 auto;
+      text-align: center;
+      letter-spacing: 0.3px;
+    }
+    .badge-fase.oficial {
+      background: rgba(56, 189, 248, 0.12);
+      border-color: rgba(56, 189, 248, 0.35);
+      color: #38bdf8;
+    }
+
+    /* VISOR DE PISTA DE ANTICIPACIÓN */
+    .contenedor-pista {
+      position: relative;
+      overflow: hidden;
+      background-color: #172133;
+      border: 1px solid #283548;
+      border-radius: 14px;
+      height: 120px;
+      display: flex;
+      align-items: center;
+      touch-action: manipulation;
+    }
+    .zona-ciega {
+      position: absolute;
+      left: 65%;
+      width: 25%;
+      height: 100%;
+      background: rgba(239, 68, 68, 0.15);
+      border-left: 2px dashed rgba(239, 68, 68, 0.4);
+      border-right: 2px dashed rgba(239, 68, 68, 0.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.65rem;
+      font-weight: 800;
+      color: #f87171;
+      letter-spacing: 1px;
+      z-index: 2;
+    }
+    .linea-meta {
+      position: absolute;
+      left: 92%;
+      width: 3px;
+      height: 100%;
+      background-color: #10b981;
+      z-index: 2;
+    }
+    .objeto-movil {
+      position: absolute;
+      left: 0%;
+      width: 24px;
+      height: 24px;
+      background-color: #38bdf8;
+      border-radius: 50%;
+      box-shadow: 0 0 10px rgba(56, 189, 248, 0.8);
+      z-index: 3;
+      transition: left linear;
+    }
+
+    .marca-agua-svg {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 145px;
+      height: 145px;
+      opacity: 0.08;
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .instruccion-sub {
+      text-align: center;
+      font-size: 0.8rem;
+      color: #94a3b8;
+      line-height: 1.4;
+      margin: 0;
+      min-height: 2.2rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* BOTÓN DE ACCIÓN */
+    .btn-calibrar {
+      width: 100%;
+      background-color: #0284c7;
+      color: #ffffff;
+      border: none;
+      border-radius: 10px;
+      padding: 13px;
+      font-size: 0.95rem;
+      font-weight: 700;
+      cursor: pointer;
+      touch-action: manipulation;
+      transition: background-color 0.15s ease, transform 0.05s ease;
+    }
+    .btn-calibrar:hover { background-color: #0369a1; }
+    .btn-calibrar:active { transform: scale(0.98); }
+    .btn-calibrar:disabled {
+      background-color: #1e293b;
+      color: #475569;
+      cursor: not-allowed;
+    }
+
+    /* TABLERO DE MÉTRICAS */
+    .metricas-inferiores-grid {
+      display: grid;
+      grid-template-columns: 1fr 1.2fr 1fr;
+      gap: 8px;
+      background-color: #070b14;
+      border: 1px solid #1e293b;
+      border-radius: 10px;
+      padding: 10px 8px;
+      text-align: center;
+      align-items: center;
+    }
+    .col-metrica span {
+      display: block;
+      font-size: 0.65rem;
+      color: #94a3b8;
+      text-transform: uppercase;
+      margin-bottom: 4px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+    }
+    .col-metrica strong {
+      display: block;
+      font-size: 0.95rem;
+      color: #ffffff;
+      font-weight: 800;
+    }
+    .col-metrica .badge-tiempo-verde {
+      display: inline-block;
+      background-color: #10b981;
+      color: #000000 !important;
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      font-weight: 900;
+      letter-spacing: 0.5px;
+      box-shadow: 0 0 10px rgba(16, 185, 129, 0.4);
+    }
+    .col-metrica strong.rojo { color: #f87171; }
+    .col-metrica strong.amarillo { color: #facc15; }
+  </style>
+</head>
+<body>
+
+  <main class="app-container">
+    <header class="sensometrika-brand-header">
+      <svg class="brand-svg-iso" viewBox="0 0 70 70" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M52 28 C52 14, 37 10, 25 15 C15 19, 11 29, 15 38 C18 43, 21 46, 26 47" stroke="#f8fafc" stroke-width="4.2" stroke-linecap="round"/>
+        <path d="M43 28 C43 19, 34 16, 26 20 C20 23, 18 30, 22 36 C24 39, 27 41, 31 42" stroke="#cbd5e1" stroke-width="3.5" stroke-linecap="round"/>
+        <path d="M29 42 C29 51, 38 54, 46 50 C52 47, 54 40, 50 34 C48 31, 45 29, 41 28" stroke="#cbd5e1" stroke-width="3.5" stroke-linecap="round"/>
+        <path d="M20 42 C20 56, 35 60, 47 55 C57 51, 61 41, 57 32" stroke="#f8fafc" stroke-width="4.2" stroke-linecap="round"/>
+        <circle cx="36" cy="35" r="7.5" stroke="#00e5ff" stroke-width="1.8" opacity="0.6"/>
+        <circle cx="36" cy="35" r="4.2" fill="#00e5ff"/>
+        <path d="M39 38 L44 41 L41 36 Z" fill="#38bdf8"/>
+      </svg>
+      <h1 class="brand-title">SENSOMETRIKA</h1>
+      <span class="brand-subtitle">CALIBRATION TECHNOLOGY</span>
+    </header>
+
+    <section class="modulo-card-container">
+      <div class="nav-top-row">
+        <a href="demo.html" class="link-volver" id="btnBack">← Menú Pruebas</a>
+        <button type="button" class="btn-como-funciona" onclick="abrirModalAyuda()">
+          ? ¿Cómo funciona?
+        </button>
+      </div>
+
+      <div style="text-align: center;">
+        <span class="badge-fase" id="simulacionActualBadge">🟡 Calibración Demo (3 intentos)</span>
+      </div>
+
+      <div class="contenedor-pista" id="contenedorPista">
+        <svg class="marca-agua-svg" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="50" cy="50" r="10" fill="#ffffff" />
+          <path d="M50 30 A20 20 0 0 1 70 50 A20 20 0 0 1 50 70" stroke="#ffffff" stroke-width="4.5" stroke-linecap="round"/>
+          <path d="M50 20 A30 30 0 0 1 80 50 A30 30 0 0 1 50 80" stroke="#ffffff" stroke-width="4.5" stroke-linecap="round"/>
+        </svg>
+        <div class="zona-ciega">ZONA CIEGA</div>
+        <div class="linea-meta"></div>
+        <div id="objetoMovil" class="objeto-movil" style="top: 48px;"></div>
+      </div>
+
+      <p class="instruccion-sub" id="statusText">
+        Observa el desplazamiento. Cuando el móvil entre a la zona ciega, presiona el botón al calcular que cruza la línea verde.
+      </p>
+
+      <button type="button" class="btn-calibrar" id="btnAccion">
+        ¡MARCAR LLEGADA!
+      </button>
+
+      <div class="metricas-inferiores-grid">
+        <div class="col-metrica">
+          <span>Intento</span>
+          <strong id="displayIntento">0 / 3</strong>
+        </div>
+        <div class="col-metrica">
+          <span>Desfase</span>
+          <strong id="displayDesfase" class="badge-tiempo-verde">-- ms</strong>
+        </div>
+        <div class="col-metrica">
+          <span>Precisión</span>
+          <strong class="amarillo" id="displayPrecision">--</strong>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- MODAL DE AYUDA -->
+  <div id="modalAyuda" style="display: none; position: fixed; inset: 0; background: rgba(3, 7, 18, 0.9); backdrop-filter: blur(8px); z-index: 99999; align-items: center; justify-content: center; padding: 16px;">
+    <div style="background: #0f172a; border: 1px solid rgba(56, 189, 248, 0.4); border-radius: 16px; max-width: 400px; width: 100%; padding: 22px; text-align: left; color: #f8fafc;">
+      <h3 style="font-size: 1.15rem; font-weight: 800; color: #38bdf8; margin-bottom: 12px;">🎯 Velocidad de Anticipación</h3>
+      <p style="font-size: 0.82rem; color: #cbd5e1; line-height: 1.55; margin-bottom: 12px;">
+        Evalúa la capacidad de estimar el tiempo y velocidad de un móvil al desaparecer temporalmente de la vista (Faenas Mineras y Forestales).
+      </p>
+      <ul style="font-size: 0.8rem; color: #94a3b8; line-height: 1.6; margin-bottom: 18px; padding-left: 18px;">
+        <li><strong style="color: #ffffff;">Dinámica:</strong> El objeto cruza y se oculta en la zona roja.</li>
+        <li><strong style="color: #ffffff;">Objetivo:</strong> Presionar justo cuando cruce la línea de meta verde.</li>
+        <li><strong style="color: #38bdf8;">Aprobación:</strong> Margen de error promedio menor a 250 ms.</li>
+      </ul>
+      <button onclick="cerrarModalAyuda()" style="width: 100%; background: #0284c7; color: #ffffff; border: none; border-radius: 10px; padding: 10px; font-weight: 700; cursor: pointer;">
+        Entendido, Continuar
+      </button>
+    </div>
+  </div>
+
+  <script>
+    function abrirModalAyuda() { document.getElementById('modalAyuda').style.display = 'flex'; }
+    function cerrarModalAyuda() { document.getElementById('modalAyuda').style.display = 'none'; }
+
+    (function() {
+      const TOTAL_INTENTOS_DEMO = 3;
+      const TOTAL_INTENTOS_OFICIAL = 5;
+
+      let fase = 'DEMO';
+      let intentoActual = 0;
+      let erroresTanda = [];
+      let isRunning = false;
+      let tiempoInicioMovimiento = 0;
+      let tiempoEsperadoLlegada = 0;
+      let animacionTimeout = null;
+
+      const btnAccion = document.getElementById('btnAccion');
+      const objetoMovil = document.getElementById('objetoMovil');
+      const statusText = document.getElementById('statusText');
+      const displayIntento = document.getElementById('displayIntento');
+      const displayDesfase = document.getElementById('displayDesfase');
+      const displayPrecision = document.getElementById('displayPrecision');
+      const badgeFase = document.getElementById('simulacionActualBadge');
+
+      function iniciarSiguienteRonda() {
+        const maxIntentos = fase === 'DEMO' ? TOTAL_INTENTOS_DEMO : TOTAL_INTENTOS_OFICIAL;
+        
+        if (intentoActual >= maxIntentos) {
+          finalizarTanda();
+          return;
+        }
+
+        intentoActual++;
+        displayIntento.innerText = `${intentoActual} / ${maxIntentos}`;
+        statusText.innerText = "Atento... el móvil se desplaza.";
+        btnAccion.innerText = "¡MARCAR LLEGADA!";
+        btnAccion.style.backgroundColor = '#0284c7';
+
+        // Reset posición
+        objetoMovil.style.transition = 'none';
+        objetoMovil.style.left = '0%';
+        void objetoMovil.offsetWidth; // Reflow
+
+        const duracionTrayectoMs = 2800; // 2.8 segundos de recorrido total
+        objetoMovil.style.transition = `left ${duracionTrayectoMs}ms linear`;
+        objetoMovil.style.left = '92%'; // Posición de la línea de meta
+
+        tiempoInicioMovimiento = performance.now();
+        // La meta (92%) se alcanza exactamente al cumplir el tiempo de duración
+        tiempoEsperadoLlegada = tiempoInicioMovimiento + duracionTrayectoMs;
+        isRunning = true;
+
+        // Opcional: auto-cierre si el usuario no presiona
+        animacionTimeout = setTimeout(() => {
+          if (isRunning) {
+            registrarImpacto(500); // Fuera de tiempo por demora
+          }
+        }, duracionTrayectoMs + 800);
+      }
+
+      function registrarImpacto(desfaseForzado = null) {
+        if (!isRunning) return;
+        isRunning = false;
+        clearTimeout(animacionTimeout);
+
+        const tiempoClick = performance.now();
+        const desfaseMs = desfaseForzado !== null ? desfaseForzado : Math.round(tiempoClick - tiempoEsperadoLlegada);
+        erroresTanda.push(Math.abs(desfaseMs));
+
+        displayDesfase.innerText = `${desfaseMs > 0 ? '+' : ''}${desfaseMs} ms`;
+        
+        let calificacion = "Buena";
+        if (Math.abs(desfaseMs) <= 150) {
+          calificacion = "Excelente";
+          displayDesfase.className = "badge-tiempo-verde";
+        } else if (Math.abs(desfaseMs) <= 300) {
+          calificacion = "Aceptable";
+          displayDesfase.className = "badge-tiempo-verde";
+        } else {
+          calificacion = "Desviado";
+          displayDesfase.className = "col-metrica strong rojo";
+        }
+        displayPrecision.innerText = calificacion;
+
+        statusText.innerText = `Intento registrado. Desfase: ${desfaseMs} ms.`;
+
+        setTimeout(() => {
+          iniciarSiguienteRonda();
+        }, 1500);
+      }
+
+      btnAccion.addEventListener('click', () => {
+        if (!isRunning) {
+          // Si está en estado inicial o finalizado, arranca
+          if (intentoActual === 0) {
+            iniciarSiguienteRonda();
+          }
+          return;
+        }
+        registrarImpacto();
+      });
+
+      window.addEventListener('keydown', (e) => {
+        if (e.code === 'Space' || e.key === ' ' || e.code === 'Enter') {
+          e.preventDefault();
+          if (!isRunning && intentoActual === 0) {
+            iniciarSiguienteRonda();
+          } else if (isRunning) {
+            registrarImpacto();
+          }
+        }
+      });
+
+      function finalizarTanda() {
+        btnAccion.disabled = true;
+        const promedioError = Math.round(erroresTanda.reduce((a, b) => a + b, 0) / erroresTanda.length);
+
+        if (fase === 'DEMO') {
+          statusText.innerText = `Calibración finalizada. Error promedio: ${promedioError} ms. Iniciando Oficial...`;
+          setTimeout(() => {
+            fase = 'OFICIAL';
+            intentoActual = 0;
+            erroresTanda = [];
+            btnAccion.disabled = false;
+            badgeFase.innerText = `🔴 Simulación Oficial (${TOTAL_INTENTOS_OFICIAL} intentos)`;
+            badgeFase.className = 'badge-fase oficial';
+            iniciarSiguienteRonda();
+          }, 2000);
+        } else {
+          statusText.innerText = `Prueba Oficial Completa. Error Promedio: ${promedioError} ms.`;
+          btnAccion.innerText = "Módulo Completado";
+          localStorage.setItem('sensometrika_anticipacion', JSON.stringify({ promedioError, aprobado: promedioError <= 250 }));
+          
+          // Mostrar modal final o redirigir
+          alert(`¡Prueba de Anticipación Finalizada!\nError Promedio: ${promedioError} ms\nEstado: ${promedioError <= 250 ? 'APROBADO' : 'OBSERVADO'}`);
+          window.location.href = 'demo.html';
+        }
+      }
+
+      // Estado inicial
+      btnAccion.innerText = "Iniciar Calibración Demo";
+    })();
+  </script>
+  <script src="session-timer.js"></script>
+</body>
+</html>
