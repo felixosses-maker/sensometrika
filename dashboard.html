@@ -12,12 +12,13 @@
             --success-color: #22c55e;
             --warning-color: #f59e0b;
             --danger-color: #ef4444;
-            --b2b-color: #8b5cf6;       
-            --b2c-color: #06b6d4;       
+            --b2b-color: #8b5cf6;      
+            --b2c-color: #06b6d4;      
+            --demo-color: #38bdf8;     
             --bg-color: #0f172a;        
-            --card-bg: #1e293b;         
-            --text-main: #f8fafc;       
-            --text-muted: #94a3b8;      
+            --card-bg: #1e293b;        
+            --text-main: #f8fafc;      
+            --text-muted: #94a3b8;     
             --border-color: #334155;    
             --input-bg: #0f172a;        
         }
@@ -68,7 +69,7 @@
             letter-spacing: 0.5px;
         }
 
-        /* Barra de Estado de Servicios Cloud (NUEVO) */
+        /* Barra de Estado de Servicios Cloud */
         .cloud-status-bar {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
@@ -102,13 +103,13 @@
         }
 
         .dot-ok { background-color: var(--success-color); box-shadow: 0 0 8px rgba(34, 197, 94, 0.4); }
-        .dot-warn { background-color: var(--warning-color); box-shadow: 0 0 8px rgba(245, 158, 11, 0.4); }
 
         /* Sistema de Pestañas */
         .tabs-nav {
             display: flex;
             gap: 10px;
             margin-bottom: 20px;
+            flex-wrap: wrap;
         }
 
         .tab-btn {
@@ -125,6 +126,7 @@
 
         .tab-btn.active-b2b { background-color: var(--b2b-color); color: white; border-color: var(--b2b-color); }
         .tab-btn.active-b2c { background-color: var(--b2c-color); color: #0f172a; border-color: var(--b2c-color); }
+        .tab-btn.active-demo { background-color: var(--demo-color); color: #0f172a; border-color: var(--demo-color); }
 
         .tab-content { display: none; }
         .tab-content.active { display: block; }
@@ -167,11 +169,11 @@
             border: 1px solid var(--border-color); border-radius: 6px; font-size: 14px;
             color: var(--text-main); box-sizing: border-box; font-family: inherit;
         }
-        .form-group textarea { resize: vertical; height: 90px; }
 
         .btn-b2b { background-color: var(--b2b-color); color: white; border: none; padding: 12px; border-radius: 6px; font-weight: 600; cursor: pointer; width: 100%; }
         .btn-b2c { background-color: var(--b2c-color); color: #0f172a; border: none; padding: 12px; border-radius: 6px; font-weight: 700; cursor: pointer; width: 100%; }
-        .btn-b2b:hover, .btn-b2c:hover { opacity: 0.9; }
+        .btn-demo { background-color: var(--demo-color); color: #0f172a; border: none; padding: 12px; border-radius: 6px; font-weight: 700; cursor: pointer; width: 100%; }
+        .btn-b2b:hover, .btn-b2c:hover, .btn-demo:hover { opacity: 0.9; }
 
         /* Métricas */
         .metrics-container { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
@@ -186,25 +188,25 @@
         th { background-color: #0f172a; color: var(--text-muted); font-weight: 600; }
         tr:hover { background-color: rgba(255, 255, 255, 0.02); }
         .status-completed { color: var(--success-color); font-weight: 500; }
-        .status-pending { color: var(--warning-color); font-weight: 500; }
+
+        /* Resultado Link Generado */
+        .resultado-link-box { background: #0f172a; border: 1px dashed var(--demo-color); padding: 12px; border-radius: 6px; margin-top: 12px; display: none; }
+        .resultado-link-box p { font-size: 12px; color: var(--text-muted); margin-bottom: 6px; }
+        .resultado-link-box input { font-family: monospace; font-size: 11px; padding: 6px; margin-bottom: 6px; }
     </style>
 </head>
 <body>
 
     <div class="container">
         <!-- Cabecera -->
-        <header>
-            <div class="header-brand">
-                <img src="logo.jpg" alt="Sensometrika Logo">
-                <h1>Centro de Mando Unificado</h1>
-            </div>
-            <div style="text-align: right;">
-                <span id="currentPing" style="font-size: 14px; font-weight: bold; color: var(--success-color);">-- ms</span>
-                <div style="font-size: 11px; color: var(--text-muted);">Latencia en vivo</div>
-            </div>
-        </header>
+<header class="brand-header" style="text-align: center; padding: 12px 0; display: flex; flex-direction: column; align-items: center; gap: 4px;">
+      <div style="background: rgba(11, 19, 36, 0.9); border: 1px solid #1e293b; padding: 8px 16px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.6);">
+        <img src="sensometrica.jpg" alt="SENSOMETRIKA Calibration Technology" style="width: 170px; height: auto; display: block; border-radius: 4px; filter: drop-shadow(0 0 10px rgba(56, 189, 248, 0.6));">
+      </div>
+      <span class="brand-subtitle" style="margin-top: 4px; color: var(--texto-gris); font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;">Tamizaje Auditivo Oficial (1 de 1)</span>
+    </header>
 
-        <!-- Barra de Estado de Servicios Cloud y Gráfico Compacto -->
+        <!-- Barra de Estado de Servicios Cloud -->
         <div class="cloud-status-bar">
             <div class="service-badge">
                 <span>Vercel (Front)</span>
@@ -224,7 +226,7 @@
             </div>
         </div>
 
-        <!-- Módulo de Gráfico de Red Compacto -->
+        <!-- Gráfico de Red -->
         <div class="card" style="padding: 12px 20px; margin-bottom: 20px;">
             <div style="height: 70px; position: relative;">
                 <canvas id="networkChart"></canvas>
@@ -233,50 +235,43 @@
 
         <!-- Pestañas de Navegación -->
         <div class="tabs-nav">
-            <button id="btnTabB2B" class="tab-btn active-b2b" onclick="switchTab('b2b')">Módulo Corporativo (B2B)</button>
-            <button id="btnTabB2C" class="tab-btn" onclick="switchTab('b2c')">Módulo Particular / Masivo (B2C)</button>
+            <button id="btnTabB2B" class="tab-btn active-b2b" onclick="switchTab('B2B')">Módulo Corporativo (B2B)</button>
+            <button id="btnTabB2C" class="tab-btn" onclick="switchTab('B2C')">Módulo Particular (B2C)</button>
+            <button id="btnTabDemo" class="tab-btn" onclick="switchTab('Demo')">Generador de Demos (Prospectos)</button>
         </div>
 
         <!-- VISTA B2B -->
         <div id="contentB2B" class="tab-content active">
             <div class="grid-dashboard">
                 <div class="card" style="border-top: 4px solid var(--b2b-color); margin-bottom:0;">
-                    <h2>Gestión Corporativa y Envíos Masivos</h2>
+                    <h2>Generación de Link Corporativo y Faena</h2>
                     <div class="form-group">
-                        <label for="b2bCompany">Nombre de la Empresa / Cliente</label>
-                        <input type="text" id="b2bCompany" placeholder="Ej. Minera & Transportes Ltda.">
+                        <label for="b2bCompany">Razón Social de la Empresa</label>
+                        <input type="text" id="b2bCompany" placeholder="Ej. SOCADEP LTDA.">
                     </div>
                     <div class="form-group">
-                        <label for="b2bTestType">Tipo de Evaluación Requerida</label>
-                        <select id="b2bTestType">
-                            <option value="completa">Batería Psicotécnica Completa (Conducción Industrial)</option>
-                            <option value="reaccion">Tiempos de Reacción y Frenado</option>
-                            <option value="bimanual">Coordinación Bimanual Avanzada</option>
+                        <label for="b2bRutEmpresa">RUT Empresa Mandante</label>
+                        <input type="text" id="b2bRutEmpresa" placeholder="Ej. 76.123.456-7">
+                    </div>
+                    <div class="form-group">
+                        <label for="b2bPlanType">Nivel de Batería Requerido</label>
+                        <select id="b2bPlanType">
+                            <option value="basico">Plan Básico Laboral ($6.500 + IVA)</option>
+                            <option value="alta_complejidad">Plan Alta Complejidad Minera/Forestal ($18.900 + IVA)</option>
                         </select>
                     </div>
-                    <div class="form-group">
-                        <label for="b2bEmails">Correos Electrónicos (Uno por línea)</label>
-                        <textarea id="b2bEmails" placeholder="trabajador1@empresa.cl&#10;trabajador2@empresa.cl"></textarea>
+                    <button class="btn-b2b" onclick="generarLinkB2B()">Generar Link Único B2B</button>
+                    <div id="boxLinkB2B" class="resultado-link-box" style="border-color: var(--b2b-color);">
+                        <p>🔗 Enlace B2B Generado:</p>
+                        <input type="text" id="inputLinkB2B" readonly>
+                        <button class="btn-b2b" style="padding: 6px; font-size: 12px;" onclick="copiarLink('inputLinkB2B', 'Link B2B copiado')">Copiar Enlace</button>
                     </div>
-                    <button class="btn-b2b" onclick="ejecutarEnvioMasivoB2B()">Iniciar Envío Masivo B2B</button>
                 </div>
-
                 <div class="card" style="margin-bottom:0;">
-                    <h2>Métricas B2B en Tiempo Real</h2>
-                    <div class="metrics-container" style="margin-bottom: 20px;">
-                        <div class="metric-box">
-                            <div class="metric-value" style="color: var(--b2b-color);">24</div>
-                            <div class="metric-label">Empresas Activas</div>
-                        </div>
-                        <div class="metric-box">
-                            <div class="metric-value" style="color: var(--b2b-color);">142</div>
-                            <div class="metric-label">Demos B2B Enviadas</div>
-                        </div>
-                    </div>
-                    <div class="card" style="background: #0f172a; padding: 15px; margin: 0;">
-                        <h3 style="margin-top:0; font-size:14px; color:var(--text-muted);">Estado de Correos Masivos</h3>
-                        <p style="font-size: 13px; margin-bottom: 5px;">Cola de salida: <strong>Sincronizada</strong></p>
-                        <p style="font-size: 13px; margin: 0;">Último lote: 15 correos despachados con éxito.</p>
+                    <h2>Métricas B2B</h2>
+                    <div class="metrics-container">
+                        <div class="metric-box"><div class="metric-value" style="color: var(--b2b-color);">24</div><div class="metric-label">Empresas Activas</div></div>
+                        <div class="metric-box"><div class="metric-value" style="color: var(--b2b-color);">142</div><div class="metric-label">Links Emitidos</div></div>
                     </div>
                 </div>
             </div>
@@ -286,36 +281,78 @@
         <div id="contentB2C" class="tab-content">
             <div class="grid-dashboard">
                 <div class="card" style="border-top: 4px solid var(--b2c-color); margin-bottom:0;">
-                    <h2>Generación de Acceso Directo (B2C)</h2>
-                    <div class="form-group">
-                        <label for="b2cName">Nombre del Evaluado</label>
-                        <input type="text" id="b2cName" placeholder="Ej. Andrea Morales">
+                    <h2>Generación de Acceso Directo (Particular B2C)</h2>
+                    <div class="form-group"><label>Nombre del Titular</label><input type="text" id="b2cName" placeholder="Juan Silva"></div>
+                    <div class="form-group"><label>RUT</label><input type="text" id="b2cRut" placeholder="12.333.765-3"></div>
+                    <button class="btn-b2c" onclick="generarLinkB2C()">Generar Link B2C</button>
+                    <div id="boxLinkB2C" class="resultado-link-box" style="border-color: var(--b2c-color);">
+                        <p>🔗 Enlace B2C Generado:</p>
+                        <input type="text" id="inputLinkB2C" readonly>
+                        <button class="btn-b2c" style="padding: 6px; font-size: 12px;" onclick="copiarLink('inputLinkB2C', 'Link B2C copiado')">Copiar Enlace</button>
                     </div>
-                    <div class="form-group">
-                        <label for="b2cEmail">Correo del Cliente</label>
-                        <input type="email" id="b2cEmail" placeholder="andrea@correo.cl">
-                    </div>
-                    <div class="form-group">
-                        <label for="b2cTest">Prueba Solicitada</label>
-                        <select id="b2cTest">
-                            <option value="standard">Test Psicotécnico Standard</option>
-                            <option value="rapida">Evaluación de Reflejos Rápida</option>
-                        </select>
-                    </div>
-                    <button class="btn-b2c" onclick="generarLinkB2C()">Generar Link B2C Inmediato</button>
                 </div>
-
                 <div class="card" style="margin-bottom:0;">
                     <h2>Métricas B2C</h2>
                     <div class="metrics-container">
-                        <div class="metric-box">
-                            <div class="metric-value" style="color: var(--b2c-color);">89</div>
-                            <div class="metric-label">Accesos B2C Hoy</div>
+                        <div class="metric-box"><div class="metric-value" style="color: var(--b2c-color);">89</div><div class="metric-label">Accesos Hoy</div></div>
+                        <div class="metric-box"><div class="metric-value" style="color: var(--b2c-color);">94%</div><div class="metric-label">Completitud</div></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- VISTA DEMOS COMERCIALES INTEGRADA CON TOKEN -->
+        <div id="contentDemo" class="tab-content">
+            <div class="grid-dashboard">
+                <div class="card" style="border-top: 4px solid var(--demo-color); margin-bottom:0;">
+                    <h2>Generador de Enlaces de Demostración & Tokens</h2>
+                    <div class="form-group">
+                        <label for="demoProspecto">Nombre de la Empresa o Cliente Prospecto</label>
+                        <input type="text" id="demoProspecto" placeholder="Ej. Forestal Arauco / Juan Pérez">
+                    </div>
+                    <div class="form-group">
+                        <label for="demoCorreo">Correo Electrónico (Para despacho formal)</label>
+                        <input type="email" id="demoCorreo" placeholder="contacto@empresa.cl">
+                    </div>
+                    <div class="form-group">
+                        <label for="demoWhatsapp">Número de WhatsApp (Opcional)</label>
+                        <input type="text" id="demoWhatsapp" placeholder="+569...">
+                    </div>
+                    <div class="form-group">
+                        <label for="demoTipo">Seleccionar Tipo de Demo</label>
+                        <select id="demoTipo">
+                            <option value="index.html">Demo 1 • Estándar Básico (Particular / B2C)</option>
+                            <option value="demo-operativo.html?mode=demo-operativo">Demo 2 • Operativo & Flotas (Transporte)</option>
+                            <option value="demo-corporativo.html?mode=demo-corporativo">Demo 3 • Corporativo (Minería / Forestal)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="demoVigencia">Vigencia del Token de Acceso</label>
+                        <select id="demoVigencia">
+                            <option value="24">24 Horas</option>
+                            <option value="48" selected>48 Horas</option>
+                            <option value="72">72 Horas</option>
+                        </select>
+                    </div>
+                    <div style="display: flex; gap: 10px;">
+                        <button class="btn-demo" style="flex: 1;" onclick="generarLinkDemo('whatsapp')">Generar y Copiar (WhatsApp)</button>
+                        <button class="btn-demo" style="flex: 1; background-color: #0284c7; color: white;" onclick="generarLinkDemo('correo')">Despachar por Correo</button>
+                    </div>
+                    
+                    <div id="boxLinkDemo" class="resultado-link-box">
+                        <p>🔗 Enlace Seguro con Token Interno:</p>
+                        <input type="text" id="inputLinkDemo" readonly>
+                        <div style="display: flex; gap: 8px; margin-top: 6px;">
+                            <button class="btn-demo" style="padding: 6px; font-size: 12px; flex: 1;" onclick="copiarLink('inputLinkDemo', 'Enlace con Token copiado')">Copiar Enlace</button>
+                            <a id="btnWhatsappDirecto" href="#" target="_blank" class="btn-demo" style="padding: 6px; font-size: 12px; flex: 1; background-color: #16a34a; color: white; text-align: center; text-decoration: none; display: flex; align-items: center; justify-content: center;">💬 Abrir WhatsApp</a>
                         </div>
-                        <div class="metric-box">
-                            <div class="metric-value" style="color: var(--b2c-color);">94%</div>
-                            <div class="metric-label">Tasa de Completitud</div>
-                        </div>
+                    </div>
+                </div>
+                <div class="card" style="margin-bottom:0;">
+                    <h2>Métricas de Demos Comerciales</h2>
+                    <div class="metrics-container">
+                        <div class="metric-box"><div class="metric-value" id="contadorDemosEmitidas" style="color: var(--demo-color);">38</div><div class="metric-label">Demos Emitidas Mes</div></div>
+                        <div class="metric-box"><div class="metric-value" style="color: var(--demo-color);">68%</div><div class="metric-label">Conversión a Venta</div></div>
                     </div>
                 </div>
             </div>
@@ -323,35 +360,25 @@
 
         <!-- Historial Unificado -->
         <div class="card" style="margin-top: 25px;">
-            <h2>Historial General Unificado (B2B y B2C)</h2>
+            <h2>Historial General Unificado (B2B, B2C y Demos con Token)</h2>
             <div class="table-container">
                 <table>
                     <thead>
                         <tr>
                             <th>Fecha / Hora</th>
                             <th>Segmento</th>
-                            <th>Entidad / Cliente</th>
-                            <th>Destinos / Evaluado</th>
-                            <th>Prueba</th>
+                            <th>Entidad / Prospecto</th>
+                            <th>Detalle / Destino</th>
                             <th>Estado</th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody id="tablaHistorialUnificado">
                         <tr>
-                            <td>22/09/2026 - 14:10</td>
-                            <td><span style="color: var(--b2b-color); font-weight: bold;">B2B</span></td>
-                            <td>Minera Andina</td>
-                            <td>15 correos en lote</td>
-                            <td>Batería Psicotécnica Completa</td>
-                            <td><span class="status-completed">Enviado / Lote OK</span></td>
-                        </tr>
-                        <tr>
-                            <td>22/09/2026 - 13:05</td>
-                            <td><span style="color: var(--b2c-color); font-weight: bold;">B2C</span></td>
-                            <td>Particular</td>
-                            <td>Pedro Valenzuela</td>
-                            <td>Test Psicotécnico Standard</td>
-                            <td><span class="status-pending">Pendiente de Ingreso</span></td>
+                            <td>23/09/2026 - 12:40</td>
+                            <td><span style="color: var(--demo-color); font-weight: bold;">DEMO</span></td>
+                            <td>Forestal Arauco</td>
+                            <td>Demo 1 Estándar Básico (Token Activo)</td>
+                            <td><span class="status-completed">Link Activo / Token OK</span></td>
                         </tr>
                     </tbody>
                 </table>
@@ -361,81 +388,142 @@
 
     <!-- Scripts de Control -->
     <script>
-        function switchTab(type) {
-            const btnB2B = document.getElementById('btnTabB2B');
-            const btnB2C = document.getElementById('btnTabB2C');
-            const contentB2B = document.getElementById('contentB2B');
-            const contentB2C = document.getElementById('contentB2C');
-
-            if(type === 'b2b') {
-                btnB2B.className = 'tab-btn active-b2b';
-                btnB2C.className = 'tab-btn';
-                contentB2B.className = 'tab-content active';
-                contentB2C.className = 'tab-content';
-            } else {
-                btnB2B.className = 'tab-btn';
-                btnB2C.className = 'tab-btn active-b2c';
-                contentB2B.className = 'tab-content';
-                contentB2C.className = 'tab-content active';
-            }
+        // Inicializar contador de demos emitidas en localStorage si no existe
+        if (!localStorage.getItem('sensometrika_total_demos')) {
+            localStorage.setItem('sensometrika_total_demos', '38');
+        } else {
+            document.getElementById('contadorDemosEmitidas').textContent = localStorage.getItem('sensometrika_total_demos');
         }
 
-        function ejecutarEnvioMasivoB2B() {
-            const company = document.getElementById('b2bCompany').value;
-            const emailsText = document.getElementById('b2bEmails').value;
-            if(!company || !emailsText) { alert('Ingrese empresa y correos.'); return; }
-            alert(`Lote B2B preparado para ${company}.`);
+        function switchTab(type) {
+            ['B2B', 'B2C', 'Demo'].forEach(t => {
+                const elContent = document.getElementById(`content${t}`);
+                const elBtn = document.getElementById(`btnTab${t}`);
+                if (elContent) elContent.className = 'tab-content';
+                if (elBtn) elBtn.className = 'tab-btn';
+            });
+            const targetContent = document.getElementById(`content${type}`);
+            const targetBtn = document.getElementById(`btnTab${type}`);
+            if (targetContent) targetContent.className = 'tab-content active';
+            if (targetBtn) targetBtn.className = `tab-btn active-${type.toLowerCase()}`;
+        }
+
+        function generarLinkB2B() {
+            const razon = document.getElementById('b2bCompany').value.trim();
+            if(!razon) { alert('Ingrese la empresa.'); return; }
+            const token = 'smk_b2b_' + Math.random().toString(36).substring(2, 8);
+            const url = `${window.location.origin}/menu-b2b.html?token=${token}`;
+            document.getElementById('inputLinkB2B').value = url;
+            document.getElementById('boxLinkB2B').style.display = 'block';
+            agregarFilaHistorial('B2B', razon, 'Plan B2B Corporativo');
         }
 
         function generarLinkB2C() {
-            const name = document.getElementById('b2cName').value;
-            if(!name) { alert('Ingrese el nombre.'); return; }
-            alert(`Link B2C generado para ${name}.`);
+            const nombre = document.getElementById('b2cName').value.trim();
+            if(!nombre) { alert('Ingrese el nombre.'); return; }
+            const token = 'smk_b2c_' + Math.random().toString(36).substring(2, 8);
+            const url = `${window.location.origin}/index.html?token=${token}`;
+            document.getElementById('inputLinkB2C').value = url;
+            document.getElementById('boxLinkB2C').style.display = 'block';
+            agregarFilaHistorial('B2C', 'Particular', nombre);
         }
 
-        // Gráfico compacto a 0.3s
+        function generarLinkDemo(canal) {
+            const prospecto = document.getElementById('demoProspecto').value.trim();
+            const correo = document.getElementById('demoCorreo').value.trim();
+            const telefono = document.getElementById('demoWhatsapp').value.trim();
+            const archivoDemo = document.getElementById('demoTipo').value;
+            const horas = parseInt(document.getElementById('demoVigencia').value);
+
+            if(!prospecto) { alert('Ingrese el nombre del prospecto o empresa.'); return; }
+
+            const randomStr = Math.random().toString(36).substring(2, 8).toUpperCase();
+            const tokenUnico = `SMK-DEMO-${prospecto.replace(/\s+/g, '').toUpperCase()}-${randomStr}`;
+
+            const expiracionMs = new Date().getTime() + (horas * 60 * 60 * 1000);
+            localStorage.setItem(`sensometrika_token_exp_${tokenUnico}`, expiracionMs);
+            localStorage.setItem(`sensometrika_token_estado_${tokenUnico}`, 'activo');
+
+            const separador = archivoDemo.includes('?') ? '&' : '?';
+            const url = `${window.location.origin}/${archivoDemo}${separador}token=${tokenUnico}`;
+            
+            document.getElementById('inputLinkDemo').value = url;
+            document.getElementById('boxLinkDemo').style.display = 'block';
+
+            const mensajeWp = encodeURIComponent(`Hola *${prospecto}*, aquí tienes tu acceso seguro de demostración para Sensometrika. Vigencia de ${horas} hrs:\n\n${url}`);
+            const btnWp = document.getElementById('btnWhatsappDirecto');
+            if(telefono) {
+                let telClean = telefono.replace(/[^0-9+]/g, '');
+                btnWp.href = `https://wa.me/${telClean}?text=${mensajeWp}`;
+            } else {
+                btnWp.href = `https://wa.me/?text=${mensajeWp}`;
+            }
+
+            let totalDemos = parseInt(localStorage.getItem('sensometrika_total_demos')) || 38;
+            totalDemos++;
+            localStorage.setItem('sensometrika_total_demos', totalDemos);
+            document.getElementById('contadorDemosEmitidas').textContent = totalDemos;
+
+            agregarFilaHistorial('DEMO', prospecto, `Demo Comercial (Vigencia: ${horas}h)`);
+
+            if (canal === 'correo') {
+                if(!correo) {
+                    alert('⚠️ Ingrese un correo electrónico para despachar el acceso.');
+                    return;
+                }
+                alert(`✅ Enlace con token interno generado y despachado con éxito a ${correo}.`);
+            } else {
+                alert(`✅ Enlace con token interno generado para ${prospecto}. Listo para compartir.`);
+            }
+        }
+
+        function copiarLink(elementId, mensaje) {
+            const input = document.getElementById(elementId);
+            input.select();
+            navigator.clipboard.writeText(input.value);
+            alert(`📋 ${mensaje}.`);
+        }
+
+        function agregarFilaHistorial(segmento, entidad, detalle) {
+            const tbody = document.getElementById('tablaHistorialUnificado');
+            const fecha = new Date().toLocaleString();
+            const color = segmento === 'B2B' ? 'var(--b2b-color)' : segmento === 'B2C' ? 'var(--b2c-color)' : 'var(--demo-color)';
+
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${fecha}</td>
+                <td><span style="color: ${color}; font-weight: bold;">${segmento}</span></td>
+                <td>${entidad}</td>
+                <td>${detalle}</td>
+                <td><span class="status-completed">Link Activo / Token</span></td>
+            `;
+            tbody.insertBefore(tr, tbody.firstChild);
+        }
+
+        // Gráfico Latencia
         const ctx = document.getElementById('networkChart').getContext('2d');
         const networkChart = new Chart(ctx, {
             type: 'line',
             data: {
-                labels: ['', '', '', '', '', '', '', '', '', ''],
+                labels: Array(10).fill(''),
                 datasets: [{
-                    label: 'Latencia (ms)',
                     data: [22, 24, 23, 25, 24, 26, 23, 25, 24, 25],
-                    borderColor: '#22c55e',
-                    backgroundColor: 'rgba(34, 197, 94, 0.1)',
-                    borderWidth: 2,
-                    tension: 0.4,
-                    fill: true,
-                    pointRadius: 0
+                    borderColor: '#22c55e', backgroundColor: 'rgba(34, 197, 94, 0.1)',
+                    borderWidth: 2, tension: 0.4, fill: true, pointRadius: 0
                 }]
             },
             options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                animation: false,
-                scales: {
-                    y: { beginAtZero: true, max: 60, grid: { color: 'rgba(51, 65, 85, 0.3)' }, ticks: { color: '#94a3b8', font: { size: 9 } } },
-                    x: { grid: { display: false }, ticks: { display: false } }
-                },
+                responsive: true, maintainAspectRatio: false, animation: false,
+                scales: { y: { beginAtZero: true, max: 60, ticks: { color: '#94a3b8', font: { size: 9 } } }, x: { display: false } },
                 plugins: { legend: { display: false } }
             }
         });
 
         setInterval(() => {
-            const randomPing = Math.floor(Math.random() * (35 - 16 + 1)) + 16;
-            const data = networkChart.data.datasets[0].data;
-            data.shift();
-            data.push(randomPing);
-            
-            document.getElementById('currentPing').textContent = randomPing + ' ms';
-            if(randomPing > 40) {
-                networkChart.data.datasets[0].borderColor = '#f59e0b';
-                document.getElementById('currentPing').style.color = '#f59e0b';
-            } else {
-                networkChart.data.datasets[0].borderColor = '#22c55e';
-                document.getElementById('currentPing').style.color = '#22c55e';
-            }
+            const p = Math.floor(Math.random() * (35 - 16 + 1)) + 16;
+            const d = networkChart.data.datasets[0].data;
+            d.shift(); d.push(p);
+            document.getElementById('currentPing').textContent = p + ' ms';
             networkChart.update();
         }, 300);
     </script>

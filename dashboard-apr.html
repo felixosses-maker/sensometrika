@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>SENSOMETRIKA | Portal APR & Gestión Corporativa B2B</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    :root {
+      --bg-principal: #070d18;
+      --bg-card: #0b1324;
+      --border-color: #1e293b;
+      --verde-destacado: #10b981;
+      --azul-destacado: #38bdf8;
+      --azul-btn: #0284c7;
+      --azul-btn-hover: #0369a1;
+      --verde-btn: #059669;
+      --verde-btn-hover: #047857;
+      --texto-blanco: #ffffff;
+      --texto-gris: #94a3b8;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { background-color: var(--bg-principal); color: var(--texto-blanco); min-height: 100vh; display: flex; flex-direction: column; align-items: center; padding: 20px 12px; }
+    .app-container { width: 100%; max-width: 600px; display: flex; flex-direction: column; gap: 16px; }
+
+    /* LOGOTIPO OFICIAL */
+    .brand-header { text-align: center; margin-bottom: 4px; }
+    .brand-logo-icon { width: 52px; height: 52px; margin: 0 auto 4px; display: flex; align-items: center; justify-content: center; position: relative; filter: drop-shadow(0 0 8px var(--azul-destacado)); }
+    .brand-logo-icon .cursor-flecha { position: absolute; width: 0; height: 0; border-left: 6px solid transparent; border-right: 6px solid transparent; border-bottom: 14px solid var(--azul-destacado); transform: rotate(-30deg); z-index: 3; }
+    .brand-logo-icon .ring-inner { position: absolute; width: 20px; height: 20px; border: 2px solid var(--azul-destacado); border-radius: 50%; z-index: 2; }
+    .brand-logo-icon .arco-izq { position: absolute; width: 28px; height: 28px; border: 2px solid transparent; border-bottom-color: rgba(255, 255, 255, 0.75); border-left-color: rgba(255, 255, 255, 0.75); border-radius: 50%; transform: rotate(35deg); }
+    .brand-logo-icon .onda-1 { position: absolute; width: 28px; height: 28px; border: 2px solid transparent; border-top-color: #ffffff; border-right-color: #ffffff; border-radius: 50%; transform: rotate(15deg); }
+    .brand-logo-icon .onda-2 { position: absolute; width: 38px; height: 38px; border: 2px solid transparent; border-top-color: rgba(255, 255, 255, 0.75); border-right-color: rgba(255, 255, 255, 0.75); border-radius: 50%; transform: rotate(15deg); }
+    .brand-logo-icon .onda-3 { position: absolute; width: 48px; height: 48px; border: 2px solid transparent; border-top-color: rgba(255, 255, 255, 0.4); border-right-color: rgba(255, 255, 255, 0.4); border-radius: 50%; transform: rotate(15deg); }
+    .brand-header h1 { font-size: 1.25rem; font-weight: 900; letter-spacing: 2px; color: var(--texto-blanco); text-transform: uppercase; }
+    .brand-header span { font-size: 0.6rem; letter-spacing: 2.5px; color: var(--texto-gris); text-transform: uppercase; font-weight: 700; display: block; margin-top: 2px; }
+
+    /* TARJETAS Y PANELES */
+    .card-panel { background-color: var(--bg-card); border: 1px solid var(--border-color); border-radius: 16px; padding: 20px; display: flex; flex-direction: column; gap: 14px; box-shadow: 0 15px 35px rgba(0, 0, 0, 0.6); }
+    .seccion-titulo { font-size: 0.82rem; font-weight: 800; color: var(--azul-destacado); text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid var(--border-color); padding-bottom: 6px; display: flex; justify-content: space-between; align-items: center; }
+
+    .form-group { display: flex; flex-direction: column; gap: 4px; }
+    .form-group label { font-size: 0.68rem; color: var(--texto-gris); font-weight: 700; text-transform: uppercase; }
+    .form-control { width: 100%; background: #070b14; border: 1px solid var(--border-color); border-radius: 8px; padding: 10px; color: var(--texto-blanco); font-size: 0.85rem; outline: none; }
+    .form-control:focus { border-color: var(--azul-destacado); }
+
+    /* LISTA DE MÓDULOS DEL DASHBOARD */
+    .modulo-item { display: flex; align-items: center; justify-content: background; background: #070b14; border: 1px solid var(--border-color); border-radius: 10px; padding: 12px; gap: 12px; }
+    .modulo-item.bloqueado { opacity: 0.4; border-style: dashed; }
+    .modulo-item.activo { border-color: var(--verde-destacado); background: rgba(16, 185, 129, 0.04); }
+    .modulo-info { flex: 1; }
+    .modulo-info h4 { font-size: 0.82rem; font-weight: 700; color: var(--texto-blanco); margin-bottom: 2px; }
+    .modulo-info p { font-size: 0.65rem; color: var(--texto-gris); }
+    .badge-plan { font-size: 0.62rem; font-weight: 800; padding: 4px 8px; border-radius: 6px; text-transform: uppercase; }
+    .badge-activo { background: rgba(16, 185, 129, 0.15); color: var(--verde-destacado); border: 1px solid rgba(16, 185, 129, 0.4); }
+    .badge-bloq { background: rgba(100, 116, 139, 0.15); color: var(--texto-gris); border: 1px solid rgba(100, 116, 139, 0.3); }
+
+    .btn-principal { width: 100%; background-color: var(--azul-btn); color: var(--texto-blanco); border: none; border-radius: 10px; padding: 12px; font-size: 0.88rem; font-weight: 800; cursor: pointer; text-transform: uppercase; box-shadow: 0 4px 15px rgba(2, 132, 199, 0.4); }
+    .btn-principal:hover { background-color: var(--azul-btn-hover); }
+
+    .btn-copiar { width: 100%; background-color: var(--verde-btn); color: var(--texto-blanco); border: none; border-radius: 10px; padding: 12px; font-size: 0.88rem; font-weight: 800; cursor: pointer; text-transform: uppercase; box-shadow: 0 4px 15px rgba(5, 150, 105, 0.4); display: none; margin-top: 6px; }
+    .btn-copiar:hover { background-color: var(--verde-btn-hover); }
+
+    /* CAJA DE ENLACE GENERADO */
+    .enlace-box { background: #070b14; border: 1px dashed var(--verde-destacado); border-radius: 8px; padding: 10px; display: none; flex-direction: column; gap: 6px; margin-top: 6px; }
+    .enlace-box span { font-size: 0.65rem; color: var(--verde-destacado); font-weight: 700; text-transform: uppercase; }
+    .enlace-input { background: #0f172a; border: 1px solid var(--border-color); border-radius: 6px; padding: 8px; color: var(--texto-blanco); font-size: 0.75rem; width: 100%; outline: none; }
+
+    /* MODAL */
+    .modal-overlay { position: fixed; inset: 0; background: rgba(3, 7, 18, 0.85); backdrop-filter: blur(6px); display: flex; align-items: center; justify-content: center; z-index: 99999; padding: 16px; }
+    .modal-card { background: #0f172a; border: 1px solid #1e293b; border-radius: 16px; width: 100%; max-width: 380px; padding: 22px; text-align: center; box-shadow: 0 20px 30px rgba(0,0,0,0.7); color: #f8fafc; }
+    .modal-card h3 { font-size: 1.15rem; font-weight: 800; color: #38bdf8; margin-bottom: 6px; }
+    .modal-card p { font-size: 0.82rem; color: #94a3b8; line-height: 1.4; margin-bottom: 18px; }
+    .modal-btn { width: 100%; background: #0284c7; color: #fff; border: none; border-radius: 10px; padding: 10px; font-weight: 700; cursor: pointer; font-size: 0.85rem; text-transform: uppercase; }
+  </style>
+</head>
+<body>
+  <main class="app-container">
+<header class="brand-header" style="text-align: center; padding: 12px 0; display: flex; flex-direction: column; align-items: center; gap: 4px;">
+      <div style="background: rgba(11, 19, 36, 0.9); border: 1px solid #1e293b; padding: 8px 16px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.6);">
+        <img src="sensometrica.jpg" alt="SENSOMETRIKA Calibration Technology" style="width: 170px; height: auto; display: block; border-radius: 4px; filter: drop-shadow(0 0 10px rgba(56, 189, 248, 0.6));">
+      </div>
+      <span class="brand-subtitle" style="margin-top: 4px; color: var(--texto-gris); font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;">ASIGNACION DE TRABAJADOR Y GENERACION DE LINK </LINK></span>
+ </header>
+
+    <!-- ASIGNACIÓN DE TRABAJADOR Y CONTACTO PARA ENLACE -->
+    <section class="card-panel">
+      <div class="seccion-titulo">
+        <span>1. Asignación y Enlace de Evaluación</span>
+        <span id="txtPlanActivo" style="font-size: 0.65rem; color: var(--verde-destacado);">Plan Seleccionado</span>
+      </div>
+
+      <div class="form-group">
+        <label>Nombre Completo del Trabajador</label>
+        <input type="text" id="inputNombre" class="form-control" placeholder="Ej: Juan Silva Morales">
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+        <div class="form-group">
+          <label>RUT del Trabajador</label>
+          <input type="text" id="inputRut" class="form-control" placeholder="14.345.333-7">
+        </div>
+        <div class="form-group">
+          <label>Cargo / Función</label>
+          <input type="text" id="inputCargo" class="form-control" placeholder="Operador Maquinaria">
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+        <div class="form-group">
+          <label>Correo Electrónico (Notificación)</label>
+          <input type="email" id="inputCorreo" class="form-control" placeholder="trabajador@faena.cl">
+        </div>
+        <div class="form-group">
+          <label>Celular (WhatsApp Link)</label>
+          <input type="text" id="inputCelular" class="form-control" placeholder="+56991234567">
+        </div>
+      </div>
+
+      <button type="button" class="btn-principal" onclick="generarEnlaceEvaluacion()" style="margin-top: 4px;">
+        Generar Enlace de Evaluación →
+      </button>
+
+      <!-- CAJA DE ENLACE COPIABLE -->
+      <div id="cajaEnlaceGenerado" class="enlace-box">
+        <span>✓ Enlace generado para copiar y enviar:</span>
+        <input type="text" id="inputEnlaceUrl" class="enlace-input" readonly>
+        <button type="button" id="btnCopiarPortapapeles" class="btn-copiar" onclick="copiarEnlaceAlPortapapeles()">
+          Copiar Enlace al Portapapeles
+        </button>
+      </div>
+    </section>
+
+    <!-- ESTADO DE MÓDULOS SEGÚN PLAN COMPRADO -->
+    <section class="card-panel">
+      <div class="seccion-titulo">
+        <span>2. Estado de Módulos de la Batería Ocupacional</span>
+      </div>
+
+      <div id="listaModulosDashboard" style="display: flex; flex-direction: column; gap: 8px;">
+        <!-- Inyectado dinámicamente -->
+      </div>
+    </section>
+  </main>
+
+  <div id="modalContainer"></div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const planInfo = JSON.parse(localStorage.getItem('sensometrika_plan_empresa')) || { planId: 'plus', nombre: 'Plan Plus Laboral (B2B)' };
+      document.getElementById('txtPlanActivo').innerText = planInfo.nombre;
+
+      renderizarEstadoModulos(planInfo.planId);
+    });
+
+    function renderizarEstadoModulos(planId) {
+      const idPlan = String(planId).toLowerCase();
+      const contenedor = document.getElementById('listaModulosDashboard');
+
+      const modulos = [
+        { key: 'reactimetro', nombre: '1. Reactímetro Simple', desc: 'Frenado simple de emergencia', basico: true, plus: true, full: true },
+        { key: 'palancas', nombre: '2. Test de Palancas', desc: 'Coordinación motriz bimanual', basico: true, plus: true, full: true },
+        { key: 'punteo', nombre: '3. Test de Punteo y Ritmo (Lahy)', desc: 'Estabilidad psicomotriz y cadencia', basico: true, plus: true, full: true },
+        { key: 'auditivo', nombre: '4. Tamizaje Auditivo Ocupacional', desc: 'Evaluación en frecuencias críticas', basico: false, plus: true, full: true },
+        { key: 'visual', nombre: '5. Tamizaje Visual Integral', desc: 'Agudeza visual cromática', basico: false, plus: true, full: true },
+        { key: 'estereopsis', nombre: '6. Estereopsis 3D', desc: 'Percepción de profundidad y visión binocular', basico: false, plus: false, full: true },
+        { key: 'anticipacion', nombre: '7. Velocidad de Anticipación', desc: 'Cálculo de trayectorias en ruta', basico: false, plus: false, full: true },
+        { key: 'fatiga', nombre: '8. Resistencia a la Fatiga (PVT)', desc: 'Test psicomotor de vigilancia', basico: false, plus: false, full: true }
+      ];
+
+      let html = '';
+      modulos.forEach(mod => {
+        let habilitado = false;
+        if (idPlan.includes('basico') && mod.basico) habilitado = true;
+        if ((idPlan.includes('plus') || idPlan.includes('operativo')) && mod.plus) habilitado = true;
+        if ((idPlan.includes('full') || idPlan.includes('alta_complejidad')) && mod.full) habilitado = true;
+
+        const claseEstado = habilitado ? 'activo' : 'bloqueado';
+        const badgeClase = habilitado ? 'badge-activo' : 'badge-bloq';
+        const badgeTexto = habilitado ? 'Desbloqueado (Plan)' : 'No Incluido';
+
+        html += `
+          <div class="modulo-item ${claseEstado}">
+            <div class="modulo-info">
+              <h4>${mod.nombre}</h4>
+              <p>${mod.desc}</p>
+            </div>
+            <span class="badge-plan ${badgeClase}">${badgeTexto}</span>
+          </div>
+        `;
+      });
+
+      contenedor.innerHTML = html;
+    }
+
+    function mostrarModal(titulo, mensaje, callback) {
+      document.getElementById('modalContainer').innerHTML = `
+        <div class="modal-overlay">
+          <div class="modal-card">
+            <h3>${titulo}</h3>
+            <p>${mensaje}</p>
+            <button type="button" class="modal-btn" id="btnCerrarModal">Entendido</button>
+          </div>
+        </div>
+      `;
+      document.getElementById('btnCerrarModal').onclick = () => {
+        document.getElementById('modalContainer').innerHTML = '';
+        if (callback) callback();
+      };
+    }
+
+    function generarEnlaceEvaluacion() {
+      const nombre = document.getElementById('inputNombre').value.trim();
+      const rut = document.getElementById('inputRut').value.trim();
+      const cargo = document.getElementById('inputCargo').value.trim();
+      const correo = document.getElementById('inputCorreo').value.trim();
+      const celular = document.getElementById('inputCelular').value.trim();
+
+      if (!nombre || !rut || !cargo || !correo || !celular) {
+        mostrarModal("Datos Incompletos", "⚠️ Por favor, complete todos los campos de asignación y contacto del trabajador para emitir el enlace.");
+        return;
+      }
+
+      // LIMPIAR EVALUACIONES ANTERIORES AL GENERAR NUEVO ENLACE PARA QUE INICIE DESDE CERO
+      const modulosAEliminar = [
+        'sensometrika_reactimetro',
+        'sensometrika_palancas',
+        'sensometrika_punteo',
+        'sensometrika_auditivo',
+        'sensometrika_visual',
+        'sensometrika_anticipacion',
+        'sensometrika_estereopsis',
+        'sensometrika_foto_identidad',
+        'sensometrika_firma_trabajador',
+        'sensometrika_declaracion_aceptada'
+      ];
+      modulosAEliminar.forEach(key => localStorage.removeItem(key));
+
+      // 1. Guardar datos en localStorage para sesión persistente del trabajador
+      localStorage.setItem('sensometrika_datos_usuario', JSON.stringify({ nombre, rut, cargo, correo, celular }));
+
+      // 2. Apuntar estrictamente al archivo menu_B2B.html
+      const urlBase = window.location.href.substring(0, window.location.href.lastIndexOf('/') + 1);
+      const enlaceFinal = urlBase + 'menu_B2B.html';
+
+      document.getElementById('inputEnlaceUrl').value = enlaceFinal;
+      document.getElementById('cajaEnlaceGenerado').style.display = 'flex';
+      document.getElementById('btnCopiarPortapapeles').style.display = 'block';
+
+      mostrarModal("Enlace Generado", "✓ Enlace de acceso directo emitido correctamente. El trabajador ya puede usarlo para rendir su batería ocupacional con memoria limpia.");
+    }
+
+    function copiarEnlaceAlPortapapeles() {
+      const inputUrl = document.getElementById('inputEnlaceUrl');
+      inputUrl.select();
+      inputUrl.setSelectionRange(0, 99999);
+
+      navigator.clipboard.writeText(inputUrl.value).then(() => {
+        mostrarModal("¡Enlace Copiado!", "✓ El enlace ha sido copiado al portapapeles con éxito.");
+      }).catch(err => {
+        mostrarModal("Aviso", "No se pudo copiar automáticamente. Por favor, seleccione el texto y cópielo manual.");
+      });
+    }
+  </script>
+</body>
+</html>

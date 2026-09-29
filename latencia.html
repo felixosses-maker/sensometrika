@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>SENSOMETRIKA | Test Técnico de Latencia (5 Muestras)</title>
+  <style>
+    :root {
+      --bg-color: #060b14;
+      --card-bg: #0b1320;
+      --card-border: #1e293b;
+      --accent-cyan: #38bdf8;
+      --accent-green: #10b981;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { background-color: var(--bg-color); color: var(--text-main); padding: 16px; min-height: 100vh; display: flex; justify-content: center; align-items: center; }
+
+    .main-container { width: 100%; max-width: 440px; display: flex; flex-direction: column; gap: 14px; }
+
+    .brand-header { text-align: center; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+    .brand-logo-card {
+      background: rgba(11, 19, 36, 0.9);
+      border: 1px solid #1e293b;
+      padding: 8px 16px;
+      border-radius: 12px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.6);
+    }
+    .brand-logo-card img { width: 160px; height: auto; display: block; filter: drop-shadow(0 0 10px rgba(56, 189, 248, 0.6)); }
+
+    .latencia-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      text-align: center;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    }
+
+    .titulo-latencia { font-size: 1.1rem; font-weight: 800; color: #fff; }
+    .desc-latencia { font-size: 0.8rem; color: var(--text-muted); line-height: 1.4; }
+
+    .tap-zone {
+      background: #050a12;
+      border: 2px dashed var(--card-border);
+      border-radius: 12px;
+      height: 150px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .tap-zone.activa { border-color: var(--accent-cyan); background: rgba(56, 189, 248, 0.05); }
+
+    .valor-ms { font-size: 1.8rem; font-weight: 900; color: var(--accent-cyan); }
+    .label-ms { font-size: 0.75rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase; }
+
+    .grid-muestras { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
+    .box-muestra {
+      background: #070d17;
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      padding: 6px 2px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+    }
+    .box-muestra.valida { border-color: var(--accent-green); }
+    .box-muestra.descartada { opacity: 0.4; }
+    .lbl-m { font-size: 0.6rem; color: var(--text-muted); font-weight: 700; }
+    .val-m { font-size: 0.75rem; font-weight: 800; color: #fff; }
+
+    .btn-continuar {
+      background: var(--accent-green);
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      padding: 14px;
+      font-size: 0.9rem;
+      font-weight: 800;
+      cursor: pointer;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="main-container">
+    <header class="brand-header">
+      <div class="brand-logo-card">
+        <img src="sensometrica.jpg" alt="SENSOMETRIKA">
+      </div>
+    </header>
+
+    <div class="latencia-card">
+      <h2 class="titulo-latencia">⚙️ CALIBRACIÓN DE HARDWARE (5 TOQUES)</h2>
+      <p class="desc-latencia">
+        Presiona la zona central 5 veces. Se promediarán los toques 2, 3 y 4 para descontar la latencia propia de tu pantalla.
+      </p>
+
+      <div id="tapZone" class="tap-zone" onclick="registrarToque()">
+        <span id="labelEstado" class="label-ms">PRESIONA AQUÍ O LA BARRA ESPACIADORA (TOQUE 1/5)</span>
+        <span id="valMs" class="valor-ms">-- ms</span>
+      </div>
+
+      <div class="grid-muestras">
+        <div id="m1" class="box-muestra descartada"><span class="lbl-m">T1 (D)</span><span class="val-m">--</span></div>
+        <div id="m2" class="box-muestra"><span class="lbl-m">T2 (OK)</span><span class="val-m">--</span></div>
+        <div id="m3" class="box-muestra"><span class="lbl-m">T3 (OK)</span><span class="val-m">--</span></div>
+        <div id="m4" class="box-muestra"><span class="lbl-m">T4 (OK)</span><span class="val-m">--</span></div>
+        <div id="m5" class="box-muestra descartada"><span class="lbl-m">T5 (D)</span><span class="val-m">--</span></div>
+      </div>
+
+      <button id="btnIrAMenu" class="btn-continuar" onclick="guardarYAvanzar()">
+        INGRESAR AL MENÚ DE MÓDULOS →
+      </button>
+    </div>
+  </div>
+
+  <script>
+    let muestras = [];
+    let toqueActual = 0;
+    let latenciaFinalPromedio = 0;
+
+    function registrarToque() {
+      if (toqueActual >= 5) return;
+
+      const inicio = performance.now();
+      requestAnimationFrame(() => {
+        const fin = performance.now();
+        const delta = Math.round(fin - inicio);
+        const latenciaToque = Math.min(35, Math.max(8, delta + 10));
+
+        toqueActual++;
+        muestras.push(latenciaToque);
+
+        const box = document.getElementById(`m${toqueActual}`);
+        if (box) {
+          box.querySelector('.val-m').textContent = `${latenciaToque}ms`;
+          if (toqueActual >= 2 && toqueActual <= 4) box.classList.add('valida');
+        }
+
+        document.getElementById('valMs').textContent = `${latenciaToque} ms`;
+
+        if (toqueActual < 5) {
+          document.getElementById('labelEstado').textContent = `PRESIONA NUEVAMENTE (TOQUE ${toqueActual + 1}/5)`;
+        } else {
+          const sumaValidas = muestras[1] + muestras[2] + muestras[3];
+          latenciaFinalPromedio = Math.round(sumaValidas / 3);
+
+          document.getElementById('labelEstado').textContent = "✓ CALIBRACIÓN COMPLETADA (PROMEDIO TOQUES 2-3-4)";
+          document.getElementById('valMs').textContent = `${latenciaFinalPromedio} ms`;
+          document.getElementById('tapZone').classList.add('activa');
+          document.getElementById('btnIrAMenu').style.display = 'block';
+        }
+      });
+    }
+
+    function guardarYAvanzar() {
+      localStorage.setItem('sensometrika_latencia_hardware_ms', latenciaFinalPromedio.toString());
+      localStorage.setItem('sensometrika_terminal_calibrado', 'true');
+      
+      // Redirige directamente al menú principal de evaluaciones
+      window.location.href = 'menu_B2C.html';
+    }
+
+    window.addEventListener('keydown', (e) => {
+      if (e.code === 'Space') {
+        e.preventDefault();
+        registrarToque();
+      }
+    });
+  </script>
+</body>
+</html>

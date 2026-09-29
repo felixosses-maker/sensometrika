@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>SENSOMETRIKA | Calibración y Consola B2B (D.S. N° 170)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    :root {
+      --bg-principal: #070d18;
+      --bg-card: #0b1324;
+      --border-color: #1e293b;
+      --verde-destacado: #10b981;
+      --azul-destacado: #38bdf8;
+      --azul-btn: #0284c7;
+      --azul-btn-hover: #0369a1;
+      --texto-blanco: #ffffff;
+      --texto-gris: #94a3b8;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; user-select: none; }
+    body { background-color: var(--bg-principal); color: var(--texto-blanco); min-height: 100vh; display: flex; flex-direction: column; align-items: center; padding: 16px 12px 36px; }
+    .app-container { width: 100%; max-width: 520px; display: flex; flex-direction: column; gap: 14px; }
+
+    .brand-header { text-align: center; margin-bottom: 2px; }
+    .brand-header span { font-size: 0.6rem; letter-spacing: 2.5px; color: var(--texto-gris); text-transform: uppercase; font-weight: 700; display: block; margin-top: 4px; }
+
+    .card-panel { background-color: var(--bg-card); border: 1px solid var(--border-color); border-radius: 16px; padding: 16px; display: flex; flex-direction: column; gap: 12px; box-shadow: 0 15px 35px rgba(0, 0, 0, 0.6); }
+    .seccion-titulo { font-size: 0.8rem; font-weight: 800; color: var(--azul-destacado); text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid var(--border-color); padding-bottom: 6px; display: flex; justify-content: space-between; align-items: center; }
+
+    .form-group { display: flex; flex-direction: column; gap: 3px; }
+    .form-group label { font-size: 0.68rem; color: var(--texto-gris); font-weight: 700; text-transform: uppercase; }
+    .form-control { width: 100%; background: #070b14; border: 1px solid var(--border-color); border-radius: 8px; padding: 9px; color: var(--texto-blanco); font-size: 0.85rem; outline: none; }
+    .form-control:focus { border-color: var(--azul-destacado); }
+    .form-control:read-only { background-color: #04070d; color: #64748b; cursor: not-allowed; border-color: #1e293b; }
+
+    .biometric-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .cam-box { background: #000; border: 1px solid var(--border-color); border-radius: 8px; height: 130px; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; overflow: hidden; }
+    .cam-box video, .cam-box img { width: 100%; height: 100%; object-fit: cover; }
+    .btn-cam { position: absolute; bottom: 6px; background: rgba(2, 132, 199, 0.85); color: #fff; border: none; padding: 4px 10px; font-size: 0.65rem; font-weight: 700; border-radius: 4px; cursor: pointer; z-index: 4; }
+    #cuentaRegresivaOverlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.65); display: flex; align-items: center; justify-content: center; font-size: 2.5rem; font-weight: 900; color: var(--verde-destacado); z-index: 5; display: none; }
+
+    .firma-box { background: #ffffff; border: 1px solid var(--border-color); border-radius: 8px; height: 130px; display: flex; flex-direction: column; align-items: center; position: relative; }
+    #canvasFirma { width: 100%; height: 100%; cursor: crosshair; touch-action: none; }
+    .btn-limpiar-firma { position: absolute; top: 4px; right: 4px; background: #64748b; color: #fff; border: none; padding: 2px 6px; font-size: 0.55rem; border-radius: 3px; cursor: pointer; z-index: 3; }
+
+    .calibracion-banner { background: rgba(56, 189, 248, 0.1); border: 1px solid #38bdf8; border-radius: 10px; padding: 14px; text-align: center; display: flex; flex-direction: column; gap: 8px; }
+    .calibracion-banner.ok { background: rgba(16, 185, 129, 0.1); border-color: #10b981; }
+    
+    .pad-latencia { background: #04070d; border: 2px dashed #38bdf8; border-radius: 10px; height: 90px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s; }
+    .pad-latencia:active { background: #0284c7; transform: scale(0.98); }
+
+    .bloqueado-seccion { opacity: 0.35; pointer-events: none; filter: grayscale(50%); transition: opacity 0.3s; }
+    .desbloqueado-seccion { opacity: 1; pointer-events: auto; filter: none; }
+
+    .modulo-btn { display: flex; align-items: center; justify-content: space-between; background: #070b14; border: 1px solid var(--border-color); border-radius: 10px; padding: 11px; text-decoration: none; color: var(--texto-blanco); transition: all 0.2s ease; }
+    .modulo-btn:hover { border-color: var(--azul-destacado); background: #0d162a; }
+    .modulo-btn.quemado { opacity: 0.6; pointer-events: none; border-color: #10b981; background: rgba(16,185,129,0.05); }
+    .modulo-btn.bloqueado-plan { opacity: 0.4; pointer-events: none; border-style: dashed; background: #04070d; }
+    .modulo-info h3 { font-size: 0.82rem; font-weight: 700; margin-bottom: 2px; }
+    .modulo-info p { font-size: 0.65rem; color: var(--texto-gris); }
+    .estado-badge { font-size: 0.65rem; font-weight: 800; padding: 3px 8px; border-radius: 6px; text-transform: uppercase; }
+    .badge-pend { background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.4); }
+    .badge-ok { background: rgba(16, 185, 129, 0.15); color: var(--verde-destacado); border: 1px solid rgba(16, 185, 129, 0.4); }
+    .badge-bloq { background: rgba(100, 116, 139, 0.15); color: var(--texto-gris); border: 1px solid rgba(100, 116, 139, 0.3); }
+
+    .btn-principal { width: 100%; background-color: var(--azul-btn); color: var(--texto-blanco); border: none; border-radius: 10px; padding: 12px; font-size: 0.88rem; font-weight: 800; cursor: pointer; text-transform: uppercase; box-shadow: 0 4px 15px rgba(2, 132, 199, 0.4); }
+    .btn-principal:hover { background-color: var(--azul-btn-hover); }
+
+    .modal-overlay { position: fixed; inset: 0; background: rgba(3, 7, 18, 0.85); backdrop-filter: blur(6px); display: flex; align-items: center; justify-content: center; z-index: 99999; padding: 16px; }
+    .modal-card { background: #0f172a; border: 1px solid #1e293b; border-radius: 16px; width: 100%; max-width: 360px; padding: 22px; text-align: center; box-shadow: 0 20px 30px rgba(0,0,0,0.7); color: #f8fafc; }
+    .modal-card h3 { font-size: 1.15rem; font-weight: 800; color: #38bdf8; margin-bottom: 6px; }
+    .modal-card p { font-size: 0.82rem; color: #94a3b8; line-height: 1.4; margin-bottom: 18px; }
+    .modal-btn { width: 100%; background: #0284c7; color: #fff; border: none; border-radius: 10px; padding: 10px; font-weight: 700; cursor: pointer; font-size: 0.85rem; text-transform: uppercase; }
+  </style>
+</head>
+<body>
+  <main class="app-container" id="app-container">
+    <header class="brand-header" style="text-align: center; padding: 12px 0; display: flex; flex-direction: column; align-items: center; gap: 4px;">
+      <div style="background: rgba(11, 19, 36, 0.9); border: 1px solid #1e293b; padding: 8px 16px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.6);">
+        <img src="sensometrica.jpg" alt="SENSOMETRIKA Calibration Technology" style="width: 170px; height: auto; display: block; border-radius: 4px; filter: drop-shadow(0 0 10px rgba(56, 189, 248, 0.6));">
+      </div>
+      <span class="brand-subtitle" style="margin-top: 4px; color: var(--texto-gris); font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;">Consola B2B & Faena • D.S. N° 170</span>
+    </header>
+
+    <!-- PASO 0: CALIBRACIÓN TÉCNICA -->
+    <section class="card-panel">
+      <div class="seccion-titulo">
+        <span>0. Calibración Técnica y Sensor Táctil</span>
+      </div>
+      <div id="cajaCalibracion" class="calibracion-banner">
+        <span style="font-size: 0.78rem; font-weight: 800; color: #38bdf8;" id="txtEstadoCalib">⚙️ Toque 5 veces el área inferior para calibrar latencia (0/5)</span>
+        <div class="pad-latencia" id="padCalibracion" onclick="registrarToqueCalibracion()">
+          <span style="font-size: 0.8rem; font-weight: 900; color: #38bdf8;">PULSE AQUÍ RÁPIDO 5 VECES</span>
+          <span style="font-size: 0.6rem; color: var(--texto-gris);">Mide respuesta en toques 2, 3 y 4</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- PASO 1: IDENTIFICACIÓN Y BIOMETRÍA -->
+    <section class="card-panel bloqueado-seccion" id="seccionBiometria">
+      <div class="seccion-titulo">
+        <span>1. Identificación y Biometría (APR)</span>
+        <span id="txtNombrePlanBadge" style="font-size: 0.65rem; color: var(--verde-destacado);">Plan B2B</span>
+      </div>
+
+      <div class="form-group">
+        <label>Nombre Completo del Trabajador</label>
+        <input type="text" id="inputNombre" class="form-control" readonly>
+      </div>
+
+      <div class="form-group">
+        <label>RUT del Trabajador</label>
+        <input type="text" id="inputRut" class="form-control" readonly>
+      </div>
+
+      <div class="form-group">
+        <label>Cargo / Función Operativa</label>
+        <input type="text" id="inputCargo" class="form-control" readonly>
+      </div>
+
+      <div class="biometric-grid">
+        <div class="form-group">
+          <label>Fotografía Rostro (Webcam)</label>
+          <div class="cam-box" id="camContainer">
+            <video id="videoWebcam" autoplay playsinline style="display: none;"></video>
+            <img id="imgCaptura" style="display: none;" alt="Foto capturada">
+            <div id="cuentaRegresivaOverlay">3</div>
+            <span id="txtCamEstado" style="font-size: 0.6rem; color: #94a3b8; text-align: center; padding: 4px;">Cámara inactiva</span>
+            <button type="button" class="btn-cam" id="btnAccionCam" onclick="iniciarConteoCamara()">Activar Cámara</button>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Firma Digital del Trabajador</label>
+          <div class="firma-box">
+            <button type="button" class="btn-limpiar-firma" id="btnLimpiarFirma" onclick="limpiarFirma()">Limpiar</button>
+            <canvas id="canvasFirma"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <div style="display: flex; align-items: flex-start; gap: 8px; margin-top: 4px;">
+        <input type="checkbox" id="checkTerminos" onchange="bloquearBiometriaPorTerminos(this)" style="margin-top: 3px; accent-color: var(--azul-destacado); width: 16px; height: 16px; cursor: pointer;">
+        <label for="checkTerminos" style="font-size: 0.7rem; color: var(--texto-gris); line-height: 1.35; cursor: pointer;">
+          Declaro bajo juramento que los datos son fidedignos y que realizaré la evaluación de forma personal (D.S. N° 170). Al aceptar, se sella la biometría.
+        </label>
+      </div>
+    </section>
+
+    <!-- PASO 2: MÓDULOS -->
+    <section class="card-panel bloqueado-seccion" id="seccionModulos">
+      <div class="seccion-titulo">
+        <span>2. Módulos de la Batería Ocupacional (8 Módulos Portafolio)</span>
+      </div>
+
+      <div id="contenedorModulosB2B" style="display: flex; flex-direction: column; gap: 8px;"></div>
+
+      <button type="button" class="btn-principal" onclick="verificarYGenerarInforme(); return false;" style="margin-top: 6px;">
+        Generar Certificado Oficial B2B →
+      </button>
+    </section>
+  </main>
+
+  <div id="modalContainer"></div>
+
+  <script>
+    let streamWebcam = null;
+    let canvasFirma, ctxFirma, dibujando = false;
+    let toquesCalibracion = [];
+
+    document.addEventListener('DOMContentLoaded', () => {
+      validarCambioTrabajadorYInicializar();
+    });
+
+    function validarCambioTrabajadorYInicializar() {
+      const usuarioActual = JSON.parse(localStorage.getItem('sensometrika_datos_usuario')) || {};
+      const rutActual = usuarioActual.rut || '';
+      const rutAnteriorRegistrado = localStorage.getItem('sensometrika_ultimo_rut_evaluado');
+
+      if (rutAnteriorRegistrado && rutAnteriorRegistrado !== rutActual) {
+        const modulosAEliminar = [
+          'sensometrika_reactimetro', 'sensometrika_palancas', 'sensometrika_punteo',
+          'sensometrika_auditivo', 'sensometrika_visual', 'sensometrika_anticipacion',
+          'sensometrika_estereopsis', 'sensometrika_fatiga', 'sensometrika_foto_identidad',
+          'sensometrika_firma_trabajador', 'sensometrika_declaracion_aceptada',
+          'sensometrika_calibracion_ok', 'sensometrika_latencia_sensor'
+        ];
+        modulosAEliminar.forEach(key => localStorage.removeItem(key));
+      }
+
+      if (rutActual) {
+        localStorage.setItem('sensometrika_ultimo_rut_evaluado', rutActual);
+      }
+
+      inicializarConsolaFaena();
+    }
+
+    function inicializarConsolaFaena() {
+      const usuario = JSON.parse(localStorage.getItem('sensometrika_datos_usuario')) || {};
+      if (usuario.nombre) document.getElementById('inputNombre').value = usuario.nombre;
+      if (usuario.rut) document.getElementById('inputRut').value = usuario.rut;
+      if (usuario.cargo) document.getElementById('inputCargo').value = usuario.cargo;
+
+      if (localStorage.getItem('sensometrika_calibracion_ok') === 'true') {
+        activarConsolaPostCalibracion();
+      }
+
+      const fotoGuardada = localStorage.getItem('sensometrika_foto_identidad');
+      if (fotoGuardada) {
+        const img = document.getElementById('imgCaptura');
+        img.src = fotoGuardada;
+        img.style.display = 'block';
+        document.getElementById('txtCamEstado').style.display = 'none';
+        document.getElementById('btnAccionCam').innerText = 'Reiterar Foto';
+      }
+
+      renderizarModulosSegunPlan();
+
+      canvasFirma = document.getElementById('canvasFirma');
+      ctxFirma = canvasFirma.getContext('2d');
+      ajustarCanvasFirma();
+
+      const firmaGuardada = localStorage.getItem('sensometrika_firma_trabajador');
+      if (firmaGuardada) {
+        const imgFirma = new Image();
+        imgFirma.onload = () => { ctxFirma.drawImage(imgFirma, 0, 0); };
+        imgFirma.src = firmaGuardada;
+      }
+
+      if (localStorage.getItem('sensometrika_declaracion_aceptada') === 'true') {
+        document.getElementById('checkTerminos').checked = true;
+        document.getElementById('btnAccionCam').style.display = 'none';
+        document.getElementById('btnLimpiarFirma').style.display = 'none';
+      }
+
+      canvasFirma.addEventListener('mousedown', empezarDibujo);
+      canvasFirma.addEventListener('mousemove', dibujar);
+      canvasFirma.addEventListener('mouseup', detenerDibujo);
+      canvasFirma.addEventListener('touchstart', empezarDibujoTouch, {passive: false});
+      canvasFirma.addEventListener('touchmove', dibujarTouch, {passive: false});
+      canvasFirma.addEventListener('touchend', detenerDibujo);
+    }
+
+    function registrarToqueCalibracion() {
+      if (localStorage.getItem('sensometrika_calibracion_ok') === 'true') return;
+
+      const tiempoActual = performance.now();
+      toquesCalibracion.push(tiempoActual);
+      const totalToques = toquesCalibracion.length;
+
+      if (totalToques < 5) {
+        document.getElementById('txtEstadoCalib').innerText = `⚙️ Toque 5 veces el área inferior para calibrar latencia (${totalToques}/5)`;
+      } else {
+        const delta2 = toquesCalibracion[2] - toquesCalibracion[1];
+        const delta3 = toquesCalibracion[3] - toquesCalibracion[2];
+        const delta4 = toquesCalibracion[4] - toquesCalibracion[3];
+        const promedioLatencia = Math.round((delta2 + delta3 + delta4) / 3) || 285;
+
+        localStorage.setItem('sensometrika_calibracion_ok', 'true');
+        localStorage.setItem('sensometrika_latencia_sensor', promedioLatencia);
+
+        activarConsolaPostCalibracion();
+        mostrarModalInterno("Calibración Exitosa", `✓ Test de sensor completado.<br>Latencia promedio registrada (Toques 2, 3 y 4): <strong>${promedioLatencia} ms</strong>.<br><br>Consola biométrica y módulos habilitados.`);
+      }
+    }
+
+    function activarConsolaPostCalibracion() {
+      document.getElementById('cajaCalibracion').className = "calibracion-banner ok";
+      const latenciaFinal = localStorage.getItem('sensometrika_latencia_sensor') || '285';
+      document.getElementById('txtEstadoCalib').innerText = `✓ Terminal Calibrado (Latencia Sensor: ${latenciaFinal} ms)`;
+      document.getElementById('padCalibracion').style.display = 'none';
+
+      document.getElementById('seccionBiometria').className = "card-panel desbloqueado-seccion";
+      document.getElementById('seccionModulos').className = "card-panel desbloqueado-seccion";
+    }
+
+    function mostrarModalInterno(titulo, mensaje, callback) {
+      document.getElementById('modalContainer').innerHTML = `
+        <div class="modal-overlay">
+          <div class="modal-card">
+            <h3>${titulo}</h3>
+            <p>${mensaje}</p>
+            <button type="button" class="modal-btn" id="btnCerrarModal">Entendido</button>
+          </div>
+        </div>
+      `;
+      document.getElementById('btnCerrarModal').onclick = () => {
+        document.getElementById('modalContainer').innerHTML = '';
+        if (callback) callback();
+      };
+    }
+
+    function renderizarModulosSegunPlan() {
+      const planInfo = JSON.parse(localStorage.getItem('sensometrika_plan_empresa')) || { planId: 'plus', nombre: 'Plan Plus Laboral (B2B)' };
+      document.getElementById('txtNombrePlanBadge').innerText = planInfo.nombre;
+      const idPlan = String(planInfo.planId || 'plus').toLowerCase();
+
+      const contenedor = document.getElementById('contenedorModulosB2B');
+      const modulosDef = [
+        { key: 'reactimetro', nombre: '1. Reactímetro Simple', desc: 'Frenado simple de emergencia', archivo: 'reactimetro.html?mode=b2b', basico: true, plus: true, full: true },
+        { key: 'palancas', nombre: '2. Test de Palancas', desc: 'Coordinación motriz bimanual', archivo: 'palancas.html', basico: true, plus: true, full: true },
+        { key: 'punteo', nombre: '3. Test de Punteo y Ritmo (Lahy)', desc: 'Estabilidad psicomotriz', archivo: 'punteo.html', basico: true, plus: true, full: true },
+        { key: 'auditivo', nombre: '4. Tamizaje Auditivo Ocupacional', desc: 'Frecuencias críticas faena', archivo: 'audicion.html', basico: false, plus: true, full: true },
+        { key: 'visual', nombre: '5. Tamizaje Visual Integral', desc: 'Agudeza visual cromática', archivo: 'visual.html', basico: false, plus: true, full: true },
+        { key: 'estereopsis', nombre: '6. Estereopsis 3D', desc: 'Percepción espacial binocular', archivo: 'estereopsis.html', basico: false, plus: false, full: true },
+        { key: 'anticipacion', nombre: '7. Velocidad de Anticipación', desc: 'Cálculo de trayectorias', archivo: 'anticipacion.html', basico: false, plus: false, full: true },
+        { key: 'fatiga', nombre: '8. Resistencia a la Fatiga (PVT)', desc: 'Control de vigilancia', archivo: 'fatiga.html', basico: false, plus: false, full: true }
+      ];
+
+      let htmlModulos = '';
+      modulosDef.forEach(mod => {
+        let habilitadoEnPlan = false;
+        if (idPlan.includes('basico') && mod.basico) habilitadoEnPlan = true;
+        else if (idPlan.includes('plus') && mod.plus) habilitadoEnPlan = true;
+        else if (idPlan.includes('full') && mod.full) habilitadoEnPlan = true;
+
+        const completado = localStorage.getItem(`sensometrika_${mod.key}`);
+
+        if (!habilitadoEnPlan) {
+          htmlModulos += `
+            <div class="modulo-btn bloqueado-plan">
+              <div class="modulo-info">
+                <h3>${mod.nombre}</h3>
+                <p>${mod.desc}</p>
+              </div>
+              <span class="estado-badge badge-bloq">No Incluido en Plan</span>
+            </div>
+          `;
+        } else {
+          const claseQuemado = completado ? 'quemado' : '';
+          const badgeTexto = completado ? 'Completado' : 'Pendiente';
+          const claseBadge = completado ? 'badge-ok' : 'badge-pend';
+
+          htmlModulos += `
+            <a href="${mod.archivo}" id="link_${mod.key}" class="modulo-btn ${claseQuemado}">
+              <div class="modulo-info">
+                <h3>${mod.nombre}</h3>
+                <p>${mod.desc}</p>
+              </div>
+              <span id="badge_${mod.key}" class="estado-badge ${claseBadge}">${badgeTexto}</span>
+            </a>
+          `;
+        }
+      });
+
+      contenedor.innerHTML = htmlModulos;
+    }
+
+    function ajustarCanvasFirma() {
+      const rect = canvasFirma.getBoundingClientRect();
+      canvasFirma.width = rect.width || 220;
+      canvasFirma.height = rect.height || 110;
+      ctxFirma.strokeStyle = '#000000';
+      ctxFirma.lineWidth = 2.2;
+      ctxFirma.lineCap = 'round';
+    }
+
+    function empezarDibujo(e) { if (document.getElementById('checkTerminos').checked) return; dibujando = true; ctxFirma.beginPath(); ctxFirma.moveTo(e.offsetX, e.offsetY); }
+    function dibujar(e) { if (!dibujando || document.getElementById('checkTerminos').checked) return; ctxFirma.lineTo(e.offsetX, e.offsetY); ctxFirma.stroke(); }
+    function empezarDibujoTouch(e) {
+      if (document.getElementById('checkTerminos').checked) return;
+      e.preventDefault();
+      const rect = canvasFirma.getBoundingClientRect();
+      const touch = e.touches[0];
+      dibujando = true;
+      ctxFirma.beginPath();
+      ctxFirma.moveTo(touch.clientX - rect.left, touch.clientY - rect.top);
+    }
+    function dibujarTouch(e) {
+      if (!dibujando || document.getElementById('checkTerminos').checked) return;
+      e.preventDefault();
+      const rect = canvasFirma.getBoundingClientRect();
+      const touch = e.touches[0];
+      ctxFirma.lineTo(touch.clientX - rect.left, touch.clientY - rect.top);
+      ctxFirma.stroke();
+    }
+    function detenerDibujo() {
+      dibujando = false;
+      if (!document.getElementById('checkTerminos').checked) {
+        localStorage.setItem('sensometrika_firma_trabajador', canvasFirma.toDataURL());
+      }
+    }
+    function limpiarFirma() {
+      if (document.getElementById('checkTerminos').checked) return;
+      ctxFirma.clearRect(0, 0, canvasFirma.width, canvasFirma.height);
+      localStorage.removeItem('sensometrika_firma_trabajador');
+    }
+
+    async function iniciarConteoCamara() {
+      if (document.getElementById('checkTerminos').checked) return;
+      const video = document.getElementById('videoWebcam');
+      const img = document.getElementById('imgCaptura');
+      const txt = document.getElementById('txtCamEstado');
+      const btn = document.getElementById('btnAccionCam');
+      const overlay = document.getElementById('cuentaRegresivaOverlay');
+
+      try {
+        if (!streamWebcam) {
+          streamWebcam = await navigator.mediaDevices.getUserMedia({ 
+            video: { width: { ideal: 320 }, height: { ideal: 240 } } 
+          });
+          video.srcObject = streamWebcam;
+          video.style.display = 'block';
+          img.style.display = 'none';
+          txt.style.display = 'none';
+        }
+
+        btn.style.display = 'none';
+        overlay.style.display = 'flex';
+        let segundos = 3;
+        overlay.innerText = segundos;
+
+        let intervalo = setInterval(() => {
+          segundos--;
+          if (segundos > 0) {
+            overlay.innerText = segundos;
+          } else {
+            clearInterval(intervalo);
+            overlay.style.display = 'none';
+
+            const canvas = document.createElement('canvas');
+            canvas.width = 320;
+            canvas.height = 240;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+
+            localStorage.setItem('sensometrika_foto_identidad', dataUrl);
+            img.src = dataUrl;
+            img.style.display = 'block';
+            video.style.display = 'none';
+
+            if (streamWebcam) {
+              streamWebcam.getTracks().forEach(track => track.stop());
+              streamWebcam = null;
+            }
+            btn.innerText = 'Reiterar Foto';
+            btn.style.display = 'block';
+          }
+        }, 1000);
+
+      } catch (err) {
+        mostrarModalInterno(
+          "Cámara No Disponible", 
+          "⚠️ El navegador ha bloqueado el acceso a la webcam.<br><br><strong>Solución:</strong><br>1. Verifique permisos en la barra de direcciones.<br>2. Asegúrese de no tener otra aplicación usando la cámara."
+        );
+        btn.style.display = 'block';
+        overlay.style.display = 'none';
+      }
+    }
+
+    function bloquearBiometriaPorTerminos(checkbox) {
+      if (checkbox.checked) {
+        localStorage.setItem('sensometrika_firma_trabajador', canvasFirma.toDataURL());
+        localStorage.setItem('sensometrika_declaracion_aceptada', 'true');
+        
+        document.getElementById('btnAccionCam').style.display = 'none';
+        document.getElementById('btnLimpiarFirma').style.display = 'none';
+        
+        mostrarModalInterno("Biometría Sellada", "✓ Declaración jurada aceptada. Identidad y firma selladas para el informe formal.");
+      } else {
+        localStorage.removeItem('sensometrika_declaracion_aceptada');
+      }
+    }
+
+    function verificarYGenerarInforme() {
+      if (localStorage.getItem('sensometrika_calibracion_ok') !== 'true') {
+        mostrarModalInterno("Calibración Requerida", "⚠️ Debe completar el Test de Calibración de 5 toques (Paso 0) antes de generar el certificado oficial.");
+        return;
+      }
+
+      const nombre = document.getElementById('inputNombre').value.trim();
+      const rut = document.getElementById('inputRut').value.trim();
+      const cargo = document.getElementById('inputCargo').value.trim();
+      const acepto = document.getElementById('checkTerminos').checked;
+
+      if (!nombre || !rut || !cargo) {
+        mostrarModalInterno("Datos Incompletos", "⚠️ No se han detectado los datos de filiación del trabajador desde el APR.");
+        return;
+      }
+      if (!acepto) {
+        mostrarModalInterno("Aceptación Requerida", "⚠️ Debe aceptar la declaración jurada y los términos normativos para emitir el certificado.");
+        return;
+      }
+      if (!localStorage.getItem('sensometrika_foto_identidad')) {
+        mostrarModalInterno("Fotografía Requerida", "⚠️ Debe registrar su fotografía biométrica mediante la webcam antes de generar el certificado.");
+        return;
+      }
+
+      const planInfo = JSON.parse(localStorage.getItem('sensometrika_plan_empresa')) || { planId: 'plus' };
+      const idPlan = String(planInfo.planId).toLowerCase();
+
+      let rReact = localStorage.getItem('sensometrika_reactimetro');
+      let rPal = localStorage.getItem('sensometrika_palancas');
+      let rPunt = localStorage.getItem('sensometrika_punteo');
+      let rAuditivo = localStorage.getItem('sensometrika_auditivo');
+      let rVisual = localStorage.getItem('sensometrika_visual');
+
+      if (idPlan.includes('basico')) {
+        if (!rReact || !rPal || !rPunt) {
+          mostrarModalInterno("Evaluación Incompleta", "⚠️ Para emitir el certificado del Plan Básico, debe completar los 3 módulos esenciales.");
+          return;
+        }
+      } else if (idPlan.includes('plus')) {
+        if (!rReact || !rPal || !rPunt || !rAuditivo || !rVisual) {
+          mostrarModalInterno("Evaluación Incompleta", "⚠️ Para emitir el certificado del Plan Plus, debe completar los 5 módulos requeridos.");
+          return;
+        }
+      }
+
+      window.location.assign('informe-b2b.html');
+    }
+  </script>
+</body>
+</html>

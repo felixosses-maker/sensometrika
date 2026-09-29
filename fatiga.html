@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>SENSOMETRIKA | Velocidad de Anticipación Industrial (Demo + 3 Rondas)</title>
+  <title>SENSOMETRIKA | Test de Fatiga y Vigilancia (PVT)</title>
   <style>
     * {
       box-sizing: border-box;
@@ -96,74 +96,28 @@
       text-align: center;
     }
 
-    .contenedor-pista {
+    /* PISTA / PANTALLA PVT */
+    .contenedor-pvt {
       position: relative;
       width: 100%;
-      height: 180px;
+      height: 200px;
       background: radial-gradient(circle at center, #0f172a 0%, #030712 100%);
       border: 2px solid #1e293b;
       border-radius: 12px;
       overflow: hidden;
       display: flex;
-      align-items: center;
-      box-shadow: inset 0 0 20px rgba(0,0,0,0.8);
-    }
-
-    .pista-eje-central {
-      position: absolute;
-      width: 100%;
-      height: 2px;
-      background: repeating-linear-gradient(90deg, #334155, #334155 12px, transparent 12px, transparent 24px);
-      top: 50%;
-      transform: translateY(-50%);
-    }
-
-    .linea-meta {
-      position: absolute;
-      right: 110px;
-      top: 0;
-      bottom: 0;
-      width: 3px;
-      background: #10b981;
-      box-shadow: 0 0 10px #10b981;
-      z-index: 2;
-    }
-
-    .tunel-oculto {
-      position: absolute;
-      right: 0;
-      width: 110px;
-      height: 100%;
-      background: repeating-linear-gradient(45deg, rgba(15, 23, 42, 0.85), rgba(15, 23, 42, 0.85) 10px, rgba(30, 41, 59, 0.85) 10px, rgba(30, 41, 59, 0.85) 20px);
-      border-left: 2px dashed #f59e0b;
-      display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      font-size: 0.65rem;
-      color: #f59e0b;
-      font-weight: 900;
-      letter-spacing: 1px;
-      z-index: 3;
-      text-align: center;
-      padding: 4px;
+      box-shadow: inset 0 0 20px rgba(0,0,0,0.8);
+      cursor: pointer;
     }
 
-    .vehiculo-movil {
-      position: absolute;
-      left: 15px;
-      width: 60px;
-      height: 34px;
-      background: linear-gradient(135deg, #0284c7, #0369a1);
-      border: 1px solid #38bdf8;
-      border-radius: 8px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 1rem;
-      box-shadow: 0 0 15px rgba(56, 189, 248, 0.6);
-      z-index: 4;
-      transition: transform 0.03s linear;
+    .pvt-display {
+      font-size: 2.2rem;
+      font-weight: 900;
+      color: #64748b;
+      letter-spacing: 2px;
     }
 
     .instruccion-sub {
@@ -192,7 +146,7 @@
       text-transform: uppercase;
     }
     .btn-iniciar-test:active { transform: scale(0.98); }
-    .btn-iniciar-test.frenar {
+    .btn-iniciar-test.reaccionar {
       background-color: #10b981;
       box-shadow: 0 4px 16px rgba(16, 185, 129, 0.4);
     }
@@ -230,7 +184,7 @@
       <div style="background: rgba(11, 19, 36, 0.9); border: 1px solid #1e293b; padding: 8px 16px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.6);">
         <img src="sensometrica.jpg" alt="SENSOMETRIKA Calibration Technology" style="width: 170px; height: auto; display: block; border-radius: 4px; filter: drop-shadow(0 0 10px rgba(56, 189, 248, 0.6));">
       </div>
-      <span class="brand-subtitle" id="titulo-fase" style="margin-top: 4px; color: var(--texto-gris); font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;">Módulo de Anticipación (Fase Demo de Práctica)</span>
+      <span class="brand-subtitle" id="titulo-fase" style="margin-top: 4px; color: var(--texto-gris); font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;">Test de Fatiga y Vigilancia (PVT - Demo)</span>
     </header>
 
     <section class="modulo-card-container">
@@ -240,46 +194,43 @@
       </div>
 
       <div style="text-align: center;">
-        <span class="badge-fase" id="badge-modo">🚀 Alta Complejidad (Sernageomin / CORMA)</span>
+        <span class="badge-fase" id="badge-modo">⚡ Control de Somnolencia y Lapsos (D.S. N° 170)</span>
       </div>
 
-      <div class="contenedor-pista" id="pista">
-        <div class="pista-eje-central"></div>
-        <div class="linea-meta"></div>
-        <div class="vehiculo-movil" id="vehiculo" style="transform: translateX(15px);">🚛</div>
-        <div class="tunel-oculto">ZONA CIEGA<br><span style="font-size:0.5rem; color:#94a3b8;">Cálculo Temporal</span></div>
+      <div class="contenedor-pvt" id="areaPvt" onclick="registrarReaccion()">
+        <div class="pvt-display" id="displayPvt">ESPERE...</div>
+        <div style="font-size: 0.65rem; color: #64748b; margin-top: 8px;" id="subDisplay">Atención a los estímulos</div>
       </div>
 
       <p class="instruccion-sub" id="panel-estado">
-        Fase de práctica libre. Estima el momento en que el vehículo cruza la zona ciega y presiona frenar.
+        Presione el botón de abajo tan pronto como el contador comience a correr.
       </p>
 
-      <button type="button" class="btn-iniciar-test" id="btn-accion" onclick="manejarAccion()">
-        ▶ Iniciar Demo de Práctica
+      <button type="button" class="btn-iniciar-test" id="btn-accion" onclick="manejarAccionBtn()">
+        ▶ Iniciar Demo de Fatiga
       </button>
 
       <div class="metricas-grid">
         <div class="col-metrica">
-          <span>Margen Estándar</span>
-          <strong style="color: #38bdf8;">&le; 220 ms</strong>
+          <span>Umbral Estándar</span>
+          <strong style="color: #38bdf8;">Sin Lapsos Críticos</strong>
         </div>
         <div class="col-metrica">
-          <span>Promedio Oficial (3 Rondas)</span>
+          <span>Promedio Reacción</span>
           <strong id="txt-resultado-actual" style="color: #cbd5e1;">Pendiente</strong>
         </div>
       </div>
     </section>
   </main>
 
-  <!-- Contenedor para Modales Internos Estilizados -->
   <div id="modalContainer"></div>
 
   <!-- Modal Guía -->
   <div id="modalGuia" style="display: none; position: fixed; inset: 0; background: rgba(3, 7, 18, 0.9); backdrop-filter: blur(8px); z-index: 99999; align-items: center; justify-content: center; padding: 16px;">
     <div style="background: #0f172a; border: 1px solid rgba(56, 189, 248, 0.4); border-radius: 16px; max-width: 400px; width: 100%; padding: 22px; text-align: left; color: #f8fafc;">
-      <h3 style="font-size: 1.15rem; font-weight: 800; color: #38bdf8; margin-bottom: 10px;">🚀 Velocidad de Anticipación</h3>
+      <h3 style="font-size: 1.15rem; font-weight: 800; color: #38bdf8; margin-bottom: 10px;">⚡ Test de Fatiga (PVT)</h3>
       <p style="font-size: 0.8rem; color: #cbd5e1; line-height: 1.5; margin-bottom: 10px;">
-        Consta de 1 ensayo Demo (práctica libre no puntuable) seguido de 3 simulaciones oficiales consecutivas. El sistema promediará los 3 ensayos oficiales para emitir el dictamen bajo la norma D.S. N° 170.
+        Mide la velocidad de vigilancia sostenida ante lapsos de somnolencia. Consta de 1 Demo de práctica y 3 evaluaciones oficiales cronometradas en milisegundos.
       </p>
       <button onclick="cerrarModalGuia()" style="width: 100%; background: #0284c7; color: #ffffff; border: none; border-radius: 10px; padding: 10px; font-weight: 700; cursor: pointer;">Entendido</button>
     </div>
@@ -295,7 +246,7 @@
           <div style="background: #0f172a; border: 1px solid #1e293b; border-radius: 16px; width: 100%; max-width: 360px; padding: 22px; text-align: center; box-shadow: 0 20px 30px rgba(0,0,0,0.7); color: #f8fafc;">
             <h3 style="font-size: 1.15rem; font-weight: 800; color: #38bdf8; margin-bottom: 6px;">${titulo}</h3>
             <p style="font-size: 0.82rem; color: #94a3b8; line-height: 1.4; margin-bottom: 18px;">${mensaje}</p>
-            <button type="button" id="btnCerrarModalInterno" style="width: 100%; background: #0284c7; color: #fff; border: none; border-radius: 10px; padding: 10px; font-weight: 700; cursor: pointer; font-size: 0.85rem; text-transform: uppercase;">Continuar a Rondas Oficiales</button>
+            <button type="button" id="btnCerrarModalInterno" style="width: 100%; background: #0284c7; color: #fff; border: none; border-radius: 10px; padding: 10px; font-weight: 700; cursor: pointer; font-size: 0.85rem; text-transform: uppercase;">Continuar</button>
           </div>
         </div>
       `;
@@ -305,95 +256,97 @@
       };
     }
 
-    let interval = null;
-    let posicionX = 15;
-    let velocidad = 4;
-    let posicionObjetivo = 250; 
-    let simulando = false;
+    let fase = 0; // 0 = Demo, 1 = Oficial 1, 2 = Oficial 2, 3 = Oficial 3
+    let tInicio = 0;
+    let timerEstmulo = null;
+    let timerContador = null;
+    let activo = false;
+    let tiemposOficiales = [];
 
-    let faseActual = 0; 
-    let erroresOficiales = [];
-
-    function manejarAccion() {
+    function manejarAccionBtn() {
       const btn = document.getElementById('btn-accion');
-      if (!simulando) {
-        if (faseActual === 0) {
-          btn.innerText = "🛑 ¡FRENAR (DEMO)!";
-        } else {
-          btn.innerText = `🛑 ¡FRENAR / ENSAYO OFICIAL ${faseActual} DE 3!`;
-        }
-        btn.className = 'btn-iniciar-test frenar';
-        simulando = true;
-        posicionX = 15;
-        velocidad = 3.5 + Math.random() * 2.5;
-
-        const vehiculo = document.getElementById('vehiculo');
-        interval = setInterval(() => {
-          posicionX += velocidad;
-          vehiculo.style.transform = `translateX(${posicionX}px)`;
-
-          if (posicionX > 330) {
-            registrarFinEnsayo(195); 
-          }
-        }, 30);
-      } else {
-        clearInterval(interval);
-        simulando = false;
-        const error = Math.abs(posicionX - posicionObjetivo);
-        registrarFinEnsayo(Math.round(error * 1.4));
-      }
+      btn.style.display = 'none';
+      iniciarEstímulo();
     }
 
-    function registrarFinEnsayo(errorMs) {
-      clearInterval(interval);
-      simulando = false;
+    function iniciarEstímulo() {
+      const display = document.getElementById('displayPvt');
+      display.innerText = "ESPERE...";
+      display.style.color = "#64748b";
+      activo = false;
 
-      if (faseActual === 0) {
-        // Fin del Demo usando modal corporativo en lugar de alert()
+      const tiempoEspera = Math.floor(Math.random() * 2000) + 1500; // entre 1.5s y 3.5s
+      timerEstmulo = setTimeout(() => {
+        display.innerText = "0 ms";
+        display.style.color = "#10b981";
+        tInicio = performance.now();
+        activo = true;
+
+        timerContador = setInterval(() => {
+          const actual = Math.round(performance.now() - tInicio);
+          display.innerText = `${actual} ms`;
+        }, 30);
+      }, tiempoEspera);
+    }
+
+    function registrarReaccion() {
+      if (!activo) return;
+      activo = false;
+      clearTimeout(timerEstmulo);
+      clearInterval(timerContador);
+
+      const tReaccion = Math.round(performance.now() - tInicio);
+      const display = document.getElementById('displayPvt');
+      display.innerText = `${tReaccion} ms`;
+      display.style.color = "#38bdf8";
+
+      if (fase === 0) {
         mostrarModalInterno(
-          "¡Prueba Demo Completada!",
-          `Margen estimado en práctica: <strong>${errorMs} ms</strong>.<br><br>A continuación, iniciarán las 3 Rondas Oficiales evaluadas por el sistema.`,
+          "Demo de Fatiga Completada",
+          `Tiempo registrado en práctica: <strong>${tReaccion} ms</strong>.<br><br>A continuación, darán inicio las 3 Evaluaciones Oficiales de Vigilancia.`,
           () => {
-            faseActual = 1;
-            document.getElementById('titulo-fase').innerText = `Módulo de Anticipación (Ensayo Oficial 1 de 3)`;
-            document.getElementById('panel-estado').innerText = `Ronda oficial 1 en curso. Presione frenar al calcular la zona ciega.`;
+            fase = 1;
+            document.getElementById('titulo-fase').innerText = `Test de Fatiga y Vigilancia (Ensayo Oficial 1 de 3)`;
             document.getElementById('btn-accion').innerText = `▶ Iniciar Ensayo Oficial 1 de 3`;
-            document.getElementById('btn-accion').className = 'btn-iniciar-test';
-            document.getElementById('vehiculo').style.transform = 'translateX(15px)';
+            document.getElementById('btn-accion').style.display = 'block';
           }
         );
       } else {
-        // Registrar ensayo oficial
-        erroresOficiales.push(errorMs);
-        const suma = erroresOficiales.reduce((a, b) => a + b, 0);
-        const promedioParcial = Math.round(suma / erroresOficiales.length);
-        document.getElementById('txt-resultado-actual').innerText = `${promedioParcial} ms`;
+        tiemposOficiales.push(tReaccion);
+        const suma = tiemposOficiales.reduce((a,b) => a+b, 0);
+        const promedio = Math.round(suma / tiemposOficiales.length);
+        document.getElementById('txt-resultado-actual').innerText = `${promedio} ms`;
 
-        if (faseActual < 3) {
-          faseActual++;
-          document.getElementById('titulo-fase').innerText = `Módulo de Anticipación (Ensayo Oficial ${faseActual} de 3)`;
-          document.getElementById('btn-accion').innerText = `▶ Iniciar Ensayo Oficial ${faseActual} de 3`;
-          document.getElementById('btn-accion').className = 'btn-iniciar-test';
-          document.getElementById('vehiculo').style.transform = 'translateX(15px)';
+        if (fase < 3) {
+          fase++;
+          document.getElementById('titulo-fase').innerText = `Test de Fatiga y Vigilancia (Ensayo Oficial ${fase} de 3)`;
+          document.getElementById('btn-accion').innerText = `▶ Iniciar Ensayo Oficial ${fase} de 3`;
+          document.getElementById('btn-accion').style.display = 'block';
         } else {
-          finalizarPruebaTotal(promedioParcial);
+          finalizarPruebaFatiga(promedio);
         }
       }
     }
 
-    function finalizarPruebaTotal(promedioFinal) {
-      const aprobado = promedioFinal <= 220;
+    function finalizarPruebaFatiga(promedioFinal) {
+      const aprobado = promedioFinal <= 450; // Umbral estándar PVT de vigilancia
 
-      localStorage.setItem('sensometrika_anticipacion', JSON.stringify({
+      localStorage.setItem('sensometrika_fatiga', JSON.stringify({
         estado: 'completado',
-        errorMs: promedioFinal,
-        rondas: erroresOficiales,
+        promedioMs: promedioFinal,
+        tiempos: tiemposOficiales,
         aprobado: aprobado,
-        modo: 'B2B OFICIAL 3 RONDAS',
+        modo: 'B2B OFICIAL PVT',
         fecha: new Date().toISOString()
       }));
 
-      window.location.href = 'menu_B2B.html';
+      mostrarModalInterno(
+        "Evaluación de Fatiga Finalizada",
+        `Promedio de vigilancia (3 Rondas): <strong>${promedioFinal} ms</strong>.<br><br>Estado: <strong>${aprobado ? 'APROBADO' : 'OBSERVADO'}</strong>`,
+        () => {
+          window.location.href = 'menu_B2B.html';
+        }
+      );
     }
   </script>
 </body>
