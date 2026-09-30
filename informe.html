@@ -352,7 +352,7 @@
                         <th>S1 (1ª Sim)</th>
                         <th>S2 (2ª Sim)</th>
                         <th>S3 (3ª Sim)</th>
-                        <th id="thS4">S4 (4ª Sim)</th>
+                        <th id="thS4" style="display: none;">S4 (4ª Sim)</th>
                         <th>Estado</th>
                     </tr>
                 </thead>
@@ -362,7 +362,7 @@
                         <td id="tblReactS1">--</td>
                         <td id="tblReactS2">--</td>
                         <td id="tblReactS3">--</td>
-                        <td id="tblReactS4">--</td>
+                        <td id="tblReactS4" style="display: none;">--</td>
                         <td id="tblReactEstado" style="color: var(--accent-gold);">PENDIENTE</td>
                     </tr>
                     <tr>
@@ -370,7 +370,7 @@
                         <td id="tblPalancasS1">--</td>
                         <td id="tblPalancasS2">--</td>
                         <td id="tblPalancasS3">--</td>
-                        <td id="tblPalancasS4">--</td>
+                        <td id="tblPalancasS4" style="display: none;">--</td>
                         <td id="tblPalancasEstado" style="color: var(--accent-gold);">PENDIENTE</td>
                     </tr>
                     <tr>
@@ -378,7 +378,7 @@
                         <td id="tblPunteoS1">--</td>
                         <td id="tblPunteoS2">--</td>
                         <td id="tblPunteoS3">--</td>
-                        <td id="tblPunteoS4">--</td>
+                        <td id="tblPunteoS4" style="display: none;">--</td>
                         <td id="tblPunteoEstado" style="color: var(--accent-gold);">PENDIENTE</td>
                     </tr>
                     <tr id="trVisual">
@@ -386,7 +386,7 @@
                         <td id="tblVisualS1">--</td>
                         <td id="tblVisualS2">--</td>
                         <td id="tblVisualS3">--</td>
-                        <td id="tblVisualS4">--</td>
+                        <td id="tblVisualS4" style="display: none;">--</td>
                         <td id="tblVisualEstado" style="color: var(--accent-gold);">PENDIENTE</td>
                     </tr>
                     <tr id="trAuditivo">
@@ -394,7 +394,7 @@
                         <td id="tblAuditivoS1">--</td>
                         <td id="tblAuditivoS2">--</td>
                         <td id="tblAuditivoS3">--</td>
-                        <td id="tblAuditivoS4">--</td>
+                        <td id="tblAuditivoS4" style="display: none;">--</td>
                         <td id="tblAuditivoEstado" style="color: var(--accent-gold);">PENDIENTE</td>
                     </tr>
                 </tbody>
@@ -445,31 +445,91 @@
             return null;
         }
 
+        // Función para parsear limpiamente datos de Palancas sin falsos positivos de tiempo de error
+        function procesarDatosPalancas(item) {
+            if (!item) return { prec: 100, errs: 0, tiempoErr: 0 };
+            
+            let prec = 100;
+            if (typeof item === 'number' || typeof item === 'string') prec = parseInt(item);
+            else prec = item.precision ?? item.porcentajeEfectividad ?? item.efectividad ?? 100;
+
+            let errs = (typeof item === 'object') ? (item.errores ?? item.cantidadErrores ?? 0) : 0;
+            let rawTiempo = (typeof item === 'object') ? (item.tiempoError ?? item.tiempoPermanenciaError ?? item.duracionError ?? 0) : 0;
+
+            // Si no hay errores o la precisión es 100%, el tiempo de permanencia en error debe ser 0
+            if (prec >= 100 || errs === 0) {
+                errs = 0;
+                rawTiempo = 0;
+            }
+
+            // Convertir ms a segundos si viene en un valor elevado (> 100)
+            let tiempoSegundos = rawTiempo > 100 ? (rawTiempo / 1000) : rawTiempo;
+            tiempoSegundos = parseFloat(tiempoSegundos.toFixed(1));
+
+            return { prec, errs, tiempoErr: tiempoSegundos };
+        }
+
+        function formatearPalancasDetalle(item) {
+            const data = procesarDatosPalancas(item);
+            if (data.errs > 0 || data.tiempoErr > 0) {
+                return `${data.prec}% (${data.errs}e / ${data.tiempoErr}s)`;
+            }
+            return `${data.prec}%`;
+        }
+
         document.addEventListener('DOMContentLoaded', () => {
-            const planActual = (localStorage.getItem('sensometrika_plan') || 'FULL').toUpperCase();
+            const planActual = (localStorage.getItem('sensometrika_plan') || 'BASICO').toUpperCase();
             document.getElementById('tituloDesglose').textContent = `📋 Desglose de Simulaciones (Pase ${planActual})`;
 
-            // Visibilidad según Plan
+            // Visibilidad por Plan
             const rowVisual = document.getElementById('rowVisual');
             const trVisual = document.getElementById('trVisual');
             const rowAuditivo = document.getElementById('rowAuditivo');
             const trAuditivo = document.getElementById('trAuditivo');
+
+            const thS4 = document.getElementById('thS4');
+            const tblReactS4 = document.getElementById('tblReactS4');
+            const tblPalancasS4 = document.getElementById('tblPalancasS4');
+            const tblPunteoS4 = document.getElementById('tblPunteoS4');
+            const tblVisualS4 = document.getElementById('tblVisualS4');
+            const tblAuditivoS4 = document.getElementById('tblAuditivoS4');
 
             if (planActual === 'BASICO') {
                 rowVisual.style.display = 'none';
                 trVisual.style.display = 'none';
                 rowAuditivo.style.display = 'none';
                 trAuditivo.style.display = 'none';
+
+                thS4.style.display = 'none';
+                tblReactS4.style.display = 'none';
+                tblPalancasS4.style.display = 'none';
+                tblPunteoS4.style.display = 'none';
+                tblVisualS4.style.display = 'none';
+                tblAuditivoS4.style.display = 'none';
             } else if (planActual === 'PLUS') {
                 rowVisual.style.display = 'flex';
                 trVisual.style.display = 'table-row';
                 rowAuditivo.style.display = 'none';
                 trAuditivo.style.display = 'none';
+
+                thS4.style.display = 'table-cell';
+                tblReactS4.style.display = 'table-cell';
+                tblPalancasS4.style.display = 'table-cell';
+                tblPunteoS4.style.display = 'table-cell';
+                tblVisualS4.style.display = 'table-cell';
+                tblAuditivoS4.style.display = 'table-cell';
             } else if (planActual === 'FULL') {
                 rowVisual.style.display = 'flex';
                 trVisual.style.display = 'table-row';
                 rowAuditivo.style.display = 'flex';
                 trAuditivo.style.display = 'table-row';
+
+                thS4.style.display = 'table-cell';
+                tblReactS4.style.display = 'table-cell';
+                tblPalancasS4.style.display = 'table-cell';
+                tblPunteoS4.style.display = 'table-cell';
+                tblVisualS4.style.display = 'table-cell';
+                tblAuditivoS4.style.display = 'table-cell';
             }
 
             // Fecha y Hora
@@ -550,26 +610,29 @@
 
             const simsUsadasPalancas = parseInt(localStorage.getItem('palancas_simulaciones_usadas')) || 0;
 
-            if (datosPalancasB2C[0] !== null) document.getElementById('tblPalancasS1').textContent = `${datosPalancasB2C[0]}%`;
-            if (datosPalancasB2C[1] !== null) document.getElementById('tblPalancasS2').textContent = `${datosPalancasB2C[1]}%`;
-            if (datosPalancasB2C[2] !== null) document.getElementById('tblPalancasS3').textContent = `${datosPalancasB2C[2]}%`;
+            if (historialPalancas[0]) document.getElementById('tblPalancasS1').textContent = formatearPalancasDetalle(historialPalancas[0]);
+            if (historialPalancas[1]) document.getElementById('tblPalancasS2').textContent = formatearPalancasDetalle(historialPalancas[1]);
+            if (historialPalancas[2]) document.getElementById('tblPalancasS3').textContent = formatearPalancasDetalle(historialPalancas[2]);
 
             if (historialPalancas.length > 0 || simsUsadasPalancas > 0) {
                 const totalRendidas = Math.min(Math.max(historialPalancas.length, simsUsadasPalancas), 3);
                 if (totalRendidas >= 3) palancasCompletado = true;
 
-                const ultimoValor = historialPalancas.length > 0 ? (obtenerValorGenerico(historialPalancas[historialPalancas.length - 1]) || 0) : 0;
-                document.getElementById('subPalancas').textContent = `Precisión: ${ultimoValor}% (${totalRendidas}/3 sim rendidas)`;
+                const ultimaSim = historialPalancas.length > 0 ? historialPalancas[historialPalancas.length - 1] : {};
+                const parsed = procesarDatosPalancas(ultimaSim);
+
+                document.getElementById('subPalancas').textContent = `Precisión: ${parsed.prec}% | Errores: ${parsed.errs} | Tiempo Error: ${parsed.tiempoErr}s (${totalRendidas}/3 sim rendidas)`;
                 const badge = document.getElementById('badgePalancas');
 
-                if (ultimoValor >= 80) {
+                // Criterio D.S. N° 170: Precisión >= 80% y Permanencia en error <= 3.0s
+                if (parsed.prec >= 80 && parsed.tiempoErr <= 3.0) {
                     palancasOk = true;
-                    badge.textContent = `${ultimoValor}% • ÓPTIMO`;
+                    badge.textContent = `${parsed.prec}% • ÓPTIMO`;
                     badge.className = 'badge-res badge-optimo';
                     document.getElementById('tblPalancasEstado').textContent = 'ÓPTIMO';
                     document.getElementById('tblPalancasEstado').style.color = 'var(--accent-green)';
                 } else {
-                    badge.textContent = `${ultimoValor}% • REGULAR`;
+                    badge.textContent = `${parsed.prec}% • REGULAR`;
                     badge.className = 'badge-res badge-no-califica';
                     document.getElementById('tblPalancasEstado').textContent = 'REGULAR';
                     document.getElementById('tblPalancasEstado').style.color = 'var(--accent-red)';
@@ -672,7 +735,7 @@
                 if (historialAuditivo[3]) document.getElementById('tblAuditivoS4').textContent = historialAuditivo[3].umbral || 'OK';
             }
 
-            // --- EVALUACIÓN Y DICTAMEN DINÁMICO ---
+            // --- EVALUACIÓN Y DICTAMEN DINÁMICO SEGÚN PLAN ---
             const cardDictamen = document.getElementById('cardDictamen');
             const txtDictamenTitulo = document.getElementById('txtDictamenTitulo');
             const txtDictamenSub = document.getElementById('txtDictamenSub');
@@ -695,11 +758,19 @@
             } else if (todoOk) {
                 cardDictamen.className = 'box-dictamen dictamen-optimo';
                 txtDictamenTitulo.textContent = '✓ EVALUACIÓN SATISFACTORIA';
-                txtDictamenSub.textContent = 'El postulante presenta tiempos de reacción, coordinación motriz, visión y audición dentro de los rangos exigidos por el Decreto Supremo N° 170.';
+
+                let modulosEvaluadosTexto = "tiempos de reacción y coordinación motriz bimanual";
+                if (planActual === 'PLUS') {
+                    modulosEvaluadosTexto = "tiempos de reacción, coordinación motriz y parámetros visuales";
+                } else if (planActual === 'FULL') {
+                    modulosEvaluadosTexto = "tiempos de reacción, coordinación motriz, parámetros visuales y audición";
+                }
+
+                txtDictamenSub.textContent = `El postulante presenta ${modulosEvaluadosTexto} dentro de los rangos exigidos por el Decreto Supremo N° 170.`;
             } else {
                 cardDictamen.className = 'box-dictamen dictamen-no-califica';
                 txtDictamenTitulo.textContent = '⚠️ EVALUACIÓN RECHAZADA - NO CALIFICA';
-                txtDictamenSub.textContent = 'El postulante excede la latencia máxima o no alcanza los parámetros requeridos por el Decreto Supremo N° 170.';
+                txtDictamenSub.textContent = 'El postulante excede la latencia máxima o no alcanza los parámetros de precisión/control motriz requeridos por el Decreto Supremo N° 170.';
             }
 
             // --- CONFIGURACIÓN DE CHART.JS ---
