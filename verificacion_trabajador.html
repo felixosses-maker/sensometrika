@@ -10,7 +10,6 @@
       --card-bg: #111625;
       --card-border: #1e2638;
       --accent-blue: #00a8e8;
-      --accent-blue-hover: #0077b6;
       --accent-cyan: #38bdf8;
       --accent-green: #10b981;
       --accent-yellow: #e5b324;
@@ -79,25 +78,12 @@
       padding-bottom: 6px;
     }
 
-    /* Ficha de Datos */
-    .data-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-    }
-
+    .data-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
     .data-item { display: flex; flex-direction: column; }
     .data-item span { font-size: 0.68rem; color: var(--text-muted); text-transform: uppercase; }
     .data-item strong { font-size: 0.88rem; color: #fff; }
 
-    /* Cámara Web */
-    .webcam-container {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 10px;
-    }
-
+    .webcam-container { display: flex; flex-direction: column; align-items: center; gap: 10px; }
     .webcam-box {
       width: 100%;
       max-width: 320px;
@@ -111,11 +97,7 @@
       overflow: hidden;
     }
 
-    #webcamVideo, #capturedCanvas {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
+    #webcamVideo, #capturedCanvas { width: 100%; height: 100%; object-fit: cover; }
 
     .btn-cam {
       background: var(--input-bg);
@@ -128,13 +110,7 @@
       cursor: pointer;
     }
 
-    /* Firma Digital Canvas */
-    .signature-container {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-
+    .signature-container { display: flex; flex-direction: column; gap: 8px; }
     .signature-canvas {
       width: 100%;
       height: 120px;
@@ -155,7 +131,6 @@
       cursor: pointer;
     }
 
-    /* TEST DE LATENCIA DE SENSOR Y PANTALLA */
     .latency-box {
       background: #080d17;
       border: 1px solid var(--accent-cyan);
@@ -184,20 +159,9 @@
       touch-action: manipulation;
     }
 
-    .touch-target.active {
-      background: var(--accent-green);
-      color: #000;
-      border-style: solid;
-    }
+    .touch-target.active { background: var(--accent-green); color: #000; border-style: solid; }
 
-    .latency-metrics {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      width: 100%;
-      gap: 8px;
-      margin-top: 4px;
-    }
-
+    .latency-metrics { display: grid; grid-template-columns: 1fr 1fr; width: 100%; gap: 8px; margin-top: 4px; }
     .metric-sub {
       background: #0b1320;
       border: 1px solid var(--card-border);
@@ -210,7 +174,6 @@
     .metric-sub span { font-size: 0.62rem; color: var(--text-muted); text-transform: uppercase; }
     .metric-sub strong { font-size: 0.85rem; color: var(--accent-cyan); }
 
-    /* Términos y Condiciones */
     .terms-box {
       display: flex;
       align-items: flex-start;
@@ -259,7 +222,6 @@
       <span class="brand-subtitle">VERIFICACIÓN Y ACREDITACIÓN DEL EVALUADO</span>
     </header>
 
-    <!-- 1. Ficha del Trabajador -->
     <div class="card-block">
       <div class="card-title">👤 Datos del Postulante / Trabajador</div>
       <div class="data-grid">
@@ -278,7 +240,6 @@
       </div>
     </div>
 
-    <!-- 2. Registro Fotográfico Cámara Web -->
     <div class="card-block">
       <div class="card-title">📷 Registro Fotográfico de Identidad</div>
       <div class="webcam-container">
@@ -290,7 +251,6 @@
       </div>
     </div>
 
-    <!-- 3. Firma Digital -->
     <div class="card-block">
       <div class="card-title">✍️ Firma Digital del Evaluado</div>
       <div class="signature-container">
@@ -299,7 +259,6 @@
       </div>
     </div>
 
-    <!-- 4. Test de Latencia y Sensores del Dispositivo Móvil/PC -->
     <div class="card-block">
       <div class="card-title">📱 Calibración de Latencia del Hardware</div>
       <div class="latency-box">
@@ -319,7 +278,6 @@
       </div>
     </div>
 
-    <!-- 5. Consentimiento Informado -->
     <div class="card-block">
       <div class="terms-box">
         <input type="checkbox" id="chkTerms" onchange="validarFormulario()">
@@ -335,9 +293,6 @@
   </div>
 
   <script>
-    let photoCaptured = false;
-    let signatureDone = false;
-    let latencyDone = false;
     let touchCount = 0;
     let touchTimes = [];
     let lastTouchTime = 0;
@@ -345,8 +300,8 @@
 
     document.addEventListener('DOMContentLoaded', () => {
       const urlParams = new URLSearchParams(window.location.search);
-      const rut = urlParams.get('rut') || '12.333.333-7';
-      const token = urlParams.get('token') || 'TOKEN-B2B';
+      const rut = urlParams.get('rut') || localStorage.getItem('sensometrika_b2b_rut') || '12.333.333-7';
+      const token = urlParams.get('token') || localStorage.getItem('sensometrika_b2b_token') || 'B2B-DEMO';
 
       document.getElementById('evalRut').textContent = decodeURIComponent(rut);
       document.getElementById('evalNombre').textContent = 'Trabajador Evaluado';
@@ -375,7 +330,6 @@
 
       video.style.display = 'none';
       canvas.style.display = 'block';
-      photoCaptured = true;
       validarFormulario();
     }
 
@@ -402,7 +356,6 @@
         const p = getPos(e); 
         ctxSig.lineTo(p.x, p.y); 
         ctxSig.stroke(); 
-        signatureDone = true; 
         validarFormulario(); 
       };
       const stopDraw = () => { isDrawing = false; };
@@ -418,7 +371,6 @@
 
     function limpiarFirma() {
       ctxSig.clearRect(0, 0, canvasSig.width, canvasSig.height);
-      signatureDone = false;
       validarFormulario();
     }
 
@@ -456,7 +408,6 @@
         target.className = 'touch-target active';
         target.style.pointerEvents = 'none';
 
-        latencyDone = true;
         validarFormulario();
       }
     }
@@ -474,10 +425,10 @@
 
     function iniciarEvaluacion() {
       const urlParams = new URLSearchParams(window.location.search);
-      const token = urlParams.get('token') || localStorage.getItem('sensometrika_b2b_token') || '';
+      const token = urlParams.get('token') || localStorage.getItem('sensometrika_b2b_token') || 'B2B-DEMO';
       const rut = urlParams.get('rut') || localStorage.getItem('sensometrika_b2b_rut') || '';
 
-      // REINICIO AUTOMÁTICO DE ESTADO PARA UNA EVALUACIÓN B2B DESDE CERO
+      // REINICIO DE ESTADO
       localStorage.removeItem('sensometrika_modulos_rendidos');
       localStorage.removeItem('sensometrika_session_burned');
       
@@ -490,6 +441,7 @@
       localStorage.removeItem('punteo_demo_completada');
       localStorage.removeItem('punteo_simulaciones_usadas');
 
+      localStorage.setItem('sensometrika_b2b_mode', 'true');
       if (token) localStorage.setItem('sensometrika_b2b_token', token);
       if (rut) localStorage.setItem('sensometrika_b2b_rut', rut);
 
