@@ -9,13 +9,10 @@
             --bg-color: #060b13;
             --card-bg: #0b1320;
             --card-border: #1a2638;
-            --accent-gold: #e5b324;
             --accent-green: #10b981;
-            --accent-green-hover: #059669;
             --text-main: #f1f5f9;
             --text-muted: #94a3b8;
             --blue-btn: #0284c7;
-            --blue-btn-border: #0369a1;
             --accent-cyan: #38bdf8;
         }
 
@@ -47,17 +44,6 @@
             flex-direction: column;
             align-items: center;
             gap: 6px;
-            padding: 4px 0;
-            width: 100%;
-        }
-
-        .brand-logo-card {
-            background: rgba(11, 19, 36, 0.9);
-            border: 1px solid #1e293b;
-            padding: 8px 16px;
-            border-radius: 12px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.6);
-            display: inline-block;
         }
 
         .brand-logo-card img {
@@ -100,7 +86,6 @@
             color: var(--text-muted);
             cursor: pointer;
             font-size: 0.85rem;
-            font-weight: 500;
         }
 
         .nav-btn-blue {
@@ -110,7 +95,6 @@
             border-radius: 8px !important;
             border: 1px solid rgba(56, 189, 248, 0.3) !important;
             font-weight: 600 !important;
-            cursor: pointer;
         }
 
         .status-badge-container { display: flex; justify-content: center; }
@@ -128,12 +112,7 @@
             gap: 8px;
         }
 
-        .dot-status {
-            width: 8px;
-            height: 8px;
-            background-color: #ef4444;
-            border-radius: 50%;
-        }
+        .dot-status { width: 8px; height: 8px; border-radius: 50%; }
 
         .canvas-wrapper {
             position: relative;
@@ -143,8 +122,8 @@
             border: 1px solid var(--card-border);
             border-radius: 12px;
             overflow: hidden;
-            touch-action: manipulation;
-            cursor: crosshair;
+            cursor: pointer;
+            touch-action: none;
         }
 
         canvas { width: 100%; height: 100%; display: block; }
@@ -154,21 +133,18 @@
             font-size: 0.85rem;
             color: var(--text-main);
             line-height: 1.4;
-            padding: 0 8px;
         }
-
-        .action-container { display: flex; flex-direction: column; gap: 10px; }
 
         .btn-start {
             background-color: var(--blue-btn);
-            border: 1px solid var(--blue-btn-border);
             color: #ffffff;
+            border: none;
             border-radius: 10px;
             padding: 14px;
             font-weight: 700;
             font-size: 1rem;
             cursor: pointer;
-            transition: background 0.2s;
+            width: 100%;
         }
 
         .btn-next {
@@ -179,9 +155,8 @@
             padding: 14px;
             font-weight: 800;
             font-size: 1rem;
-            letter-spacing: 0.5px;
             cursor: pointer;
-            text-align: center;
+            width: 100%;
             display: none;
         }
 
@@ -197,11 +172,10 @@
 
         .metric-item { display: flex; flex-direction: column; gap: 4px; }
         .metric-label { font-size: 0.65rem; color: var(--text-muted); font-weight: 700; }
-        .metric-value { font-size: 1.1rem; font-weight: 800; color: #ffffff; }
-        .metric-value-cyan { color: #38bdf8; }
+        .metric-value { font-size: 1.1rem; font-weight: 800; }
 
         .modal-overlay {
-            position: absolute;
+            position: fixed;
             top: 0; left: 0;
             width: 100%; height: 100%;
             background: rgba(6, 11, 19, 0.85);
@@ -210,7 +184,6 @@
             justify-content: center;
             align-items: center;
             z-index: 100;
-            border-radius: 16px;
         }
 
         .modal-content {
@@ -219,6 +192,7 @@
             border-radius: 12px;
             padding: 24px;
             width: 85%;
+            max-width: 360px;
             text-align: center;
             display: flex;
             flex-direction: column;
@@ -243,14 +217,14 @@
     <div class="main-container">
         <header class="brand-header">
             <div class="brand-logo-card">
-                <img src="sensometrica.jpg" alt="SENSOMETRIKA Calibration Technology">
+                <img src="sensometrica.jpg" alt="SENSOMETRIKA">
             </div>
             <span class="brand-subtitle">MÓDULO PUNTEO VISO-MOTRIZ • RITMO Y PRECISIÓN</span>
         </header>
 
         <div class="eval-card">
             <div class="top-nav">
-                <button id="btnVolverNav" class="nav-btn" onclick="ejecutarRetornoMenu()">← Menú Pruebas</button>
+                <button class="nav-btn" onclick="ejecutarRetornoMenu()">← Menú Pruebas</button>
                 <button id="btnInfo" class="nav-btn nav-btn-blue">? ¿Cómo funciona?</button>
             </div>
 
@@ -261,23 +235,23 @@
                 </div>
             </div>
 
-            <div class="canvas-wrapper">
+            <div class="canvas-wrapper" id="canvasContainer">
                 <canvas id="punteoCanvas" width="400" height="300"></canvas>
             </div>
 
             <div class="instruction-text" id="instructionText">
-                Evaluación Oficial: Toca o haz clic sobre la zona de impacto rítmico cuando coincida el estímulo.
+                Toca la pantalla o haz clic cuando el círculo cruce la zona inferior de impacto.
             </div>
 
-            <div class="action-container">
-                <button id="btnStart" class="btn-start">INICIAR SIMULACIÓN OFICIAL</button>
+            <div>
+                <button id="btnStart" class="btn-start">INICIAR EVALUACIÓN</button>
                 <button id="btnNext" class="btn-next" onclick="ejecutarRetornoMenu()">VOLVER AL MENÚ DE PRUEBAS →</button>
             </div>
 
             <div class="metrics-grid">
                 <div class="metric-item">
                     <span class="metric-label">ACIERTOS</span>
-                    <span id="metricAciertos" class="metric-value metric-value-cyan">0</span>
+                    <span id="metricAciertos" class="metric-value" style="color:#38bdf8;">0</span>
                 </div>
                 <div class="metric-item">
                     <span class="metric-label">ERRORES</span>
@@ -293,20 +267,18 @@
         <div id="modalSistema" class="modal-overlay">
             <div class="modal-content">
                 <div id="modalTitle" class="modal-title">PRUEBA FINALIZADA</div>
-                <div id="modalBody" class="modal-body">Resultados registrados correctamente.</div>
+                <div id="modalBody" class="modal-body">Resultados registrados.</div>
                 <button id="modalBtnClose" class="modal-btn">Continuar</button>
             </div>
         </div>
     </div>
 
-    <script src="punteo.js"></script>
     <script>
         const canvas = document.getElementById('punteoCanvas');
+        const ctx = canvas.getContext('2d');
+        const canvasContainer = document.getElementById('canvasContainer');
         const btnStart = document.getElementById('btnStart');
         const btnNext = document.getElementById('btnNext');
-        const btnInfo = document.getElementById('btnInfo');
-        const btnVolverNav = document.getElementById('btnVolverNav');
-
         const badgeDot = document.getElementById('badgeDot');
         const badgeText = document.getElementById('badgeText');
         const instructionText = document.getElementById('instructionText');
@@ -320,18 +292,22 @@
         const modalBody = document.getElementById('modalBody');
         const modalBtnClose = document.getElementById('modalBtnClose');
 
+        // URL Params & Token B2B
         const urlParams = new URLSearchParams(window.location.search);
         const tokenUrl = urlParams.get('token') || localStorage.getItem('sensometrika_b2b_token');
         const rutUrl = urlParams.get('rut') || localStorage.getItem('sensometrika_b2b_rut');
 
-        let sesion = {};
-        try { sesion = JSON.parse(localStorage.getItem('sensometrika_sesion')) || {}; } catch(e){}
+        // Estado de Evaluación
+        let evaluacionActiva = false;
+        let aciertos = 0;
+        let errores = 0;
+        let tiempoRestante = 15; // 15 segundos de duración
+        let timerInterval = null;
+        let animFrameId = null;
 
-        const plan = localStorage.getItem('sensometrika_plan') || sesion.planId || 'B2C'; 
-        const esB2B = (tokenUrl || rutUrl || plan === 'B2B' || sesion.rol === 'empresa' || localStorage.getItem('sensometrika_b2b_mode') === 'true' || localStorage.getItem('sensometrika_b2b_contratacion'));
-
-        let simulacionesTotales = esB2B ? 1 : (parseInt(localStorage.getItem('sensometrika_simulaciones_compradas')) || 3);
-        let simulacionesUsadas = parseInt(localStorage.getItem('punteo_simulaciones_usadas')) || 0;
+        // Variables de la bola y tolerancia de la Zona de Impacto
+        let bola = { x: 200, y: -20, r: 18, vy: 2.8 };
+        const targetZone = { yMin: 200, yMax: 270 };
 
         let modoActual = 'DEMO';
 
@@ -339,19 +315,16 @@
             const token = tokenUrl || localStorage.getItem('sensometrika_b2b_token') || '';
             const rut = rutUrl || localStorage.getItem('sensometrika_b2b_rut') || '';
 
-            if (esB2B) {
+            if (token || rut) {
                 window.location.href = `menu_B2C.html?token=${token}&rut=${rut}&verified=true`;
             } else {
                 window.location.href = 'menu_B2C.html';
             }
         }
 
-        btnVolverNav.addEventListener('click', ejecutarRetornoMenu);
-        btnNext.addEventListener('click', ejecutarRetornoMenu);
-
-        function actualizarEstadoPlanUI() {
+        function actualizarEstadoUI() {
             const demoRealizada = localStorage.getItem('punteo_demo_completada') === 'true';
-            simulacionesUsadas = parseInt(localStorage.getItem('punteo_simulaciones_usadas')) || 0;
+            const simulacionesUsadas = parseInt(localStorage.getItem('punteo_simulaciones_usadas')) || 0;
 
             if (!demoRealizada) {
                 modoActual = 'DEMO';
@@ -361,12 +334,11 @@
                 btnStart.style.display = 'block';
                 btnNext.style.display = 'none';
                 instructionText.textContent = "Modo Demo: Toca la pantalla cuando el círculo cruce la zona inferior.";
-            } else if (simulacionesUsadas < simulacionesTotales) {
+            } else if (simulacionesUsadas < 1) {
                 modoActual = 'OFICIAL';
-                const numSimulacion = simulacionesUsadas + 1;
-                badgeText.textContent = esB2B ? "Simulación Oficial (1/1) (D.S. N° 170)" : `Simulación Oficial ${numSimulacion} de ${simulacionesTotales} (D.S. N° 170)`;
+                badgeText.textContent = "Simulación Oficial (1/1) (D.S. N° 170)";
                 badgeDot.style.backgroundColor = "#ef4444"; 
-                btnStart.textContent = esB2B ? "INICIAR SIMULACIÓN OFICIAL" : `INICIAR SIMULACIÓN OFICIAL (${numSimulacion}/${simulacionesTotales})`;
+                btnStart.textContent = "INICIAR SIMULACIÓN OFICIAL";
                 btnStart.style.display = 'block';
                 btnNext.style.display = 'none';
                 instructionText.textContent = "Evaluación Oficial: Mantén el ritmo constante presionando sobre el área indicada.";
@@ -380,9 +352,145 @@
             }
         }
 
-        function mostrarAlertaSistema(titulo, mensaje, callback) {
+        function renderLoop() {
+            // Limpiar canvas
+            ctx.fillStyle = '#050a12';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Dibujar Zona de Impacto Rítmico (con resplandor al estar activa)
+            ctx.strokeStyle = evaluacionActiva ? '#f59e0b' : '#e5b324';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(15, targetZone.yMin, 370, targetZone.yMax - targetZone.yMin);
+
+            ctx.fillStyle = '#e5b324';
+            ctx.font = 'bold 11px sans-serif';
+            ctx.fillText('ZONA DE IMPACTO RÍTMICO', 25, targetZone.yMin + 18);
+
+            if (evaluacionActiva) {
+                // Avanzar bola
+                bola.y += bola.vy;
+
+                // Si sobrepasa la pantalla sin haber tocado
+                if (bola.y > canvas.height + bola.r) {
+                    errores++;
+                    resetearBola();
+                    actualizarMetricas();
+                }
+
+                // Dibujar Bola
+                ctx.beginPath();
+                ctx.arc(bola.x, bola.y, bola.r, 0, Math.PI * 2);
+                ctx.fillStyle = '#38bdf8';
+                ctx.fill();
+                ctx.lineWidth = 2;
+                ctx.strokeStyle = '#ffffff';
+                ctx.stroke();
+
+                animFrameId = requestAnimationFrame(renderLoop);
+            } else {
+                // Estado en reposo
+                ctx.beginPath();
+                ctx.arc(200, 130, 22, 0, Math.PI * 2);
+                ctx.strokeStyle = '#1e293b';
+                ctx.lineWidth = 3;
+                ctx.stroke();
+            }
+        }
+
+        function resetearBola() {
+            bola.x = 50 + Math.random() * 300;
+            bola.y = -20;
+            bola.vy = 2.5 + Math.random() * 1.2;
+        }
+
+        function evaluarImpacto(e) {
+            if (e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+            if (!evaluacionActiva) return;
+
+            // Verificar si el borde inferior o centro de la bola está dentro de la zona
+            const yBolaInf = bola.y + bola.r;
+            const yBolaSup = bola.y - bola.r;
+
+            if ((yBolaInf >= targetZone.yMin && bola.y <= targetZone.yMax) || (yBolaSup <= targetZone.yMax && bola.y >= targetZone.yMin)) {
+                aciertos++;
+            } else {
+                errores++;
+            }
+
+            resetearBola();
+            actualizarMetricas();
+        }
+
+        function actualizarMetricas() {
+            metricAciertos.textContent = aciertos;
+            metricErrores.textContent = errores;
+            const total = aciertos + errores;
+            const prec = total > 0 ? Math.round((aciertos / total) * 100) : 100;
+            metricPrecision.textContent = `${prec}%`;
+        }
+
+        function iniciarPrueba() {
+            aciertos = 0;
+            errores = 0;
+            tiempoRestante = 15;
+            evaluacionActiva = true;
+
+            actualizarMetricas();
+            resetearBola();
+
+            btnStart.style.display = 'none';
+
+            timerInterval = setInterval(() => {
+                tiempoRestante--;
+                if (tiempoRestante <= 0) {
+                    finalizarPrueba();
+                }
+            }, 1000);
+
+            renderLoop();
+        }
+
+        function finalizarPrueba() {
+            evaluacionActiva = false;
+            clearInterval(timerInterval);
+            cancelAnimationFrame(animFrameId);
+
+            const total = aciertos + errores;
+            const precisionVal = total > 0 ? Math.round((aciertos / total) * 100) : 100;
+
+            if (modoActual === 'DEMO') {
+                localStorage.setItem('punteo_demo_completada', 'true');
+                actualizarEstadoUI();
+                mostrarModal(
+                    "CALIBRACIÓN DEMO COMPLETADA",
+                    `Aciertos: <b>${aciertos}</b><br>Errores: <b>${errores}</b><br>Precisión: <b>${precisionVal}%</b><br><br>Has finalizado el ensayo. Ya puedes rendir tu Simulación Oficial.`
+                );
+            } else if (modoActual === 'OFICIAL') {
+                localStorage.setItem('punteo_simulaciones_usadas', '1');
+
+                let rendidos = JSON.parse(localStorage.getItem('sensometrika_modulos_rendidos')) || [];
+                if (!rendidos.includes(3)) rendidos.push(3);
+                localStorage.setItem('sensometrika_modulos_rendidos', JSON.stringify(rendidos));
+
+                let historial = JSON.parse(localStorage.getItem('sensometrika_historial_punteo')) || [];
+                historial.push({ aciertos: aciertos, errores: errores, precision: precisionVal });
+                localStorage.setItem('sensometrika_historial_punteo', JSON.stringify(historial));
+
+                actualizarEstadoUI();
+                mostrarModal(
+                    "SIMULACIÓN REGISTRADA",
+                    `Aciertos: <b>${aciertos}</b><br>Errores: <b>${errores}</b><br>Precisión: <b>${precisionVal}%</b><br><br><b>¡Evaluación registrada correctamente!</b>`,
+                    () => { ejecutarRetornoMenu(); }
+                );
+            }
+        }
+
+        function mostrarModal(titulo, cuerpo, callback) {
             modalTitle.textContent = titulo;
-            modalBody.innerHTML = mensaje;
+            modalBody.innerHTML = cuerpo;
             modal.style.display = 'flex';
             modalBtnClose.onclick = () => {
                 modal.style.display = 'none';
@@ -390,96 +498,19 @@
             };
         }
 
-        // BUCLE DE ACTUALIZACIÓN EN TIEMPO REAL DE LAS MÉTRICAS
-        function refrescarUI() {
-            if (typeof moduloPunteo !== 'undefined' && moduloPunteo.activo) {
-                metricAciertos.textContent = moduloPunteo.aciertos || 0;
-                metricErrores.textContent = moduloPunteo.errores || 0;
-                
-                const total = (moduloPunteo.aciertos || 0) + (moduloPunteo.errores || 0);
-                const prec = total > 0 ? Math.round((moduloPunteo.aciertos / total) * 100) : 100;
-                metricPrecision.textContent = `${prec}%`;
+        // BINDING MULTINIVEL DE EVENTOS TÁCTILES Y DE RATÓN
+        canvasContainer.addEventListener('pointerdown', evaluarImpacto, true);
+        canvas.addEventListener('touchstart', evaluarImpacto, { passive: false });
+        canvas.addEventListener('mousedown', evaluarImpacto, true);
 
-                requestAnimationFrame(refrescarUI);
-            }
-        }
+        btnStart.addEventListener('click', iniciarPrueba);
 
-        const moduloPunteo = new ModuloPunteo(canvas, { width: 400, height: 300 }, (res) => {
-            if (modoActual === 'DEMO') {
-                localStorage.setItem('punteo_demo_completada', 'true');
-                actualizarEstadoPlanUI();
-                mostrarAlertaSistema(
-                    "CALIBRACIÓN DEMO COMPLETADA",
-                    `Aciertos: <b>${res.aciertos}</b><br>Errores: <b>${res.errores}</b><br>Precisión: <b>${res.precision}%</b><br><br>Has finalizado el ensayo. Ya puedes rendir tu Simulación Oficial.`
-                );
-            } else if (modoActual === 'OFICIAL') {
-                simulacionesUsadas++;
-                localStorage.setItem('punteo_simulaciones_usadas', simulacionesUsadas.toString());
-                
-                let rendidos = JSON.parse(localStorage.getItem('sensometrika_modulos_rendidos')) || [];
-                if (!rendidos.includes(3)) rendidos.push(3);
-                localStorage.setItem('sensometrika_modulos_rendidos', JSON.stringify(rendidos));
-
-                let historial = JSON.parse(localStorage.getItem('sensometrika_historial_punteo')) || [];
-                historial.push({
-                    aciertos: res.aciertos,
-                    errores: res.errores,
-                    precision: res.precision
-                });
-                localStorage.setItem('sensometrika_historial_punteo', JSON.stringify(historial));
-
-                actualizarEstadoPlanUI();
-
-                mostrarAlertaSistema(
-                    "SIMULACIÓN REGISTRADA",
-                    `Aciertos: <b>${res.aciertos}</b><br>Errores: <b>${res.errores}</b><br>Precisión: <b>${res.precision}%</b><br><br>` +
-                    "<b>¡Has completado la evaluación oficial de este módulo!</b>",
-                    () => {
-                        ejecutarRetornoMenu();
-                    }
-                );
-            }
+        document.getElementById('btnInfo').addEventListener('click', () => {
+            mostrarModal("¿CÓMO FUNCIONA?", "Toca la pantalla o haz clic cuando la bola cruce dentro de la <b>ZONA DE IMPACTO RÍTMICO</b> para registrar aciertos.");
         });
 
-        // REGISTRO DE EVENTOS TÁCTILES Y CLIC SOBRE EL CANVAS
-        const registrarImpacto = (e) => {
-            if (!moduloPunteo.activo) return;
-            e.preventDefault();
-            const rect = canvas.getBoundingClientRect();
-            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-            
-            const x = clientX - rect.left;
-            const y = clientY - rect.top;
-
-            if (typeof moduloPunteo.registrarToque === 'function') {
-                moduloPunteo.registrarToque(x, y);
-            } else if (typeof moduloPunteo.registrarImpacto === 'function') {
-                moduloPunteo.registrarImpacto(x, y);
-            } else {
-                // Caída si la función interna es genérica
-                moduloPunteo.toque(x, y);
-            }
-        };
-
-        canvas.addEventListener('touchstart', registrarImpacto);
-        canvas.addEventListener('mousedown', registrarImpacto);
-
-        btnStart.addEventListener('click', () => {
-            if (modoActual === 'BLOQUEADO') return;
-            btnStart.style.display = 'none';
-            moduloPunteo.iniciar();
-            refrescarUI();
-        });
-
-        btnInfo.addEventListener('click', () => {
-            mostrarAlertaSistema(
-                "¿CÓMO FUNCIONA?",
-                "<b>Evaluación Viso-Motriz:</b> Presiona la pantalla exactamente cuando el objetivo cruzando la zona de impacto.<br><br>• Mantén la cadencia y el tiempo de reacción constante.<br>• Tocas a tiempo o fuera de la zona sumará aciertos o errores."
-            );
-        });
-
-        actualizarEstadoPlanUI();
+        actualizarEstadoUI();
+        renderLoop();
     </script>
 </body>
 </html>

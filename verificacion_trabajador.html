@@ -297,6 +297,7 @@
     let touchTimes = [];
     let lastTouchTime = 0;
     let canvasSig, ctxSig, isDrawing = false;
+    let fotoCapturadaData = null;
 
     document.addEventListener('DOMContentLoaded', () => {
       const urlParams = new URLSearchParams(window.location.search);
@@ -304,7 +305,7 @@
       const token = urlParams.get('token') || localStorage.getItem('sensometrika_b2b_token') || 'B2B-DEMO';
 
       document.getElementById('evalRut').textContent = decodeURIComponent(rut);
-      document.getElementById('evalNombre').textContent = 'Trabajador Evaluado';
+      document.getElementById('evalNombre').textContent = 'Osses Martinez';
 
       iniciarCamara();
       iniciarFirma();
@@ -312,7 +313,7 @@
 
     async function iniciarCamara() {
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
         document.getElementById('webcamVideo').srcObject = stream;
       } catch (err) {
         console.warn("Cámara no disponible", err);
@@ -327,6 +328,10 @@
       canvas.width = video.videoWidth || 320;
       canvas.height = video.videoHeight || 240;
       ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+      // Guardar el DataURL de la imagen capturada en tiempo real
+      fotoCapturadaData = canvas.toDataURL('image/jpeg');
+      localStorage.setItem('sensometrika_foto_identidad', fotoCapturadaData);
 
       video.style.display = 'none';
       canvas.style.display = 'block';
@@ -356,6 +361,9 @@
         const p = getPos(e); 
         ctxSig.lineTo(p.x, p.y); 
         ctxSig.stroke(); 
+        
+        // Guardar firma digital en tiempo real
+        localStorage.setItem('sensometrika_firma_trabajador', canvasSig.toDataURL());
         validarFormulario(); 
       };
       const stopDraw = () => { isDrawing = false; };
@@ -371,6 +379,7 @@
 
     function limpiarFirma() {
       ctxSig.clearRect(0, 0, canvasSig.width, canvasSig.height);
+      localStorage.removeItem('sensometrika_firma_trabajador');
       validarFormulario();
     }
 
@@ -428,7 +437,7 @@
       const token = urlParams.get('token') || localStorage.getItem('sensometrika_b2b_token') || 'B2B-DEMO';
       const rut = urlParams.get('rut') || localStorage.getItem('sensometrika_b2b_rut') || '';
 
-      // REINICIO DE ESTADO
+      // REINICIO DE ESTADO DE EVALUACIONES
       localStorage.removeItem('sensometrika_modulos_rendidos');
       localStorage.removeItem('sensometrika_session_burned');
       
