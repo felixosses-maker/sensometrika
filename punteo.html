@@ -144,6 +144,7 @@
             border-radius: 12px;
             overflow: hidden;
             touch-action: manipulation;
+            cursor: crosshair;
         }
 
         canvas { width: 100%; height: 100%; display: block; }
@@ -265,7 +266,7 @@
             </div>
 
             <div class="instruction-text" id="instructionText">
-                Evaluación Oficial: Toca o haz clic sobre los objetivos antes de que desaparezcan.
+                Evaluación Oficial: Toca o haz clic sobre la zona de impacto rítmico cuando coincida el estímulo.
             </div>
 
             <div class="action-container">
@@ -359,7 +360,7 @@
                 btnStart.textContent = "INICIAR CALIBRACIÓN DEMO";
                 btnStart.style.display = 'block';
                 btnNext.style.display = 'none';
-                instructionText.textContent = "Modo Demo: Toca los objetivos circulares para calibrar la coordinación viso-motriz.";
+                instructionText.textContent = "Modo Demo: Toca la pantalla cuando el círculo cruce la zona inferior.";
             } else if (simulacionesUsadas < simulacionesTotales) {
                 modoActual = 'OFICIAL';
                 const numSimulacion = simulacionesUsadas + 1;
@@ -368,7 +369,7 @@
                 btnStart.textContent = esB2B ? "INICIAR SIMULACIÓN OFICIAL" : `INICIAR SIMULACIÓN OFICIAL (${numSimulacion}/${simulacionesTotales})`;
                 btnStart.style.display = 'block';
                 btnNext.style.display = 'none';
-                instructionText.textContent = "Evaluación Oficial: Mantén la atención y presiona con precisión los estímulos estocásticos.";
+                instructionText.textContent = "Evaluación Oficial: Mantén el ritmo constante presionando sobre el área indicada.";
             } else {
                 modoActual = 'BLOQUEADO';
                 badgeText.textContent = "EVALUACIÓN REGISTRADA EN SISTEMA";
@@ -387,6 +388,20 @@
                 modal.style.display = 'none';
                 if (callback) callback();
             };
+        }
+
+        // BUCLE DE ACTUALIZACIÓN EN TIEMPO REAL DE LAS MÉTRICAS
+        function refrescarUI() {
+            if (typeof moduloPunteo !== 'undefined' && moduloPunteo.activo) {
+                metricAciertos.textContent = moduloPunteo.aciertos || 0;
+                metricErrores.textContent = moduloPunteo.errores || 0;
+                
+                const total = (moduloPunteo.aciertos || 0) + (moduloPunteo.errores || 0);
+                const prec = total > 0 ? Math.round((moduloPunteo.aciertos / total) * 100) : 100;
+                metricPrecision.textContent = `${prec}%`;
+
+                requestAnimationFrame(refrescarUI);
+            }
         }
 
         const moduloPunteo = new ModuloPunteo(canvas, { width: 400, height: 300 }, (res) => {
@@ -426,16 +441,41 @@
             }
         });
 
+        // REGISTRO DE EVENTOS TÁCTILES Y CLIC SOBRE EL CANVAS
+        const registrarImpacto = (e) => {
+            if (!moduloPunteo.activo) return;
+            e.preventDefault();
+            const rect = canvas.getBoundingClientRect();
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            
+            const x = clientX - rect.left;
+            const y = clientY - rect.top;
+
+            if (typeof moduloPunteo.registrarToque === 'function') {
+                moduloPunteo.registrarToque(x, y);
+            } else if (typeof moduloPunteo.registrarImpacto === 'function') {
+                moduloPunteo.registrarImpacto(x, y);
+            } else {
+                // Caída si la función interna es genérica
+                moduloPunteo.toque(x, y);
+            }
+        };
+
+        canvas.addEventListener('touchstart', registrarImpacto);
+        canvas.addEventListener('mousedown', registrarImpacto);
+
         btnStart.addEventListener('click', () => {
             if (modoActual === 'BLOQUEADO') return;
             btnStart.style.display = 'none';
             moduloPunteo.iniciar();
+            refrescarUI();
         });
 
         btnInfo.addEventListener('click', () => {
             mostrarAlertaSistema(
                 "¿CÓMO FUNCIONA?",
-                "<b>Evaluación Viso-Motriz:</b> Aparecerán objetivos en pantalla durante un tiempo delimitado.<br><br>• Haz clic o toca rápido cada objetivo antes de que desaparezca.<br>• Tocas fuera del objetivo sumará error.<br>• El sistema evaluará tu tasa de aciertos y ritmo constante."
+                "<b>Evaluación Viso-Motriz:</b> Presiona la pantalla exactamente cuando el objetivo cruzando la zona de impacto.<br><br>• Mantén la cadencia y el tiempo de reacción constante.<br>• Tocas a tiempo o fuera de la zona sumará aciertos o errores."
             );
         });
 
