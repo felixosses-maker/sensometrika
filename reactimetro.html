@@ -41,7 +41,6 @@
             gap: 12px;
         }
 
-        /* ENCABEZADO INTEGRADO (ALTERNATIVA 1) */
         .brand-header {
             text-align: center;
             display: flex;
@@ -56,8 +55,8 @@
             width: 220px;
             height: auto;
             display: block;
-            mix-blend-mode: lighten; /* Elimina el recuadro negro y funde la imagen */
-            filter: drop-shadow(0 0 12px rgba(56, 189, 248, 0.45)); /* Resplandor cian fluido */
+            mix-blend-mode: lighten;
+            filter: drop-shadow(0 0 12px rgba(56, 189, 248, 0.45));
         }
 
         .brand-subtitle {
@@ -271,7 +270,6 @@
 <body>
 
     <div class="main-container">
-        <!-- Encabezado Armónico con Integración CSS Neón -->
         <header class="brand-header">
             <img src="sensometrica.jpg" alt="SENSOMETRIKA" class="brand-logo-img">
             <span class="brand-subtitle">MÓDULO REACTÍMETRO • TIEMPO DE FRENADO</span>
@@ -378,18 +376,27 @@
         const modalInstrucciones = document.getElementById('modalInstrucciones');
         const btnCloseInstrucciones = document.getElementById('btnCloseInstrucciones');
 
+        // DETECCIÓN INTELIGENTE DE ENTORNO
+        const urlParams = new URLSearchParams(window.location.search);
+        const tokenUrl = urlParams.get('token') || localStorage.getItem('sensometrika_b2b_token');
+        const rutUrl = urlParams.get('rut') || localStorage.getItem('sensometrika_b2b_rut');
+
         let sesion = {};
         try { sesion = JSON.parse(localStorage.getItem('sensometrika_sesion')) || {}; } catch(e){}
 
         const plan = localStorage.getItem('sensometrika_plan') || sesion.planId || 'B2C'; 
-        const esB2B = (plan === 'B2B' || sesion.rol === 'empresa' || localStorage.getItem('sensometrika_b2b_mode') === 'true');
+        const esB2B = (tokenUrl || rutUrl || plan === 'B2B' || sesion.rol === 'empresa' || localStorage.getItem('sensometrika_b2b_mode') === 'true' || localStorage.getItem('sensometrika_b2b_contratacion'));
 
-        let simulacionesTotales = parseInt(localStorage.getItem('sensometrika_simulaciones_compradas')) || 3;
+        let simulacionesTotales = esB2B ? 1 : (parseInt(localStorage.getItem('sensometrika_simulaciones_compradas')) || 3);
         let simulacionesUsadas = parseInt(localStorage.getItem('reactimetro_simulaciones_usadas')) || 0;
         let modoActual = 'DEMO';
 
-        const rutaMenuOrigen = esB2B ? 'menu_B2B.html' : 'menu_B2C.html';
-        const rutaInformeOrigen = esB2B ? 'informe-b2b.html' : 'informe.html';
+        let rutaMenuOrigen = 'menu_B2C.html';
+        if (esB2B) {
+            rutaMenuOrigen = `menu_B2C.html?token=${tokenUrl || ''}&rut=${rutUrl || ''}&verified=true`;
+        }
+
+        const rutaInformeOrigen = 'informe.html';
 
         btnVolverNav.addEventListener('click', () => { window.location.href = rutaMenuOrigen; });
         btnVolverMenuExamen.addEventListener('click', () => { window.location.href = rutaMenuOrigen; });
@@ -399,7 +406,7 @@
         btnCloseInstrucciones.addEventListener('click', () => { modalInstrucciones.style.display = 'none'; });
 
         function actualizarEstadoPlanUI() {
-            demoRealizada = localStorage.getItem('reactimetro_demo_completada') === 'true';
+            const demoRealizada = localStorage.getItem('reactimetro_demo_completada') === 'true';
             simulacionesUsadas = parseInt(localStorage.getItem('reactimetro_simulaciones_usadas')) || 0;
 
             if (!demoRealizada) {
@@ -414,21 +421,21 @@
             } else if (simulacionesUsadas < simulacionesTotales) {
                 modoActual = 'OFICIAL';
                 const numSimulacion = simulacionesUsadas + 1;
-                badgeText.textContent = `Simulación Oficial ${numSimulacion} de ${simulacionesTotales} (D.S. N° 170)`;
+                badgeText.textContent = esB2B ? "Simulación Oficial (1/1) (D.S. N° 170)" : `Simulación Oficial ${numSimulacion} de ${simulacionesTotales} (D.S. N° 170)`;
                 badgeDot.style.backgroundColor = "#ef4444"; 
-                btnStart.textContent = `INICIAR SIMULACIÓN OFICIAL (${numSimulacion}/${simulacionesTotales})`;
+                btnStart.textContent = esB2B ? "INICIAR SIMULACIÓN OFICIAL" : `INICIAR SIMULACIÓN OFICIAL (${numSimulacion}/${simulacionesTotales})`;
                 btnStart.style.display = 'block';
                 btnBrake.style.display = 'none';
                 salidaWrapper.style.display = 'none';
-                instructionText.textContent = `Evaluación Oficial ${numSimulacion}: Se promediarán 6 estímulos visuales aleatorios. Mantén la atención.`;
+                instructionText.textContent = "Evaluación Oficial: Se promediarán 6 estímulos visuales aleatorios. Mantén la atención.";
             } else {
                 modoActual = 'BLOQUEADO';
-                badgeText.textContent = "SIMULACIONES AGOTADAS";
-                badgeDot.style.backgroundColor = "#94a3b8"; 
+                badgeText.textContent = "SIMULACIÓN EVALUADA Y REGISTRADA";
+                badgeDot.style.backgroundColor = "#10b981"; 
                 btnStart.style.display = 'none';
                 btnBrake.style.display = 'none';
                 salidaWrapper.style.display = 'flex';
-                instructionText.textContent = "Has completado las simulaciones de este módulo. Elige tu siguiente acción.";
+                instructionText.textContent = "Has completado la evaluación de este módulo. Retorna al menú para continuar.";
             }
         }
 
@@ -452,12 +459,17 @@
                 actualizarEstadoPlanUI();
                 mostrarAlertaSistema(
                     "CALIBRACIÓN DEMO COMPLETADA",
-                    `Promedio Neto: <b>${res.promedioTiempo} ms</b><br>Anticipaciones: <b>${res.anticipaciones}</b><br><br>Has completado el ensayo. Ya puedes rendir tus simulaciones oficiales.`
+                    `Promedio Neto: <b>${res.promedioTiempo} ms</b><br>Anticipaciones: <b>${res.anticipaciones}</b><br><br>Has completado el ensayo. Ya puedes rendir tu simulación oficial.`
                 );
             } else if (modoActual === 'OFICIAL') {
                 simulacionesUsadas++;
                 localStorage.setItem('reactimetro_simulaciones_usadas', simulacionesUsadas.toString());
                 
+                // MARCAR MÓDULO 1 COMO RENDIDO EN EL ARREGLO GLOBAL B2B
+                let rendidos = JSON.parse(localStorage.getItem('sensometrika_modulos_rendidos')) || [];
+                if (!rendidos.includes(1)) rendidos.push(1);
+                localStorage.setItem('sensometrika_modulos_rendidos', JSON.stringify(rendidos));
+
                 let historial = JSON.parse(localStorage.getItem('sensometrika_historial_reactimetro')) || [];
                 historial.push({
                     promedioTiempo: res.promedioTiempo,
@@ -466,16 +478,15 @@
                 });
                 localStorage.setItem('sensometrika_historial_reactimetro', JSON.stringify(historial));
 
-                const completadoTodo = simulacionesUsadas >= simulacionesTotales;
                 actualizarEstadoPlanUI();
 
                 mostrarAlertaSistema(
                     "SIMULACIÓN REGISTRADA",
                     `Promedio Neto de Frenado: <b>${res.promedioTiempo} ms</b> (${res.promedioTiempo <= 450 ? '✓ En Norma' : '⚠ Latencia Elevada'})<br>` +
                     `Anticipaciones: <b>${res.anticipaciones}</b><br><br>` +
-                    (completadoTodo ? "<b>¡Has completado todas las simulaciones de este módulo!</b>" : `Quedan <b>${simulacionesTotales - simulacionesUsadas}</b> simulación(es) disponibles.`),
+                    "<b>¡Has completado la evaluación oficial de este módulo!</b>",
                     () => {
-                        if (completadoTodo) salidaWrapper.style.display = 'flex';
+                        window.location.href = rutaMenuOrigen;
                     }
                 );
             }

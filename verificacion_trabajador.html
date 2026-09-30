@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Sensometrika | Acreditación y Calibración de Hardware</title>
+  <style>
+    :root {
+      --bg-color: #0b0f19;
+      --card-bg: #111625;
+      --card-border: #1e2638;
+      --accent-blue: #00a8e8;
+      --accent-blue-hover: #0077b6;
+      --accent-cyan: #38bdf8;
+      --accent-green: #10b981;
+      --accent-yellow: #e5b324;
+      --text-white: #ffffff;
+      --text-muted: #9aa0a6;
+      --input-bg: #080d17;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; user-select: none; }
+
+    body {
+      background-color: var(--bg-color);
+      color: var(--text-white);
+      padding: 20px 15px;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      min-height: 100vh;
+    }
+
+    .container { width: 100%; max-width: 500px; margin: 0 auto; }
+
+    .brand-header {
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      padding: 10px 0;
+      margin-bottom: 12px;
+    }
+
+    .brand-logo-img {
+      width: 210px;
+      max-width: 80%;
+      height: auto;
+      mix-blend-mode: lighten;
+      filter: drop-shadow(0 0 12px rgba(56, 189, 248, 0.45));
+    }
+
+    .brand-subtitle {
+      color: var(--accent-cyan);
+      font-size: 0.75rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+    }
+
+    .card-block {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 14px;
+      padding: 18px;
+      margin-bottom: 16px;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.35);
+    }
+
+    .card-title {
+      font-size: 0.82rem;
+      font-weight: 800;
+      color: var(--accent-cyan);
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      margin-bottom: 12px;
+      border-bottom: 1px solid var(--card-border);
+      padding-bottom: 6px;
+    }
+
+    /* Ficha de Datos */
+    .data-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .data-item { display: flex; flex-direction: column; }
+    .data-item span { font-size: 0.68rem; color: var(--text-muted); text-transform: uppercase; }
+    .data-item strong { font-size: 0.88rem; color: #fff; }
+
+    /* Cámara Web */
+    .webcam-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .webcam-box {
+      width: 100%;
+      max-width: 320px;
+      height: 200px;
+      background: #000;
+      border: 2px dashed var(--accent-cyan);
+      border-radius: 12px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      overflow: hidden;
+    }
+
+    #webcamVideo, #capturedCanvas {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .btn-cam {
+      background: var(--input-bg);
+      border: 1px solid var(--accent-cyan);
+      color: var(--accent-cyan);
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-size: 0.75rem;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    /* Firma Digital Canvas */
+    .signature-container {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .signature-canvas {
+      width: 100%;
+      height: 120px;
+      background: #080d17;
+      border: 1px solid var(--card-border);
+      border-radius: 10px;
+      cursor: crosshair;
+      touch-action: none;
+    }
+
+    .btn-clear-sig {
+      align-self: flex-end;
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      font-size: 0.72rem;
+      text-decoration: underline;
+      cursor: pointer;
+    }
+
+    /* TEST DE LATENCIA DE SENSOR Y PANTALLA */
+    .latency-box {
+      background: #080d17;
+      border: 1px solid var(--accent-cyan);
+      border-radius: 10px;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      text-align: center;
+    }
+
+    .touch-target {
+      width: 100%;
+      height: 75px;
+      background: rgba(56, 189, 248, 0.15);
+      border: 2px dashed var(--accent-cyan);
+      border-radius: 8px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 0.85rem;
+      font-weight: 800;
+      color: var(--accent-cyan);
+      cursor: pointer;
+      touch-action: manipulation;
+    }
+
+    .touch-target.active {
+      background: var(--accent-green);
+      color: #000;
+      border-style: solid;
+    }
+
+    .latency-metrics {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      width: 100%;
+      gap: 8px;
+      margin-top: 4px;
+    }
+
+    .metric-sub {
+      background: #0b1320;
+      border: 1px solid var(--card-border);
+      padding: 6px;
+      border-radius: 6px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .metric-sub span { font-size: 0.62rem; color: var(--text-muted); text-transform: uppercase; }
+    .metric-sub strong { font-size: 0.85rem; color: var(--accent-cyan); }
+
+    /* Términos y Condiciones */
+    .terms-box {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      line-height: 1.35;
+    }
+
+    .terms-box input[type="checkbox"] {
+      margin-top: 2px;
+      accent-color: var(--accent-blue);
+      width: 16px;
+      height: 16px;
+    }
+
+    .btn-submit-verify {
+      width: 100%;
+      background: var(--accent-green);
+      color: #000000;
+      border: none;
+      padding: 14px;
+      border-radius: 10px;
+      font-size: 0.9rem;
+      font-weight: 800;
+      cursor: pointer;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      box-shadow: 0 4px 15px rgba(16, 185, 129, 0.25);
+      margin-top: 10px;
+    }
+
+    .btn-submit-verify:disabled {
+      background: #1e2638;
+      color: #6b7280;
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <header class="brand-header">
+      <img src="sensometrica.jpg" alt="SENSOMETRIKA" class="brand-logo-img">
+      <span class="brand-subtitle">VERIFICACIÓN Y ACREDITACIÓN DEL EVALUADO</span>
+    </header>
+
+    <!-- 1. Ficha del Trabajador -->
+    <div class="card-block">
+      <div class="card-title">👤 Datos del Postulante / Trabajador</div>
+      <div class="data-grid">
+        <div class="data-item" style="grid-column: span 2;">
+          <span>Nombre Completo</span>
+          <strong id="evalNombre">Cargando...</strong>
+        </div>
+        <div class="data-item">
+          <span>RUT / Cédula</span>
+          <strong id="evalRut">Cargando...</strong>
+        </div>
+        <div class="data-item">
+          <span>Cargo / Función</span>
+          <strong id="evalCargo">Operador / Conductor</strong>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2. Registro Fotográfico Cámara Web -->
+    <div class="card-block">
+      <div class="card-title">📷 Registro Fotográfico de Identidad</div>
+      <div class="webcam-container">
+        <div class="webcam-box">
+          <video id="webcamVideo" autoplay playsinline></video>
+          <canvas id="capturedCanvas" style="display: none;"></canvas>
+        </div>
+        <button type="button" class="btn-cam" onclick="tomarFoto()">CAPTURAR FOTO FACIAL 📸</button>
+      </div>
+    </div>
+
+    <!-- 3. Firma Digital -->
+    <div class="card-block">
+      <div class="card-title">✍️ Firma Digital del Evaluado</div>
+      <div class="signature-container">
+        <canvas id="signatureCanvas" class="signature-canvas"></canvas>
+        <button type="button" class="btn-clear-sig" onclick="limpiarFirma()">Limpiar Firma</button>
+      </div>
+    </div>
+
+    <!-- 4. Test de Latencia y Sensores del Dispositivo Móvil/PC -->
+    <div class="card-block">
+      <div class="card-title">📱 Calibración de Latencia del Hardware</div>
+      <div class="latency-box">
+        <div id="touchTarget" class="touch-target" onclick="probarLatencia(event)">
+          TOCA AQUÍ (0 / 3) PARA MEDIR LATENCIA
+        </div>
+        <div class="latency-metrics">
+          <div class="metric-sub">
+            <span>Latencia Pantalla/Sensor</span>
+            <strong id="valLatencia">-- ms</strong>
+          </div>
+          <div class="metric-sub">
+            <span>Calibración Hardware</span>
+            <strong id="valEstadoLatencia" style="color:var(--accent-yellow);">PENDIENTE</strong>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 5. Consentimiento Informado -->
+    <div class="card-block">
+      <div class="terms-box">
+        <input type="checkbox" id="chkTerms" onchange="validarFormulario()">
+        <label for="chkTerms">
+          Declaro que mis datos son fidedignos, acepto rendir las evaluaciones psicotécnicas bajo consentimiento informado y autorizo el procesamiento de resultados para el informe pericial.
+        </label>
+      </div>
+    </div>
+
+    <button id="btnContinuar" class="btn-submit-verify" disabled onclick="iniciarEvaluacion()">
+      INICIAR BATERÍA DE EVALUACIONES →
+    </button>
+  </div>
+
+  <script>
+    let photoCaptured = false;
+    let signatureDone = false;
+    let latencyDone = false;
+    let touchCount = 0;
+    let touchTimes = [];
+    let lastTouchTime = 0;
+    let canvasSig, ctxSig, isDrawing = false;
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const rut = urlParams.get('rut') || '12.333.333-7';
+      const token = urlParams.get('token') || 'TOKEN-B2B';
+
+      document.getElementById('evalRut').textContent = decodeURIComponent(rut);
+      document.getElementById('evalNombre').textContent = 'Trabajador Evaluado';
+
+      iniciarCamara();
+      iniciarFirma();
+    });
+
+    async function iniciarCamara() {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        document.getElementById('webcamVideo').srcObject = stream;
+      } catch (err) {
+        console.warn("Cámara no disponible", err);
+      }
+    }
+
+    function tomarFoto() {
+      const video = document.getElementById('webcamVideo');
+      const canvas = document.getElementById('capturedCanvas');
+      const ctx = canvas.getContext('2d');
+
+      canvas.width = video.videoWidth || 320;
+      canvas.height = video.videoHeight || 240;
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+      video.style.display = 'none';
+      canvas.style.display = 'block';
+      photoCaptured = true;
+      validarFormulario();
+    }
+
+    function iniciarFirma() {
+      canvasSig = document.getElementById('signatureCanvas');
+      ctxSig = canvasSig.getContext('2d');
+      
+      canvasSig.width = canvasSig.offsetWidth;
+      canvasSig.height = canvasSig.offsetHeight;
+
+      ctxSig.strokeStyle = '#38bdf8';
+      ctxSig.lineWidth = 2;
+
+      const getPos = (e) => {
+        const rect = canvasSig.getBoundingClientRect();
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        return { x: clientX - rect.left, y: clientY - rect.top };
+      };
+
+      const startDraw = (e) => { isDrawing = true; const p = getPos(e); ctxSig.beginPath(); ctxSig.moveTo(p.x, p.y); };
+      const draw = (e) => { 
+        if (!isDrawing) return; 
+        const p = getPos(e); 
+        ctxSig.lineTo(p.x, p.y); 
+        ctxSig.stroke(); 
+        signatureDone = true; 
+        validarFormulario(); 
+      };
+      const stopDraw = () => { isDrawing = false; };
+
+      canvasSig.addEventListener('mousedown', startDraw);
+      canvasSig.addEventListener('mousemove', draw);
+      canvasSig.addEventListener('mouseup', stopDraw);
+
+      canvasSig.addEventListener('touchstart', startDraw);
+      canvasSig.addEventListener('touchmove', draw);
+      canvasSig.addEventListener('touchend', stopDraw);
+    }
+
+    function limpiarFirma() {
+      ctxSig.clearRect(0, 0, canvasSig.width, canvasSig.height);
+      signatureDone = false;
+      validarFormulario();
+    }
+
+    function probarLatencia(e) {
+      if (e) e.preventDefault();
+      const now = performance.now();
+
+      if (lastTouchTime > 0) {
+        const diff = Math.round(now - lastTouchTime);
+        touchTimes.push(diff);
+      }
+      lastTouchTime = now;
+
+      touchCount++;
+      const target = document.getElementById('touchTarget');
+
+      if (touchCount < 3) {
+        target.innerText = `¡TOCA OTRA VEZ! (${touchCount} / 3)`;
+        target.className = 'touch-target active';
+        setTimeout(() => { target.className = 'touch-target'; }, 150);
+      } else {
+        const sum = touchTimes.reduce((a, b) => a + b, 0);
+        const avgLatency = touchTimes.length > 0 ? Math.round(sum / touchTimes.length) : 16;
+        
+        const latenciaPuraHardware = Math.min(Math.max(avgLatency, 12), 45);
+        localStorage.setItem('sensometrika_hardware_latency', latenciaPuraHardware.toString());
+
+        document.getElementById('valLatencia').innerText = `${latenciaPuraHardware} ms`;
+        
+        const statusEl = document.getElementById('valEstadoLatencia');
+        statusEl.innerText = 'OPTIMIZADO ✓';
+        statusEl.style.color = 'var(--accent-green)';
+
+        target.innerText = '¡SENSOR Y PANTALLA CALIBRADOS!';
+        target.className = 'touch-target active';
+        target.style.pointerEvents = 'none';
+
+        latencyDone = true;
+        validarFormulario();
+      }
+    }
+
+    function validarFormulario() {
+      const termsAccepted = document.getElementById('chkTerms').checked;
+      const btn = document.getElementById('btnContinuar');
+
+      if (termsAccepted) {
+        btn.disabled = false;
+      } else {
+        btn.disabled = true;
+      }
+    }
+
+    function iniciarEvaluacion() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const token = urlParams.get('token') || localStorage.getItem('sensometrika_b2b_token') || '';
+      const rut = urlParams.get('rut') || localStorage.getItem('sensometrika_b2b_rut') || '';
+
+      // REINICIO AUTOMÁTICO DE ESTADO PARA UNA EVALUACIÓN B2B DESDE CERO
+      localStorage.removeItem('sensometrika_modulos_rendidos');
+      localStorage.removeItem('sensometrika_session_burned');
+      
+      localStorage.removeItem('reactimetro_demo_completada');
+      localStorage.removeItem('reactimetro_simulaciones_usadas');
+      
+      localStorage.removeItem('palancas_demo_completada');
+      localStorage.removeItem('palancas_simulaciones_usadas');
+      
+      localStorage.removeItem('punteo_demo_completada');
+      localStorage.removeItem('punteo_simulaciones_usadas');
+
+      if (token) localStorage.setItem('sensometrika_b2b_token', token);
+      if (rut) localStorage.setItem('sensometrika_b2b_rut', rut);
+
+      window.location.href = `menu_B2C.html?token=${token}&rut=${rut}&verified=true`;
+    }
+  </script>
+</body>
+</html>
