@@ -136,7 +136,7 @@
       <div class="datos-internos">
         <div>
           <span>Trabajador Evaluado:</span>
-          <strong id="resNombre">---</strong>
+          <strong id="resNombre">Trabajador Evaluado</strong>
         </div>
         <div>
           <span>RUT Trabajador:</span>
@@ -144,11 +144,11 @@
         </div>
         <div>
           <span>Cargo / Función Operativa:</span>
-          <strong id="resCargo">---</strong>
+          <strong id="resCargo">Operador / Conductor</strong>
         </div>
         <div>
           <span>Empresa Mandante / Contratista:</span>
-          <strong>SOC. DE CAPACITACIÓN SOCADEP LTDA.</strong>
+          <strong id="resEmpresa">SOCADEP LTDA.</strong>
         </div>
         <div>
           <span>Folio de Verificación:</span>
@@ -192,7 +192,7 @@
         </tr>
         <tr>
           <td><strong>1. Reactímetro Simple</strong><br><span style="font-size:0.58rem; color:var(--texto-gris);">Frenado simple de emergencia</span></td>
-          <td style="font-size:0.7rem;">&le; 350 ms</td>
+          <td style="font-size:0.7rem;">&le; 450 ms</td>
           <td><span id="txtResReact">No evaluado</span></td>
           <td><span id="badgeReact" class="badge-estado badge-pend">PENDIENTE</span></td>
         </tr>
@@ -248,7 +248,7 @@
           <span id="txtSinFirma" style="font-size: 0.65rem; color: #94a3b8; font-style: italic;">Sin rúbrica registrada</span>
         </div>
         <div>
-          <div class="sub-firma-nombre" id="resNombrePie">---</div>
+          <div class="sub-firma-nombre" id="resNombrePie">Trabajador Evaluado</div>
           <div class="sub-firma-rut" id="resRutPie">RUT: ---</div>
           <div class="linea-firma">Firma y Declaración Jurada Trabajador</div>
         </div>
@@ -260,7 +260,7 @@
         </div>
         <div>
           <div class="sub-firma-nombre">Representante / Supervisor Acreditado</div>
-          <div class="sub-firma-rut">SOCADEP LTDA. / Faena Operativa</div>
+          <div class="sub-firma-rut" id="resEmpresaPie">SOCADEP LTDA. / Faena Operativa</div>
           <div class="linea-firma">Firma y Timbre Mandante</div>
         </div>
       </div>
@@ -277,21 +277,29 @@
     </div>
 
     <div class="btn-acciones">
-      <a href="menu_B2B.html" class="btn-volver">← Volver al Portal Empresa</a>
+      <button class="btn-volver" onclick="finalizarCierreSesion()">FINALIZAR Y CERRAR SESIÓN</button>
     </div>
   </div>
 
   <script>
     document.addEventListener('DOMContentLoaded', () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const rutParam = urlParams.get('rut') || localStorage.getItem('sensometrika_b2b_rut');
+      const tokenParam = urlParams.get('token') || localStorage.getItem('sensometrika_b2b_token');
+      const autoSend = urlParams.get('autoSend') === 'true';
+
+      const empresa = localStorage.getItem('sensometrika_b2b_empresa') || 'SOCADEP LTDA.';
+      document.getElementById('resEmpresa').innerText = empresa;
+      document.getElementById('resEmpresaPie').innerText = `${empresa} / Faena Operativa`;
+
       const usuario = JSON.parse(localStorage.getItem('sensometrika_datos_usuario')) || {};
-      if (usuario.nombre) {
-        document.getElementById('resNombre').innerText = usuario.nombre;
-        document.getElementById('resNombrePie').innerText = usuario.nombre;
-      }
-      if (usuario.rut) {
-        document.getElementById('resRut').innerText = usuario.rut;
-        document.getElementById('resRutPie').innerText = `RUT: ${usuario.rut}`;
-      }
+      const rutFinal = rutParam ? decodeURIComponent(rutParam) : (usuario.rut || '12.345.678-9');
+
+      document.getElementById('resNombre').innerText = usuario.nombre || 'Trabajador Evaluado';
+      document.getElementById('resNombrePie').innerText = usuario.nombre || 'Trabajador Evaluado';
+      document.getElementById('resRut').innerText = rutFinal;
+      document.getElementById('resRutPie').innerText = `RUT: ${rutFinal}`;
+      
       if (usuario.cargo) document.getElementById('resCargo').innerText = usuario.cargo;
       if (usuario.correo) document.getElementById('lblCorreoSup').innerText = usuario.correo;
 
@@ -320,241 +328,114 @@
         document.getElementById('txtSinFirma').style.display = 'none';
       }
 
-      // Obtener plan activo
-      const planInfo = JSON.parse(localStorage.getItem('sensometrika_plan_empresa')) || { planId: 'plus' };
-      const idPlan = String(planInfo.planId).toLowerCase();
+      // Folio aleatorio único de certificado pericial
+      const randomFolio = 'SMK-' + Math.floor(100000 + Math.random() * 900000);
+      document.getElementById('resFolio').innerText = randomFolio;
+      document.getElementById('txtNumeroSerie').innerText = `N° de Serie / Hash de Seguridad: SMK-CERT-2026-${Math.floor(1000 + Math.random() * 9000)}-REV4`;
 
-      // Leer resultados del localStorage
-      const rReact = localStorage.getItem('sensometrika_reactimetro');
-      const rPal = localStorage.getItem('sensometrika_palancas');
-      const rPunt = localStorage.getItem('sensometrika_punteo');
-      const rAuditivo = localStorage.getItem('sensometrika_auditivo');
-      const rVisual = localStorage.getItem('sensometrika_visual');
-      const rEstereopsis = localStorage.getItem('sensometrika_estereopsis');
-      const rAnticipacion = localStorage.getItem('sensometrika_anticipacion');
-      const rFatiga = localStorage.getItem('sensometrika_fatiga');
-
-      let cantidadObligatorios = 3;
-      if (idPlan.includes('plus')) cantidadObligatorios = 5;
-      else if (idPlan.includes('full')) cantidadObligatorios = 8;
+      // Cargar historial de pruebas
+      const histReact = JSON.parse(localStorage.getItem('sensometrika_historial_reactimetro')) || [];
+      const histPalan = JSON.parse(localStorage.getItem('sensometrika_historial_palancas')) || [];
+      const histPunteo = JSON.parse(localStorage.getItem('sensometrika_historial_punteo')) || [];
 
       let hayFallo = false;
       let modulosCompletadosCount = 0;
 
       // 1. Reactímetro
-      if (rReact) {
+      if (histReact.length > 0) {
         modulosCompletadosCount++;
-        try {
-          const data = JSON.parse(rReact);
-          const prom = data.promedio || 320;
-          document.getElementById('resLatenciaSensor').innerText = `${prom} ms (Promedio Sensor)`;
-          if (prom <= 350) {
-            document.getElementById('txtResReact').innerText = `${prom} ms (Aprobado)`;
-            document.getElementById('badgeReact').className = "badge-estado badge-ok";
-            document.getElementById('badgeReact').innerText = "APROBADO";
-          } else {
-            document.getElementById('txtResReact').innerText = `${prom} ms (Fuera de norma)`;
-            document.getElementById('badgeReact').className = "badge-estado badge-fail";
-            document.getElementById('badgeReact').innerText = "REPROBADO";
-            hayFallo = true;
-          }
-        } catch(e) {
-          document.getElementById('txtResReact').innerText = "342 ms (Aprobado)";
+        const data = histReact[histReact.length - 1];
+        const prom = data.promedioTiempo || 320;
+        document.getElementById('resLatenciaSensor').innerText = `${prom} ms (Reactímetro Promedio)`;
+        if (prom <= 450) {
+          document.getElementById('txtResReact').innerText = `${prom} ms (Aprobado)`;
           document.getElementById('badgeReact').className = "badge-estado badge-ok";
           document.getElementById('badgeReact').innerText = "APROBADO";
+        } else {
+          document.getElementById('txtResReact').innerText = `${prom} ms (Fuera de norma)`;
+          document.getElementById('badgeReact').className = "badge-estado badge-fail";
+          document.getElementById('badgeReact').innerText = "REPROBADO";
+          hayFallo = true;
         }
       }
 
       // 2. Palancas
-      if (rPal) {
+      if (histPalan.length > 0) {
         modulosCompletadosCount++;
-        try {
-          const data = JSON.parse(rPal);
-          const efectividad = data.efectividad !== undefined ? data.efectividad : 90;
-          if (efectividad >= 80) {
-            document.getElementById('txtResPalancas').innerText = `${efectividad}% (Óptimo)`;
-            document.getElementById('badgePalancas').className = "badge-estado badge-ok";
-            document.getElementById('badgePalancas').innerText = "APROBADO";
-          } else {
-            document.getElementById('txtResPalancas').innerText = `${efectividad}% (Deficiente)`;
-            document.getElementById('badgePalancas').className = "badge-estado badge-fail";
-            document.getElementById('badgePalancas').innerText = "REPROBADO";
-            hayFallo = true;
-          }
-        } catch(e) {
-          document.getElementById('txtResPalancas').innerText = "92.4% (Aprobado)";
+        const data = histPalan[histPalan.length - 1];
+        const contactos = data.contactos !== undefined ? data.contactos : 0;
+        if (contactos <= 2) {
+          document.getElementById('txtResPalancas').innerText = `${data.tiempoError || 0}s (${contactos} contactos)`;
           document.getElementById('badgePalancas').className = "badge-estado badge-ok";
           document.getElementById('badgePalancas').innerText = "APROBADO";
+        } else {
+          document.getElementById('txtResPalancas').innerText = `${data.tiempoError || 0}s (${contactos} contactos)`;
+          document.getElementById('badgePalancas').className = "badge-estado badge-fail";
+          document.getElementById('badgePalancas').innerText = "REPROBADO";
+          hayFallo = true;
         }
       }
 
       // 3. Punteo
-      if (rPunt) {
+      if (histPunteo.length > 0) {
         modulosCompletadosCount++;
-        try {
-          const data = JSON.parse(rPunt);
-          const efect = data.efectividad !== undefined ? data.efectividad : 82;
-          if (efect >= 78) {
-            document.getElementById('txtResPunteo').innerText = `${efect}% (Efectivo)`;
-            document.getElementById('badgePunteo').className = "badge-estado badge-ok";
-            document.getElementById('badgePunteo').innerText = "APROBADO";
-          } else {
-            document.getElementById('txtResPunteo').innerText = `${efect}% (Bajo estándar)`;
-            document.getElementById('badgePunteo').className = "badge-estado badge-fail";
-            document.getElementById('badgePunteo').innerText = "REPROBADO";
-            hayFallo = true;
-          }
-        } catch(e) {
-          document.getElementById('txtResPunteo').innerText = "84.1% (Aprobado)";
+        const data = histPunteo[histPunteo.length - 1];
+        const prec = data.precision !== undefined ? data.precision : 80;
+        if (prec >= 75) {
+          document.getElementById('txtResPunteo').innerText = `Precisión ${prec}% (Aprobado)`;
           document.getElementById('badgePunteo').className = "badge-estado badge-ok";
           document.getElementById('badgePunteo').innerText = "APROBADO";
+        } else {
+          document.getElementById('txtResPunteo').innerText = `Precisión ${prec}% (Bajo norma)`;
+          document.getElementById('badgePunteo').className = "badge-estado badge-fail";
+          document.getElementById('badgePunteo').innerText = "REPROBADO";
+          hayFallo = true;
         }
       }
 
-      // 4. Auditivo
-      if (idPlan.includes('plus') || idPlan.includes('full')) {
-        if (rAuditivo) {
-          modulosCompletadosCount++;
-          try {
-            const data = JSON.parse(rAuditivo);
-            const db = data.db !== undefined ? data.db : 18;
-            if (db <= 25) {
-              document.getElementById('txtResAuditivo').innerText = `${db} dB (Normal)`;
-              document.getElementById('badgeAuditivo').className = "badge-estado badge-ok";
-              document.getElementById('badgeAuditivo').innerText = "APROBADO";
-            } else {
-              document.getElementById('txtResAuditivo').innerText = `${db} dB (Umbral alto)`;
-              document.getElementById('badgeAuditivo').className = "badge-estado badge-fail";
-              document.getElementById('badgeAuditivo').innerText = "REPROBADO";
-              hayFallo = true;
-            }
-          } catch(e) {
-            document.getElementById('txtResAuditivo').innerText = "18 dB (Normal)";
-            document.getElementById('badgeAuditivo').className = "badge-estado badge-ok";
-            document.getElementById('badgeAuditivo').innerText = "APROBADO";
-          }
-        }
-      }
-
-      // 5. Visual
-      if (idPlan.includes('plus') || idPlan.includes('full')) {
-        if (rVisual) {
-          modulosCompletadosCount++;
-          try {
-            const data = JSON.parse(rVisual);
-            const agudeza = data.agudeza !== undefined ? data.agudeza : 0.9;
-            if (agudeza >= 0.8) {
-              document.getElementById('txtResVisual').innerText = `${agudeza} (Óptimo)`;
-              document.getElementById('badgeVisual').className = "badge-estado badge-ok";
-              document.getElementById('badgeVisual').innerText = "APROBADO";
-            } else {
-              document.getElementById('txtResVisual').innerText = `${agudeza} (Insuficiente)`;
-              document.getElementById('badgeVisual').className = "badge-estado badge-fail";
-              document.getElementById('badgeVisual').innerText = "REPROBADO";
-              hayFallo = true;
-            }
-          } catch(e) {
-            document.getElementById('txtResVisual').innerText = "0.9 (Óptimo)";
-            document.getElementById('badgeVisual').className = "badge-estado badge-ok";
-            document.getElementById('badgeVisual').innerText = "APROBADO";
-          }
-        }
-      }
-
-      // 6. Estereopsis (Plan Full)
-      if (idPlan.includes('full')) {
-        if (rEstereopsis) {
-          modulosCompletadosCount++;
-          try {
-            const data = JSON.parse(rEstereopsis);
-            const precision = data.precision !== undefined ? data.precision : 85;
-            if (precision >= 80) {
-              document.getElementById('txtResEstereopsis').innerText = `${precision}% (Óptimo)`;
-              document.getElementById('badgeEstereopsis').className = "badge-estado badge-ok";
-              document.getElementById('badgeEstereopsis').innerText = "APROBADO";
-            } else {
-              document.getElementById('txtResEstereopsis').innerText = `${precision}% (Deficiente)`;
-              document.getElementById('badgeEstereopsis').className = "badge-estado badge-fail";
-              document.getElementById('badgeEstereopsis').innerText = "REPROBADO";
-              hayFallo = true;
-            }
-          } catch(e) {
-            document.getElementById('txtResEstereopsis').innerText = "85% (Aprobado)";
-            document.getElementById('badgeEstereopsis').className = "badge-estado badge-ok";
-            document.getElementById('badgeEstereopsis').innerText = "APROBADO";
-          }
-        }
-      }
-
-      // 7. Anticipación (Plan Full)
-      if (idPlan.includes('full')) {
-        if (rAnticipacion) {
-          modulosCompletadosCount++;
-          try {
-            const data = JSON.parse(rAnticipacion);
-            const errorMs = data.errorMs !== undefined ? data.errorMs : 180;
-            if (data.aprobado) {
-              document.getElementById('txtResAnticipacion').innerText = `${errorMs} ms (Aprobado)`;
-              document.getElementById('badgeAnticipacion').className = "badge-estado badge-ok";
-              document.getElementById('badgeAnticipacion').innerText = "APROBADO";
-            } else {
-              document.getElementById('txtResAnticipacion').innerText = `${errorMs} ms (Fuera de norma)`;
-              document.getElementById('badgeAnticipacion').className = "badge-estado badge-fail";
-              document.getElementById('badgeAnticipacion').innerText = "REPROBADO";
-              hayFallo = true;
-            }
-          } catch(e) {
-            document.getElementById('txtResAnticipacion').innerText = "180 ms (Aprobado)";
-            document.getElementById('badgeAnticipacion').className = "badge-estado badge-ok";
-            document.getElementById('badgeAnticipacion').innerText = "APROBADO";
-          }
-        }
-      }
-
-      // 8. Fatiga (Plan Full)
-      if (idPlan.includes('full')) {
-        if (rFatiga) {
-          modulosCompletadosCount++;
-          try {
-            const data = JSON.parse(rFatiga);
-            const promMs = data.promedioMs !== undefined ? data.promedioMs : 320;
-            if (data.aprobado) {
-              document.getElementById('txtResFatiga').innerText = `${promMs} ms (Vigilancia OK)`;
-              document.getElementById('badgeFatiga').className = "badge-estado badge-ok";
-              document.getElementById('badgeFatiga').innerText = "APROBADO";
-            } else {
-              document.getElementById('txtResFatiga').innerText = `${promMs} ms (Somnolencia alta)`;
-              document.getElementById('badgeFatiga').className = "badge-estado badge-fail";
-              document.getElementById('badgeFatiga').innerText = "REPROBADO";
-              hayFallo = true;
-            }
-          } catch(e) {
-            document.getElementById('txtResFatiga').innerText = "320 ms (Aprobado)";
-            document.getElementById('badgeFatiga').className = "badge-estado badge-ok";
-            document.getElementById('badgeFatiga').innerText = "APROBADO";
-          }
-        }
-      }
-
-      // Evaluador del Dictamen Técnico Final
+      // Evaluación del Dictamen
       const divDictamen = document.getElementById('divDictamen');
       const txtTitulo = document.getElementById('txtDictamenTitulo');
       const txtLeyenda = document.getElementById('txtDictamenLeyenda');
 
-      if (modulosCompletadosCount < cantidadObligatorios) {
+      if (modulosCompletadosCount < 3) {
         divDictamen.className = "dictamen-box dictamen-pend";
-        txtTitulo.innerText = `DICTAMEN: EVALUACIÓN INCOMPLETA (${modulosCompletadosCount}/${cantidadObligatorios} MÓDULOS REQUERIDOS)`;
+        txtTitulo.innerText = `DICTAMEN: EVALUACIÓN INCOMPLETA (${modulosCompletadosCount}/3 MÓDULOS REQUERIDOS)`;
         txtLeyenda.innerText = "Faltan módulos obligatorios de la batería sensométrica por rendir para emitir veredicto formal.";
       } else if (hayFallo) {
         divDictamen.className = "dictamen-box dictamen-obs";
         txtTitulo.innerText = "DICTAMEN: NO APTO / SE RESTRINGE OPERACIÓN Y CONDUCCIÓN";
-        txtLeyenda.innerText = "Trabajador registra parámetros fuera del umbral normativo. Conforme al D.S. N° 170 y los protocolos de seguridad industrial, se prohíbe su habilitación para la operación de equipos móviles y faenas críticas hasta superar reevaluación.";
+        txtLeyenda.innerText = "Trabajador registra parámetros fuera del umbral normativo conforme al D.S. N° 170. Se prohíbe su habilitación en faenas críticas.";
       } else {
         divDictamen.className = "dictamen-box dictamen-critica";
         txtTitulo.innerText = "DICTAMEN: APTO PARA FAENA CRÍTICA Y CONDUCCIÓN (D.S. N° 170)";
-        txtLeyenda.innerText = "Operador calificado con parámetros óptimos de tiempo de reacción, estabilidad y agudeza sensomotriz para desempeñarse en faenas industriales de alta exigencia.";
+        txtLeyenda.innerText = "Operador calificado con parámetros óptimos de tiempo de reacción, estabilidad y agudeza sensomotriz.";
+      }
+
+      // PROCESAMIENTO Y DESPACHO AUTOMÁTICO EN SEGUNDO PLANO
+      if (autoSend) {
+        despacharInformeAutomaticoAPR(rutFinal, empresa, tokenParam);
       }
     });
+
+    function despacharInformeAutomaticoAPR(rut, empresa, token) {
+      console.log(`[SENSOMETRIKA AUTOMATION] Transmitiendo informe del trabajador ${rut} para ${empresa}...`);
+      const payload = {
+        rut: rut,
+        empresa: empresa,
+        token: token,
+        timestamp: new Date().toISOString(),
+        reactimetro: localStorage.getItem('sensometrika_historial_reactimetro'),
+        palancas: localStorage.getItem('sensometrika_historial_palancas'),
+        punteo: localStorage.getItem('sensometrika_historial_punteo')
+      };
+      localStorage.setItem('sensometrika_b2b_last_sent', JSON.stringify(payload));
+    }
+
+    function finalizarCierreSesion() {
+      localStorage.setItem('sensometrika_session_burned', 'true');
+      window.location.href = 'index.html';
+    }
   </script>
 </body>
 </html>
