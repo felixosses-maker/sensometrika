@@ -3,16 +3,17 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>SENSOMETRIKA | Acreditación de Identidad</title>
+  <title>SENSOMETRIKA | Acreditación & Calibración de Hardware</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     :root {
-      --bg-color: #060b13;
-      --card-bg: #0b1320;
-      --card-border: #1a2638;
-      --accent-cyan: #38bdf8;
+      --bg-color: #040810;
+      --card-bg: #091120;
+      --card-border: #132238;
+      --accent-cyan: #00bfff;
+      --accent-cyan-glow: rgba(0, 191, 255, 0.45);
       --accent-green: #10b981;
-      --text-main: #f1f5f9;
+      --text-main: #f8fafc;
       --text-muted: #94a3b8;
     }
 
@@ -32,7 +33,7 @@
     .main-container { width: 100%; max-width: 480px; display: flex; flex-direction: column; gap: 16px; }
 
     .brand-header { text-align: center; display: flex; flex-direction: column; align-items: center; gap: 6px; }
-    .brand-logo-img { width: 190px; height: auto; mix-blend-mode: lighten; filter: drop-shadow(0 0 12px rgba(56, 189, 248, 0.45)); }
+    .brand-logo-img { width: 185px; height: auto; mix-blend-mode: lighten; filter: drop-shadow(0 0 12px var(--accent-cyan-glow)); }
 
     .card-box {
       background-color: var(--card-bg);
@@ -42,7 +43,7 @@
       display: flex;
       flex-direction: column;
       gap: 12px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.6);
     }
 
     .card-title {
@@ -59,9 +60,10 @@
     .info-label { color: var(--text-muted); font-size: 0.68rem; text-transform: uppercase; font-weight: 700; display: block; }
     .info-val { color: #fff; font-weight: 800; font-size: 0.85rem; }
 
+    /* Canvas de Firma */
     .signature-container {
       width: 100%;
-      background: #040810;
+      background: #030712;
       border: 1px dashed var(--accent-cyan);
       border-radius: 10px;
       position: relative;
@@ -75,18 +77,47 @@
       border-radius: 10px;
     }
 
+    /* Caja de Latencia */
+    .latency-btn-box {
+      background: #030712;
+      border: 1px dashed var(--accent-cyan);
+      border-radius: 10px;
+      padding: 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .latency-btn-box:active {
+      transform: scale(0.98);
+      background: rgba(0, 191, 255, 0.08);
+    }
+
     .btn-action {
       background: var(--accent-cyan);
       color: #000;
       border: none;
       padding: 14px;
       border-radius: 10px;
-      font-weight: 800;
+      font-weight: 900;
       font-size: 0.88rem;
       cursor: pointer;
       text-transform: uppercase;
       width: 100%;
       margin-top: 6px;
+      box-shadow: 0 4px 16px var(--accent-cyan-glow);
+    }
+
+    .btn-disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+      box-shadow: none;
+      background: #1e293b;
+      color: var(--text-muted);
     }
   </style>
 </head>
@@ -100,7 +131,7 @@
       </span>
     </header>
 
-    <!-- Datos Evaluado -->
+    <!-- DATOS PERSONALES -->
     <div class="card-box">
       <div class="card-title" id="lblHeaderCard">👤 DATOS PERSONALES</div>
       <div id="gridDatos" class="info-grid">
@@ -108,24 +139,24 @@
           <span class="info-label">Nombre Completo</span>
           <span id="lblNombre" class="info-val">-</span>
         </div>
-        <div id="colRut">
+        <div>
           <span class="info-label">RUT / Cédula</span>
           <span id="lblRut" class="info-val">-</span>
         </div>
       </div>
     </div>
 
-    <!-- SECCIÓN FOTO (Oculta en B2C) -->
-    <div class="card-box" id="boxFotoBiometrica">
+    <!-- SECCIÓN FOTO BIOMÉTRICA (Exclusiva B2B, oculta en B2C) -->
+    <div class="card-box" id="boxFotoBiometrica" style="display: none;">
       <div class="card-title">📷 REGISTRO FOTOGRÁFICO DE IDENTIDAD</div>
-      <div style="width:100%; height:180px; background:#040810; border-radius:10px; display:flex; justify-content:center; align-items:center; border:1px solid var(--card-border);">
+      <div style="width:100%; height:180px; background:#030712; border-radius:10px; display:flex; justify-content:center; align-items:center; border:1px solid var(--card-border);">
         <span style="color:var(--text-muted); font-size:0.75rem;">Cámara Biométrica Activada</span>
       </div>
     </div>
 
     <!-- SECCIÓN FIRMA DIGITAL -->
     <div class="card-box">
-      <div class="card-title">✍️ FIRMA DIGITAL DEL EVALUADO</div>
+      <div class="card-title">✍️️ FIRMA DIGITAL DEL EVALUADO</div>
       <div class="signature-container">
         <canvas id="canvasFirma"></canvas>
       </div>
@@ -135,35 +166,71 @@
       </div>
     </div>
 
-    <button onclick="confirmarYPasarAlMenu()" class="btn-action">
+    <!-- CALIBRACIÓN DE LATENCIA (5 TOQUES: PROMEDIO 2, 3 Y 4) -->
+    <div class="card-box">
+      <div class="card-title">📱 CALIBRACIÓN DE LATENCIA DEL HARDWARE</div>
+      
+      <div id="btnLatenciaArea" class="latency-btn-box" onclick="registrarToqueLatencia()">
+        <span id="txtLatenciaMain" style="font-size: 0.90rem; font-weight: 800; color: var(--accent-cyan);">
+          TOCA AQUÍ PARA CALIBRAR HARDWARE (0 / 5)
+        </span>
+        <span id="txtLatenciaSub" style="font-size: 0.70rem; color: var(--text-muted);">
+          Realiza 5 toques rítmicos. Se promediarán los toques 2, 3 y 4.
+        </span>
+      </div>
+
+      <div class="info-grid" style="margin-top: 4px;">
+        <div>
+          <span class="info-label">Latencia Medida</span>
+          <span id="lblLatenciaVal" class="info-val">-- ms</span>
+        </div>
+        <div>
+          <span class="info-label">Estado Hardware</span>
+          <span id="lblLatenciaEstado" class="info-val" style="color: #f59e0b;">PENDIENTE</span>
+        </div>
+      </div>
+    </div>
+
+    <button id="btnContinuar" onclick="confirmarYPasarAlMenu()" class="btn-action btn-disabled" disabled>
       INICIAR BATERÍA DE EVALUACIONES →
     </button>
   </div>
 
   <script>
-    let isB2C = false;
+    let isB2C = true; // B2C por defecto
     let canvas, ctx, dibujando = false;
+
+    // Control de Latencia
+    let toquesLatencia = [];
+    let tiempoUltimoToque = 0;
+    let latenciaCompletada = false;
 
     document.addEventListener('DOMContentLoaded', () => {
       const urlParams = new URLSearchParams(window.location.search);
-      const rut = urlParams.get('rut') || '15.344.221-K';
-      const nombre = urlParams.get('nombre') || 'Félix Osses';
-      const mode = urlParams.get('mode') || localStorage.getItem('sensometrika_b2c_mode');
+      const modeParam = urlParams.get('mode');
+      const b2cModeStorage = localStorage.getItem('sensometrika_b2c_mode');
+
+      // Intentar recuperar datos cargados desde el modal de index.html
+      let datosUsuario = {};
+      try {
+        datosUsuario = JSON.parse(localStorage.getItem('sensometrika_datos_usuario')) || {};
+      } catch(e){}
+
+      const rut = urlParams.get('rut') || datosUsuario.rut || '15.344.221-K';
+      const nombre = urlParams.get('nombre') || datosUsuario.nombre || 'Félix Osses';
 
       document.getElementById('lblRut').textContent = rut;
       document.getElementById('lblNombre').textContent = decodeURIComponent(nombre);
 
-      if (mode === 'b2c' || localStorage.getItem('sensometrika_b2c_mode') === 'true') {
-        isB2C = true;
-        
-        // Encabezado B2C
-        document.getElementById('lblHeaderCard').textContent = '👤 DATOS PERSONALES';
-        
-        // Ocultar foto
-        document.getElementById('boxFotoBiometrica').style.display = 'none';
-      } else {
-        // Encabezado B2B
+      // Evaluación estricta de modo B2C o B2B
+      if (modeParam === 'b2b' || (b2cModeStorage === 'false' && modeParam !== 'b2c')) {
+        isB2C = false;
         document.getElementById('lblHeaderCard').textContent = '👤 DATOS DEL POSTULANTE / TRABAJADOR';
+        document.getElementById('boxFotoBiometrica').style.display = 'flex';
+      } else {
+        isB2C = true;
+        document.getElementById('lblHeaderCard').textContent = '👤 DATOS PERSONALES';
+        document.getElementById('boxFotoBiometrica').style.display = 'none';
       }
 
       initCanvasFirma();
@@ -175,7 +242,7 @@
       canvas.width = canvas.offsetWidth;
       canvas.height = 180;
 
-      ctx.strokeStyle = '#38bdf8';
+      ctx.strokeStyle = '#00bfff';
       ctx.lineWidth = 2.5;
       ctx.lineCap = 'round';
 
@@ -203,7 +270,47 @@
       ctx.clearRect(0, 0, canvas.width, canvas.height);
     }
 
+    function registrarToqueLatencia() {
+      if (latenciaCompletada) return;
+
+      const ahora = performance.now();
+
+      if (tiempoUltimoToque > 0) {
+        const deltamS = Math.round(ahora - tiempoUltimoToque);
+        toquesLatencia.push(deltamS);
+      } else {
+        toquesLatencia.push(0);
+      }
+
+      tiempoUltimoToque = ahora;
+      const totalToques = toquesLatencia.length;
+
+      document.getElementById('txtLatenciaMain').textContent = `TOCA AQUÍ PARA CALIBRAR HARDWARE (${totalToques} / 5)`;
+
+      if (totalToques >= 5) {
+        const toquesValidos = [toquesLatencia[1], toquesLatencia[2], toquesLatencia[3]];
+        const suma = toquesValidos.reduce((acc, val) => acc + val, 0);
+        const promedioLatencia = Math.round(suma / toquesValidos.length);
+
+        latenciaCompletada = true;
+        localStorage.setItem('sensometrika_latencia_ms', promedioLatencia);
+
+        document.getElementById('txtLatenciaMain').textContent = '✓ CALIBRACIÓN COMPLETADA';
+        document.getElementById('txtLatenciaMain').style.color = '#10b981';
+        document.getElementById('txtLatenciaSub').textContent = 'Latencia de hardware registrada correctamente.';
+        document.getElementById('lblLatenciaVal').textContent = `${promedioLatencia} ms`;
+        document.getElementById('lblLatenciaEstado').textContent = 'OPTIMIZADO';
+        document.getElementById('lblLatenciaEstado').style.color = '#10b981';
+
+        const btnContinuar = document.getElementById('btnContinuar');
+        btnContinuar.classList.remove('btn-disabled');
+        btnContinuar.disabled = false;
+      }
+    }
+
     function confirmarYPasarAlMenu() {
+      if (!latenciaCompletada) return;
+
       const urlParams = new URLSearchParams(window.location.search);
       const rut = urlParams.get('rut') || '';
       const plan = urlParams.get('plan') || 'BASICO';
