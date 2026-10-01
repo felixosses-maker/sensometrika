@@ -118,6 +118,11 @@
       font-size: 0.82rem;
     }
 
+    .form-group input:focus {
+      outline: none;
+      border-color: var(--accent-cyan);
+    }
+
     .btn-generate {
       background: var(--accent-cyan);
       color: #000;
@@ -173,6 +178,46 @@
 
     .badge-status { padding: 3px 8px; border-radius: 4px; font-weight: 800; font-size: 0.62rem; text-transform: uppercase; }
     .badge-ok { background: rgba(16, 185, 129, 0.15); color: var(--accent-green); border: 1px solid var(--accent-green); }
+
+    /* Modal Integrado en la App */
+    .modal-overlay {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(6, 11, 19, 0.85);
+      backdrop-filter: blur(4px);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 100;
+    }
+
+    .modal-content {
+      background-color: var(--card-bg);
+      border: 1px solid #1e3a5f;
+      border-radius: 12px;
+      padding: 24px;
+      width: 90%;
+      max-width: 380px;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+    }
+
+    .modal-title { color: #38bdf8; font-size: 1.05rem; font-weight: 800; text-transform: uppercase; }
+    .modal-body { font-size: 0.85rem; color: var(--text-main); line-height: 1.5; }
+    .modal-btn {
+      background-color: var(--accent-green);
+      color: #000;
+      border: none;
+      padding: 10px;
+      border-radius: 8px;
+      font-weight: 800;
+      cursor: pointer;
+      text-transform: uppercase;
+    }
   </style>
 </head>
 <body>
@@ -224,7 +269,7 @@
       <!-- Caja Enlace Generado -->
       <div id="boxLinkResultado" class="link-out-box">
         <span style="font-size: 0.70rem; color: var(--text-muted); font-weight: 800; text-transform: uppercase;">
-          Enlace Individual Generado (Correctamente Concatenado):
+          Enlace Individual Generado (Listo para enviar al trabajador):
         </span>
         <input type="text" id="txtLinkGenerado" class="link-out-input" readonly>
         <button type="button" class="btn-copy" onclick="copiarLinkGenerado()">
@@ -253,6 +298,15 @@
         </table>
       </div>
     </div>
+
+    <!-- Modal Emergente Integrado -->
+    <div id="modalApp" class="modal-overlay">
+      <div class="modal-content">
+        <div id="modalTitle" class="modal-title">ENLACE COPIADO</div>
+        <div id="modalBody" class="modal-body">El enlace de acreditación individual ha sido copiado al portapapeles.</div>
+        <button id="modalBtnClose" class="modal-btn">Aceptar</button>
+      </div>
+    </div>
   </div>
 
   <script>
@@ -266,6 +320,17 @@
       renderizarNomina();
     });
 
+    function mostrarModalIntegrado(titulo, cuerpo) {
+      document.getElementById('modalTitle').textContent = titulo;
+      document.getElementById('modalBody').innerHTML = cuerpo;
+      const modal = document.getElementById('modalApp');
+      modal.style.display = 'flex';
+      
+      document.getElementById('modalBtnClose').onclick = () => {
+        modal.style.display = 'none';
+      };
+    }
+
     function generarAcreditacion(e) {
       e.preventDefault();
       
@@ -276,11 +341,9 @@
 
       const tokenB2B = 'B2B-SMK-' + Math.floor(1000 + Math.random() * 9000);
       
-      // CORRECTA CONCATENACIÓN DE LA URL CON LA BARRA DIAGONAL RUTA RAÍZ
       const originUrl = window.location.origin;
       const urlCompleta = `${originUrl}/verificacion_trabajador.html?token=${tokenB2B}&rut=${encodeURIComponent(rut)}&nombre=${encodeURIComponent(nombre)}&cargo=${encodeURIComponent(cargo)}&empresa=${encodeURIComponent(empresa)}`;
 
-      // Guardar datos temporales en localStorage
       localStorage.setItem('sensometrika_datos_usuario', JSON.stringify({
         nombre: nombre,
         rut: rut,
@@ -289,7 +352,6 @@
       }));
       localStorage.setItem('sensometrika_b2b_empresa', empresa);
 
-      // Mostrar link en pantalla
       const inputLink = document.getElementById('txtLinkGenerado');
       inputLink.value = urlCompleta;
       document.getElementById('boxLinkResultado').style.display = 'flex';
@@ -313,13 +375,19 @@
       const inputLink = document.getElementById('txtLinkGenerado');
       inputLink.select();
       navigator.clipboard.writeText(inputLink.value).then(() => {
-        alert("¡Enlace copiado exitosamente!\nIncluye los datos del trabajador y su cargo correspondiente.");
+        mostrarModalIntegrado(
+          "ENLACE COPIADO AL PORTAPAPELES 📋",
+          "El enlace de evaluación con cargo codificado ha sido copiado.<br><br>Ya puedes enviarlo directamente al trabajador por WhatsApp o Correo."
+        );
       });
     }
 
     function copiarLinkFila(url) {
       navigator.clipboard.writeText(url).then(() => {
-        alert("Enlace individual copiado al portapapeles.");
+        mostrarModalIntegrado(
+          "ENLACE COPIADO 📋",
+          "El enlace individual del trabajador ha sido copiado al portapapeles."
+        );
       });
     }
 
