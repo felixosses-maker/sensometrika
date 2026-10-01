@@ -16,7 +16,14 @@
             --accent-cyan: #38bdf8;
         }
 
-        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+        * { 
+            box-sizing: border-box; 
+            margin: 0; 
+            padding: 0; 
+            user-select: none; 
+            -webkit-user-select: none;
+            touch-action: manipulation;
+        }
 
         body {
             background-color: var(--bg-color);
@@ -126,7 +133,7 @@
             touch-action: none;
         }
 
-        canvas { width: 100%; height: 100%; display: block; }
+        canvas { width: 100%; height: 100%; display: block; touch-action: none; }
 
         .instruction-text {
             text-align: center;
@@ -301,11 +308,14 @@
         let evaluacionActiva = false;
         let aciertos = 0;
         let errores = 0;
-        let tiempoRestante = 15; // 15 segundos de duración
+        let tiempoRestante = 15;
         let timerInterval = null;
         let animFrameId = null;
 
-        // Variables de la bola y tolerancia de la Zona de Impacto
+        // Anti-doble toque / Cooldown
+        let ultimoToqueMs = 0;
+
+        // Variables de la bola
         let bola = { x: 200, y: -20, r: 18, vy: 2.8 };
         const targetZone = { yMin: 200, yMax: 270 };
 
@@ -353,11 +363,10 @@
         }
 
         function renderLoop() {
-            // Limpiar canvas
             ctx.fillStyle = '#050a12';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // Dibujar Zona de Impacto Rítmico (con resplandor al estar activa)
+            // Dibujar Zona de Impacto
             ctx.strokeStyle = evaluacionActiva ? '#f59e0b' : '#e5b324';
             ctx.lineWidth = 2;
             ctx.strokeRect(15, targetZone.yMin, 370, targetZone.yMax - targetZone.yMin);
@@ -367,17 +376,15 @@
             ctx.fillText('ZONA DE IMPACTO RÍTMICO', 25, targetZone.yMin + 18);
 
             if (evaluacionActiva) {
-                // Avanzar bola
                 bola.y += bola.vy;
 
-                // Si sobrepasa la pantalla sin haber tocado
+                // Si se pasa sin haber tocado
                 if (bola.y > canvas.height + bola.r) {
                     errores++;
                     resetearBola();
                     actualizarMetricas();
                 }
 
-                // Dibujar Bola
                 ctx.beginPath();
                 ctx.arc(bola.x, bola.y, bola.r, 0, Math.PI * 2);
                 ctx.fillStyle = '#38bdf8';
@@ -388,7 +395,6 @@
 
                 animFrameId = requestAnimationFrame(renderLoop);
             } else {
-                // Estado en reposo
                 ctx.beginPath();
                 ctx.arc(200, 130, 22, 0, Math.PI * 2);
                 ctx.strokeStyle = '#1e293b';
@@ -410,11 +416,19 @@
             }
             if (!evaluacionActiva) return;
 
-            // Verificar si el borde inferior o centro de la bola está dentro de la zona
+            // BLOQUEO ANTI-REBOTE (Mínimo 220 ms entre toques)
+            const ahora = Date.now();
+            if (ahora - ultimoToqueMs < 220) {
+                return;
+            }
+            ultimoToqueMs = ahora;
+
+            // Evaluar posición del centro y bordes de la bola
             const yBolaInf = bola.y + bola.r;
             const yBolaSup = bola.y - bola.r;
 
-            if ((yBolaInf >= targetZone.yMin && bola.y <= targetZone.yMax) || (yBolaSup <= targetZone.yMax && bola.y >= targetZone.yMin)) {
+            if ((yBolaInf >= targetZone.yMin && bola.y <= targetZone.yMax) || 
+                (yBolaSup <= targetZone.yMax && bola.y >= targetZone.yMin)) {
                 aciertos++;
             } else {
                 errores++;
@@ -437,6 +451,7 @@
             errores = 0;
             tiempoRestante = 15;
             evaluacionActiva = true;
+            ultimoToqueMs = 0;
 
             actualizarMetricas();
             resetearBola();
@@ -498,10 +513,8 @@
             };
         }
 
-        // BINDING MULTINIVEL DE EVENTOS TÁCTILES Y DE RATÓN
-        canvasContainer.addEventListener('pointerdown', evaluarImpacto, true);
-        canvas.addEventListener('touchstart', evaluarImpacto, { passive: false });
-        canvas.addEventListener('mousedown', evaluarImpacto, true);
+        // UN SOLO LISTENER DE ALTA PRECISIÓN (pointerdown)
+        canvasContainer.addEventListener('pointerdown', evaluarImpacto, { passive: false });
 
         btnStart.addEventListener('click', iniciarPrueba);
 
