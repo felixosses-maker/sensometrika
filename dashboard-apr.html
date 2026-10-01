@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>SENSOMETRIKA | Dashboard APR & Control B2B</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
@@ -16,7 +16,13 @@
       --text-muted: #94a3b8;
     }
 
-    * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+    * { 
+      box-sizing: border-box; 
+      margin: 0; 
+      padding: 0; 
+      user-select: none; 
+      -webkit-user-select: none;
+    }
 
     body {
       background-color: var(--bg-color);
@@ -45,20 +51,11 @@
       gap: 6px;
     }
 
-    .brand-logo-card {
-      background: rgba(11, 19, 36, 0.9);
-      border: 1px solid #1e293b;
-      padding: 8px 16px;
-      border-radius: 12px;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.6);
-      display: inline-block;
-    }
-
-    .brand-logo-card img {
-      width: 170px;
+    .brand-logo-img {
+      width: 210px;
       height: auto;
-      display: block;
-      filter: drop-shadow(0 0 10px rgba(56, 189, 248, 0.6));
+      mix-blend-mode: lighten;
+      filter: drop-shadow(0 0 12px rgba(56, 189, 248, 0.45));
     }
 
     .panel-card {
@@ -82,9 +79,20 @@
       padding-bottom: 8px;
     }
 
+    .info-empresa-bar {
+      background: #080d17;
+      border: 1px solid var(--card-border);
+      border-radius: 10px;
+      padding: 12px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.80rem;
+    }
+
     .form-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
       gap: 12px;
     }
 
@@ -110,14 +118,9 @@
       font-size: 0.82rem;
     }
 
-    .form-group input:focus {
-      outline: none;
-      border-color: var(--accent-cyan);
-    }
-
     .btn-generate {
-      background: #0284c7;
-      color: #fff;
+      background: var(--accent-cyan);
+      color: #000;
       border: none;
       padding: 12px;
       border-radius: 8px;
@@ -126,11 +129,6 @@
       cursor: pointer;
       text-transform: uppercase;
       margin-top: 6px;
-      transition: background 0.2s;
-    }
-
-    .btn-generate:hover {
-      background: #0369a1;
     }
 
     .link-out-box {
@@ -165,120 +163,77 @@
       text-transform: uppercase;
     }
 
-    .table-container {
-      overflow-x: auto;
-    }
+    .table-container { overflow-x: auto; }
 
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 0.78rem;
-    }
+    table { width: 100%; border-collapse: collapse; font-size: 0.78rem; }
 
-    th, td {
-      border: 1px solid var(--card-border);
-      padding: 10px 12px;
-      text-align: left;
-    }
+    th, td { border: 1px solid var(--card-border); padding: 10px 12px; text-align: left; }
 
-    th {
-      background: #070d17;
-      color: var(--accent-cyan);
-      font-weight: 800;
-      text-transform: uppercase;
-      font-size: 0.65rem;
-    }
+    th { background: #070d17; color: var(--accent-cyan); font-weight: 800; text-transform: uppercase; font-size: 0.65rem; }
 
-    .badge-status {
-      padding: 3px 8px;
-      border-radius: 4px;
-      font-weight: 800;
-      font-size: 0.62rem;
-      text-transform: uppercase;
-    }
-
+    .badge-status { padding: 3px 8px; border-radius: 4px; font-weight: 800; font-size: 0.62rem; text-transform: uppercase; }
     .badge-ok { background: rgba(16, 185, 129, 0.15); color: var(--accent-green); border: 1px solid var(--accent-green); }
-
-    /* MODAL */
-    .modal-overlay {
-      position: fixed;
-      inset: 0;
-      background: rgba(3, 7, 18, 0.85);
-      backdrop-filter: blur(6px);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 99999;
-      padding: 16px;
-    }
-
-    .modal-card {
-      background: #0f172a;
-      border: 1px solid #1e293b;
-      border-radius: 16px;
-      width: 100%;
-      max-width: 380px;
-      padding: 22px;
-      text-align: center;
-      box-shadow: 0 20px 30px rgba(0,0,0,0.7);
-      color: #f8fafc;
-    }
-
-    .modal-card h3 { font-size: 1.15rem; font-weight: 800; color: #38bdf8; margin-bottom: 6px; }
-    .modal-card p { font-size: 0.82rem; color: #94a3b8; line-height: 1.4; margin-bottom: 18px; }
-    .modal-btn { width: 100%; background: #0284c7; color: #fff; border: none; border-radius: 10px; padding: 10px; font-weight: 700; cursor: pointer; font-size: 0.85rem; text-transform: uppercase; }
   </style>
 </head>
 <body>
 
   <div class="main-container">
     <header class="brand-header">
-      <div class="brand-logo-card">
-        <img src="sensometrica.jpg" alt="SENSOMETRIKA Calibration Technology">
-      </div>
-      <span style="color: var(--accent-cyan); font-size: 0.75rem; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase; margin-top: 6px;">
+      <img src="sensometrica.jpg" alt="SENSOMETRIKA" class="brand-logo-img">
+      <span style="color: var(--accent-cyan); font-size: 0.75rem; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase;">
         PANEL DE CONTROL APR • REGISTRO & TELEMETRÍA B2B
       </span>
     </header>
 
-    <!-- Formulario de Asignación -->
+    <div class="info-empresa-bar">
+      <div>
+        <span style="color: var(--text-muted); text-transform: uppercase; font-size: 0.68rem; display: block;">Empresa Mandante</span>
+        <strong id="lblEmpresa" style="color: #fff; font-size: 0.9rem;">Minerales / Socadep</strong>
+      </div>
+      <div>
+        <span style="color: var(--text-muted); text-transform: uppercase; font-size: 0.68rem; display: block;">Encargado / APR</span>
+        <strong id="lblEncargado" style="color: var(--accent-cyan); font-size: 0.9rem;">Raul Hernandez</strong>
+      </div>
+    </div>
+
+    <!-- Formulario Registro -->
     <div class="panel-card">
       <div class="card-title">➕ Registrar Trabajador & Generar Link de Acreditación</div>
       <form id="formRegistrar" onsubmit="generarAcreditacion(event)">
         <div class="form-grid">
           <div class="form-group">
             <label>RUT del Trabajador</label>
-            <input type="text" id="inputRut" placeholder="Ej: 77.654.234-1" required>
+            <input type="text" id="inputRut" placeholder="Ej: 12.222.222-1" required>
           </div>
           <div class="form-group">
             <label>Nombre Completo</label>
-            <input type="text" id="inputNombre" placeholder="Ej: Juan Silva Morales" required>
+            <input type="text" id="inputNombre" placeholder="Ej: Juan Pérez" required>
           </div>
           <div class="form-group">
-            <label>Cargo / Función</label>
+            <label>Cargo / Función a Evaluar</label>
             <input type="text" id="inputCargo" placeholder="Ej: Operador Harvester / Conductor" required>
           </div>
           <div class="form-group">
             <label>Empresa Mandante</label>
-            <input type="text" id="inputEmpresa" placeholder="Ej: Minera Cabterias / Socadep" required>
+            <input type="text" id="inputEmpresa" placeholder="Ej: Minerales" required>
           </div>
         </div>
-        <button type="submit" class="btn-generate">GENERAR ENLACE DE EVALUACIÓN 🔗</button>
+        <button type="submit" class="btn-generate">GENERAR ENLACE DE EVALUACIÓN CON CARGO 🔗</button>
       </form>
 
-      <!-- Caja con el Link Generado -->
+      <!-- Caja Enlace Generado -->
       <div id="boxLinkResultado" class="link-out-box">
         <span style="font-size: 0.70rem; color: var(--text-muted); font-weight: 800; text-transform: uppercase;">
-          Enlace Individual Generado (Listo para enviar al trabajador):
+          Enlace Individual Generado (Correctamente Concatenado):
         </span>
         <input type="text" id="txtLinkGenerado" class="link-out-input" readonly>
         <button type="button" class="btn-copy" onclick="copiarLinkGenerado()">
-          📋 COPIAR LINK AL PORTAPAPELES
+          📋 COPIAR LINK Y ENVIAR AL TRABAJADOR
         </button>
       </div>
     </div>
 
-    <!-- Tabla Nómina APR -->
+    <!-- Tabla Nómina -->
     <div class="panel-card">
       <div class="card-title">📋 Nómina de Trabajadores Acreditados en Faena</div>
       <div class="table-container">
@@ -293,37 +248,23 @@
             </tr>
           </thead>
           <tbody id="tablaNominaAPR">
-            <!-- Filas Dinámicas -->
+            <!-- Renderizado dinámico -->
           </tbody>
         </table>
       </div>
     </div>
   </div>
 
-  <div id="modalContainer"></div>
-
   <script>
     let trabajadores = JSON.parse(localStorage.getItem('sensometrika_apr_nomina')) || [];
 
     document.addEventListener('DOMContentLoaded', () => {
+      const contratacion = JSON.parse(localStorage.getItem('sensometrika_b2b_contratacion')) || {};
+      if (contratacion.razonSocial) document.getElementById('lblEmpresa').innerText = contratacion.razonSocial;
+      if (contratacion.encargado) document.getElementById('lblEncargado').innerText = contratacion.encargado;
+
       renderizarNomina();
     });
-
-    function mostrarModal(titulo, mensaje, callback) {
-      document.getElementById('modalContainer').innerHTML = `
-        <div class="modal-overlay">
-          <div class="modal-card">
-            <h3>${titulo}</h3>
-            <p>${mensaje}</p>
-            <button type="button" class="modal-btn" id="btnCerrarModal">Entendido</button>
-          </div>
-        </div>
-      `;
-      document.getElementById('btnCerrarModal').onclick = () => {
-        document.getElementById('modalContainer').innerHTML = '';
-        if (callback) callback();
-      };
-    }
 
     function generarAcreditacion(e) {
       e.preventDefault();
@@ -333,37 +274,26 @@
       const cargo = document.getElementById('inputCargo').value.trim();
       const empresa = document.getElementById('inputEmpresa').value.trim();
 
-      if (!rut || !nombre || !cargo || !empresa) {
-        mostrarModal("Datos Incompletos", "Por favor, complete todos los campos requeridos.");
-        return;
-      }
-
       const tokenB2B = 'B2B-SMK-' + Math.floor(1000 + Math.random() * 9000);
-      const baseUrl = window.location.origin + window.location.pathname.replace('dashboard_apr.html', '');
       
-      // Apunta a verificacion_trabajador.html con token y rut
-      const urlCompleta = `${baseUrl}verificacion_trabajador.html?token=${tokenB2B}&rut=${encodeURIComponent(rut)}`;
+      // CORRECTA CONCATENACIÓN DE LA URL CON LA BARRA DIAGONAL RUTA RAÍZ
+      const originUrl = window.location.origin;
+      const urlCompleta = `${originUrl}/verificacion_trabajador.html?token=${tokenB2B}&rut=${encodeURIComponent(rut)}&nombre=${encodeURIComponent(nombre)}&cargo=${encodeURIComponent(cargo)}&empresa=${encodeURIComponent(empresa)}`;
 
-      // Guardar sesión previa limpia
-      localStorage.removeItem('sensometrika_modulos_rendidos');
-      localStorage.removeItem('sensometrika_session_burned');
-
+      // Guardar datos temporales en localStorage
       localStorage.setItem('sensometrika_datos_usuario', JSON.stringify({
         nombre: nombre,
         rut: rut,
         cargo: cargo,
-        correo: 'supervision@faena.cl'
+        correo: 'felix.osses@gmail.com'
       }));
       localStorage.setItem('sensometrika_b2b_empresa', empresa);
-      localStorage.setItem('sensometrika_b2b_token', tokenB2B);
-      localStorage.setItem('sensometrika_b2b_rut', rut);
 
-      // Mostrar link
+      // Mostrar link en pantalla
       const inputLink = document.getElementById('txtLinkGenerado');
       inputLink.value = urlCompleta;
       document.getElementById('boxLinkResultado').style.display = 'flex';
 
-      // Agregar a nómina local
       const nuevoTrabajador = {
         rut: rut,
         nombre: nombre,
@@ -377,21 +307,19 @@
       trabajadores.unshift(nuevoTrabajador);
       localStorage.setItem('sensometrika_apr_nomina', JSON.stringify(trabajadores));
       renderizarNomina();
-
-      mostrarModal("Enlace Generado", "✓ Se ha emitido el enlace de acreditación individual. Ya puedes copiarlo y enviárselo al trabajador.");
     }
 
     function copiarLinkGenerado() {
       const inputLink = document.getElementById('txtLinkGenerado');
       inputLink.select();
       navigator.clipboard.writeText(inputLink.value).then(() => {
-        mostrarModal("¡Enlace Copiado!", "El enlace ha sido copiado al portapapeles con éxito.");
+        alert("¡Enlace copiado exitosamente!\nIncluye los datos del trabajador y su cargo correspondiente.");
       });
     }
 
     function copiarLinkFila(url) {
       navigator.clipboard.writeText(url).then(() => {
-        mostrarModal("Enlace Copiado", "El enlace individual ha sido copiado al portapapeles.");
+        alert("Enlace individual copiado al portapapeles.");
       });
     }
 
@@ -412,7 +340,7 @@
             <span style="font-size:0.68rem; color:var(--text-muted);">RUT: ${t.rut}</span>
           </td>
           <td>
-            <span style="display:block; font-weight:700;">${t.cargo}</span>
+            <strong style="color:var(--accent-cyan); display:block;">${t.cargo}</strong>
             <span style="font-size:0.68rem; color:var(--text-muted);">${t.empresa}</span>
           </td>
           <td>
@@ -420,7 +348,7 @@
           </td>
           <td>
             <button onclick="copiarLinkFila('${t.url}')" style="background:#0284c7; color:#fff; border:none; padding:6px 10px; border-radius:4px; font-weight:700; cursor:pointer;">
-              🔗 Copiar
+              🔗 Copiar Link
             </button>
           </td>
           <td>
