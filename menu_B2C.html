@@ -111,6 +111,8 @@
       font-weight: 800;
       font-size: 0.75rem;
       text-transform: uppercase;
+      cursor: not-allowed;
+      opacity: 0.8;
     }
 
     .btn-action-main {
@@ -141,19 +143,19 @@
       </span>
     </header>
 
-    <!-- BANNER DINÁMICO DE PLAN -->
+    <!-- BANNER DE PLAN -->
     <div id="boxHeaderPlan" class="badge-plan-header">
-      <span id="txtTipoPlan" style="font-size:0.88rem; font-weight:900;">EVALUACIÓN PARTICULAR • PLAN BASICO (B2C)</span>
+      <span id="txtTipoPlan" style="font-size:0.88rem; font-weight:900;">EVALUACIÓN • B2B / B2C</span>
       <span id="txtInfoEvaluado" style="font-size:0.72rem; color:var(--text-muted); font-weight:600;">Evaluado: - | RUT: -</span>
     </div>
 
-    <!-- TARJETA DE CONTADOR DE SIMULACIONES -->
+    <!-- CUOTA SIMULACIONES B2C -->
     <div id="boxContadorSimulaciones" class="counter-box">
       <span style="color: var(--text-muted); font-size: 0.72rem; font-weight: 700;">🔄 SIMULACIONES DISPONIBLES:</span>
       <strong id="lblSimulacionesCuota" style="color: var(--accent-cyan); font-size: 0.88rem; font-weight: 900;">INTENTO 1 DE 3</strong>
     </div>
 
-    <!-- MÓDULOS DE EVALUACIÓN DINÁMICOS -->
+    <!-- MÓDULOS DE EVALUACIÓN -->
     <div class="card-box" id="boxModulos">
       
       <!-- 1. Reactímetro -->
@@ -163,7 +165,7 @@
           <span class="module-desc">Medición de velocidad de respuesta en frenado.</span>
         </div>
         <div id="statusMod1">
-          <a href="reactimetro.html" class="btn-start">INICIAR →</a>
+          <a id="linkMod1" href="reactimetro.html" class="btn-start">INICIAR →</a>
         </div>
       </div>
 
@@ -174,7 +176,7 @@
           <span class="module-desc">Coordinación motriz fina con ambas manos en ruta.</span>
         </div>
         <div id="statusMod2">
-          <a href="palancas.html" class="btn-start">INICIAR →</a>
+          <a id="linkMod2" href="palancas.html" class="btn-start">INICIAR →</a>
         </div>
       </div>
 
@@ -185,37 +187,37 @@
           <span class="module-desc">Estabilidad de ritmo y precisión de impacto.</span>
         </div>
         <div id="statusMod3">
-          <a href="punteo.html" class="btn-start">INICIAR →</a>
+          <a id="linkMod3" href="punteo.html" class="btn-start">INICIAR →</a>
         </div>
       </div>
 
-      <!-- 4. Tamizaje Auditivo -->
+      <!-- 4. Auditivo -->
       <div class="module-card" id="cardModAuditivo" style="display: none;">
         <div class="module-info">
           <span class="module-title">4. Tamizaje Auditivo Ocupacional</span>
           <span class="module-desc">Audiometría tonal en frecuencias críticas para faena.</span>
         </div>
         <div id="statusMod4">
-          <a href="auditivo.html" class="btn-start">INICIAR →</a>
+          <a id="linkMod4" href="auditivo.html" class="btn-start">INICIAR →</a>
         </div>
       </div>
 
-      <!-- 5. Tamizaje Visual -->
+      <!-- 5. Visual -->
       <div class="module-card" id="cardModVisual" style="display: none;">
         <div class="module-info">
           <span class="module-title">5. Tamizaje Visual Integral</span>
           <span class="module-desc">Agudeza visual, nocturna y visión de colores (Ishihara).</span>
         </div>
         <div id="statusMod5">
-          <a href="visual.html" class="btn-start">INICIAR →</a>
+          <a id="linkMod5" href="visual.html" class="btn-start">INICIAR →</a>
         </div>
       </div>
 
     </div>
 
-    <!-- BOTÓN FINAL -->
+    <!-- BOTÓN DE CIERRE -->
     <button id="btnFinalizarGeneral" onclick="finalizarEvaluacion()" class="btn-action-main">
-      🎓 FINALIZAR Y OBTENER CERTIFICADO DIGITAL
+      FINALIZAR Y GENERAR INFORME →
     </button>
   </div>
 
@@ -232,15 +234,13 @@
         datosUsuario = JSON.parse(localStorage.getItem('sensometrika_datos_usuario')) || {};
       } catch(e){}
 
-      const rut = urlParams.get('rut') || datosUsuario.rut || '13.654.345-1';
-      const nombre = datosUsuario.nombre || urlParams.get('nombre') || 'Francisco Arteaga Soto';
+      const rut = urlParams.get('rut') || datosUsuario.rut || '12.434.333-1';
+      const nombre = datosUsuario.nombre || urlParams.get('nombre') || 'Usuario Evaluado';
 
-      // Definir límite de simulaciones según el plan
       let totalSimulacionesPlan = 3;
       if (planParam.includes('PLUS')) totalSimulacionesPlan = 5;
       if (planParam.includes('FULL')) totalSimulacionesPlan = 8;
 
-      // Obtener el número de simulación actual ejecutada
       let intentoActual = parseInt(localStorage.getItem('sensometrika_intento_actual') || '1');
 
       if (modeParam === 'b2c' || localStorage.getItem('sensometrika_b2c_mode') === 'true') {
@@ -256,6 +256,14 @@
       }
 
       document.getElementById('txtInfoEvaluado').textContent = `Evaluado: ${decodeURIComponent(nombre)} | RUT: ${rut}`;
+
+      // Configurar parámetros en enlaces de módulos
+      const paramsQuery = urlParams.toString();
+      if (document.getElementById('linkMod1')) document.getElementById('linkMod1').href = `reactimetro.html?${paramsQuery}`;
+      if (document.getElementById('linkMod2')) document.getElementById('linkMod2').href = `palancas.html?${paramsQuery}`;
+      if (document.getElementById('linkMod3')) document.getElementById('linkMod3').href = `punteo.html?${paramsQuery}`;
+      if (document.getElementById('linkMod4')) document.getElementById('linkMod4').href = `auditivo.html?${paramsQuery}`;
+      if (document.getElementById('linkMod5')) document.getElementById('linkMod5').href = `visual.html?${paramsQuery}`;
 
       if (planParam.includes('PLUS') || planParam.includes('FULL')) {
         document.getElementById('cardModAuditivo').style.display = 'flex';
@@ -289,9 +297,9 @@
 
     function finalizarEvaluacion() {
       if (isB2C) {
-        window.location.href = "informe.html";
+        window.location.href = `informe.html?${window.location.search.substring(1)}`;
       } else {
-        window.location.href = "informe-b2b.html";
+        window.location.href = `informe-b2b.html?${window.location.search.substring(1)}`;
       }
     }
   </script>

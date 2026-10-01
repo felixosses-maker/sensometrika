@@ -180,7 +180,7 @@
       </button>
     </div>
 
-    <!-- FIRMA DIGITAL DEL EVALUADO (SOLO B2B - OCULTA EN B2C) -->
+    <!-- FIRMA DIGITAL DEL EVALUADO (SOLO B2B) -->
     <div class="card-box" id="boxFirmaDigital" style="display: none;">
       <div class="card-title">✍️ FIRMA DIGITAL DEL EVALUADO</div>
       <div class="signature-container">
@@ -192,7 +192,7 @@
       </div>
     </div>
 
-    <!-- CALIBRACIÓN DE LATENCIA DEL HARDWARE (5 TOQUES) -->
+    <!-- CALIBRACIÓN DE LATENCIA DEL HARDWARE -->
     <div class="card-box">
       <div class="card-title">📱 CALIBRACIÓN DE LATENCIA DEL HARDWARE</div>
       
@@ -221,7 +221,7 @@
     <div class="terms-box">
       <input type="checkbox" id="chkTerminos" onchange="validarTerminosYLatencia()">
       <label for="chkTerminos" style="cursor: pointer;">
-        Declaro que mis datos son fidedignos, acepto rendir las evaluaciones psicotécnicas bajo consentimiento informado y autorizo el procesamiento de resultados para el informe de simulación según los <strong style="color: var(--accent-cyan);">Términos y Condiciones del Servicio</strong>.
+        Declaro que mis datos son fidedignos, acepto rendir las evaluaciones psicotécnicas bajo consentimiento informado y autorizo el procesamiento de resultados según los <strong style="color: var(--accent-cyan);">Términos y Condiciones del Servicio</strong>.
       </label>
     </div>
 
@@ -249,22 +249,36 @@
         datosUsuario = JSON.parse(localStorage.getItem('sensometrika_datos_usuario')) || {};
       } catch(e){}
 
-      const rut = urlParams.get('rut') || datosUsuario.rut || '12.222.888-9';
-      const nombre = urlParams.get('nombre') || datosUsuario.nombre || 'Francisco Ferragut Ordenes';
+      const rut = urlParams.get('rut') || datosUsuario.rut || '';
+      const nombre = urlParams.get('nombre') || datosUsuario.nombre || '';
 
-      document.getElementById('lblRut').textContent = rut;
-      document.getElementById('lblNombre').textContent = decodeURIComponent(nombre);
+      document.getElementById('lblRut').textContent = rut || 'SIN RUT';
+      document.getElementById('lblNombre').textContent = decodeURIComponent(nombre) || 'SIN NOMBRE';
+
+      // REGLA DE LIMPIEZA TOTAL DE RESULTADOS PREVIOS AL INGRESAR NUEVO TRABAJADOR
+      const rutGuardado = localStorage.getItem('sensometrika_evaluado_rut');
+      if (rutGuardado !== rut) {
+        localStorage.removeItem('sensometrika_modulos_rendidos');
+        localStorage.removeItem('sensometrika_historial_reactimetro');
+        localStorage.removeItem('sensometrika_historial_palancas');
+        localStorage.removeItem('sensometrika_historial_punteo');
+        localStorage.removeItem('sensometrika_historial_auditivo');
+        localStorage.removeItem('sensometrika_historial_visual');
+        localStorage.removeItem('sensometrika_foto_trabajador');
+        localStorage.removeItem('sensometrika_firma_trabajador');
+        localStorage.setItem('sensometrika_evaluado_rut', rut);
+      }
 
       if (modeParam === 'b2c' || b2cModeStorage === 'true') {
         isB2C = true;
         document.getElementById('lblHeaderCard').textContent = '👤 DATOS PERSONALES';
         document.getElementById('boxFotoBiometrica').style.display = 'none';
-        document.getElementById('boxFirmaDigital').style.display = 'none'; // OCULTO EN B2C
+        document.getElementById('boxFirmaDigital').style.display = 'none';
       } else {
         isB2C = false;
         document.getElementById('lblHeaderCard').textContent = '👤 DATOS DEL POSTULANTE / TRABAJADOR';
         document.getElementById('boxFotoBiometrica').style.display = 'flex';
-        document.getElementById('boxFirmaDigital').style.display = 'flex'; // VISIBLE EN B2B
+        document.getElementById('boxFirmaDigital').style.display = 'flex';
         iniciarCamaraB2B();
         initCanvasFirma();
       }
@@ -397,13 +411,14 @@
 
       const urlParams = new URLSearchParams(window.location.search);
       const rut = urlParams.get('rut') || '';
+      const nombre = urlParams.get('nombre') || '';
       const plan = urlParams.get('plan') || 'BASICO';
 
       if (!isB2C && canvas) {
         localStorage.setItem('sensometrika_firma_trabajador', canvas.toDataURL());
       }
       
-      window.location.href = `menu_B2C.html?rut=${encodeURIComponent(rut)}&plan=${plan}&mode=${isB2C ? 'b2c' : 'b2b'}`;
+      window.location.href = `menu_B2C.html?rut=${encodeURIComponent(rut)}&nombre=${encodeURIComponent(nombre)}&plan=${plan}&mode=${isB2C ? 'b2c' : 'b2b'}`;
     }
   </script>
 </body>

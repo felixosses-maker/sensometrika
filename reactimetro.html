@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>SENSOMETRIKA | Reactímetro Simple (Tiempo de Frenado)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <style>
         :root {
             --bg-color: #060b13;
@@ -52,7 +53,7 @@
         }
 
         .brand-logo-img {
-            width: 220px;
+            width: 185px;
             height: auto;
             display: block;
             mix-blend-mode: lighten;
@@ -61,7 +62,7 @@
 
         .brand-subtitle {
             color: var(--accent-cyan);
-            font-size: 0.75rem;
+            font-size: 0.72rem;
             font-weight: 800;
             text-transform: uppercase;
             letter-spacing: 1.5px;
@@ -309,6 +310,7 @@
             </div>
         </div>
 
+        <!-- MODAL INSTRUCCIONES -->
         <div id="modalInstrucciones" class="modal-overlay">
             <div class="modal-content">
                 <div class="modal-title">ℹ ¿CÓMO FUNCIONA ESTE MÓDULO?</div>
@@ -326,6 +328,7 @@
             </div>
         </div>
 
+        <!-- MODAL ALERTA SISTEMA -->
         <div id="modalSistema" class="modal-overlay">
             <div class="modal-content" style="text-align: center;">
                 <div id="modalTitle" class="modal-title">PRUEBA FINALIZADA</div>
@@ -361,28 +364,14 @@
         const btnCloseInstrucciones = document.getElementById('btnCloseInstrucciones');
 
         const urlParams = new URLSearchParams(window.location.search);
-        const tokenUrl = urlParams.get('token') || localStorage.getItem('sensometrika_b2b_token');
-        const rutUrl = urlParams.get('rut') || localStorage.getItem('sensometrika_b2b_rut');
+        const modeParam = urlParams.get('mode') || (localStorage.getItem('sensometrika_b2c_mode') === 'true' ? 'b2c' : 'b2b');
+        const esB2B = (modeParam === 'b2b');
 
-        let sesion = {};
-        try { sesion = JSON.parse(localStorage.getItem('sensometrika_sesion')) || {}; } catch(e){}
-
-        const plan = localStorage.getItem('sensometrika_plan') || sesion.planId || 'B2C'; 
-        const esB2B = (tokenUrl || rutUrl || plan === 'B2B' || sesion.rol === 'empresa' || localStorage.getItem('sensometrika_b2b_mode') === 'true' || localStorage.getItem('sensometrika_b2b_contratacion'));
-
-        let simulacionesTotales = esB2B ? 1 : (parseInt(localStorage.getItem('sensometrika_simulaciones_compradas')) || 3);
-        let simulacionesUsadas = parseInt(localStorage.getItem('reactimetro_simulaciones_usadas')) || 0;
         let modoActual = 'DEMO';
 
         function ejecutarRetornoMenu() {
-            const token = tokenUrl || localStorage.getItem('sensometrika_b2b_token') || '';
-            const rut = rutUrl || localStorage.getItem('sensometrika_b2b_rut') || '';
-
-            if (esB2B) {
-                window.location.href = `menu_B2C.html?token=${token}&rut=${rut}&verified=true`;
-            } else {
-                window.location.href = 'menu_B2C.html';
-            }
+            const queryStr = urlParams.toString();
+            window.location.href = `menu_B2C.html?${queryStr}`;
         }
 
         btnVolverNav.addEventListener('click', ejecutarRetornoMenu);
@@ -392,10 +381,19 @@
         btnCloseInstrucciones.addEventListener('click', () => { modalInstrucciones.style.display = 'none'; });
 
         function actualizarEstadoPlanUI() {
+            const modulosRendidos = JSON.parse(localStorage.getItem('sensometrika_modulos_rendidos')) || {};
+            const yaRendido = modulosRendidos.reactimetro === true;
             const demoRealizada = localStorage.getItem('reactimetro_demo_completada') === 'true';
-            simulacionesUsadas = parseInt(localStorage.getItem('reactimetro_simulaciones_usadas')) || 0;
 
-            if (!demoRealizada) {
+            if (yaRendido) {
+                modoActual = 'BLOQUEADO';
+                badgeText.textContent = "MÓDULO EVALUADO Y REGISTRADO";
+                badgeDot.style.backgroundColor = "#10b981"; 
+                btnStart.style.display = 'none';
+                btnBrake.style.display = 'none';
+                salidaWrapper.style.display = 'flex';
+                instructionText.textContent = "Has completado la evaluación de este módulo. Retorna al menú para continuar.";
+            } else if (!demoRealizada) {
                 modoActual = 'DEMO';
                 badgeText.textContent = "Paso 1: Calibración Demo (1/1)";
                 badgeDot.style.backgroundColor = "#e5b324"; 
@@ -404,24 +402,15 @@
                 btnBrake.style.display = 'none';
                 salidaWrapper.style.display = 'none';
                 instructionText.textContent = "Modo Demo: Se realizarán 6 estímulos de ensayo para familiarizarte antes de la prueba oficial.";
-            } else if (simulacionesUsadas < simulacionesTotales) {
+            } else {
                 modoActual = 'OFICIAL';
-                const numSimulacion = simulacionesUsadas + 1;
-                badgeText.textContent = esB2B ? "Simulación Oficial (1/1) (D.S. N° 170)" : `Simulación Oficial ${numSimulacion} de ${simulacionesTotales} (D.S. N° 170)`;
+                badgeText.textContent = esB2B ? "Simulación Oficial B2B (D.S. N° 170)" : "Simulación Oficial (D.S. N° 170)";
                 badgeDot.style.backgroundColor = "#ef4444"; 
-                btnStart.textContent = esB2B ? "INICIAR SIMULACIÓN OFICIAL" : `INICIAR SIMULACIÓN OFICIAL (${numSimulacion}/${simulacionesTotales})`;
+                btnStart.textContent = "INICIAR SIMULACIÓN OFICIAL";
                 btnStart.style.display = 'block';
                 btnBrake.style.display = 'none';
                 salidaWrapper.style.display = 'none';
                 instructionText.textContent = "Evaluación Oficial: Se promediarán 6 estímulos visuales aleatorios. Mantén la atención.";
-            } else {
-                modoActual = 'BLOQUEADO';
-                badgeText.textContent = "SIMULACIÓN EVALUADA Y REGISTRADA";
-                badgeDot.style.backgroundColor = "#10b981"; 
-                btnStart.style.display = 'none';
-                btnBrake.style.display = 'none';
-                salidaWrapper.style.display = 'flex';
-                instructionText.textContent = "Has completado la evaluación de este módulo. Retorna al menú para continuar.";
             }
         }
 
@@ -448,13 +437,12 @@
                     `Promedio Neto: <b>${res.promedioTiempo} ms</b><br>Anticipaciones: <b>${res.anticipaciones}</b><br><br>Has completado el ensayo. Ya puedes rendir tu simulación oficial.`
                 );
             } else if (modoActual === 'OFICIAL') {
-                simulacionesUsadas++;
-                localStorage.setItem('reactimetro_simulaciones_usadas', simulacionesUsadas.toString());
-                
-                let rendidos = JSON.parse(localStorage.getItem('sensometrika_modulos_rendidos')) || [];
-                if (!rendidos.includes(1)) rendidos.push(1);
+                // 1. Guardar como Objeto en sensometrika_modulos_rendidos
+                let rendidos = JSON.parse(localStorage.getItem('sensometrika_modulos_rendidos')) || {};
+                rendidos.reactimetro = true;
                 localStorage.setItem('sensometrika_modulos_rendidos', JSON.stringify(rendidos));
 
+                // 2. Guardar resultado del intento
                 let historial = JSON.parse(localStorage.getItem('sensometrika_historial_reactimetro')) || [];
                 historial.push({
                     promedioTiempo: res.promedioTiempo,
