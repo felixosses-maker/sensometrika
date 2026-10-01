@@ -219,6 +219,9 @@
     .form-group label { font-size: 0.68rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700; }
     .form-group input { background: #030712; border: 1px solid var(--card-border); color: #fff; padding: 10px 12px; border-radius: 8px; font-size: 0.82rem; }
     .form-group input:focus { outline: none; border-color: var(--accent-cyan); }
+
+    .chk-container { display: flex; align-items: flex-start; gap: 8px; font-size: 0.68rem; color: var(--text-muted); margin-top: 4px; }
+    .chk-container input { width: 15px; height: 15px; accent-color: var(--accent-cyan); cursor: pointer; }
   </style>
 </head>
 <body>
@@ -233,7 +236,7 @@
       </p>
     </header>
 
-    <!-- Switch de Modalidades B2C / B2B -->
+    <!-- Switch B2C / B2B -->
     <div class="switch-tab-container">
       <button id="btnTabB2C" class="tab-btn active-tab" onclick="cambiarModalidad('B2C')">
         👤 Particular (B2C)
@@ -308,13 +311,13 @@
 
     </div>
 
-    <!-- VISTA EMPRESAS (B2B - BOLSAS CORPORATIVAS CON BOTÓN DE PAGO) -->
+    <!-- VISTA EMPRESAS (B2B - BOLSAS CORPORATIVAS) -->
     <div id="vistaB2B" style="display: none; flex-direction: column; gap: 14px;">
       
       <div class="bolsa-selector-box">
         <div>
           <span style="color: var(--accent-cyan); font-weight: 800; text-transform: uppercase; display: block; font-size: 0.70rem;">📦 Bolsa Corporativa de Evaluaciones</span>
-          <span style="color: #cbd5e1; font-size: 0.67rem; font-weight: 700;">♾️ SIN EXPIRACIÓN: Los cupos adquiridos no vencen.</span>
+          <span style="color: #cbd5e1; font-size: 0.67rem; font-weight: 700;">♾️️ SIN EXPIRACIÓN: Los cupos adquiridos no vencen.</span>
         </div>
         <div style="display: flex; align-items: center; gap: 8px;">
           <button class="counter-btn" onclick="modificarBolsa(-5)">-</button>
@@ -357,7 +360,7 @@
         </ul>
         <div class="price-box">
           <span class="price-main" id="priceB2B_2">$ 89.900 <span style="font-size: 0.70rem; font-weight:400; color:var(--text-muted);">+ IVA Total</span></span>
-          <span class="price-sub">♾️ La bolsa de evaluaciones NO tiene fecha de caducidad.</span>
+          <span class="price-sub">♾️️ La bolsa de evaluaciones NO tiene fecha de caducidad.</span>
           <span class="reintegro-note">🔄 Cada link emitido vigila por 72 hrs. Si no se utiliza, el cupo se reincorpora automáticamente a su bolsa.</span>
         </div>
         <button class="btn-action-cyan" onclick="abrirModalB2B('Plan Plus (B2B)', 2)">
@@ -412,7 +415,7 @@
     </div>
   </div>
 
-  <!-- Modal Emergente B2C -->
+  <!-- Modal B2C -->
   <div id="modalB2C" class="modal-overlay">
     <div class="modal-card">
       <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--card-border); padding-bottom: 8px;">
@@ -441,6 +444,11 @@
             <input type="email" id="modalCorreo" placeholder="Ej: felix@correo.com" required>
           </div>
 
+          <div class="chk-container">
+            <input type="checkbox" id="chkModalB2C" required>
+            <label for="chkModalB2C">Acepto los <strong style="color: var(--accent-cyan);">Términos y Condiciones</strong> del servicio de acreditación Sensometrika.</label>
+          </div>
+
           <button type="submit" class="btn-action-cyan" style="margin-top: 4px;">💳 PAGAR & ENVIAR LINK AL CORREO</button>
         </div>
       </form>
@@ -455,7 +463,7 @@
     </div>
   </div>
 
-  <!-- Modal Emergente B2B (Pasarela Corporativa) -->
+  <!-- Modal B2B -->
   <div id="modalB2B" class="modal-overlay">
     <div class="modal-card">
       <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--card-border); padding-bottom: 8px;">
@@ -489,6 +497,11 @@
             <input type="email" id="modalB2BCorreo" placeholder="Ej: apr@empresa.cl" required>
           </div>
 
+          <div class="chk-container">
+            <input type="checkbox" id="chkModalB2B" required>
+            <label for="chkModalB2B">Acepto las <strong style="color: var(--accent-cyan);">Políticas de Contratación y Términos B2B</strong>.</label>
+          </div>
+
           <button type="submit" class="btn-action-cyan" style="margin-top: 4px;">
             💳 CONFIRMAR PAGO & ACTIVAR DASHBOARD B2B
           </button>
@@ -510,7 +523,6 @@
   <script>
     let cantidadBolsa = 10;
     let planSeleccionadoModal = 'BASICO';
-    let idPlanB2BModal = 1;
 
     const preciosUnitariosB2B = {
       1: 4990,
@@ -590,9 +602,7 @@
       document.getElementById('boxExitoModal').style.display = 'flex';
     }
 
-    /* Lógica B2B Pasarela */
     function abrirModalB2B(nombrePlan, idPlan) {
-      idPlanB2BModal = idPlan;
       document.getElementById('lblModalPlanB2B').textContent = nombrePlan;
       document.getElementById('lblModalCantB2B').textContent = `${cantidadBolsa} EVAL`;
       
@@ -614,12 +624,10 @@
 
       const rutEmpresa = document.getElementById('modalB2BRut').value.trim();
       const nombreEmpresa = document.getElementById('modalB2BEmpresa').value.trim();
-      const correoAPR = document.getElementById('modalB2BCorreo').value.trim();
 
       localStorage.setItem('sensometrika_b2b_token', 'B2B-TOKEN-' + Date.now());
       localStorage.setItem('sensometrika_b2b_empresa', nombreEmpresa);
       localStorage.setItem('sensometrika_b2b_rut', rutEmpresa);
-      localStorage.setItem('sensometrika_b2b_correo', correoAPR);
       localStorage.setItem('sensometrika_bolsa_disponible', cantidadBolsa);
       localStorage.setItem('sensometrika_b2c_mode', 'false');
 

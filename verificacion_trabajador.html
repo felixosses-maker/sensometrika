@@ -60,7 +60,6 @@
     .info-label { color: var(--text-muted); font-size: 0.68rem; text-transform: uppercase; font-weight: 700; display: block; }
     .info-val { color: #fff; font-weight: 800; font-size: 0.85rem; }
 
-    /* Canvas de Firma */
     .signature-container {
       width: 100%;
       background: #030712;
@@ -77,7 +76,15 @@
       border-radius: 10px;
     }
 
-    /* Caja de Latencia */
+    .video-preview {
+      width: 100%;
+      height: 180px;
+      background: #000;
+      border-radius: 10px;
+      object-fit: cover;
+      border: 1px solid var(--card-border);
+    }
+
     .latency-btn-box {
       background: #030712;
       border: 1px dashed var(--accent-cyan);
@@ -90,11 +97,6 @@
       flex-direction: column;
       align-items: center;
       gap: 6px;
-    }
-
-    .latency-btn-box:active {
-      transform: scale(0.98);
-      background: rgba(0, 191, 255, 0.08);
     }
 
     .btn-action {
@@ -119,6 +121,26 @@
       background: #1e293b;
       color: var(--text-muted);
     }
+
+    .terms-box {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      background: #030712;
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid var(--card-border);
+    }
+
+    .terms-box input[type="checkbox"] {
+      width: 16px;
+      height: 16px;
+      accent-color: var(--accent-cyan);
+      cursor: pointer;
+      margin-top: 2px;
+    }
   </style>
 </head>
 <body>
@@ -131,7 +153,7 @@
       </span>
     </header>
 
-    <!-- DATOS PERSONALES -->
+    <!-- DATOS DEL POSTULANTE -->
     <div class="card-box">
       <div class="card-title" id="lblHeaderCard">👤 DATOS PERSONALES</div>
       <div id="gridDatos" class="info-grid">
@@ -146,17 +168,21 @@
       </div>
     </div>
 
-    <!-- SECCIÓN FOTO BIOMÉTRICA (Exclusiva B2B, oculta en B2C) -->
+    <!-- REGISTRO FOTOGRÁFICO DE IDENTIDAD (SOLO B2B) -->
     <div class="card-box" id="boxFotoBiometrica" style="display: none;">
       <div class="card-title">📷 REGISTRO FOTOGRÁFICO DE IDENTIDAD</div>
-      <div style="width:100%; height:180px; background:#030712; border-radius:10px; display:flex; justify-content:center; align-items:center; border:1px solid var(--card-border);">
-        <span style="color:var(--text-muted); font-size:0.75rem;">Cámara Biométrica Activada</span>
+      <div style="position: relative; width: 100%;">
+        <video id="videoCam" autoplay playsinline class="video-preview"></video>
+        <img id="imgSnapshot" class="video-preview" style="display: none;" alt="Captura Facial">
       </div>
+      <button id="btnCapturarFoto" onclick="capturarFotoFacial()" type="button" style="background:#0284c7; color:#fff; padding:10px; border-radius:8px; font-weight:800; font-size:0.78rem; text-transform:uppercase; border:none; cursor:pointer; width:100%;">
+        📸 CAPTURAR FOTO FACIAL
+      </button>
     </div>
 
-    <!-- SECCIÓN FIRMA DIGITAL -->
-    <div class="card-box">
-      <div class="card-title">✍️️ FIRMA DIGITAL DEL EVALUADO</div>
+    <!-- FIRMA DIGITAL DEL EVALUADO (SOLO B2B - OCULTA EN B2C) -->
+    <div class="card-box" id="boxFirmaDigital" style="display: none;">
+      <div class="card-title">✍️ FIRMA DIGITAL DEL EVALUADO</div>
       <div class="signature-container">
         <canvas id="canvasFirma"></canvas>
       </div>
@@ -166,7 +192,7 @@
       </div>
     </div>
 
-    <!-- CALIBRACIÓN DE LATENCIA (5 TOQUES: PROMEDIO 2, 3 Y 4) -->
+    <!-- CALIBRACIÓN DE LATENCIA DEL HARDWARE (5 TOQUES) -->
     <div class="card-box">
       <div class="card-title">📱 CALIBRACIÓN DE LATENCIA DEL HARDWARE</div>
       
@@ -191,16 +217,24 @@
       </div>
     </div>
 
+    <!-- TÉRMINOS Y CONDICIONES -->
+    <div class="terms-box">
+      <input type="checkbox" id="chkTerminos" onchange="validarTerminosYLatencia()">
+      <label for="chkTerminos" style="cursor: pointer;">
+        Declaro que mis datos son fidedignos, acepto rendir las evaluaciones psicotécnicas bajo consentimiento informado y autorizo el procesamiento de resultados para el informe de simulación según los <strong style="color: var(--accent-cyan);">Términos y Condiciones del Servicio</strong>.
+      </label>
+    </div>
+
     <button id="btnContinuar" onclick="confirmarYPasarAlMenu()" class="btn-action btn-disabled" disabled>
       INICIAR BATERÍA DE EVALUACIONES →
     </button>
   </div>
 
   <script>
-    let isB2C = true; // B2C por defecto
+    let isB2C = true;
     let canvas, ctx, dibujando = false;
+    let videoStream = null;
 
-    // Control de Latencia
     let toquesLatencia = [];
     let tiempoUltimoToque = 0;
     let latenciaCompletada = false;
@@ -210,34 +244,73 @@
       const modeParam = urlParams.get('mode');
       const b2cModeStorage = localStorage.getItem('sensometrika_b2c_mode');
 
-      // Intentar recuperar datos cargados desde el modal de index.html
       let datosUsuario = {};
       try {
         datosUsuario = JSON.parse(localStorage.getItem('sensometrika_datos_usuario')) || {};
       } catch(e){}
 
-      const rut = urlParams.get('rut') || datosUsuario.rut || '15.344.221-K';
-      const nombre = urlParams.get('nombre') || datosUsuario.nombre || 'Félix Osses';
+      const rut = urlParams.get('rut') || datosUsuario.rut || '12.222.888-9';
+      const nombre = urlParams.get('nombre') || datosUsuario.nombre || 'Francisco Ferragut Ordenes';
 
       document.getElementById('lblRut').textContent = rut;
       document.getElementById('lblNombre').textContent = decodeURIComponent(nombre);
 
-      // Evaluación estricta de modo B2C o B2B
-      if (modeParam === 'b2b' || (b2cModeStorage === 'false' && modeParam !== 'b2c')) {
-        isB2C = false;
-        document.getElementById('lblHeaderCard').textContent = '👤 DATOS DEL POSTULANTE / TRABAJADOR';
-        document.getElementById('boxFotoBiometrica').style.display = 'flex';
-      } else {
+      if (modeParam === 'b2c' || b2cModeStorage === 'true') {
         isB2C = true;
         document.getElementById('lblHeaderCard').textContent = '👤 DATOS PERSONALES';
         document.getElementById('boxFotoBiometrica').style.display = 'none';
+        document.getElementById('boxFirmaDigital').style.display = 'none'; // OCULTO EN B2C
+      } else {
+        isB2C = false;
+        document.getElementById('lblHeaderCard').textContent = '👤 DATOS DEL POSTULANTE / TRABAJADOR';
+        document.getElementById('boxFotoBiometrica').style.display = 'flex';
+        document.getElementById('boxFirmaDigital').style.display = 'flex'; // VISIBLE EN B2B
+        iniciarCamaraB2B();
+        initCanvasFirma();
       }
-
-      initCanvasFirma();
     });
+
+    async function iniciarCamaraB2B() {
+      try {
+        videoStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" }, audio: false });
+        const videoEl = document.getElementById('videoCam');
+        videoEl.srcObject = videoStream;
+      } catch (err) {
+        console.warn("No se pudo acceder a la cámara:", err);
+      }
+    }
+
+    function capturarFotoFacial() {
+      const videoEl = document.getElementById('videoCam');
+      const imgEl = document.getElementById('imgSnapshot');
+      const canvasTmp = document.createElement('canvas');
+      
+      canvasTmp.width = videoEl.videoWidth || 320;
+      canvasTmp.height = videoEl.videoHeight || 240;
+      const ctxTmp = canvasTmp.getContext('2d');
+      ctxTmp.drawImage(videoEl, 0, 0, canvasTmp.width, canvasTmp.height);
+
+      const fotoCapturadaB64 = canvasTmp.toDataURL('image/jpeg');
+      localStorage.setItem('sensometrika_foto_trabajador', fotoCapturadaB64);
+
+      imgEl.src = fotoCapturadaB64;
+      videoEl.style.display = 'none';
+      imgEl.style.display = 'block';
+
+      document.getElementById('btnCapturarFoto').textContent = '✓ FOTO CAPTURADA (TOCAR PARA REPETIR)';
+      document.getElementById('btnCapturarFoto').style.background = '#10b981';
+      document.getElementById('btnCapturarFoto').onclick = () => {
+        videoEl.style.display = 'block';
+        imgEl.style.display = 'none';
+        document.getElementById('btnCapturarFoto').textContent = '📸 CAPTURAR FOTO FACIAL';
+        document.getElementById('btnCapturarFoto').style.background = '#0284c7';
+        document.getElementById('btnCapturarFoto').onclick = capturarFotoFacial;
+      };
+    }
 
     function initCanvasFirma() {
       canvas = document.getElementById('canvasFirma');
+      if (!canvas) return;
       ctx = canvas.getContext('2d');
       canvas.width = canvas.offsetWidth;
       canvas.height = 180;
@@ -267,7 +340,7 @@
     }
 
     function limpiarFirma() {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
     }
 
     function registrarToqueLatencia() {
@@ -302,20 +375,34 @@
         document.getElementById('lblLatenciaEstado').textContent = 'OPTIMIZADO';
         document.getElementById('lblLatenciaEstado').style.color = '#10b981';
 
-        const btnContinuar = document.getElementById('btnContinuar');
+        validarTerminosYLatencia();
+      }
+    }
+
+    function validarTerminosYLatencia() {
+      const chk = document.getElementById('chkTerminos').checked;
+      const btnContinuar = document.getElementById('btnContinuar');
+
+      if (latenciaCompletada && chk) {
         btnContinuar.classList.remove('btn-disabled');
         btnContinuar.disabled = false;
+      } else {
+        btnContinuar.classList.add('btn-disabled');
+        btnContinuar.disabled = true;
       }
     }
 
     function confirmarYPasarAlMenu() {
-      if (!latenciaCompletada) return;
+      if (!latenciaCompletada || !document.getElementById('chkTerminos').checked) return;
 
       const urlParams = new URLSearchParams(window.location.search);
       const rut = urlParams.get('rut') || '';
       const plan = urlParams.get('plan') || 'BASICO';
 
-      localStorage.setItem('sensometrika_firma_trabajador', canvas.toDataURL());
+      if (!isB2C && canvas) {
+        localStorage.setItem('sensometrika_firma_trabajador', canvas.toDataURL());
+      }
+      
       window.location.href = `menu_B2C.html?rut=${encodeURIComponent(rut)}&plan=${plan}&mode=${isB2C ? 'b2c' : 'b2b'}`;
     }
   </script>
