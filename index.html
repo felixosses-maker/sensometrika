@@ -2,533 +2,531 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Sensometrika | Selección de Modalidad</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>SENSOMETRIKA | Selección de Modalidad & Planes</title>
+  <script src="https://cdn.tailwindcss.com"></script>
   <style>
     :root {
-      --bg-color: #0b0f19;
-      --card-bg: #111625;
-      --card-border: #1e2638;
-      --accent-blue: #00a8e8;
-      --accent-blue-hover: #0077b6;
-      --accent-cyan: #38bdf8;
-      --accent-green: #10b981;
-      --text-white: #ffffff;
-      --text-muted: #9aa0a6;
-      --badge-bg: rgba(0, 168, 232, 0.15);
-      --badge-border: #00a8e8;
+      --bg-color: #040810;
+      --card-bg: #091120;
+      --card-border: #132238;
+      --inner-price-bg: #050a14;
+      --accent-cyan: #00bfff;
+      --accent-cyan-glow: rgba(0, 191, 255, 0.55);
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
     }
 
-    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; }
+    * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
 
     body {
       background-color: var(--bg-color);
-      color: var(--text-white);
-      padding: 30px 15px;
-      display: flex;
-      justify-content: center;
-      align-items: flex-start;
+      color: var(--text-main);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       min-height: 100vh;
-    }
-
-    .container { width: 100%; max-width: 480px; margin: 0 auto; }
-
-    /* Header Logo */
-    .brand-header {
-      text-align: center;
+      padding: 24px 12px;
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 6px;
-      padding: 10px 0;
-      margin-bottom: 12px;
     }
 
-    .brand-logo-img {
-      width: 220px;
-      max-width: 80%;
-      height: auto;
-      display: block;
-      mix-blend-mode: lighten;
-      filter: drop-shadow(0 0 12px rgba(56, 189, 248, 0.45));
+    .main-container { width: 100%; max-width: 460px; display: flex; flex-direction: column; gap: 16px; }
+
+    .brand-header { text-align: center; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+    
+    .logo-container {
+      background: #060d1d;
+      border: 1px solid var(--card-border);
+      border-radius: 14px;
+      padding: 12px 24px;
+      box-shadow: 0 0 25px rgba(0, 191, 255, 0.22);
     }
 
-    .brand-subtitle {
-      color: var(--accent-cyan);
-      font-size: 0.75rem;
-      font-weight: 800;
-      text-transform: uppercase;
-      letter-spacing: 1.5px;
-    }
+    .brand-logo-img { width: 175px; height: auto; mix-blend-mode: lighten; filter: drop-shadow(0 0 12px var(--accent-cyan-glow)); }
 
-    .description {
-      font-size: 0.8rem;
+    .subtitle-text {
+      font-size: 0.74rem;
       color: var(--text-muted);
       text-align: center;
       line-height: 1.35;
-      margin-bottom: 20px;
-      padding: 0 10px;
+      padding: 0 8px;
     }
 
-    /* Tabs Nav */
-    .nav-tabs {
-      display: flex;
-      background: #0e131f;
+    /* Switch de Modalidad B2C / B2B */
+    .switch-tab-container {
+      background: #030712;
       border: 1px solid var(--card-border);
       border-radius: 12px;
       padding: 4px;
-      margin-bottom: 20px;
+      display: flex;
+      gap: 4px;
     }
 
     .tab-btn {
       flex: 1;
-      padding: 10px 0;
-      border: none;
-      background: transparent;
-      color: var(--text-muted);
-      font-size: 0.85rem;
-      font-weight: 600;
+      padding: 11px;
       border-radius: 8px;
+      font-size: 0.80rem;
+      font-weight: 800;
+      border: none;
+      color: var(--text-muted);
+      background: transparent;
       cursor: pointer;
+      text-transform: uppercase;
+      transition: all 0.25s ease;
       display: flex;
       align-items: center;
       justify-content: center;
       gap: 6px;
-      transition: all 0.2s ease;
     }
 
-    .tab-btn.active {
-      background: var(--accent-blue);
-      color: #fff;
+    .tab-btn.active-tab {
+      background: var(--accent-cyan);
+      color: #000;
+      font-weight: 900;
+      box-shadow: 0 0 16px var(--accent-cyan-glow);
     }
-
-    /* AISLAMIENTO DE VISTAS */
-    .view-section { display: none !important; }
-    .view-section.active { display: block !important; }
-
-    /* Bolsa B2B */
-    .bolsa-card {
-      background: var(--card-bg);
-      border: 1px solid #1a365d;
-      border-radius: 12px;
-      padding: 14px 16px;
-      margin-bottom: 20px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-    }
-
-    .bolsa-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-    .bolsa-title { display: flex; align-items: center; gap: 6px; font-size: 0.78rem; font-weight: 700; color: var(--accent-cyan); }
-    .bolsa-subtitle { font-size: 0.7rem; color: var(--text-muted); }
-
-    .counter-control {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      background: #0a0e17;
-      border: 1px solid #1e2638;
-      border-radius: 8px;
-      padding: 4px;
-      margin-bottom: 8px;
-    }
-
-    .btn-counter {
-      width: 36px;
-      height: 32px;
-      background: #0f1e36;
-      border: 1px solid #1d3b66;
-      color: var(--accent-cyan);
-      border-radius: 6px;
-      font-size: 1.1rem;
-      font-weight: bold;
-      cursor: pointer;
-    }
-
-    .counter-value { font-size: 1.1rem; font-weight: 800; color: #ffffff; }
-    .bolsa-footer { display: flex; justify-content: space-between; font-size: 0.68rem; color: #7f8c8d; }
 
     /* Tarjetas de Planes */
     .plan-card {
-      background: var(--card-bg);
+      background-color: var(--card-bg);
       border: 1px solid var(--card-border);
       border-radius: 14px;
-      padding: 18px 16px;
-      margin-bottom: 18px;
-      position: relative;
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.7);
     }
 
-    .plan-card.highlight { border: 1px solid var(--accent-blue); box-shadow: 0 0 15px rgba(0, 168, 232, 0.15); }
+    .plan-header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
 
-    .plan-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 14px; gap: 10px; }
-    .plan-title { font-size: 1.05rem; font-weight: 700; color: #ffffff; }
-    .plan-badge {
-      font-size: 0.62rem;
-      font-weight: 700;
+    .plan-title { font-size: 1.02rem; font-weight: 800; color: #fff; }
+    .badge-tag {
+      background: rgba(0, 191, 255, 0.15);
       color: var(--accent-cyan);
-      border: 1px solid var(--badge-border);
-      background: var(--badge-bg);
+      border: 1px solid rgba(0, 191, 255, 0.4);
       padding: 3px 8px;
       border-radius: 6px;
+      font-size: 0.60rem;
+      font-weight: 800;
       text-transform: uppercase;
+      letter-spacing: 0.4px;
     }
 
-    .plan-features { list-style: none; margin-bottom: 18px; }
-    .plan-features li {
-      font-size: 0.78rem;
-      color: #d1d5db;
-      margin-bottom: 8px;
+    .plan-features {
+      list-style: none;
+      font-size: 0.76rem;
+      color: #cbd5e1;
       display: flex;
-      align-items: flex-start;
-      gap: 8px;
-      line-height: 1.3;
+      flex-direction: column;
+      gap: 6px;
+      line-height: 1.35;
     }
 
-    .plan-features li::before { content: "✓"; color: var(--accent-cyan); font-weight: bold; }
-
-    .price-container {
-      text-align: center;
-      background: rgba(0, 0, 0, 0.25);
-      padding: 10px;
-      border-radius: 8px;
-      margin-bottom: 14px;
+    .plan-features li::before {
+      content: "✓ ";
+      color: var(--accent-cyan);
+      font-weight: 800;
     }
 
-    .price-main { font-size: 1.35rem; font-weight: 800; color: #ffffff; }
-    .price-iva { font-size: 0.75rem; color: var(--text-muted); font-weight: normal; }
-    .price-unit { font-size: 0.68rem; color: var(--text-muted); margin-top: 2px; }
-
-    .btn-action {
-      width: 100%;
+    /* Bloque Interno de Precio */
+    .price-box {
+      background-color: var(--inner-price-bg);
+      border-radius: 10px;
       padding: 12px;
-      background: var(--accent-blue);
-      color: #ffffff;
-      border: none;
-      border-radius: 8px;
-      font-size: 0.85rem;
-      font-weight: 700;
-      cursor: pointer;
-      transition: background 0.2s;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
     }
 
-    .btn-action:hover { background: var(--accent-blue-hover); }
+    .price-main { font-size: 1.32rem; font-weight: 900; color: #fff; }
+    .price-sub { font-size: 0.65rem; color: var(--text-muted); }
+    .reintegro-note { font-size: 0.63rem; color: var(--accent-cyan); font-weight: 700; margin-top: 2px; display: block; line-height: 1.3; }
 
-    /* Modal B2B */
+    .btn-action-cyan {
+      background: var(--accent-cyan);
+      color: #000;
+      border: none;
+      padding: 12px;
+      border-radius: 9px;
+      font-weight: 900;
+      font-size: 0.83rem;
+      cursor: pointer;
+      text-transform: uppercase;
+      text-align: center;
+      width: 100%;
+      box-shadow: 0 4px 16px var(--accent-cyan-glow);
+      text-decoration: none;
+      display: block;
+    }
+
+    /* Selector de Bolsa B2B */
+    .bolsa-selector-box {
+      background: #030712;
+      border: 1px solid var(--card-border);
+      border-radius: 10px;
+      padding: 12px 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.78rem;
+    }
+
+    .counter-btn {
+      background: #0b1526;
+      border: 1px solid var(--accent-cyan);
+      color: var(--accent-cyan);
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    /* Modal B2C */
     .modal-overlay {
       position: fixed;
-      inset: 0;
-      background: rgba(6, 11, 19, 0.85);
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(4, 8, 16, 0.94);
       backdrop-filter: blur(6px);
       display: none;
       justify-content: center;
       align-items: center;
-      z-index: 1000;
-      padding: 20px;
+      z-index: 100;
     }
 
     .modal-card {
-      background: var(--card-bg);
+      background-color: var(--card-bg);
       border: 1px solid var(--accent-cyan);
-      border-radius: 16px;
-      width: 100%;
-      max-width: 400px;
+      border-radius: 14px;
       padding: 22px;
+      width: 90%;
+      max-width: 400px;
       display: flex;
       flex-direction: column;
-      gap: 14px;
-      text-align: center;
+      gap: 12px;
+      box-shadow: 0 15px 40px rgba(0,0,0,0.85);
     }
+
+    .form-group { display: flex; flex-direction: column; gap: 4px; }
+    .form-group label { font-size: 0.68rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700; }
+    .form-group input { background: #030712; border: 1px solid var(--card-border); color: #fff; padding: 10px 12px; border-radius: 8px; font-size: 0.82rem; }
+    .form-group input:focus { outline: none; border-color: var(--accent-cyan); }
   </style>
 </head>
 <body>
 
-  <div class="container">
+  <div class="main-container">
     <header class="brand-header">
-      <img src="sensometrica.jpg" alt="SENSOMETRIKA" class="brand-logo-img">
-      <span class="brand-subtitle">SELECCIÓN DE MODALIDAD</span>
+      <div class="logo-container">
+        <img src="sensometrica.jpg" alt="SENSOMETRIKA" class="brand-logo-img">
+      </div>
+      <p class="subtitle-text">
+        Selecciona tu modalidad de acceso y el plan requerido para registrar la cuenta e iniciar las evaluaciones.
+      </p>
     </header>
 
-    <p class="description">
-      Selecciona tu modalidad de acceso y el plan requerido para registrar la cuenta e iniciar las evaluaciones.
-    </p>
-
-    <!-- Tabs B2C / B2B -->
-    <div class="nav-tabs">
-      <button id="tabB2C" class="tab-btn active" onclick="switchTab('B2C')">
+    <!-- Switch de Modalidades B2C / B2B -->
+    <div class="switch-tab-container">
+      <button id="btnTabB2C" class="tab-btn active-tab" onclick="cambiarModalidad('B2C')">
         👤 Particular (B2C)
       </button>
-      <button id="tabB2B" class="tab-btn" onclick="switchTab('B2B')">
+      <button id="btnTabB2B" class="tab-btn" onclick="cambiarModalidad('B2B')">
         🏢 Empresas (B2B)
       </button>
     </div>
 
-    <!-- VISTA B2C -->
-    <div id="viewB2C" class="view-section active">
+    <!-- VISTA PARTICULARES (B2C) -->
+    <div id="vistaB2C" style="display: flex; flex-direction: column; gap: 14px;">
+      
+      <!-- Pase Básico B2C -->
       <div class="plan-card">
-        <div class="plan-header">
-          <div class="plan-title">Pase Básico Individual</div>
-          <div class="plan-badge">3 MÓDULOS PSICOMOTRICES</div>
+        <div class="plan-header-row">
+          <span class="plan-title">Pase Básico (B2C)</span>
+          <span class="badge-tag">3 SIMULACIONES</span>
         </div>
         <ul class="plan-features">
-          <li>1 Demo de ensayo previa por módulo</li>
-          <li>3 Simulaciones Oficiales (Reactímetro + Palancas + Punteo)</li>
-          <li>Curva de aprendizaje e informe pericial D.S. N° 170</li>
+          <li>1 Demo de inducción por cada prueba</li>
+          <li>3 Simulaciones en Reactímetro (Frenado)</li>
+          <li>3 Simulaciones en Palancas (D.S. N° 170)</li>
+          <li>3 Simulaciones en Punteo y Ritmo (Lahy)</li>
+          <li>Informe psicomotor consolidado en pantalla</li>
         </ul>
-        <div class="price-container">
-          <div class="price-main">$ 4.990 <span class="price-iva">Final</span></div>
+        <div class="price-box">
+          <span class="price-main">$ 4.990 <span style="font-size: 0.70rem; font-weight:400; color:var(--text-muted);">IVA Inc.</span></span>
+          <span class="price-sub">⏱️ Vigencia máxima del link: <strong>48 horas</strong> (o hasta completar todas las simulaciones)</span>
         </div>
-        <button class="btn-action" onclick="iniciarPlanB2C('BASICO')">Iniciar Pase Básico →</button>
+        <button class="btn-action-cyan" onclick="abrirModalB2C('BASICO')">Elegir Plan Básico (3 Sim) →</button>
       </div>
 
+      <!-- Pase Plus B2C -->
       <div class="plan-card">
-        <div class="plan-header">
-          <div class="plan-title">Pase Plus Individual</div>
-          <div class="plan-badge">+ TAMIZAJE VISUAL</div>
+        <div class="plan-header-row">
+          <span class="plan-title">Pase Plus (B2C)</span>
+          <span class="badge-tag">5 SIM + VISUAL</span>
         </div>
         <ul class="plan-features">
-          <li>1 Demo + 4 Simulaciones Oficiales Psicomotrices</li>
-          <li>+ Screening Visual Pericial (Snellen + Ishihara + Distancia)</li>
-          <li>Informe extendido con aptitud física y mental</li>
+          <li>1 Demo de inducción por cada prueba</li>
+          <li>5 Simulaciones en Reactímetro, Palancas y Punteo</li>
+          <li>+ 2 Simulaciones de Tamizaje Visual (Agudeza / Ishihara)</li>
+          <li>Curva de aprendizaje y desviación estadística</li>
+          <li>Informe consolidado con 4 módulos rendidos</li>
         </ul>
-        <div class="price-container">
-          <div class="price-main">$ 8.990 <span class="price-iva">Final</span></div>
+        <div class="price-box">
+          <span class="price-main">$ 8.990 <span style="font-size: 0.70rem; font-weight:400; color:var(--text-muted);">IVA Inc.</span></span>
+          <span class="price-sub">⏱️ Vigencia máxima del link: <strong>5 días</strong> (o hasta completar todas las simulaciones)</span>
         </div>
-        <button class="btn-action" onclick="iniciarPlanB2C('PLUS')">Iniciar Pase Plus →</button>
+        <button class="btn-action-cyan" onclick="abrirModalB2C('PLUS')">Elegir Plan Plus (5 Sim) →</button>
       </div>
 
-      <div class="plan-card highlight">
-        <div class="plan-header">
-          <div class="plan-title">Pase Full Integral</div>
-          <div class="plan-badge">BATERÍA COMPLETA</div>
+      <!-- Pase Full B2C -->
+      <div class="plan-card">
+        <div class="plan-header-row">
+          <span class="plan-title">Pase Full (B2C)</span>
+          <span class="badge-tag">8 SIM + SENSORIAL</span>
         </div>
         <ul class="plan-features">
-          <li>1 Demo + 4 Simulaciones Oficiales (Módulos Psicomotrices)</li>
-          <li>+ Screening Visual Completo</li>
-          <li>+ Tamizaje Auditivo Tonal Ocupacional</li>
-          <li>Informe pericial completo con firma digital y QR</li>
+          <li>1 Demo de inducción por cada prueba</li>
+          <li>8 Simulaciones oficiales en los 3 módulos psicomotores</li>
+          <li>+ 4 Tamizajes Visuales</li>
+          <li>+ 4 Tamizajes Auditivos (Audiometría tonal)</li>
+          <li>Batería integral completa de 5 módulos</li>
         </ul>
-        <div class="price-container">
-          <div class="price-main">$ 12.990 <span class="price-iva">Final</span></div>
+        <div class="price-box">
+          <span class="price-main">$ 14.990 <span style="font-size: 0.70rem; font-weight:400; color:var(--text-muted);">IVA Inc.</span></span>
+          <span class="price-sub">⏱️ Vigencia máxima del link: <strong>7 días</strong> (o hasta completar todas las simulaciones)</span>
         </div>
-        <button class="btn-action" onclick="iniciarPlanB2C('FULL')">Iniciar Pase Full →</button>
+        <button class="btn-action-cyan" onclick="abrirModalB2C('FULL')">Elegir Plan Full (8 Sim) →</button>
       </div>
+
     </div>
 
-    <!-- VISTA B2B -->
-    <div id="viewB2B" class="view-section">
-      <div class="bolsa-card">
-        <div class="bolsa-header">
-          <div class="bolsa-title"><span>📦</span> BOLSA DE EVALUACIONES</div>
-          <div class="bolsa-subtitle">Bolsa Corporativa · Pack 10+</div>
+    <!-- VISTA EMPRESAS (B2B - BOLSAS CORPORATIVAS SIN EXPIRACIÓN) -->
+    <div id="vistaB2B" style="display: none; flex-direction: column; gap: 14px;">
+      
+      <div class="bolsa-selector-box">
+        <div>
+          <span style="color: var(--accent-cyan); font-weight: 800; text-transform: uppercase; display: block; font-size: 0.70rem;">📦 Bolsa Corporativa de Evaluaciones</span>
+          <span style="color: #cbd5e1; font-size: 0.67rem; font-weight: 700;">♾️ SIN EXPIRACIÓN: Los cupos adquiridos no vencen.</span>
         </div>
-        <div class="counter-control">
-          <button class="btn-counter" onclick="adjustEvaluations(-10)">-</button>
-          <span class="counter-value" id="evalCount">10</span>
-          <button class="btn-counter" onclick="adjustEvaluations(10)">+</button>
-        </div>
-        <div class="bolsa-footer">
-          <span>Mínimo base: 10 evaluaciones</span>
-          <span>Enlaces de 72 hrs por trabajador</span>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <button class="counter-btn" onclick="modificarBolsa(-5)">-</button>
+          <strong id="lblCantBolsa" style="font-size: 0.95rem; color: #fff;">10</strong>
+          <button class="counter-btn" onclick="modificarBolsa(5)">+</button>
         </div>
       </div>
 
+      <!-- Plan Básico B2B -->
       <div class="plan-card">
-        <div class="plan-header">
-          <div class="plan-title">Plan Básico Laboral (B2B)</div>
-          <div class="plan-badge">1 DEMO + 1 SIM</div>
+        <div class="plan-header-row">
+          <span class="plan-title">Plan Básico Laboral (B2B)</span>
+          <span class="badge-tag">PACK CORPORATIVO</span>
         </div>
         <ul class="plan-features">
-          <li>1 Demo de calibración técnica previa</li>
-          <li>1 Simulación Oficial por módulo (Reactímetro + Palancas + Punteo)</li>
-          <li>Parámetros normativos para faena y transporte</li>
+          <li>Dashboard APR de administración y telemetría</li>
+          <li>Generación de enlaces individuales con cargo codificado</li>
           <li>Despacho desatendido de informes al correo del supervisor</li>
         </ul>
-        <div class="price-container">
-          <div class="price-main">$ <span id="price-basico">59.000</span> <span class="price-iva">+ IVA total</span></div>
-          <div class="price-unit">($<span id="unit-basico">5.900</span> + IVA / eval)</div>
+        <div class="price-box">
+          <span class="price-main" id="priceB2B_1">$ 49.900 <span style="font-size: 0.70rem; font-weight:400; color:var(--text-muted);">+ IVA Total</span></span>
+          <span class="price-sub">♾️ La bolsa de evaluaciones NO tiene fecha de caducidad.</span>
+          <span class="reintegro-note">🔄 Cada link emitido vigila por 72 hrs. Si no se utiliza, el cupo se reincorpora automáticamente a su bolsa.</span>
         </div>
-        <button class="btn-action" onclick="selectPlanB2B('Plan Básico Laboral', 5900)">
-          Elegir Plan Básico (<span class="btn-count">10</span> Eval) →
-        </button>
+        <a href="registro_B2B.html?plan=BASICO" class="btn-action-cyan">Elegir Plan Básico (<span class="txtCantBolsa">10</span> Eval) →</a>
       </div>
 
+      <!-- Plan Plus B2B -->
       <div class="plan-card">
-        <div class="plan-header">
-          <div class="plan-title">Plan Plus (B2B)</div>
-          <div class="plan-badge">+ TAMIZAJE AUDITIVO</div>
+        <div class="plan-header-row">
+          <span class="plan-title">Plan Plus (B2B)</span>
+          <span class="badge-tag">+ TAMIZAJE AUDITIVO</span>
         </div>
         <ul class="plan-features">
-          <li>1 Demo + 1 Simulación Oficial (3 Módulos Psicomotrices)</li>
-          <li>+ 1 Tamizaje Auditivo Clínico Ocupacional</li>
-          <li>Detección de umbrales en frecuencias críticas</li>
+          <li>Bolsa corporativa para acreditaciones masivas</li>
+          <li>Módulos Psicomotrices + Tamizaje Auditivo Ocupacional</li>
           <li>Ficha técnica y dictamen formal de aptitud laboral</li>
         </ul>
-        <div class="price-container">
-          <div class="price-main">$ <span id="price-plus">89.000</span> <span class="price-iva">+ IVA total</span></div>
-          <div class="price-unit">($<span id="unit-plus">8.900</span> + IVA / eval)</div>
+        <div class="price-box">
+          <span class="price-main" id="priceB2B_2">$ 89.900 <span style="font-size: 0.70rem; font-weight:400; color:var(--text-muted);">+ IVA Total</span></span>
+          <span class="price-sub">♾️ La bolsa de evaluaciones NO tiene fecha de caducidad.</span>
+          <span class="reintegro-note">🔄 Cada link emitido vigila por 72 hrs. Si no se utiliza, el cupo se reincorpora automáticamente a su bolsa.</span>
         </div>
-        <button class="btn-action" onclick="selectPlanB2B('Plan Plus', 8900)">
-          Elegir Plan Plus (<span class="btn-count">10</span> Eval) →
-        </button>
+        <a href="registro_B2B.html?plan=PLUS" class="btn-action-cyan">Elegir Plan Plus (<span class="txtCantBolsa">10</span> Eval) →</a>
       </div>
 
+      <!-- Plan Full B2B -->
       <div class="plan-card">
-        <div class="plan-header">
-          <div class="plan-title">Plan Full Integral (B2B)</div>
-          <div class="plan-badge">BATERÍA COMPLETA</div>
+        <div class="plan-header-row">
+          <span class="plan-title">Plan Full Integral (B2B)</span>
+          <span class="badge-tag">BATERÍA COMPLETA</span>
         </div>
         <ul class="plan-features">
-          <li>1 Demo + 1 Simulación Oficial (3 Módulos Psicomotrices)</li>
-          <li>+ 1 Tamizaje Auditivo Clínico</li>
-          <li>+ 1 Tamizaje Visual Integral (Agudeza / Encandilamiento)</li>
-          <li>Certificado formal con código QR para faena minera y forestal</li>
+          <li>Batería completa de evaluaciones para faena minera/forestal</li>
+          <li>Código QR de validación en informe pericial</li>
+          <li>Informe B2B formal firmado digitalmente por APR</li>
         </ul>
-        <div class="price-container">
-          <div class="price-main">$ <span id="price-full">135.000</span> <span class="price-iva">+ IVA total</span></div>
-          <div class="price-unit">($<span id="unit-full">13.500</span> + IVA / eval)</div>
+        <div class="price-box">
+          <span class="price-main" id="priceB2B_3">$ 135.000 <span style="font-size: 0.70rem; font-weight:400; color:var(--text-muted);">+ IVA Total</span></span>
+          <span class="price-sub">♾️ La bolsa de evaluaciones NO tiene fecha de caducidad.</span>
+          <span class="reintegro-note">🔄 Cada link emitido vigila por 72 hrs. Si no se utiliza, el cupo se reincorpora automáticamente a su bolsa.</span>
         </div>
-        <button class="btn-action" onclick="selectPlanB2B('Plan Full Integral', 13500)">
-          Elegir Plan Full (<span class="btn-count">10</span> Eval) →
-        </button>
+        <a href="registro_B2B.html?plan=FULL" class="btn-action-cyan">Elegir Plan Full (<span class="txtCantBolsa">10</span> Eval) →</a>
       </div>
 
-      <div class="plan-card highlight">
-        <div class="plan-header">
-          <div class="plan-title">Batería Integral de Alto Riesgo (B2B)</div>
-          <div class="plan-badge">ACREDITACIÓN PERICIAL</div>
+      <!-- Batería Integral de Alto Riesgo B2B -->
+      <div class="plan-card">
+        <div class="plan-header-row">
+          <span class="plan-title">Batería Integral Alto Riesgo (B2B)</span>
+          <span class="badge-tag">ACREDITACIÓN PERICIAL</span>
         </div>
         <ul class="plan-features">
           <li>1 Demo + 3 Simulaciones Oficiales de Calibración</li>
           <li>Batería Psicomotora Completa (Reactímetro, Palancas y Punteo)</li>
           <li>Tamizaje Visual Completo + Tamizaje Auditivo Clínico Tonal</li>
           <li>Pruebas Avanzadas: Estereopsis 3D, Anticipación y Fatiga PVT</li>
-          <li>Reporte ejecutivo de alto riesgo, dictamen pericial y curvas de aprendizaje</li>
+          <li>Reporte ejecutivo de alto riesgo y curvas de aprendizaje</li>
         </ul>
-        <div class="price-container">
-          <div class="price-main">$ <span id="price-alto-riesgo">195.000</span> <span class="price-iva">+ IVA total</span></div>
-          <div class="price-unit">($<span id="unit-alto-riesgo">19.500</span> + IVA / eval)</div>
+        <div class="price-box">
+          <span class="price-main" id="priceB2B_4">$ 195.000 <span style="font-size: 0.70rem; font-weight:400; color:var(--text-muted);">+ IVA Total</span></span>
+          <span class="price-sub">♾️ La bolsa de evaluaciones NO tiene fecha de caducidad.</span>
+          <span class="reintegro-note">🔄 Cada link emitido vigila por 72 hrs. Si no se utiliza, el cupo se reincorpora automáticamente a su bolsa.</span>
         </div>
-        <button class="btn-action" onclick="selectPlanB2B('Batería Integral Alto Riesgo', 19500)">
-          Elegir Batería Alto Riesgo (<span class="btn-count">10</span> Eval) →
-        </button>
+        <a href="registro_B2B.html?plan=ALTO_RIESGO" class="btn-action-cyan">Elegir Batería Alto Riesgo (<span class="txtCantBolsa">10</span> Eval) →</a>
       </div>
-    </div>
 
+    </div>
   </div>
 
-  <!-- MODAL DE CONFIRMACIÓN B2B -->
-  <div id="modalConfirmacion" class="modal-overlay">
+  <!-- Modal Emergente de Registro y Pago B2C -->
+  <div id="modalB2C" class="modal-overlay">
     <div class="modal-card">
-      <span style="font-size: 0.85rem; font-weight: 800; color: var(--accent-cyan); text-transform: uppercase;">📋 Resumen de Contratación B2B</span>
-      <h3 id="modalPlanTitle" style="font-size: 1.2rem; font-weight: 900; color: #ffffff;">Plan Básico Laboral</h3>
-      <div style="background: #080d17; border: 1px solid var(--card-border); padding: 12px; border-radius: 10px; font-size: 0.82rem; display: flex; flex-direction: column; gap: 8px;">
-        <div style="display: flex; justify-content: space-between; color: var(--text-muted);"><span>Cantidad de Evaluaciones:</span><strong id="modalQty" style="color: #fff;">10 evaluaciones</strong></div>
-        <div style="display: flex; justify-content: space-between; color: var(--text-muted);"><span>Inversión Total:</span><span id="modalTotal" style="color: var(--accent-green); font-weight: 900; font-size: 1.1rem;">$59.000 + IVA</span></div>
+      <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--card-border); padding-bottom: 8px;">
+        <span style="font-size: 0.82rem; font-weight: 800; color: var(--accent-cyan); text-transform: uppercase;">👤 Acreditación Evaluado B2C</span>
+        <button onclick="cerrarModalB2C()" style="color: var(--text-muted); font-weight: 800; border: none; background: none; cursor: pointer;">✕</button>
       </div>
-      <button style="background: var(--accent-blue); color: #ffffff; border: none; padding: 12px; border-radius: 8px; font-size: 0.9rem; font-weight: 800; cursor: pointer;" onclick="confirmarReservaB2B()">CONTINUAR A REGISTRO B2B →</button>
-      <button style="background: transparent; color: var(--text-muted); border: none; font-size: 0.78rem; cursor: pointer; text-decoration: underline;" onclick="cerrarModal()">Cancelar / Elegir otro plan</button>
+
+      <div style="font-size: 0.75rem; color: var(--text-muted);">
+        Plan seleccionado: <strong id="lblModalPlan" style="color: #fff;">-</strong>
+      </div>
+
+      <form id="formModalB2C" onsubmit="procesarPagoModal(event)">
+        <div style="display: flex; flex-direction: column; gap: 10px;">
+          <div class="form-group">
+            <label>Nombre Completo *</label>
+            <input type="text" id="modalNombre" placeholder="Ej: Félix Osses" required>
+          </div>
+
+          <div class="form-group">
+            <label>RUT / Cédula de Identidad *</label>
+            <input type="text" id="modalRut" placeholder="Ej: 15.344.221-K" required>
+          </div>
+
+          <div class="form-group">
+            <label>Correo Electrónico (Recepción de Link) *</label>
+            <input type="email" id="modalCorreo" placeholder="Ej: felix@correo.com" required>
+          </div>
+
+          <button type="submit" class="btn-action-cyan" style="margin-top: 4px;">💳 PAGAR & ENVIAR LINK AL CORREO</button>
+        </div>
+      </form>
+
+      <div id="boxExitoModal" style="display: none; flex-direction: column; gap: 10px; text-align: center;">
+        <span style="color: #10b981; font-weight: 800; font-size: 0.88rem;">✓ PAGO CONFIRMADO & LINK DESPACHADO</span>
+        <span style="font-size: 0.75rem; color: var(--text-muted);">Enlace enviado a <strong id="txtCorreoEnviado" style="color: var(--accent-cyan);"></strong></span>
+        <a id="btnLinkInmediato" href="#" class="btn-action-cyan" style="display: block; margin-top: 4px;">
+          🚀 INICIAR EVALUACIÓN AHORA
+        </a>
+      </div>
     </div>
   </div>
 
   <script>
-    const UNIT_PRICES = { 
-      basico: 5900, 
-      plus: 8900, 
-      full: 13500, 
-      altoRiesgo: 19500 
+    let cantidadBolsa = 10;
+    let planSeleccionadoModal = 'BASICO';
+
+    const preciosUnitariosB2B = {
+      1: 4990,
+      2: 8990,
+      3: 13500,
+      4: 19500
     };
 
-    let currentQty = 10;
-    let selectedPlanData = {};
+    function cambiarModalidad(modalidad) {
+      const vistaB2C = document.getElementById('vistaB2C');
+      const vistaB2B = document.getElementById('vistaB2B');
+      const btnB2C = document.getElementById('btnTabB2C');
+      const btnB2B = document.getElementById('btnTabB2B');
 
-    function switchTab(type) {
-      const tabB2C = document.getElementById('tabB2C');
-      const tabB2B = document.getElementById('tabB2B');
-      const viewB2C = document.getElementById('viewB2C');
-      const viewB2B = document.getElementById('viewB2B');
-
-      if (!tabB2C || !tabB2B || !viewB2C || !viewB2B) return;
-
-      if (type === 'B2C') {
-        tabB2C.classList.add('active');
-        tabB2B.classList.remove('active');
-        viewB2C.classList.add('active');
-        viewB2B.classList.remove('active');
+      if (modalidad === 'B2B') {
+        vistaB2C.style.display = 'none';
+        vistaB2B.style.display = 'flex';
+        btnB2C.classList.remove('active-tab');
+        btnB2B.classList.add('active-tab');
       } else {
-        tabB2B.classList.add('active');
-        tabB2C.classList.remove('active');
-        viewB2B.classList.add('active');
-        viewB2C.classList.remove('active');
-        updatePrices();
+        vistaB2B.style.display = 'none';
+        vistaB2C.style.display = 'flex';
+        btnB2B.classList.remove('active-tab');
+        btnB2C.classList.add('active-tab');
       }
     }
 
-    function iniciarPlanB2C(plan) {
-      try {
-        localStorage.setItem('sensometrika_plan', plan);
-        window.location.href = 'menu_B2C.html';
-      } catch (e) {
-        console.error("Error iniciando B2C", e);
-      }
+    function modificarBolsa(delta) {
+      cantidadBolsa = Math.max(10, cantidadBolsa + delta);
+      document.getElementById('lblCantBolsa').textContent = cantidadBolsa;
+
+      document.querySelectorAll('.txtCantBolsa').forEach(el => el.textContent = cantidadBolsa);
+
+      document.getElementById('priceB2B_1').innerHTML = `$ ${(preciosUnitariosB2B[1] * cantidadBolsa).toLocaleString('es-CL')} <span style="font-size:0.70rem; font-weight:400; color:var(--text-muted);">+ IVA Total</span>`;
+      document.getElementById('priceB2B_2').innerHTML = `$ ${(preciosUnitariosB2B[2] * cantidadBolsa).toLocaleString('es-CL')} <span style="font-size:0.70rem; font-weight:400; color:var(--text-muted);">+ IVA Total</span>`;
+      document.getElementById('priceB2B_3').innerHTML = `$ ${(preciosUnitariosB2B[3] * cantidadBolsa).toLocaleString('es-CL')} <span style="font-size:0.70rem; font-weight:400; color:var(--text-muted);">+ IVA Total</span>`;
+      document.getElementById('priceB2B_4').innerHTML = `$ ${(preciosUnitariosB2B[4] * cantidadBolsa).toLocaleString('es-CL')} <span style="font-size:0.70rem; font-weight:400; color:var(--text-muted);">+ IVA Total</span>`;
     }
 
-    function adjustEvaluations(amount) {
-      currentQty += amount;
-      if (currentQty < 10) currentQty = 10;
-      updatePrices();
+    function abrirModalB2C(plan) {
+      localStorage.clear();
+
+      planSeleccionadoModal = plan;
+      document.getElementById('lblModalPlan').textContent = `PLAN ${plan}`;
+      document.getElementById('formModalB2C').style.display = 'flex';
+      document.getElementById('boxExitoModal').style.display = 'none';
+      document.getElementById('modalB2C').style.display = 'flex';
     }
 
-    function formatNumber(num) {
-      return num.toLocaleString('es-CL');
+    function cerrarModalB2C() {
+      document.getElementById('modalB2C').style.display = 'none';
     }
 
-    function updatePrices() {
-      const elEvalCount = document.getElementById('evalCount');
-      if (!elEvalCount) return;
+    function procesarPagoModal(e) {
+      e.preventDefault();
 
-      elEvalCount.innerText = currentQty;
-      document.querySelectorAll('.btn-count').forEach(el => el.innerText = currentQty);
+      const nombre = document.getElementById('modalNombre').value.trim();
+      const rut = document.getElementById('modalRut').value.trim();
+      const correo = document.getElementById('modalCorreo').value.trim();
 
-      const updateElement = (id, val) => {
-        const el = document.getElementById(id);
-        if (el) el.innerText = formatNumber(val);
-      };
+      localStorage.setItem('sensometrika_datos_usuario', JSON.stringify({
+        nombre: nombre,
+        rut: rut,
+        correo: correo,
+        cargo: 'Evaluación Particular B2C'
+      }));
+      localStorage.setItem('sensometrika_b2c_mode', 'true');
+      localStorage.setItem('sensometrika_b2b_rut', rut);
+      localStorage.setItem('sensometrika_plan_contratado', planSeleccionadoModal);
 
-      updateElement('price-basico', currentQty * UNIT_PRICES.basico);
-      updateElement('unit-basico', UNIT_PRICES.basico);
+      const originUrl = window.location.origin;
+      const urlAcceso = `${originUrl}/verificacion_trabajador.html?rut=${encodeURIComponent(rut)}&nombre=${encodeURIComponent(nombre)}&plan=${planSeleccionadoModal}&mode=b2c`;
 
-      updateElement('price-plus', currentQty * UNIT_PRICES.plus);
-      updateElement('unit-plus', UNIT_PRICES.plus);
-
-      updateElement('price-full', currentQty * UNIT_PRICES.full);
-      updateElement('unit-full', UNIT_PRICES.full);
-
-      updateElement('price-alto-riesgo', currentQty * UNIT_PRICES.altoRiesgo);
-      updateElement('unit-alto-riesgo', UNIT_PRICES.altoRiesgo);
-    }
-
-    function selectPlanB2B(planName, unitPrice) {
-      const total = currentQty * unitPrice;
-      selectedPlanData = { plan: planName, cantidad: currentQty, precioUnitario: unitPrice, total: total };
-      localStorage.setItem('sensometrika_b2b_contratacion', JSON.stringify(selectedPlanData));
-
-      const elTitle = document.getElementById('modalPlanTitle');
-      const elQty = document.getElementById('modalQty');
-      const elTotal = document.getElementById('modalTotal');
-      const elModal = document.getElementById('modalConfirmacion');
-
-      if (elTitle) elTitle.innerText = planName;
-      if (elQty) elQty.innerText = `${currentQty} evaluaciones`;
-      if (elTotal) elTotal.innerText = `$${formatNumber(total)} + IVA`;
-      if (elModal) elModal.style.display = 'flex';
-    }
-
-    function cerrarModal() {
-      const elModal = document.getElementById('modalConfirmacion');
-      if (elModal) elModal.style.display = 'none';
-    }
-
-    function confirmarReservaB2B() {
-      cerrarModal();
-      window.location.href = 'registro_B2B.html';
+      document.getElementById('formModalB2C').style.display = 'none';
+      document.getElementById('txtCorreoEnviado').textContent = correo;
+      document.getElementById('btnLinkInmediato').href = urlAcceso;
+      document.getElementById('boxExitoModal').style.display = 'flex';
     }
   </script>
 </body>
