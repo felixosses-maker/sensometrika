@@ -2,8 +2,8 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Sensometrika | Evaluaciones Psicosensométricas</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Sensometrika | Menú de Evaluaciones Adaptativo</title>
   <style>
     :root {
       --bg-color: #0b0f19;
@@ -17,7 +17,7 @@
       --text-muted: #9aa0a6;
     }
 
-    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; user-select: none; }
 
     body {
       background-color: var(--bg-color);
@@ -29,7 +29,7 @@
       min-height: 100vh;
     }
 
-    .container { width: 100%; max-width: 520px; margin: 0 auto; }
+    .container { width: 100%; max-width: 540px; margin: 0 auto; }
 
     .brand-header {
       text-align: center;
@@ -58,7 +58,7 @@
     }
 
     .b2b-banner-title {
-      font-size: 0.8rem;
+      font-size: 0.82rem;
       font-weight: 800;
       color: var(--accent-green);
       text-transform: uppercase;
@@ -121,6 +121,7 @@
       font-size: 0.78rem;
       font-weight: 800;
       cursor: pointer;
+      white-space: nowrap;
     }
 
     .btn-start.done {
@@ -157,12 +158,12 @@
     <header class="brand-header">
       <img src="sensometrica.jpg" alt="SENSOMETRIKA" class="brand-logo-img">
       <span style="color:var(--accent-cyan); font-size:0.75rem; font-weight:800; letter-spacing:1.5px; text-transform:uppercase;">
-        MENÚ DE EVALUACIONES
+        MENÚ DE EVALUACIONES MULTI-PLAN
       </span>
     </header>
 
     <div class="b2b-header-banner">
-      <div class="b2b-banner-title">🏢 EVALUACIÓN CORPORATIVA B2B EN CURSO</div>
+      <div id="b2bPlanTitle" class="b2b-banner-title">🏢 EVALUACIÓN B2B EN CURSO</div>
       <div id="b2bSubInfo" class="b2b-banner-sub">Acreditación D.S. N° 170</div>
     </div>
 
@@ -170,30 +171,9 @@
       🔒 EVALUACIÓN FINALIZADA Y TRANSMITIDA AL APR. SESIÓN BLOQUEADA.
     </div>
 
-    <div class="modules-container">
-      <div id="card-mod-1" class="module-card">
-        <div class="module-details">
-          <span class="module-title">1. Reactímetro (Tiempo Frenado)</span>
-          <span class="module-desc">Medición de velocidad de respuesta en frenado.</span>
-        </div>
-        <button id="btn-mod-1" class="btn-start" onclick="iniciarModulo('reactimetro.html')">INICIAR →</button>
-      </div>
-
-      <div id="card-mod-2" class="module-card">
-        <div class="module-details">
-          <span class="module-title">2. Palancas (Coordinación Bimanual)</span>
-          <span class="module-desc">Coordinación motriz fina con ambas manos en ruta.</span>
-        </div>
-        <button id="btn-mod-2" class="btn-start" onclick="iniciarModulo('palancas.html')">INICIAR →</button>
-      </div>
-
-      <div id="card-mod-3" class="module-card">
-        <div class="module-details">
-          <span class="module-title">3. Punteo (Ritmo Viso-Motriz)</span>
-          <span class="module-desc">Estabilidad de ritmo y precisión de impacto.</span>
-        </div>
-        <button id="btn-mod-3" class="btn-start" onclick="iniciarModulo('punteo.html')">INICIAR →</button>
-      </div>
+    <!-- Lista Dinámica de Módulos según Plan -->
+    <div class="modules-container" id="listaModulosContainer">
+      <!-- Carga vía JavaScript -->
     </div>
 
     <button id="btnReport" class="btn-report" disabled onclick="finalizarYVerInforme()">
@@ -203,43 +183,89 @@
 
   <script>
     let isBurnedSession = false;
+    let planActual = 'BASICO'; // 'BASICO', 'PLUS', 'FULL', 'ALTO_RIESGO'
+
+    // Catálogo Máster de Módulos Sensometrika estandarizado con la tarifa B2B
+    const catalogoModulos = [
+      { id: 1, titulo: '1. Reactímetro (Tiempo Frenado)', desc: 'Medición de velocidad de respuesta en frenado.', url: 'reactimetro.html', planes: ['BASICO', 'PLUS', 'FULL', 'ALTO_RIESGO'] },
+      { id: 2, titulo: '2. Palancas (Coordinación Bimanual)', desc: 'Coordinación motriz fina con ambas manos en ruta.', url: 'palancas.html', planes: ['BASICO', 'PLUS', 'FULL', 'ALTO_RIESGO'] },
+      { id: 3, titulo: '3. Punteo (Ritmo Viso-Motriz)', desc: 'Estabilidad de ritmo y precisión de impacto.', url: 'punteo.html', planes: ['BASICO', 'PLUS', 'FULL', 'ALTO_RIESGO'] },
+      { id: 4, titulo: '4. Tamizaje Auditivo Ocupacional', desc: 'Detección de umbrales auditivos en frecuencias críticas.', url: 'auditivo.html', planes: ['PLUS', 'FULL', 'ALTO_RIESGO'] },
+      { id: 5, titulo: '5. Tamizaje Visual Integral', desc: 'Agudeza visual, visión nocturna y encandilamiento.', url: 'visual.html', planes: ['FULL', 'ALTO_RIESGO'] },
+      { id: 6, titulo: '6. Estereopsis 3D', desc: 'Percepción espacial y profundidad binocular.', url: 'estereopsis.html', planes: ['ALTO_RIESGO'] },
+      { id: 7, titulo: '7. Velocidad de Anticipación', desc: 'Cálculo espacio-temporal de trayectorias.', url: 'anticipacion.html', planes: ['ALTO_RIESGO'] },
+      { id: 8, titulo: '8. Resistencia a la Fatiga (PVT)', desc: 'Control de vigilancia y lapsos atencionales.', url: 'fatiga.html', planes: ['ALTO_RIESGO'] }
+    ];
 
     document.addEventListener('DOMContentLoaded', () => {
       const urlParams = new URLSearchParams(window.location.search);
       const rut = urlParams.get('rut') || localStorage.getItem('sensometrika_b2b_rut');
       
+      // Mapeo exacto del plan contratado
+      const planUrl = (urlParams.get('plan') || localStorage.getItem('sensometrika_plan_contratado') || 'BASICO').toUpperCase();
+      
+      if (planUrl.includes('RIESGO') || planUrl.includes('ALTO')) {
+        planActual = 'ALTO_RIESGO';
+        document.getElementById('b2bPlanTitle').innerText = '🏢 EVALUACIÓN B2B • BATERÍA INTEGRAL DE ALTO RIESGO';
+      } else if (planUrl.includes('FULL')) {
+        planActual = 'FULL';
+        document.getElementById('b2bPlanTitle').innerText = '🏢 EVALUACIÓN B2B • PLAN FULL INTEGRAL';
+      } else if (planUrl.includes('PLUS')) {
+        planActual = 'PLUS';
+        document.getElementById('b2bPlanTitle').innerText = '🏢 EVALUACIÓN B2B • PLAN PLUS';
+      } else {
+        planActual = 'BASICO';
+        document.getElementById('b2bPlanTitle').innerText = '🏢 EVALUACIÓN B2B • PLAN BÁSICO LABORAL';
+      }
+
       if (rut) {
         document.getElementById('b2bSubInfo').innerText = `Evaluado: ${decodeURIComponent(rut)} · Acreditación Aprobada`;
       }
 
       isBurnedSession = (urlParams.get('burned') === 'true' || localStorage.getItem('sensometrika_session_burned') === 'true');
 
-      renderizarInterfaz();
+      renderizarModulosAdaptativos();
     });
 
-    function renderizarInterfaz() {
+    function renderizarModulosAdaptativos() {
       if (isBurnedSession) {
         document.getElementById('bannerBurned').style.display = 'block';
       }
 
+      const container = document.getElementById('listaModulosContainer');
+      container.innerHTML = '';
+
       const rendidos = JSON.parse(localStorage.getItem('sensometrika_modulos_rendidos')) || [];
 
-      for (let i = 1; i <= 3; i++) {
-        const cardEl = document.getElementById(`card-mod-${i}`);
-        const btnEl = document.getElementById(`btn-mod-${i}`);
+      // Filtrar catálogo por el plan contratado
+      const modulosHabilitados = catalogoModulos.filter(m => m.planes.includes(planActual));
 
-        if (rendidos.includes(i)) {
-          cardEl.className = 'module-card completed-card';
-          btnEl.className = 'btn-start done';
-          btnEl.innerText = 'RENDIDO ✓';
-          btnEl.disabled = true;
-        } else if (isBurnedSession) {
-          btnEl.disabled = true;
-        }
-      }
+      modulosHabilitados.forEach(mod => {
+        const estaRendido = rendidos.includes(mod.id);
 
+        const card = document.createElement('div');
+        card.className = `module-card ${estaRendido ? 'completed-card' : ''}`;
+
+        card.innerHTML = `
+          <div class="module-details">
+            <span class="module-title">${mod.titulo}</span>
+            <span class="module-desc">${mod.desc}</span>
+          </div>
+          <button class="btn-start ${estaRendido ? 'done' : ''}" 
+                  ${(estaRendido || isBurnedSession) ? 'disabled' : ''} 
+                  onclick="iniciarModulo('${mod.url}')">
+            ${estaRendido ? 'RENDIDO ✓' : 'INICIAR →'}
+          </button>
+        `;
+
+        container.appendChild(card);
+      });
+
+      // Validar término
       const btnReport = document.getElementById('btnReport');
-      if (rendidos.length >= 3 && !isBurnedSession) {
+      const todosCompletados = modulosHabilitados.every(m => rendidos.includes(m.id));
+
+      if (todosCompletados && !isBurnedSession) {
         btnReport.disabled = false;
       } else {
         btnReport.disabled = true;
@@ -250,13 +276,13 @@
       if (isBurnedSession) return;
       const token = localStorage.getItem('sensometrika_b2b_token') || '';
       const rut = localStorage.getItem('sensometrika_b2b_rut') || '';
-      window.location.href = `${urlHtml}?token=${token}&rut=${rut}`;
+      window.location.href = `${urlHtml}?token=${token}&rut=${rut}&plan=${planActual}`;
     }
 
     function finalizarYVerInforme() {
       const token = localStorage.getItem('sensometrika_b2b_token') || '';
       const rut = localStorage.getItem('sensometrika_b2b_rut') || '';
-      window.location.href = `informe-b2b.html?token=${token}&rut=${rut}&autoSend=true`;
+      window.location.href = `informe-b2b.html?token=${token}&rut=${rut}&plan=${planActual}&autoSend=true`;
     }
   </script>
 </body>
