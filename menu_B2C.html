@@ -61,6 +61,17 @@
       gap: 3px;
     }
 
+    .counter-box {
+      background: #030712;
+      border: 1px solid var(--card-border);
+      border-radius: 10px;
+      padding: 10px 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.78rem;
+    }
+
     .module-card {
       background: #030712;
       border: 1px solid var(--card-border);
@@ -132,8 +143,14 @@
 
     <!-- BANNER DINÁMICO DE PLAN -->
     <div id="boxHeaderPlan" class="badge-plan-header">
-      <span id="txtTipoPlan" style="font-size:0.88rem; font-weight:900;">EVALUACIÓN • CARGANDO PLAN...</span>
+      <span id="txtTipoPlan" style="font-size:0.88rem; font-weight:900;">EVALUACIÓN PARTICULAR • PLAN BASICO (B2C)</span>
       <span id="txtInfoEvaluado" style="font-size:0.72rem; color:var(--text-muted); font-weight:600;">Evaluado: - | RUT: -</span>
+    </div>
+
+    <!-- TARJETA DE CONTADOR DE SIMULACIONES -->
+    <div id="boxContadorSimulaciones" class="counter-box">
+      <span style="color: var(--text-muted); font-size: 0.72rem; font-weight: 700;">🔄 SIMULACIONES DISPONIBLES:</span>
+      <strong id="lblSimulacionesCuota" style="color: var(--accent-cyan); font-size: 0.88rem; font-weight: 900;">INTENTO 1 DE 3</strong>
     </div>
 
     <!-- MÓDULOS DE EVALUACIÓN DINÁMICOS -->
@@ -172,7 +189,7 @@
         </div>
       </div>
 
-      <!-- 4. Tamizaje Auditivo Ocupacional (Habilitado en Plan Plus y superiores) -->
+      <!-- 4. Tamizaje Auditivo -->
       <div class="module-card" id="cardModAuditivo" style="display: none;">
         <div class="module-info">
           <span class="module-title">4. Tamizaje Auditivo Ocupacional</span>
@@ -183,7 +200,7 @@
         </div>
       </div>
 
-      <!-- 5. Tamizaje Visual Integral (Habilitado en Plan Full / Full Integral) -->
+      <!-- 5. Tamizaje Visual -->
       <div class="module-card" id="cardModVisual" style="display: none;">
         <div class="module-info">
           <span class="module-title">5. Tamizaje Visual Integral</span>
@@ -198,7 +215,7 @@
 
     <!-- BOTÓN FINAL -->
     <button id="btnFinalizarGeneral" onclick="finalizarEvaluacion()" class="btn-action-main">
-      FINALIZAR Y GENERAR INFORME →
+      🎓 FINALIZAR Y OBTENER CERTIFICADO DIGITAL
     </button>
   </div>
 
@@ -215,23 +232,31 @@
         datosUsuario = JSON.parse(localStorage.getItem('sensometrika_datos_usuario')) || {};
       } catch(e){}
 
-      const rut = urlParams.get('rut') || datosUsuario.rut || '13.125.088-4';
-      const nombre = datosUsuario.nombre || urlParams.get('nombre') || 'Heriberto Pérez Muñoz';
+      const rut = urlParams.get('rut') || datosUsuario.rut || '13.654.345-1';
+      const nombre = datosUsuario.nombre || urlParams.get('nombre') || 'Francisco Arteaga Soto';
 
-      // Verificar si es B2C o B2B
+      // Definir límite de simulaciones según el plan
+      let totalSimulacionesPlan = 3;
+      if (planParam.includes('PLUS')) totalSimulacionesPlan = 5;
+      if (planParam.includes('FULL')) totalSimulacionesPlan = 8;
+
+      // Obtener el número de simulación actual ejecutada
+      let intentoActual = parseInt(localStorage.getItem('sensometrika_intento_actual') || '1');
+
       if (modeParam === 'b2c' || localStorage.getItem('sensometrika_b2c_mode') === 'true') {
         isB2C = true;
         document.getElementById('txtTipoPlan').textContent = `EVALUACIÓN PARTICULAR • PLAN ${planParam} (B2C)`;
+        document.getElementById('lblSimulacionesCuota').textContent = `INTENTO ${intentoActual} DE ${totalSimulacionesPlan}`;
         document.getElementById('btnFinalizarGeneral').textContent = '🎓 FINALIZAR Y OBTENER CERTIFICADO DIGITAL';
       } else {
         isB2C = false;
         document.getElementById('txtTipoPlan').textContent = `EVALUACIÓN B2B • PLAN ${planParam}`;
+        document.getElementById('boxContadorSimulaciones').style.display = 'none';
         document.getElementById('btnFinalizarGeneral').textContent = '📊 FINALIZAR Y ENVIAR INFORME AL APR';
       }
 
       document.getElementById('txtInfoEvaluado').textContent = `Evaluado: ${decodeURIComponent(nombre)} | RUT: ${rut}`;
 
-      // Desbloqueo de módulos según el plan
       if (planParam.includes('PLUS') || planParam.includes('FULL')) {
         document.getElementById('cardModAuditivo').style.display = 'flex';
       }
@@ -264,9 +289,9 @@
 
     function finalizarEvaluacion() {
       if (isB2C) {
-        window.location.href = "certificado_b2c.html";
+        window.location.href = "informe.html";
       } else {
-        window.location.href = "informe_B2B.html";
+        window.location.href = "informe-b2b.html";
       }
     }
   </script>

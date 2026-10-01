@@ -1,39 +1,35 @@
-/* ==========================================================================
-   SENSOMETRIKA - CONFIGURACIÓN DE PLANES Y PERFILES B2B (config.js)
-   ========================================================================== */
+/* SENSOMETRIKA - Core Session & Isolation Manager */
 
-export const PLANES_B2B = {
-  estandar: {
-    id: "estandar",
-    name: "Plan B2B Estándar (Transporte / General)",
-    modulos: ["reactimetro", "punteo", "palancas"],
-    descripcion: "Evaluación psicotécnica base para conducción general y transporte de carga."
+const SensometrikaSession = {
+  // Inicializa la sesión B2C limpiando residuos anteriores
+  initB2C: function(datos) {
+    localStorage.removeItem('sensometrika_b2b_token');
+    localStorage.removeItem('sensometrika_foto_trabajador');
+    localStorage.removeItem('sensometrika_firma_trabajador');
+    
+    localStorage.setItem('sensometrika_mode', 'b2c');
+    localStorage.setItem('sensometrika_datos_usuario', JSON.stringify(datos));
+    
+    if (!localStorage.getItem('sensometrika_intento_actual')) {
+      localStorage.setItem('sensometrika_intento_actual', '1');
+    }
   },
-  alta_complejidad: {
-    id: "alta_complejidad",
-    name: "Plan B2B Alta Complejidad (Minería Sernageomin / Forestal CORMA)",
-    modulos: ["reactimetro", "palancas", "anticipacion", "fatiga", "estereopsis"],
-    descripcion: "Batería crítica avanzada para operación de maquinaria pesada, grúas y faenas de alto riesgo."
-  }
-};
 
-export const INDUSTRY_THRESHOLDS = {
-  mining: {
-    name: "Minera (Estándar Sernageomin)",
-    maxReactionTime: 350,
-    errorTolerance: 0,
-    passingScore: 85
+  // Inicializa la sesión B2B aislada
+  initB2B: function(datosEmpresa) {
+    localStorage.removeItem('sensometrika_b2c_intentos');
+    localStorage.setItem('sensometrika_mode', 'b2b');
+    localStorage.setItem('sensometrika_b2b_datos', JSON.stringify(datosEmpresa));
   },
-  forestry: {
-    name: "Forestal (Estándar CORMA)",
-    maxReactionTime: 400,
-    errorTolerance: 1,
-    passingScore: 80
+
+  // Obtiene la modalidad activa de forma segura
+  getMode: function() {
+    const urlParams = new URLSearchParams(window.location.search);
+    return urlParams.get('mode') || localStorage.getItem('sensometrika_mode') || 'b2c';
   },
-  transport: {
-    name: "Transporte de Carga",
-    maxReactionTime: 380,
-    errorTolerance: 2,
-    passingScore: 75
+
+  // Reinicia los módulos rendidos cuando se inicia un nuevo intento B2C
+  resetModulosRendidos: function() {
+    localStorage.removeItem('sensometrika_modulos_rendidos');
   }
 };

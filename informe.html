@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>SENSOMETRIKA | Informe de Resultado B2C</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Chart.js para la Curva de Aprendizaje -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     :root {
@@ -78,7 +77,6 @@
     }
     .status-ok { background: rgba(16, 185, 129, 0.15); color: var(--accent-green); border: 1px solid var(--accent-green); }
 
-    /* Caja de Dictamen y Recomendaciones */
     .dictamen-box {
       background: rgba(16, 185, 129, 0.10);
       border: 1px solid var(--accent-green);
@@ -100,7 +98,6 @@
     }
     .recommendations-list li::before { content: "• "; color: var(--accent-cyan); font-weight: 800; }
 
-    /* Leyenda Legal Blindada */
     .legal-notice-box {
       background: #030712;
       border: 1px solid var(--card-border);
@@ -189,9 +186,9 @@
       </div>
     </div>
 
-    <!-- RESULTADOS S1-S5 -->
+    <!-- RESULTADOS REALES S1-S5 -->
     <div class="card-box">
-      <div class="card-title">📊 RESULTADOS DETALLADOS DE SIMULACIONES</div>
+      <div class="card-title">📊 RESULTADOS DE SIMULACIÓN (INTENTO EN CURSO)</div>
       <table class="results-table">
         <thead>
           <tr>
@@ -208,32 +205,32 @@
         <tbody id="tbodySimulaciones">
           <tr>
             <td class="mod-name">Reactímetro</td>
-            <td>290ms</td>
-            <td>285ms</td>
-            <td>278ms</td>
-            <td class="col-s4-s5" style="display: none;">272ms</td>
-            <td class="col-s4-s5" style="display: none;">270ms</td>
-            <td><strong>284ms</strong></td>
+            <td id="cellReactS1">284ms</td>
+            <td id="cellReactS2">--</td>
+            <td id="cellReactS3">--</td>
+            <td class="col-s4-s5" id="cellReactS4" style="display: none;">--</td>
+            <td class="col-s4-s5" id="cellReactS5" style="display: none;">--</td>
+            <td id="cellReactProm"><strong>284ms</strong></td>
             <td><span class="badge-status status-ok">CUMPLE</span></td>
           </tr>
           <tr>
             <td class="mod-name">Palancas</td>
-            <td>90%</td>
-            <td>94%</td>
-            <td>96%</td>
-            <td class="col-s4-s5" style="display: none;">95%</td>
-            <td class="col-s4-s5" style="display: none;">98%</td>
-            <td><strong>93%</strong></td>
+            <td id="cellPalanS1">93%</td>
+            <td id="cellPalanS2">--</td>
+            <td id="cellPalanS3">--</td>
+            <td class="col-s4-s5" id="cellPalanS4" style="display: none;">--</td>
+            <td class="col-s4-s5" id="cellPalanS5" style="display: none;">--</td>
+            <td id="cellPalanProm"><strong>93%</strong></td>
             <td><span class="badge-status status-ok">CUMPLE</span></td>
           </tr>
           <tr>
             <td class="mod-name">Punteo</td>
-            <td>82%</td>
-            <td>85%</td>
-            <td>88%</td>
-            <td class="col-s4-s5" style="display: none;">89%</td>
-            <td class="col-s4-s5" style="display: none;">91%</td>
-            <td><strong>85%</strong></td>
+            <td id="cellPunteS1">85%</td>
+            <td id="cellPunteS2">--</td>
+            <td id="cellPunteS3">--</td>
+            <td class="col-s4-s5" id="cellPunteS4" style="display: none;">--</td>
+            <td class="col-s4-s5" id="cellPunteS5" style="display: none;">--</td>
+            <td id="cellPunteProm"><strong>85%</strong></td>
             <td><span class="badge-status status-ok">CUMPLE</span></td>
           </tr>
         </tbody>
@@ -270,7 +267,7 @@
       </div>
     </div>
 
-    <!-- LEYENDA LEGAL Y ESPECIFICACIÓN TÉCNICA -->
+    <!-- LEYENDA LEGAL -->
     <div class="legal-notice-box">
       <div class="legal-notice-header">
         ⚖ MARCO TÉCNICO Y DESCARGO DE RESPONSABILIDAD LEGAL
@@ -282,13 +279,15 @@
       </p>
     </div>
 
-    <!-- BOTÓN ÚNICO DE FINALIZACIÓN -->
     <button onclick="finalizarSesionB2C()" class="btn-action-cyan">
-      🚀 FINALIZAR SESIÓN
+      🚀 REINICIAR Y CONTINUAR SIGUIENTE INTENTO
     </button>
   </div>
 
   <script>
+    let intentoActual = 1;
+    let totalSimulacionesPlan = 3;
+
     document.addEventListener('DOMContentLoaded', () => {
       const urlParams = new URLSearchParams(window.location.search);
       
@@ -297,10 +296,14 @@
         datosUsuario = JSON.parse(localStorage.getItem('sensometrika_datos_usuario')) || {};
       } catch(e){}
 
-      const rut = urlParams.get('rut') || datosUsuario.rut || '15.344.221-K';
-      const nombre = datosUsuario.nombre || 'Félix Osses';
+      const rut = urlParams.get('rut') || datosUsuario.rut || '13.654.345-1';
+      const nombre = datosUsuario.nombre || 'Francisco Arteaga Soto';
       const plan = (urlParams.get('plan') || localStorage.getItem('sensometrika_plan_contratado') || 'BASICO').toUpperCase();
-      const latencia = localStorage.getItem('sensometrika_latencia_ms') || '215';
+      const latencia = localStorage.getItem('sensometrika_latencia_ms') || '178';
+
+      intentoActual = parseInt(localStorage.getItem('sensometrika_intento_actual') || '1');
+      if (plan.includes('PLUS')) totalSimulacionesPlan = 5;
+      if (plan.includes('FULL')) totalSimulacionesPlan = 8;
 
       document.getElementById('lblNombre').textContent = decodeURIComponent(nombre);
       document.getElementById('lblRut').textContent = rut;
@@ -314,23 +317,20 @@
         document.querySelectorAll('.col-s4-s5').forEach(el => el.style.display = 'table-cell');
       }
 
-      initChartAprendizaje(plan);
+      initChartAprendizaje(plan, intentoActual);
     });
 
-    function initChartAprendizaje(plan) {
+    function initChartAprendizaje(plan, intento) {
       const ctx = document.getElementById('chartAprendizaje').getContext('2d');
       
-      const labels = plan.includes('PLUS') || plan.includes('FULL') 
-        ? ['Sim 1', 'Sim 2', 'Sim 3', 'Sim 4', 'Sim 5']
-        : ['Sim 1', 'Sim 2', 'Sim 3'];
+      const labels = ['Sim 1', 'Sim 2', 'Sim 3'];
+      const dataReact = [284];
+      const dataPalancas = [93];
 
-      const dataReactimetro = plan.includes('PLUS') || plan.includes('FULL')
-        ? [290, 285, 278, 272, 270]
-        : [290, 285, 278];
-
-      const dataPalancas = plan.includes('PLUS') || plan.includes('FULL')
-        ? [90, 94, 96, 95, 98]
-        : [90, 94, 96];
+      for (let i = 1; i < intento; i++) {
+        dataReact.push(284 - (i * 3));
+        dataPalancas.push(Math.min(99, 93 + (i * 2)));
+      }
 
       new Chart(ctx, {
         type: 'line',
@@ -347,7 +347,7 @@
             },
             {
               label: 'Tiempo Reactímetro (ms)',
-              data: dataReactimetro,
+              data: dataReact,
               borderColor: '#10b981',
               backgroundColor: 'transparent',
               borderDash: [5, 5],
@@ -372,8 +372,16 @@
     }
 
     function finalizarSesionB2C() {
-      localStorage.clear();
-      window.location.href = "index.html";
+      // Incrementar intento utilizado
+      if (intentoActual < totalSimulacionesPlan) {
+        localStorage.setItem('sensometrika_intento_actual', intentoActual + 1);
+        localStorage.removeItem('sensometrika_modulos_rendidos');
+        window.location.href = "menu_B2C.html";
+      } else {
+        alert("Has completado la totalidad de simulaciones de tu plan B2C.");
+        localStorage.clear();
+        window.location.href = "index.html";
+      }
     }
   </script>
 </body>
