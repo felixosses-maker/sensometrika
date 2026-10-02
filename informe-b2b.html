@@ -244,7 +244,15 @@
 
     /* FIRMAS Y PIE LEGAL */
     .firmas-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 6px; }
-    .box-firma { border: 1.5px dashed #cbd5e1; border-radius: 8px; height: 82px; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; padding: 6px; font-size: 0.60rem; color: #64748b; text-align: center; }
+    .box-firma { border: 1.5px dashed #cbd5e1; border-radius: 8px; height: 95px; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; padding: 6px; font-size: 0.60rem; color: #64748b; text-align: center; position: relative; }
+
+    .img-firma-trabajador {
+      max-height: 40px;
+      width: auto;
+      object-fit: contain;
+      margin-bottom: 2px;
+      mix-blend-mode: multiply;
+    }
 
     .legal-disclaimer-b2b {
       font-size: 0.58rem;
@@ -346,7 +354,7 @@
       </div>
     </div>
 
-    <!-- TELEMETRÍA HARDWARE (DETECCIÓN DINÁMICA DE DISPOSITIVO Y OS) -->
+    <!-- TELEMETRÍA HARDWARE -->
     <div class="telemetry-row">
       <div><span style="color:#94a3b8; display:block;">Calibración Terminal:</span><strong id="lblDispositivoTerminal">Smartphone / Mobile</strong></div>
       <div><span style="color:#94a3b8; display:block;">Telemetría de Red:</span><strong style="color:#10b981;">35 ms (Estable)</strong></div>
@@ -382,8 +390,10 @@
     <!-- FIRMAS DE RESPONSABILIDAD -->
     <div class="firmas-grid">
       <div class="box-firma">
+        <!-- Renderizado dinámico de la imagen de la firma -->
+        <img id="imgFirmaTrabajador" class="img-firma-trabajador" src="" alt="Firma Manuscrita" style="display: none;">
         <span style="font-weight:800; color:#0f172a; margin-bottom:2px;" id="lblFirmaTrabajador">Andres Perez</span>
-        <span>RUT: 13.766.987-1</span>
+        <span id="lblRutFirmaTrabajador">RUT: 13.766.987-1</span>
         <span style="border-top:1px solid #cbd5e1; width:85%; margin-top:4px; padding-top:2px;">FIRMA Y DECLARACIÓN JURADA TRABAJADOR</span>
       </div>
       <div class="box-firma">
@@ -429,11 +439,20 @@
       document.getElementById('lblNombreTrabajador').textContent = decodeURIComponent(nombre).toUpperCase();
       document.getElementById('lblRutTrabajador').textContent = rut;
       document.getElementById('lblFirmaTrabajador').textContent = decodeURIComponent(nombre);
+      document.getElementById('lblRutFirmaTrabajador').textContent = `RUT: ${rut}`;
       document.getElementById('lblCorreoAPR').textContent = correoAPR;
       document.getElementById('lblEmpresaTrabajador').textContent = empresa.toUpperCase();
       document.getElementById('txtNombrePlanContratado').textContent = `PLAN ${planParam.replace('_', ' ')}`;
 
-      // DETECCIÓN DINÁMICA DE DISPOSITIVO Y SISTEMA OPERATIVO
+      // DETECCIÓN Y RENDERIZADO DE LA FIRMA DIGITAL MANUSCRITA
+      const firmaB64 = localStorage.getItem('sensometrika_firma_trabajador');
+      const imgFirma = document.getElementById('imgFirmaTrabajador');
+      if (firmaB64) {
+        imgFirma.src = firmaB64;
+        imgFirma.style.display = 'block';
+      }
+
+      // Detección dinámica de dispositivo terminal
       const ua = navigator.userAgent;
       let tipoDispositivo = "PC Escritorio";
       let sistemaOp = "Windows";
@@ -454,7 +473,6 @@
 
       document.getElementById('lblDispositivoTerminal').textContent = `${tipoDispositivo} / ${sistemaOp}`;
 
-      // Latencia registrada
       const latenciaGuardada = localStorage.getItem('sensometrika_latencia_ms') || '152';
       document.getElementById('lblLatenciaHardware').textContent = `${latenciaGuardada} ms (Promedio)`;
 
