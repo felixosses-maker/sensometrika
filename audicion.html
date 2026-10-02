@@ -16,6 +16,7 @@
       --azul-btn-hover: #0369a1;
       --texto-blanco: #ffffff;
       --texto-gris: #94a3b8;
+      --accent-gold: #e5b324;
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; user-select: none; -webkit-user-select: none; }
@@ -126,7 +127,11 @@
   <script>
     const urlParams = new URLSearchParams(window.location.search);
     const modeParam = urlParams.get('mode') || (localStorage.getItem('sensometrika_b2c_mode') === 'true' ? 'b2c' : 'b2b');
-    const esB2C = (modeParam === 'b2c');
+    const esB2B = (modeParam === 'b2b');
+
+    // PRIORIDAD ABSOLUTA A LA URL PARA MODO DEMO
+    const isDemoURL = urlParams.get('demo') === 'true' || urlParams.get('fase') === 'demo';
+    let modoActual = isDemoURL ? 'DEMO' : 'OFICIAL';
 
     let audioCtx = null;
     let oscilador = null;
@@ -156,20 +161,50 @@
       window.location.href = `menu_B2C.html?${urlParams.toString()}`;
     }
 
-    function revisarModuloBloqueado() {
+    function actualizarEstadoUI() {
       const modulosRendidos = JSON.parse(localStorage.getItem('sensometrika_modulos_rendidos')) || {};
-      if (modulosRendidos.auditivo === true) {
+      const yaRendido = modulosRendidos.auditivo === true;
+      const demoRealizada = localStorage.getItem('audicion_demo_completada') === 'true';
+
+      if (isDemoURL) {
+        modoActual = 'DEMO';
+      } else if (yaRendido) {
+        modoActual = 'BLOQUEADO';
+      } else if (!demoRealizada) {
+        modoActual = 'DEMO';
+      } else {
+        modoActual = 'OFICIAL';
+      }
+
+      if (modoActual === 'BLOQUEADO') {
         cajaCheck.style.display = 'none';
         btnIniciar.style.display = 'none';
+        badgeFase.innerText = '✓ Evaluación Registrada';
+        badgeFase.style.color = '#10b981';
         lblOido.innerText = '✓ MÓDULO REGISTRADO';
         lblFrecuencia.innerText = 'Completado';
         lblUmbral.innerText = 'Evaluación registrada en el sistema';
         mEstado.innerText = 'Completado';
-        statusText.innerText = 'Has completado la evaluación auditiva. Retorna al menú de evaluaciones.';
+        mEstado.style.color = '#10b981';
+        statusText.innerText = 'Has completado la evaluación auditiva. Retorna al menú para continuar.';
+      } else if (modoActual === 'DEMO') {
+        badgeFase.innerText = 'Paso 1: Calibración Demo (1/1)';
+        badgeFase.style.borderColor = '#e5b324';
+        badgeFase.style.color = '#e5b324';
+        btnIniciar.innerText = 'INICIAR CALIBRACIÓN DEMO (8 TONOS)';
+        btnIniciar.style.backgroundColor = '#e5b324';
+      } else {
+        badgeFase.innerText = esB2B ? '🔴 Tamizaje Auditivo Oficial B2B (D.S. N° 170)' : '🔴 Tamizaje Auditivo Oficial (D.S. N° 170)';
+        badgeFase.style.borderColor = 'rgba(56, 189, 248, 0.35)';
+        badgeFase.style.color = '#38bdf8';
+        btnIniciar.innerText = 'INICIAR SIMULACIÓN OFICIAL';
+        btnIniciar.style.backgroundColor = '#0284c7';
       }
     }
 
     function actualizarEstadoAudifonos() {
+      if (modoActual === 'BLOQUEADO') return;
+
       if (checkAudifonos.checked) {
         cajaCheck.classList.add('activo');
         btnIniciar.disabled = false;
@@ -190,10 +225,10 @@
     function mostrarModalAyudaAudio() {
       const modalHtml = `
         <div id="modalAyudaAudio" style="position: fixed; inset: 0; background: rgba(5, 8, 18, 0.9); backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center; z-index: 99999; padding: 16px;">
-          <div style="background: #0f172a; border: 1px solid #1e293b; border-radius: 18px; width: 100%; max-width: 380px; padding: 24px 20px; text-align: left; color: #f8fafc;">
-            <h3 style="color: #ffffff; margin-bottom: 6px; font-size: 1.15rem; font-weight: 800; text-align: center;">Tamizaje Auditivo Avanzado</h3>
-            <p style="color: #38bdf8; margin-bottom: 14px; font-size: 0.8rem; font-weight: 600; text-align: center;">Audiometría de 8 Tonos Aleatorios</p>
-            <div style="font-size: 0.82rem; color: #94a3b8; line-height: 1.5; display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px;">
+          <div style="background: #0f172a; border: 1px solid #1e293b; border-radius: 18px; width: 100%; max-width: 380px; padding: 24px 20px; text-align: center; color: #f8fafc;">
+            <h3 style="color: #ffffff; margin-bottom: 6px; font-size: 1.15rem; font-weight: 800;">Tamizaje Auditivo Avanzado</h3>
+            <p style="color: #38bdf8; margin-bottom: 14px; font-size: 0.8rem; font-weight: 600;">Audiometría de 8 Tonos Aleatorios</p>
+            <div style="font-size: 0.82rem; color: #94a3b8; line-height: 1.5; display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; text-align: left;">
               <p>1. <strong>Recuadro Obligatorio:</strong> Debe marcar la confirmación de audífonos estéreo para desbloquear el sistema.</p>
               <p>2. <strong>Estímulos Aleatorios:</strong> El sistema emitirá 8 tonos desordenados (250 Hz a 6000 Hz) en el oído izquierdo o derecho.</p>
             </div>
@@ -217,6 +252,8 @@
     }
 
     function iniciarTamizajeAuditivo() {
+      if (modoActual === 'BLOQUEADO') return;
+
       if (!checkAudifonos.checked) {
         alert("⚠️ Debe marcar la casilla de confirmación de audífonos para continuar.");
         return;
@@ -233,7 +270,6 @@
       btnIniciar.style.display = 'none';
       cajaCheck.style.display = 'none';
       btnEmitirTono.style.display = 'block';
-      badgeFase.innerText = esB2C ? '🔴 Tamizaje Auditivo B2C' : '🔴 Tamizaje Auditivo Oficial B2B (D.S. N° 170)';
       mEstado.innerText = 'En Curso';
       statusText.innerText = 'Pulse "Reproducir Tono Acústico" y seleccione el oído donde lo perciba.';
 
@@ -323,33 +359,50 @@
       const aprobado = aciertosTotales >= 6;
       const precisionVal = Math.round((aciertosTotales / 8) * 100);
 
-      // 1. Quemar el módulo en el Objeto sensometrika_modulos_rendidos
-      let modulosRendidos = JSON.parse(localStorage.getItem('sensometrika_modulos_rendidos')) || {};
-      modulosRendidos.auditivo = true;
-      localStorage.setItem('sensometrika_modulos_rendidos', JSON.stringify(modulosRendidos));
+      if (modoActual === 'DEMO') {
+        localStorage.setItem('audicion_demo_completada', 'true');
 
-      // 2. Guardar historial detallado
-      let historial = JSON.parse(localStorage.getItem('sensometrika_historial_auditivo')) || [];
-      historial.push({
-        fecha: new Date().toISOString(),
-        aciertos: aciertosTotales,
-        total: 8,
-        precision: precisionVal,
-        aprobado: aprobado
-      });
-      localStorage.setItem('sensometrika_historial_auditivo', JSON.stringify(historial));
+        urlParams.set('demo', 'false');
+        urlParams.set('fase', 'oficial');
+        window.history.replaceState({}, '', `${window.location.pathname}?${urlParams.toString()}`);
 
-      mostrarModalResultadoAudio(aciertosTotales, aprobado);
+        actualizarEstadoUI();
+        cajaCheck.style.display = 'flex';
+        checkAudifonos.checked = false;
+        actualizarEstadoAudifonos();
+
+        mostrarModalResultadoAudio(aciertosTotales, aprobado, true);
+      } else if (modoActual === 'OFICIAL') {
+        let modulosRendidos = JSON.parse(localStorage.getItem('sensometrika_modulos_rendidos')) || {};
+        modulosRendidos.auditivo = true;
+        localStorage.setItem('sensometrika_modulos_rendidos', JSON.stringify(modulosRendidos));
+
+        let historial = JSON.parse(localStorage.getItem('sensometrika_historial_auditivo')) || [];
+        historial.push({
+          fecha: new Date().toISOString(),
+          aciertos: aciertosTotales,
+          total: 8,
+          precision: precisionVal,
+          aprobado: aprobado
+        });
+        localStorage.setItem('sensometrika_historial_auditivo', JSON.stringify(historial));
+
+        actualizarEstadoUI();
+        mostrarModalResultadoAudio(aciertosTotales, aprobado, false);
+      }
     }
 
-    function mostrarModalResultadoAudio(aciertos, aprobado) {
+    function mostrarModalResultadoAudio(aciertos, aprobado, esDemo) {
       const modalExistente = document.getElementById('modalResultadoAudio');
       if (modalExistente) modalExistente.remove();
+
+      const tituloModal = esDemo ? 'CALIBRACIÓN DEMO COMPLETADA' : (esB2B ? 'Simulación Oficial B2B Registrada' : 'Simulación Oficial Registrada');
+      const mensajeModal = esDemo ? 'Has finalizado tu ensayo. Ya puedes realizar tu Simulación Oficial.' : '<b>¡Evaluación registrada correctamente!</b>';
 
       const modalHtml = `
         <div id="modalResultadoAudio" style="position: fixed; inset: 0; background: rgba(5, 8, 18, 0.9); backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center; z-index: 99999; padding: 16px;">
           <div style="background: #0f172a; border: 1px solid #1e293b; border-radius: 18px; width: 100%; max-width: 380px; padding: 24px 20px; text-align: center; box-shadow: 0 20px 30px rgba(0,0,0,0.7); color: #f8fafc;">
-            <h3 style="color: #ffffff; margin-bottom: 4px; font-size: 1.25rem; font-weight: 800;">${esB2C ? 'Práctica B2C Registrada' : 'Simulación Oficial B2B Registrada'}</h3>
+            <h3 style="color: #ffffff; margin-bottom: 4px; font-size: 1.15rem; font-weight: 800;">${tituloModal}</h3>
             <p style="color: #38bdf8; margin-bottom: 16px; font-size: 0.85rem; font-weight: 600;">Módulo: Tamizaje Auditivo Ocupacional</p>
 
             <div style="margin-bottom: 18px;">
@@ -369,8 +422,10 @@
               </div>
             </div>
 
-            <button onclick="ejecutarRetornoMenu()" style="width: 100%; background: #0284c7; color: #ffffff; border: none; border-radius: 10px; padding: 12px; font-weight: 700; cursor: pointer; font-size: 0.9rem; text-transform: uppercase; box-shadow: 0 4px 14px rgba(2, 132, 199, 0.4);">
-              ← VOLVER AL MENÚ DE EVALUACIONES
+            <p style="font-size: 0.8rem; color: #cbd5e1; margin-bottom: 16px;">${mensajeModal}</p>
+
+            <button onclick="${esDemo ? "document.getElementById('modalResultadoAudio').remove()" : "ejecutarRetornoMenu()"}" style="width: 100%; background: #0284c7; color: #ffffff; border: none; border-radius: 10px; padding: 12px; font-weight: 700; cursor: pointer; font-size: 0.9rem; text-transform: uppercase; box-shadow: 0 4px 14px rgba(2, 132, 199, 0.4);">
+              ${esDemo ? 'CONTINUAR A SIMULACIÓN OFICIAL →' : '← VOLVER AL MENÚ DE EVALUACIONES'}
             </button>
           </div>
         </div>
@@ -378,7 +433,7 @@
       document.body.insertAdjacentHTML('beforeend', modalHtml);
     }
 
-    revisarModuloBloqueado();
+    actualizarEstadoUI();
   </script>
 </body>
 </html>

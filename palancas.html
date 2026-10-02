@@ -391,7 +391,9 @@
         const modeParam = urlParams.get('mode') || (localStorage.getItem('sensometrika_b2c_mode') === 'true' ? 'b2c' : 'b2b');
         const esB2B = (modeParam === 'b2b');
 
-        let modoActual = 'DEMO';
+        // PRIORIDAD ABSOLUTA A LA URL PARA MODO DEMO
+        const isDemoURL = urlParams.get('demo') === 'true' || urlParams.get('fase') === 'demo';
+        let modoActual = isDemoURL ? 'DEMO' : 'OFICIAL';
 
         function ejecutarRetornoMenu() {
             window.location.href = `menu_B2C.html?${urlParams.toString()}`;
@@ -405,29 +407,39 @@
             const yaRendido = modulosRendidos.palancas === true;
             const demoRealizada = localStorage.getItem('palancas_demo_completada') === 'true';
 
-            if (yaRendido) {
+            // Si la URL exige demo=true, forzar fase de práctica
+            if (isDemoURL) {
+                modoActual = 'DEMO';
+            } else if (yaRendido) {
                 modoActual = 'BLOQUEADO';
+            } else if (!demoRealizada) {
+                modoActual = 'DEMO';
+            } else {
+                modoActual = 'OFICIAL';
+            }
+
+            if (modoActual === 'BLOQUEADO') {
                 badgeText.textContent = "EVALUACIÓN REGISTRADA EN SISTEMA";
                 badgeDot.style.backgroundColor = "#10b981"; 
                 btnStart.style.display = 'none';
                 btnNext.style.display = 'block';
                 instructionText.textContent = "Has completado la evaluación de Coordinación Bimanual. Retorna al menú para continuar.";
-            } else if (!demoRealizada) {
-                modoActual = 'DEMO';
+            } else if (modoActual === 'DEMO') {
                 badgeText.textContent = "Paso 1: Calibración Demo (1/1)";
                 badgeDot.style.backgroundColor = "#e5b324"; 
                 btnStart.textContent = "INICIAR CALIBRACIÓN DEMO";
                 btnStart.style.display = 'block';
+                btnStart.style.backgroundColor = "#e5b324";
                 btnStart.style.opacity = '1';
                 btnStart.disabled = false;
                 btnNext.style.display = 'none';
                 instructionText.textContent = "Modo Demo: Coordina ambos pulgares para llevar el puntero a la meta verde en esta pista de ensayo.";
             } else {
-                modoActual = 'OFICIAL';
                 badgeText.textContent = esB2B ? "Simulación Oficial B2B (D.S. N° 170)" : "Simulación Oficial (D.S. N° 170)";
                 badgeDot.style.backgroundColor = "#ef4444"; 
                 btnStart.textContent = "INICIAR SIMULACIÓN OFICIAL";
                 btnStart.style.display = 'block';
+                btnStart.style.backgroundColor = "#0284c7";
                 btnStart.style.opacity = '1';
                 btnStart.disabled = false;
                 btnNext.style.display = 'none';
@@ -448,6 +460,12 @@
         const moduloPalancas = new ModuloPalancas(canvas, { width: 400, height: 300 }, (res) => {
             if (modoActual === 'DEMO') {
                 localStorage.setItem('palancas_demo_completada', 'true');
+
+                // Transición explícita a la fase oficial en URL
+                urlParams.set('demo', 'false');
+                urlParams.set('fase', 'oficial');
+                window.history.replaceState({}, '', `${window.location.pathname}?${urlParams.toString()}`);
+
                 actualizarEstadoPlanUI();
                 mostrarAlertaSistema(
                     "CALIBRACIÓN DEMO COMPLETADA",
@@ -459,14 +477,16 @@
                 rendidos.palancas = true;
                 localStorage.setItem('sensometrika_modulos_rendidos', JSON.stringify(rendidos));
 
-                // 2. Calcular precisión de coordinación
+                // 2. Calcular precisión de coordinación y tiempo de error
                 const precisionCalc = Math.max(50, Math.round(100 - (res.contactos * 3.5)));
+                const tiempoErrorMs = res.tiempoError || (res.contactos * 220);
 
                 let historial = JSON.parse(localStorage.getItem('sensometrika_historial_palancas')) || [];
                 historial.push({
                     precision: precisionCalc,
                     contactos: res.contactos,
-                    tiempoTotal: res.tiempoTotal
+                    tiempoTotal: res.tiempoTotal,
+                    tiempoError: tiempoErrorMs
                 });
                 localStorage.setItem('sensometrika_historial_palancas', JSON.stringify(historial));
 

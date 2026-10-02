@@ -15,6 +15,7 @@
             --text-muted: #94a3b8;
             --blue-btn: #0284c7;
             --accent-cyan: #38bdf8;
+            --accent-gold: #e5b324;
         }
 
         * { 
@@ -155,6 +156,7 @@
             font-size: 1rem;
             cursor: pointer;
             width: 100%;
+            transition: background 0.2s;
         }
 
         .btn-next {
@@ -277,7 +279,7 @@
             <div class="modal-content">
                 <div id="modalTitle" class="modal-title">PRUEBA FINALIZADA</div>
                 <div id="modalBody" class="modal-body">Resultados registrados.</div>
-                <button id="modalBtnClose" class="modal-btn" onclick="ejecutarRetornoMenu()">VOLVER AL MENÚ DE EVALUACIONES →</button>
+                <button id="modalBtnClose" class="modal-btn">Continuar</button>
             </div>
         </div>
     </div>
@@ -305,6 +307,10 @@
         const modeParam = urlParams.get('mode') || (localStorage.getItem('sensometrika_b2c_mode') === 'true' ? 'b2c' : 'b2b');
         const esB2B = (modeParam === 'b2b');
 
+        // PRIORIDAD ABSOLUTA A LA URL PARA MODO DEMO
+        const isDemoURL = urlParams.get('demo') === 'true' || urlParams.get('fase') === 'demo';
+        let modoActual = isDemoURL ? 'DEMO' : 'OFICIAL';
+
         let evaluacionActiva = false;
         let aciertos = 0;
         let errores = 0;
@@ -317,8 +323,6 @@
         let bola = { x: 200, y: -20, r: 18, vy: 3.2 };
         const targetZone = { yMin: 200, yMax: 270 };
 
-        let modoActual = 'DEMO';
-
         function ejecutarRetornoMenu() {
             window.location.href = `menu_B2C.html?${urlParams.toString()}`;
         }
@@ -328,26 +332,36 @@
             const yaRendido = modulosRendidos.punteo === true;
             const demoRealizada = localStorage.getItem('punteo_demo_completada') === 'true';
 
-            if (yaRendido) {
+            // Si la URL exige demo=true, forzar fase de práctica
+            if (isDemoURL) {
+                modoActual = 'DEMO';
+            } else if (yaRendido) {
                 modoActual = 'BLOQUEADO';
+            } else if (!demoRealizada) {
+                modoActual = 'DEMO';
+            } else {
+                modoActual = 'OFICIAL';
+            }
+
+            if (modoActual === 'BLOQUEADO') {
                 badgeText.textContent = "EVALUACIÓN REGISTRADA EN SISTEMA";
                 badgeDot.style.backgroundColor = "#10b981"; 
                 btnStart.style.display = 'none';
                 btnNext.style.display = 'block';
                 instructionText.textContent = "Has completado la evaluación de Punteo Viso-Motriz. Retorna al menú para continuar.";
-            } else if (!demoRealizada) {
-                modoActual = 'DEMO';
+            } else if (modoActual === 'DEMO') {
                 badgeText.textContent = "Paso 1: Calibración Demo (1/1)";
                 badgeDot.style.backgroundColor = "#e5b324"; 
                 btnStart.textContent = "INICIAR CALIBRACIÓN DEMO";
+                btnStart.style.backgroundColor = "#e5b324";
                 btnStart.style.display = 'block';
                 btnNext.style.display = 'none';
-                instructionText.textContent = "Modo Demo: Toca la pantalla cuando el círculo cruce la zona inferior.";
+                instructionText.textContent = "Modo Demo: Toca la pantalla cuando el círculo cruce la zona inferior de ensayo.";
             } else {
-                modoActual = 'OFICIAL';
                 badgeText.textContent = esB2B ? "Simulación Oficial B2B (D.S. N° 170)" : "Simulación Oficial (D.S. N° 170)";
                 badgeDot.style.backgroundColor = "#ef4444"; 
                 btnStart.textContent = "INICIAR SIMULACIÓN OFICIAL";
+                btnStart.style.backgroundColor = "#0284c7";
                 btnStart.style.display = 'block';
                 btnNext.style.display = 'none';
                 instructionText.textContent = "Evaluación Oficial: Mantén el ritmo constante presionando sobre el área indicada.";
@@ -464,6 +478,12 @@
 
             if (modoActual === 'DEMO') {
                 localStorage.setItem('punteo_demo_completada', 'true');
+
+                // Cambiar a fase oficial en la URL para habilitar la simulación real
+                urlParams.set('demo', 'false');
+                urlParams.set('fase', 'oficial');
+                window.history.replaceState({}, '', `${window.location.pathname}?${urlParams.toString()}`);
+
                 actualizarEstadoUI();
                 mostrarModal(
                     "CALIBRACIÓN DEMO COMPLETADA",
@@ -494,7 +514,6 @@
             modalBtnClose.onclick = () => {
                 modal.style.display = 'none';
                 if (callback) callback();
-                else ejecutarRetornoMenu();
             };
         }
 
