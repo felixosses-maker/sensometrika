@@ -69,6 +69,7 @@
       text-decoration: none;
       font-size: 0.8rem;
       font-weight: 500;
+      cursor: pointer;
     }
     .link-volver:hover { color: #38bdf8; }
 
@@ -226,16 +227,16 @@
 <body>
 
   <main class="app-container">
-    <header class="sensometrika-brand-header" style="text-align: center; padding: 12px 0; display: flex; flex-direction: column; align-items: center; gap: 4px;">
+    <header class="sensometrika-brand-header">
       <div style="background: rgba(11, 19, 36, 0.9); border: 1px solid #1e293b; padding: 8px 16px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.6);">
         <img src="sensometrica.jpg" alt="SENSOMETRIKA Calibration Technology" style="width: 170px; height: auto; display: block; border-radius: 4px; filter: drop-shadow(0 0 10px rgba(56, 189, 248, 0.6));">
       </div>
-      <span class="brand-subtitle" id="titulo-fase" style="margin-top: 4px; color: var(--texto-gris); font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;">Módulo de Anticipación (Fase Demo de Práctica)</span>
+      <span class="brand-subtitle" id="titulo-fase">Módulo de Anticipación (Fase Demo de Práctica)</span>
     </header>
 
     <section class="modulo-card-container">
       <div class="nav-top-row">
-        <a href="menu_B2B.html" class="link-volver">← Menú B2B</a>
+        <a id="btnVolverMenu" onclick="regresarAlMenu()" class="link-volver">← Menú de Evaluaciones</a>
         <button type="button" class="btn-como-funciona" onclick="abrirModalGuia()">? ¿Cómo funciona?</button>
       </div>
 
@@ -271,7 +272,6 @@
     </section>
   </main>
 
-  <!-- Contenedor para Modales Internos Estilizados -->
   <div id="modalContainer"></div>
 
   <!-- Modal Guía -->
@@ -288,6 +288,11 @@
   <script>
     function abrirModalGuia() { document.getElementById('modalGuia').style.display = 'flex'; }
     function cerrarModalGuia() { document.getElementById('modalGuia').style.display = 'none'; }
+
+    function regresarAlMenu() {
+      const urlParams = new URLSearchParams(window.location.search);
+      window.location.href = `menu_B2C.html?${urlParams.toString()}`;
+    }
 
     function mostrarModalInterno(titulo, mensaje, callback) {
       document.getElementById('modalContainer').innerHTML = `
@@ -349,7 +354,6 @@
       simulando = false;
 
       if (faseActual === 0) {
-        // Fin del Demo usando modal corporativo en lugar de alert()
         mostrarModalInterno(
           "¡Prueba Demo Completada!",
           `Margen estimado en práctica: <strong>${errorMs} ms</strong>.<br><br>A continuación, iniciarán las 3 Rondas Oficiales evaluadas por el sistema.`,
@@ -363,7 +367,6 @@
           }
         );
       } else {
-        // Registrar ensayo oficial
         erroresOficiales.push(errorMs);
         const suma = erroresOficiales.reduce((a, b) => a + b, 0);
         const promedioParcial = Math.round(suma / erroresOficiales.length);
@@ -384,16 +387,23 @@
     function finalizarPruebaTotal(promedioFinal) {
       const aprobado = promedioFinal <= 220;
 
-      localStorage.setItem('sensometrika_anticipacion', JSON.stringify({
-        estado: 'completado',
+      // 1. Guardar en historial acumulativo de anticipación
+      let histAnt = JSON.parse(localStorage.getItem('sensometrika_historial_anticipacion')) || [];
+      histAnt.push({
         errorMs: promedioFinal,
         rondas: erroresOficiales,
         aprobado: aprobado,
-        modo: 'B2B OFICIAL 3 RONDAS',
         fecha: new Date().toISOString()
-      }));
+      });
+      localStorage.setItem('sensometrika_historial_anticipacion', JSON.stringify(histAnt));
 
-      window.location.href = 'menu_B2B.html';
+      // 2. Marcar módulo rendido en la sesión del menú
+      let modulosRendidos = JSON.parse(localStorage.getItem('sensometrika_modulos_rendidos')) || {};
+      modulosRendidos.anticipacion = true;
+      localStorage.setItem('sensometrika_modulos_rendidos', JSON.stringify(modulosRendidos));
+
+      // 3. Regresar preservando la URL y parámetros
+      regresarAlMenu();
     }
   </script>
 </body>

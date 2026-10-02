@@ -69,6 +69,7 @@
       text-decoration: none;
       font-size: 0.8rem;
       font-weight: 500;
+      cursor: pointer;
     }
     .link-volver:hover { color: #38bdf8; }
 
@@ -111,6 +112,7 @@
       justify-content: center;
       box-shadow: inset 0 0 20px rgba(0,0,0,0.8);
       cursor: pointer;
+      touch-action: manipulation;
     }
 
     .pvt-display {
@@ -146,10 +148,6 @@
       text-transform: uppercase;
     }
     .btn-iniciar-test:active { transform: scale(0.98); }
-    .btn-iniciar-test.reaccionar {
-      background-color: #10b981;
-      box-shadow: 0 4px 16px rgba(16, 185, 129, 0.4);
-    }
 
     .metricas-grid {
       display: grid;
@@ -180,16 +178,16 @@
 <body>
 
   <main class="app-container">
-    <header class="sensometrika-brand-header" style="text-align: center; padding: 12px 0; display: flex; flex-direction: column; align-items: center; gap: 4px;">
+    <header class="sensometrika-brand-header">
       <div style="background: rgba(11, 19, 36, 0.9); border: 1px solid #1e293b; padding: 8px 16px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.6);">
         <img src="sensometrica.jpg" alt="SENSOMETRIKA Calibration Technology" style="width: 170px; height: auto; display: block; border-radius: 4px; filter: drop-shadow(0 0 10px rgba(56, 189, 248, 0.6));">
       </div>
-      <span class="brand-subtitle" id="titulo-fase" style="margin-top: 4px; color: var(--texto-gris); font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;">Test de Fatiga y Vigilancia (PVT - Demo)</span>
+      <span class="brand-subtitle" id="titulo-fase">Test de Fatiga y Vigilancia (PVT - Demo)</span>
     </header>
 
     <section class="modulo-card-container">
       <div class="nav-top-row">
-        <a href="menu_B2B.html" class="link-volver">← Menú B2B</a>
+        <a id="btnVolverMenu" onclick="volverMenu()" class="link-volver">← Menú Evaluaciones</a>
         <button type="button" class="btn-como-funciona" onclick="abrirModalGuia()">? ¿Cómo funciona?</button>
       </div>
 
@@ -199,11 +197,11 @@
 
       <div class="contenedor-pvt" id="areaPvt" onclick="registrarReaccion()">
         <div class="pvt-display" id="displayPvt">ESPERE...</div>
-        <div style="font-size: 0.65rem; color: #64748b; margin-top: 8px;" id="subDisplay">Atención a los estímulos</div>
+        <div style="font-size: 0.65rem; color: #64748b; margin-top: 8px;" id="subDisplay">TOCA LA PANTALLA CUANDO CORRA EL TIEMPO</div>
       </div>
 
       <p class="instruccion-sub" id="panel-estado">
-        Presione el botón de abajo tan pronto como el contador comience a correr.
+        Presiona el botón de abajo o la pantalla tan pronto como el contador comience a correr.
       </p>
 
       <button type="button" class="btn-iniciar-test" id="btn-accion" onclick="manejarAccionBtn()">
@@ -213,7 +211,7 @@
       <div class="metricas-grid">
         <div class="col-metrica">
           <span>Umbral Estándar</span>
-          <strong style="color: #38bdf8;">Sin Lapsos Críticos</strong>
+          <strong style="color: #38bdf8;">≤ 450 ms</strong>
         </div>
         <div class="col-metrica">
           <span>Promedio Reacción</span>
@@ -240,6 +238,11 @@
     function abrirModalGuia() { document.getElementById('modalGuia').style.display = 'flex'; }
     function cerrarModalGuia() { document.getElementById('modalGuia').style.display = 'none'; }
 
+    function volverMenu() {
+      const params = new URLSearchParams(window.location.search).toString();
+      window.location.href = `menu_B2C.html?${params}`;
+    }
+
     function mostrarModalInterno(titulo, mensaje, callback) {
       document.getElementById('modalContainer').innerHTML = `
         <div style="position: fixed; inset: 0; background: rgba(3, 7, 18, 0.85); backdrop-filter: blur(6px); display: flex; align-items: center; justify-content: center; z-index: 99999; padding: 16px;">
@@ -261,6 +264,7 @@
     let timerEstmulo = null;
     let timerContador = null;
     let activo = false;
+    let esperando = false;
     let tiemposOficiales = [];
 
     function manejarAccionBtn() {
@@ -274,9 +278,11 @@
       display.innerText = "ESPERE...";
       display.style.color = "#64748b";
       activo = false;
+      esperando = true;
 
       const tiempoEspera = Math.floor(Math.random() * 2000) + 1500; // entre 1.5s y 3.5s
       timerEstmulo = setTimeout(() => {
+        esperando = false;
         display.innerText = "0 ms";
         display.style.color = "#10b981";
         tInicio = performance.now();
@@ -290,6 +296,20 @@
     }
 
     function registrarReaccion() {
+      // Control de Anticipación
+      if (esperando && !activo) {
+        clearTimeout(timerEstmulo);
+        esperando = false;
+        const display = document.getElementById('displayPvt');
+        display.innerText = "¡ANTICIPACIÓN!";
+        display.style.color = "#ef4444";
+
+        setTimeout(() => {
+          document.getElementById('btn-accion').style.display = 'block';
+        }, 1000);
+        return;
+      }
+
       if (!activo) return;
       activo = false;
       clearTimeout(timerEstmulo);
@@ -329,22 +349,28 @@
     }
 
     function finalizarPruebaFatiga(promedioFinal) {
-      const aprobado = promedioFinal <= 450; // Umbral estándar PVT de vigilancia
+      const aprobado = promedioFinal <= 450;
 
-      localStorage.setItem('sensometrika_fatiga', JSON.stringify({
-        estado: 'completado',
-        promedioMs: promedioFinal,
+      // Registrar historial global de fatiga
+      let historial = JSON.parse(localStorage.getItem('sensometrika_historial_fatiga')) || [];
+      historial.push({
+        promedioTiempo: promedioFinal,
         tiempos: tiemposOficiales,
         aprobado: aprobado,
-        modo: 'B2B OFICIAL PVT',
         fecha: new Date().toISOString()
-      }));
+      });
+      localStorage.setItem('sensometrika_historial_fatiga', JSON.stringify(historial));
+
+      // Marcar módulo 8 como Rendido
+      let modulosRendidos = JSON.parse(localStorage.getItem('sensometrika_modulos_rendidos')) || {};
+      modulosRendidos.fatiga = true;
+      localStorage.setItem('sensometrika_modulos_rendidos', JSON.stringify(modulosRendidos));
 
       mostrarModalInterno(
         "Evaluación de Fatiga Finalizada",
         `Promedio de vigilancia (3 Rondas): <strong>${promedioFinal} ms</strong>.<br><br>Estado: <strong>${aprobado ? 'APROBADO' : 'OBSERVADO'}</strong>`,
         () => {
-          window.location.href = 'menu_B2B.html';
+          volverMenu();
         }
       );
     }
