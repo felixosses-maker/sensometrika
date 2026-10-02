@@ -170,7 +170,7 @@
 
     <!-- REGISTRO FOTOGRÁFICO DE IDENTIDAD (SOLO B2B) -->
     <div class="card-box" id="boxFotoBiometrica" style="display: none;">
-      <div class="card-title">📷 REGISTRO FOTOGRÁFICO DE IDENTIDAD</div>
+      <div class="card-title">📷 REGISTRO FOTOGRÁFICO DE IDENTIDAD WEBCAM</div>
       <div style="position: relative; width: 100%;">
         <video id="videoCam" autoplay playsinline class="video-preview"></video>
         <img id="imgSnapshot" class="video-preview" style="display: none;" alt="Captura Facial">
@@ -226,7 +226,7 @@
     </div>
 
     <button id="btnContinuar" onclick="confirmarYPasarAlMenu()" class="btn-action btn-disabled" disabled>
-      INICIAR BATERÍA DE EVALUACIONES →
+      INICIAR MÓDULO DEMO / INDUCCIÓN →
     </button>
   </div>
 
@@ -265,6 +265,7 @@
         localStorage.removeItem('sensometrika_historial_auditivo');
         localStorage.removeItem('sensometrika_historial_visual');
         localStorage.removeItem('sensometrika_foto_trabajador');
+        localStorage.removeItem('sensometrika_foto_evaluado');
         localStorage.removeItem('sensometrika_firma_trabajador');
         localStorage.setItem('sensometrika_evaluado_rut', rut);
       }
@@ -305,15 +306,24 @@
       ctxTmp.drawImage(videoEl, 0, 0, canvasTmp.width, canvasTmp.height);
 
       const fotoCapturadaB64 = canvasTmp.toDataURL('image/jpeg');
+      
+      // Guardar con ambas claves para asegurar compatibilidad total en informes B2B
       localStorage.setItem('sensometrika_foto_trabajador', fotoCapturadaB64);
+      localStorage.setItem('sensometrika_foto_evaluado', fotoCapturadaB64);
 
       imgEl.src = fotoCapturadaB64;
       videoEl.style.display = 'none';
       imgEl.style.display = 'block';
 
+      // Detener los tracks de la cámara para liberar recursos de hardware
+      if (videoStream) {
+        videoStream.getTracks().forEach(track => track.stop());
+      }
+
       document.getElementById('btnCapturarFoto').textContent = '✓ FOTO CAPTURADA (TOCAR PARA REPETIR)';
       document.getElementById('btnCapturarFoto').style.background = '#10b981';
       document.getElementById('btnCapturarFoto').onclick = () => {
+        iniciarCamaraB2B();
         videoEl.style.display = 'block';
         imgEl.style.display = 'none';
         document.getElementById('btnCapturarFoto').textContent = '📸 CAPTURAR FOTO FACIAL';
@@ -418,7 +428,10 @@
         localStorage.setItem('sensometrika_firma_trabajador', canvas.toDataURL());
       }
       
-      window.location.href = `menu_B2C.html?rut=${encodeURIComponent(rut)}&nombre=${encodeURIComponent(nombre)}&plan=${plan}&mode=${isB2C ? 'b2c' : 'b2b'}`;
+      // FORZAR MODO DEMO PREVIO OBLIGATORIO AL INGRESAR
+      localStorage.setItem('sensometrika_estado_fase', 'demo');
+
+      window.location.href = `menu_B2C.html?rut=${encodeURIComponent(rut)}&nombre=${encodeURIComponent(nombre)}&plan=${plan}&mode=${isB2C ? 'b2c' : 'b2b'}&fase=demo`;
     }
   </script>
 </body>
