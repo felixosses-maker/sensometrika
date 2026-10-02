@@ -346,9 +346,9 @@
       </div>
     </div>
 
-    <!-- TELEMETRÍA HARDWARE -->
+    <!-- TELEMETRÍA HARDWARE (DETECCIÓN DINÁMICA DE DISPOSITIVO Y OS) -->
     <div class="telemetry-row">
-      <div><span style="color:#94a3b8; display:block;">Calibración Terminal:</span><strong>PC Escritorio / Windows</strong></div>
+      <div><span style="color:#94a3b8; display:block;">Calibración Terminal:</span><strong id="lblDispositivoTerminal">Smartphone / Mobile</strong></div>
       <div><span style="color:#94a3b8; display:block;">Telemetría de Red:</span><strong style="color:#10b981;">35 ms (Estable)</strong></div>
       <div><span style="color:#94a3b8; display:block;">Latencia del Sensor:</span><strong style="color:#38bdf8;" id="lblLatenciaHardware">152 ms (Promedio)</strong></div>
       <div><span style="color:#94a3b8; display:block;">Estado de Sensores:</span><strong style="color:#10b981;">V°B° Calibrado</strong></div>
@@ -432,6 +432,31 @@
       document.getElementById('lblCorreoAPR').textContent = correoAPR;
       document.getElementById('lblEmpresaTrabajador').textContent = empresa.toUpperCase();
       document.getElementById('txtNombrePlanContratado').textContent = `PLAN ${planParam.replace('_', ' ')}`;
+
+      // DETECCIÓN DINÁMICA DE DISPOSITIVO Y SISTEMA OPERATIVO
+      const ua = navigator.userAgent;
+      let tipoDispositivo = "PC Escritorio";
+      let sistemaOp = "Windows";
+
+      if (/Android/i.test(ua)) {
+        tipoDispositivo = "Smartphone";
+        sistemaOp = "Android";
+      } else if (/iPhone|iPad|iPod/i.test(ua)) {
+        tipoDispositivo = "Smartphone";
+        sistemaOp = "iOS";
+      } else if (/Macintosh|Mac OS X/i.test(ua)) {
+        tipoDispositivo = "PC Escritorio";
+        sistemaOp = "macOS";
+      } else if (/Linux/i.test(ua)) {
+        tipoDispositivo = "PC Escritorio";
+        sistemaOp = "Linux";
+      }
+
+      document.getElementById('lblDispositivoTerminal').textContent = `${tipoDispositivo} / ${sistemaOp}`;
+
+      // Latencia registrada
+      const latenciaGuardada = localStorage.getItem('sensometrika_latencia_ms') || '152';
+      document.getElementById('lblLatenciaHardware').textContent = `${latenciaGuardada} ms (Promedio)`;
 
       const folio = 'SMK-' + rut.replace(/[^0-9Kk]/g, '').substring(0, 6);
       document.getElementById('lblFolioVerificacion').textContent = folio;
