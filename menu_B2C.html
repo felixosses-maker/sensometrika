@@ -132,7 +132,7 @@
       margin-top: 6px;
     }
 
-    /* ESTILOS MODAL DE BIENVENIDA CON LOGO CONCURRENTE */
+    /* MODAL DE BIENVENIDA */
     .welcome-modal-overlay {
       position: fixed;
       top: 0; left: 0;
@@ -173,10 +173,7 @@
       border-radius: 10px;
     }
 
-    .recom-icon {
-      font-size: 1.1rem;
-      line-height: 1;
-    }
+    .recom-icon { font-size: 1.1rem; line-height: 1; }
   </style>
 </head>
 <body>
@@ -267,7 +264,7 @@
     </button>
   </div>
 
-  <!-- MODAL DE BIENVENIDA CON LOGO CORPORATIVO -->
+  <!-- MODAL DE BIENVENIDA -->
   <div id="modalBienvenidaInduccion" class="welcome-modal-overlay" style="display: none;">
     <div class="welcome-card">
       <div style="text-align: center; display: flex; flex-direction: column; align-items: center; gap: 4px;">
@@ -339,7 +336,11 @@
 
       const urlParams = new URLSearchParams(window.location.search);
       const modeParam = urlParams.get('mode');
-      const planParam = (urlParams.get('plan') || localStorage.getItem('sensometrika_plan_contratado') || 'BASICO').toUpperCase();
+      
+      // PRIORIDAD DEL PLAN: 1. LocalStorage > 2. Parámetro URL > 3. Defecto BASICO
+      const planStorage = localStorage.getItem('sensometrika_plan_contratado');
+      const planUrl = urlParams.get('plan');
+      let planParam = (planStorage || planUrl || 'BASICO').toUpperCase();
 
       let datosUsuario = {};
       try {
@@ -351,32 +352,36 @@
 
       let totalSimulacionesPlan = 3;
       if (planParam.includes('PLUS')) totalSimulacionesPlan = 5;
-      if (planParam.includes('FULL')) totalSimulacionesPlan = 8;
+      if (planParam.includes('FULL') || planParam.includes('ALTO_DESEMPENIO')) totalSimulacionesPlan = 8;
 
       let intentoActual = parseInt(localStorage.getItem('sensometrika_intento_actual') || '1');
 
       if (modeParam === 'b2c' || localStorage.getItem('sensometrika_b2c_mode') === 'true') {
         isB2C = true;
-        document.getElementById('txtTipoPlan').textContent = `EVALUACIÓN PARTICULAR • PLAN ${planParam} (B2C)`;
+        document.getElementById('txtTipoPlan').textContent = `EVALUACIÓN PARTICULAR • PLAN ${planParam.replace('_', ' ')} (B2C)`;
         document.getElementById('lblSimulacionesCuota').textContent = `INTENTO ${intentoActual} DE ${totalSimulacionesPlan}`;
         document.getElementById('btnFinalizarGeneral').textContent = '🎓 FINALIZAR Y OBTENER CERTIFICADO DIGITAL';
       } else {
         isB2C = false;
-        document.getElementById('txtTipoPlan').textContent = `EVALUACIÓN B2B • PLAN ${planParam}`;
+        document.getElementById('txtTipoPlan').textContent = `EVALUACIÓN B2B • PLAN ${planParam.replace('_', ' ')}`;
         document.getElementById('boxContadorSimulaciones').style.display = 'none';
         document.getElementById('btnFinalizarGeneral').textContent = '📊 FINALIZAR Y ENVIAR INFORME AL APR';
       }
 
       document.getElementById('txtInfoEvaluado').textContent = `EVALUADO: ${decodeURIComponent(nombre)} | RUT: ${rut}`;
 
-      if (planParam.includes('PLUS') || planParam.includes('FULL')) {
+      // DESBLOQUEO DINÁMICO SEGÚN EL PLAN CONTRATADO
+      if (planParam.includes('PLUS') || planParam.includes('FULL') || planParam.includes('ALTO_DESEMPENIO')) {
         document.getElementById('cardModAuditivo').style.display = 'flex';
       }
-      if (planParam.includes('FULL')) {
+      if (planParam.includes('FULL') || planParam.includes('ALTO_DESEMPENIO')) {
         document.getElementById('cardModVisual').style.display = 'flex';
       }
 
+      // Reconstruir URL con el plan real
+      urlParams.set('plan', planParam);
       const paramsQuery = urlParams.toString();
+
       if (document.getElementById('linkMod1')) document.getElementById('linkMod1').href = `reactimetro.html?${paramsQuery}`;
       if (document.getElementById('linkMod2')) document.getElementById('linkMod2').href = `palancas.html?${paramsQuery}`;
       if (document.getElementById('linkMod3')) document.getElementById('linkMod3').href = `punteo.html?${paramsQuery}`;
@@ -412,10 +417,13 @@
     }
 
     function finalizarEvaluacion() {
+      const planStorage = localStorage.getItem('sensometrika_plan_contratado') || 'BASICO';
+      const queryStr = window.location.search.substring(1);
+
       if (isB2C) {
-        window.location.href = `informe.html?${window.location.search.substring(1)}`;
+        window.location.href = `informe.html?${queryStr}&plan=${planStorage}`;
       } else {
-        window.location.href = `informe-b2b.html?${window.location.search.substring(1)}`;
+        window.location.href = `informe-b2b.html?${queryStr}&plan=${planStorage}`;
       }
     }
   </script>
