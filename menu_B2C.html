@@ -13,6 +13,7 @@
       --accent-cyan: #00bfff;
       --accent-cyan-glow: rgba(0, 191, 255, 0.45);
       --accent-green: #10b981;
+      --accent-gold: #e5b324;
       --text-main: #f8fafc;
       --text-muted: #94a3b8;
     }
@@ -30,7 +31,7 @@
       align-items: center;
     }
 
-    .main-container { width: 100%; max-width: 480px; display: flex; flex-direction: column; gap: 16px; }
+    .main-container { width: 100%; max-width: 500px; display: flex; flex-direction: column; gap: 16px; }
 
     .brand-header { text-align: center; display: flex; flex-direction: column; align-items: center; gap: 6px; }
     .brand-logo-img { width: 185px; height: auto; mix-blend-mode: lighten; filter: drop-shadow(0 0 12px var(--accent-cyan-glow)); }
@@ -198,7 +199,7 @@
       <strong id="lblSimulacionesCuota" style="color: var(--accent-cyan); font-size: 0.88rem; font-weight: 900;">INTENTO 1 DE 3</strong>
     </div>
 
-    <!-- MÓDULOS DE EVALUACIÓN -->
+    <!-- MÓDULOS DE EVALUACIÓN (8 MÓDULOS) -->
     <div class="card-box" id="boxModulos">
       
       <!-- 1. Reactímetro -->
@@ -253,6 +254,39 @@
         </div>
         <div id="statusMod5">
           <a id="linkMod5" href="visual.html" class="btn-start">INICIAR →</a>
+        </div>
+      </div>
+
+      <!-- 6. Anticipación de Velocidad (Alto Desempeño) -->
+      <div class="module-card" id="cardModAnticipacion" style="display: none;">
+        <div class="module-info">
+          <span class="module-title">6. Velocidad de Anticipación</span>
+          <span class="module-desc">Cálculo de velocidad relativa y trayectoria en zona ciega.</span>
+        </div>
+        <div id="statusMod6">
+          <a id="linkMod6" href="anticipacion.html" class="btn-start">INICIAR →</a>
+        </div>
+      </div>
+
+      <!-- 7. Estereopsis 3D (Alto Desempeño) -->
+      <div class="module-card" id="cardModEstereopsis" style="display: none;">
+        <div class="module-info">
+          <span class="module-title">7. Estereopsis y Profundidad 3D</span>
+          <span class="module-desc">Percepción espacial binocular y cálculo de distancias.</span>
+        </div>
+        <div id="statusMod7">
+          <a id="linkMod7" href="estereopsis.html" class="btn-start">INICIAR →</a>
+        </div>
+      </div>
+
+      <!-- 8. PVT Fatiga (Alto Desempeño) -->
+      <div class="module-card" id="cardModFatiga" style="display: none;">
+        <div class="module-info">
+          <span class="module-title">8. Test de Fatiga y Vigilancia (PVT)</span>
+          <span class="module-desc">Control de somnolencia, lapsos de micro-sueño y atención.</span>
+        </div>
+        <div id="statusMod8">
+          <a id="linkMod8" href="fatiga.html" class="btn-start">INICIAR →</a>
         </div>
       </div>
 
@@ -337,7 +371,6 @@
       const urlParams = new URLSearchParams(window.location.search);
       const modeParam = urlParams.get('mode');
       
-      // PRIORIDAD DEL PLAN: 1. LocalStorage > 2. Parámetro URL > 3. Defecto BASICO
       const planStorage = localStorage.getItem('sensometrika_plan_contratado');
       const planUrl = urlParams.get('plan');
       let planParam = (planStorage || planUrl || 'BASICO').toUpperCase();
@@ -347,8 +380,8 @@
         datosUsuario = JSON.parse(localStorage.getItem('sensometrika_datos_usuario')) || {};
       } catch(e){}
 
-      const rut = urlParams.get('rut') || datosUsuario.rut || '14.765.889-1';
-      const nombre = datosUsuario.nombre || urlParams.get('nombre') || 'Gonzalo Barría';
+      const rut = urlParams.get('rut') || datosUsuario.rut || '13.543.222-5';
+      const nombre = datosUsuario.nombre || urlParams.get('nombre') || 'Ricardo Romero';
 
       let totalSimulacionesPlan = 3;
       if (planParam.includes('PLUS')) totalSimulacionesPlan = 5;
@@ -370,15 +403,22 @@
 
       document.getElementById('txtInfoEvaluado').textContent = `EVALUADO: ${decodeURIComponent(nombre)} | RUT: ${rut}`;
 
-      // DESBLOQUEO DINÁMICO SEGÚN EL PLAN CONTRATADO
+      // HABILITACIÓN DE MÓDULOS SEGÚN PLAN
+      // Plan Plus: Módulos 1 al 4
       if (planParam.includes('PLUS') || planParam.includes('FULL') || planParam.includes('ALTO_DESEMPENIO')) {
         document.getElementById('cardModAuditivo').style.display = 'flex';
       }
+      // Plan Full: Módulos 1 al 5
       if (planParam.includes('FULL') || planParam.includes('ALTO_DESEMPENIO')) {
         document.getElementById('cardModVisual').style.display = 'flex';
       }
+      // Plan Alto Desempeño: Módulos 1 al 8
+      if (planParam.includes('ALTO_DESEMPENIO')) {
+        document.getElementById('cardModAnticipacion').style.display = 'flex';
+        document.getElementById('cardModEstereopsis').style.display = 'flex';
+        document.getElementById('cardModFatiga').style.display = 'flex';
+      }
 
-      // Reconstruir URL con el plan real
       urlParams.set('plan', planParam);
       const paramsQuery = urlParams.toString();
 
@@ -387,6 +427,9 @@
       if (document.getElementById('linkMod3')) document.getElementById('linkMod3').href = `punteo.html?${paramsQuery}`;
       if (document.getElementById('linkMod4')) document.getElementById('linkMod4').href = `audicion.html?${paramsQuery}`;
       if (document.getElementById('linkMod5')) document.getElementById('linkMod5').href = `visual.html?${paramsQuery}`;
+      if (document.getElementById('linkMod6')) document.getElementById('linkMod6').href = `anticipacion.html?${paramsQuery}`;
+      if (document.getElementById('linkMod7')) document.getElementById('linkMod7').href = `estereopsis.html?${paramsQuery}`;
+      if (document.getElementById('linkMod8')) document.getElementById('linkMod8').href = `fatiga.html?${paramsQuery}`;
 
       revisarModulosRendidos();
     });
@@ -399,21 +442,14 @@
     function revisarModulosRendidos() {
       const modulosRendidos = JSON.parse(localStorage.getItem('sensometrika_modulos_rendidos')) || {};
 
-      if (modulosRendidos.reactimetro) {
-        document.getElementById('statusMod1').innerHTML = '<span class="btn-done">RENDIDO ✓</span>';
-      }
-      if (modulosRendidos.palancas) {
-        document.getElementById('statusMod2').innerHTML = '<span class="btn-done">RENDIDO ✓</span>';
-      }
-      if (modulosRendidos.punteo) {
-        document.getElementById('statusMod3').innerHTML = '<span class="btn-done">RENDIDO ✓</span>';
-      }
-      if (modulosRendidos.auditivo) {
-        document.getElementById('statusMod4').innerHTML = '<span class="btn-done">RENDIDO ✓</span>';
-      }
-      if (modulosRendidos.visual) {
-        document.getElementById('statusMod5').innerHTML = '<span class="btn-done">RENDIDO ✓</span>';
-      }
+      if (modulosRendidos.reactimetro) document.getElementById('statusMod1').innerHTML = '<span class="btn-done">RENDIDO ✓</span>';
+      if (modulosRendidos.palancas) document.getElementById('statusMod2').innerHTML = '<span class="btn-done">RENDIDO ✓</span>';
+      if (modulosRendidos.punteo) document.getElementById('statusMod3').innerHTML = '<span class="btn-done">RENDIDO ✓</span>';
+      if (modulosRendidos.auditivo) document.getElementById('statusMod4').innerHTML = '<span class="btn-done">RENDIDO ✓</span>';
+      if (modulosRendidos.visual) document.getElementById('statusMod5').innerHTML = '<span class="btn-done">RENDIDO ✓</span>';
+      if (modulosRendidos.anticipacion) document.getElementById('statusMod6').innerHTML = '<span class="btn-done">RENDIDO ✓</span>';
+      if (modulosRendidos.estereopsis) document.getElementById('statusMod7').innerHTML = '<span class="btn-done">RENDIDO ✓</span>';
+      if (modulosRendidos.fatiga) document.getElementById('statusMod8').innerHTML = '<span class="btn-done">RENDIDO ✓</span>';
     }
 
     function finalizarEvaluacion() {
