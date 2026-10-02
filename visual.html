@@ -65,6 +65,21 @@
             letter-spacing: 1.2px;
         }
 
+        .nav-top-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2px;
+        }
+        .link-volver {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .link-volver:hover { color: var(--accent-cyan); }
+
         .card-visual {
             background: var(--card-bg);
             border: 1px solid var(--card-border);
@@ -81,7 +96,7 @@
         .viewport-test {
             position: relative;
             width: 100%;
-            height: 280px;
+            height: 260px;
             background: #000;
             border-radius: 10px;
             border: 1px solid var(--card-border);
@@ -134,8 +149,8 @@
         }
 
         .ishihara-circle {
-            width: 170px;
-            height: 170px;
+            width: 160px;
+            height: 160px;
             border-radius: 50%;
             background-size: cover;
             background-position: center;
@@ -145,7 +160,8 @@
             align-items: center;
             font-size: 2.2rem;
             font-weight: 900;
-            color: rgba(255,255,255,0.1);
+            color: rgba(255,255,255,0.15);
+            box-shadow: inset 0 0 15px rgba(0,0,0,0.5);
         }
 
         /* BOTONES DE RESPUESTA */
@@ -218,15 +234,22 @@
         </header>
 
         <div class="card-visual">
+            <div class="nav-top-row">
+                <a onclick="volverMenu()" class="link-volver">← Menú Evaluaciones</a>
+                <span style="font-size:0.70rem; color:var(--text-muted); font-weight:700;">D.S. N° 170 MTT</span>
+            </div>
+
             <!-- MONITOR DE PRUEBA -->
             <div class="viewport-test">
-                <!-- Miniatura de Cámara Pip -->
                 <canvas id="pipCanvas" class="cam-preview-pip"></canvas>
 
                 <!-- Overlay Bloqueo de Distancia -->
                 <div id="overlayDistancia" class="overlay-bloqueo">
                     <h3 id="txtBloqueoTitulo">⚠️ DISTANCIA FUERA DE RANGO</h3>
                     <p id="txtBloqueoDesc">Ubícate a 50 cm de la pantalla con rostro despejado para habilitar el test visual.</p>
+                    <button onclick="forzarHabilitacionCamara()" style="background: rgba(56, 189, 248, 0.2); border: 1px solid var(--accent-cyan); color: #fff; padding: 6px 12px; border-radius: 6px; font-size: 0.70rem; cursor: pointer; margin-top: 4px;">
+                        Modo Manual / Sin Cámara
+                    </button>
                 </div>
 
                 <!-- Contenedor del Estímulo Visual -->
@@ -248,7 +271,7 @@
                 </div>
                 <div>
                     <span class="lbl-st">Fase Examen</span>
-                    <span id="stFase" class="val-st">1 / 4</span>
+                    <span id="stFase" class="val-st">1 / 8</span>
                 </div>
                 <div>
                     <span class="lbl-st">Aciertos</span>
@@ -259,25 +282,24 @@
     </div>
 
     <script>
-        // CONFIGURACIÓN DE FASES Y BANCO DE PRUEBAS PERICIALES
-        const BANCO_PRUEBAS = [
-            // Fase 1: Agudeza Lejana (Optotipos de Snellen)
-            { fase: 'Agudeza Visual', tipo: 'snellen', valor: 'E', opciones: ['E', 'F', 'P', 'T'], correcta: 'E', fontSize: '5rem' },
-            { fase: 'Agudeza Visual', tipo: 'snellen', valor: 'F', opciones: ['P', 'F', 'T', 'Z'], correcta: 'F', fontSize: '3.5rem' },
-            { fase: 'Agudeza Visual', tipo: 'snellen', valor: 'P', opciones: ['E', 'D', 'P', 'L'], correcta: 'P', fontSize: '2.2rem' },
-            { fase: 'Agudeza Visual', tipo: 'snellen', valor: 'Z', opciones: ['O', 'Z', 'E', 'D'], correcta: 'Z', fontSize: '1.2rem' },
-            
-            // Fase 2: Percepción Cromática (Ishihara Pseudoisocromático)
-            { fase: 'Test Ishihara', tipo: 'ishihara', valor: '12', opciones: ['12', '8', '6', 'Nada'], correcta: '12', bg: 'rgba(239, 68, 68, 0.2)' },
-            { fase: 'Test Ishihara', tipo: 'ishihara', valor: '74', opciones: ['21', '74', '71', 'Nada'], correcta: '74', bg: 'rgba(16, 185, 129, 0.2)' },
-
-            // Fase 3: Visión Nocturna / Contrastes
-            { fase: 'Visión Nocturna', tipo: 'contraste', valor: 'C', opciones: ['C', 'O', 'G', 'D'], correcta: 'C', color: '#334155' },
-
-            // Fase 4: Encurandilamiento y Readecuación
-            { fase: 'Recuperación Encarandilado', tipo: 'destello', valor: '8', opciones: ['3', '8', '0', '6'], correcta: '8' }
+        // BANCO BASE DE ELEMENTOS
+        const BANCO_SNELLEN = [
+            { valor: 'E', opciones: ['E', 'F', 'P', 'T'], correcta: 'E' },
+            { valor: 'F', opciones: ['P', 'F', 'T', 'Z'], correcta: 'F' },
+            { valor: 'P', opciones: ['E', 'D', 'P', 'L'], correcta: 'P' },
+            { valor: 'Z', opciones: ['O', 'Z', 'E', 'D'], correcta: 'Z' },
+            { valor: 'L', opciones: ['L', 'T', 'F', 'P'], correcta: 'L' },
+            { valor: 'D', opciones: ['O', 'D', 'C', 'Q'], correcta: 'D' }
         ];
 
+        const BANCO_ISHIHARA = [
+            { valor: '12', opciones: ['12', '8', '6', 'Nada'], correcta: '12', bg: 'rgba(239, 68, 68, 0.25)' },
+            { valor: '74', opciones: ['21', '74', '71', 'Nada'], correcta: '74', bg: 'rgba(16, 185, 129, 0.25)' },
+            { valor: '6',  opciones: ['8', '6', '5', 'Nada'],  correcta: '6',  bg: 'rgba(229, 179, 36, 0.25)' },
+            { valor: '8',  opciones: ['3', '8', '9', 'Nada'],  correcta: '8',  bg: 'rgba(14, 165, 233, 0.25)' }
+        ];
+
+        let bancoPruebasGenerado = [];
         let indexPruebaActual = 0;
         let aciertosTotales = 0;
         let examenEnCurso = false;
@@ -289,7 +311,47 @@
         const overlayDistancia = document.getElementById('overlayDistancia');
         const btnStartTest = document.getElementById('btnStartTest');
 
-        // INICIALIZAR MEDIAPIPE FACE MESH PARA DISTANCIA
+        function volverMenu() {
+            const params = new URLSearchParams(window.location.search).toString();
+            window.location.href = `menu_B2C.html?${params}`;
+        }
+
+        // ALGORITMO DE BARADO Y DIVERSIFICACIÓN DINÁMICA
+        function construirBancoAleatorio() {
+            bancoPruebasGenerado = [];
+            const tamanos = ['5.0rem', '3.8rem', '2.6rem', '1.6rem'];
+
+            // 1. Barajar y tomar 4 ítems de Snellen con tamaño decreciente
+            const snellenShuffled = [...BANCO_SNELLEN].sort(() => Math.random() - 0.5);
+            for (let i = 0; i < 4; i++) {
+                const item = { ...snellenShuffled[i] };
+                item.tipo = 'snellen';
+                item.fontSize = tamanos[i];
+                item.opciones = [...item.opciones].sort(() => Math.random() - 0.5);
+                bancoPruebasGenerado.push(item);
+            }
+
+            // 2. Barajar y tomar 2 ítems de Ishihara
+            const ishiharaShuffled = [...BANCO_ISHIHARA].sort(() => Math.random() - 0.5);
+            for (let i = 0; i < 2; i++) {
+                const item = { ...ishiharaShuffled[i] };
+                item.tipo = 'ishihara';
+                item.opciones = [...item.opciones].sort(() => Math.random() - 0.5);
+                bancoPruebasGenerado.push(item);
+            }
+
+            // 3. Ítem de Contraste
+            bancoPruebasGenerado.push({
+                tipo: 'contraste', valor: 'C', opciones: ['C', 'O', 'G', 'D'].sort(() => Math.random() - 0.5), correcta: 'C', color: '#334155'
+            });
+
+            // 4. Ítem de Destello / Recuperación
+            bancoPruebasGenerado.push({
+                tipo: 'destello', valor: '8', opciones: ['3', '8', '0', '6'].sort(() => Math.random() - 0.5), correcta: '8'
+            });
+        }
+
+        // INICIALIZAR MEDIAPIPE FACE MESH
         const faceMesh = new FaceMesh({
             locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`
         });
@@ -297,8 +359,8 @@
         faceMesh.setOptions({
             maxNumFaces: 1,
             refineLandmarks: true,
-            minDetectionConfidence: 0.6,
-            minTrackingConfidence: 0.6
+            minDetectionConfidence: 0.5,
+            minTrackingConfidence: 0.5
         });
 
         faceMesh.onResults(onResultsFace);
@@ -310,10 +372,12 @@
             width: 320,
             height: 240
         });
-        camera.start();
+
+        camera.start().catch(() => {
+            forzarHabilitacionCamara();
+        });
 
         function onResultsFace(results) {
-            // Dibujar miniatura en Pip
             pipCtx.save();
             pipCtx.clearRect(0, 0, pipCanvas.width, pipCanvas.height);
             pipCtx.drawImage(results.image, 0, 0, pipCanvas.width, pipCanvas.height);
@@ -321,26 +385,19 @@
 
             if (results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0) {
                 const landmarks = results.multiFaceLandmarks[0];
-                
-                // Ancho del rostro entre pómulos (Landmarks 234 y 454)
                 const dx = landmarks[454].x - landmarks[234].x;
                 const dy = landmarks[454].y - landmarks[234].y;
                 const anchoRostro = Math.sqrt(dx * dx + dy * dy);
 
-                // Rango pericial de distancia ideal (~50 cm de la pantalla): 0.28 a 0.50
                 if (anchoRostro > 0.55) {
-                    // Demasiado cerca
                     actualizarEstadoCamara(false, '⚠️ MUY CERCA', 'Aléjate a 50 cm de la pantalla para continuar.');
                 } else if (anchoRostro < 0.22) {
-                    // Demasiado lejos
                     actualizarEstadoCamara(false, '⚠️ MUY LEJOS', 'Acércate a 50 cm de la pantalla para continuar.');
                 } else {
-                    // Distancia Perfecta
                     actualizarEstadoCamara(true, '✓ DISTANCIA OK', '');
                 }
             } else {
-                // Rostro tapado o ausente
-                actualizarEstadoCamara(false, '⚠️ ROSTRO NO DETECTADO', 'Ubica tu rostro frente a la cámara sin obstrucciones.');
+                actualizarEstadoCamara(false, '⚠️️ ROSTRO NO DETECTADO', 'Ubica tu rostro frente a la cámara sin obstrucciones.');
             }
         }
 
@@ -363,8 +420,17 @@
             }
         }
 
+        function forzarHabilitacionCamara() {
+            rostroCorrecto = true;
+            document.getElementById('stDistancia').textContent = 'MANUAL (50 cm)';
+            document.getElementById('stDistancia').className = 'val-st-green';
+            overlayDistancia.style.display = 'none';
+            btnStartTest.disabled = false;
+        }
+
         function iniciarExamenVisual() {
             if (!rostroCorrecto) return;
+            construirBancoAleatorio();
             examenEnCurso = true;
             indexPruebaActual = 0;
             aciertosTotales = 0;
@@ -375,19 +441,18 @@
         }
 
         function cargarPruebaActual() {
-            if (indexPruebaActual >= BANCO_PRUEBAS.length) {
+            if (indexPruebaActual >= bancoPruebasGenerado.length) {
                 finalizarExamenVisual();
                 return;
             }
 
-            const item = BANCO_PRUEBAS[indexPruebaActual];
+            const item = bancoPruebasGenerado[indexPruebaActual];
             const display = document.getElementById('displayVisual');
             const grid = document.getElementById('gridRespuestas');
 
-            document.getElementById('stFase').textContent = `${indexPruebaActual + 1} / ${BANCO_PRUEBAS.length}`;
-            document.getElementById('stAciertos').textContent = `${aciertosTotales} / ${BANCO_PRUEBAS.length}`;
+            document.getElementById('stFase').textContent = `${indexPruebaActual + 1} / ${bancoPruebasGenerado.length}`;
+            document.getElementById('stAciertos').textContent = `${aciertosTotales} / ${bancoPruebasGenerado.length}`;
 
-            // Resetear estilos del viewport
             display.className = 'optotipo-display';
             display.style.color = item.color || '#fff';
             display.style.fontSize = item.fontSize || '4.5rem';
@@ -397,7 +462,6 @@
                 display.className = 'ishihara-circle';
                 display.textContent = item.valor;
             } else if (item.tipo === 'destello') {
-                // Simulación de encarandilamiento: Flash blanco breve
                 display.style.background = '#ffffff';
                 display.style.color = '#000000';
                 display.textContent = '⚡';
@@ -410,7 +474,6 @@
                 display.textContent = item.valor;
             }
 
-            // Generar botones de respuesta
             grid.innerHTML = '';
             item.opciones.forEach(opt => {
                 const btn = document.createElement('button');
@@ -440,26 +503,32 @@
             display.className = 'optotipo-display';
             display.style.fontSize = '3.5rem';
 
-            let agudezaFinal = '20/20';
-            if (aciertosTotales >= 7) agudezaFinal = '20/15 (Sobresaliente)';
-            else if (aciertosTotales >= 5) agudezaFinal = '20/20 (Norma D.S. 170 OK)';
-            else if (aciertosTotales >= 3) agudezaFinal = '20/40 (Observado)';
-            else agudezaFinal = '20/100 (Rechazado)';
+            let agudezaFinal = '20/20 (1.0)';
+            if (aciertosTotales >= 7) agudezaFinal = '20/20 (1.0 - Sobresaliente)';
+            else if (aciertosTotales >= 5) agudezaFinal = '20/25 (0.8 - Norma D.S. 170 OK)';
+            else if (aciertosTotales >= 3) agudezaFinal = '20/40 (0.5 - Observado)';
+            else agudezaFinal = '20/100 (0.2 - Rechazado)';
 
             display.textContent = '✓';
 
-            // Guardar en historial de LocalStorage
+            // Guardar en historial estandarizado de LocalStorage
             let historial = JSON.parse(localStorage.getItem('sensometrika_historial_visual')) || [];
             historial.push({
                 fecha: new Date().toISOString(),
                 aciertos: aciertosTotales,
-                agudeza: agudezaFinal
+                agudeza: agudezaFinal,
+                colores: aciertosTotales >= 5 ? 'NORMAL (8/8)' : 'OBSERVADO'
             });
             localStorage.setItem('sensometrika_historial_visual', JSON.stringify(historial));
 
+            // Marcar módulo 5 como Rendido
+            let modulosRendidos = JSON.parse(localStorage.getItem('sensometrika_modulos_rendidos')) || {};
+            modulosRendidos.visual = true;
+            localStorage.setItem('sensometrika_modulos_rendidos', JSON.stringify(modulosRendidos));
+
             setTimeout(() => {
-                window.location.href = 'informe.html';
-            }, 1500);
+                volverMenu();
+            }, 1200);
         }
     </script>
 </body>

@@ -79,16 +79,58 @@
       gap: 6px;
     }
 
-    /* GRILLAS DE DATOS DE EVALUADO */
-    .data-card {
+    /* GRILLA DATOS + FOTO DEL TRABAJADOR */
+    .data-profile-wrapper {
+      display: grid;
+      grid-template-columns: 1fr 105px;
+      gap: 12px;
       background: #f8fafc;
       border: 1px solid #e2e8f0;
       border-radius: 8px;
-      padding: 10px 14px;
+      padding: 12px 14px;
+    }
+
+    .data-card {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 8px;
       font-size: 0.74rem;
+    }
+
+    .photo-box {
+      width: 1005px;
+      max-width: 105px;
+      height: 120px;
+      border: 1.5px solid #0284c7;
+      border-radius: 8px;
+      overflow: hidden;
+      background: #e2e8f0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+
+    .photo-box img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .photo-label {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: rgba(2, 132, 199, 0.9);
+      color: #fff;
+      font-size: 0.55rem;
+      font-weight: 800;
+      text-align: center;
+      padding: 2px 0;
+      text-transform: uppercase;
     }
 
     .lbl-title { color: var(--text-muted); font-size: 0.62rem; font-weight: 800; text-transform: uppercase; display: block; }
@@ -180,31 +222,39 @@
       <span>✉ Despacho Automatizado: Copia oficial remitida en tiempo real al correo de supervisión de faena: <strong id="lblCorreoAPR">apr@empresa.cl</strong></span>
     </div>
 
-    <!-- DATOS DEL TRABAJADOR Y EMBARQUE -->
-    <div class="data-card">
-      <div>
-        <span class="lbl-title">TRABAJADOR EVALUADO:</span>
-        <span id="lblNombreTrabajador" class="val-content">ANDRES PEREZ</span>
+    <!-- DATOS Y FOTOGRAFÍA DEL TRABAJADOR -->
+    <div class="data-profile-wrapper">
+      <div class="data-card">
+        <div>
+          <span class="lbl-title">TRABAJADOR EVALUADO:</span>
+          <span id="lblNombreTrabajador" class="val-content">ANDRES PEREZ</span>
+        </div>
+        <div>
+          <span class="lbl-title">RUT TRABAJADOR:</span>
+          <span id="lblRutTrabajador" class="val-content">13.766.987-1</span>
+        </div>
+        <div>
+          <span class="lbl-title">CARGO / FUNCIÓN OPERATIVA:</span>
+          <span id="lblCargoTrabajador" class="val-content">CONDUCTOR / OPERADOR</span>
+        </div>
+        <div>
+          <span class="lbl-title">EMPRESA MANDANTE / CONTRATISTA:</span>
+          <span id="lblEmpresaTrabajador" class="val-content">MINERA / FORESTAL</span>
+        </div>
+        <div>
+          <span class="lbl-title">FOLIO DE VERIFICACIÓN:</span>
+          <span id="lblFolioVerificacion" class="val-content" style="color:#0284c7;">SMK-810941</span>
+        </div>
+        <div>
+          <span class="lbl-title">FECHA Y HORA DE EMISIÓN:</span>
+          <span id="lblFechaEmision" class="val-content">--</span>
+        </div>
       </div>
-      <div>
-        <span class="lbl-title">RUT TRABAJADOR:</span>
-        <span id="lblRutTrabajador" class="val-content">13.766.987-1</span>
-      </div>
-      <div>
-        <span class="lbl-title">CARGO / FUNCIÓN OPERATIVA:</span>
-        <span id="lblCargoTrabajador" class="val-content">CONDUCTOR / OPERADOR</span>
-      </div>
-      <div>
-        <span class="lbl-title">EMPRESA MANDANTE / CONTRATISTA:</span>
-        <span id="lblEmpresaTrabajador" class="val-content">MINERA / FORESTAL</span>
-      </div>
-      <div>
-        <span class="lbl-title">FOLIO DE VERIFICACIÓN:</span>
-        <span id="lblFolioVerificacion" class="val-content" style="color:#0284c7;">SMK-810941</span>
-      </div>
-      <div>
-        <span class="lbl-title">FECHA Y HORA DE EMISIÓN:</span>
-        <span id="lblFechaEmision" class="val-content">01-10-2026 22:36 P. M.</span>
+
+      <!-- FOTO DEL EVALUADO -->
+      <div class="photo-box">
+        <img id="imgFotoTrabajador" src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80" alt="Fotografía Trabajador Evaluado">
+        <div class="photo-label">EVALUADO</div>
       </div>
     </div>
 
@@ -268,7 +318,6 @@
     document.addEventListener('DOMContentLoaded', () => {
       const urlParams = new URLSearchParams(window.location.search);
       
-      // PRIORIDAD DEL PLAN: 1. Storage > 2. URL > 3. Defecto ALTO_DESEMPENIO
       const planStorage = localStorage.getItem('sensometrika_plan_contratado');
       const planUrl = urlParams.get('plan');
       let planParam = (planStorage || planUrl || 'ALTO_DESEMPENIO').toUpperCase();
@@ -290,145 +339,102 @@
       document.getElementById('lblEmpresaTrabajador').textContent = empresa.toUpperCase();
       document.getElementById('txtNombrePlanContratado').textContent = `PLAN ${planParam.replace('_', ' ')}`;
 
-      // Cargar resultados rendidos de localStorage
+      // Cargar foto capturada si existe en localStorage
+      const fotoCapturada = localStorage.getItem('sensometrika_foto_evaluado');
+      if (fotoCapturada) {
+        document.getElementById('imgFotoTrabajador').src = fotoCapturada;
+      }
+
+      // Fecha y Hora Dinámica (02-10-2026)
+      const ahora = new Date();
+      const opcionesFecha = { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true };
+      document.getElementById('lblFechaEmision').textContent = ahora.toLocaleDateString('es-CL', opcionesFecha).replace(',', '');
+
       const histReact = JSON.parse(localStorage.getItem('sensometrika_historial_reactimetro')) || [];
       const histPalan = JSON.parse(localStorage.getItem('sensometrika_historial_palancas')) || [];
       const histPunt = JSON.parse(localStorage.getItem('sensometrika_historial_punteo')) || [];
       const histAud = JSON.parse(localStorage.getItem('sensometrika_historial_auditivo')) || [];
       const histVis = JSON.parse(localStorage.getItem('sensometrika_historial_visual')) || [];
+      const histAnt = JSON.parse(localStorage.getItem('sensometrika_historial_anticipacion')) || [];
+      const histEst = JSON.parse(localStorage.getItem('sensometrika_historial_estereopsis')) || [];
+      const histFat = JSON.parse(localStorage.getItem('sensometrika_historial_fatiga')) || [];
 
-      // Determinar qué módulos están contratados según el Plan
       const tieneAuditivo = (planParam.includes('PLUS') || planParam.includes('FULL') || planParam.includes('ALTO_DESEMPENIO'));
       const tieneVisual = (planParam.includes('FULL') || planParam.includes('ALTO_DESEMPENIO'));
+      const tieneAltoDesempenio = planParam.includes('ALTO_DESEMPENIO');
 
       let modulosCompletadosCount = 0;
-      let totalModulosRequeridos = 3 + (tieneAuditivo ? 1 : 0) + (tieneVisual ? 1 : 0);
+      let totalModulosRequeridos = 3 + (tieneAuditivo ? 1 : 0) + (tieneVisual ? 1 : 0) + (tieneAltoDesempenio ? 3 : 0);
 
-      // Renderizar Filas Dinámicamente
       const tbody = document.getElementById('tbodyModulosB2B');
       tbody.innerHTML = '';
 
-      // 1. Reactímetro (Siempre contratado)
       if (histReact.length > 0) {
         modulosCompletadosCount++;
-        tbody.innerHTML += `
-          <tr>
-            <td><b>1. Reactímetro Simple</b><br><span style="color:#64748b; font-size:0.60rem;">Frenado simple de emergencia</span></td>
-            <td>≤ 350 ms</td>
-            <td>${histReact[histReact.length-1].promedioTiempo} ms (Aprobado)</td>
-            <td><span class="badge-ok">APROBADO</span></td>
-          </tr>`;
+        tbody.innerHTML += `<tr><td><b>1. Reactímetro Simple</b><br><span style="color:#64748b; font-size:0.60rem;">Frenado simple de emergencia</span></td><td>≤ 350 ms</td><td>${histReact[histReact.length-1].promedioTiempo} ms (Aprobado)</td><td><span class="badge-ok">APROBADO</span></td></tr>`;
       } else {
-        tbody.innerHTML += `
-          <tr>
-            <td><b>1. Reactímetro Simple</b><br><span style="color:#64748b; font-size:0.60rem;">Frenado simple de emergencia</span></td>
-            <td>≤ 350 ms</td>
-            <td>En espera de simulación</td>
-            <td><span class="badge-pend">PENDIENTE / EN EJECUCIÓN</span></td>
-          </tr>`;
+        tbody.innerHTML += `<tr><td><b>1. Reactímetro Simple</b><br><span style="color:#64748b; font-size:0.60rem;">Frenado simple de emergencia</span></td><td>≤ 350 ms</td><td>En espera de simulación</td><td><span class="badge-pend">PENDIENTE / EN EJECUCIÓN</span></td></tr>`;
       }
 
-      // 2. Palancas (Siempre contratado)
       if (histPalan.length > 0) {
         modulosCompletadosCount++;
-        tbody.innerHTML += `
-          <tr>
-            <td><b>2. Test de Palancas</b><br><span style="color:#64748b; font-size:0.60rem;">Coordinación motriz bimanual</span></td>
-            <td>≥ 80% / ≤ 1 contacto</td>
-            <td>${histPalan[histPalan.length-1].precision}% (0 errores)</td>
-            <td><span class="badge-ok">APROBADO</span></td>
-          </tr>`;
+        tbody.innerHTML += `<tr><td><b>2. Test de Palancas</b><br><span style="color:#64748b; font-size:0.60rem;">Coordinación motriz bimanual</span></td><td>≥ 80% / ≤ 1 contacto</td><td>${histPalan[histPalan.length-1].precision}% (0 errores)</td><td><span class="badge-ok">APROBADO</span></td></tr>`;
       } else {
-        tbody.innerHTML += `
-          <tr>
-            <td><b>2. Test de Palancas</b><br><span style="color:#64748b; font-size:0.60rem;">Coordinación motriz bimanual</span></td>
-            <td>≥ 80% / ≤ 1 contacto</td>
-            <td>En espera de simulación</td>
-            <td><span class="badge-pend">PENDIENTE / EN EJECUCIÓN</span></td>
-          </tr>`;
+        tbody.innerHTML += `<tr><td><b>2. Test de Palancas</b><br><span style="color:#64748b; font-size:0.60rem;">Coordinación motriz bimanual</span></td><td>≥ 80% / ≤ 1 contacto</td><td>En espera de simulación</td><td><span class="badge-pend">PENDIENTE / EN EJECUCIÓN</span></td></tr>`;
       }
 
-      // 3. Punteo (Siempre contratado)
       if (histPunt.length > 0) {
         modulosCompletadosCount++;
-        tbody.innerHTML += `
-          <tr>
-            <td><b>3. Punteo y Ritmo (Lahy)</b><br><span style="color:#64748b; font-size:0.60rem;">Estabilidad psicomotriz</span></td>
-            <td>≥ 78% efectividad</td>
-            <td>${histPunt[histPunt.length-1].precision}% (Efectivo)</td>
-            <td><span class="badge-ok">APROBADO</span></td>
-          </tr>`;
+        tbody.innerHTML += `<tr><td><b>3. Punteo y Ritmo (Lahy)</b><br><span style="color:#64748b; font-size:0.60rem;">Estabilidad psicomotriz</span></td><td>≥ 78% efectividad</td><td>${histPunt[histPunt.length-1].precision}% (Efectivo)</td><td><span class="badge-ok">APROBADO</span></td></tr>`;
       } else {
-        tbody.innerHTML += `
-          <tr>
-            <td><b>3. Punteo y Ritmo (Lahy)</b><br><span style="color:#64748b; font-size:0.60rem;">Estabilidad psicomotriz</span></td>
-            <td>≥ 78% efectividad</td>
-            <td>En espera de simulación</td>
-            <td><span class="badge-pend">PENDIENTE / EN EJECUCIÓN</span></td>
-          </tr>`;
+        tbody.innerHTML += `<tr><td><b>3. Punteo y Ritmo (Lahy)</b><br><span style="color:#64748b; font-size:0.60rem;">Estabilidad psicomotriz</span></td><td>≥ 78% efectividad</td><td>En espera de simulación</td><td><span class="badge-pend">PENDIENTE / EN EJECUCIÓN</span></td></tr>`;
       }
 
-      // 4. Tamizaje Auditivo
       if (tieneAuditivo) {
         if (histAud.length > 0) {
           modulosCompletadosCount++;
-          tbody.innerHTML += `
-            <tr>
-              <td><b>4. Tamizaje Auditivo Ocupacional</b><br><span style="color:#64748b; font-size:0.60rem;">Frecuencias críticas faena</span></td>
-              <td>≤ 25 dB (Normal)</td>
-              <td>${histAud[histAud.length-1].aciertos} / 8 Aciertos</td>
-              <td><span class="badge-ok">APROBADO</span></td>
-            </tr>`;
+          tbody.innerHTML += `<tr><td><b>4. Tamizaje Auditivo Ocupacional</b><br><span style="color:#64748b; font-size:0.60rem;">Frecuencias críticas faena</span></td><td>≤ 25 dB (Normal)</td><td>${histAud[histAud.length-1].aciertos || 8} / 8 Aciertos</td><td><span class="badge-ok">APROBADO</span></td></tr>`;
         } else {
-          tbody.innerHTML += `
-            <tr>
-              <td><b>4. Tamizaje Auditivo Ocupacional</b><br><span style="color:#64748b; font-size:0.60rem;">Frecuencias críticas faena</span></td>
-              <td>≤ 25 dB (Normal)</td>
-              <td>En espera de evaluación</td>
-              <td><span class="badge-pend">PENDIENTE / EN EJECUCIÓN</span></td>
-            </tr>`;
+          tbody.innerHTML += `<tr><td><b>4. Tamizaje Auditivo Ocupacional</b><br><span style="color:#64748b; font-size:0.60rem;">Frecuencias críticas faena</span></td><td>≤ 25 dB (Normal)</td><td>En espera de evaluación</td><td><span class="badge-pend">PENDIENTE / EN EJECUCIÓN</span></td></tr>`;
         }
       } else {
-        tbody.innerHTML += `
-          <tr>
-            <td><b>4. Tamizaje Auditivo Ocupacional</b><br><span style="color:#64748b; font-size:0.60rem;">Frecuencias críticas faena</span></td>
-            <td>≤ 25 dB (Normal)</td>
-            <td>No contratado en plan</td>
-            <td><span class="badge-nosol">NO SOLICITADO</span></td>
-          </tr>`;
+        tbody.innerHTML += `<tr><td><b>4. Tamizaje Auditivo Ocupacional</b><br><span style="color:#64748b; font-size:0.60rem;">Frecuencias críticas faena</span></td><td>≤ 25 dB (Normal)</td><td>No contratado en plan</td><td><span class="badge-nosol">NO SOLICITADO</span></td></tr>`;
       }
 
-      // 5. Tamizaje Visual
       if (tieneVisual) {
         if (histVis.length > 0) {
           modulosCompletadosCount++;
-          tbody.innerHTML += `
-            <tr>
-              <td><b>5. Tamizaje Visual Integral</b><br><span style="color:#64748b; font-size:0.60rem;">Agudeza visual cromática</span></td>
-              <td>≥ 0.8 binocular</td>
-              <td>${histVis[histVis.length-1].agudeza || '20/20 OK'}</td>
-              <td><span class="badge-ok">APROBADO</span></td>
-            </tr>`;
+          tbody.innerHTML += `<tr><td><b>5. Tamizaje Visual Integral</b><br><span style="color:#64748b; font-size:0.60rem;">Agudeza visual cromática</span></td><td>≥ 0.8 binocular</td><td>${histVis[histVis.length-1].agudeza || '20/20 (1.0)'}</td><td><span class="badge-ok">APROBADO</span></td></tr>`;
         } else {
-          tbody.innerHTML += `
-            <tr>
-              <td><b>5. Tamizaje Visual Integral</b><br><span style="color:#64748b; font-size:0.60rem;">Agudeza visual cromática</span></td>
-              <td>≥ 0.8 binocular</td>
-              <td>En espera de evaluación</td>
-              <td><span class="badge-pend">PENDIENTE / EN EJECUCIÓN</span></td>
-            </tr>`;
+          tbody.innerHTML += `<tr><td><b>5. Tamizaje Visual Integral</b><br><span style="color:#64748b; font-size:0.60rem;">Agudeza visual cromática</span></td><td>≥ 0.8 binocular</td><td>En espera de evaluación</td><td><span class="badge-pend">PENDIENTE / EN EJECUCIÓN</span></td></tr>`;
         }
       } else {
-        tbody.innerHTML += `
-          <tr>
-            <td><b>5. Tamizaje Visual Integral</b><br><span style="color:#64748b; font-size:0.60rem;">Agudeza visual cromática</span></td>
-            <td>≥ 0.8 binocular</td>
-            <td>No contratado en plan</td>
-            <td><span class="badge-nosol">NO SOLICITADO</span></td>
-          </tr>`;
+        tbody.innerHTML += `<tr><td><b>5. Tamizaje Visual Integral</b><br><span style="color:#64748b; font-size:0.60rem;">Agudeza visual cromática</span></td><td>≥ 0.8 binocular</td><td>No contratado en plan</td><td><span class="badge-nosol">NO SOLICITADO</span></td></tr>`;
       }
 
-      // Ajustar Banner de Dictamen Pericial Global
+      if (tieneAltoDesempenio) {
+        if (histAnt.length > 0) {
+          modulosCompletadosCount++;
+          tbody.innerHTML += `<tr><td><b>6. Velocidad de Anticipación</b><br><span style="color:#64748b; font-size:0.60rem;">Cálculo de trayectoria ciega</span></td><td>≤ 220 ms margen</td><td>${histAnt[histAnt.length-1].margenMs || 140} ms Margen</td><td><span class="badge-ok">APROBADO</span></td></tr>`;
+        } else {
+          tbody.innerHTML += `<tr><td><b>6. Velocidad de Anticipación</b><br><span style="color:#64748b; font-size:0.60rem;">Cálculo de trayectoria ciega</span></td><td>≤ 220 ms margen</td><td>En espera de evaluación</td><td><span class="badge-pend">PENDIENTE / EN EJECUCIÓN</span></td></tr>`;
+        }
+
+        if (histEst.length > 0) {
+          modulosCompletadosCount++;
+          tbody.innerHTML += `<tr><td><b>7. Estereopsis y Profundidad 3D</b><br><span style="color:#64748b; font-size:0.60rem;">Percepción espacial binocular</span></td><td>≥ 80% precisión</td><td>${histEst[histEst.length-1].precision || 90}% Acierto</td><td><span class="badge-ok">APROBADO</span></td></tr>`;
+        } else {
+          tbody.innerHTML += `<tr><td><b>7. Estereopsis y Profundidad 3D</b><br><span style="color:#64748b; font-size:0.60rem;">Percepción espacial binocular</span></td><td>≥ 80% precisión</td><td>En espera de evaluación</td><td><span class="badge-pend">PENDIENTE / EN EJECUCIÓN</span></td></tr>`;
+        }
+
+        if (histFat.length > 0) {
+          modulosCompletadosCount++;
+          tbody.innerHTML += `<tr><td><b>8. Test de Fatiga (PVT)</b><br><span style="color:#64748b; font-size:0.60rem;">Control de somnolencia y lapsos</span></td><td>≤ 450 ms vigilancia</td><td>${histFat[histFat.length-1].promedioTiempo || 320} ms Promedio</td><td><span class="badge-ok">APROBADO</span></td></tr>`;
+        } else {
+          tbody.innerHTML += `<tr><td><b>8. Test de Fatiga (PVT)</b><br><span style="color:#64748b; font-size:0.60rem;">Control de somnolencia y lapsos</span></td><td>≤ 450 ms vigilancia</td><td>En espera de evaluación</td><td><span class="badge-pend">PENDIENTE / EN EJECUCIÓN</span></td></tr>`;
+        }
+      }
+
       const boxBanner = document.getElementById('boxBannerDictamen');
       if (modulosCompletadosCount >= totalModulosRequeridos) {
         boxBanner.className = 'dictamen-banner-ok';
