@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>SENSOMETRIKA | Informe Pericial B2B D.S. 170</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <style>
     :root {
       --bg-page: #040810;
@@ -57,12 +58,13 @@
     .brand-subtitle { font-size: 0.62rem; color: #475569; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; }
 
     .qr-box {
-      width: 52px; height: 52px;
+      width: 64px; height: 64px;
       border: 1px solid #cbd5e1;
       border-radius: 6px;
       display: flex;
       align-items: center; justify-content: center;
-      background: #f8fafc;
+      background: #ffffff;
+      padding: 2px;
     }
 
     /* BANNERS INFORMATIVOS */
@@ -194,6 +196,16 @@
     .badge-pend { background: #fef3c7; color: #b45309; border: 1px solid #fde68a; padding: 2px 6px; border-radius: 4px; font-weight: 800; font-size: 0.62rem; }
     .badge-nosol { background: #f1f5f9; color: #64748b; border: 1px solid #cbd5e1; padding: 2px 6px; border-radius: 4px; font-weight: 700; font-size: 0.62rem; }
 
+    /* JUSTIFICACIÓN TÉCNICA DE VIGENCIA */
+    .vencimiento-card {
+      background: #f1f5f9;
+      border-left: 4px solid #0284c7;
+      padding: 8px 12px;
+      border-radius: 0 6px 6px 0;
+      font-size: 0.65rem;
+      color: #334155;
+    }
+
     /* ZONA DE FIRMAS Y LEGAL */
     .firmas-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 6px; }
     .box-firma { border: 1.5px dashed #cbd5e1; border-radius: 8px; height: 85px; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; padding: 6px; font-size: 0.60rem; color: #64748b; text-align: center; }
@@ -235,8 +247,8 @@
         <h1 class="brand-title">SENSOMETRIKA SpA</h1>
         <p class="brand-subtitle">GABINETE SENSOTÉCNICO LABORAL • D.S. N° 170 MTT • ESTÁNDAR CORMA</p>
       </div>
-      <div class="qr-box">
-        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#0284c7" stroke-width="2"><path d="M3 3h6v6H3zM15 3h6v6h-6zM3 15h6v6H3zM14 14h2v2h-2zM18 14h3v3h-3zM14 18h3v3h-3zM18 18h3v3h-3z"/></svg>
+      <div id="qrCodeContainer" class="qr-box">
+        <!-- Renderizado dinámicamente con QRCode.js -->
       </div>
     </header>
 
@@ -271,6 +283,14 @@
           <span class="lbl-title">FECHA Y HORA DE EMISIÓN:</span>
           <span id="lblFechaEmision" class="val-content">--</span>
         </div>
+        <div>
+          <span class="lbl-title">VIGENCIA PERICIAL CADUCIDAD:</span>
+          <span id="lblFechaVencimiento" class="val-content" style="color:#0284c7;">--</span>
+        </div>
+        <div>
+          <span class="lbl-title">SISTEMA REEVALUACIÓN:</span>
+          <span class="val-content" style="color:#10b981;">PERIÓDICA AUTOMÁTICA</span>
+        </div>
       </div>
 
       <!-- FOTO WEBCAM / PLACEHOLDER DE BIOMETRÍA -->
@@ -282,6 +302,12 @@
         </div>
         <div class="photo-label">EVALUADO BIOMÉTRICO</div>
       </div>
+    </div>
+
+    <!-- JUSTIFICACIÓN TÉCNICA DE VIGENCIA -->
+    <div class="vencimiento-card">
+      <strong style="color: #0f172a; display: block; margin-bottom: 2px;">📌 FUNDAMENTACIÓN TÉCNICA Y MOTIVACIÓN DEL PLAZO DE VIGENCIA:</strong>
+      <span id="lblJustificacionVigencia">Calculando vigencia en función de parámetros psicomotrices y sensoriales telemétricos...</span>
     </div>
 
     <!-- TELEMETRÍA HARDWARE -->
@@ -331,9 +357,9 @@
       </div>
     </div>
 
-    <!-- CLAUSULA DE BLINDAJE JURIDICO -->
+    <!-- CLÁUSULA DE BLINDAJE JURÍDICO -->
     <div class="legal-disclaimer-b2b">
-      <strong>⚖️ ALCANSE NORMATIVO Y CONTROL PREVENTIVO EN FAENA:</strong> 
+      <strong>⚖️ ALCANCE NORMATIVO Y CONTROL PREVENTIVO EN FAENA:</strong> 
       El presente informe pericial B2B certifica la telemetría de rendimiento psicomotor y sensorial bajo el estándar D.S. N° 170 MTT y normas CORMA. Funciona como un insumo técnico de control preventivo para el Sistema de Gestión de Seguridad y Salud en el Trabajo (SGSST) de la empresa mandante (Ley N° 16.744 / Ley N° 20.123), no reemplazando la Ficha Médica de Aptitud de la Mutualidad ni la Licencia Municipal de Conducir.
     </div>
 
@@ -371,12 +397,30 @@
       document.getElementById('lblEmpresaTrabajador').textContent = empresa.toUpperCase();
       document.getElementById('txtNombrePlanContratado').textContent = `PLAN ${planParam.replace('_', ' ')}`;
 
+      // Folio e Historiales
+      const folio = 'SMK-' + rut.replace(/[^0-9Kk]/g, '').substring(0, 6);
+      document.getElementById('lblFolioVerificacion').textContent = folio;
+
+      // Generación de Código QR Dinámico
+      const baseUrl = window.location.origin;
+      const urlValidacion = `${baseUrl}/verificacion_trabajador.html?folio=${encodeURIComponent(folio)}`;
+      const qrContainer = document.getElementById('qrCodeContainer');
+      qrContainer.innerHTML = '';
+      new QRCode(qrContainer, {
+        text: urlValidacion,
+        width: 60,
+        height: 60,
+        colorDark: "#0284c7",
+        colorLight: "#ffffff",
+        correctLevel: QRCode.CorrectLevel.H
+      });
+
       // Generación de Hash Criptográfico
       const rawHash = 'SMK-B2B-' + btoa(rut + Date.now()).substring(0, 14).toUpperCase();
       document.getElementById('lblHashB2B').textContent = rawHash;
 
       // Foto en Tiempo Real de la Webcam
-      const fotoWebcam = localStorage.getItem('sensometrika_foto_evaluado');
+      const fotoWebcam = localStorage.getItem('sensometrika_foto_evaluado') || localStorage.getItem('sensometrika_foto_trabajador');
       const imgFoto = document.getElementById('imgFotoTrabajador');
       const phFoto = document.getElementById('phFotoBox');
       if (fotoWebcam) {
@@ -399,6 +443,31 @@
       const histEst = JSON.parse(localStorage.getItem('sensometrika_historial_estereopsis')) || [];
       const histFat = JSON.parse(localStorage.getItem('sensometrika_historial_fatiga')) || [];
 
+      // CÁLCULO DINÁMICO DE CADUCIDAD Y JUSTIFICACIÓN PERICIAL
+      let ultReactTime = histReact.length > 0 ? histReact[histReact.length - 1].promedioTiempo : 280;
+      let ultPalanPrec = histPalan.length > 0 ? histPalan[histPalan.length - 1].precision : 95;
+
+      let mesesVigencia = 12;
+      let textoJustificacion = "";
+
+      if (ultReactTime > 340 || ultPalanPrec < 82) {
+        mesesVigencia = 3;
+        textoJustificacion = "CRITERIO PREVENTIVO B (3 MESES): Registro de tiempos de respuesta en el límite de la tolerancia reglamentaria (≤350ms) o dispersión en coordinación bimanual. Se determina reevaluación preventiva a corto plazo para vigilar curva de fatiga u operabilidad.";
+      } else if (ultReactTime > 300 || ultPalanPrec < 90) {
+        mesesVigencia = 6;
+        textoJustificacion = "CRITERIO ESTÁNDAR A2 (6 MESES): Desempeño acorde a las exigencias normativas del D.S. N° 170 MTT con holgura moderada. Se recomienda reevaluación semestral periódica dentro del programa de vigilancia ocupacional de faena.";
+      } else {
+        mesesVigencia = 12;
+        textoJustificacion = "CRITERIO SOBRESALIENTE A1 (12 MESES): Excelente velocidad de respuesta psicomotriz (≤300ms), alto control bimanual y respuesta sensorial óptima. Se concede la vigencia anual máxima recomendada por el Estándar CORMA/SGSST.";
+      }
+
+      const fechaVencimiento = new Date();
+      fechaVencimiento.setMonth(ahora.getMonth() + mesesVigencia);
+      const opcSimple = { day: '2-digit', month: '2-digit', year: 'numeric' };
+      document.getElementById('lblFechaVencimiento').textContent = `${fechaVencimiento.toLocaleDateString('es-CL', opcSimple)} (${mesesVigencia} MESES)`;
+      document.getElementById('lblJustificacionVigencia').textContent = textoJustificacion;
+
+      // Inclusión por Plan
       const tieneAuditivo = (planParam.includes('PLUS') || planParam.includes('FULL') || planParam.includes('ALTO_DESEMPENIO'));
       const tieneVisual = (planParam.includes('FULL') || planParam.includes('ALTO_DESEMPENIO'));
       const tieneAltoDesempenio = planParam.includes('ALTO_DESEMPENIO');
