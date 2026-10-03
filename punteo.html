@@ -307,8 +307,8 @@
         const modeParam = urlParams.get('mode') || (localStorage.getItem('sensometrika_b2c_mode') === 'true' ? 'b2c' : 'b2b');
         const esB2B = (modeParam === 'b2b');
 
-        // PRIORIDAD ABSOLUTA A LA URL PARA MODO DEMO
-        const isDemoURL = urlParams.get('demo') === 'true' || urlParams.get('fase') === 'demo';
+        // PERMITIR MUTACIÓN DE BANDERA CON let PARA EVITAR BUCLE
+        let isDemoURL = urlParams.get('demo') === 'true' || urlParams.get('fase') === 'demo';
         let modoActual = isDemoURL ? 'DEMO' : 'OFICIAL';
 
         let evaluacionActiva = false;
@@ -332,8 +332,7 @@
             const yaRendido = modulosRendidos.punteo === true;
             const demoRealizada = localStorage.getItem('punteo_demo_completada') === 'true';
 
-            // Si la URL exige demo=true, forzar fase de práctica
-            if (isDemoURL) {
+            if (isDemoURL && !demoRealizada) {
                 modoActual = 'DEMO';
             } else if (yaRendido) {
                 modoActual = 'BLOQUEADO';
@@ -479,15 +478,22 @@
             if (modoActual === 'DEMO') {
                 localStorage.setItem('punteo_demo_completada', 'true');
 
-                // Cambiar a fase oficial en la URL para habilitar la simulación real
+                // 1. DESACTIVAR LA BANDERA DE DEMO EN MEMORIA
+                isDemoURL = false;
+                modoActual = 'OFICIAL';
+
+                // 2. ACTUALIZAR LA URL DE NAVEGACIÓN
                 urlParams.set('demo', 'false');
                 urlParams.set('fase', 'oficial');
                 window.history.replaceState({}, '', `${window.location.pathname}?${urlParams.toString()}`);
 
-                actualizarEstadoUI();
+                // 3. MOSTRAR AVISO Y REEVALUAR UI AL CERRAR EL MODAL
                 mostrarModal(
                     "CALIBRACIÓN DEMO COMPLETADA",
-                    `Aciertos: <b>${aciertos}</b><br>Errores: <b>${errores}</b><br>Precisión: <b>${precisionVal}%</b><br><br>Has finalizado el ensayo. Ya puedes rendir tu Simulación Oficial.`
+                    `Aciertos: <b>${aciertos}</b><br>Errores: <b>${errores}</b><br>Precisión: <b>${precisionVal}%</b><br><br>Has finalizado el ensayo. Ya puedes rendir tu Simulación Oficial.`,
+                    () => {
+                        actualizarEstadoUI();
+                    }
                 );
             } else if (modoActual === 'OFICIAL') {
                 let rendidos = JSON.parse(localStorage.getItem('sensometrika_modulos_rendidos')) || {};
