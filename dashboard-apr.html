@@ -233,11 +233,11 @@
     <div class="info-empresa-bar">
       <div>
         <span style="color: var(--text-muted); text-transform: uppercase; font-size: 0.68rem; display: block;">Empresa Mandante</span>
-        <strong id="lblEmpresa" style="color: #fff; font-size: 0.9rem;">Minerales / Socadep</strong>
+        <strong id="lblEmpresa" style="color: #fff; font-size: 0.9rem;">Cargando...</strong>
       </div>
       <div>
         <span style="color: var(--text-muted); text-transform: uppercase; font-size: 0.68rem; display: block;">Encargado / APR</span>
-        <strong id="lblEncargado" style="color: var(--accent-cyan); font-size: 0.9rem;">Raul Hernandez</strong>
+        <strong id="lblEncargado" style="color: var(--accent-cyan); font-size: 0.9rem;">Cargando...</strong>
       </div>
     </div>
 
@@ -313,9 +313,35 @@
     let trabajadores = JSON.parse(localStorage.getItem('sensometrika_apr_nomina')) || [];
 
     document.addEventListener('DOMContentLoaded', () => {
-      const contratacion = JSON.parse(localStorage.getItem('sensometrika_b2b_contratacion')) || {};
-      if (contratacion.razonSocial) document.getElementById('lblEmpresa').innerText = contratacion.razonSocial;
-      if (contratacion.encargado) document.getElementById('lblEncargado').innerText = contratacion.encargado;
+      const urlParams = new URLSearchParams(window.location.search);
+      
+      let contratacion = {};
+      let datosUsuario = {};
+      
+      try {
+        contratacion = JSON.parse(localStorage.getItem('sensometrika_b2b_contratacion')) || {};
+        datosUsuario = JSON.parse(localStorage.getItem('sensometrika_datos_usuario')) || {};
+      } catch(e){}
+
+      // BÚSQUEDA ROBUSTA DE VARIABLES DE RESPALDO (URL -> localStorage -> Sesión)
+      const empresaResuelta = urlParams.get('empresa') || 
+                              contratacion.razonSocial || 
+                              localStorage.getItem('sensometrika_b2b_empresa') || 
+                              datosUsuario.empresa || 
+                              'SOCADEP LTDA';
+
+      const encargadoResuelto = urlParams.get('encargado') || 
+                                urlParams.get('nombre') || 
+                                contratacion.encargado || 
+                                localStorage.getItem('sensometrika_b2b_encargado') || 
+                                datosUsuario.nombre || 
+                                'Félix Osses';
+
+      document.getElementById('lblEmpresa').innerText = decodeURIComponent(empresaResuelta).toUpperCase();
+      document.getElementById('lblEncargado').innerText = decodeURIComponent(encargadoResuelto);
+
+      // Pre-llenar input de empresa mandante en el formulario
+      document.getElementById('inputEmpresa').value = decodeURIComponent(empresaResuelta).toUpperCase();
 
       renderizarNomina();
     });
