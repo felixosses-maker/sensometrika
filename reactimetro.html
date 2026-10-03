@@ -286,7 +286,7 @@
             </div>
 
             <div class="action-container">
-                <button id="btnStart" class="btn-start">INICIAR EVALUACIÓN</button>
+                <button id="btnStart" class="btn-start">INICIAR CALIBRACIÓN DEMO (6 ESTÍMULOS)</button>
                 <button id="btnBrake" class="btn-brake">🛑 FRENAR (ESPACIO)</button>
                 
                 <div id="salidaWrapper" class="salida-buttons-wrapper">
@@ -310,7 +310,6 @@
             </div>
         </div>
 
-        <!-- MODAL INSTRUCCIONES -->
         <div id="modalInstrucciones" class="modal-overlay">
             <div class="modal-content">
                 <div class="modal-title">ℹ ¿CÓMO FUNCIONA ESTE MÓDULO?</div>
@@ -320,7 +319,6 @@
                         <li><b>Secuencia:</b> La prueba consta de <b>6 estímulos visuales aleatorios</b>.</li>
                         <li><b>Instrucción:</b> Presiona el botón <b>FRENAR</b> o la <b>barra espaciadora</b> en cuanto la luz cambie a <b>ROJO</b>.</li>
                         <li><b>Anticipación:</b> Si frenas mientras el semáforo está amarillo, la prueba detectará anticipación y reiniciará el estímulo.</li>
-                        <li><b>Descuento Técnico:</b> El sistema descuenta la latencia de tu pantalla previamente calibrada para asegurar un resultado justo.</li>
                         <li><b>Aprobación:</b> Un promedio igual o inferior a <b>450 ms</b> cumple con el estándar de la norma.</li>
                     </ul>
                 </div>
@@ -328,7 +326,6 @@
             </div>
         </div>
 
-        <!-- MODAL ALERTA SISTEMA -->
         <div id="modalSistema" class="modal-overlay">
             <div class="modal-content" style="text-align: center;">
                 <div id="modalTitle" class="modal-title">PRUEBA FINALIZADA</div>
@@ -367,7 +364,7 @@
         const modeParam = urlParams.get('mode') || (localStorage.getItem('sensometrika_b2c_mode') === 'true' ? 'b2c' : 'b2b');
         const esB2B = (modeParam === 'b2b');
 
-        // PERMITIR MUTACIÓN DE BANDERA CON let PARA EVITAR BUCLE
+        // PRIORIDAD ABSOLUTA A LA URL PARA MODO DEMO
         let isDemoURL = urlParams.get('demo') === 'true' || urlParams.get('fase') === 'demo';
         let modoActual = isDemoURL ? 'DEMO' : 'OFICIAL';
 
@@ -385,14 +382,11 @@
         function actualizarEstadoPlanUI() {
             const modulosRendidos = JSON.parse(localStorage.getItem('sensometrika_modulos_rendidos')) || {};
             const yaRendido = modulosRendidos.reactimetro === true;
-            const demoRealizada = localStorage.getItem('reactimetro_demo_completada') === 'true';
 
-            if (isDemoURL && !demoRealizada) {
+            if (isDemoURL) {
                 modoActual = 'DEMO';
             } else if (yaRendido) {
                 modoActual = 'BLOQUEADO';
-            } else if (!demoRealizada) {
-                modoActual = 'DEMO';
             } else {
                 modoActual = 'OFICIAL';
             }
@@ -443,16 +437,14 @@
             if (modoActual === 'DEMO') {
                 localStorage.setItem('reactimetro_demo_completada', 'true');
                 
-                // 1. DESACTIVAR LA BANDERA DE DEMO EN MEMORIA
+                // DESACTIVAR MODO DEMO EN MEMORIA Y URL
                 isDemoURL = false;
                 modoActual = 'OFICIAL';
 
-                // 2. ACTUALIZAR LA URL DE NAVEGACIÓN
                 urlParams.set('demo', 'false');
                 urlParams.set('fase', 'oficial');
                 window.history.replaceState({}, '', `${window.location.pathname}?${urlParams.toString()}`);
                 
-                // 3. MOSTRAR AVISO Y REEVALUAR UI AL CERRAR EL MODAL
                 mostrarAlertaSistema(
                     "CALIBRACIÓN DEMO COMPLETADA",
                     `Promedio Neto: <b>${res.promedioTiempo} ms</b><br>Anticipaciones: <b>${res.anticipaciones}</b><br><br>Has completado el ensayo. Ya puedes rendir tu simulación oficial.`,
@@ -461,12 +453,10 @@
                     }
                 );
             } else if (modoActual === 'OFICIAL') {
-                // 1. Guardar como Objeto en sensometrika_modulos_rendidos
                 let rendidos = JSON.parse(localStorage.getItem('sensometrika_modulos_rendidos')) || {};
                 rendidos.reactimetro = true;
                 localStorage.setItem('sensometrika_modulos_rendidos', JSON.stringify(rendidos));
 
-                // 2. Guardar resultado del intento
                 let historial = JSON.parse(localStorage.getItem('sensometrika_historial_reactimetro')) || [];
                 historial.push({
                     promedioTiempo: res.promedioTiempo,
