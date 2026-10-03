@@ -194,12 +194,18 @@
     const nombre = urlParams.get('nombre') || 'ANDRES PEREZ';
     const mode = urlParams.get('mode') || 'b2b';
 
-    // LECTURA FLEXIBLE DE PLAN: URL -> LocalStorage -> Por defecto
+    // RESOLUCIÓN DE PRIORIDAD DEL PLAN PARA EVITAR REANUDAR EN 'BASICO' POR ERROR DE URL
     let planUrl = urlParams.get('plan');
-    if (planUrl) {
-      localStorage.setItem('sensometrika_plan_seleccionado', planUrl.toUpperCase());
+    let planGuardado = localStorage.getItem('sensometrika_plan_seleccionado');
+
+    let plan = 'BASICO';
+
+    if (planGuardado && planGuardado !== 'BASICO') {
+      plan = planGuardado.toUpperCase().trim();
+    } else if (planUrl) {
+      plan = planUrl.toUpperCase().trim();
+      localStorage.setItem('sensometrika_plan_seleccionado', plan);
     }
-    const plan = (planUrl || localStorage.getItem('sensometrika_plan_seleccionado') || 'BASICO').toUpperCase().trim();
 
     document.getElementById('lblBannerEvaluacion').textContent = `EVALUACIÓN ${mode.toUpperCase()} • PLAN ${plan.replace('_', ' ')}`;
     document.getElementById('lblNombreUsuario').textContent = `EVALUADO: ${decodeURIComponent(nombre).toUpperCase()} | RUT: ${rut}`;
@@ -219,10 +225,9 @@
       const currentParams = new URLSearchParams(window.location.search);
       const modulosRendidos = JSON.parse(localStorage.getItem('sensometrika_modulos_rendidos')) || {};
 
-      // Asegurar que el plan actual vaya en la URL del módulo
+      // Sincronizar el plan resuelto en los parámetros salientes
       currentParams.set('plan', plan);
 
-      // Si no ha sido rendido oficialmente, forzar siempre modo demo
       if (!modulosRendidos[idModulo]) {
         currentParams.set('demo', 'true');
         currentParams.set('fase', 'demo');
@@ -241,7 +246,7 @@
       const modulosRendidos = JSON.parse(localStorage.getItem('sensometrika_modulos_rendidos')) || {};
 
       listaModulos.forEach(mod => {
-        // Jerarquía de Planes B2B: BASICO < PLUS < FULL < ALTO_DESEMPEÑO
+        // Validación jerárquica de acceso por Plan
         const tieneAcceso = 
           (mod.minPlan === 'BASICO') ||
           (mod.minPlan === 'PLUS' && (plan === 'PLUS' || plan === 'FULL' || plan.includes('ALTO'))) ||
@@ -271,7 +276,9 @@
     }
 
     function verInformeFinal() {
-      window.location.href = `informe-b2b.html?${urlParams.toString()}`;
+      const currentParams = new URLSearchParams(window.location.search);
+      currentParams.set('plan', plan);
+      window.location.href = `informe-b2b.html?${currentParams.toString()}`;
     }
 
     renderModulos();
