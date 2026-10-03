@@ -367,8 +367,8 @@
         const modeParam = urlParams.get('mode') || (localStorage.getItem('sensometrika_b2c_mode') === 'true' ? 'b2c' : 'b2b');
         const esB2B = (modeParam === 'b2b');
 
-        // PRIORIDAD ABSOLUTA A LA URL PARA MODO DEMO
-        const isDemoURL = urlParams.get('demo') === 'true' || urlParams.get('fase') === 'demo';
+        // PERMITIR MUTACIÓN DE BANDERA CON let PARA EVITAR BUCLE
+        let isDemoURL = urlParams.get('demo') === 'true' || urlParams.get('fase') === 'demo';
         let modoActual = isDemoURL ? 'DEMO' : 'OFICIAL';
 
         function ejecutarRetornoMenu() {
@@ -387,8 +387,7 @@
             const yaRendido = modulosRendidos.reactimetro === true;
             const demoRealizada = localStorage.getItem('reactimetro_demo_completada') === 'true';
 
-            // Si la URL fuerza demo=true, prevalece sobre el estado bloqueado previo
-            if (isDemoURL) {
+            if (isDemoURL && !demoRealizada) {
                 modoActual = 'DEMO';
             } else if (yaRendido) {
                 modoActual = 'BLOQUEADO';
@@ -444,15 +443,22 @@
             if (modoActual === 'DEMO') {
                 localStorage.setItem('reactimetro_demo_completada', 'true');
                 
-                // Cambiar a fase oficial en la URL para permitir la rendición real
+                // 1. DESACTIVAR LA BANDERA DE DEMO EN MEMORIA
+                isDemoURL = false;
+                modoActual = 'OFICIAL';
+
+                // 2. ACTUALIZAR LA URL DE NAVEGACIÓN
                 urlParams.set('demo', 'false');
                 urlParams.set('fase', 'oficial');
                 window.history.replaceState({}, '', `${window.location.pathname}?${urlParams.toString()}`);
                 
-                actualizarEstadoPlanUI();
+                // 3. MOSTRAR AVISO Y REEVALUAR UI AL CERRAR EL MODAL
                 mostrarAlertaSistema(
                     "CALIBRACIÓN DEMO COMPLETADA",
-                    `Promedio Neto: <b>${res.promedioTiempo} ms</b><br>Anticipaciones: <b>${res.anticipaciones}</b><br><br>Has completado el ensayo. Ya puedes rendir tu simulación oficial.`
+                    `Promedio Neto: <b>${res.promedioTiempo} ms</b><br>Anticipaciones: <b>${res.anticipaciones}</b><br><br>Has completado el ensayo. Ya puedes rendir tu simulación oficial.`,
+                    () => {
+                        actualizarEstadoPlanUI();
+                    }
                 );
             } else if (modoActual === 'OFICIAL') {
                 // 1. Guardar como Objeto en sensometrika_modulos_rendidos
