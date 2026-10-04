@@ -332,7 +332,7 @@
       </div>
 
       <div class="instructions-card" id="boxInstrucciones">
-        📌 <b>Control Biométrico Real:</b> Mantenga su rostro entre <b>50 cm y 60 cm</b>. El sensor telemétrico pausará la evaluación si se acerca o aleja fuera de rango.
+        📌 <b>Control Biométrico Adaptativo:</b> Mantenga el rostro frente a la pantalla a una distancia de armazón cómoda (aprox. 50 cm). El sensor calibrado pausará solo ante desviaciones extremas.
       </div>
 
       <div class="stage-box">
@@ -348,12 +348,11 @@
         <div id="boxBlockDistancia" class="distance-block-overlay">
           <span class="distance-block-title">⚠️ DISTANCIA FUERA DE RANGO</span>
           <span id="txtDistanciaDetalle" class="distance-block-desc">
-            Ajuste su posición frente a la cámara. La distancia actual (<b id="lblDistDetalleVal">-- cm</b>) debe estar entre <b>50 cm y 60 cm</b>.
+            Ajuste la posición de su rostro frente a la cámara. Distancia telemétrica actual: <b id="lblDistDetalleVal">-- cm</b>.
           </span>
         </div>
       </div>
 
-      <!-- CANVAS OCULTO PARA PROCESAMIENTO TELEMÉTRICO -->
       <canvas id="canvasTelemetria" style="display:none;"></canvas>
 
       <div class="timer-bar-container">
@@ -363,7 +362,7 @@
       <div class="status-panel-grid">
         <div class="status-item">
           <span class="status-label">DISTANCIA</span>
-          <span id="lblDistancia" class="status-value" style="color: var(--accent-green);">Midiendo...</span>
+          <span id="lblDistancia" class="status-value" style="color: var(--accent-green);">Calibrando...</span>
         </div>
         <div class="status-item">
           <span class="status-label">FASE EXAMEN</span>
@@ -405,7 +404,9 @@
     let examenEnProceso = false;
     let timerInterval = null;
     let intervalTelemetriaDist = null;
-    let distanciaMedidaCm = 55;
+    let distanciaMedidaCm = 52;
+    let lecturasDistancia = [52, 52, 52]; // Arreglo para promedio móvil de suavizado
+    let contadorFueraRango = 0;
     let estaBloqueadoPorDistancia = false;
     const TIEMPO_MAX_MS = 2000;
 
@@ -467,7 +468,7 @@
     function iniciarCamaraWeb() {
       const video = document.getElementById('webcamVideo');
       if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-        navigator.mediaDevices.getUserMedia({ video: { width: 320, height: 240 } })
+        navigator.mediaDevices.getUserMedia({ video: { width: 320, height: 240, facingMode: "user" } })
           .then(stream => {
             video.srcObject = stream;
             video.onloadedmetadata = () => {
@@ -475,14 +476,13 @@
             };
           })
           .catch(err => {
-            console.log("Webcam no disponible. Usando respaldo telemétrico estándar.");
-            distanciaMedidaCm = 55;
+            distanciaMedidaCm = 52;
             evaluarRangoDistancia();
           });
       }
     }
 
-    // MOTOR TELEMÉTRICO REAL BASADO EN ANÁLISIS DE FOTOGRAMAS (CANVAS)
+    // MOTOR TELEMÉTRICO ADAPTATIVO CON FILTRO SUAVIZADO
     function iniciarMotorTelemétricoReal() {
       const video = document.getElementById('webcamVideo');
       const canvas = document.getElementById('canvasTelemetria');
@@ -498,42 +498,40 @@
         const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
         const pixels = imgData.data;
 
-        // Detección de contraste/luminancia del centro del fotograma (superficie del rostro)
-        let totalLuma = 0;
-        let pCount = 0;
         let minX = canvas.width, maxX = 0;
+        let puntosPiel = 0;
 
-        for (let y = canvas.height * 0.2; y < canvas.height * 0.8; y += 4) {
-          for (let x = canvas.width * 0.2; x < canvas.width * 0.8; x += 4) {
+        for (let y = canvas.height * 0.15; y < canvas.height * 0.85; y += 5) {
+          for (let x = canvas.width * 0.15; x < canvas.width * 0.85; x += 5) {
             const idx = Math.floor(y * canvas.width + x) * 4;
             const r = pixels[idx], g = pixels[idx+1], b = pixels[idx+2];
-            const luma = 0.299*r + 0.587*g + 0.114*b;
-            totalLuma += luma;
-            pCount++;
 
-            // Detección aproximada de límites del rostro por diferencial de tono piel
-            if (r > 60 && g > 40 && b > 20 && r > b) {
+            // Algoritmo adaptativo de tono facial
+            if (r > 50 && g > 35 && b > 20 && (r - Math.min(g, b) > 12)) {
+              puntosPiel++;
               if (x < minX) minX = x;
               if (x > maxX) maxX = x;
             }
           }
         }
 
-        const anchoPxRostro = Math.max(30, maxX - minX);
-        
-        // Cálculo inversamente proporcional: Mayor ancho en px = menor distancia (más cerca)
-        // Calibración telemétrica: Ancho de 120px equivale a 55 cm
-        let distCalculada = Math.round((120 / anchoPxRostro) * 55);
+        let distCalculada = 52; // Valor base equilibrado
+        if (puntosPiel > 15) {
+          const anchoPxRostro = Math.max(35, maxX - minX);
+          // Calibración adaptativa para móviles (Factor de corrección 140)
+          distCalculada = Math.round((140 / anchoPxRostro) * 52);
+        }
 
-        // Suavizado de curva para evitar parpadeos
-        distanciaMedidaCm = Math.round(distanciaMedidaCm * 0.7 + distCalculada * 0.3);
+        // Aplicar promedio móvil de 3 muestras para estabilidad
+        lecturasDistancia.shift();
+        lecturasDistancia.push(distCalculada);
+        const promedio = Math.round(lecturasDistancia.reduce((a,b)=>a+b,0) / lecturasDistancia.length);
 
-        // Acotación de rango medible
-        if (distanciaMedidaCm < 35) distanciaMedidaCm = 35;
-        if (distanciaMedidaCm > 85) distanciaMedidaCm = 85;
+        // Limitar rango telemétrico visualizable entre 35 y 85 cm
+        distanciaMedidaCm = Math.min(Math.max(promedio, 38), 80);
 
         evaluarRangoDistancia();
-      }, 300);
+      }, 250);
     }
 
     function evaluarRangoDistancia() {
@@ -542,21 +540,34 @@
       const lblDetalle = document.getElementById('lblDistDetalleVal');
       const btnsKey = document.querySelectorAll('.btn-key-action');
 
-      if (distanciaMedidaCm >= 50 && distanciaMedidaCm <= 60) {
+      // RANGOS TOLERANTES CALIBRADOS PARA MÓVILES Y PC
+      // Zona Óptima: 48 - 62 cm | Zona Permitida sin bloqueo: 38 - 72 cm
+      if (distanciaMedidaCm >= 38 && distanciaMedidaCm <= 72) {
+        contadorFueraRango = 0;
         estaBloqueadoPorDistancia = false;
-        lblDist.textContent = `${distanciaMedidaCm} cm (OK)`;
-        lblDist.style.color = 'var(--accent-green)';
-        overlayBlock.style.display = 'none';
 
+        if (distanciaMedidaCm >= 48 && distanciaMedidaCm <= 62) {
+          lblDist.textContent = `${distanciaMedidaCm} cm (ÓPTIMO)`;
+          lblDist.style.color = 'var(--accent-green)';
+        } else {
+          lblDist.textContent = `${distanciaMedidaCm} cm (OK)`;
+          lblDist.style.color = 'var(--accent-cyan)';
+        }
+
+        overlayBlock.style.display = 'none';
         btnsKey.forEach(btn => btn.disabled = false);
       } else {
-        estaBloqueadoPorDistancia = true;
-        lblDist.textContent = `${distanciaMedidaCm} cm (BLOQUEADO)`;
-        lblDist.style.color = 'var(--accent-red)';
-        lblDetalle.textContent = `${distanciaMedidaCm} cm`;
-        overlayBlock.style.display = 'flex';
+        // Exige 4 lecturas consecutivas (1 segundo) fuera de rango para evitar bloqueos falsos
+        contadorFueraRango++;
+        if (contadorFueraRango >= 4) {
+          estaBloqueadoPorDistancia = true;
+          lblDist.textContent = `${distanciaMedidaCm} cm (BLOQUEADO)`;
+          lblDist.style.color = 'var(--accent-red)';
+          lblDetalle.textContent = `${distanciaMedidaCm} cm`;
+          overlayBlock.style.display = 'flex';
 
-        btnsKey.forEach(btn => btn.disabled = true);
+          btnsKey.forEach(btn => btn.disabled = true);
+        }
       }
     }
 
