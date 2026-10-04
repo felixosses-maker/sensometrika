@@ -450,18 +450,24 @@
       document.getElementById('modalBienvenidaInduccion').style.display = 'none';
     }
 
-    // CONSTRUCCIÓN DE URL: FORZAR DEMO SI EL MÓDULO NO HA SIDO RENDIDO OFICIALMENTE
+    // CONSTRUCCIÓN CORREGIDA DE URL DE MÓDULO
     function construirUrlModulo(nombreModulo) {
       const currentParams = new URLSearchParams(globalParamsQuery || window.location.search);
       const modulosRendidos = JSON.parse(localStorage.getItem('sensometrika_modulos_rendidos')) || {};
+      const demoCompletada = localStorage.getItem(`${nombreModulo}_demo_completada`) === 'true';
 
-      // Si el módulo aún NO ha sido completado oficialmente, obliga pasar por la Demo
-      if (!modulosRendidos[nombreModulo]) {
-        currentParams.set('demo', 'true');
-        currentParams.set('fase', 'demo');
-      } else {
+      if (modulosRendidos[nombreModulo] === true) {
+        // Módulo rendido oficialmente
         currentParams.set('demo', 'false');
         currentParams.set('fase', 'oficial');
+      } else if (demoCompletada) {
+        // Demo completada: abre directamente la simulación oficial
+        currentParams.set('demo', 'false');
+        currentParams.set('fase', 'oficial');
+      } else {
+        // Primera entrada: debe hacer la calibración demo primero
+        currentParams.set('demo', 'true');
+        currentParams.set('fase', 'demo');
       }
 
       return `${nombreModulo}.html?${currentParams.toString()}`;
@@ -495,10 +501,10 @@
           const demoRealizada = localStorage.getItem(`${mod.id}_demo_completada`) === 'true';
 
           if (demoRealizada) {
-            // Si ya hizo la calibración de ensayo, habilitar botón de Simulación Oficial
+            // Si ya hizo la calibración de ensayo, habilita botón de Simulación Oficial
             statusContainer.innerHTML = `<a id="${mod.linkElem}" href="${urlDestino}" class="btn-oficial">SIMULACIÓN OFICIAL →</a>`;
           } else {
-            // Si no ha hecho la calibración demo, forzar INICIAR DEMO primero
+            // Si no ha hecho la calibración demo, fuerza INICIAR DEMO primero
             statusContainer.innerHTML = `<a id="${mod.linkElem}" href="${urlDestino}" class="btn-start">INICIAR DEMO →</a>`;
           }
         }
