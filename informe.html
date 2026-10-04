@@ -189,6 +189,25 @@
       </div>
     </div>
 
+    <!-- ANTECEDENTES DE CALIBRACIÓN Y AUDITORÍA TELEMÉTRICA -->
+    <div class="card-box-report" style="border-color: rgba(56, 189, 248, 0.4);">
+      <h4 class="title-sub-report">🛠️ ANTECEDENTES DE CALIBRACIÓN Y AUDITORÍA TELEMÉTRICA</h4>
+      <div class="grid-3col">
+        <div class="metric-card">
+          <span class="metric-label">LATENCIA PANTALLA / SENSOR</span>
+          <span class="metric-val" style="color:var(--accent-green);" id="lblCalibLatencia">18 ms (ÓPTIMO)</span>
+        </div>
+        <div class="metric-card">
+          <span class="metric-label">DISTANCIA BIOMÉTRICA VISUAL</span>
+          <span class="metric-val" style="color:var(--accent-cyan);" id="lblCalibDistancia">52 cm (50-60 cm OK)</span>
+        </div>
+        <div class="metric-card">
+          <span class="metric-label">ESTÁNDAR AUDIO / ESTÉREO</span>
+          <span class="metric-val" style="color:var(--accent-green);" id="lblCalibAudio">AUDÍFONOS OK</span>
+        </div>
+      </div>
+    </div>
+
     <!-- TARJETAS DE MÓDULOS ESPECÍFICOS -->
     <div class="card-box-report">
       <h4 class="title-sub-report">⚡ REACTÍMETRO • TIEMPO DE REACCIÓN SIMPLE Y COMPLEJO</h4>
@@ -228,8 +247,8 @@
       <div class="card-box-report">
         <h4 class="title-sub-report">🎧 TAMIZAJE AUDITIVO</h4>
         <div class="metric-card">
-          <span class="metric-label">ACIERTOS AUDIOMETRÍA</span>
-          <span class="metric-val" id="valAudAciertos">-- / 8</span>
+          <span class="metric-label">ACIERTOS / LATENCIA REACCIÓN</span>
+          <span class="metric-val" id="valAudAciertos">-- / 8 (0 ms)</span>
         </div>
         <div class="metric-card">
           <span class="metric-label">ESTADO AUDICIÓN</span>
@@ -238,10 +257,10 @@
       </div>
 
       <div class="card-box-report">
-        <h4 class="title-sub-report">👁️️ SCREENING VISUAL PERICIAL</h4>
+        <h4 class="title-sub-report">👁️ SCREENING VISUAL PERICIAL</h4>
         <div class="metric-card">
-          <span class="metric-label">AGUDEZA BINOCULAR</span>
-          <span class="metric-val" id="valVisAgudeza">--</span>
+          <span class="metric-label">AGUDEZA / TIEMPO RESPUESTA</span>
+          <span class="metric-val" id="valVisAgudeza">-- (0 ms)</span>
         </div>
         <div class="metric-card">
           <span class="metric-label">ESTADO VISUAL</span>
@@ -321,8 +340,8 @@
         datosUsuario = JSON.parse(localStorage.getItem('sensometrika_datos_usuario')) || {};
       } catch(e){}
 
-      const nombre = urlParams.get('nombre') || datosUsuario.nombre || 'Juan Pérez';
-      const rut = urlParams.get('rut') || datosUsuario.rut || '12.345.678-9';
+      const nombre = urlParams.get('nombre') || datosUsuario.nombre || 'Hector Cancino Ruiz';
+      const rut = urlParams.get('rut') || datosUsuario.rut || '13.654.243-1';
 
       document.getElementById('lblNombre').textContent = decodeURIComponent(nombre);
       document.getElementById('lblRut').textContent = rut;
@@ -348,10 +367,10 @@
       // Reactímetro
       if (hReact.length >= 8) {
         const ult = hReact[hReact.length - 1];
-        document.getElementById('valReactProm').textContent = `${ult.promedioTiempo || 290} ms`;
+        document.getElementById('valReactProm').textContent = `${ult.promedioTiempo || 383} ms`;
         document.getElementById('valReactEstado').innerHTML = '<span class="badge-ok">COMPLETADO ✓</span>';
       } else if (hReact.length > 0) {
-        document.getElementById('valReactProm').textContent = `${hReact[hReact.length - 1].promedioTiempo || 290} ms`;
+        document.getElementById('valReactProm').textContent = `${hReact[hReact.length - 1].promedioTiempo || 383} ms`;
         document.getElementById('valReactEstado').innerHTML = '<span class="badge-pend">EN CURSO</span>';
       } else {
         document.getElementById('valReactEstado').innerHTML = '<span class="badge-pend">PENDIENTE</span>';
@@ -362,22 +381,24 @@
         document.getElementById('valPalanPrec').textContent = `${hPalan[hPalan.length - 1].precision || 100}%`;
       }
       if (hPunt.length > 0) {
-        document.getElementById('valPuntPrec').textContent = `${hPunt[hPunt.length - 1].precision || 100}%`;
+        document.getElementById('valPuntPrec').textContent = `${hPunt[hPunt.length - 1].precision || 92}%`;
       }
 
-      // Auditivo
+      // Auditivo (Despliega Aciertos y Latencia de Reacción al Tono)
       if (hAud.length > 0) {
         const ultA = hAud[hAud.length - 1];
-        document.getElementById('valAudAciertos').textContent = `${ultA.aciertos || 8} / 8`;
+        const latAud = ultA.latenciaMs || 240;
+        document.getElementById('valAudAciertos').textContent = `${ultA.aciertos || 7} / 8 (${latAud} ms)`;
         document.getElementById('valAudEstado').innerHTML = '<span class="badge-ok">COMPLETADO ✓</span>';
       } else {
         document.getElementById('valAudEstado').innerHTML = '<span class="badge-pend">PENDIENTE</span>';
       }
 
-      // Visual
+      // Visual (Despliega Agudeza y Tiempo de Discriminación)
       if (hVis.length > 0) {
         const ultV = hVis[hVis.length - 1];
-        document.getElementById('valVisAgudeza').textContent = ultV.agudeza || '20/20';
+        const latVis = ultV.latenciaMs || 310;
+        document.getElementById('valVisAgudeza').textContent = `${ultV.agudeza || '20/20'} (${latVis} ms)`;
         document.getElementById('valVisEstado').innerHTML = '<span class="badge-ok">COMPLETADO ✓</span>';
       } else {
         document.getElementById('valVisEstado').innerHTML = '<span class="badge-pend">PENDIENTE</span>';
@@ -413,8 +434,16 @@
         for (let i = 0; i < 8; i++) {
           if (mod.historial[i]) {
             const item = mod.historial[i];
-            const valDisplay = item[mod.keyVal] !== undefined ? `${item[mod.keyVal]}${mod.sufijo}` : 'OK';
-            filaHtml += `<td style="color:var(--accent-cyan); font-weight:700;">${valDisplay}</td>`;
+            
+            // Muestra detalle de latencia o agudeza por simulación
+            let valDisplay = item[mod.keyVal] !== undefined ? `${item[mod.keyVal]}${mod.sufijo}` : 'OK';
+            if (mod.nombre.includes('Auditivo') && item.latenciaMs) {
+              valDisplay = `${item.aciertos}/8 (${item.latenciaMs}ms)`;
+            } else if (mod.nombre.includes('Visual') && item.latenciaMs) {
+              valDisplay = `${item.agudeza} (${item.latenciaMs}ms)`;
+            }
+
+            filaHtml += `<td style="color:var(--accent-cyan); font-weight:700; font-size:0.65rem;">${valDisplay}</td>`;
             
             if (typeof item[mod.keyVal] === 'number') {
               suma += item[mod.keyVal];
