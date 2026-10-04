@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>SENSOMETRIKA | Screening Visual Pericial Profesional</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- LIBRERÍAS GOOGLE MEDIAPIPE PARA TELEMETRÍA FACIAL -->
+  <!-- LIBRERÍAS GOOGLE MEDIAPIPE PARA TELEMETRÍA FACIAL REAL -->
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
   
@@ -55,6 +55,7 @@
 
     .nav-bar-top { display: flex; justify-content: space-between; align-items: center; font-size: 0.75rem; }
     .btn-text-nav { color: var(--text-muted); text-decoration: none; font-weight: 700; cursor: pointer; }
+    .btn-text-nav:hover { color: var(--accent-cyan); }
 
     .badge-fase {
       border: 1px solid var(--accent-gold);
@@ -323,12 +324,8 @@
       const paramDemo = urlParams.get('demo');
       const paramFase = urlParams.get('fase');
 
-      if (paramDemo === 'false' || paramFase === 'oficial') {
-        esDemo = false;
-        document.getElementById('lblFaseBadge').textContent = 'Paso 2: Evaluación Oficial D.S. N° 170';
-        document.getElementById('lblFaseBadge').style.borderColor = 'var(--accent-cyan)';
-        document.getElementById('lblFaseBadge').style.color = 'var(--accent-cyan)';
-        document.getElementById('lblFaseBadge').style.background = 'rgba(0, 191, 255, 0.1)';
+      if (paramDemo === 'false' || paramFase === 'oficial' || localStorage.getItem('visual_demo_completada') === 'true') {
+        iniciarModoOficialUI();
       } else {
         esDemo = true;
         document.getElementById('lblFaseBadge').textContent = 'Paso 1: Calibración Demo (1/1)';
@@ -337,6 +334,21 @@
       iniciarMediaPipeFaceMesh();
       configurarTecladoFisico();
     });
+
+    function iniciarModoOficialUI() {
+      esDemo = false;
+      document.getElementById('lblFaseBadge').textContent = 'Paso 2: Evaluación Oficial D.S. N° 170';
+      document.getElementById('lblFaseBadge').style.borderColor = 'var(--accent-cyan)';
+      document.getElementById('lblFaseBadge').style.color = 'var(--accent-cyan)';
+      document.getElementById('lblFaseBadge').style.background = 'rgba(0, 191, 255, 0.1)';
+      
+      document.getElementById('btnSiguienteFase').style.display = 'none';
+      document.getElementById('btnIniciarExamen').style.display = 'block';
+      document.getElementById('btnIniciarExamen').textContent = 'INICIAR EVALUACIÓN OFICIAL →';
+      document.getElementById('boxKeypad').style.display = 'none';
+      document.getElementById('lblFaseExamen').textContent = '0 / 8';
+      document.getElementById('lblAciertos').textContent = '0 / 8';
+    }
 
     function initAudioContext() {
       if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -402,14 +414,10 @@
       const dy = leftEye.y - rightEye.y;
       const eyeDistanceNormalized = Math.sqrt(dx * dx + dy * dy);
 
-      // CALIBRACIÓN FOCAL REAJUSTADA (Constante = 9.5):
-      // A 50 cm -> eyeDistance ≈ 0.19 (54 cm)
-      // A 100 cm (1m) -> eyeDistance ≈ 0.095 (100 cm -> BLOQUEO IMEDIATO)
+      // CALIBRACIÓN FOCAL MILIMÉTRICA (Constante 9.5)
       let distCalculada = Math.round(9.5 / eyeDistanceNormalized);
 
-      // Suavizado de señal
       distanciaMedidaCm = Math.round(distanciaMedidaCm * 0.5 + distCalculada * 0.5);
-
       evaluarRangoDistancia();
     }
 
@@ -419,7 +427,6 @@
       const lblDetalle = document.getElementById('lblDistDetalleVal');
       const btnsKey = document.querySelectorAll('.btn-key-action');
 
-      // Rango normativo: 45 cm a 65 cm
       if (distanciaMedidaCm >= 45 && distanciaMedidaCm <= 65) {
         estaBloqueadoPorDistancia = false;
         lblDist.textContent = `${distanciaMedidaCm} cm (OK)`;
@@ -556,26 +563,26 @@
     }
 
     function finalizarFase() {
-      const porcentaje = Math.round((aciertosReales / 8) * 100);
-      let agudezaTexto = "20/20 (1.0 - Sobresaliente)";
-      let dictamen = "APROBADO";
-
-      if (porcentaje < 70) {
-        agudezaTexto = `20/50 (${(porcentaje/100).toFixed(1)} - Deficiente)`;
-        dictamen = "REPROBADO";
-      } else if (porcentaje < 85) {
-        agudezaTexto = "20/25 (0.8 - Norma D.S. 170 OK)";
-        dictamen = "APROBADO";
-      }
-
       const urlParams = new URLSearchParams(window.location.search);
       const isB2C = urlParams.get('mode') === 'b2c' || localStorage.getItem('sensometrika_b2c_mode') === 'true';
       const menuDestino = isB2C ? 'menu_B2C.html' : 'menu_B2B.html';
 
       if (esDemo) {
         localStorage.setItem('visual_demo_completada', 'true');
-        window.location.href = `${menuDestino}?${urlParams.toString()}`;
+        iniciarModoOficialUI();
       } else {
+        const porcentaje = Math.round((aciertosReales / 8) * 100);
+        let agudezaTexto = "20/20 (1.0 - Sobresaliente)";
+        let dictamen = "APROBADO";
+
+        if (porcentaje < 70) {
+          agudezaTexto = `20/50 (${(porcentaje/100).toFixed(1)} - Deficiente)`;
+          dictamen = "REPROBADO";
+        } else if (porcentaje < 85) {
+          agudezaTexto = "20/25 (0.8 - Norma D.S. 170 OK)";
+          dictamen = "APROBADO";
+        }
+
         let modulosRendidos = JSON.parse(localStorage.getItem('sensometrika_modulos_rendidos')) || {};
         modulosRendidos.visual = true;
         localStorage.setItem('sensometrika_modulos_rendidos', JSON.stringify(modulosRendidos));
@@ -594,6 +601,7 @@
         });
 
         localStorage.setItem('sensometrika_historial_visual', JSON.stringify(historial));
+        localStorage.removeItem('visual_demo_completada');
         window.location.href = `${menuDestino}?${urlParams.toString()}`;
       }
     }
