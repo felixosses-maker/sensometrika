@@ -189,7 +189,7 @@
       </div>
     </div>
 
-    <!-- TARJETAS DE MÓDULOS ESPECÍFICOS (RESTAURADAS) -->
+    <!-- TARJETAS DE MÓDULOS ESPECÍFICOS -->
     <div class="card-box-report">
       <h4 class="title-sub-report">⚡ REACTÍMETRO • TIEMPO DE REACCIÓN SIMPLE Y COMPLEJO</h4>
       <div class="grid-3col">
@@ -238,7 +238,7 @@
       </div>
 
       <div class="card-box-report">
-        <h4 class="title-sub-report">👁️ SCREENING VISUAL PERICIAL</h4>
+        <h4 class="title-sub-report">👁️️ SCREENING VISUAL PERICIAL</h4>
         <div class="metric-card">
           <span class="metric-label">AGUDEZA BINOCULAR</span>
           <span class="metric-val" id="valVisAgudeza">--</span>
@@ -277,7 +277,7 @@
       </div>
     </div>
 
-    <!-- CURVA DE APRENDIZAJE Y RENDIMIENTO (GRÁFICO RESTAURADO) -->
+    <!-- CURVA DE APRENDIZAJE Y RENDIMIENTO TEMPORAL -->
     <div class="card-box-report">
       <h4 class="title-sub-report">📈 CURVA DE APRENDIZAJE & RENDIMIENTO TEMPORAL</h4>
       <div class="chart-container">
@@ -346,10 +346,13 @@
       const hVis = JSON.parse(localStorage.getItem('sensometrika_historial_visual')) || [];
 
       // Reactímetro
-      if (hReact.length > 0) {
+      if (hReact.length >= 8) {
         const ult = hReact[hReact.length - 1];
         document.getElementById('valReactProm').textContent = `${ult.promedioTiempo || 290} ms`;
-        document.getElementById('valReactEstado').innerHTML = '<span class="badge-ok">APROBADO ✓</span>';
+        document.getElementById('valReactEstado').innerHTML = '<span class="badge-ok">COMPLETADO ✓</span>';
+      } else if (hReact.length > 0) {
+        document.getElementById('valReactProm').textContent = `${hReact[hReact.length - 1].promedioTiempo || 290} ms`;
+        document.getElementById('valReactEstado').innerHTML = '<span class="badge-pend">EN CURSO</span>';
       } else {
         document.getElementById('valReactEstado').innerHTML = '<span class="badge-pend">PENDIENTE</span>';
       }
@@ -366,7 +369,7 @@
       if (hAud.length > 0) {
         const ultA = hAud[hAud.length - 1];
         document.getElementById('valAudAciertos').textContent = `${ultA.aciertos || 8} / 8`;
-        document.getElementById('valAudEstado').innerHTML = '<span class="badge-ok">APROBADO ✓</span>';
+        document.getElementById('valAudEstado').innerHTML = '<span class="badge-ok">COMPLETADO ✓</span>';
       } else {
         document.getElementById('valAudEstado').innerHTML = '<span class="badge-pend">PENDIENTE</span>';
       }
@@ -375,7 +378,7 @@
       if (hVis.length > 0) {
         const ultV = hVis[hVis.length - 1];
         document.getElementById('valVisAgudeza').textContent = ultV.agudeza || '20/20';
-        document.getElementById('valVisEstado').innerHTML = '<span class="badge-ok">APROBADO ✓</span>';
+        document.getElementById('valVisEstado').innerHTML = '<span class="badge-ok">COMPLETADO ✓</span>';
       } else {
         document.getElementById('valVisEstado').innerHTML = '<span class="badge-pend">PENDIENTE</span>';
       }
@@ -392,12 +395,15 @@
       const hVis = JSON.parse(localStorage.getItem('sensometrika_historial_visual')) || [];
 
       const listaModulos = [
-        { nombre: '1. Reactímetro (ms)', historial: hReact, keyVal: 'promedioTiempo', sufijo: 'ms' },
-        { nombre: '2. Palancas (%)', historial: hPalan, keyVal: 'precision', sufijo: '%' },
-        { nombre: '3. Punteo (%)', historial: hPunt, keyVal: 'precision', sufijo: '%' },
-        { nombre: '4. Tamizaje Auditivo', historial: hAud, keyVal: 'aciertos', sufijo: '/8' },
-        { nombre: '5. Screening Visual', historial: hVis, keyVal: 'agudeza', sufijo: '' }
+        { nombre: '1. Reactímetro (ms)', historial: hReact, keyVal: 'promedioTiempo', sufijo: 'ms', minEsperado: 8 },
+        { nombre: '2. Palancas (%)', historial: hPalan, keyVal: 'precision', sufijo: '%', minEsperado: 8 },
+        { nombre: '3. Punteo (%)', historial: hPunt, keyVal: 'precision', sufijo: '%', minEsperado: 8 },
+        { nombre: '4. Tamizaje Auditivo', historial: hAud, keyVal: 'aciertos', sufijo: '/8', minEsperado: 1 },
+        { nombre: '5. Screening Visual', historial: hVis, keyVal: 'agudeza', sufijo: '', minEsperado: 1 }
       ];
+
+      let totalSimulacionesCompletadas = 0;
+      let modulosCompletes = 0;
 
       listaModulos.forEach(mod => {
         let filaHtml = `<tr><td style="text-align:left; font-weight:800;">${mod.nombre}</td>`;
@@ -413,23 +419,44 @@
             if (typeof item[mod.keyVal] === 'number') {
               suma += item[mod.keyVal];
               conteo++;
+            } else {
+              conteo++;
             }
+            totalSimulacionesCompletadas++;
           } else {
             filaHtml += `<td style="color:var(--text-muted);">--</td>`;
           }
         }
 
         const promedioTxt = conteo > 0 ? `${Math.round(suma / conteo)}${mod.sufijo}` : '--';
-        const estadoBadge = mod.historial.length > 0 ? '<span class="badge-ok">RENDIDO</span>' : '<span class="badge-pend">PENDIENTE</span>';
+        
+        let estadoBadge = '<span class="badge-pend">EN CURSO</span>';
+        if (conteo >= mod.minEsperado) {
+          estadoBadge = '<span class="badge-ok">COMPLETADO</span>';
+          modulosCompletes++;
+        }
 
         filaHtml += `<td><b>${promedioTxt}</b></td><td>${estadoBadge}</td></tr>`;
         tbody.innerHTML += filaHtml;
       });
 
-      const totalRendidos = [hReact, hPalan, hPunt, hAud, hVis].filter(h => h.length > 0).length;
-      document.getElementById('txtDictamenFinal').innerHTML = totalRendidos >= 5 
-        ? `<strong style="color:var(--accent-green);">✓ BATERÍA COMPLETA APROBADA:</strong> El evaluado cumple con la totalidad de los requerimientos de agudeza visual, discriminación auditiva, tiempo de reacción y coordinación bimanual bajo norma D.S. N° 170 MTT.`
-        : `<strong style="color:var(--accent-yellow);">⏳ EVALUACIÓN EN CURSO (${totalRendidos}/5 MÓDULOS):</strong> Complete las simulaciones pendientes para cerrar el expediente pericial de certificación.`;
+      // CONTROL PERICIAL ESTRICTO DE DICTAMEN FINAL (100% DE SIMULACIONES)
+      const elemDictamen = document.getElementById('txtDictamenFinal');
+      const totalEnsayosNormativos = 26; // 8 (React) + 8 (Palan) + 8 (Punt) + 1 (Aud) + 1 (Vis)
+      
+      if (modulosCompletes >= 5 && totalSimulacionesCompletadas >= totalEnsayosNormativos) {
+        elemDictamen.innerHTML = `
+          <strong style="color:var(--accent-green); font-size:0.85rem;">✓ BATERÍA COMPLETA APROBADA (100% EJECUTADO):</strong><br>
+          El evaluado ha completado exitosamente la totalidad de las simulaciones normativas (S1 a S8). Se certifica el cumplimiento integral de los requerimientos de agudeza visual, discriminación auditiva, tiempo de reacción y coordinación bimanual bajo norma D.S. N° 170 MTT y Estándar CORMA.
+        `;
+      } else {
+        const porcentajeAvance = Math.round((totalSimulacionesCompletadas / totalEnsayosNormativos) * 100);
+
+        elemDictamen.innerHTML = `
+          <strong style="color:var(--accent-yellow); font-size:0.85rem;">⏳ EVALUACIÓN INCOMPLETA EN CURSO (AVANCE REAL: ${porcentajeAvance}%):</strong><br>
+          Se han registrado <b>${totalSimulacionesCompletadas} de ${totalEnsayosNormativos} simulaciones requeridas</b> (${modulosCompletes} de 5 módulos finalizados). El informe mantendrá estado provisional no certificable hasta completar el 100% de la batería pericial.
+        `;
+      }
     }
 
     function renderizarGraficoCurva() {
