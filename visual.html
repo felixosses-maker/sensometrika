@@ -7,6 +7,7 @@
     <!-- MediaPipe Face Mesh para detección facial y estimación de distancia real -->
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
     <style>
         :root {
             --bg-color: #060b13;
@@ -146,6 +147,8 @@
             letter-spacing: 2px;
             transition: all 0.2s ease;
             text-shadow: 0 0 10px rgba(255,255,255,0.2);
+            text-align: center;
+            line-height: 1;
         }
 
         .ishihara-circle {
@@ -160,8 +163,9 @@
             align-items: center;
             font-size: 2.2rem;
             font-weight: 900;
-            color: rgba(255,255,255,0.15);
+            color: #ffffff;
             box-shadow: inset 0 0 15px rgba(0,0,0,0.5);
+            text-shadow: 0 0 8px rgba(0,0,0,0.8);
         }
 
         /* BOTONES DE RESPUESTA */
@@ -236,7 +240,7 @@
         <div class="card-visual">
             <div class="nav-top-row">
                 <a onclick="volverMenu()" class="link-volver">← Menú Evaluaciones</a>
-                <span style="font-size:0.70rem; color:var(--text-muted); font-weight:700;">D.S. N° 170 MTT</span>
+                <span id="txtModoEtiqueta" style="font-size:0.70rem; color:var(--accent-cyan); font-weight:700;">D.S. N° 170 MTT</span>
             </div>
 
             <!-- MONITOR DE PRUEBA -->
@@ -271,7 +275,7 @@
                 </div>
                 <div>
                     <span class="lbl-st">Fase Examen</span>
-                    <span id="stFase" class="val-st">1 / 8</span>
+                    <span id="stFase" class="val-st">0 / 8</span>
                 </div>
                 <div>
                     <span class="lbl-st">Aciertos</span>
@@ -282,21 +286,31 @@
     </div>
 
     <script>
-        // BANCO BASE DE ELEMENTOS
-        const BANCO_SNELLEN = [
-            { valor: 'E', opciones: ['E', 'F', 'P', 'T'], correcta: 'E' },
-            { valor: 'F', opciones: ['P', 'F', 'T', 'Z'], correcta: 'F' },
-            { valor: 'P', opciones: ['E', 'D', 'P', 'L'], correcta: 'P' },
-            { valor: 'Z', opciones: ['O', 'Z', 'E', 'D'], correcta: 'Z' },
-            { valor: 'L', opciones: ['L', 'T', 'F', 'P'], correcta: 'L' },
-            { valor: 'D', opciones: ['O', 'D', 'C', 'Q'], correcta: 'D' }
+        const urlParams = new URLSearchParams(window.location.search);
+        const modeParam = urlParams.get('mode') || (localStorage.getItem('sensometrika_b2c_mode') === 'true' ? 'b2c' : 'b2b');
+        const esB2B = (modeParam === 'b2b');
+
+        const isDemoURL = urlParams.get('demo') === 'true' || urlParams.get('fase') === 'demo';
+        let modoActual = isDemoURL ? 'DEMO' : 'OFICIAL';
+
+        // BANCO AMPLIO Y VARIABLES DINÁMICAS ANTI-MEMORIZACIÓN
+        const BANCO_SNELLEN_BASE = [
+            { valor: 'E', distractoras: ['F', 'P', 'T'] },
+            { valor: 'F', distractoras: ['P', 'T', 'Z'] },
+            { valor: 'P', distractoras: ['E', 'D', 'L'] },
+            { valor: 'Z', distractoras: ['O', 'E', 'D'] },
+            { valor: 'L', distractoras: ['T', 'F', 'P'] },
+            { valor: 'D', distractoras: ['O', 'C', 'Q'] },
+            { valor: 'H', distractoras: ['N', 'K', 'X'] },
+            { valor: 'N', distractoras: ['H', 'V', 'Z'] }
         ];
 
-        const BANCO_ISHIHARA = [
-            { valor: '12', opciones: ['12', '8', '6', 'Nada'], correcta: '12', bg: 'rgba(239, 68, 68, 0.25)' },
-            { valor: '74', opciones: ['21', '74', '71', 'Nada'], correcta: '74', bg: 'rgba(16, 185, 129, 0.25)' },
-            { valor: '6',  opciones: ['8', '6', '5', 'Nada'],  correcta: '6',  bg: 'rgba(229, 179, 36, 0.25)' },
-            { valor: '8',  opciones: ['3', '8', '9', 'Nada'],  correcta: '8',  bg: 'rgba(14, 165, 233, 0.25)' }
+        const BANCO_ISHIHARA_BASE = [
+            { valor: '12', distractoras: ['8', '6', 'Nada'], bg: 'rgba(239, 68, 68, 0.35)' },
+            { valor: '74', distractoras: ['21', '71', 'Nada'], bg: 'rgba(16, 185, 129, 0.35)' },
+            { valor: '6',  distractoras: ['8', '5', 'Nada'],  bg: 'rgba(229, 179, 36, 0.35)' },
+            { valor: '8',  distractoras: ['3', '9', 'Nada'],  bg: 'rgba(14, 165, 233, 0.35)' },
+            { valor: '29', distractoras: ['70', '26', 'Nada'], bg: 'rgba(168, 85, 247, 0.35)' }
         ];
 
         let bancoPruebasGenerado = [];
@@ -312,43 +326,70 @@
         const btnStartTest = document.getElementById('btnStartTest');
 
         function volverMenu() {
-            const params = new URLSearchParams(window.location.search).toString();
-            window.location.href = `menu_B2C.html?${params}`;
+            const menuDestino = esB2B ? 'menu_B2B.html' : 'menu_B2C.html';
+            window.location.href = `${menuDestino}?${urlParams.toString()}`;
         }
 
-        // ALGORITMO DE BARADO Y DIVERSIFICACIÓN DINÁMICA
+        // ALGORITMO CONSTRUCCIÓN ALEATORIA DE 8 PASOS
         function construirBancoAleatorio() {
             bancoPruebasGenerado = [];
-            const tamanos = ['5.0rem', '3.8rem', '2.6rem', '1.6rem'];
+            const tamanos = ['4.8rem', '3.6rem', '2.5rem', '1.6rem'];
 
-            // 1. Barajar y tomar 4 ítems de Snellen con tamaño decreciente
-            const snellenShuffled = [...BANCO_SNELLEN].sort(() => Math.random() - 0.5);
+            // 1. Tomar 4 ítems Snellen aleatorios con tamaños decrecientes
+            const snellenShuffled = [...BANCO_SNELLEN_BASE].sort(() => Math.random() - 0.5);
             for (let i = 0; i < 4; i++) {
-                const item = { ...snellenShuffled[i] };
-                item.tipo = 'snellen';
-                item.fontSize = tamanos[i];
-                item.opciones = [...item.opciones].sort(() => Math.random() - 0.5);
-                bancoPruebasGenerado.push(item);
+                const base = snellenShuffled[i];
+                const opciones = [base.valor, ...base.distractoras].sort(() => Math.random() - 0.5);
+                bancoPruebasGenerado.push({
+                    tipo: 'snellen',
+                    valor: base.valor,
+                    correcta: base.valor,
+                    opciones: opciones,
+                    fontSize: tamanos[i]
+                });
             }
 
-            // 2. Barajar y tomar 2 ítems de Ishihara
-            const ishiharaShuffled = [...BANCO_ISHIHARA].sort(() => Math.random() - 0.5);
+            // 2. Tomar 2 ítems de Ishihara (test de color) aleatorios
+            const ishiharaShuffled = [...BANCO_ISHIHARA_BASE].sort(() => Math.random() - 0.5);
             for (let i = 0; i < 2; i++) {
-                const item = { ...ishiharaShuffled[i] };
-                item.tipo = 'ishihara';
-                item.opciones = [...item.opciones].sort(() => Math.random() - 0.5);
-                bancoPruebasGenerado.push(item);
+                const base = ishiharaShuffled[i];
+                const opciones = [base.valor, ...base.distractoras].sort(() => Math.random() - 0.5);
+                bancoPruebasGenerado.push({
+                    tipo: 'ishihara',
+                    valor: base.valor,
+                    correcta: base.valor,
+                    opciones: opciones,
+                    bg: base.bg
+                });
             }
 
-            // 3. Ítem de Contraste
+            // 3. Ítem de Sensibilidad al Contraste
+            const letrasContraste = ['C', 'O', 'G', 'D', 'Q'];
+            const letraContrasteOk = letrasContraste[Math.floor(Math.random() * letrasContraste.length)];
+            const distContraste = letrasContraste.filter(l => l !== letraContrasteOk).slice(0, 3);
             bancoPruebasGenerado.push({
-                tipo: 'contraste', valor: 'C', opciones: ['C', 'O', 'G', 'D'].sort(() => Math.random() - 0.5), correcta: 'C', color: '#334155'
+                tipo: 'contraste',
+                valor: letraContrasteOk,
+                correcta: letraContrasteOk,
+                opciones: [letraContrasteOk, ...distContraste].sort(() => Math.random() - 0.5),
+                color: '#334155', // Bajo contraste sobre fondo oscuro
+                fontSize: '2.8rem'
             });
 
-            // 4. Ítem de Destello / Recuperación
+            // 4. Ítem de Destello / Recuperación Nocturna
+            const letrasDestello = ['8', '3', '0', '6', '9'];
+            const letraDestelloOk = letrasDestello[Math.floor(Math.random() * letrasDestello.length)];
+            const distDestello = letrasDestello.filter(l => l !== letraDestelloOk).slice(0, 3);
             bancoPruebasGenerado.push({
-                tipo: 'destello', valor: '8', opciones: ['3', '8', '0', '6'].sort(() => Math.random() - 0.5), correcta: '8'
+                tipo: 'destello',
+                valor: letraDestelloOk,
+                correcta: letraDestelloOk,
+                opciones: [letraDestelloOk, ...distDestello].sort(() => Math.random() - 0.5),
+                fontSize: '3.2rem'
             });
+
+            // Mezclar el orden final de la batería
+            bancoPruebasGenerado.sort(() => Math.random() - 0.5);
         }
 
         // INICIALIZAR MEDIAPIPE FACE MESH
@@ -397,7 +438,7 @@
                     actualizarEstadoCamara(true, '✓ DISTANCIA OK', '');
                 }
             } else {
-                actualizarEstadoCamara(false, '⚠️️ ROSTRO NO DETECTADO', 'Ubica tu rostro frente a la cámara sin obstrucciones.');
+                actualizarEstadoCamara(false, '⚠ ROSTRO NO DETECTADO', 'Ubica tu rostro frente a la cámara sin obstrucciones.');
             }
         }
 
@@ -469,7 +510,7 @@
                     display.style.background = 'transparent';
                     display.style.color = '#ffffff';
                     display.textContent = item.valor;
-                }, 800);
+                }, 700);
             } else {
                 display.textContent = item.valor;
             }
@@ -503,32 +544,91 @@
             display.className = 'optotipo-display';
             display.style.fontSize = '3.5rem';
 
+            // EVALUACIÓN ESTRICTA D.S. N° 170: MÍNIMO 7 DE 8 ACIERTOS (≥ 87.5%) PARA APROBADO (0.8 Binocular Snellen)
+            const aprobado = aciertosTotales >= 7;
+            const precisionVal = Math.round((aciertosTotales / 8) * 100);
+
             let agudezaFinal = '20/20 (1.0)';
-            if (aciertosTotales >= 7) agudezaFinal = '20/20 (1.0 - Sobresaliente)';
-            else if (aciertosTotales >= 5) agudezaFinal = '20/25 (0.8 - Norma D.S. 170 OK)';
-            else if (aciertosTotales >= 3) agudezaFinal = '20/40 (0.5 - Observado)';
+            if (aciertosTotales === 8) agudezaFinal = '20/20 (1.0 - Sobresaliente)';
+            else if (aciertosTotales === 7) agudezaFinal = '20/25 (0.8 - Norma D.S. 170 OK)';
+            else if (aciertosTotales >= 5) agudezaFinal = '20/40 (0.5 - Observado)';
             else agudezaFinal = '20/100 (0.2 - Rechazado)';
 
-            display.textContent = '✓';
+            display.textContent = aprobado ? '✓' : '⚠️';
+            display.style.color = aprobado ? '#10b981' : '#ef4444';
 
-            // Guardar en historial estandarizado de LocalStorage
-            let historial = JSON.parse(localStorage.getItem('sensometrika_historial_visual')) || [];
-            historial.push({
-                fecha: new Date().toISOString(),
-                aciertos: aciertosTotales,
-                agudeza: agudezaFinal,
-                colores: aciertosTotales >= 5 ? 'NORMAL (8/8)' : 'OBSERVADO'
-            });
-            localStorage.setItem('sensometrika_historial_visual', JSON.stringify(historial));
+            if (modoActual === 'DEMO') {
+                localStorage.setItem('visual_demo_completada', 'true');
 
-            // Marcar módulo 5 como Rendido
-            let modulosRendidos = JSON.parse(localStorage.getItem('sensometrika_modulos_rendidos')) || {};
-            modulosRendidos.visual = true;
-            localStorage.setItem('sensometrika_modulos_rendidos', JSON.stringify(modulosRendidos));
+                urlParams.set('demo', 'false');
+                urlParams.set('fase', 'oficial');
+                window.history.replaceState({}, '', `${window.location.pathname}?${urlParams.toString()}`);
 
-            setTimeout(() => {
-                volverMenu();
-            }, 1200);
+                mostrarModalResultadoVisual(aciertosTotales, agudezaFinal, aprobado, true);
+            } else if (modoActual === 'OFICIAL') {
+                let modulosRendidos = JSON.parse(localStorage.getItem('sensometrika_modulos_rendidos')) || {};
+                modulosRendidos.visual = true;
+                localStorage.setItem('sensometrika_modulos_rendidos', JSON.stringify(modulosRendidos));
+
+                let historial = JSON.parse(localStorage.getItem('sensometrika_historial_visual')) || [];
+                let intentoNumero = parseInt(localStorage.getItem('sensometrika_intento_actual') || '1');
+
+                historial.push({
+                    simulacion: intentoNumero,
+                    fecha: new Date().toISOString(),
+                    aciertos: aciertosTotales,
+                    total: 8,
+                    precision: precisionVal,
+                    agudeza: agudezaFinal,
+                    colores: aciertosTotales >= 7 ? 'NORMAL (8/8)' : 'OBSERVADO',
+                    aprobado: aprobado,
+                    dictamen: aprobado ? 'APROBADO' : 'OBSERVADO'
+                });
+                localStorage.setItem('sensometrika_historial_visual', JSON.stringify(historial));
+
+                mostrarModalResultadoVisual(aciertosTotales, agudezaFinal, aprobado, false);
+            }
+        }
+
+        function mostrarModalResultadoVisual(aciertos, agudeza, aprobado, esDemo) {
+            const modalExistente = document.getElementById('modalResultadoVisual');
+            if (modalExistente) modalExistente.remove();
+
+            const tituloModal = esDemo ? 'CALIBRACIÓN DEMO COMPLETADA' : (esB2B ? 'Simulación Oficial B2B Registrada' : 'Simulación Oficial Registrada');
+            const mensajeModal = esDemo ? 'Has finalizado tu ensayo visual. Ya puedes realizar tu Simulación Oficial.' : '<b>¡Evaluación registrada correctamente!</b>';
+
+            const modalHtml = `
+                <div id="modalResultadoVisual" style="position: fixed; inset: 0; background: rgba(5, 8, 18, 0.9); backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center; z-index: 99999; padding: 16px;">
+                    <div style="background: #0f172a; border: 1px solid #1e293b; border-radius: 18px; width: 100%; max-width: 380px; padding: 24px 20px; text-align: center; box-shadow: 0 20px 30px rgba(0,0,0,0.7); color: #f8fafc;">
+                        <h3 style="color: #ffffff; margin-bottom: 4px; font-size: 1.15rem; font-weight: 800;">${tituloModal}</h3>
+                        <p style="color: #38bdf8; margin-bottom: 16px; font-size: 0.85rem; font-weight: 600;">Módulo: Tamizaje Visual Integral</p>
+
+                        <div style="margin-bottom: 18px;">
+                            <span style="display: inline-block; padding: 4px 18px; border-radius: 6px; font-size: 0.75rem; font-weight: 800; letter-spacing: 0.05em; background: ${aprobado ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.15)'}; border: 1px solid ${aprobado ? '#10b981' : '#ef4444'}; color: ${aprobado ? '#34d399' : '#f87171'};">
+                                ${aprobado ? 'APROBADO' : 'OBSERVADO (FUERA DE NORMA D.S. N° 170)'}
+                            </span>
+                        </div>
+
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; background: #070b14; border: 1px solid #1e293b; border-radius: 12px; padding: 14px 10px; margin-bottom: 20px; text-align: left;">
+                            <div>
+                                <span style="display: block; font-size: 0.68rem; color: #94a3b8; font-weight: 600;">Aciertos Correctos</span>
+                                <strong style="color: #ffffff; font-size: 1rem; font-weight: 800;">${aciertos} / 8</strong>
+                            </div>
+                            <div>
+                                <span style="display: block; font-size: 0.68rem; color: #94a3b8; font-weight: 600;">Agudeza Estimada</span>
+                                <strong style="color: ${aprobado ? '#10b981' : '#ef4444'}; font-size: 0.85rem; font-weight: 800;">${agudeza}</strong>
+                            </div>
+                        </div>
+
+                        <p style="font-size: 0.8rem; color: #cbd5e1; margin-bottom: 16px;">${mensajeModal}</p>
+
+                        <button onclick="${esDemo ? "document.getElementById('modalResultadoVisual').remove(); location.reload();" : "volverMenu()"}" style="width: 100%; background: #0284c7; color: #ffffff; border: none; border-radius: 10px; padding: 12px; font-weight: 700; cursor: pointer; font-size: 0.9rem; text-transform: uppercase; box-shadow: 0 4px 14px rgba(2, 132, 199, 0.4);">
+                            ${esDemo ? 'CONTINUAR A SIMULACIÓN OFICIAL →' : '← VOLVER AL MENÚ DE EVALUACIONES'}
+                        </button>
+                    </div>
+                </div>
+            `;
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
         }
     </script>
 </body>
