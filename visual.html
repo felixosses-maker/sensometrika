@@ -5,6 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>SENSOMETRIKA | Screening Visual Pericial Profesional</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <!-- LIBRERÍAS GOOGLE MEDIAPIPE PARA TELEMETRÍA FACIAL -->
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
+  
   <style>
     :root {
       --bg-color: #040810;
@@ -19,13 +23,7 @@
       --text-muted: #94a3b8;
     }
 
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      user-select: none;
-      -webkit-user-select: none;
-    }
+    * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
 
     body {
       background-color: var(--bg-color);
@@ -37,31 +35,11 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      overflow-x: hidden;
     }
 
-    .main-container {
-      width: 100%;
-      max-width: 460px;
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-    }
-
-    .brand-header {
-      text-align: center;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 4px;
-    }
-
-    .brand-logo-img {
-      width: 165px;
-      height: auto;
-      mix-blend-mode: lighten;
-      filter: drop-shadow(0 0 10px var(--accent-cyan-glow));
-    }
+    .main-container { width: 100%; max-width: 460px; display: flex; flex-direction: column; gap: 12px; }
+    .brand-header { text-align: center; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+    .brand-logo-img { width: 165px; height: auto; filter: drop-shadow(0 0 10px var(--accent-cyan-glow)); }
 
     .module-card {
       background-color: var(--card-bg);
@@ -75,22 +53,8 @@
       position: relative;
     }
 
-    .nav-bar-top {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      font-size: 0.75rem;
-    }
-
-    .btn-text-nav {
-      color: var(--text-muted);
-      text-decoration: none;
-      font-weight: 700;
-      cursor: pointer;
-      transition: color 0.2s;
-    }
-
-    .btn-text-nav:hover { color: var(--accent-cyan); }
+    .nav-bar-top { display: flex; justify-content: space-between; align-items: center; font-size: 0.75rem; }
+    .btn-text-nav { color: var(--text-muted); text-decoration: none; font-weight: 700; cursor: pointer; }
 
     .badge-fase {
       border: 1px solid var(--accent-gold);
@@ -116,7 +80,6 @@
       justify-content: center;
       position: relative;
       overflow: hidden;
-      box-shadow: inset 0 0 20px rgba(0,0,0,0.8);
     }
 
     .cam-preview-box {
@@ -130,20 +93,13 @@
       overflow: hidden;
       background: #030712;
       z-index: 10;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.5);
     }
 
-    .cam-preview-box video {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
+    .cam-preview-box video { width: 100%; height: 100%; object-fit: cover; }
 
     .cam-overlay-tag {
       position: absolute;
-      bottom: 0;
-      left: 0;
-      right: 0;
+      bottom: 0; left: 0; right: 0;
       background: rgba(0, 191, 255, 0.85);
       color: #000;
       font-size: 0.45rem;
@@ -159,7 +115,6 @@
       line-height: 1;
       transition: transform 0.25s ease, font-size 0.25s ease;
       display: inline-block;
-      text-shadow: 0 0 10px rgba(255,255,255,0.2);
     }
 
     .rot-0 { transform: rotate(0deg); }
@@ -183,42 +138,13 @@
       border-radius: 12px;
     }
 
-    .distance-block-title {
-      color: var(--accent-red);
-      font-weight: 900;
-      font-size: 0.95rem;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
+    .distance-block-title { color: var(--accent-red); font-weight: 900; font-size: 0.95rem; text-transform: uppercase; }
+    .distance-block-desc { color: var(--text-main); font-size: 0.75rem; line-height: 1.35; }
 
-    .distance-block-desc {
-      color: var(--text-main);
-      font-size: 0.75rem;
-      line-height: 1.35;
-    }
+    .timer-bar-container { width: 100%; height: 5px; background: #1e293b; border-radius: 3px; overflow: hidden; }
+    .timer-bar-fill { height: 100%; background: var(--accent-cyan); width: 100%; transition: width 0.05s linear; }
 
-    .timer-bar-container {
-      width: 100%;
-      height: 5px;
-      background: #1e293b;
-      border-radius: 3px;
-      overflow: hidden;
-      margin-top: 2px;
-    }
-
-    .timer-bar-fill {
-      height: 100%;
-      background: var(--accent-cyan);
-      width: 100%;
-      transition: width 0.05s linear;
-    }
-
-    .keypad-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 8px;
-      margin-top: 4px;
-    }
+    .keypad-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 4px; }
 
     .btn-key {
       background: #0f172a;
@@ -232,22 +158,10 @@
       display: flex;
       justify-content: center;
       align-items: center;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-      transition: all 0.15s ease;
     }
 
-    .btn-key:disabled {
-      opacity: 0.25;
-      cursor: not-allowed;
-      background: #080d17;
-      border-color: #0f172a;
-    }
-
-    .btn-key:not(:disabled):active {
-      background: var(--accent-cyan);
-      color: #000;
-      transform: scale(0.96);
-    }
+    .btn-key:disabled { opacity: 0.25; cursor: not-allowed; }
+    .btn-key:not(:disabled):active { background: var(--accent-cyan); color: #000; }
 
     .status-panel-grid {
       display: grid;
@@ -275,16 +189,11 @@
       cursor: pointer;
       text-transform: uppercase;
       width: 100%;
-      box-shadow: 0 2px 10px var(--accent-cyan-glow);
-      transition: transform 0.15s ease, background 0.15s ease;
     }
-
-    .btn-action-main:active { transform: scale(0.98); }
 
     .feedback-toast {
       position: absolute;
-      top: 50%;
-      left: 50%;
+      top: 50%; left: 50%;
       transform: translate(-50%, -50%);
       padding: 8px 16px;
       border-radius: 20px;
@@ -332,7 +241,7 @@
       </div>
 
       <div class="instructions-card" id="boxInstrucciones">
-        📌 <b>Control Biométrico Adaptativo:</b> Mantenga el rostro frente a la pantalla a una distancia de armazón cómoda (aprox. 50 cm). El sensor calibrado pausará solo ante desviaciones extremas.
+        📌 <b>Control Biométrico por Malla Facial:</b> Mantenga la distancia entre <b>50 cm y 60 cm</b>. Si se acerca (< 45 cm) o aleja (> 65 cm), la prueba se bloqueará automáticamente.
       </div>
 
       <div class="stage-box">
@@ -348,12 +257,10 @@
         <div id="boxBlockDistancia" class="distance-block-overlay">
           <span class="distance-block-title">⚠️ DISTANCIA FUERA DE RANGO</span>
           <span id="txtDistanciaDetalle" class="distance-block-desc">
-            Ajuste la posición de su rostro frente a la cámara. Distancia telemétrica actual: <b id="lblDistDetalleVal">-- cm</b>.
+            Ajuste su posición frente a la cámara. Distancia telemétrica actual: <b id="lblDistDetalleVal">-- cm</b> (Rango normativo: 50 a 60 cm).
           </span>
         </div>
       </div>
-
-      <canvas id="canvasTelemetria" style="display:none;"></canvas>
 
       <div class="timer-bar-container">
         <div id="timerFill" class="timer-bar-fill"></div>
@@ -362,7 +269,7 @@
       <div class="status-panel-grid">
         <div class="status-item">
           <span class="status-label">DISTANCIA</span>
-          <span id="lblDistancia" class="status-value" style="color: var(--accent-green);">Calibrando...</span>
+          <span id="lblDistancia" class="status-value" style="color: var(--accent-green);">Iniciando Sensor...</span>
         </div>
         <div class="status-item">
           <span class="status-label">FASE EXAMEN</span>
@@ -403,21 +310,12 @@
     let latenciasMs = [];
     let examenEnProceso = false;
     let timerInterval = null;
-    let intervalTelemetriaDist = null;
-    let distanciaMedidaCm = 52;
-    let lecturasDistancia = [52, 52, 52]; // Arreglo para promedio móvil de suavizado
-    let contadorFueraRango = 0;
+    let distanciaMedidaCm = 54;
     let estaBloqueadoPorDistancia = false;
     const TIEMPO_MAX_MS = 2000;
 
     const direcciones = ['ARRIBA', 'ABAJO', 'IZQUIERDA', 'DERECHA'];
-    const clasesRotacion = {
-      'DERECHA': 'rot-0',
-      'ABAJO': 'rot-90',
-      'IZQUIERDA': 'rot-180',
-      'ARRIBA': 'rot-270'
-    };
-
+    const clasesRotacion = { 'DERECHA': 'rot-0', 'ABAJO': 'rot-90', 'IZQUIERDA': 'rot-180', 'ARRIBA': 'rot-270' };
     const tamaniosExigentes = ['5.0rem', '3.8rem', '2.8rem', '2.0rem', '1.5rem', '1.1rem', '0.85rem', '0.65rem'];
 
     document.addEventListener('DOMContentLoaded', () => {
@@ -436,17 +334,13 @@
         document.getElementById('lblFaseBadge').textContent = 'Paso 1: Calibración Demo (1/1)';
       }
 
-      iniciarCamaraWeb();
+      iniciarMediaPipeFaceMesh();
       configurarTecladoFisico();
     });
 
     function initAudioContext() {
-      if (!audioCtx) {
-        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      }
-      if (audioCtx.state === 'suspended') {
-        audioCtx.resume();
-      }
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      if (audioCtx.state === 'suspended') audioCtx.resume();
     }
 
     function playBeep(freq, duration) {
@@ -465,73 +359,58 @@
       } catch(e){}
     }
 
-    function iniciarCamaraWeb() {
-      const video = document.getElementById('webcamVideo');
-      if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-        navigator.mediaDevices.getUserMedia({ video: { width: 320, height: 240, facingMode: "user" } })
-          .then(stream => {
-            video.srcObject = stream;
-            video.onloadedmetadata = () => {
-              iniciarMotorTelemétricoReal();
-            };
-          })
-          .catch(err => {
-            distanciaMedidaCm = 52;
-            evaluarRangoDistancia();
-          });
-      }
+    function iniciarMediaPipeFaceMesh() {
+      const videoElement = document.getElementById('webcamVideo');
+
+      const faceMesh = new FaceMesh({
+        locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`
+      });
+
+      faceMesh.setOptions({
+        maxNumFaces: 1,
+        refineLandmarks: true,
+        minDetectionConfidence: 0.5,
+        minTrackingConfidence: 0.5
+      });
+
+      faceMesh.onResults(onResultsFaceMesh);
+
+      const camera = new Camera(videoElement, {
+        onFrame: async () => {
+          await faceMesh.send({ image: videoElement });
+        },
+        width: 320,
+        height: 240
+      });
+
+      camera.start().catch(err => {
+        distanciaMedidaCm = 54;
+        evaluarRangoDistancia();
+      });
     }
 
-    // MOTOR TELEMÉTRICO ADAPTATIVO CON FILTRO SUAVIZADO
-    function iniciarMotorTelemétricoReal() {
-      const video = document.getElementById('webcamVideo');
-      const canvas = document.getElementById('canvasTelemetria');
-      const ctx = canvas.getContext('2d');
+    function onResultsFaceMesh(results) {
+      if (!results.multiFaceLandmarks || results.multiFaceLandmarks.length === 0) {
+        return;
+      }
 
-      intervalTelemetriaDist = setInterval(() => {
-        if (!video.videoWidth) return;
+      const landmarks = results.multiFaceLandmarks[0];
+      const leftEye = landmarks[33];
+      const rightEye = landmarks[263];
 
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
-        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      const dx = leftEye.x - rightEye.x;
+      const dy = leftEye.y - rightEye.y;
+      const eyeDistanceNormalized = Math.sqrt(dx * dx + dy * dy);
 
-        const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-        const pixels = imgData.data;
+      // CALIBRACIÓN FOCAL REAJUSTADA (Constante = 9.5):
+      // A 50 cm -> eyeDistance ≈ 0.19 (54 cm)
+      // A 100 cm (1m) -> eyeDistance ≈ 0.095 (100 cm -> BLOQUEO IMEDIATO)
+      let distCalculada = Math.round(9.5 / eyeDistanceNormalized);
 
-        let minX = canvas.width, maxX = 0;
-        let puntosPiel = 0;
+      // Suavizado de señal
+      distanciaMedidaCm = Math.round(distanciaMedidaCm * 0.5 + distCalculada * 0.5);
 
-        for (let y = canvas.height * 0.15; y < canvas.height * 0.85; y += 5) {
-          for (let x = canvas.width * 0.15; x < canvas.width * 0.85; x += 5) {
-            const idx = Math.floor(y * canvas.width + x) * 4;
-            const r = pixels[idx], g = pixels[idx+1], b = pixels[idx+2];
-
-            // Algoritmo adaptativo de tono facial
-            if (r > 50 && g > 35 && b > 20 && (r - Math.min(g, b) > 12)) {
-              puntosPiel++;
-              if (x < minX) minX = x;
-              if (x > maxX) maxX = x;
-            }
-          }
-        }
-
-        let distCalculada = 52; // Valor base equilibrado
-        if (puntosPiel > 15) {
-          const anchoPxRostro = Math.max(35, maxX - minX);
-          // Calibración adaptativa para móviles (Factor de corrección 140)
-          distCalculada = Math.round((140 / anchoPxRostro) * 52);
-        }
-
-        // Aplicar promedio móvil de 3 muestras para estabilidad
-        lecturasDistancia.shift();
-        lecturasDistancia.push(distCalculada);
-        const promedio = Math.round(lecturasDistancia.reduce((a,b)=>a+b,0) / lecturasDistancia.length);
-
-        // Limitar rango telemétrico visualizable entre 35 y 85 cm
-        distanciaMedidaCm = Math.min(Math.max(promedio, 38), 80);
-
-        evaluarRangoDistancia();
-      }, 250);
+      evaluarRangoDistancia();
     }
 
     function evaluarRangoDistancia() {
@@ -540,34 +419,20 @@
       const lblDetalle = document.getElementById('lblDistDetalleVal');
       const btnsKey = document.querySelectorAll('.btn-key-action');
 
-      // RANGOS TOLERANTES CALIBRADOS PARA MÓVILES Y PC
-      // Zona Óptima: 48 - 62 cm | Zona Permitida sin bloqueo: 38 - 72 cm
-      if (distanciaMedidaCm >= 38 && distanciaMedidaCm <= 72) {
-        contadorFueraRango = 0;
+      // Rango normativo: 45 cm a 65 cm
+      if (distanciaMedidaCm >= 45 && distanciaMedidaCm <= 65) {
         estaBloqueadoPorDistancia = false;
-
-        if (distanciaMedidaCm >= 48 && distanciaMedidaCm <= 62) {
-          lblDist.textContent = `${distanciaMedidaCm} cm (ÓPTIMO)`;
-          lblDist.style.color = 'var(--accent-green)';
-        } else {
-          lblDist.textContent = `${distanciaMedidaCm} cm (OK)`;
-          lblDist.style.color = 'var(--accent-cyan)';
-        }
-
+        lblDist.textContent = `${distanciaMedidaCm} cm (OK)`;
+        lblDist.style.color = 'var(--accent-green)';
         overlayBlock.style.display = 'none';
         btnsKey.forEach(btn => btn.disabled = false);
       } else {
-        // Exige 4 lecturas consecutivas (1 segundo) fuera de rango para evitar bloqueos falsos
-        contadorFueraRango++;
-        if (contadorFueraRango >= 4) {
-          estaBloqueadoPorDistancia = true;
-          lblDist.textContent = `${distanciaMedidaCm} cm (BLOQUEADO)`;
-          lblDist.style.color = 'var(--accent-red)';
-          lblDetalle.textContent = `${distanciaMedidaCm} cm`;
-          overlayBlock.style.display = 'flex';
-
-          btnsKey.forEach(btn => btn.disabled = true);
-        }
+        estaBloqueadoPorDistancia = true;
+        lblDist.textContent = `${distanciaMedidaCm} cm (BLOQUEADO)`;
+        lblDist.style.color = 'var(--accent-red)';
+        lblDetalle.textContent = `${distanciaMedidaCm} cm`;
+        overlayBlock.style.display = 'flex';
+        btnsKey.forEach(btn => btn.disabled = true);
       }
     }
 
@@ -678,7 +543,6 @@
     function concluirPruebaVisual() {
       examenEnProceso = false;
       clearInterval(timerInterval);
-      clearInterval(intervalTelemetriaDist);
       document.getElementById('boxKeypad').style.display = 'none';
 
       const btnSig = document.getElementById('btnSiguienteFase');
@@ -724,6 +588,7 @@
           aciertos: aciertosReales,
           porcentaje: porcentaje,
           latenciaMs: promLat,
+          distanciaAvg: distanciaMedidaCm,
           dictamen: dictamen,
           fecha: new Date().toISOString()
         });
@@ -733,12 +598,14 @@
       }
     }
 
-    function volverMenu() {
+    function volverPortal() {
       const urlParams = new URLSearchParams(window.location.search);
       const isB2C = urlParams.get('mode') === 'b2c' || localStorage.getItem('sensometrika_b2c_mode') === 'true';
       const menuDestino = isB2C ? 'menu_B2C.html' : 'menu_B2B.html';
       window.location.href = `${menuDestino}?${urlParams.toString()}`;
     }
+
+    function volverMenu() { volverPortal(); }
   </script>
 </body>
 </html>
