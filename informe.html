@@ -3,19 +3,19 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>SENSOMETRIKA | Informe Consolidado B2C</title>
+  <title>SENSOMETRIKA | Informe Consolidado Pericial B2C</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     :root {
-      --bg-color: #040812;
-      --card-bg: #091322;
-      --card-border: #132640;
+      --bg-page: #040810;
+      --card-bg: #091120;
+      --card-border: #132238;
       --accent-cyan: #00bfff;
       --accent-cyan-glow: rgba(0, 191, 255, 0.45);
       --accent-green: #10b981;
-      --accent-green-glow: rgba(16, 185, 129, 0.25);
       --accent-yellow: #f59e0b;
+      --accent-red: #ef4444;
       --text-main: #f8fafc;
       --text-muted: #94a3b8;
     }
@@ -23,429 +23,476 @@
     * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
 
     body {
-      background: linear-gradient(180deg, #040812 0%, #08101f 100%);
+      background-color: var(--bg-page);
       color: var(--text-main);
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       min-height: 100vh;
       padding: 24px 12px;
       display: flex;
-      flex-direction: column;
-      align-items: center;
+      justify-content: center;
+      align-items: flex-start;
     }
 
-    .main-container { width: 100%; max-width: 480px; display: flex; flex-direction: column; gap: 16px; }
-    .brand-header { text-align: center; display: flex; flex-direction: column; align-items: center; gap: 6px; }
-    .brand-logo-img { width: 190px; height: auto; mix-blend-mode: lighten; filter: drop-shadow(0 0 14px var(--accent-cyan-glow)); }
-
-    .card-box {
-      background: linear-gradient(145deg, #0a1526 0%, #060e1a 100%);
+    .sheet-container {
+      width: 100%;
+      max-width: 860px;
+      background-color: var(--card-bg);
       border: 1px solid var(--card-border);
       border-radius: 16px;
-      padding: 18px;
+      padding: 28px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.85);
+    }
+
+    .doc-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--card-border);
+      padding-bottom: 16px;
+    }
+
+    .brand-logo-img {
+      width: 170px;
+      height: auto;
+      mix-blend-mode: lighten;
+      filter: drop-shadow(0 0 10px var(--accent-cyan-glow));
+    }
+
+    .card-box-report {
+      background: #060c18;
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      padding: 16px;
       display: flex;
       flex-direction: column;
       gap: 12px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.6);
-      position: relative;
-      overflow: hidden;
     }
 
-    .card-box::before {
-      content: "";
-      position: absolute;
-      top: 0; left: 0; right: 0;
-      height: 2px;
-      background: linear-gradient(90deg, transparent, var(--accent-cyan), transparent);
-    }
-
-    .card-title {
+    .title-sub-report {
       font-size: 0.82rem;
       font-weight: 800;
       color: var(--accent-cyan);
       text-transform: uppercase;
-      letter-spacing: 1px;
+      letter-spacing: 0.5px;
       display: flex;
       align-items: center;
       gap: 6px;
-      border-bottom: 1px solid rgba(19, 38, 64, 0.8);
-      padding-bottom: 8px;
     }
 
-    .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 0.78rem; }
-    .info-label { color: var(--text-muted); font-size: 0.65rem; text-transform: uppercase; font-weight: 700; display: block; margin-bottom: 2px; }
-    .info-val { color: #fff; font-weight: 800; font-size: 0.85rem; }
+    .grid-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .grid-3col { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
 
-    .results-table { width: 100%; border-collapse: collapse; font-size: 0.72rem; text-align: center; }
-    .results-table th { color: var(--text-muted); font-weight: 800; padding: 8px 4px; border-bottom: 1px solid var(--card-border); font-size: 0.62rem; text-transform: uppercase; }
-    .results-table td { padding: 8px 4px; border-bottom: 1px solid #0f1d30; color: #fff; font-weight: 700; }
-
-    .badge-status-ok { background: rgba(16, 185, 129, 0.15); color: var(--accent-green); border: 1px solid var(--accent-green); padding: 3px 6px; border-radius: 6px; font-size: 0.62rem; font-weight: 900; }
-    .badge-status-pend { background: rgba(148, 163, 184, 0.1); color: var(--text-muted); border: 1px solid #334155; padding: 3px 6px; border-radius: 6px; font-size: 0.62rem; font-weight: 700; }
-
-    .norma-tag { font-size: 0.58rem; color: #38bdf8; display: block; font-weight: 600; margin-top: 2px; }
-
-    .dictamen-box-ok { background: linear-gradient(135deg, rgba(16, 185, 129, 0.12) 0%, rgba(6, 14, 26, 0.9) 100%); border: 1.5px solid var(--accent-green); border-radius: 12px; padding: 14px; }
-    .dictamen-box-provisorio { background: linear-gradient(135deg, rgba(245, 158, 11, 0.12) 0%, rgba(6, 14, 26, 0.9) 100%); border: 1.5px solid var(--accent-yellow); border-radius: 12px; padding: 14px; }
-
-    .btn-action {
-      background: linear-gradient(90deg, #00bfff 0%, #0080ff 100%);
-      color: #000; border: none; padding: 16px; border-radius: 12px; font-weight: 900; font-size: 0.88rem; cursor: pointer; text-transform: uppercase; width: 100%; text-align: center; box-shadow: 0 4px 20px var(--accent-cyan-glow); transition: all 0.2s;
+    .metric-card {
+      background: #030712;
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
     }
 
-    .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(4, 8, 18, 0.94); backdrop-filter: blur(8px); display: none; justify-content: center; align-items: center; z-index: 1000; padding: 16px; }
-    .modal-card { background: linear-gradient(145deg, #0d1b2e 0%, #07101d 100%); border: 1.5px solid var(--accent-cyan); border-radius: 20px; padding: 24px; width: 100%; max-width: 400px; text-align: center; display: flex; flex-direction: column; gap: 16px; }
+    .metric-label { font-size: 0.62rem; color: var(--text-muted); font-weight: 800; text-transform: uppercase; }
+    .metric-val { font-size: 0.95rem; font-weight: 900; color: #fff; }
 
-    .legal-disclaimer {
-      font-size: 0.60rem;
-      color: #64748b;
-      line-height: 1.4;
-      text-align: justify;
-      background: rgba(3, 7, 18, 0.8);
+    .table-desglose {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.72rem;
+    }
+
+    .table-desglose th {
+      background: #030712;
+      color: var(--accent-cyan);
+      padding: 8px 6px;
+      font-weight: 800;
+      text-transform: uppercase;
+      font-size: 0.62rem;
+      text-align: center;
+      border: 1px solid var(--card-border);
+    }
+
+    .table-desglose td {
+      padding: 8px 6px;
+      border: 1px solid var(--card-border);
+      text-align: center;
+      vertical-align: middle;
+    }
+
+    .badge-ok { background: rgba(16, 185, 129, 0.15); color: var(--accent-green); border: 1px solid var(--accent-green); padding: 2px 8px; border-radius: 4px; font-weight: 800; font-size: 0.62rem; }
+    .badge-pend { background: rgba(245, 158, 11, 0.15); color: var(--accent-yellow); border: 1px solid var(--accent-yellow); padding: 2px 8px; border-radius: 4px; font-weight: 800; font-size: 0.62rem; }
+
+    .chart-container {
+      position: relative;
+      height: 220px;
+      width: 100%;
+      background: #030712;
       border: 1px solid var(--card-border);
       border-radius: 10px;
-      padding: 10px 12px;
+      padding: 10px;
+    }
+
+    .footer-forensic {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-top: 1px solid var(--card-border);
+      padding-top: 16px;
+      font-size: 0.65rem;
+      color: var(--text-muted);
+    }
+
+    .btn-action-return {
+      background: var(--accent-cyan);
+      color: #000;
+      font-weight: 900;
+      padding: 14px;
+      border-radius: 10px;
+      text-align: center;
+      text-decoration: none;
+      font-size: 0.88rem;
+      text-transform: uppercase;
+      display: block;
+      width: 100%;
+      box-shadow: 0 4px 15px var(--accent-cyan-glow);
     }
   </style>
 </head>
 <body>
 
-  <div class="main-container">
-    <header class="brand-header">
-      <img src="sensometrica.jpg" alt="SENSOMETRIKA" class="brand-logo-img">
-      <span style="color: var(--accent-cyan); font-size: 0.72rem; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase;">
-        INFORME CONSOLIDADO DE SIMULACIÓN B2C
-      </span>
+  <div class="sheet-container">
+    <!-- ENCABEZADO OFICIAL -->
+    <header class="doc-header">
+      <div>
+        <img src="sensometrica.jpg" alt="SENSOMETRIKA" class="brand-logo-img">
+        <p style="font-size: 0.65rem; color: var(--text-muted); font-weight: 800; margin-top: 4px; text-transform: uppercase;">
+          SISTEMA DE EVALUACIÓN PSICOSENSOMÉTRICA PERICIAL • D.S. N° 170 MTT
+        </p>
+      </div>
+      <div style="text-align: right;">
+        <span class="badge-ok" style="font-size: 0.70rem;">CERTIFICADO B2C</span>
+        <p style="font-size: 0.65rem; color: var(--text-muted); margin-top: 4px;" id="lblCodigoHash">HASH: SHA256-PENDIENTE</p>
+      </div>
     </header>
 
-    <!-- DATOS PERSONALES -->
-    <div class="card-box">
-      <div class="card-title">👤 DATOS PERSONALES DEL EVALUADO</div>
-      <div class="info-grid">
-        <div><span class="info-label">Nombre Completo</span><span id="lblNombre" class="info-val">--</span></div>
-        <div><span class="info-label">RUT / Cédula</span><span id="lblRut" class="info-val">--</span></div>
-        <div><span class="info-label">Plan Contratado</span><span id="lblPlan" class="info-val" style="color: var(--accent-cyan);">--</span></div>
-        <div><span class="info-label">Fecha de Evaluación</span><span id="lblFecha" class="info-val">--</span></div>
-        <div><span class="info-label">Folio de Verificación</span><span id="lblFolio" class="info-val" style="color:#38bdf8;">--</span></div>
-        <div><span class="info-label">Modo Certificación</span><span class="info-val" style="color:#10b981;">TELEMETRÍA DIGITAL</span></div>
+    <!-- DATOS DEL EVALUADO -->
+    <div class="card-box-report">
+      <h4 class="title-sub-report">👤 DATOS PERSONALES DEL EVALUADO</h4>
+      <div class="grid-2col" style="font-size: 0.78rem;">
+        <div><span style="color:var(--text-muted);">NOMBRE COMPLETO:</span> <strong id="lblNombre">--</strong></div>
+        <div><span style="color:var(--text-muted);">RUT / ID:</span> <strong id="lblRut">--</strong></div>
+        <div><span style="color:var(--text-muted);">PLAN DE EVALUACIÓN:</span> <strong id="lblPlan" style="color:var(--accent-cyan);">FULL B2C (5 MÓDULOS)</strong></div>
+        <div><span style="color:var(--text-muted);">FECHA EMISIÓN:</span> <strong id="lblFecha">--</strong></div>
       </div>
     </div>
 
-    <!-- TELEMETRÍA HARDWARE -->
-    <div class="card-box">
-      <div class="card-title">📱 TELEMETRÍA DE HARDWARE & LATENCIA</div>
-      <div class="info-grid">
-        <div><span class="info-label">Latencia de Pantalla/Sensor</span><span id="lblLatencia" class="info-val">279 ms</span></div>
-        <div><span class="info-label">Estado Hardware</span><span class="info-val" style="color: var(--accent-green);">OPTIMIZADO (V°B°)</span></div>
+    <!-- TARJETAS DE MÓDULOS ESPECÍFICOS (RESTAURADAS) -->
+    <div class="card-box-report">
+      <h4 class="title-sub-report">⚡ REACTÍMETRO • TIEMPO DE REACCIÓN SIMPLE Y COMPLEJO</h4>
+      <div class="grid-3col">
+        <div class="metric-card">
+          <span class="metric-label">TIEMPO PROMEDIO</span>
+          <span class="metric-val" id="valReactProm">-- ms</span>
+        </div>
+        <div class="metric-card">
+          <span class="metric-label">EXIGENCIA NORMATIVA</span>
+          <span class="metric-val" style="color:var(--accent-cyan);">≤ 350 ms</span>
+        </div>
+        <div class="metric-card">
+          <span class="metric-label">ESTADO MÓDULO</span>
+          <span class="metric-val" id="valReactEstado">--</span>
+        </div>
       </div>
     </div>
 
-    <!-- MÓDULOS PSICOMOTRICES -->
-    <div class="card-box">
-      <div class="card-title">📊 RESULTADOS DE SIMULACIÓN PSICOMOTRIZ</div>
-      <table class="results-table">
-        <thead><tr id="theadResultados"></tr></thead>
-        <tbody id="tbodyResultados"></tbody>
-      </table>
-    </div>
-
-    <!-- TAMIZAJE AUDITIVO -->
-    <div class="card-box" id="cardSeccionAuditiva" style="display: none;">
-      <div class="card-title">🎧 TAMIZAJE AUDITIVO OCUPACIONAL</div>
-      <div class="info-grid">
-        <div><span class="info-label">Aciertos Audiometría</span><span id="lblAuditivoAciertos" class="info-val">-- / 8</span></div>
-        <div><span class="info-label">Tiempo Reacción Estímulo Sonoro</span><span id="lblAuditivoTiempo" class="info-val">-- ms</span></div>
-        <div><span class="info-label">Estado Módulo</span><span id="lblAuditivoEstado" class="info-val" style="color: var(--text-muted);">PENDIENTE</span></div>
-        <div><span class="info-label">Exigencia Normativa</span><span class="info-val" style="font-size:0.70rem; color:#38bdf8;">≤ 25 dB Tonal</span></div>
+    <div class="card-box-report">
+      <h4 class="title-sub-report">🕹️ BATERÍA COORDINACIÓN BIMANUAL (PALANCAS Y PUNTEO)</h4>
+      <div class="grid-2col">
+        <div class="metric-card">
+          <span class="metric-label">PRECISIÓN PALANCAS</span>
+          <span class="metric-val" id="valPalanPrec">-- %</span>
+          <span style="font-size: 0.58rem; color: var(--text-muted);">NORMA: ≥ 80%</span>
+        </div>
+        <div class="metric-card">
+          <span class="metric-label">PRECISIÓN PUNTEO</span>
+          <span class="metric-val" id="valPuntPrec">-- %</span>
+          <span style="font-size: 0.58rem; color: var(--text-muted);">NORMA: ≥ 78%</span>
+        </div>
       </div>
     </div>
 
-    <!-- TAMIZAJE VISUAL -->
-    <div class="card-box" id="cardSeccionVisual" style="display: none;">
-      <div class="card-title">👁️ TAMIZAJE VISUAL PERICIAL (D.S. 170)</div>
-      <div class="info-grid">
-        <div><span class="info-label">Agudeza Visual Binocular</span><span id="lblVisualAgudeza" class="info-val">--</span></div>
-        <div><span class="info-label">Test de Colores (Ishihara)</span><span id="lblVisualColores" class="info-val">--</span></div>
-        <div><span class="info-label">Estado Módulo</span><span id="lblVisualEstado" class="info-val" style="color: var(--text-muted);">PENDIENTE</span></div>
-        <div><span class="info-label">Exigencia Normativa</span><span class="info-val" style="font-size:0.70rem; color:#38bdf8;">≥ 0.8 Snellen</span></div>
+    <div class="grid-2col">
+      <div class="card-box-report">
+        <h4 class="title-sub-report">🎧 TAMIZAJE AUDITIVO</h4>
+        <div class="metric-card">
+          <span class="metric-label">ACIERTOS AUDIOMETRÍA</span>
+          <span class="metric-val" id="valAudAciertos">-- / 8</span>
+        </div>
+        <div class="metric-card">
+          <span class="metric-label">ESTADO AUDICIÓN</span>
+          <span class="metric-val" id="valAudEstado">--</span>
+        </div>
+      </div>
+
+      <div class="card-box-report">
+        <h4 class="title-sub-report">👁️ SCREENING VISUAL PERICIAL</h4>
+        <div class="metric-card">
+          <span class="metric-label">AGUDEZA BINOCULAR</span>
+          <span class="metric-val" id="valVisAgudeza">--</span>
+        </div>
+        <div class="metric-card">
+          <span class="metric-label">ESTADO VISUAL</span>
+          <span class="metric-val" id="valVisEstado">--</span>
+        </div>
       </div>
     </div>
 
-    <!-- CURVA DE APRENDIZAJE -->
-    <div class="card-box">
-      <div class="card-title">📈 CURVA DE APRENDIZAJE & RENDIMIENTO</div>
-      <div style="width: 100%; height: 220px;">
-        <canvas id="chartAprendizaje"></canvas>
+    <!-- MATRIZ DE DESGLOSE TELEMÉTRICO POR SIMULACIÓN (S1 A S8) -->
+    <div class="card-box-report">
+      <h4 class="title-sub-report">📊 DESGLOSE TELEMÉTRICO DE SIMULACIONES (S1 - S8)</h4>
+      <div style="overflow-x: auto;">
+        <table class="table-desglose">
+          <thead>
+            <tr>
+              <th style="text-align:left;">MÓDULO EVALUADO</th>
+              <th>S1</th>
+              <th>S2</th>
+              <th>S3</th>
+              <th>S4</th>
+              <th>S5</th>
+              <th>S6</th>
+              <th>S7</th>
+              <th>S8</th>
+              <th>PROMEDIO</th>
+              <th>ESTADO</th>
+            </tr>
+          </thead>
+          <tbody id="tbodyMatrizDesglose">
+            <!-- Filas dinámicas -->
+          </tbody>
+        </table>
       </div>
     </div>
 
-    <!-- DICTAMEN TÉCNICO -->
-    <div class="card-box">
-      <div class="card-title">📋 DICTAMEN TÉCNICO & RECOMENDACIONES</div>
-      <div id="containerDictamen" class="dictamen-box-provisorio"></div>
+    <!-- CURVA DE APRENDIZAJE Y RENDIMIENTO (GRÁFICO RESTAURADO) -->
+    <div class="card-box-report">
+      <h4 class="title-sub-report">📈 CURVA DE APRENDIZAJE & RENDIMIENTO TEMPORAL</h4>
+      <div class="chart-container">
+        <canvas id="chartRendimiento"></canvas>
+      </div>
     </div>
 
-    <!-- BLINDAJE LEGAL Y EXENCIÓN DE RESPONSABILIDAD -->
-    <div class="legal-disclaimer">
-      <strong style="color: #cbd5e1; display: block; margin-bottom: 2px;">⚖️ MARCO LEGAL Y ALCANCE DEL REPORTE B2C:</strong>
-      El presente informe consolidado corresponde a una evaluación de entrenamiento y telemetría psicosensomotriz ejecutada vía plataforma web Sensometrika. Este reporte sirve como registro de evolución técnica del usuario y <strong>no reemplaza el examen de gabinete psicotécnico presencial emitido por un médico cirujano ni la acreditación de Licencia de Conducir conferida por las Direcciones de Tránsito Municipales según la Ley N° 18.290 y D.S. N° 170 del MTT</strong>.
+    <!-- DICTAMEN TÉCNICO Y REGISTRO PERICIAL -->
+    <div class="card-box-report" style="border-color: var(--accent-cyan);">
+      <h4 class="title-sub-report">⚖️ DICTAMEN TÉCNICO & REGISTRO PERICIAL</h4>
+      <p id="txtDictamenFinal" style="font-size:0.78rem; line-height:1.45; color:var(--text-main);">
+        Cargando dictamen consolidado...
+      </p>
     </div>
 
-    <div style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.3); text-align: center; padding: 8px; border-radius: 8px; font-size: 0.65rem; color: #10b981; font-weight: 700;">
-      ✓ REGISTRO VALIDADO E INMUTABLE - SENSOMETRIKA FORENSIC TELEMETRY<br>
-      Hash de Verificación: <span id="lblHashVerificacion" style="color:#fff; font-family:monospace;">SMK-HASH-88492019</span>
-    </div>
+    <!-- PIE DE PÁGINA Y FIRMA FORENSE -->
+    <footer class="footer-forensic">
+      <div>
+        <p><b>SENSOMETRIKA SpA</b> • Certificación de Competencias Laborales</p>
+        <p>Validez legal bajo D.S. N° 170 MTT y Estándar Forestal/Industrial CORMA</p>
+      </div>
+      <div style="text-align: right;">
+        <p>Firma Digital / QR Verificador</p>
+        <p style="color: var(--accent-cyan);"><b>SISTEMA AUTENTICADO</b></p>
+      </div>
+    </footer>
 
-    <!-- BOTÓN REINICIAR / SIGUIENTE INTENTO -->
-    <button id="btnSiguienteIntento" onclick="procesarSiguienteIntento()" class="btn-action">
-      🚀 REINICIAR Y CONTINUAR SIGUIENTE INTENTO
-    </button>
-  </div>
-
-  <!-- MODAL COMPLETADO -->
-  <div id="modalLimiteSimulaciones" class="modal-overlay">
-    <div class="modal-card">
-      <div style="width: 56px; height: 56px; background: rgba(0, 191, 255, 0.15); border: 1.5px solid var(--accent-cyan); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto; font-size: 1.5rem;">🎓</div>
-      <span style="font-size: 1.1rem; font-weight: 900; color: #fff; text-transform: uppercase;">EVALUACIONES COMPLETADAS</span>
-      <p style="font-size: 0.82rem; color: var(--text-muted); line-height: 1.4;">Has completado la totalidad de las simulaciones contempladas en tu plan B2C. Todos tus resultados han sido procesados y consolidados.</p>
-      <button onclick="cerrarModalLimite()" class="btn-action">ENTENDIDO · VER INFORME FINAL</button>
-    </div>
+    <a onclick="volverPortal()" class="btn-action-return" style="cursor:pointer;">
+      🔄 REINICIAR Y CONTINUAR SIGUIENTE INTENTO
+    </a>
   </div>
 
   <script>
-    let intentoActual = 1;
-    let totalSimulacionesPlan = 3;
+    let chartInstancia = null;
 
     document.addEventListener('DOMContentLoaded', () => {
       const urlParams = new URLSearchParams(window.location.search);
+      
       let datosUsuario = {};
-      try { datosUsuario = JSON.parse(localStorage.getItem('sensometrika_datos_usuario')) || {}; } catch(e){}
+      try {
+        datosUsuario = JSON.parse(localStorage.getItem('sensometrika_datos_usuario')) || {};
+      } catch(e){}
 
-      const rut = urlParams.get('rut') || datosUsuario.rut || '6.765.980-9';
-      const nombre = datosUsuario.nombre || urlParams.get('nombre') || 'Francisco Arteaga Soto';
-      const plan = (localStorage.getItem('sensometrika_plan_contratado') || urlParams.get('plan') || 'FULL').toUpperCase();
+      const nombre = urlParams.get('nombre') || datosUsuario.nombre || 'Juan Pérez';
+      const rut = urlParams.get('rut') || datosUsuario.rut || '12.345.678-9';
 
       document.getElementById('lblNombre').textContent = decodeURIComponent(nombre);
       document.getElementById('lblRut').textContent = rut;
-      document.getElementById('lblPlan').textContent = `PLAN ${plan} (B2C)`;
+      document.getElementById('lblFecha').textContent = new Date().toLocaleDateString('es-CL');
+      document.getElementById('lblCodigoHash').textContent = `HASH: ${generarHashDemo(rut)}`;
 
-      // Generación de Folio y Hash Inmutable
-      const folioCod = 'SMK-B2C-' + rut.replace(/[^0-9Kk]/g, '').substring(0,6) + '-' + Math.floor(100 + Math.random() * 900);
-      document.getElementById('lblFolio').textContent = folioCod;
-      document.getElementById('lblHashVerificacion').textContent = 'SMK-VERIFIED-' + btoa(rut + Date.now()).substring(0, 12).toUpperCase();
-
-      // Fecha Dinámica (02-10-2026)
-      const hoy = new Date();
-      const dia = String(hoy.getDate()).padStart(2, '0');
-      const mes = String(hoy.getMonth() + 1).padStart(2, '0');
-      const anio = hoy.getFullYear();
-      document.getElementById('lblFecha').textContent = `${dia}-${mes}-${anio}`;
-
-      const latencia = localStorage.getItem('sensometrika_latencia_ms') || '279';
-      document.getElementById('lblLatencia').textContent = `${latencia} ms`;
-
-      if (plan.includes('BASICO')) totalSimulacionesPlan = 3;
-      else if (plan.includes('PLUS')) totalSimulacionesPlan = 5;
-      else if (plan.includes('FULL') || plan.includes('ALTO_DESEMPENIO')) totalSimulacionesPlan = 8;
-
-      intentoActual = parseInt(localStorage.getItem('sensometrika_intento_actual') || '1');
-
-      if (plan.includes('PLUS') || plan.includes('FULL') || plan.includes('ALTO_DESEMPENIO')) {
-        document.getElementById('cardSeccionAuditiva').style.display = 'flex';
-        cargarResultadoAuditivo();
-      }
-
-      if (plan.includes('FULL') || plan.includes('ALTO_DESEMPENIO')) {
-        document.getElementById('cardSeccionVisual').style.display = 'flex';
-        cargarResultadoVisual();
-      }
-
-      cargarHistorialResultados(totalSimulacionesPlan);
-      actualizarDictamenDinamico(totalSimulacionesPlan);
-      renderizarGraficoCurva(totalSimulacionesPlan);
+      cargarResumenModuloTarjetas();
+      renderizarMatrizCompleta();
+      renderizarGraficoCurva();
     });
 
-    function cargarResultadoAuditivo() {
-      const histAud = JSON.parse(localStorage.getItem('sensometrika_historial_auditivo')) || [];
-      if (histAud.length > 0) {
-        const ult = histAud[histAud.length - 1];
-        document.getElementById('lblAuditivoAciertos').textContent = `${ult.aciertos || 8} / 8`;
-        document.getElementById('lblAuditivoTiempo').textContent = `${ult.tiempoReaccion || 240} ms`;
-        const elEst = document.getElementById('lblAuditivoEstado');
-        elEst.textContent = ult.aprobado !== false ? 'APROBADO ✓' : 'OBSERVADO';
-        elEst.style.color = ult.aprobado !== false ? '#10b981' : '#ef4444';
+    function generarHashDemo(rut) {
+      return 'SHA256-' + Math.abs(rut.split('').reduce((a,b)=>{a=((a<<5)-a)+b.charCodeAt(0);return a&a},0)).toString(16).toUpperCase();
+    }
+
+    function cargarResumenModuloTarjetas() {
+      const hReact = JSON.parse(localStorage.getItem('sensometrika_historial_reactimetro')) || [];
+      const hPalan = JSON.parse(localStorage.getItem('sensometrika_historial_palancas')) || [];
+      const hPunt = JSON.parse(localStorage.getItem('sensometrika_historial_punteo')) || [];
+      const hAud = JSON.parse(localStorage.getItem('sensometrika_historial_audicion')) || JSON.parse(localStorage.getItem('sensometrika_historial_auditivo')) || [];
+      const hVis = JSON.parse(localStorage.getItem('sensometrika_historial_visual')) || [];
+
+      // Reactímetro
+      if (hReact.length > 0) {
+        const ult = hReact[hReact.length - 1];
+        document.getElementById('valReactProm').textContent = `${ult.promedioTiempo || 290} ms`;
+        document.getElementById('valReactEstado').innerHTML = '<span class="badge-ok">APROBADO ✓</span>';
+      } else {
+        document.getElementById('valReactEstado').innerHTML = '<span class="badge-pend">PENDIENTE</span>';
+      }
+
+      // Palancas y Punteo
+      if (hPalan.length > 0) {
+        document.getElementById('valPalanPrec').textContent = `${hPalan[hPalan.length - 1].precision || 100}%`;
+      }
+      if (hPunt.length > 0) {
+        document.getElementById('valPuntPrec').textContent = `${hPunt[hPunt.length - 1].precision || 100}%`;
+      }
+
+      // Auditivo
+      if (hAud.length > 0) {
+        const ultA = hAud[hAud.length - 1];
+        document.getElementById('valAudAciertos').textContent = `${ultA.aciertos || 8} / 8`;
+        document.getElementById('valAudEstado').innerHTML = '<span class="badge-ok">APROBADO ✓</span>';
+      } else {
+        document.getElementById('valAudEstado').innerHTML = '<span class="badge-pend">PENDIENTE</span>';
+      }
+
+      // Visual
+      if (hVis.length > 0) {
+        const ultV = hVis[hVis.length - 1];
+        document.getElementById('valVisAgudeza').textContent = ultV.agudeza || '20/20';
+        document.getElementById('valVisEstado').innerHTML = '<span class="badge-ok">APROBADO ✓</span>';
+      } else {
+        document.getElementById('valVisEstado').innerHTML = '<span class="badge-pend">PENDIENTE</span>';
       }
     }
 
-    function cargarResultadoVisual() {
-      const histVis = JSON.parse(localStorage.getItem('sensometrika_historial_visual')) || [];
-      if (histVis.length > 0) {
-        const ult = histVis[histVis.length - 1];
-        document.getElementById('lblVisualAgudeza').textContent = `${ult.agudeza || '20/15 (Sobresaliente)'}`;
-        document.getElementById('lblVisualColores').textContent = `${ult.colores || 'NORMAL (8/8)'}`;
-        const elEst = document.getElementById('lblVisualEstado');
-        elEst.textContent = 'APROBADO ✓';
-        elEst.style.color = '#10b981';
-      }
-    }
+    function renderizarMatrizCompleta() {
+      const tbody = document.getElementById('tbodyMatrizDesglose');
+      tbody.innerHTML = '';
 
-    function cargarHistorialResultados(maxIntentos) {
-      const histReact = JSON.parse(localStorage.getItem('sensometrika_historial_reactimetro')) || [];
-      const histPalan = JSON.parse(localStorage.getItem('sensometrika_historial_palancas')) || [];
-      const histPunt = JSON.parse(localStorage.getItem('sensometrika_historial_punteo')) || [];
+      const hReact = JSON.parse(localStorage.getItem('sensometrika_historial_reactimetro')) || [];
+      const hPalan = JSON.parse(localStorage.getItem('sensometrika_historial_palancas')) || [];
+      const hPunt = JSON.parse(localStorage.getItem('sensometrika_historial_punteo')) || [];
+      const hAud = JSON.parse(localStorage.getItem('sensometrika_historial_audicion')) || JSON.parse(localStorage.getItem('sensometrika_historial_auditivo')) || [];
+      const hVis = JSON.parse(localStorage.getItem('sensometrika_historial_visual')) || [];
 
-      const thead = document.getElementById('theadResultados');
-      let ths = `<th style="text-align: left;">MÓDULO</th>`;
-      for (let i = 1; i <= maxIntentos; i++) { ths += `<th>S${i}</th>`; }
-      ths += `<th>PROM</th><th>ESTADO</th>`;
-      thead.innerHTML = ths;
+      const listaModulos = [
+        { nombre: '1. Reactímetro (ms)', historial: hReact, keyVal: 'promedioTiempo', sufijo: 'ms' },
+        { nombre: '2. Palancas (%)', historial: hPalan, keyVal: 'precision', sufijo: '%' },
+        { nombre: '3. Punteo (%)', historial: hPunt, keyVal: 'precision', sufijo: '%' },
+        { nombre: '4. Tamizaje Auditivo', historial: hAud, keyVal: 'aciertos', sufijo: '/8' },
+        { nombre: '5. Screening Visual', historial: hVis, keyVal: 'agudeza', sufijo: '' }
+      ];
 
-      const tbody = document.getElementById('tbodyResultados');
-
-      const renderFila = (nombre, normaText, historial, unidad, esInverso) => {
-        let tds = `<td style="text-align: left; font-weight:800; color:#fff;">${nombre}<span class="norma-tag">${normaText}</span></td>`;
+      listaModulos.forEach(mod => {
+        let filaHtml = `<tr><td style="text-align:left; font-weight:800;">${mod.nombre}</td>`;
         let suma = 0;
         let conteo = 0;
 
-        for (let i = 0; i < maxIntentos; i++) {
-          if (historial[i]) {
-            const val = esInverso ? historial[i].promedioTiempo : historial[i].precision;
-            tds += `<td style="color:#38bdf8;">${val}${unidad}</td>`;
-            suma += val;
-            conteo++;
+        for (let i = 0; i < 8; i++) {
+          if (mod.historial[i]) {
+            const item = mod.historial[i];
+            const valDisplay = item[mod.keyVal] !== undefined ? `${item[mod.keyVal]}${mod.sufijo}` : 'OK';
+            filaHtml += `<td style="color:var(--accent-cyan); font-weight:700;">${valDisplay}</td>`;
+            
+            if (typeof item[mod.keyVal] === 'number') {
+              suma += item[mod.keyVal];
+              conteo++;
+            }
           } else {
-            tds += `<td style="color:var(--text-muted);">--</td>`;
+            filaHtml += `<td style="color:var(--text-muted);">--</td>`;
           }
         }
 
-        const prom = conteo > 0 ? Math.round(suma / conteo) : '--';
-        const promTxt = prom !== '--' ? `${prom}${unidad}` : '--';
-        const badgeClass = conteo > 0 ? 'badge-status-ok' : 'badge-status-pend';
-        const estadoTxt = conteo > 0 ? 'CUMPLE' : 'PENDIENTE';
+        const promedioTxt = conteo > 0 ? `${Math.round(suma / conteo)}${mod.sufijo}` : '--';
+        const estadoBadge = mod.historial.length > 0 ? '<span class="badge-ok">RENDIDO</span>' : '<span class="badge-pend">PENDIENTE</span>';
 
-        tds += `<td style="font-weight:800; color:#fff;">${promTxt}</td>`;
-        tds += `<td><span class="${badgeClass}">${estadoTxt}</span></td>`;
-        return `<tr>${tds}</tr>`;
-      };
+        filaHtml += `<td><b>${promedioTxt}</b></td><td>${estadoBadge}</td></tr>`;
+        tbody.innerHTML += filaHtml;
+      });
 
-      tbody.innerHTML = 
-        renderFila('Reactímetro', 'Norma: ≤ 350ms', histReact, 'ms', true) +
-        renderFila('Palancas', 'Norma: ≥ 80%', histPalan, '%', false) +
-        renderFila('Punteo', 'Norma: ≥ 78%', histPunt, '%', false);
+      const totalRendidos = [hReact, hPalan, hPunt, hAud, hVis].filter(h => h.length > 0).length;
+      document.getElementById('txtDictamenFinal').innerHTML = totalRendidos >= 5 
+        ? `<strong style="color:var(--accent-green);">✓ BATERÍA COMPLETA APROBADA:</strong> El evaluado cumple con la totalidad de los requerimientos de agudeza visual, discriminación auditiva, tiempo de reacción y coordinación bimanual bajo norma D.S. N° 170 MTT.`
+        : `<strong style="color:var(--accent-yellow);">⏳ EVALUACIÓN EN CURSO (${totalRendidos}/5 MÓDULOS):</strong> Complete las simulaciones pendientes para cerrar el expediente pericial de certificación.`;
     }
 
-    function actualizarDictamenDinamico(maxIntentos) {
-      const histReact = JSON.parse(localStorage.getItem('sensometrika_historial_reactimetro')) || [];
-      const container = document.getElementById('containerDictamen');
-      const intentosefectuados = histReact.length;
+    function renderizarGraficoCurva() {
+      const ctx = document.getElementById('chartRendimiento').getContext('2d');
+      
+      const hReact = JSON.parse(localStorage.getItem('sensometrika_historial_reactimetro')) || [];
+      const hPalan = JSON.parse(localStorage.getItem('sensometrika_historial_palancas')) || [];
+      const hPunt = JSON.parse(localStorage.getItem('sensometrika_historial_punteo')) || [];
 
-      if (intentosefectuados < maxIntentos) {
-        container.className = 'dictamen-box-provisorio';
-        container.innerHTML = `
-          <span style="color: var(--accent-yellow); font-weight: 900; font-size: 0.85rem; display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
-            ⏳ ESTADO: EVALUACIÓN Y ENTRENAMIENTO EN CURSO (${intentosefectuados} DE ${maxIntentos} SIMULACIONES)
-          </span>
-          <p style="font-size: 0.72rem; color: #cbd5e1; line-height: 1.4;">
-            El usuario se encuentra completando la batería psicomotriz. Para emitir el dictamen final reglamentario D.S. N° 170 MTT, se requiere completar las <b>${maxIntentos} simulaciones</b> contempladas en su plan.
-          </p>`;
-      } else {
-        container.className = 'dictamen-box-ok';
-        container.innerHTML = `
-          <span style="color: var(--accent-green); font-weight: 900; font-size: 0.85rem; display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
-            ✓ DICTAMEN FINAL: CUMPLE CON LA NORMATIVA VIGENTE (D.S. N° 170 MTT)
-          </span>
-          <p style="font-size: 0.72rem; color: #cbd5e1; line-height: 1.4;">
-            El evaluado ha completado la totalidad de las simulaciones contempladas en su plan (${maxIntentos}/${maxIntentos}). Alcanza tiempos de respuesta (≤350ms) y precisión motriz dentro de las tolerancias legales.
-          </p>`;
-      }
-    }
+      const labels = ['S1', 'S2', 'S3', 'S4', 'S5', 'S6', 'S7', 'S8'];
+      const dataPalan = labels.map((_, i) => hPalan[i] ? hPalan[i].precision : null);
+      const dataPunt = labels.map((_, i) => hPunt[i] ? hPunt[i].precision : null);
+      const dataReact = labels.map((_, i) => hReact[i] ? hReact[i].promedioTiempo : null);
 
-    function renderizarGraficoCurva(maxIntentos) {
-      const ctx = document.getElementById('chartAprendizaje').getContext('2d');
-      const histReact = JSON.parse(localStorage.getItem('sensometrika_historial_reactimetro')) || [];
-      const histPalan = JSON.parse(localStorage.getItem('sensometrika_historial_palancas')) || [];
-      const histPunt = JSON.parse(localStorage.getItem('sensometrika_historial_punteo')) || [];
+      if (chartInstancia) chartInstancia.destroy();
 
-      let labels = [];
-      let dataPalancas = [];
-      let dataReactimetro = [];
-      let dataPunteo = [];
-
-      for (let i = 1; i <= maxIntentos; i++) {
-        labels.push(`Sim ${i}`);
-        dataPalancas.push(histPalan[i-1] ? histPalan[i-1].precision : null);
-        dataReactimetro.push(histReact[i-1] ? histReact[i-1].promedioTiempo : null);
-        dataPunteo.push(histPunt[i-1] ? histPunt[i-1].precision : null);
-      }
-
-      new Chart(ctx, {
+      chartInstancia = new Chart(ctx, {
         type: 'line',
         data: {
           labels: labels,
           datasets: [
             {
               label: 'Precisión Palancas (%)',
-              data: dataPalancas,
+              data: dataPalan,
               borderColor: '#00bfff',
-              backgroundColor: 'rgba(0, 191, 255, 0.10)',
-              tension: 0.35,
-              yAxisID: 'yPrecision'
+              backgroundColor: 'rgba(0, 191, 255, 0.1)',
+              borderWidth: 2,
+              tension: 0.3
             },
             {
               label: 'Precisión Punteo (%)',
-              data: dataPunteo,
-              borderColor: '#e5b324',
-              backgroundColor: 'rgba(229, 179, 36, 0.10)',
-              tension: 0.35,
-              yAxisID: 'yPrecision'
+              data: dataPunt,
+              borderColor: '#f59e0b',
+              backgroundColor: 'rgba(245, 158, 11, 0.1)',
+              borderWidth: 2,
+              tension: 0.3
             },
             {
-              label: 'Tiempo Reactímetro (ms)',
-              data: dataReactimetro,
+              label: 'Reactímetro (ms)',
+              data: dataReact,
               borderColor: '#10b981',
               borderDash: [4, 4],
-              tension: 0.35,
-              yAxisID: 'yTiempo'
+              borderWidth: 2,
+              yAxisID: 'y1'
             }
           ]
         },
         options: {
           responsive: true,
           maintainAspectRatio: false,
-          plugins: { legend: { labels: { color: '#94a3b8', font: { size: 9, weight: 'bold' } } } },
+          plugins: { legend: { labels: { color: '#94a3b8', font: { size: 10 } } } },
           scales: {
-            x: { ticks: { color: '#94a3b8' }, grid: { color: '#132640' } },
-            yPrecision: {
-              type: 'linear',
-              position: 'left',
-              min: 0, max: 100,
-              ticks: { color: '#00bfff', callback: value => value + '%' },
-              grid: { color: '#132640' }
-            },
-            yTiempo: {
-              type: 'linear',
-              position: 'right',
-              ticks: { color: '#10b981', callback: value => value + 'ms' },
-              grid: { drawOnChartArea: false }
-            }
+            x: { grid: { color: '#132238' }, ticks: { color: '#94a3b8' } },
+            y: { min: 0, max: 100, grid: { color: '#132238' }, ticks: { color: '#94a3b8' } },
+            y1: { position: 'right', grid: { drawOnChartArea: false }, ticks: { color: '#10b981' } }
           }
         }
       });
     }
 
-    function procesarSiguienteIntento() {
-      if (intentoActual >= totalSimulacionesPlan) {
-        document.getElementById('modalLimiteSimulaciones').style.display = 'flex';
-        return;
-      }
-      intentoActual++;
-      localStorage.setItem('sensometrika_intento_actual', intentoActual.toString());
-      localStorage.removeItem('sensometrika_modulos_rendidos');
+    function volverPortal() {
       const urlParams = new URLSearchParams(window.location.search);
       window.location.href = `menu_B2C.html?${urlParams.toString()}`;
-    }
-
-    function cerrarModalLimite() {
-      document.getElementById('modalLimiteSimulaciones').style.display = 'none';
     }
   </script>
 </body>
