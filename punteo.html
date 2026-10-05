@@ -329,22 +329,27 @@
         function actualizarEstadoUI() {
             const historial = JSON.parse(localStorage.getItem('sensometrika_historial_punteo')) || [];
             const numEnsayosRealizados = historial.length;
-            const maxIntentos = 8;
+
+            // DETERMINAR LÍMITE SEGÚN EL PLAN CONTRATADO
+            const planStorage = (localStorage.getItem('sensometrika_plan_contratado') || urlParams.get('plan') || 'BASICO').toUpperCase();
+            let maxIntentosPlan = 3;
+            if (planStorage.includes('PLUS')) maxIntentosPlan = 5;
+            if (planStorage.includes('FULL') || planStorage.includes('ALTO')) maxIntentosPlan = 8;
 
             if (isDemoURL) {
                 modoActual = 'DEMO';
-            } else if (numEnsayosRealizados >= maxIntentos) {
+            } else if (numEnsayosRealizados >= maxIntentosPlan) {
                 modoActual = 'BLOQUEADO';
             } else {
                 modoActual = 'OFICIAL';
             }
 
             if (modoActual === 'BLOQUEADO') {
-                badgeText.textContent = `EVALUACIÓN COMPLETADA (${numEnsayosRealizados}/${maxIntentos})`;
+                badgeText.textContent = `PLAN ${planStorage} COMPLETADO (${numEnsayosRealizados}/${maxIntentosPlan})`;
                 badgeDot.style.backgroundColor = "#10b981"; 
                 btnStart.style.display = 'none';
                 btnNext.style.display = 'block';
-                instructionText.textContent = "Has completado todas las simulaciones de Punteo Viso-Motriz. Retorna al menú para continuar.";
+                instructionText.textContent = `Has alcanzado el límite de ${maxIntentosPlan} simulaciones de tu Plan ${planStorage}. Retorna al menú.`;
             } else if (modoActual === 'DEMO') {
                 badgeText.textContent = "Paso 1: Calibración Demo (1/1)";
                 badgeDot.style.backgroundColor = "#e5b324"; 
@@ -355,9 +360,9 @@
                 instructionText.textContent = "Modo Demo: Toca la pantalla cuando el círculo cruce la zona inferior de ensayo.";
             } else {
                 const siguienteSimu = numEnsayosRealizados + 1;
-                badgeText.textContent = esB2B ? `Simulación Oficial B2B (S${siguienteSimu})` : `Simulación Oficial S${siguienteSimu} de ${maxIntentos}`;
+                badgeText.textContent = esB2B ? `Simulación Oficial B2B (S${siguienteSimu})` : `Simulación Oficial S${siguienteSimu} de ${maxIntentosPlan}`;
                 badgeDot.style.backgroundColor = "#0284c7"; 
-                btnStart.textContent = `INICIAR SIMULACIÓN OFICIAL (S${siguienteSimu})`;
+                btnStart.textContent = `INICIAR SIMULACIÓN OFICIAL (S${siguienteSimu} DE ${maxIntentosPlan})`;
                 btnStart.style.backgroundColor = "#0284c7";
                 btnStart.style.display = 'block';
                 btnNext.style.display = 'none';
@@ -491,12 +496,16 @@
                     }
                 );
             } else if (modoActual === 'OFICIAL') {
-                // REGISTRO ACUMULATIVO SIN BLOQUEO EN PRIMER INTENTO
                 let historial = JSON.parse(localStorage.getItem('sensometrika_historial_punteo')) || [];
                 historial.push({ aciertos: aciertos, errores: errores, precision: precisionVal, fecha: new Date().toISOString() });
                 localStorage.setItem('sensometrika_historial_punteo', JSON.stringify(historial));
 
-                if (historial.length >= 8) {
+                const planStorage = (localStorage.getItem('sensometrika_plan_contratado') || 'BASICO').toUpperCase();
+                let maxIntentosPlan = 3;
+                if (planStorage.includes('PLUS')) maxIntentosPlan = 5;
+                if (planStorage.includes('FULL') || planStorage.includes('ALTO')) maxIntentosPlan = 8;
+
+                if (historial.length >= maxIntentosPlan) {
                     let rendidos = JSON.parse(localStorage.getItem('sensometrika_modulos_rendidos')) || {};
                     rendidos.punteo = true;
                     localStorage.setItem('sensometrika_modulos_rendidos', JSON.stringify(rendidos));
@@ -506,7 +515,7 @@
 
                 mostrarModal(
                     `SIMULACIÓN S${numSimu} REGISTRADA`,
-                    `Aciertos: <b>${aciertos}</b><br>Errores: <b>${errores}</b><br>Precisión: <b>${precisionVal}%</b><br><br><b>Simulación S${numSimu} de 8 guardada con éxito.</b>`,
+                    `Aciertos: <b>${aciertos}</b><br>Errores: <b>${errores}</b><br>Precisión: <b>${precisionVal}%</b><br><br><b>Simulación S${numSimu} de ${maxIntentosPlan} guardada con éxito.</b>`,
                     () => { ejecutarRetornoMenu(); }
                 );
             }

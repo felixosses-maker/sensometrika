@@ -381,23 +381,28 @@
         function actualizarEstadoPlanUI() {
             const historial = JSON.parse(localStorage.getItem('sensometrika_historial_reactimetro')) || [];
             const numEnsayosRealizados = historial.length;
-            const maxIntentos = 8;
+
+            // DETERMINAR LÍMITE SEGÚN EL PLAN CONTRATADO
+            const planStorage = (localStorage.getItem('sensometrika_plan_contratado') || urlParams.get('plan') || 'BASICO').toUpperCase();
+            let maxIntentosPlan = 3;
+            if (planStorage.includes('PLUS')) maxIntentosPlan = 5;
+            if (planStorage.includes('FULL') || planStorage.includes('ALTO')) maxIntentosPlan = 8;
 
             if (isDemoURL) {
                 modoActual = 'DEMO';
-            } else if (numEnsayosRealizados >= maxIntentos) {
+            } else if (numEnsayosRealizados >= maxIntentosPlan) {
                 modoActual = 'BLOQUEADO';
             } else {
                 modoActual = 'OFICIAL';
             }
 
             if (modoActual === 'BLOQUEADO') {
-                badgeText.textContent = `MÓDULO EVALUADO (${numEnsayosRealizados}/${maxIntentos})`;
+                badgeText.textContent = `PLAN ${planStorage} COMPLETADO (${numEnsayosRealizados}/${maxIntentosPlan})`;
                 badgeDot.style.backgroundColor = "#10b981"; 
                 btnStart.style.display = 'none';
                 btnBrake.style.display = 'none';
                 salidaWrapper.style.display = 'flex';
-                instructionText.textContent = "Has completado la totalidad de las simulaciones normativas para este módulo. Retorna al menú.";
+                instructionText.textContent = `Has alcanzado el límite de ${maxIntentosPlan} simulaciones de tu Plan ${planStorage}. Retorna al menú.`;
             } else if (modoActual === 'DEMO') {
                 badgeText.textContent = "Paso 1: Calibración Demo (1/1)";
                 badgeDot.style.backgroundColor = "#e5b324"; 
@@ -409,9 +414,9 @@
                 instructionText.textContent = "Modo Demo: Se realizarán 6 estímulos de ensayo para familiarizarte antes de la prueba oficial.";
             } else {
                 const siguienteSimu = numEnsayosRealizados + 1;
-                badgeText.textContent = esB2B ? `Simulación Oficial B2B (S${siguienteSimu})` : `Simulación Oficial S${siguienteSimu} de ${maxIntentos}`;
+                badgeText.textContent = esB2B ? `Simulación Oficial B2B (S${siguienteSimu})` : `Simulación Oficial S${siguienteSimu} de ${maxIntentosPlan}`;
                 badgeDot.style.backgroundColor = "#0284c7"; 
-                btnStart.textContent = `INICIAR SIMULACIÓN OFICIAL (S${siguienteSimu})`;
+                btnStart.textContent = `INICIAR SIMULACIÓN OFICIAL (S${siguienteSimu} DE ${maxIntentosPlan})`;
                 btnStart.style.display = 'block';
                 btnStart.style.backgroundColor = "#0284c7";
                 btnBrake.style.display = 'none';
@@ -453,7 +458,6 @@
                     }
                 );
             } else if (modoActual === 'OFICIAL') {
-                // GUARDADO ACUMULATIVO SIN BLOQUEO EN EL PRIMER INTENTO
                 let historial = JSON.parse(localStorage.getItem('sensometrika_historial_reactimetro')) || [];
                 historial.push({
                     promedioTiempo: res.promedioTiempo,
@@ -463,8 +467,12 @@
                 });
                 localStorage.setItem('sensometrika_historial_reactimetro', JSON.stringify(historial));
 
-                // Marca rendido general solo cuando alcance los 8 intentos completos
-                if (historial.length >= 8) {
+                const planStorage = (localStorage.getItem('sensometrika_plan_contratado') || 'BASICO').toUpperCase();
+                let maxIntentosPlan = 3;
+                if (planStorage.includes('PLUS')) maxIntentosPlan = 5;
+                if (planStorage.includes('FULL') || planStorage.includes('ALTO')) maxIntentosPlan = 8;
+
+                if (historial.length >= maxIntentosPlan) {
                     let rendidos = JSON.parse(localStorage.getItem('sensometrika_modulos_rendidos')) || {};
                     rendidos.reactimetro = true;
                     localStorage.setItem('sensometrika_modulos_rendidos', JSON.stringify(rendidos));
@@ -476,7 +484,7 @@
                     `SIMULACIÓN S${numSimu} REGISTRADA`,
                     `Promedio Neto de Frenado: <b>${res.promedioTiempo} ms</b> (${res.promedioTiempo <= 450 ? '✓ En Norma' : '⚠ Latencia Elevada'})<br>` +
                     `Anticipaciones: <b>${res.anticipaciones}</b><br><br>` +
-                    `<b>Simulación S${numSimu} de 8 guardada con éxito.</b>`,
+                    `<b>Simulación S${numSimu} de ${maxIntentosPlan} guardada con éxito.</b>`,
                     () => {
                         ejecutarRetornoMenu();
                     }
