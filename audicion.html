@@ -155,10 +155,13 @@
       const historial = JSON.parse(localStorage.getItem('sensometrika_historial_auditivo')) || JSON.parse(localStorage.getItem('sensometrika_historial_audicion')) || [];
       const numEnsayosRealizados = historial.length;
 
-      const planStorage = (localStorage.getItem('sensometrika_plan_contratado') || urlParams.get('plan') || 'BASICO').toUpperCase();
-      let maxIntentosPlan = 3;
-      if (planStorage.includes('PLUS')) maxIntentosPlan = 5;
-      if (planStorage.includes('FULL') || planStorage.includes('ALTO')) maxIntentosPlan = 8;
+      const planStorage = (localStorage.getItem('sensometrika_plan_contratado') || urlParams.get('plan') || 'PLUS').toUpperCase();
+      
+      // REGLA B2C: PLAN PLUS = 5 SIMULACIONES | PLAN FULL = 8 SIMULACIONES
+      let maxIntentosPlan = 5;
+      if (planStorage.includes('FULL') || planStorage.includes('ALTO')) {
+        maxIntentosPlan = 8;
+      }
 
       const demoRealizada = localStorage.getItem('audicion_demo_completada') === 'true';
 
@@ -386,10 +389,11 @@
         localStorage.setItem('sensometrika_historial_auditivo', JSON.stringify(historial));
         localStorage.setItem('sensometrika_historial_audicion', JSON.stringify(historial));
 
-        const planStorage = (localStorage.getItem('sensometrika_plan_contratado') || 'BASICO').toUpperCase();
-        let maxIntentosPlan = 3;
-        if (planStorage.includes('PLUS')) maxIntentosPlan = 5;
-        if (planStorage.includes('FULL') || planStorage.includes('ALTO')) maxIntentosPlan = 8;
+        const planStorage = (localStorage.getItem('sensometrika_plan_contratado') || 'PLUS').toUpperCase();
+        let maxIntentosPlan = 5;
+        if (planStorage.includes('FULL') || planStorage.includes('ALTO')) {
+          maxIntentosPlan = 8;
+        }
 
         if (historial.length >= maxIntentosPlan) {
           let modulosRendidos = JSON.parse(localStorage.getItem('sensometrika_modulos_rendidos')) || {};
