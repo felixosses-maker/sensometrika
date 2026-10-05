@@ -212,7 +212,7 @@
     <!-- CUOTA SIMULACIONES B2C -->
     <div id="boxContadorSimulaciones" class="counter-box">
       <span style="color: var(--text-muted); font-size: 0.72rem; font-weight: 700;">🔄 SIMULACIONES DISPONIBLES:</span>
-      <strong id="lblSimulacionesCuota" style="color: var(--accent-cyan); font-size: 0.88rem; font-weight: 900;">INTENTO 1 DE 8</strong>
+      <strong id="lblSimulacionesCuota" style="color: var(--accent-cyan); font-size: 0.88rem; font-weight: 900;">INTENTO 1 DE 3</strong>
     </div>
 
     <!-- MÓDULOS DE EVALUACIÓN (8 MÓDULOS HOMOLOGADOS) -->
@@ -465,16 +465,21 @@
     }
 
     function revisarModulosRendidos() {
-      // HOMOLOGACIÓN DE MÁXIMO DE INTENTOS A 8 EN TODOS LOS MÓDULOS
+      // OBTENER LÍMITE REAL DE INTENTOS SEGÚN PLAN
+      const planParam = (localStorage.getItem('sensometrika_plan_contratado') || 'BASICO').toUpperCase();
+      let maxIntentosPlan = 3;
+      if (planParam.includes('PLUS')) maxIntentosPlan = 5;
+      if (planParam.includes('FULL') || planParam.includes('ALTO')) maxIntentosPlan = 8;
+
       const listaConfig = [
-        { id: 'reactimetro', statusElem: 'statusMod1', linkElem: 'linkMod1', maxIntentos: 8 },
-        { id: 'palancas', statusElem: 'statusMod2', linkElem: 'linkMod2', maxIntentos: 8 },
-        { id: 'punteo', statusElem: 'statusMod3', linkElem: 'linkMod3', maxIntentos: 8 },
-        { id: 'audicion', statusElem: 'statusMod4', linkElem: 'linkMod4', maxIntentos: 8 },
-        { id: 'visual', statusElem: 'statusMod5', linkElem: 'linkMod5', maxIntentos: 8 },
-        { id: 'anticipacion', statusElem: 'statusMod6', linkElem: 'linkMod6', maxIntentos: 8 },
-        { id: 'estereopsis', statusElem: 'statusMod7', linkElem: 'linkMod7', maxIntentos: 8 },
-        { id: 'fatiga', statusElem: 'statusMod8', linkElem: 'linkMod8', maxIntentos: 8 }
+        { id: 'reactimetro', statusElem: 'statusMod1', linkElem: 'linkMod1' },
+        { id: 'palancas', statusElem: 'statusMod2', linkElem: 'linkMod2' },
+        { id: 'punteo', statusElem: 'statusMod3', linkElem: 'linkMod3' },
+        { id: 'audicion', statusElem: 'statusMod4', linkElem: 'linkMod4' },
+        { id: 'visual', statusElem: 'statusMod5', linkElem: 'linkMod5' },
+        { id: 'anticipacion', statusElem: 'statusMod6', linkElem: 'linkMod6' },
+        { id: 'estereopsis', statusElem: 'statusMod7', linkElem: 'linkMod7' },
+        { id: 'fatiga', statusElem: 'statusMod8', linkElem: 'linkMod8' }
       ];
 
       listaConfig.forEach(mod => {
@@ -485,8 +490,8 @@
         const numEnsayos = historial.length;
         const urlDestino = construirUrlModulo(mod.id);
 
-        if (numEnsayos >= mod.maxIntentos) {
-          statusContainer.innerHTML = `<a id="${mod.linkElem}" href="${urlDestino}" class="btn-done">RENDIDO ✓ (${numEnsayos}/${mod.maxIntentos})</a>`;
+        if (numEnsayos >= maxIntentosPlan) {
+          statusContainer.innerHTML = `<span class="btn-done" style="background: rgba(16, 185, 129, 0.15); border: 1px solid var(--accent-green); color: var(--accent-green);">PLAN COMPLETADO (${numEnsayos}/${maxIntentosPlan})</span>`;
         } else if (numEnsayos > 0) {
           const sigSimu = numEnsayos + 1;
           statusContainer.innerHTML = `<a id="${mod.linkElem}" href="${urlDestino}" class="btn-oficial">SIMULACIÓN S${sigSimu} →</a>`;
@@ -500,24 +505,19 @@
         }
       });
 
-      // Sincronización del intento global a partir del menor progreso psicomotor
+      // Sincronización del intento global
       const reactHist = (JSON.parse(localStorage.getItem('sensometrika_historial_reactimetro')) || []).length;
       const palHist = (JSON.parse(localStorage.getItem('sensometrika_historial_palancas')) || []).length;
       const puntHist = (JSON.parse(localStorage.getItem('sensometrika_historial_punteo')) || []).length;
       
       const minPsicomotriz = Math.min(reactHist, palHist, puntHist);
-      const intentoGlobal = Math.min(8, minPsicomotriz + 1);
+      const intentoGlobal = Math.min(maxIntentosPlan, minPsicomotriz + 1);
 
       localStorage.setItem('sensometrika_intento_actual', intentoGlobal.toString());
       
       const lblCuota = document.getElementById('lblSimulacionesCuota');
       if (lblCuota) {
-        const planParam = localStorage.getItem('sensometrika_plan_contratado') || 'BASICO';
-        let totalPlan = 3;
-        if (planParam.includes('PLUS')) totalPlan = 5;
-        if (planParam.includes('FULL') || planParam.includes('ALTO')) totalPlan = 8;
-        
-        lblCuota.textContent = `INTENTO ${intentoGlobal} DE ${totalPlan}`;
+        lblCuota.textContent = `INTENTO ${intentoGlobal} DE ${maxIntentosPlan}`;
       }
     }
 
