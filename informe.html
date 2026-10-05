@@ -340,8 +340,8 @@
         datosUsuario = JSON.parse(localStorage.getItem('sensometrika_datos_usuario')) || {};
       } catch(e){}
 
-      const nombre = urlParams.get('nombre') || datosUsuario.nombre || 'Hector Cancino Ruiz';
-      const rut = urlParams.get('rut') || datosUsuario.rut || '13.654.243-1';
+      const nombre = urlParams.get('nombre') || datosUsuario.nombre || 'Francisco Arteaga Soto';
+      const rut = urlParams.get('rut') || datosUsuario.rut || '5.444.232-1';
 
       document.getElementById('lblNombre').textContent = decodeURIComponent(nombre);
       document.getElementById('lblRut').textContent = rut;
@@ -378,13 +378,13 @@
 
       // Palancas y Punteo
       if (hPalan.length > 0) {
-        document.getElementById('valPalanPrec').textContent = `${hPalan[hPalan.length - 1].precision || 100}%`;
+        document.getElementById('valPalanPrec').textContent = `${hPalan[hPalan.length - 1].precision || 97}%`;
       }
       if (hPunt.length > 0) {
-        document.getElementById('valPuntPrec').textContent = `${hPunt[hPunt.length - 1].precision || 92}%`;
+        document.getElementById('valPuntPrec').textContent = `${hPunt[hPunt.length - 1].precision || 85}%`;
       }
 
-      // Auditivo (Despliega Aciertos y Latencia de Reacción al Tono)
+      // Auditivo
       if (hAud.length > 0) {
         const ultA = hAud[hAud.length - 1];
         const latAud = ultA.latenciaMs || 240;
@@ -394,11 +394,11 @@
         document.getElementById('valAudEstado').innerHTML = '<span class="badge-pend">PENDIENTE</span>';
       }
 
-      // Visual (Despliega Agudeza y Tiempo de Discriminación)
+      // Visual
       if (hVis.length > 0) {
         const ultV = hVis[hVis.length - 1];
-        const latVis = ultV.latenciaMs || 310;
-        document.getElementById('valVisAgudeza').textContent = `${ultV.agudeza || '20/20'} (${latVis} ms)`;
+        const latVis = ultV.latenciaMs || 1202;
+        document.getElementById('valVisAgudeza').textContent = `${ultV.agudeza || '20/20 (1.0)'} (${latVis} ms)`;
         document.getElementById('valVisEstado').innerHTML = '<span class="badge-ok">COMPLETADO ✓</span>';
       } else {
         document.getElementById('valVisEstado').innerHTML = '<span class="badge-pend">PENDIENTE</span>';
@@ -434,16 +434,20 @@
         for (let i = 0; i < 8; i++) {
           if (mod.historial[i]) {
             const item = mod.historial[i];
-            
-            // Muestra detalle de latencia o agudeza por simulación
-            let valDisplay = item[mod.keyVal] !== undefined ? `${item[mod.keyVal]}${mod.sufijo}` : 'OK';
-            if (mod.nombre.includes('Auditivo') && item.latenciaMs) {
-              valDisplay = `${item.aciertos}/8 (${item.latenciaMs}ms)`;
-            } else if (mod.nombre.includes('Visual') && item.latenciaMs) {
-              valDisplay = `${item.agudeza} (${item.latenciaMs}ms)`;
+            let valDisplay = '';
+
+            if (mod.nombre.includes('Auditivo')) {
+              const lat = item.latenciaMs || 240;
+              const errores = item.errores !== undefined ? item.errores : (8 - (item.aciertos || 8));
+              valDisplay = `${item.aciertos}/8 (${lat}ms${errores > 0 ? ` - ${errores}ERR` : ''})`;
+            } else if (mod.nombre.includes('Visual')) {
+              const lat = item.latenciaMs || 1202;
+              valDisplay = `${item.agudeza} (${lat}ms)`;
+            } else {
+              valDisplay = item[mod.keyVal] !== undefined ? `${item[mod.keyVal]}${mod.sufijo}` : 'OK';
             }
 
-            filaHtml += `<td style="color:var(--accent-cyan); font-weight:700; font-size:0.65rem;">${valDisplay}</td>`;
+            filaHtml += `<td style="color:var(--accent-cyan); font-weight:700; font-size:0.62rem;">${valDisplay}</td>`;
             
             if (typeof item[mod.keyVal] === 'number') {
               suma += item[mod.keyVal];
@@ -458,7 +462,6 @@
         }
 
         const promedioTxt = conteo > 0 ? `${Math.round(suma / conteo)}${mod.sufijo}` : '--';
-        
         let estadoBadge = '<span class="badge-pend">EN CURSO</span>';
         if (conteo >= mod.minEsperado) {
           estadoBadge = '<span class="badge-ok">COMPLETADO</span>';
@@ -469,9 +472,8 @@
         tbody.innerHTML += filaHtml;
       });
 
-      // CONTROL PERICIAL ESTRICTO DE DICTAMEN FINAL (100% DE SIMULACIONES)
       const elemDictamen = document.getElementById('txtDictamenFinal');
-      const totalEnsayosNormativos = 26; // 8 (React) + 8 (Palan) + 8 (Punt) + 1 (Aud) + 1 (Vis)
+      const totalEnsayosNormativos = 26;
       
       if (modulosCompletes >= 5 && totalSimulacionesCompletadas >= totalEnsayosNormativos) {
         elemDictamen.innerHTML = `
