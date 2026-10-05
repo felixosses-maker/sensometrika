@@ -3,19 +3,17 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>SENSOMETRIKA | Informe Consolidado Pericial B2C</title>
+  <title>SENSOMETRIKA | Menú de Evaluaciones Multi-Plan</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     :root {
-      --bg-page: #040810;
+      --bg-color: #040810;
       --card-bg: #091120;
       --card-border: #132238;
       --accent-cyan: #00bfff;
       --accent-cyan-glow: rgba(0, 191, 255, 0.45);
       --accent-green: #10b981;
-      --accent-yellow: #f59e0b;
-      --accent-red: #ef4444;
+      --accent-gold: #e5b324;
       --text-main: #f8fafc;
       --text-muted: #94a3b8;
     }
@@ -23,534 +21,515 @@
     * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
 
     body {
-      background-color: var(--bg-page);
+      background-color: var(--bg-color);
       color: var(--text-main);
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       min-height: 100vh;
-      padding: 24px 12px;
-      display: flex;
-      justify-content: center;
-      align-items: flex-start;
-    }
-
-    .sheet-container {
-      width: 100%;
-      max-width: 860px;
-      background-color: var(--card-bg);
-      border: 1px solid var(--card-border);
-      border-radius: 16px;
-      padding: 28px;
+      padding: 20px 12px;
       display: flex;
       flex-direction: column;
-      gap: 20px;
-      box-shadow: 0 20px 50px rgba(0,0,0,0.85);
-    }
-
-    .doc-header {
-      display: flex;
-      justify-content: space-between;
       align-items: center;
-      border-bottom: 1px solid var(--card-border);
-      padding-bottom: 16px;
     }
 
-    .brand-logo-img {
-      width: 170px;
-      height: auto;
-      mix-blend-mode: lighten;
-      filter: drop-shadow(0 0 10px var(--accent-cyan-glow));
-    }
+    .main-container { width: 100%; max-width: 500px; display: flex; flex-direction: column; gap: 16px; }
 
-    .card-box-report {
-      background: #060c18;
+    .brand-header { text-align: center; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+    .brand-logo-img { width: 185px; height: auto; mix-blend-mode: lighten; filter: drop-shadow(0 0 12px var(--accent-cyan-glow)); }
+
+    .card-box {
+      background-color: var(--card-bg);
       border: 1px solid var(--card-border);
-      border-radius: 12px;
-      padding: 16px;
+      border-radius: 14px;
+      padding: 18px;
       display: flex;
       flex-direction: column;
       gap: 12px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.6);
     }
 
-    .title-sub-report {
+    .badge-plan-header {
+      background: rgba(0, 191, 255, 0.12);
+      border: 1px solid var(--accent-cyan);
+      color: var(--accent-cyan);
+      padding: 12px 14px;
+      border-radius: 10px;
       font-size: 0.82rem;
       font-weight: 800;
-      color: var(--accent-cyan);
       text-transform: uppercase;
-      letter-spacing: 0.5px;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .grid-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-    .grid-3col { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
-
-    .metric-card {
-      background: #030712;
-      border: 1px solid var(--card-border);
-      border-radius: 8px;
-      padding: 10px;
+      text-align: center;
       display: flex;
       flex-direction: column;
-      gap: 4px;
+      gap: 3px;
     }
 
-    .metric-label { font-size: 0.62rem; color: var(--text-muted); font-weight: 800; text-transform: uppercase; }
-    .metric-val { font-size: 0.95rem; font-weight: 900; color: #fff; }
-
-    .table-desglose {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 0.72rem;
-    }
-
-    .table-desglose th {
-      background: #030712;
-      color: var(--accent-cyan);
-      padding: 8px 6px;
-      font-weight: 800;
-      text-transform: uppercase;
-      font-size: 0.62rem;
-      text-align: center;
-      border: 1px solid var(--card-border);
-    }
-
-    .table-desglose td {
-      padding: 8px 6px;
-      border: 1px solid var(--card-border);
-      text-align: center;
-      vertical-align: middle;
-    }
-
-    .badge-ok { background: rgba(16, 185, 129, 0.15); color: var(--accent-green); border: 1px solid var(--accent-green); padding: 2px 8px; border-radius: 4px; font-weight: 800; font-size: 0.62rem; }
-    .badge-pend { background: rgba(245, 158, 11, 0.15); color: var(--accent-yellow); border: 1px solid var(--accent-yellow); padding: 2px 8px; border-radius: 4px; font-weight: 800; font-size: 0.62rem; }
-
-    .chart-container {
-      position: relative;
-      height: 220px;
-      width: 100%;
+    .counter-box {
       background: #030712;
       border: 1px solid var(--card-border);
       border-radius: 10px;
-      padding: 10px;
-    }
-
-    .footer-forensic {
+      padding: 10px 14px;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      border-top: 1px solid var(--card-border);
-      padding-top: 16px;
-      font-size: 0.65rem;
-      color: var(--text-muted);
+      font-size: 0.78rem;
     }
 
-    .btn-action-return {
+    .module-card {
+      background: #030712;
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      padding: 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .module-info { display: flex; flex-direction: column; gap: 2px; }
+    .module-title { font-size: 0.88rem; font-weight: 800; color: #fff; }
+    .module-desc { font-size: 0.70rem; color: var(--text-muted); }
+
+    .btn-start {
       background: var(--accent-cyan);
       color: #000;
+      border: none;
+      padding: 8px 14px;
+      border-radius: 8px;
       font-weight: 900;
+      font-size: 0.78rem;
+      cursor: pointer;
+      text-transform: uppercase;
+      text-decoration: none;
+      white-space: nowrap;
+      box-shadow: 0 2px 10px var(--accent-cyan-glow);
+    }
+
+    .btn-oficial {
+      background: #0284c7;
+      color: #ffffff;
+      border: 1px solid #38bdf8;
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-weight: 900;
+      font-size: 0.78rem;
+      cursor: pointer;
+      text-transform: uppercase;
+      text-decoration: none;
+      white-space: nowrap;
+      box-shadow: 0 2px 10px rgba(2, 132, 199, 0.4);
+    }
+
+    .btn-done {
+      background: rgba(16, 185, 129, 0.15);
+      border: 1px solid var(--accent-green);
+      color: var(--accent-green);
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-weight: 800;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      opacity: 0.9;
+      text-decoration: none;
+      white-space: nowrap;
+    }
+
+    .btn-action-main {
+      background: var(--accent-green);
+      color: #000;
+      border: none;
       padding: 14px;
       border-radius: 10px;
+      font-weight: 900;
+      font-size: 0.88rem;
+      cursor: pointer;
+      text-transform: uppercase;
+      width: 100%;
       text-align: center;
       text-decoration: none;
-      font-size: 0.88rem;
-      text-transform: uppercase;
       display: block;
-      width: 100%;
-      box-shadow: 0 4px 15px var(--accent-cyan-glow);
+      margin-top: 6px;
     }
+
+    /* MODAL DE BIENVENIDA */
+    .welcome-modal-overlay {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(4, 8, 16, 0.94);
+      backdrop-filter: blur(8px);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 2000;
+      padding: 16px;
+    }
+
+    .welcome-card {
+      background: linear-gradient(145deg, #0d1b2e 0%, #07101d 100%);
+      border: 1.5px solid var(--accent-cyan);
+      border-radius: 20px;
+      padding: 22px 20px;
+      width: 100%;
+      max-width: 440px;
+      max-height: 90vh;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      box-shadow: 0 20px 50px rgba(0, 191, 255, 0.25);
+    }
+
+    .recom-item {
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+      font-size: 0.75rem;
+      color: #cbd5e1;
+      background: rgba(3, 7, 18, 0.6);
+      border: 1px solid var(--card-border);
+      padding: 10px 12px;
+      border-radius: 10px;
+    }
+
+    .recom-icon { font-size: 1.1rem; line-height: 1; }
   </style>
 </head>
 <body>
 
-  <div class="sheet-container">
-    <!-- ENCABEZADO OFICIAL -->
-    <header class="doc-header">
-      <div>
-        <img src="sensometrica.jpg" alt="SENSOMETRIKA" class="brand-logo-img">
-        <p style="font-size: 0.65rem; color: var(--text-muted); font-weight: 800; margin-top: 4px; text-transform: uppercase;">
-          SISTEMA DE EVALUACIÓN PSICOSENSOMÉTRICA PERICIAL • D.S. N° 170 MTT
-        </p>
-      </div>
-      <div style="text-align: right;">
-        <span class="badge-ok" style="font-size: 0.70rem;">CERTIFICADO B2C</span>
-        <p style="font-size: 0.65rem; color: var(--text-muted); margin-top: 4px;" id="lblCodigoHash">HASH: SHA256-PENDIENTE</p>
-      </div>
+  <div class="main-container">
+    <header class="brand-header">
+      <img src="sensometrica.jpg" alt="SENSOMETRIKA" class="brand-logo-img">
+      <span style="color: var(--accent-cyan); font-size: 0.72rem; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase;">
+        MENÚ DE EVALUACIONES MULTI-PLAN
+      </span>
     </header>
 
-    <!-- DATOS DEL EVALUADO -->
-    <div class="card-box-report">
-      <h4 class="title-sub-report">👤 DATOS PERSONALES DEL EVALUADO</h4>
-      <div class="grid-2col" style="font-size: 0.78rem;">
-        <div><span style="color:var(--text-muted);">NOMBRE COMPLETO:</span> <strong id="lblNombre">--</strong></div>
-        <div><span style="color:var(--text-muted);">RUT / ID:</span> <strong id="lblRut">--</strong></div>
-        <div><span style="color:var(--text-muted);">PLAN DE EVALUACIÓN:</span> <strong id="lblPlan" style="color:var(--accent-cyan);">FULL B2C (5 MÓDULOS)</strong></div>
-        <div><span style="color:var(--text-muted);">FECHA EMISIÓN:</span> <strong id="lblFecha">--</strong></div>
-      </div>
+    <!-- BANNER DE PLAN -->
+    <div id="boxHeaderPlan" class="badge-plan-header">
+      <span id="txtTipoPlan" style="font-size:0.88rem; font-weight:900;">EVALUACIÓN • B2B / B2C</span>
+      <span id="txtInfoEvaluado" style="font-size:0.72rem; color:var(--text-muted); font-weight:600;">Evaluado: - | RUT: -</span>
     </div>
 
-    <!-- ANTECEDENTES DE CALIBRACIÓN Y AUDITORÍA TELEMÉTRICA -->
-    <div class="card-box-report" style="border-color: rgba(56, 189, 248, 0.4);">
-      <h4 class="title-sub-report">🛠️ ANTECEDENTES DE CALIBRACIÓN Y AUDITORÍA TELEMÉTRICA</h4>
-      <div class="grid-3col">
-        <div class="metric-card">
-          <span class="metric-label">LATENCIA PANTALLA / SENSOR</span>
-          <span class="metric-val" style="color:var(--accent-green);" id="lblCalibLatencia">18 ms (ÓPTIMO)</span>
-        </div>
-        <div class="metric-card">
-          <span class="metric-label">DISTANCIA BIOMÉTRICA VISUAL</span>
-          <span class="metric-val" style="color:var(--accent-cyan);" id="lblCalibDistancia">52 cm (50-60 cm OK)</span>
-        </div>
-        <div class="metric-card">
-          <span class="metric-label">ESTÁNDAR AUDIO / ESTÉREO</span>
-          <span class="metric-val" style="color:var(--accent-green);" id="lblCalibAudio">AUDÍFONOS OK</span>
-        </div>
-      </div>
+    <!-- CUOTA SIMULACIONES B2C -->
+    <div id="boxContadorSimulaciones" class="counter-box">
+      <span style="color: var(--text-muted); font-size: 0.72rem; font-weight: 700;">🔄 SIMULACIONES DISPONIBLES:</span>
+      <strong id="lblSimulacionesCuota" style="color: var(--accent-cyan); font-size: 0.88rem; font-weight: 900;">INTENTO 1 DE 8</strong>
     </div>
 
-    <!-- TARJETAS DE MÓDULOS ESPECÍFICOS -->
-    <div class="card-box-report">
-      <h4 class="title-sub-report">⚡ REACTÍMETRO • TIEMPO DE REACCIÓN SIMPLE Y COMPLEJO</h4>
-      <div class="grid-3col">
-        <div class="metric-card">
-          <span class="metric-label">TIEMPO PROMEDIO</span>
-          <span class="metric-val" id="valReactProm">-- ms</span>
+    <!-- MÓDULOS DE EVALUACIÓN (8 MÓDULOS HOMOLOGADOS) -->
+    <div class="card-box" id="boxModulos">
+      
+      <!-- 1. Reactímetro -->
+      <div class="module-card">
+        <div class="module-info">
+          <span class="module-title">1. Reactímetro (Tiempo Frenado)</span>
+          <span class="module-desc">Medición de velocidad de respuesta en frenado.</span>
         </div>
-        <div class="metric-card">
-          <span class="metric-label">EXIGENCIA NORMATIVA</span>
-          <span class="metric-val" style="color:var(--accent-cyan);">≤ 350 ms</span>
-        </div>
-        <div class="metric-card">
-          <span class="metric-label">ESTADO MÓDULO</span>
-          <span class="metric-val" id="valReactEstado">--</span>
+        <div id="statusMod1">
+          <a id="linkMod1" href="reactimetro.html" class="btn-start">INICIAR DEMO →</a>
         </div>
       </div>
+
+      <!-- 2. Palancas -->
+      <div class="module-card">
+        <div class="module-info">
+          <span class="module-title">2. Palancas (Coordinación Bimanual)</span>
+          <span class="module-desc">Coordinación motriz fina con ambas manos en ruta.</span>
+        </div>
+        <div id="statusMod2">
+          <a id="linkMod2" href="palancas.html" class="btn-start">INICIAR DEMO →</a>
+        </div>
+      </div>
+
+      <!-- 3. Punteo -->
+      <div class="module-card">
+        <div class="module-info">
+          <span class="module-title">3. Punteo (Ritmo Viso-Motriz)</span>
+          <span class="module-desc">Estabilidad de ritmo y precisión de impacto.</span>
+        </div>
+        <div id="statusMod3">
+          <a id="linkMod3" href="punteo.html" class="btn-start">INICIAR DEMO →</a>
+        </div>
+      </div>
+
+      <!-- 4. Auditivo -->
+      <div class="module-card" id="cardModAuditivo" style="display: none;">
+        <div class="module-info">
+          <span class="module-title">4. Tamizaje Auditivo Ocupacional</span>
+          <span class="module-desc">Audiometría tonal en frecuencias críticas para faena.</span>
+        </div>
+        <div id="statusMod4">
+          <a id="linkMod4" href="audicion.html" class="btn-start">INICIAR DEMO →</a>
+        </div>
+      </div>
+
+      <!-- 5. Visual -->
+      <div class="module-card" id="cardModVisual" style="display: none;">
+        <div class="module-info">
+          <span class="module-title">5. Tamizaje Visual Integral</span>
+          <span class="module-desc">Agudeza visual, nocturna y visión de colores (Ishihara).</span>
+        </div>
+        <div id="statusMod5">
+          <a id="linkMod5" href="visual.html" class="btn-start">INICIAR DEMO →</a>
+        </div>
+      </div>
+
+      <!-- 6. Anticipación de Velocidad -->
+      <div class="module-card" id="cardModAnticipacion" style="display: none;">
+        <div class="module-info">
+          <span class="module-title">6. Velocidad de Anticipación</span>
+          <span class="module-desc">Cálculo de velocidad relativa y trayectoria en zona ciega.</span>
+        </div>
+        <div id="statusMod6">
+          <a id="linkMod6" href="anticipacion.html" class="btn-start">INICIAR DEMO →</a>
+        </div>
+      </div>
+
+      <!-- 7. Estereopsis 3D -->
+      <div class="module-card" id="cardModEstereopsis" style="display: none;">
+        <div class="module-info">
+          <span class="module-title">7. Estereopsis y Profundidad 3D</span>
+          <span class="module-desc">Percepción espacial binocular y cálculo de distancias.</span>
+        </div>
+        <div id="statusMod7">
+          <a id="linkMod7" href="estereopsis.html" class="btn-start">INICIAR DEMO →</a>
+        </div>
+      </div>
+
+      <!-- 8. PVT Fatiga -->
+      <div class="module-card" id="cardModFatiga" style="display: none;">
+        <div class="module-info">
+          <span class="module-title">8. Test de Fatiga y Vigilancia (PVT)</span>
+          <span class="module-desc">Control de somnolencia, lapsos de micro-sueño y atención.</span>
+        </div>
+        <div id="statusMod8">
+          <a id="linkMod8" href="fatiga.html" class="btn-start">INICIAR DEMO →</a>
+        </div>
+      </div>
+
     </div>
 
-    <div class="card-box-report">
-      <h4 class="title-sub-report">🕹️ BATERÍA COORDINACIÓN BIMANUAL (PALANCAS Y PUNTEO)</h4>
-      <div class="grid-2col">
-        <div class="metric-card">
-          <span class="metric-label">PRECISIÓN PALANCAS</span>
-          <span class="metric-val" id="valPalanPrec">-- %</span>
-          <span style="font-size: 0.58rem; color: var(--text-muted);">NORMA: ≥ 80%</span>
-        </div>
-        <div class="metric-card">
-          <span class="metric-label">PRECISIÓN PUNTEO</span>
-          <span class="metric-val" id="valPuntPrec">-- %</span>
-          <span style="font-size: 0.58rem; color: var(--text-muted);">NORMA: ≥ 78%</span>
-        </div>
-      </div>
-    </div>
+    <!-- BOTÓN DE CIERRE -->
+    <button id="btnFinalizarGeneral" onclick="finalizarEvaluacion()" class="btn-action-main">
+      FINALIZAR Y GENERAR INFORME →
+    </button>
+  </div>
 
-    <div class="grid-2col">
-      <div class="card-box-report">
-        <h4 class="title-sub-report">🎧 TAMIZAJE AUDITIVO</h4>
-        <div class="metric-card">
-          <span class="metric-label">ACIERTOS / LATENCIA REACCIÓN</span>
-          <span class="metric-val" id="valAudAciertos">-- / 8 (0 ms)</span>
-        </div>
-        <div class="metric-card">
-          <span class="metric-label">ESTADO AUDICIÓN</span>
-          <span class="metric-val" id="valAudEstado">--</span>
-        </div>
+  <!-- MODAL DE BIENVENIDA -->
+  <div id="modalBienvenidaInduccion" class="welcome-modal-overlay" style="display: none;">
+    <div class="welcome-card">
+      <div style="text-align: center; display: flex; flex-direction: column; align-items: center; gap: 4px;">
+        <img src="sensometrica.jpg" alt="SENSOMETRIKA" style="width: 160px; height: auto; mix-blend-mode: lighten; filter: drop-shadow(0 0 10px rgba(56, 189, 248, 0.5));">
+        <span style="color: var(--accent-cyan); font-size: 0.65rem; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase; margin-top: 4px;">
+          PLATAFORMA EVALUATIVA D.S. N° 170 MTT
+        </span>
+        <h2 style="font-size: 1.10rem; font-weight: 900; color: #fff;">
+          BIENVENIDO A SENSOMETRIKA
+        </h2>
       </div>
 
-      <div class="card-box-report">
-        <h4 class="title-sub-report">👁️ SCREENING VISUAL PERICIAL</h4>
-        <div class="metric-card">
-          <span class="metric-label">AGUDEZA / TIEMPO RESPUESTA</span>
-          <span class="metric-val" id="valVisAgudeza">-- (0 ms)</span>
-        </div>
-        <div class="metric-card">
-          <span class="metric-label">ESTADO VISUAL</span>
-          <span class="metric-val" id="valVisEstado">--</span>
-        </div>
-      </div>
-    </div>
-
-    <!-- MATRIZ DE DESGLOSE TELEMÉTRICO POR SIMULACIÓN (S1 A S8) -->
-    <div class="card-box-report">
-      <h4 class="title-sub-report">📊 DESGLOSE TELEMÉTRICO DE SIMULACIONES (S1 - S8)</h4>
-      <div style="overflow-x: auto;">
-        <table class="table-desglose">
-          <thead>
-            <tr>
-              <th style="text-align:left;">MÓDULO EVALUADO</th>
-              <th>S1</th>
-              <th>S2</th>
-              <th>S3</th>
-              <th>S4</th>
-              <th>S5</th>
-              <th>S6</th>
-              <th>S7</th>
-              <th>S8</th>
-              <th>PROMEDIO</th>
-              <th>ESTADO</th>
-            </tr>
-          </thead>
-          <tbody id="tbodyMatrizDesglose">
-            <!-- Filas dinámicas -->
-          </tbody>
-        </table>
-      </div>
-    </div>
-
-    <!-- CURVA DE APRENDIZAJE Y RENDIMIENTO TEMPORAL -->
-    <div class="card-box-report">
-      <h4 class="title-sub-report">📈 CURVA DE APRENDIZAJE & RENDIMIENTO TEMPORAL</h4>
-      <div class="chart-container">
-        <canvas id="chartRendimiento"></canvas>
-      </div>
-    </div>
-
-    <!-- DICTAMEN TÉCNICO Y REGISTRO PERICIAL -->
-    <div class="card-box-report" style="border-color: var(--accent-cyan);">
-      <h4 class="title-sub-report">⚖️ DICTAMEN TÉCNICO & REGISTRO PERICIAL</h4>
-      <p id="txtDictamenFinal" style="font-size:0.78rem; line-height:1.45; color:var(--text-main);">
-        Cargando dictamen consolidado...
+      <p style="font-size: 0.76rem; color: #cbd5e1; line-height: 1.4; text-align: center; background: rgba(0, 191, 255, 0.08); padding: 10px; border-radius: 10px; border: 1px solid rgba(0, 191, 255, 0.2);">
+        Desarrollado por <strong>Sensometrika</strong>, empresa líder en telemetría psicosensométrica, entrenamiento de precisión y calibración pericial de operadores y conductores.
       </p>
+
+      <div style="display: flex; flex-direction: column; gap: 8px;">
+        <span style="font-size: 0.70rem; font-weight: 800; color: var(--accent-cyan); text-transform: uppercase;">
+          📌 FUNCIONAMIENTO GENERAL Y RECOMENDACIONES DE ORO:
+        </span>
+
+        <div class="recom-item">
+          <span class="recom-icon">📏</span>
+          <div>
+            <strong style="color: #fff; display: block;">Postura & Distancia</strong>
+            Mantén tu rostro a 50 cm de la pantalla con postura erguida para asegurar lecturas de latencia y visibilidad óptimas.
+          </div>
+        </div>
+
+        <div class="recom-item">
+          <span class="recom-icon">🎧</span>
+          <div>
+            <strong style="color: #fff; display: block;">Uso de Audífonos Estéreo</strong>
+            Para la evaluación auditiva es obligatorio usar audífonos con canal izquierdo y derecho debidamente calibrados.
+          </div>
+        </div>
+
+        <div class="recom-item">
+          <span class="recom-icon">💡</span>
+          <div>
+            <strong style="color: #fff; display: block;">Entorno Aislado & Sin Distracciones</strong>
+            Asegura buena iluminación ambiental y evita interrupciones durante la ejecución de los algoritmos anti-memorización.
+          </div>
+        </div>
+
+        <div class="recom-item">
+          <span class="recom-icon">🎯</span>
+          <div>
+            <strong style="color: #fff; display: block;">Fase de Calibración Demo</strong>
+            Aprovecha la prueba Demo de ensayo en cada módulo para familiarizarte con los controles táctiles antes de la Simulación Oficial.
+          </div>
+        </div>
+      </div>
+
+      <button onclick="cerrarModalBienvenida()" class="btn-start" style="width: 100%; padding: 14px; font-size: 0.85rem; text-align: center; border-radius: 10px; margin-top: 4px;">
+        COMPRENDIDO · CONTINUAR A LAS EVALUACIONES →
+      </button>
     </div>
-
-    <!-- PIE DE PÁGINA Y FIRMA FORENSE -->
-    <footer class="footer-forensic">
-      <div>
-        <p><b>SENSOMETRIKA SpA</b> • Certificación de Competencias Laborales</p>
-        <p>Validez legal bajo D.S. N° 170 MTT y Estándar Forestal/Industrial CORMA</p>
-      </div>
-      <div style="text-align: right;">
-        <p>Firma Digital / QR Verificador</p>
-        <p style="color: var(--accent-cyan);"><b>SISTEMA AUTENTICADO</b></p>
-      </div>
-    </footer>
-
-    <a onclick="volverPortal()" class="btn-action-return" style="cursor:pointer;">
-      🔄 REINICIAR Y CONTINUAR SIGUIENTE INTENTO
-    </a>
   </div>
 
   <script>
-    let chartInstancia = null;
+    let isB2C = true;
+    let globalParamsQuery = "";
 
     document.addEventListener('DOMContentLoaded', () => {
+      const yaMostradaInsession = sessionStorage.getItem('sensometrika_welcome_shown');
+      if (!yaMostradaInsession) {
+        document.getElementById('modalBienvenidaInduccion').style.display = 'flex';
+      }
+
       const urlParams = new URLSearchParams(window.location.search);
-      
+      const modeParam = urlParams.get('mode');
+
+      // PRIORIDAD Y SINCRONIZACIÓN DEL PLAN
+      let planGuardado = localStorage.getItem('sensometrika_plan_contratado') || localStorage.getItem('sensometrika_plan_seleccionado');
+      let planUrl = urlParams.get('plan');
+      let planParam = (planGuardado || planUrl || 'BASICO').toUpperCase().trim();
+
+      localStorage.setItem('sensometrika_plan_contratado', planParam);
+      localStorage.setItem('sensometrika_plan_seleccionado', planParam);
+
       let datosUsuario = {};
       try {
         datosUsuario = JSON.parse(localStorage.getItem('sensometrika_datos_usuario')) || {};
       } catch(e){}
 
-      const nombre = urlParams.get('nombre') || datosUsuario.nombre || 'Francisco Arteaga Soto';
-      const rut = urlParams.get('rut') || datosUsuario.rut || '5.444.232-1';
+      const rut = urlParams.get('rut') || datosUsuario.rut || '13.543.222-5';
+      const nombre = datosUsuario.nombre || urlParams.get('nombre') || 'Ricardo Romero';
 
-      document.getElementById('lblNombre').textContent = decodeURIComponent(nombre);
-      document.getElementById('lblRut').textContent = rut;
-      document.getElementById('lblFecha').textContent = new Date().toLocaleDateString('es-CL');
-      document.getElementById('lblCodigoHash').textContent = `HASH: ${generarHashDemo(rut)}`;
+      let totalSimulacionesPlan = 3;
+      if (planParam.includes('PLUS')) totalSimulacionesPlan = 5;
+      if (planParam.includes('FULL') || planParam.includes('ALTO_DESEMPENIO') || planParam.includes('ALTO')) totalSimulacionesPlan = 8;
 
-      cargarResumenModuloTarjetas();
-      renderizarMatrizCompleta();
-      renderizarGraficoCurva();
+      let intentoActual = parseInt(localStorage.getItem('sensometrika_intento_actual') || '1');
+
+      if (modeParam === 'b2c' || localStorage.getItem('sensometrika_b2c_mode') === 'true') {
+        isB2C = true;
+        document.getElementById('txtTipoPlan').textContent = `EVALUACIÓN PARTICULAR • PLAN ${planParam.replace('_', ' ')} (B2C)`;
+        document.getElementById('lblSimulacionesCuota').textContent = `INTENTO ${intentoActual} DE ${totalSimulacionesPlan}`;
+        document.getElementById('btnFinalizarGeneral').textContent = '🎓 FINALIZAR Y OBTENER CERTIFICADO DIGITAL';
+      } else {
+        isB2C = false;
+        document.getElementById('txtTipoPlan').textContent = `EVALUACIÓN B2B • PLAN ${planParam.replace('_', ' ')}`;
+        document.getElementById('boxContadorSimulaciones').style.display = 'none';
+        document.getElementById('btnFinalizarGeneral').textContent = '📊 FINALIZAR Y ENVIAR INFORME AL APR';
+      }
+
+      document.getElementById('txtInfoEvaluado').textContent = `EVALUADO: ${decodeURIComponent(nombre)} | RUT: ${rut}`;
+
+      // HABILITACIÓN DINÁMICA DE MÓDULOS SEGÚN EL PLAN
+      if (planParam.includes('PLUS') || planParam.includes('FULL') || planParam.includes('ALTO')) {
+        document.getElementById('cardModAuditivo').style.display = 'flex';
+      }
+      if (planParam.includes('FULL') || planParam.includes('ALTO')) {
+        document.getElementById('cardModVisual').style.display = 'flex';
+      }
+      if (planParam.includes('ALTO')) {
+        document.getElementById('cardModAnticipacion').style.display = 'flex';
+        document.getElementById('cardModEstereopsis').style.display = 'flex';
+        document.getElementById('cardModFatiga').style.display = 'flex';
+      }
+
+      urlParams.set('plan', planParam);
+      urlParams.set('mode', isB2C ? 'b2c' : 'b2b');
+      globalParamsQuery = urlParams.toString();
+
+      revisarModulosRendidos();
     });
 
-    function generarHashDemo(rut) {
-      return 'SHA256-' + Math.abs(rut.split('').reduce((a,b)=>{a=((a<<5)-a)+b.charCodeAt(0);return a&a},0)).toString(16).toUpperCase();
+    function cerrarModalBienvenida() {
+      sessionStorage.setItem('sensometrika_welcome_shown', 'true');
+      document.getElementById('modalBienvenidaInduccion').style.display = 'none';
     }
 
-    function cargarResumenModuloTarjetas() {
-      const hReact = JSON.parse(localStorage.getItem('sensometrika_historial_reactimetro')) || [];
-      const hPalan = JSON.parse(localStorage.getItem('sensometrika_historial_palancas')) || [];
-      const hPunt = JSON.parse(localStorage.getItem('sensometrika_historial_punteo')) || [];
-      const hAud = JSON.parse(localStorage.getItem('sensometrika_historial_audicion')) || JSON.parse(localStorage.getItem('sensometrika_historial_auditivo')) || [];
-      const hVis = JSON.parse(localStorage.getItem('sensometrika_historial_visual')) || [];
+    function construirUrlModulo(nombreModulo) {
+      const currentParams = new URLSearchParams(globalParamsQuery || window.location.search);
+      const demoRealizada = localStorage.getItem(`${nombreModulo}_demo_completada`) === 'true';
 
-      // Reactímetro
-      if (hReact.length >= 8) {
-        const ult = hReact[hReact.length - 1];
-        document.getElementById('valReactProm').textContent = `${ult.promedioTiempo || 383} ms`;
-        document.getElementById('valReactEstado').innerHTML = '<span class="badge-ok">COMPLETADO ✓</span>';
-      } else if (hReact.length > 0) {
-        document.getElementById('valReactProm').textContent = `${hReact[hReact.length - 1].promedioTiempo || 383} ms`;
-        document.getElementById('valReactEstado').innerHTML = '<span class="badge-pend">EN CURSO</span>';
+      if (demoRealizada) {
+        currentParams.set('demo', 'false');
+        currentParams.set('fase', 'oficial');
       } else {
-        document.getElementById('valReactEstado').innerHTML = '<span class="badge-pend">PENDIENTE</span>';
+        currentParams.set('demo', 'true');
+        currentParams.set('fase', 'demo');
       }
 
-      // Palancas y Punteo
-      if (hPalan.length > 0) {
-        document.getElementById('valPalanPrec').textContent = `${hPalan[hPalan.length - 1].precision || 97}%`;
-      }
-      if (hPunt.length > 0) {
-        document.getElementById('valPuntPrec').textContent = `${hPunt[hPunt.length - 1].precision || 85}%`;
-      }
-
-      // Auditivo
-      if (hAud.length > 0) {
-        const ultA = hAud[hAud.length - 1];
-        const latAud = ultA.latenciaMs || 240;
-        document.getElementById('valAudAciertos').textContent = `${ultA.aciertos || 7} / 8 (${latAud} ms)`;
-        document.getElementById('valAudEstado').innerHTML = '<span class="badge-ok">COMPLETADO ✓</span>';
-      } else {
-        document.getElementById('valAudEstado').innerHTML = '<span class="badge-pend">PENDIENTE</span>';
-      }
-
-      // Visual
-      if (hVis.length > 0) {
-        const ultV = hVis[hVis.length - 1];
-        const latVis = ultV.latenciaMs || 1202;
-        document.getElementById('valVisAgudeza').textContent = `${ultV.agudeza || '20/20 (1.0)'} (${latVis} ms)`;
-        document.getElementById('valVisEstado').innerHTML = '<span class="badge-ok">COMPLETADO ✓</span>';
-      } else {
-        document.getElementById('valVisEstado').innerHTML = '<span class="badge-pend">PENDIENTE</span>';
-      }
+      return `${nombreModulo}.html?${currentParams.toString()}`;
     }
 
-    function renderizarMatrizCompleta() {
-      const tbody = document.getElementById('tbodyMatrizDesglose');
-      tbody.innerHTML = '';
-
-      const hReact = JSON.parse(localStorage.getItem('sensometrika_historial_reactimetro')) || [];
-      const hPalan = JSON.parse(localStorage.getItem('sensometrika_historial_palancas')) || [];
-      const hPunt = JSON.parse(localStorage.getItem('sensometrika_historial_punteo')) || [];
-      const hAud = JSON.parse(localStorage.getItem('sensometrika_historial_audicion')) || JSON.parse(localStorage.getItem('sensometrika_historial_auditivo')) || [];
-      const hVis = JSON.parse(localStorage.getItem('sensometrika_historial_visual')) || [];
-
-      const listaModulos = [
-        { nombre: '1. Reactímetro (ms)', historial: hReact, keyVal: 'promedioTiempo', sufijo: 'ms', minEsperado: 8 },
-        { nombre: '2. Palancas (%)', historial: hPalan, keyVal: 'precision', sufijo: '%', minEsperado: 8 },
-        { nombre: '3. Punteo (%)', historial: hPunt, keyVal: 'precision', sufijo: '%', minEsperado: 8 },
-        { nombre: '4. Tamizaje Auditivo', historial: hAud, keyVal: 'aciertos', sufijo: '/8', minEsperado: 1 },
-        { nombre: '5. Screening Visual', historial: hVis, keyVal: 'agudeza', sufijo: '', minEsperado: 1 }
+    function revisarModulosRendidos() {
+      // HOMOLOGACIÓN DE MÁXIMO DE INTENTOS A 8 EN TODOS LOS MÓDULOS
+      const listaConfig = [
+        { id: 'reactimetro', statusElem: 'statusMod1', linkElem: 'linkMod1', maxIntentos: 8 },
+        { id: 'palancas', statusElem: 'statusMod2', linkElem: 'linkMod2', maxIntentos: 8 },
+        { id: 'punteo', statusElem: 'statusMod3', linkElem: 'linkMod3', maxIntentos: 8 },
+        { id: 'audicion', statusElem: 'statusMod4', linkElem: 'linkMod4', maxIntentos: 8 },
+        { id: 'visual', statusElem: 'statusMod5', linkElem: 'linkMod5', maxIntentos: 8 },
+        { id: 'anticipacion', statusElem: 'statusMod6', linkElem: 'linkMod6', maxIntentos: 8 },
+        { id: 'estereopsis', statusElem: 'statusMod7', linkElem: 'linkMod7', maxIntentos: 8 },
+        { id: 'fatiga', statusElem: 'statusMod8', linkElem: 'linkMod8', maxIntentos: 8 }
       ];
 
-      let totalSimulacionesCompletadas = 0;
-      let modulosCompletes = 0;
+      listaConfig.forEach(mod => {
+        const statusContainer = document.getElementById(mod.statusElem);
+        if (!statusContainer) return;
 
-      listaModulos.forEach(mod => {
-        let filaHtml = `<tr><td style="text-align:left; font-weight:800;">${mod.nombre}</td>`;
-        let suma = 0;
-        let conteo = 0;
+        const historial = JSON.parse(localStorage.getItem(`sensometrika_historial_${mod.id}`)) || [];
+        const numEnsayos = historial.length;
+        const urlDestino = construirUrlModulo(mod.id);
 
-        for (let i = 0; i < 8; i++) {
-          if (mod.historial[i]) {
-            const item = mod.historial[i];
-            let valDisplay = '';
-
-            if (mod.nombre.includes('Auditivo')) {
-              const lat = item.latenciaMs || 240;
-              const errores = item.errores !== undefined ? item.errores : (8 - (item.aciertos || 8));
-              valDisplay = `${item.aciertos}/8 (${lat}ms${errores > 0 ? ` - ${errores}ERR` : ''})`;
-            } else if (mod.nombre.includes('Visual')) {
-              const lat = item.latenciaMs || 1202;
-              valDisplay = `${item.agudeza} (${lat}ms)`;
-            } else {
-              valDisplay = item[mod.keyVal] !== undefined ? `${item[mod.keyVal]}${mod.sufijo}` : 'OK';
-            }
-
-            filaHtml += `<td style="color:var(--accent-cyan); font-weight:700; font-size:0.62rem;">${valDisplay}</td>`;
-            
-            if (typeof item[mod.keyVal] === 'number') {
-              suma += item[mod.keyVal];
-              conteo++;
-            } else {
-              conteo++;
-            }
-            totalSimulacionesCompletadas++;
+        if (numEnsayos >= mod.maxIntentos) {
+          statusContainer.innerHTML = `<a id="${mod.linkElem}" href="${urlDestino}" class="btn-done">RENDIDO ✓ (${numEnsayos}/${mod.maxIntentos})</a>`;
+        } else if (numEnsayos > 0) {
+          const sigSimu = numEnsayos + 1;
+          statusContainer.innerHTML = `<a id="${mod.linkElem}" href="${urlDestino}" class="btn-oficial">SIMULACIÓN S${sigSimu} →</a>`;
+        } else {
+          const demoRealizada = localStorage.getItem(`${mod.id}_demo_completada`) === 'true';
+          if (demoRealizada) {
+            statusContainer.innerHTML = `<a id="${mod.linkElem}" href="${urlDestino}" class="btn-oficial">SIMULACIÓN S1 →</a>`;
           } else {
-            filaHtml += `<td style="color:var(--text-muted);">--</td>`;
+            statusContainer.innerHTML = `<a id="${mod.linkElem}" href="${urlDestino}" class="btn-start">INICIAR DEMO →</a>`;
           }
         }
-
-        const promedioTxt = conteo > 0 ? `${Math.round(suma / conteo)}${mod.sufijo}` : '--';
-        let estadoBadge = '<span class="badge-pend">EN CURSO</span>';
-        if (conteo >= mod.minEsperado) {
-          estadoBadge = '<span class="badge-ok">COMPLETADO</span>';
-          modulosCompletes++;
-        }
-
-        filaHtml += `<td><b>${promedioTxt}</b></td><td>${estadoBadge}</td></tr>`;
-        tbody.innerHTML += filaHtml;
       });
 
-      const elemDictamen = document.getElementById('txtDictamenFinal');
-      const totalEnsayosNormativos = 26;
+      // Sincronización del intento global a partir del menor progreso psicomotor
+      const reactHist = (JSON.parse(localStorage.getItem('sensometrika_historial_reactimetro')) || []).length;
+      const palHist = (JSON.parse(localStorage.getItem('sensometrika_historial_palancas')) || []).length;
+      const puntHist = (JSON.parse(localStorage.getItem('sensometrika_historial_punteo')) || []).length;
       
-      if (modulosCompletes >= 5 && totalSimulacionesCompletadas >= totalEnsayosNormativos) {
-        elemDictamen.innerHTML = `
-          <strong style="color:var(--accent-green); font-size:0.85rem;">✓ BATERÍA COMPLETA APROBADA (100% EJECUTADO):</strong><br>
-          El evaluado ha completado exitosamente la totalidad de las simulaciones normativas (S1 a S8). Se certifica el cumplimiento integral de los requerimientos de agudeza visual, discriminación auditiva, tiempo de reacción y coordinación bimanual bajo norma D.S. N° 170 MTT y Estándar CORMA.
-        `;
-      } else {
-        const porcentajeAvance = Math.round((totalSimulacionesCompletadas / totalEnsayosNormativos) * 100);
+      const minPsicomotriz = Math.min(reactHist, palHist, puntHist);
+      const intentoGlobal = Math.min(8, minPsicomotriz + 1);
 
-        elemDictamen.innerHTML = `
-          <strong style="color:var(--accent-yellow); font-size:0.85rem;">⏳ EVALUACIÓN INCOMPLETA EN CURSO (AVANCE REAL: ${porcentajeAvance}%):</strong><br>
-          Se han registrado <b>${totalSimulacionesCompletadas} de ${totalEnsayosNormativos} simulaciones requeridas</b> (${modulosCompletes} de 5 módulos finalizados). El informe mantendrá estado provisional no certificable hasta completar el 100% de la batería pericial.
-        `;
+      localStorage.setItem('sensometrika_intento_actual', intentoGlobal.toString());
+      
+      const lblCuota = document.getElementById('lblSimulacionesCuota');
+      if (lblCuota) {
+        const planParam = localStorage.getItem('sensometrika_plan_contratado') || 'BASICO';
+        let totalPlan = 3;
+        if (planParam.includes('PLUS')) totalPlan = 5;
+        if (planParam.includes('FULL') || planParam.includes('ALTO')) totalPlan = 8;
+        
+        lblCuota.textContent = `INTENTO ${intentoGlobal} DE ${totalPlan}`;
       }
     }
 
-    function renderizarGraficoCurva() {
-      const ctx = document.getElementById('chartRendimiento').getContext('2d');
-      
-      const hReact = JSON.parse(localStorage.getItem('sensometrika_historial_reactimetro')) || [];
-      const hPalan = JSON.parse(localStorage.getItem('sensometrika_historial_palancas')) || [];
-      const hPunt = JSON.parse(localStorage.getItem('sensometrika_historial_punteo')) || [];
+    function finalizarEvaluacion() {
+      const planStorage = localStorage.getItem('sensometrika_plan_contratado') || 'BASICO';
+      const queryStr = window.location.search.substring(1);
 
-      const labels = ['S1', 'S2', 'S3', 'S4', 'S5', 'S6', 'S7', 'S8'];
-      const dataPalan = labels.map((_, i) => hPalan[i] ? hPalan[i].precision : null);
-      const dataPunt = labels.map((_, i) => hPunt[i] ? hPunt[i].precision : null);
-      const dataReact = labels.map((_, i) => hReact[i] ? hReact[i].promedioTiempo : null);
-
-      if (chartInstancia) chartInstancia.destroy();
-
-      chartInstancia = new Chart(ctx, {
-        type: 'line',
-        data: {
-          labels: labels,
-          datasets: [
-            {
-              label: 'Precisión Palancas (%)',
-              data: dataPalan,
-              borderColor: '#00bfff',
-              backgroundColor: 'rgba(0, 191, 255, 0.1)',
-              borderWidth: 2,
-              tension: 0.3
-            },
-            {
-              label: 'Precisión Punteo (%)',
-              data: dataPunt,
-              borderColor: '#f59e0b',
-              backgroundColor: 'rgba(245, 158, 11, 0.1)',
-              borderWidth: 2,
-              tension: 0.3
-            },
-            {
-              label: 'Reactímetro (ms)',
-              data: dataReact,
-              borderColor: '#10b981',
-              borderDash: [4, 4],
-              borderWidth: 2,
-              yAxisID: 'y1'
-            }
-          ]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: { legend: { labels: { color: '#94a3b8', font: { size: 10 } } } },
-          scales: {
-            x: { grid: { color: '#132238' }, ticks: { color: '#94a3b8' } },
-            y: { min: 0, max: 100, grid: { color: '#132238' }, ticks: { color: '#94a3b8' } },
-            y1: { position: 'right', grid: { drawOnChartArea: false }, ticks: { color: '#10b981' } }
-          }
-        }
-      });
-    }
-
-    function volverPortal() {
-      const urlParams = new URLSearchParams(window.location.search);
-      window.location.href = `menu_B2C.html?${urlParams.toString()}`;
+      if (isB2C) {
+        window.location.href = `informe.html?${queryStr}&plan=${planStorage}`;
+      } else {
+        window.location.href = `informe-b2b.html?${queryStr}&plan=${planStorage}`;
+      }
     }
   </script>
 </body>
