@@ -152,15 +152,21 @@
     }
 
     function actualizarEstadoUI() {
-      const modulosRendidos = JSON.parse(localStorage.getItem('sensometrika_modulos_rendidos')) || {};
-      const yaRendido = modulosRendidos.auditivo === true || modulosRendidos.audicion === true;
+      const historial = JSON.parse(localStorage.getItem('sensometrika_historial_auditivo')) || JSON.parse(localStorage.getItem('sensometrika_historial_audicion')) || [];
+      const numEnsayosRealizados = historial.length;
+
+      const planStorage = (localStorage.getItem('sensometrika_plan_contratado') || urlParams.get('plan') || 'BASICO').toUpperCase();
+      let maxIntentosPlan = 3;
+      if (planStorage.includes('PLUS')) maxIntentosPlan = 5;
+      if (planStorage.includes('FULL') || planStorage.includes('ALTO')) maxIntentosPlan = 8;
+
       const demoRealizada = localStorage.getItem('audicion_demo_completada') === 'true';
 
       if (isDemoURL) {
         modoActual = 'DEMO';
-      } else if (yaRendido) {
+      } else if (numEnsayosRealizados >= maxIntentosPlan) {
         modoActual = 'BLOQUEADO';
-      } else if (!demoRealizada) {
+      } else if (!demoRealizada && numEnsayosRealizados === 0) {
         modoActual = 'DEMO';
       } else {
         modoActual = 'OFICIAL';
@@ -169,14 +175,14 @@
       if (modoActual === 'BLOQUEADO') {
         cajaCheck.style.display = 'none';
         btnIniciar.style.display = 'none';
-        badgeFase.innerText = '✓ Evaluación Registrada';
+        badgeFase.innerText = `✓ Plan ${planStorage} Completado (${numEnsayosRealizados}/${maxIntentosPlan})`;
         badgeFase.style.color = '#10b981';
         lblOido.innerText = '✓ MÓDULO REGISTRADO';
         lblFrecuencia.innerText = 'Completado';
         lblUmbral.innerText = 'Evaluación registrada en el sistema';
         mEstado.innerText = 'Completado';
         mEstado.style.color = '#10b981';
-        statusText.innerText = 'Has completado la evaluación auditiva. Retorna al menú para continuar.';
+        statusText.innerText = `Has completado la cuota de ${maxIntentosPlan} simulaciones de tu Plan ${planStorage}. Retorna al menú.`;
       } else if (modoActual === 'DEMO') {
         badgeFase.innerText = 'Paso 1: Calibración Demo (1/1)';
         badgeFase.style.borderColor = '#e5b324';
@@ -184,10 +190,11 @@
         btnIniciar.innerText = 'INICIAR CALIBRACIÓN DEMO (8 TONOS)';
         btnIniciar.style.backgroundColor = '#e5b324';
       } else {
-        badgeFase.innerText = esB2B ? '🔴 Tamizaje Auditivo Oficial B2B (D.S. N° 170)' : '🔴 Tamizaje Auditivo Oficial (D.S. N° 170)';
+        const siguienteSimu = numEnsayosRealizados + 1;
+        badgeFase.innerText = esB2B ? `🔴 Tamizaje Auditivo B2B (S${siguienteSimu})` : `🔴 Tamizaje Auditivo Oficial S${siguienteSimu} de ${maxIntentosPlan}`;
         badgeFase.style.borderColor = 'rgba(56, 189, 248, 0.35)';
         badgeFase.style.color = '#38bdf8';
-        btnIniciar.innerText = 'INICIAR SIMULACIÓN OFICIAL';
+        btnIniciar.innerText = `INICIAR SIMULACIÓN OFICIAL (S${siguienteSimu} DE ${maxIntentosPlan})`;
         btnIniciar.style.backgroundColor = '#0284c7';
       }
     }
@@ -347,7 +354,6 @@
       panelOidos.style.display = 'none';
       mEstado.innerText = 'Completado';
 
-      // EVALUACIÓN ESTRICTA D.S. N° 170: MÍNIMO 7 DE 8 ACIERTOS (≥ 87.5%)
       const aprobado = aciertosTotales >= 7;
       const precisionVal = Math.round((aciertosTotales / 8) * 100);
 
@@ -365,17 +371,10 @@
 
         mostrarModalResultadoAudio(aciertosTotales, aprobado, true);
       } else if (modoActual === 'OFICIAL') {
-        let modulosRendidos = JSON.parse(localStorage.getItem('sensometrika_modulos_rendidos')) || {};
-        modulosRendidos.auditivo = true;
-        modulosRendidos.audicion = true;
-        localStorage.setItem('sensometrika_modulos_rendidos', JSON.stringify(modulosRendidos));
-
         let historial = JSON.parse(localStorage.getItem('sensometrika_historial_auditivo')) || JSON.parse(localStorage.getItem('sensometrika_historial_audicion')) || [];
         
-        let intentoNumero = parseInt(localStorage.getItem('sensometrika_intento_actual') || '1');
-
         historial.push({
-          simulacion: intentoNumero,
+          simulacion: historial.length + 1,
           fecha: new Date().toISOString(),
           aciertos: aciertosTotales,
           total: 8,
@@ -387,6 +386,18 @@
         localStorage.setItem('sensometrika_historial_auditivo', JSON.stringify(historial));
         localStorage.setItem('sensometrika_historial_audicion', JSON.stringify(historial));
 
+        const planStorage = (localStorage.getItem('sensometrika_plan_contratado') || 'BASICO').toUpperCase();
+        let maxIntentosPlan = 3;
+        if (planStorage.includes('PLUS')) maxIntentosPlan = 5;
+        if (planStorage.includes('FULL') || planStorage.includes('ALTO')) maxIntentosPlan = 8;
+
+        if (historial.length >= maxIntentosPlan) {
+          let modulosRendidos = JSON.parse(localStorage.getItem('sensometrika_modulos_rendidos')) || {};
+          modulosRendidos.auditivo = true;
+          modulosRendidos.audicion = true;
+          localStorage.setItem('sensometrika_modulos_rendidos', JSON.stringify(modulosRendidos));
+        }
+
         actualizarEstadoUI();
         mostrarModalResultadoAudio(aciertosTotales, aprobado, false);
       }
@@ -396,7 +407,10 @@
       const modalExistente = document.getElementById('modalResultadoAudio');
       if (modalExistente) modalExistente.remove();
 
-      const tituloModal = esDemo ? 'CALIBRACIÓN DEMO COMPLETADA' : (esB2B ? 'Simulación Oficial B2B Registrada' : 'Simulación Oficial Registrada');
+      const historial = JSON.parse(localStorage.getItem('sensometrika_historial_auditivo')) || [];
+      const numSimu = historial.length;
+
+      const tituloModal = esDemo ? 'CALIBRACIÓN DEMO COMPLETADA' : (esB2B ? `Simulación Oficial B2B (S${numSimu}) Registrada` : `Simulación Oficial S${numSimu} Registrada`);
       const mensajeModal = esDemo ? 'Has finalizado tu ensayo. Ya puedes realizar tu Simulación Oficial.' : '<b>¡Evaluación registrada correctamente!</b>';
 
       const modalHtml = `
