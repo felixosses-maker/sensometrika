@@ -215,7 +215,7 @@
       <strong id="lblSimulacionesCuota" style="color: var(--accent-cyan); font-size: 0.88rem; font-weight: 900;">INTENTO 1 DE 3</strong>
     </div>
 
-    <!-- MÓDULOS DE EVALUACIÓN (8 MÓDULOS HOMOLOGADOS) -->
+    <!-- MÓDULOS DE EVALUACIÓN -->
     <div class="card-box" id="boxModulos">
       
       <!-- 1. Reactímetro -->
@@ -251,7 +251,7 @@
         </div>
       </div>
 
-      <!-- 4. Auditivo -->
+      <!-- 4. Auditivo (Planes PLUS y FULL) -->
       <div class="module-card" id="cardModAuditivo" style="display: none;">
         <div class="module-info">
           <span class="module-title">4. Tamizaje Auditivo Ocupacional</span>
@@ -262,7 +262,7 @@
         </div>
       </div>
 
-      <!-- 5. Visual -->
+      <!-- 5. Visual (Planes PLUS y FULL) -->
       <div class="module-card" id="cardModVisual" style="display: none;">
         <div class="module-info">
           <span class="module-title">5. Tamizaje Visual Integral</span>
@@ -273,7 +273,7 @@
         </div>
       </div>
 
-      <!-- 6. Anticipación de Velocidad -->
+      <!-- Módulos Adicionales (Reservados para Evaluaciones de Alto Desempeño B2B / Especial) -->
       <div class="module-card" id="cardModAnticipacion" style="display: none;">
         <div class="module-info">
           <span class="module-title">6. Velocidad de Anticipación</span>
@@ -284,7 +284,6 @@
         </div>
       </div>
 
-      <!-- 7. Estereopsis 3D -->
       <div class="module-card" id="cardModEstereopsis" style="display: none;">
         <div class="module-info">
           <span class="module-title">7. Estereopsis y Profundidad 3D</span>
@@ -295,7 +294,6 @@
         </div>
       </div>
 
-      <!-- 8. PVT Fatiga -->
       <div class="module-card" id="cardModFatiga" style="display: none;">
         <div class="module-info">
           <span class="module-title">8. Test de Fatiga y Vigilancia (PVT)</span>
@@ -404,6 +402,7 @@
       const rut = urlParams.get('rut') || datosUsuario.rut || '13.543.222-5';
       const nombre = datosUsuario.nombre || urlParams.get('nombre') || 'Ricardo Romero';
 
+      // REGLA B2C DE SIMULACIONES POR MÓDULO
       let totalSimulacionesPlan = 3;
       if (planParam.includes('PLUS')) totalSimulacionesPlan = 5;
       if (planParam.includes('FULL') || planParam.includes('ALTO_DESEMPENIO') || planParam.includes('ALTO')) totalSimulacionesPlan = 8;
@@ -424,13 +423,14 @@
 
       document.getElementById('txtInfoEvaluado').textContent = `EVALUADO: ${decodeURIComponent(nombre)} | RUT: ${rut}`;
 
-      // HABILITACIÓN DINÁMICA DE MÓDULOS SEGÚN EL PLAN
+      // HABILITACIÓN DINÁMICA DE MÓDULOS SEGÚN EL PLAN B2C
+      // Plan BÁSICO: Módulos 1, 2 y 3 (Reactímetro, Palancas, Punteo)
+      // Plan PLUS y FULL: Módulos 1, 2, 3, 4 y 5 (+ Auditivo y Visual)
       if (planParam.includes('PLUS') || planParam.includes('FULL') || planParam.includes('ALTO')) {
         document.getElementById('cardModAuditivo').style.display = 'flex';
-      }
-      if (planParam.includes('FULL') || planParam.includes('ALTO')) {
         document.getElementById('cardModVisual').style.display = 'flex';
       }
+
       if (planParam.includes('ALTO')) {
         document.getElementById('cardModAnticipacion').style.display = 'flex';
         document.getElementById('cardModEstereopsis').style.display = 'flex';
@@ -465,7 +465,6 @@
     }
 
     function revisarModulosRendidos() {
-      // OBTENER LÍMITE REAL DE INTENTOS SEGÚN PLAN
       const planParam = (localStorage.getItem('sensometrika_plan_contratado') || 'BASICO').toUpperCase();
       let maxIntentosPlan = 3;
       if (planParam.includes('PLUS')) maxIntentosPlan = 5;
