@@ -383,24 +383,84 @@
 
         let evaluacionActiva = false;
         let contactosCount = 0;
-        let estaEnBorde = false; // FLAG PARA EVITAR DISPARO MASIVO DE CONTACTOS
+        let estaEnBorde = false;
         let tiempoTranscurrido = 0;
         let timerInterval = null;
         let animFrameId = null;
 
-        // Pista Bayoneta
-        const trackPoints = [
-            {x: 60, y: 220},   // Inicio (Punto Amarillo)
-            {x: 175, y: 220},
-            {x: 175, y: 110},
-            {x: 235, y: 110},
-            {x: 235, y: 220},
-            {x: 340, y: 220},
-            {x: 340, y: 80}    // Meta (Círculo Verde)
-        ];
-
-        let pua = { x: 60, y: 220, r: 8, speed: 1.8 }; // Velocidad ajustada para mejor precisión
+        let pua = { x: 60, y: 220, r: 8, speed: 1.8 };
+        let posicionInicio = { x: 60, y: 220 };
+        let posicionMeta = { x: 340, y: 80 };
+        let trackPoints = [];
         let keys = { left: false, right: false, up: false, down: false };
+
+        // GENERADOR ANTI-MEMORIZACIÓN DE CIRCUITO BAYONETA
+        function generarCircuitoAntiMemorizacion(numSimu) {
+            const variante = numSimu % 4;
+            const altPuente = 95 + ((numSimu * 13) % 30);
+            const anchoPuente = 165 + ((numSimu * 11) % 25);
+
+            if (variante === 1) {
+                return {
+                    pista: [
+                        {x: 50, y: 220},
+                        {x: anchoPuente, y: 220},
+                        {x: anchoPuente, y: altPuente},
+                        {x: anchoPuente + 65, y: altPuente},
+                        {x: anchoPuente + 65, y: 220},
+                        {x: 350, y: 220},
+                        {x: 350, y: 75}
+                    ],
+                    inicio: {x: 50, y: 220},
+                    meta: {x: 350, y: 75}
+                };
+            } else if (variante === 2) {
+                // Sentido Espejo / Invertido
+                return {
+                    pista: [
+                        {x: 350, y: 220},
+                        {x: 400 - anchoPuente, y: 220},
+                        {x: 400 - anchoPuente, y: altPuente},
+                        {x: 335 - anchoPuente, y: altPuente},
+                        {x: 335 - anchoPuente, y: 220},
+                        {x: 50, y: 220},
+                        {x: 50, y: 75}
+                    ],
+                    inicio: {x: 350, y: 220},
+                    meta: {x: 50, y: 75}
+                };
+            } else if (variante === 3) {
+                // Inversión Vertical
+                return {
+                    pista: [
+                        {x: 50, y: 80},
+                        {x: 165, y: 80},
+                        {x: 165, y: 220},
+                        {x: 230, y: 220},
+                        {x: 230, y: 80},
+                        {x: 350, y: 80},
+                        {x: 350, y: 225}
+                    ],
+                    inicio: {x: 50, y: 80},
+                    meta: {x: 350, y: 225}
+                };
+            } else {
+                // Trazado Bayoneta Clásico
+                return {
+                    pista: [
+                        {x: 60, y: 220},
+                        {x: 175, y: 220},
+                        {x: 175, y: 110},
+                        {x: 235, y: 110},
+                        {x: 235, y: 220},
+                        {x: 340, y: 220},
+                        {x: 340, y: 80}
+                    ],
+                    inicio: {x: 60, y: 220},
+                    meta: {x: 340, y: 80}
+                };
+            }
+        }
 
         function ejecutarRetornoMenu() {
             window.location.href = `menu_B2C.html?${urlParams.toString()}`;
@@ -423,6 +483,15 @@
                 modoActual = 'OFICIAL';
             }
 
+            // Cargar trazado correspondiente
+            const simuActual = numEnsayosRealizados + 1;
+            const circuito = generarCircuitoAntiMemorizacion(simuActual);
+            trackPoints = circuito.pista;
+            posicionInicio = circuito.inicio;
+            posicionMeta = circuito.meta;
+            pua.x = posicionInicio.x;
+            pua.y = posicionInicio.y;
+
             if (modoActual === 'BLOQUEADO') {
                 badgeText.textContent = `PLAN ${planStorage} COMPLETADO (${numEnsayosRealizados}/${maxIntentosPlan})`;
                 badgeDot.style.backgroundColor = "#10b981"; 
@@ -438,14 +507,13 @@
                 btnNext.style.display = 'none';
                 instructionText.textContent = "Modo Demo: Guía la púa con ambos pulgares hasta la meta verde.";
             } else {
-                const siguienteSimu = numEnsayosRealizados + 1;
-                badgeText.textContent = esB2B ? `Simulación Oficial B2B (S${siguienteSimu})` : `Simulación Oficial S${siguienteSimu} de ${maxIntentosPlan}`;
+                badgeText.textContent = esB2B ? `Simulación Oficial B2B (S${simuActual})` : `Simulación Oficial S${simuActual} de ${maxIntentosPlan}`;
                 badgeDot.style.backgroundColor = "#ef4444"; 
-                btnStart.textContent = `INICIAR SIMULACIÓN OFICIAL (S${siguienteSimu} DE ${maxIntentosPlan})`;
+                btnStart.textContent = `INICIAR SIMULACIÓN OFICIAL (S${simuActual} DE ${maxIntentosPlan})`;
                 btnStart.style.backgroundColor = "#0284c7";
                 btnStart.style.display = 'block';
                 btnNext.style.display = 'none';
-                instructionText.textContent = `Evaluación Oficial: Recorre la pista con ambos pulgares hasta la meta.`;
+                instructionText.textContent = `Evaluación Oficial (Variante S${simuActual}): Recorre la pista con ambos pulgares hasta la meta.`;
             }
         }
 
@@ -453,51 +521,53 @@
             ctx.fillStyle = '#050a12';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // Dibujar Canal Pista Bayoneta
-            ctx.strokeStyle = '#0284c7';
-            ctx.lineWidth = 28;
-            ctx.lineCap = 'round';
-            ctx.lineJoin = 'round';
-            ctx.beginPath();
-            ctx.moveTo(trackPoints[0].x, trackPoints[0].y);
-            for(let i = 1; i < trackPoints.length; i++) {
-                ctx.lineTo(trackPoints[i].x, trackPoints[i].y);
+            if (trackPoints.length > 0) {
+                // Dibujar Canal Pista
+                ctx.strokeStyle = '#0284c7';
+                ctx.lineWidth = 28;
+                ctx.lineCap = 'round';
+                ctx.lineJoin = 'round';
+                ctx.beginPath();
+                ctx.moveTo(trackPoints[0].x, trackPoints[0].y);
+                for(let i = 1; i < trackPoints.length; i++) {
+                    ctx.lineTo(trackPoints[i].x, trackPoints[i].y);
+                }
+                ctx.stroke();
+
+                // Línea Central Discontinua
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.35)';
+                ctx.lineWidth = 2;
+                ctx.setLineDash([5, 5]);
+                ctx.stroke();
+                ctx.setLineDash([]);
+
+                // Punto de Inicio (Amarillo)
+                ctx.fillStyle = '#e5b324';
+                ctx.beginPath();
+                ctx.arc(posicionInicio.x, posicionInicio.y, 10, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.strokeStyle = '#ffffff';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+
+                // Punto de Meta (Verde)
+                ctx.fillStyle = '#10b981';
+                ctx.beginPath();
+                ctx.arc(posicionMeta.x, posicionMeta.y, 14, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.strokeStyle = '#ffffff';
+                ctx.lineWidth = 2;
+                ctx.stroke();
             }
-            ctx.stroke();
-
-            // Línea de centro
-            ctx.strokeStyle = 'rgba(255, 255, 255, 0.35)';
-            ctx.lineWidth = 2;
-            ctx.setLineDash([5, 5]);
-            ctx.stroke();
-            ctx.setLineDash([]);
-
-            // Dibujar Inicio (Punto Amarillo)
-            ctx.fillStyle = '#e5b324';
-            ctx.beginPath();
-            ctx.arc(60, 220, 10, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.strokeStyle = '#ffffff';
-            ctx.lineWidth = 2;
-            ctx.stroke();
-
-            // Dibujar Meta (Punto Verde)
-            ctx.fillStyle = '#10b981';
-            ctx.beginPath();
-            ctx.arc(340, 80, 14, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.strokeStyle = '#ffffff';
-            ctx.lineWidth = 2;
-            ctx.stroke();
 
             // Movimiento Bimanual
             if (evaluacionActiva) {
-                if (keys.left) pua.x = Math.max(15, pua.x - pua.speed);
-                if (keys.right) pua.x = Math.min(canvas.width - 15, pua.x + pua.speed);
-                if (keys.up) pua.y = Math.max(15, pua.y - pua.speed);
-                if (keys.down) pua.y = Math.min(canvas.height - 15, pua.y + pua.speed);
+                if (keys.left) pua.x = Math.max(12, pua.x - pua.speed);
+                if (keys.right) pua.x = Math.min(canvas.width - 12, pua.x + pua.speed);
+                if (keys.up) pua.y = Math.max(12, pua.y - pua.speed);
+                if (keys.down) pua.y = Math.min(canvas.height - 12, pua.y + pua.speed);
 
-                // EVALUACIÓN CONTROLADA DE CONTACTOS (+1 POR INCURSIÓN)
+                // Detección de contacto con flag de borde (+1 por incursión)
                 let enPista = false;
                 for(let i = 0; i < trackPoints.length - 1; i++) {
                     if (distToSegment(pua, trackPoints[i], trackPoints[i+1]) <= 12) {
@@ -509,19 +579,19 @@
                     if (!estaEnBorde) {
                         contactosCount++;
                         metricContactos.textContent = contactosCount;
-                        estaEnBorde = true; // Bloquea incremento contiguo en cuadros siguientes
+                        estaEnBorde = true;
                     }
                 } else {
-                    estaEnBorde = false; // Se resetea al volver a la zona segura
+                    estaEnBorde = false;
                 }
 
-                // Verificar Meta
-                if (Math.hypot(pua.x - 340, pua.y - 80) <= 14) {
+                // Detección de Meta
+                if (Math.hypot(pua.x - posicionMeta.x, pua.y - posicionMeta.y) <= 14) {
                     finalizarPrueba();
                 }
             }
 
-            // Dibujar Púa Activa
+            // Dibujar Púa
             ctx.fillStyle = estaEnBorde ? '#ef4444' : '#ffffff';
             ctx.beginPath();
             ctx.arc(pua.x, pua.y, pua.r, 0, Math.PI * 2);
@@ -541,7 +611,7 @@
             return Math.hypot(p.x - (v.x + t * (w.x - v.x)), p.y - (v.y + t * (w.y - v.y)));
         }
 
-        // Eventos de Botones Bimanuales
+        // Asignación de Mandos Bimanuales
         const setupBtn = (id, key) => {
             const el = document.getElementById(id);
             const on = (e) => { e.preventDefault(); keys[key] = true; };
@@ -565,7 +635,9 @@
             estaEnBorde = false;
             tiempoTranscurrido = 0;
             evaluacionActiva = true;
-            pua.x = 60; pua.y = 220;
+
+            pua.x = posicionInicio.x;
+            pua.y = posicionInicio.y;
 
             metricContactos.textContent = '0';
             metricTiempo.textContent = '0 s';
