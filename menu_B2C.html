@@ -129,6 +129,7 @@
       text-transform: uppercase;
       opacity: 0.9;
       text-decoration: none;
+      white-space: nowrap;
     }
 
     .btn-action-main {
@@ -214,7 +215,7 @@
       <strong id="lblSimulacionesCuota" style="color: var(--accent-cyan); font-size: 0.88rem; font-weight: 900;">INTENTO 1 DE 8</strong>
     </div>
 
-    <!-- MÓDULOS DE EVALUACIÓN (8 MÓDULOS) -->
+    <!-- MÓDULOS DE EVALUACIÓN (8 MÓDULOS HOMOLOGADOS) -->
     <div class="card-box" id="boxModulos">
       
       <!-- 1. Reactímetro -->
@@ -464,39 +465,32 @@
     }
 
     function revisarModulosRendidos() {
+      // HOMOLOGACIÓN DE MÁXIMO DE INTENTOS A 8 EN TODOS LOS MÓDULOS
       const listaConfig = [
         { id: 'reactimetro', statusElem: 'statusMod1', linkElem: 'linkMod1', maxIntentos: 8 },
         { id: 'palancas', statusElem: 'statusMod2', linkElem: 'linkMod2', maxIntentos: 8 },
         { id: 'punteo', statusElem: 'statusMod3', linkElem: 'linkMod3', maxIntentos: 8 },
-        { id: 'audicion', statusElem: 'statusMod4', linkElem: 'linkMod4', maxIntentos: 1 },
-        { id: 'visual', statusElem: 'statusMod5', linkElem: 'linkMod5', maxIntentos: 1 },
+        { id: 'audicion', statusElem: 'statusMod4', linkElem: 'linkMod4', maxIntentos: 8 },
+        { id: 'visual', statusElem: 'statusMod5', linkElem: 'linkMod5', maxIntentos: 8 },
         { id: 'anticipacion', statusElem: 'statusMod6', linkElem: 'linkMod6', maxIntentos: 8 },
         { id: 'estereopsis', statusElem: 'statusMod7', linkElem: 'linkMod7', maxIntentos: 8 },
         { id: 'fatiga', statusElem: 'statusMod8', linkElem: 'linkMod8', maxIntentos: 8 }
       ];
 
-      let totalSimulacionesCompletadas = 0;
-
       listaConfig.forEach(mod => {
         const statusContainer = document.getElementById(mod.statusElem);
         if (!statusContainer) return;
 
-        // Leer los registros del historial acumulados para este módulo específico
         const historial = JSON.parse(localStorage.getItem(`sensometrika_historial_${mod.id}`)) || [];
         const numEnsayos = historial.length;
-        totalSimulacionesCompletadas += numEnsayos;
-
         const urlDestino = construirUrlModulo(mod.id);
 
         if (numEnsayos >= mod.maxIntentos) {
-          // Si alcanzó el cupo máximo de simulaciones del módulo (e.g. 8 simulaciones)
           statusContainer.innerHTML = `<a id="${mod.linkElem}" href="${urlDestino}" class="btn-done">RENDIDO ✓ (${numEnsayos}/${mod.maxIntentos})</a>`;
         } else if (numEnsayos > 0) {
-          // Habilita rendir las simulaciones subsiguientes (S2, S3, S4...)
           const sigSimu = numEnsayos + 1;
           statusContainer.innerHTML = `<a id="${mod.linkElem}" href="${urlDestino}" class="btn-oficial">SIMULACIÓN S${sigSimu} →</a>`;
         } else {
-          // Si no ha registrado simulaciones oficiales aún
           const demoRealizada = localStorage.getItem(`${mod.id}_demo_completada`) === 'true';
           if (demoRealizada) {
             statusContainer.innerHTML = `<a id="${mod.linkElem}" href="${urlDestino}" class="btn-oficial">SIMULACIÓN S1 →</a>`;
@@ -506,7 +500,7 @@
         }
       });
 
-      // Cálculo del número de intento general en base a los módulos psicomotores (Reactímetro, Palancas, Punteo)
+      // Sincronización del intento global a partir del menor progreso psicomotor
       const reactHist = (JSON.parse(localStorage.getItem('sensometrika_historial_reactimetro')) || []).length;
       const palHist = (JSON.parse(localStorage.getItem('sensometrika_historial_palancas')) || []).length;
       const puntHist = (JSON.parse(localStorage.getItem('sensometrika_historial_punteo')) || []).length;
