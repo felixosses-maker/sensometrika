@@ -127,8 +127,8 @@
       font-weight: 800;
       font-size: 0.75rem;
       text-transform: uppercase;
-      cursor: not-allowed;
-      opacity: 0.8;
+      opacity: 0.9;
+      text-decoration: none;
     }
 
     .btn-action-main {
@@ -211,7 +211,7 @@
     <!-- CUOTA SIMULACIONES B2C -->
     <div id="boxContadorSimulaciones" class="counter-box">
       <span style="color: var(--text-muted); font-size: 0.72rem; font-weight: 700;">🔄 SIMULACIONES DISPONIBLES:</span>
-      <strong id="lblSimulacionesCuota" style="color: var(--accent-cyan); font-size: 0.88rem; font-weight: 900;">INTENTO 1 DE 3</strong>
+      <strong id="lblSimulacionesCuota" style="color: var(--accent-cyan); font-size: 0.88rem; font-weight: 900;">INTENTO 1 DE 8</strong>
     </div>
 
     <!-- MÓDULOS DE EVALUACIÓN (8 MÓDULOS) -->
@@ -224,7 +224,7 @@
           <span class="module-desc">Medición de velocidad de respuesta en frenado.</span>
         </div>
         <div id="statusMod1">
-          <a id="linkMod1" href="reactimetro.html" class="btn-start">INICIAR →</a>
+          <a id="linkMod1" href="reactimetro.html" class="btn-start">INICIAR DEMO →</a>
         </div>
       </div>
 
@@ -235,7 +235,7 @@
           <span class="module-desc">Coordinación motriz fina con ambas manos en ruta.</span>
         </div>
         <div id="statusMod2">
-          <a id="linkMod2" href="palancas.html" class="btn-start">INICIAR →</a>
+          <a id="linkMod2" href="palancas.html" class="btn-start">INICIAR DEMO →</a>
         </div>
       </div>
 
@@ -246,7 +246,7 @@
           <span class="module-desc">Estabilidad de ritmo y precisión de impacto.</span>
         </div>
         <div id="statusMod3">
-          <a id="linkMod3" href="punteo.html" class="btn-start">INICIAR →</a>
+          <a id="linkMod3" href="punteo.html" class="btn-start">INICIAR DEMO →</a>
         </div>
       </div>
 
@@ -257,7 +257,7 @@
           <span class="module-desc">Audiometría tonal en frecuencias críticas para faena.</span>
         </div>
         <div id="statusMod4">
-          <a id="linkMod4" href="audicion.html" class="btn-start">INICIAR →</a>
+          <a id="linkMod4" href="audicion.html" class="btn-start">INICIAR DEMO →</a>
         </div>
       </div>
 
@@ -268,40 +268,40 @@
           <span class="module-desc">Agudeza visual, nocturna y visión de colores (Ishihara).</span>
         </div>
         <div id="statusMod5">
-          <a id="linkMod5" href="visual.html" class="btn-start">INICIAR →</a>
+          <a id="linkMod5" href="visual.html" class="btn-start">INICIAR DEMO →</a>
         </div>
       </div>
 
-      <!-- 6. Anticipación de Velocidad (Alto Desempeño) -->
+      <!-- 6. Anticipación de Velocidad -->
       <div class="module-card" id="cardModAnticipacion" style="display: none;">
         <div class="module-info">
           <span class="module-title">6. Velocidad de Anticipación</span>
           <span class="module-desc">Cálculo de velocidad relativa y trayectoria en zona ciega.</span>
         </div>
         <div id="statusMod6">
-          <a id="linkMod6" href="anticipacion.html" class="btn-start">INICIAR →</a>
+          <a id="linkMod6" href="anticipacion.html" class="btn-start">INICIAR DEMO →</a>
         </div>
       </div>
 
-      <!-- 7. Estereopsis 3D (Alto Desempeño) -->
+      <!-- 7. Estereopsis 3D -->
       <div class="module-card" id="cardModEstereopsis" style="display: none;">
         <div class="module-info">
           <span class="module-title">7. Estereopsis y Profundidad 3D</span>
           <span class="module-desc">Percepción espacial binocular y cálculo de distancias.</span>
         </div>
         <div id="statusMod7">
-          <a id="linkMod7" href="estereopsis.html" class="btn-start">INICIAR →</a>
+          <a id="linkMod7" href="estereopsis.html" class="btn-start">INICIAR DEMO →</a>
         </div>
       </div>
 
-      <!-- 8. PVT Fatiga (Alto Desempeño) -->
+      <!-- 8. PVT Fatiga -->
       <div class="module-card" id="cardModFatiga" style="display: none;">
         <div class="module-info">
           <span class="module-title">8. Test de Fatiga y Vigilancia (PVT)</span>
           <span class="module-desc">Control de somnolencia, lapsos de micro-sueño y atención.</span>
         </div>
         <div id="statusMod8">
-          <a id="linkMod8" href="fatiga.html" class="btn-start">INICIAR →</a>
+          <a id="linkMod8" href="fatiga.html" class="btn-start">INICIAR DEMO →</a>
         </div>
       </div>
 
@@ -392,7 +392,6 @@
       let planUrl = urlParams.get('plan');
       let planParam = (planGuardado || planUrl || 'BASICO').toUpperCase().trim();
 
-      // Guardar el plan resuelto en la sesión
       localStorage.setItem('sensometrika_plan_contratado', planParam);
       localStorage.setItem('sensometrika_plan_seleccionado', planParam);
 
@@ -437,7 +436,6 @@
         document.getElementById('cardModFatiga').style.display = 'flex';
       }
 
-      // PARAMETRIZACIÓN BASE DE NAVEGACIÓN
       urlParams.set('plan', planParam);
       urlParams.set('mode', isB2C ? 'b2c' : 'b2b');
       globalParamsQuery = urlParams.toString();
@@ -450,22 +448,14 @@
       document.getElementById('modalBienvenidaInduccion').style.display = 'none';
     }
 
-    // CONSTRUCCIÓN CORREGIDA DE URL DE MÓDULO
     function construirUrlModulo(nombreModulo) {
       const currentParams = new URLSearchParams(globalParamsQuery || window.location.search);
-      const modulosRendidos = JSON.parse(localStorage.getItem('sensometrika_modulos_rendidos')) || {};
-      const demoCompletada = localStorage.getItem(`${nombreModulo}_demo_completada`) === 'true';
+      const demoRealizada = localStorage.getItem(`${nombreModulo}_demo_completada`) === 'true';
 
-      if (modulosRendidos[nombreModulo] === true) {
-        // Módulo rendido oficialmente
-        currentParams.set('demo', 'false');
-        currentParams.set('fase', 'oficial');
-      } else if (demoCompletada) {
-        // Demo completada: abre directamente la simulación oficial
+      if (demoRealizada) {
         currentParams.set('demo', 'false');
         currentParams.set('fase', 'oficial');
       } else {
-        // Primera entrada: debe hacer la calibración demo primero
         currentParams.set('demo', 'true');
         currentParams.set('fase', 'demo');
       }
@@ -474,41 +464,67 @@
     }
 
     function revisarModulosRendidos() {
-      const modulosRendidos = JSON.parse(localStorage.getItem('sensometrika_modulos_rendidos')) || {};
-
       const listaConfig = [
-        { id: 'reactimetro', statusElem: 'statusMod1', linkElem: 'linkMod1' },
-        { id: 'palancas', statusElem: 'statusMod2', linkElem: 'linkMod2' },
-        { id: 'punteo', statusElem: 'statusMod3', linkElem: 'linkMod3' },
-        { id: 'audicion', statusElem: 'statusMod4', linkElem: 'linkMod4' },
-        { id: 'visual', statusElem: 'statusMod5', linkElem: 'linkMod5' },
-        { id: 'anticipacion', statusElem: 'statusMod6', linkElem: 'linkMod6' },
-        { id: 'estereopsis', statusElem: 'statusMod7', linkElem: 'linkMod7' },
-        { id: 'fatiga', statusElem: 'statusMod8', linkElem: 'linkMod8' }
+        { id: 'reactimetro', statusElem: 'statusMod1', linkElem: 'linkMod1', maxIntentos: 8 },
+        { id: 'palancas', statusElem: 'statusMod2', linkElem: 'linkMod2', maxIntentos: 8 },
+        { id: 'punteo', statusElem: 'statusMod3', linkElem: 'linkMod3', maxIntentos: 8 },
+        { id: 'audicion', statusElem: 'statusMod4', linkElem: 'linkMod4', maxIntentos: 1 },
+        { id: 'visual', statusElem: 'statusMod5', linkElem: 'linkMod5', maxIntentos: 1 },
+        { id: 'anticipacion', statusElem: 'statusMod6', linkElem: 'linkMod6', maxIntentos: 8 },
+        { id: 'estereopsis', statusElem: 'statusMod7', linkElem: 'linkMod7', maxIntentos: 8 },
+        { id: 'fatiga', statusElem: 'statusMod8', linkElem: 'linkMod8', maxIntentos: 8 }
       ];
+
+      let totalSimulacionesCompletadas = 0;
 
       listaConfig.forEach(mod => {
         const statusContainer = document.getElementById(mod.statusElem);
-
         if (!statusContainer) return;
 
-        if (modulosRendidos[mod.id] === true) {
-          // Si la prueba oficial ya concluyó
-          statusContainer.innerHTML = '<span class="btn-done">RENDIDO ✓</span>';
-        } else {
-          // Si no ha concluido oficialmente
-          const urlDestino = construirUrlModulo(mod.id);
-          const demoRealizada = localStorage.getItem(`${mod.id}_demo_completada`) === 'true';
+        // Leer los registros del historial acumulados para este módulo específico
+        const historial = JSON.parse(localStorage.getItem(`sensometrika_historial_${mod.id}`)) || [];
+        const numEnsayos = historial.length;
+        totalSimulacionesCompletadas += numEnsayos;
 
+        const urlDestino = construirUrlModulo(mod.id);
+
+        if (numEnsayos >= mod.maxIntentos) {
+          // Si alcanzó el cupo máximo de simulaciones del módulo (e.g. 8 simulaciones)
+          statusContainer.innerHTML = `<a id="${mod.linkElem}" href="${urlDestino}" class="btn-done">RENDIDO ✓ (${numEnsayos}/${mod.maxIntentos})</a>`;
+        } else if (numEnsayos > 0) {
+          // Habilita rendir las simulaciones subsiguientes (S2, S3, S4...)
+          const sigSimu = numEnsayos + 1;
+          statusContainer.innerHTML = `<a id="${mod.linkElem}" href="${urlDestino}" class="btn-oficial">SIMULACIÓN S${sigSimu} →</a>`;
+        } else {
+          // Si no ha registrado simulaciones oficiales aún
+          const demoRealizada = localStorage.getItem(`${mod.id}_demo_completada`) === 'true';
           if (demoRealizada) {
-            // Si ya hizo la calibración de ensayo, habilita botón de Simulación Oficial
-            statusContainer.innerHTML = `<a id="${mod.linkElem}" href="${urlDestino}" class="btn-oficial">SIMULACIÓN OFICIAL →</a>`;
+            statusContainer.innerHTML = `<a id="${mod.linkElem}" href="${urlDestino}" class="btn-oficial">SIMULACIÓN S1 →</a>`;
           } else {
-            // Si no ha hecho la calibración demo, fuerza INICIAR DEMO primero
             statusContainer.innerHTML = `<a id="${mod.linkElem}" href="${urlDestino}" class="btn-start">INICIAR DEMO →</a>`;
           }
         }
       });
+
+      // Cálculo del número de intento general en base a los módulos psicomotores (Reactímetro, Palancas, Punteo)
+      const reactHist = (JSON.parse(localStorage.getItem('sensometrika_historial_reactimetro')) || []).length;
+      const palHist = (JSON.parse(localStorage.getItem('sensometrika_historial_palancas')) || []).length;
+      const puntHist = (JSON.parse(localStorage.getItem('sensometrika_historial_punteo')) || []).length;
+      
+      const minPsicomotriz = Math.min(reactHist, palHist, puntHist);
+      const intentoGlobal = Math.min(8, minPsicomotriz + 1);
+
+      localStorage.setItem('sensometrika_intento_actual', intentoGlobal.toString());
+      
+      const lblCuota = document.getElementById('lblSimulacionesCuota');
+      if (lblCuota) {
+        const planParam = localStorage.getItem('sensometrika_plan_contratado') || 'BASICO';
+        let totalPlan = 3;
+        if (planParam.includes('PLUS')) totalPlan = 5;
+        if (planParam.includes('FULL') || planParam.includes('ALTO')) totalPlan = 8;
+        
+        lblCuota.textContent = `INTENTO ${intentoGlobal} DE ${totalPlan}`;
+      }
     }
 
     function finalizarEvaluacion() {
