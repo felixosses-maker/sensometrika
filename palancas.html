@@ -226,19 +226,20 @@
             display: none;
         }
 
+        /* GRID DE MÉTRICAS AMPLIADO A 4 COLUMNAS PARA INCLUIR T. ERROR Y PRECISIÓN */
         .metrics-grid {
             display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
+            grid-template-columns: 1fr 1fr 1fr 1fr;
             text-align: center;
             background-color: #070d17;
             border: 1px solid var(--card-border);
             border-radius: 10px;
-            padding: 12px 8px;
+            padding: 12px 6px;
         }
 
-        .metric-item { display: flex; flex-direction: column; gap: 4px; }
-        .metric-label { font-size: 0.65rem; color: var(--text-muted); font-weight: 700; }
-        .metric-value { font-size: 1.1rem; font-weight: 800; }
+        .metric-item { display: flex; flex-direction: column; gap: 2px; }
+        .metric-label { font-size: 0.60rem; color: var(--text-muted); font-weight: 700; }
+        .metric-value { font-size: 0.95rem; font-weight: 800; }
 
         .modal-overlay {
             position: fixed;
@@ -314,12 +315,16 @@
                     <span id="metricTiempo" class="metric-value" style="color:#38bdf8;">0 s</span>
                 </div>
                 <div class="metric-item">
-                    <span class="metric-label">CONTACTOS</span>
+                    <span class="metric-label">TOQUES</span>
                     <span id="metricContactos" class="metric-value" style="color:#ef4444;">0</span>
                 </div>
                 <div class="metric-item">
-                    <span class="metric-label">CIRCUITO</span>
-                    <span id="metricCircuito" class="metric-value" style="font-size: 0.8rem; color:#ffffff; line-height: 1.4;">Trazado Bayoneta</span>
+                    <span class="metric-label">T. ERROR</span>
+                    <span id="metricTiempoError" class="metric-value" style="color:#e5b324;">0.0 s</span>
+                </div>
+                <div class="metric-item">
+                    <span class="metric-label">PRECISIÓN</span>
+                    <span id="metricPrecision" class="metric-value" style="color:#10b981;">100%</span>
                 </div>
             </div>
 
@@ -368,6 +373,8 @@
 
         const metricTiempo = document.getElementById('metricTiempo');
         const metricContactos = document.getElementById('metricContactos');
+        const metricTiempoError = document.getElementById('metricTiempoError');
+        const metricPrecision = document.getElementById('metricPrecision');
 
         const modal = document.getElementById('modalSistema');
         const modalTitle = document.getElementById('modalTitle');
@@ -384,6 +391,9 @@
         let evaluacionActiva = false;
         let contactosCount = 0;
         let estaEnBorde = false;
+        let tiempoErrorMs = 0; // ACUMULADOR DE TIEMPO EN ERROR (MS)
+        let inicioBordeMs = null;
+
         let tiempoTranscurrido = 0;
         let timerInterval = null;
         let animFrameId = null;
@@ -575,15 +585,27 @@
                     }
                 }
 
+                const ahora = Date.now();
                 if (!enPista) {
                     if (!estaEnBorde) {
                         contactosCount++;
                         metricContactos.textContent = contactosCount;
                         estaEnBorde = true;
+                        inicioBordeMs = ahora;
+                    } else {
+                        // MEDIR TIEMPO EN ERROR ACUMULADO
+                        tiempoErrorMs += (ahora - inicioBordeMs);
+                        inicioBordeMs = ahora;
+                        metricTiempoError.textContent = `${(tiempoErrorMs / 1000).toFixed(1)} s`;
                     }
                 } else {
                     estaEnBorde = false;
+                    inicioBordeMs = null;
                 }
+
+                // CÁLCULO DE PRECISIÓN PONDERADA (%)
+                const precPonderada = Math.max(0, Math.round(100 - (contactosCount * 4) - ((tiempoErrorMs / 1000) * 6)));
+                metricPrecision.textContent = `${precPonderada}%`;
 
                 // Detección de Meta
                 if (Math.hypot(pua.x - posicionMeta.x, pua.y - posicionMeta.y) <= 14) {
@@ -632,6 +654,7 @@
             if (modoActual === 'BLOQUEADO') return;
 
             contactosCount = 0;
+            tiempoErrorMs = 0;
             estaEnBorde = false;
             tiempoTranscurrido = 0;
             evaluacionActiva = true;
@@ -640,7 +663,9 @@
             pua.y = posicionInicio.y;
 
             metricContactos.textContent = '0';
+            metricTiempoError.textContent = '0.0 s';
             metricTiempo.textContent = '0 s';
+            metricPrecision.textContent = '100%';
             btnStart.style.display = 'none';
 
             timerInterval = setInterval(() => {
@@ -652,6 +677,9 @@
         function finalizarPrueba() {
             evaluacionActiva = false;
             clearInterval(timerInterval);
+
+            const tErrorSeg = (tiempoErrorMs / 1000).toFixed(1);
+            const precisionFinal = Math.max(0, Math.round(100 - (contactosCount * 4) - ((tiempoErrorMs / 1000) * 6)));
 
             if (modoActual === 'DEMO') {
                 localStorage.setItem('palancas_demo_completada', 'true');
@@ -665,7 +693,7 @@
 
                 mostrarModal(
                     "CALIBRACIÓN DEMO COMPLETADA",
-                    `Tiempo: <b>${tiempoTranscurrido} s</b><br>Contactos: <b>${contactosCount}</b><br><br>Has finalizado el ensayo. Ya puedes rendir tu Simulación Oficial.`,
+                    `Tiempo Recorrido: <b>${tiempoTranscurrido} s</b><br>Toques en Borde: <b>${contactosCount}</b><br>Tiempo en Error: <b>${tErrorSeg} s</b><br>Precisión Bimanual: <b>${precisionFinal}%</b><br><br>Has finalizado el ensayo. Ya puedes rendir tu Simulación Oficial.`,
                     () => {
                         actualizarEstadoUI();
                     }
@@ -675,6 +703,8 @@
                 historial.push({
                     tiempo: tiempoTranscurrido,
                     contactos: contactosCount,
+                    tiempoError: parseFloat(tErrorSeg),
+                    precision: precisionFinal,
                     fecha: new Date().toISOString()
                 });
                 localStorage.setItem('sensometrika_historial_palancas', JSON.stringify(historial));
@@ -694,7 +724,7 @@
 
                 mostrarModal(
                     `SIMULACIÓN S${numSimu} REGISTRADA`,
-                    `Tiempo Recorrido: <b>${tiempoTranscurrido} s</b><br>Contactos en Borde: <b>${contactosCount}</b><br><br><b>Simulación S${numSimu} de ${maxIntentosPlan} guardada con éxito.</b>`,
+                    `Tiempo Recorrido: <b>${tiempoTranscurrido} s</b><br>Toques en Borde: <b>${contactosCount}</b><br>Tiempo en Error: <b>${tErrorSeg} s</b><br>Precisión Bimanual: <b>${precisionFinal}%</b><br><br><b>Simulación S${numSimu} de ${maxIntentosPlan} guardada con éxito.</b>`,
                     () => { ejecutarRetornoMenu(); }
                 );
             }
@@ -713,7 +743,7 @@
         btnStart.addEventListener('click', iniciarPrueba);
 
         document.getElementById('btnInfo').addEventListener('click', () => {
-            mostrarModal("¿CÓMO FUNCIONA?", "Usa los botones bimanuales para desplazar la púa desde el punto amarillo inicial hasta la meta verde.");
+            mostrarModal("¿CÓMO FUNCIONA?", "Usa los botones bimanuales para desplazar la púa desde el punto amarillo inicial hasta la meta verde evitando rozar los bordes.");
         });
 
         actualizarEstadoUI();
