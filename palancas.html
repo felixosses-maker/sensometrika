@@ -81,7 +81,7 @@
             width: 100%;
             display: flex;
             flex-direction: column;
-            gap: 16px;
+            gap: 14px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.5);
         }
 
@@ -103,10 +103,10 @@
         .nav-btn-blue {
             color: #38bdf8 !important;
             background: rgba(56, 189, 248, 0.12) !important;
-            padding: 6px 12px !important;
+            padding: 6px 14px !important;
             border-radius: 8px !important;
             border: 1px solid rgba(56, 189, 248, 0.3) !important;
-            font-weight: 600 !important;
+            font-weight: 700 !important;
         }
 
         .status-badge-container { display: flex; justify-content: center; }
@@ -144,6 +144,60 @@
             font-size: 0.85rem;
             color: var(--text-main);
             line-height: 1.4;
+        }
+
+        .controls-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            width: 100%;
+        }
+
+        .control-pad {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            background: #070d17;
+            padding: 10px;
+            border-radius: 12px;
+            border: 1px solid var(--card-border);
+        }
+
+        .control-label {
+            font-size: 0.65rem;
+            font-weight: 800;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .btn-ctrl-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            width: 100%;
+        }
+
+        .btn-ctrl {
+            background-color: #1a2638;
+            color: #ffffff;
+            border: 1px solid #2d3f59;
+            border-radius: 8px;
+            padding: 12px 0;
+            font-weight: 800;
+            font-size: 1.1rem;
+            cursor: pointer;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: background 0.15s;
+        }
+
+        .btn-ctrl:active {
+            background-color: #0284c7;
+            border-color: #38bdf8;
         }
 
         .btn-start {
@@ -251,27 +305,45 @@
             </div>
 
             <div class="instruction-text" id="instructionText">
-                Arrastra la púa verde a lo largo de la pista usando el toque táctil o el mouse.
-            </div>
-
-            <div id="actionContainer" style="width: 100%;">
-                <button id="btnStart" class="btn-start">INICIAR CALIBRACIÓN DEMO</button>
-                <button id="btnNext" class="btn-next" onclick="ejecutarRetornoMenu()">VOLVER AL MENÚ DE PRUEBAS →</button>
+                Evaluación Oficial: Recorre la pista con ambos pulgares hasta la meta.
             </div>
 
             <div class="metrics-grid">
                 <div class="metric-item">
                     <span class="metric-label">TIEMPO</span>
-                    <span id="metricTiempo" class="metric-value" style="color:#38bdf8;">15s</span>
+                    <span id="metricTiempo" class="metric-value" style="color:#38bdf8;">0 s</span>
                 </div>
                 <div class="metric-item">
-                    <span class="metric-label">ERRORES</span>
-                    <span id="metricErrores" class="metric-value" style="color:#ef4444;">0</span>
+                    <span class="metric-label">CONTACTOS</span>
+                    <span id="metricContactos" class="metric-value" style="color:#ef4444;">0</span>
                 </div>
                 <div class="metric-item">
-                    <span class="metric-label">PRECISIÓN</span>
-                    <span id="metricPrecision" class="metric-value" style="color:#10b981;">100%</span>
+                    <span class="metric-label">CIRCUITO</span>
+                    <span id="metricCircuito" class="metric-value" style="font-size: 0.8rem; color:#ffffff; line-height: 1.4;">Trazado Bayoneta</span>
                 </div>
+            </div>
+
+            <!-- MANDOS DE CONTROL BIMANUAL -->
+            <div class="controls-grid" id="controlsGrid">
+                <div class="control-pad">
+                    <span class="control-label">MANO IZQUIERDA (EJE X)</span>
+                    <div class="btn-ctrl-group">
+                        <button class="btn-ctrl" id="btnLeft">◄</button>
+                        <button class="btn-ctrl" id="btnRight">►</button>
+                    </div>
+                </div>
+                <div class="control-pad">
+                    <span class="control-label">MANO DERECHA (EJE Y)</span>
+                    <div class="btn-ctrl-group">
+                        <button class="btn-ctrl" id="btnUp">▲</button>
+                        <button class="btn-ctrl" id="btnDown">▼</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="actionContainer" style="width: 100%;">
+                <button id="btnStart" class="btn-start">INICIAR SIMULACIÓN OFICIAL</button>
+                <button id="btnNext" class="btn-next" onclick="ejecutarRetornoMenu()">VOLVER AL MENÚ DE PRUEBAS →</button>
             </div>
         </div>
 
@@ -284,7 +356,6 @@
         </div>
     </div>
 
-    <!-- Integración del motor de palancas.js si existe, de lo contrario ejecuta el motor nativo de respaldo -->
     <script src="palancas.js"></script>
     <script>
         const canvas = document.getElementById('palancasCanvas');
@@ -296,8 +367,7 @@
         const instructionText = document.getElementById('instructionText');
 
         const metricTiempo = document.getElementById('metricTiempo');
-        const metricErrores = document.getElementById('metricErrores');
-        const metricPrecision = document.getElementById('metricPrecision');
+        const metricContactos = document.getElementById('metricContactos');
 
         const modal = document.getElementById('modalSistema');
         const modalTitle = document.getElementById('modalTitle');
@@ -312,25 +382,25 @@
         let modoActual = isDemoURL ? 'DEMO' : 'OFICIAL';
 
         let evaluacionActiva = false;
-        let erroresCount = 0;
-        let muestrasTotales = 0;
-        let tiempoRestante = 15;
+        let contactosCount = 0;
+        let estaEnBorde = false; // FLAG PARA EVITAR DISPARO MASIVO DE CONTACTOS
+        let tiempoTranscurrido = 0;
         let timerInterval = null;
         let animFrameId = null;
 
-        // Puntos de la pista Serpenteante
+        // Pista Bayoneta
         const trackPoints = [
-            {x: 50, y: 50},
-            {x: 50, y: 220},
-            {x: 180, y: 220},
-            {x: 180, y: 100},
-            {x: 320, y: 100},
-            {x: 320, y: 220},
-            {x: 370, y: 220}
+            {x: 60, y: 220},   // Inicio (Punto Amarillo)
+            {x: 175, y: 220},
+            {x: 175, y: 110},
+            {x: 235, y: 110},
+            {x: 235, y: 220},
+            {x: 340, y: 220},
+            {x: 340, y: 80}    // Meta (Círculo Verde)
         ];
 
-        let pua = { x: 50, y: 50, r: 12 };
-        let isDragging = false;
+        let pua = { x: 60, y: 220, r: 8, speed: 1.8 }; // Velocidad ajustada para mejor precisión
+        let keys = { left: false, right: false, up: false, down: false };
 
         function ejecutarRetornoMenu() {
             window.location.href = `menu_B2C.html?${urlParams.toString()}`;
@@ -366,16 +436,16 @@
                 btnStart.style.backgroundColor = "#e5b324";
                 btnStart.style.display = 'block';
                 btnNext.style.display = 'none';
-                instructionText.textContent = "Modo Demo: Guía la púa por la pista serpenteante para ensayar antes de la prueba oficial.";
+                instructionText.textContent = "Modo Demo: Guía la púa con ambos pulgares hasta la meta verde.";
             } else {
                 const siguienteSimu = numEnsayosRealizados + 1;
                 badgeText.textContent = esB2B ? `Simulación Oficial B2B (S${siguienteSimu})` : `Simulación Oficial S${siguienteSimu} de ${maxIntentosPlan}`;
-                badgeDot.style.backgroundColor = "#0284c7"; 
+                badgeDot.style.backgroundColor = "#ef4444"; 
                 btnStart.textContent = `INICIAR SIMULACIÓN OFICIAL (S${siguienteSimu} DE ${maxIntentosPlan})`;
                 btnStart.style.backgroundColor = "#0284c7";
                 btnStart.style.display = 'block';
                 btnNext.style.display = 'none';
-                instructionText.textContent = `Simulación S${siguienteSimu}: Mantén la púa dentro del canal de calibración durante los 15 segundos.`;
+                instructionText.textContent = `Evaluación Oficial: Recorre la pista con ambos pulgares hasta la meta.`;
             }
         }
 
@@ -383,9 +453,9 @@
             ctx.fillStyle = '#050a12';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // Dibujar Pista
+            // Dibujar Canal Pista Bayoneta
             ctx.strokeStyle = '#0284c7';
-            ctx.lineWidth = 26;
+            ctx.lineWidth = 28;
             ctx.lineCap = 'round';
             ctx.lineJoin = 'round';
             ctx.beginPath();
@@ -395,35 +465,70 @@
             }
             ctx.stroke();
 
-            // Dibujar Línea Central Guiada
-            ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+            // Línea de centro
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.35)';
             ctx.lineWidth = 2;
-            ctx.setLineDash([6, 6]);
+            ctx.setLineDash([5, 5]);
             ctx.stroke();
             ctx.setLineDash([]);
 
-            // Dibujar Púa
-            ctx.fillStyle = evaluacionActiva ? '#10b981' : '#38bdf8';
+            // Dibujar Inicio (Punto Amarillo)
+            ctx.fillStyle = '#e5b324';
+            ctx.beginPath();
+            ctx.arc(60, 220, 10, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            // Dibujar Meta (Punto Verde)
+            ctx.fillStyle = '#10b981';
+            ctx.beginPath();
+            ctx.arc(340, 80, 14, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            // Movimiento Bimanual
+            if (evaluacionActiva) {
+                if (keys.left) pua.x = Math.max(15, pua.x - pua.speed);
+                if (keys.right) pua.x = Math.min(canvas.width - 15, pua.x + pua.speed);
+                if (keys.up) pua.y = Math.max(15, pua.y - pua.speed);
+                if (keys.down) pua.y = Math.min(canvas.height - 15, pua.y + pua.speed);
+
+                // EVALUACIÓN CONTROLADA DE CONTACTOS (+1 POR INCURSIÓN)
+                let enPista = false;
+                for(let i = 0; i < trackPoints.length - 1; i++) {
+                    if (distToSegment(pua, trackPoints[i], trackPoints[i+1]) <= 12) {
+                        enPista = true; break;
+                    }
+                }
+
+                if (!enPista) {
+                    if (!estaEnBorde) {
+                        contactosCount++;
+                        metricContactos.textContent = contactosCount;
+                        estaEnBorde = true; // Bloquea incremento contiguo en cuadros siguientes
+                    }
+                } else {
+                    estaEnBorde = false; // Se resetea al volver a la zona segura
+                }
+
+                // Verificar Meta
+                if (Math.hypot(pua.x - 340, pua.y - 80) <= 14) {
+                    finalizarPrueba();
+                }
+            }
+
+            // Dibujar Púa Activa
+            ctx.fillStyle = estaEnBorde ? '#ef4444' : '#ffffff';
             ctx.beginPath();
             ctx.arc(pua.x, pua.y, pua.r, 0, Math.PI * 2);
             ctx.fill();
-            ctx.lineWidth = 3;
-            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 2;
+            ctx.strokeStyle = estaEnBorde ? '#ffffff' : '#38bdf8';
             ctx.stroke();
-
-            if (evaluacionActiva && isDragging) {
-                muestrasTotales++;
-                // Detección simple de salida de la pista
-                let enPista = false;
-                for(let i = 0; i < trackPoints.length - 1; i++) {
-                    const p1 = trackPoints[i];
-                    const p2 = trackPoints[i+1];
-                    const dist = distToSegment(pua, p1, p2);
-                    if (dist <= 13) { enPista = true; break; }
-                }
-                if (!enPista) erroresCount++;
-                actualizarMetricas();
-            }
 
             animFrameId = requestAnimationFrame(renderLoop);
         }
@@ -436,63 +541,45 @@
             return Math.hypot(p.x - (v.x + t * (w.x - v.x)), p.y - (v.y + t * (w.y - v.y)));
         }
 
-        function actualizarMetricas() {
-            metricTiempo.textContent = `${tiempoRestante}s`;
-            metricErrores.textContent = erroresCount;
-            const prec = muestrasTotales > 0 ? Math.max(0, Math.round(((muestrasTotales - erroresCount) / muestrasTotales) * 100)) : 100;
-            metricPrecision.textContent = `${prec}%`;
-        }
+        // Eventos de Botones Bimanuales
+        const setupBtn = (id, key) => {
+            const el = document.getElementById(id);
+            const on = (e) => { e.preventDefault(); keys[key] = true; };
+            const off = (e) => { e.preventDefault(); keys[key] = false; };
+            el.addEventListener('mousedown', on);
+            el.addEventListener('mouseup', off);
+            el.addEventListener('mouseleave', off);
+            el.addEventListener('touchstart', on, {passive: false});
+            el.addEventListener('touchend', off, {passive: false});
+        };
 
-        function MoverPua(e) {
-            if (!evaluacionActiva || !isDragging) return;
-            const rect = canvas.getBoundingClientRect();
-            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-            pua.x = (clientX - rect.left) * (canvas.width / rect.width);
-            pua.y = (clientY - rect.top) * (canvas.height / rect.height);
-        }
-
-        canvas.addEventListener('mousedown', (e) => { isDragging = true; MoverPua(e); });
-        canvas.addEventListener('mousemove', MoverPua);
-        window.addEventListener('mouseup', () => { isDragging = false; });
-
-        canvas.addEventListener('touchstart', (e) => { isDragging = true; MoverPua(e); }, {passive: false});
-        canvas.addEventListener('touchmove', (e) => { e.preventDefault(); MoverPua(e); }, {passive: false});
-        window.addEventListener('touchend', () => { isDragging = false; });
+        setupBtn('btnLeft', 'left');
+        setupBtn('btnRight', 'right');
+        setupBtn('btnUp', 'up');
+        setupBtn('btnDown', 'down');
 
         function iniciarPrueba() {
             if (modoActual === 'BLOQUEADO') return;
 
-            // Verificar si palancas.js posee la función de inicio oficial
-            if (typeof moduloPalancas !== 'undefined' && typeof moduloPalancas.iniciar === 'function') {
-                btnStart.style.display = 'none';
-                moduloPalancas.iniciar();
-                return;
-            }
-
-            erroresCount = 0;
-            muestrasTotales = 0;
-            tiempoRestante = 15;
+            contactosCount = 0;
+            estaEnBorde = false;
+            tiempoTranscurrido = 0;
             evaluacionActiva = true;
-            pua.x = 50; pua.y = 50;
+            pua.x = 60; pua.y = 220;
 
-            actualizarMetricas();
+            metricContactos.textContent = '0';
+            metricTiempo.textContent = '0 s';
             btnStart.style.display = 'none';
 
             timerInterval = setInterval(() => {
-                tiempoRestante--;
-                metricTiempo.textContent = `${tiempoRestante}s`;
-                if (tiempoRestante <= 0) {
-                    finalizarPrueba();
-                }
+                tiempoTranscurrido++;
+                metricTiempo.textContent = `${tiempoTranscurrido} s`;
             }, 1000);
         }
 
         function finalizarPrueba() {
             evaluacionActiva = false;
             clearInterval(timerInterval);
-
-            const precisionVal = muestrasTotales > 0 ? Math.max(0, Math.round(((muestrasTotales - erroresCount) / muestrasTotales) * 100)) : 100;
 
             if (modoActual === 'DEMO') {
                 localStorage.setItem('palancas_demo_completada', 'true');
@@ -506,7 +593,7 @@
 
                 mostrarModal(
                     "CALIBRACIÓN DEMO COMPLETADA",
-                    `Errores en Ruta: <b>${erroresCount}</b><br>Precisión Bimanual: <b>${precisionVal}%</b><br><br>Has finalizado el ensayo. Ya puedes rendir tu Simulación Oficial.`,
+                    `Tiempo: <b>${tiempoTranscurrido} s</b><br>Contactos: <b>${contactosCount}</b><br><br>Has finalizado el ensayo. Ya puedes rendir tu Simulación Oficial.`,
                     () => {
                         actualizarEstadoUI();
                     }
@@ -514,8 +601,8 @@
             } else if (modoActual === 'OFICIAL') {
                 let historial = JSON.parse(localStorage.getItem('sensometrika_historial_palancas')) || [];
                 historial.push({
-                    precision: precisionVal,
-                    errores: erroresCount,
+                    tiempo: tiempoTranscurrido,
+                    contactos: contactosCount,
                     fecha: new Date().toISOString()
                 });
                 localStorage.setItem('sensometrika_historial_palancas', JSON.stringify(historial));
@@ -535,7 +622,7 @@
 
                 mostrarModal(
                     `SIMULACIÓN S${numSimu} REGISTRADA`,
-                    `Errores en Ruta: <b>${erroresCount}</b><br>Precisión Bimanual: <b>${precisionVal}%</b><br><br><b>Simulación S${numSimu} de ${maxIntentosPlan} guardada con éxito.</b>`,
+                    `Tiempo Recorrido: <b>${tiempoTranscurrido} s</b><br>Contactos en Borde: <b>${contactosCount}</b><br><br><b>Simulación S${numSimu} de ${maxIntentosPlan} guardada con éxito.</b>`,
                     () => { ejecutarRetornoMenu(); }
                 );
             }
@@ -554,7 +641,7 @@
         btnStart.addEventListener('click', iniciarPrueba);
 
         document.getElementById('btnInfo').addEventListener('click', () => {
-            mostrarModal("¿CÓMO FUNCIONA?", "Arrastra el círculo verde desde el punto de inicio hasta el final manteniendo la precisión dentro de la pista azúlea.");
+            mostrarModal("¿CÓMO FUNCIONA?", "Usa los botones bimanuales para desplazar la púa desde el punto amarillo inicial hasta la meta verde.");
         });
 
         actualizarEstadoUI();
