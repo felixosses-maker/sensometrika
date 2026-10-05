@@ -16,6 +16,7 @@
             --blue-btn: #0284c7;
             --accent-cyan: #38bdf8;
             --accent-gold: #e5b324;
+            --accent-red: #ef4444;
         }
 
         * { 
@@ -174,17 +175,17 @@
 
         .metrics-grid {
             display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
+            grid-template-columns: 1fr 1fr 1fr 1fr;
             text-align: center;
             background-color: #070d17;
             border: 1px solid var(--card-border);
             border-radius: 10px;
-            padding: 12px 8px;
+            padding: 12px 6px;
         }
 
         .metric-item { display: flex; flex-direction: column; gap: 4px; }
-        .metric-label { font-size: 0.65rem; color: var(--text-muted); font-weight: 700; }
-        .metric-value { font-size: 1.1rem; font-weight: 800; }
+        .metric-label { font-size: 0.58rem; color: var(--text-muted); font-weight: 700; }
+        .metric-value { font-size: 0.98rem; font-weight: 800; }
 
         .modal-overlay {
             position: fixed;
@@ -265,8 +266,12 @@
                     <span id="metricAciertos" class="metric-value" style="color:#38bdf8;">0</span>
                 </div>
                 <div class="metric-item">
-                    <span class="metric-label">ERRORES</span>
+                    <span class="metric-label">PERDIDAS</span>
                     <span id="metricErrores" class="metric-value" style="color:#ef4444;">0</span>
+                </div>
+                <div class="metric-item">
+                    <span class="metric-label">LATENCIA</span>
+                    <span id="metricLatencia" class="metric-value" style="color:#e5b324;">0 ms</span>
                 </div>
                 <div class="metric-item">
                     <span class="metric-label">PRECISIÓN</span>
@@ -296,6 +301,7 @@
 
         const metricAciertos = document.getElementById('metricAciertos');
         const metricErrores = document.getElementById('metricErrores');
+        const metricLatencia = document.getElementById('metricLatencia');
         const metricPrecision = document.getElementById('metricPrecision');
 
         const modal = document.getElementById('modalSistema');
@@ -313,11 +319,14 @@
         let evaluacionActiva = false;
         let aciertos = 0;
         let errores = 0;
+        let tiemposReaccion = []; // VECTOR DE LATENCIAS
         let tiempoRestante = 15;
         let timerInterval = null;
         let animFrameId = null;
 
         let ultimoToqueMs = 0;
+        let aparicionZonaMs = null;
+        let yaEntroEnZona = false;
 
         let bola = { x: 200, y: -20, r: 18, vy: 3.2 };
         const targetZone = { yMin: 200, yMax: 270 };
@@ -330,7 +339,6 @@
             const historial = JSON.parse(localStorage.getItem('sensometrika_historial_punteo')) || [];
             const numEnsayosRealizados = historial.length;
 
-            // DETERMINAR LÍMITE SEGÚN EL PLAN CONTRATADO
             const planStorage = (localStorage.getItem('sensometrika_plan_contratado') || urlParams.get('plan') || 'BASICO').toUpperCase();
             let maxIntentosPlan = 3;
             if (planStorage.includes('PLUS')) maxIntentosPlan = 5;
@@ -386,6 +394,14 @@
             if (evaluacionActiva) {
                 bola.y += bola.vy;
 
+                // DETECCION DE INGRESO A ZONA DE IMPACTO
+                const yBolaInf = bola.y + bola.r;
+                if (yBolaInf >= targetZone.yMin && !yaEntroEnZona) {
+                    yaEntroEnZona = true;
+                    aparicionZonaMs = Date.now();
+                }
+
+                // SI EXCEDE LA ZONA SIN TOQUE = PÉRDIDA POR LATENCIA EXCEDIDA
                 if (bola.y > canvas.height + bola.r) {
                     errores++;
                     resetearBola();
@@ -414,6 +430,8 @@
             bola.x = 50 + Math.random() * 300;
             bola.y = -20;
             bola.vy = 2.8 + Math.random() * 1.4;
+            yaEntroEnZona = false;
+            aparicionZonaMs = null;
         }
 
         function evaluarImpacto(e) {
@@ -424,15 +442,23 @@
             if (!evaluacionActiva) return;
 
             const ahora = Date.now();
-            if (ahora - ultimoToqueMs < 200) return;
+            if (ahora - ultimoToqueMs < 180) return;
             ultimoToqueMs = ahora;
 
             const yBolaInf = bola.y + bola.r;
             const yBolaSup = bola.y - bola.r;
 
+            // VERIFICAR IMPACTO DENTRO DE LA ZONA
             if ((yBolaInf >= targetZone.yMin && bola.y <= targetZone.yMax) || 
                 (yBolaSup <= targetZone.yMax && bola.y >= targetZone.yMin)) {
+                
                 aciertos++;
+                
+                // CALCULAR TIEMPO DE REACCIÓN / LATENCIA
+                if (aparicionZonaMs) {
+                    const latencia = Math.max(80, ahora - aparicionZonaMs);
+                    tiemposReaccion.push(latencia);
+                }
             } else {
                 errores++;
             }
@@ -444,6 +470,15 @@
         function actualizarMetricas() {
             metricAciertos.textContent = aciertos;
             metricErrores.textContent = errores;
+            
+            // PROMEDIO LATENCIA (MS)
+            let promLatencia = 0;
+            if (tiemposReaccion.length > 0) {
+                const suma = tiemposReaccion.reduce((a, b) => a + b, 0);
+                promLatencia = Math.round(suma / tiemposReaccion.length);
+            }
+            metricLatencia.textContent = `${promLatencia} ms`;
+
             const total = aciertos + errores;
             const prec = total > 0 ? Math.round((aciertos / total) * 100) : 100;
             metricPrecision.textContent = `${prec}%`;
@@ -454,6 +489,7 @@
 
             aciertos = 0;
             errores = 0;
+            tiemposReaccion = [];
             tiempoRestante = 15;
             evaluacionActiva = true;
             ultimoToqueMs = 0;
@@ -477,6 +513,7 @@
 
             const total = aciertos + errores;
             const precisionVal = total > 0 ? Math.round((aciertos / total) * 100) : 100;
+            const latenciaMediaVal = tiemposReaccion.length > 0 ? Math.round(tiemposReaccion.reduce((a, b) => a + b, 0) / tiemposReaccion.length) : 0;
 
             if (modoActual === 'DEMO') {
                 localStorage.setItem('punteo_demo_completada', 'true');
@@ -490,14 +527,20 @@
 
                 mostrarModal(
                     "CALIBRACIÓN DEMO COMPLETADA",
-                    `Aciertos: <b>${aciertos}</b><br>Errores: <b>${errores}</b><br>Precisión: <b>${precisionVal}%</b><br><br>Has finalizado el ensayo. Ya puedes rendir tu Simulación Oficial.`,
+                    `Aciertos: <b>${aciertos}</b><br>Pérdidas/Errores: <b>${errores}</b><br>Latencia Media: <b>${latenciaMediaVal} ms</b><br>Precisión Rítmica: <b>${precisionVal}%</b><br><br>Has finalizado el ensayo. Ya puedes rendir tu Simulación Oficial.`,
                     () => {
                         actualizarEstadoUI();
                     }
                 );
             } else if (modoActual === 'OFICIAL') {
                 let historial = JSON.parse(localStorage.getItem('sensometrika_historial_punteo')) || [];
-                historial.push({ aciertos: aciertos, errores: errores, precision: precisionVal, fecha: new Date().toISOString() });
+                historial.push({ 
+                    aciertos: aciertos, 
+                    errores: errores, 
+                    latencia: latenciaMediaVal,
+                    precision: precisionVal, 
+                    fecha: new Date().toISOString() 
+                });
                 localStorage.setItem('sensometrika_historial_punteo', JSON.stringify(historial));
 
                 const planStorage = (localStorage.getItem('sensometrika_plan_contratado') || 'BASICO').toUpperCase();
@@ -515,7 +558,7 @@
 
                 mostrarModal(
                     `SIMULACIÓN S${numSimu} REGISTRADA`,
-                    `Aciertos: <b>${aciertos}</b><br>Errores: <b>${errores}</b><br>Precisión: <b>${precisionVal}%</b><br><br><b>Simulación S${numSimu} de ${maxIntentosPlan} guardada con éxito.</b>`,
+                    `Aciertos: <b>${aciertos}</b><br>Pérdidas/Errores: <b>${errores}</b><br>Latencia Media: <b>${latenciaMediaVal} ms</b><br>Precisión Rítmica: <b>${precisionVal}%</b><br><br><b>Simulación S${numSimu} de ${maxIntentosPlan} guardada con éxito.</b>`,
                     () => { ejecutarRetornoMenu(); }
                 );
             }
@@ -535,7 +578,7 @@
         btnStart.addEventListener('click', iniciarPrueba);
 
         document.getElementById('btnInfo').addEventListener('click', () => {
-            mostrarModal("¿CÓMO FUNCIONA?", "Toca la pantalla o haz clic cuando la bola cruce dentro de la <b>ZONA DE IMPACTO RÍTMICO</b> para registrar aciertos.");
+            mostrarModal("¿CÓMO FUNCIONA?", "Toca la pantalla o haz clic cuando la bola cruce dentro de la <b>ZONA DE IMPACTO RÍTMICO</b> para registrar aciertos y medir tu latencia viso-motriz.");
         });
 
         actualizarEstadoUI();
