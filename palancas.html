@@ -251,10 +251,10 @@
             </div>
 
             <div class="instruction-text" id="instructionText">
-                Desplaza ambas palancas táctiles en pantalla o el mouse para guiar la púa por la pista circular.
+                Arrastra la púa verde a lo largo de la pista usando el toque táctil o el mouse.
             </div>
 
-            <div>
+            <div id="actionContainer" style="width: 100%;">
                 <button id="btnStart" class="btn-start">INICIAR CALIBRACIÓN DEMO</button>
                 <button id="btnNext" class="btn-next" onclick="ejecutarRetornoMenu()">VOLVER AL MENÚ DE PRUEBAS →</button>
             </div>
@@ -284,10 +284,11 @@
         </div>
     </div>
 
-    <!-- Integración del motor dinámico original de Palancas -->
+    <!-- Integración del motor de palancas.js si existe, de lo contrario ejecuta el motor nativo de respaldo -->
     <script src="palancas.js"></script>
     <script>
         const canvas = document.getElementById('palancasCanvas');
+        const ctx = canvas.getContext('2d');
         const btnStart = document.getElementById('btnStart');
         const btnNext = document.getElementById('btnNext');
         const badgeDot = document.getElementById('badgeDot');
@@ -309,6 +310,27 @@
 
         let isDemoURL = urlParams.get('demo') === 'true' || urlParams.get('fase') === 'demo';
         let modoActual = isDemoURL ? 'DEMO' : 'OFICIAL';
+
+        let evaluacionActiva = false;
+        let erroresCount = 0;
+        let muestrasTotales = 0;
+        let tiempoRestante = 15;
+        let timerInterval = null;
+        let animFrameId = null;
+
+        // Puntos de la pista Serpenteante
+        const trackPoints = [
+            {x: 50, y: 50},
+            {x: 50, y: 220},
+            {x: 180, y: 220},
+            {x: 180, y: 100},
+            {x: 320, y: 100},
+            {x: 320, y: 220},
+            {x: 370, y: 220}
+        ];
+
+        let pua = { x: 50, y: 50, r: 12 };
+        let isDragging = false;
 
         function ejecutarRetornoMenu() {
             window.location.href = `menu_B2C.html?${urlParams.toString()}`;
@@ -344,7 +366,7 @@
                 btnStart.style.backgroundColor = "#e5b324";
                 btnStart.style.display = 'block';
                 btnNext.style.display = 'none';
-                instructionText.textContent = "Modo Demo: Guía la púa por el circuito para calibrar tus controles antes de la prueba oficial.";
+                instructionText.textContent = "Modo Demo: Guía la púa por la pista serpenteante para ensayar antes de la prueba oficial.";
             } else {
                 const siguienteSimu = numEnsayosRealizados + 1;
                 badgeText.textContent = esB2B ? `Simulación Oficial B2B (S${siguienteSimu})` : `Simulación Oficial S${siguienteSimu} de ${maxIntentosPlan}`;
@@ -353,27 +375,125 @@
                 btnStart.style.backgroundColor = "#0284c7";
                 btnStart.style.display = 'block';
                 btnNext.style.display = 'none';
-                instructionText.textContent = `Simulación S${siguienteSimu}: Mantén la atención y la precisión motriz durante el recorrido.`;
+                instructionText.textContent = `Simulación S${siguienteSimu}: Mantén la púa dentro del canal de calibración durante los 15 segundos.`;
             }
         }
 
-        // Instanciación si existe la clase del módulo en palancas.js
-        let moduloPalancasInst = null;
-        if (typeof ModuloPalancas !== 'undefined') {
-            moduloPalancasInst = new ModuloPalancas(canvas, (res) => {
-                finalizarPruebaConResultados(res.precision, res.errores);
-            });
+        function renderLoop() {
+            ctx.fillStyle = '#050a12';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Dibujar Pista
+            ctx.strokeStyle = '#0284c7';
+            ctx.lineWidth = 26;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            ctx.beginPath();
+            ctx.moveTo(trackPoints[0].x, trackPoints[0].y);
+            for(let i = 1; i < trackPoints.length; i++) {
+                ctx.lineTo(trackPoints[i].x, trackPoints[i].y);
+            }
+            ctx.stroke();
+
+            // Dibujar Línea Central Guiada
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+            ctx.lineWidth = 2;
+            ctx.setLineDash([6, 6]);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            // Dibujar Púa
+            ctx.fillStyle = evaluacionActiva ? '#10b981' : '#38bdf8';
+            ctx.beginPath();
+            ctx.arc(pua.x, pua.y, pua.r, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.lineWidth = 3;
+            ctx.strokeStyle = '#ffffff';
+            ctx.stroke();
+
+            if (evaluacionActiva && isDragging) {
+                muestrasTotales++;
+                // Detección simple de salida de la pista
+                let enPista = false;
+                for(let i = 0; i < trackPoints.length - 1; i++) {
+                    const p1 = trackPoints[i];
+                    const p2 = trackPoints[i+1];
+                    const dist = distToSegment(pua, p1, p2);
+                    if (dist <= 13) { enPista = true; break; }
+                }
+                if (!enPista) erroresCount++;
+                actualizarMetricas();
+            }
+
+            animFrameId = requestAnimationFrame(renderLoop);
         }
 
-        btnStart.addEventListener('click', () => {
+        function distToSegment(p, v, w) {
+            const l2 = Math.pow(v.x - w.x, 2) + Math.pow(v.y - w.y, 2);
+            if (l2 === 0) return Math.hypot(p.x - v.x, p.y - v.y);
+            let t = ((p.x - v.x) * (w.x - v.x) + (p.y - v.y) * (w.y - v.y)) / l2;
+            t = Math.max(0, Math.min(1, t));
+            return Math.hypot(p.x - (v.x + t * (w.x - v.x)), p.y - (v.y + t * (w.y - v.y)));
+        }
+
+        function actualizarMetricas() {
+            metricTiempo.textContent = `${tiempoRestante}s`;
+            metricErrores.textContent = erroresCount;
+            const prec = muestrasTotales > 0 ? Math.max(0, Math.round(((muestrasTotales - erroresCount) / muestrasTotales) * 100)) : 100;
+            metricPrecision.textContent = `${prec}%`;
+        }
+
+        function MoverPua(e) {
+            if (!evaluacionActiva || !isDragging) return;
+            const rect = canvas.getBoundingClientRect();
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            pua.x = (clientX - rect.left) * (canvas.width / rect.width);
+            pua.y = (clientY - rect.top) * (canvas.height / rect.height);
+        }
+
+        canvas.addEventListener('mousedown', (e) => { isDragging = true; MoverPua(e); });
+        canvas.addEventListener('mousemove', MoverPua);
+        window.addEventListener('mouseup', () => { isDragging = false; });
+
+        canvas.addEventListener('touchstart', (e) => { isDragging = true; MoverPua(e); }, {passive: false});
+        canvas.addEventListener('touchmove', (e) => { e.preventDefault(); MoverPua(e); }, {passive: false});
+        window.addEventListener('touchend', () => { isDragging = false; });
+
+        function iniciarPrueba() {
             if (modoActual === 'BLOQUEADO') return;
-            btnStart.style.display = 'none';
-            if (moduloPalancasInst && typeof moduloPalancasInst.iniciar === 'function') {
-                moduloPalancasInst.iniciar();
-            }
-        });
 
-        function finalizarPruebaConResultados(precisionVal, erroresCount) {
+            // Verificar si palancas.js posee la función de inicio oficial
+            if (typeof moduloPalancas !== 'undefined' && typeof moduloPalancas.iniciar === 'function') {
+                btnStart.style.display = 'none';
+                moduloPalancas.iniciar();
+                return;
+            }
+
+            erroresCount = 0;
+            muestrasTotales = 0;
+            tiempoRestante = 15;
+            evaluacionActiva = true;
+            pua.x = 50; pua.y = 50;
+
+            actualizarMetricas();
+            btnStart.style.display = 'none';
+
+            timerInterval = setInterval(() => {
+                tiempoRestante--;
+                metricTiempo.textContent = `${tiempoRestante}s`;
+                if (tiempoRestante <= 0) {
+                    finalizarPrueba();
+                }
+            }, 1000);
+        }
+
+        function finalizarPrueba() {
+            evaluacionActiva = false;
+            clearInterval(timerInterval);
+
+            const precisionVal = muestrasTotales > 0 ? Math.max(0, Math.round(((muestrasTotales - erroresCount) / muestrasTotales) * 100)) : 100;
+
             if (modoActual === 'DEMO') {
                 localStorage.setItem('palancas_demo_completada', 'true');
 
@@ -431,11 +551,14 @@
             };
         }
 
+        btnStart.addEventListener('click', iniciarPrueba);
+
         document.getElementById('btnInfo').addEventListener('click', () => {
-            mostrarModal("¿CÓMO FUNCIONA?", "Controla los mandos para mantener la púa centrada dentro del canal de calibración durante la simulación.");
+            mostrarModal("¿CÓMO FUNCIONA?", "Arrastra el círculo verde desde el punto de inicio hasta el final manteniendo la precisión dentro de la pista azúlea.");
         });
 
         actualizarEstadoUI();
+        renderLoop();
     </script>
 </body>
 </html>
