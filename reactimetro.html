@@ -364,7 +364,6 @@
         const modeParam = urlParams.get('mode') || (localStorage.getItem('sensometrika_b2c_mode') === 'true' ? 'b2c' : 'b2b');
         const esB2B = (modeParam === 'b2b');
 
-        // PRIORIDAD ABSOLUTA A LA URL PARA MODO DEMO
         let isDemoURL = urlParams.get('demo') === 'true' || urlParams.get('fase') === 'demo';
         let modoActual = isDemoURL ? 'DEMO' : 'OFICIAL';
 
@@ -380,24 +379,25 @@
         btnCloseInstrucciones.addEventListener('click', () => { modalInstrucciones.style.display = 'none'; });
 
         function actualizarEstadoPlanUI() {
-            const modulosRendidos = JSON.parse(localStorage.getItem('sensometrika_modulos_rendidos')) || {};
-            const yaRendido = modulosRendidos.reactimetro === true;
+            const historial = JSON.parse(localStorage.getItem('sensometrika_historial_reactimetro')) || [];
+            const numEnsayosRealizados = historial.length;
+            const maxIntentos = 8;
 
             if (isDemoURL) {
                 modoActual = 'DEMO';
-            } else if (yaRendido) {
+            } else if (numEnsayosRealizados >= maxIntentos) {
                 modoActual = 'BLOQUEADO';
             } else {
                 modoActual = 'OFICIAL';
             }
 
             if (modoActual === 'BLOQUEADO') {
-                badgeText.textContent = "MÓDULO EVALUADO Y REGISTRADO";
+                badgeText.textContent = `MÓDULO EVALUADO (${numEnsayosRealizados}/${maxIntentos})`;
                 badgeDot.style.backgroundColor = "#10b981"; 
                 btnStart.style.display = 'none';
                 btnBrake.style.display = 'none';
                 salidaWrapper.style.display = 'flex';
-                instructionText.textContent = "Has completado la evaluación de este módulo. Retorna al menú para continuar.";
+                instructionText.textContent = "Has completado la totalidad de las simulaciones normativas para este módulo. Retorna al menú.";
             } else if (modoActual === 'DEMO') {
                 badgeText.textContent = "Paso 1: Calibración Demo (1/1)";
                 badgeDot.style.backgroundColor = "#e5b324"; 
@@ -408,14 +408,15 @@
                 salidaWrapper.style.display = 'none';
                 instructionText.textContent = "Modo Demo: Se realizarán 6 estímulos de ensayo para familiarizarte antes de la prueba oficial.";
             } else {
-                badgeText.textContent = esB2B ? "Simulación Oficial B2B (D.S. N° 170)" : "Simulación Oficial (D.S. N° 170)";
-                badgeDot.style.backgroundColor = "#ef4444"; 
-                btnStart.textContent = "INICIAR SIMULACIÓN OFICIAL";
+                const siguienteSimu = numEnsayosRealizados + 1;
+                badgeText.textContent = esB2B ? `Simulación Oficial B2B (S${siguienteSimu})` : `Simulación Oficial S${siguienteSimu} de ${maxIntentos}`;
+                badgeDot.style.backgroundColor = "#0284c7"; 
+                btnStart.textContent = `INICIAR SIMULACIÓN OFICIAL (S${siguienteSimu})`;
                 btnStart.style.display = 'block';
                 btnStart.style.backgroundColor = "#0284c7";
                 btnBrake.style.display = 'none';
                 salidaWrapper.style.display = 'none';
-                instructionText.textContent = "Evaluación Oficial: Se promediarán 6 estímulos visuales aleatorios. Mantén la atención.";
+                instructionText.textContent = `Simulación S${siguienteSimu}: Se promediarán 6 estímulos visuales aleatorios. Mantén la atención.`;
             }
         }
 
@@ -437,7 +438,6 @@
             if (modoActual === 'DEMO') {
                 localStorage.setItem('reactimetro_demo_completada', 'true');
                 
-                // DESACTIVAR MODO DEMO EN MEMORIA Y URL
                 isDemoURL = false;
                 modoActual = 'OFICIAL';
 
@@ -453,25 +453,30 @@
                     }
                 );
             } else if (modoActual === 'OFICIAL') {
-                let rendidos = JSON.parse(localStorage.getItem('sensometrika_modulos_rendidos')) || {};
-                rendidos.reactimetro = true;
-                localStorage.setItem('sensometrika_modulos_rendidos', JSON.stringify(rendidos));
-
+                // GUARDADO ACUMULATIVO SIN BLOQUEO EN EL PRIMER INTENTO
                 let historial = JSON.parse(localStorage.getItem('sensometrika_historial_reactimetro')) || [];
                 historial.push({
                     promedioTiempo: res.promedioTiempo,
                     tiemposDetalle: res.tiemposDetalle,
-                    anticipaciones: res.anticipaciones
+                    anticipaciones: res.anticipaciones,
+                    fecha: new Date().toISOString()
                 });
                 localStorage.setItem('sensometrika_historial_reactimetro', JSON.stringify(historial));
 
-                actualizarEstadoPlanUI();
+                // Marca rendido general solo cuando alcance los 8 intentos completos
+                if (historial.length >= 8) {
+                    let rendidos = JSON.parse(localStorage.getItem('sensometrika_modulos_rendidos')) || {};
+                    rendidos.reactimetro = true;
+                    localStorage.setItem('sensometrika_modulos_rendidos', JSON.stringify(rendidos));
+                }
+
+                const numSimu = historial.length;
 
                 mostrarAlertaSistema(
-                    "SIMULACIÓN REGISTRADA",
+                    `SIMULACIÓN S${numSimu} REGISTRADA`,
                     `Promedio Neto de Frenado: <b>${res.promedioTiempo} ms</b> (${res.promedioTiempo <= 450 ? '✓ En Norma' : '⚠ Latencia Elevada'})<br>` +
                     `Anticipaciones: <b>${res.anticipaciones}</b><br><br>` +
-                    "<b>¡Has completado la evaluación oficial de este módulo!</b>",
+                    `<b>Simulación S${numSimu} de 8 guardada con éxito.</b>`,
                     () => {
                         ejecutarRetornoMenu();
                     }
