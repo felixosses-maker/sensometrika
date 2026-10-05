@@ -146,35 +146,6 @@
             line-height: 1.4;
         }
 
-        .controls-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-            width: 100%;
-        }
-
-        .control-box {
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-            background: #070d17;
-            padding: 10px;
-            border-radius: 10px;
-            border: 1px solid var(--card-border);
-        }
-
-        .control-label {
-            font-size: 0.68rem;
-            font-weight: 800;
-            color: var(--accent-cyan);
-            text-transform: uppercase;
-        }
-
-        input[type=range] {
-            width: 100%;
-            accent-color: var(--accent-cyan);
-        }
-
         .btn-start {
             background-color: var(--blue-btn);
             color: #ffffff;
@@ -275,23 +246,12 @@
                 </div>
             </div>
 
-            <div class="canvas-wrapper">
+            <div class="canvas-wrapper" id="canvasContainer">
                 <canvas id="palancasCanvas" width="400" height="300"></canvas>
             </div>
 
-            <div class="controls-grid">
-                <div class="control-box">
-                    <span class="control-label">EJE IZQUIERDO (X)</span>
-                    <input type="range" id="sliderIzq" min="0" max="100" value="50">
-                </div>
-                <div class="control-box">
-                    <span class="control-label">EJE DERECHO (Y)</span>
-                    <input type="range" id="sliderDer" min="0" max="100" value="50">
-                </div>
-            </div>
-
             <div class="instruction-text" id="instructionText">
-                Mueve ambas palancas para mantener la púa dentro de la ruta demarcada.
+                Desplaza ambas palancas táctiles en pantalla o el mouse para guiar la púa por la pista circular.
             </div>
 
             <div>
@@ -324,11 +284,10 @@
         </div>
     </div>
 
+    <!-- Integración del motor dinámico original de Palancas -->
+    <script src="palancas.js"></script>
     <script>
         const canvas = document.getElementById('palancasCanvas');
-        const ctx = canvas.getContext('2d');
-        const sliderIzq = document.getElementById('sliderIzq');
-        const sliderDer = document.getElementById('sliderDer');
         const btnStart = document.getElementById('btnStart');
         const btnNext = document.getElementById('btnNext');
         const badgeDot = document.getElementById('badgeDot');
@@ -351,13 +310,6 @@
         let isDemoURL = urlParams.get('demo') === 'true' || urlParams.get('fase') === 'demo';
         let modoActual = isDemoURL ? 'DEMO' : 'OFICIAL';
 
-        let evaluacionActiva = false;
-        let erroresCount = 0;
-        let muestrasTotales = 0;
-        let tiempoRestante = 15;
-        let timerInterval = null;
-        let animFrameId = null;
-
         function ejecutarRetornoMenu() {
             window.location.href = `menu_B2C.html?${urlParams.toString()}`;
         }
@@ -366,7 +318,6 @@
             const historial = JSON.parse(localStorage.getItem('sensometrika_historial_palancas')) || [];
             const numEnsayosRealizados = historial.length;
 
-            // DETERMINAR LÍMITE SEGÚN EL PLAN CONTRATADO
             const planStorage = (localStorage.getItem('sensometrika_plan_contratado') || urlParams.get('plan') || 'BASICO').toUpperCase();
             let maxIntentosPlan = 3;
             if (planStorage.includes('PLUS')) maxIntentosPlan = 5;
@@ -393,7 +344,7 @@
                 btnStart.style.backgroundColor = "#e5b324";
                 btnStart.style.display = 'block';
                 btnNext.style.display = 'none';
-                instructionText.textContent = "Modo Demo: Mueve los sliders para guiar el punto azul por la pista de ensayo.";
+                instructionText.textContent = "Modo Demo: Guía la púa por el circuito para calibrar tus controles antes de la prueba oficial.";
             } else {
                 const siguienteSimu = numEnsayosRealizados + 1;
                 badgeText.textContent = esB2B ? `Simulación Oficial B2B (S${siguienteSimu})` : `Simulación Oficial S${siguienteSimu} de ${maxIntentosPlan}`;
@@ -402,79 +353,27 @@
                 btnStart.style.backgroundColor = "#0284c7";
                 btnStart.style.display = 'block';
                 btnNext.style.display = 'none';
-                instructionText.textContent = `Simulación S${siguienteSimu}: Mantén la atención y la precisión motriz durante los 15 segundos.`;
+                instructionText.textContent = `Simulación S${siguienteSimu}: Mantén la atención y la precisión motriz durante el recorrido.`;
             }
         }
 
-        function renderLoop() {
-            ctx.fillStyle = '#050a12';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-            // Dibujar Ruta / Pista Objetivo
-            ctx.strokeStyle = '#0284c7';
-            ctx.lineWidth = 18;
-            ctx.beginPath();
-            ctx.arc(200, 150, 80, 0, Math.PI * 2);
-            ctx.stroke();
-
-            // Calcular posición del usuario mediante los sliders (0 - 100)
-            const posX = (sliderIzq.value / 100) * canvas.width;
-            const posY = (sliderDer.value / 100) * canvas.height;
-
-            // Detección de colisión / desviación de la ruta
-            const distCentro = Math.hypot(posX - 200, posY - 150);
-            const enRuta = Math.abs(distCentro - 80) <= 12;
-
-            if (evaluacionActiva) {
-                muestrasTotales++;
-                if (!enRuta) erroresCount++;
-                actualizarMetricas();
-            }
-
-            ctx.fillStyle = enRuta ? '#10b981' : '#ef4444';
-            ctx.beginPath();
-            ctx.arc(posX, posY, 8, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.lineWidth = 2;
-            ctx.strokeStyle = '#ffffff';
-            ctx.stroke();
-
-            animFrameId = requestAnimationFrame(renderLoop);
+        // Instanciación si existe la clase del módulo en palancas.js
+        let moduloPalancasInst = null;
+        if (typeof ModuloPalancas !== 'undefined') {
+            moduloPalancasInst = new ModuloPalancas(canvas, (res) => {
+                finalizarPruebaConResultados(res.precision, res.errores);
+            });
         }
 
-        function actualizarMetricas() {
-            metricTiempo.textContent = `${tiempoRestante}s`;
-            metricErrores.textContent = erroresCount;
-            const prec = muestrasTotales > 0 ? Math.max(0, Math.round(((muestrasTotales - erroresCount) / muestrasTotales) * 100)) : 100;
-            metricPrecision.textContent = `${prec}%`;
-        }
-
-        function iniciarPrueba() {
+        btnStart.addEventListener('click', () => {
             if (modoActual === 'BLOQUEADO') return;
-
-            erroresCount = 0;
-            muestrasTotales = 0;
-            tiempoRestante = 15;
-            evaluacionActiva = true;
-
-            actualizarMetricas();
             btnStart.style.display = 'none';
+            if (moduloPalancasInst && typeof moduloPalancasInst.iniciar === 'function') {
+                moduloPalancasInst.iniciar();
+            }
+        });
 
-            timerInterval = setInterval(() => {
-                tiempoRestante--;
-                metricTiempo.textContent = `${tiempoRestante}s`;
-                if (tiempoRestante <= 0) {
-                    finalizarPrueba();
-                }
-            }, 1000);
-        }
-
-        function finalizarPrueba() {
-            evaluacionActiva = false;
-            clearInterval(timerInterval);
-
-            const precisionVal = muestrasTotales > 0 ? Math.max(0, Math.round(((muestrasTotales - erroresCount) / muestrasTotales) * 100)) : 100;
-
+        function finalizarPruebaConResultados(precisionVal, erroresCount) {
             if (modoActual === 'DEMO') {
                 localStorage.setItem('palancas_demo_completada', 'true');
 
@@ -532,14 +431,11 @@
             };
         }
 
-        btnStart.addEventListener('click', iniciarPrueba);
-
         document.getElementById('btnInfo').addEventListener('click', () => {
-            mostrarModal("¿CÓMO FUNCIONA?", "Usa los dos deslizadores para controlar la posición X e Y del cursor y mantenerlo dentro de la ruta circular azul.");
+            mostrarModal("¿CÓMO FUNCIONA?", "Controla los mandos para mantener la púa centrada dentro del canal de calibración durante la simulación.");
         });
 
         actualizarEstadoUI();
-        renderLoop();
     </script>
 </body>
 </html>
