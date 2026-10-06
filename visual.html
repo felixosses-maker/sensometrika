@@ -327,7 +327,7 @@
       const historial = JSON.parse(localStorage.getItem('sensometrika_historial_visual')) || [];
       const numEnsayosRealizados = historial.length;
 
-      const planStorage = (localStorage.getItem('sensometrika_plan_contratado') || urlParams.get('plan') || 'BASICO').toUpperCase();
+      const planStorage = (localStorage.getItem('sensometrika_plan_contratado') || urlParams.get('plan') || 'PLUS').toUpperCase();
       let maxIntentosPlan = esB2B ? (planStorage.includes('ALTO') ? 3 : 1) : (planStorage.includes('PLUS') ? 5 : (planStorage.includes('FULL') || planStorage.includes('ALTO') ? 8 : 3));
 
       const paramDemo = urlParams.get('demo');
@@ -598,12 +598,16 @@
           dictamen = "APROBADO";
         }
 
+        // 1. REGISTRO MULTICLAVE PARA ASEGURAR VISIBILIDAD EN INFORME B2B / APR
         let modulosRendidos = JSON.parse(localStorage.getItem('sensometrika_modulos_rendidos')) || {};
         modulosRendidos.visual = true;
+        modulosRendidos.tamizaje_visual = true;
+        modulosRendidos.screening_visual = true;
         localStorage.setItem('sensometrika_modulos_rendidos', JSON.stringify(modulosRendidos));
 
         let promLat = latenciasMs.length > 0 ? Math.round(latenciasMs.reduce((a,b)=>a+b,0)/latenciasMs.length) : 310;
 
+        // 2. REGISTRO DE HISTORIAL VISUAL
         let historial = JSON.parse(localStorage.getItem('sensometrika_historial_visual')) || [];
         historial.push({
           agudeza: agudezaTexto,
@@ -616,12 +620,17 @@
         });
 
         localStorage.setItem('sensometrika_historial_visual', JSON.stringify(historial));
+        localStorage.setItem('sensometrika_historial_tamizaje_visual', JSON.stringify(historial));
         
         volverPortal();
       }
     }
 
     function volverPortal() {
+      const planStorage = (localStorage.getItem('sensometrika_plan_contratado') || urlParams.get('plan') || 'PLUS').toUpperCase();
+      urlParams.set('plan', planStorage);
+      urlParams.set('mode', esB2B ? 'b2b' : 'b2c');
+
       const menuDestino = esB2B ? 'menu_B2B.html' : 'menu_B2C.html';
       window.location.href = `${menuDestino}?${urlParams.toString()}`;
     }
