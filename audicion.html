@@ -157,19 +157,21 @@
 
       const planStorage = (localStorage.getItem('sensometrika_plan_contratado') || urlParams.get('plan') || 'PLUS').toUpperCase();
       
-      // REGLA B2C: PLAN PLUS = 5 SIMULACIONES | PLAN FULL = 8 SIMULACIONES
+      // DISCRIMINACIÓN ESTRICTA DE CUOTAS POR MODO (B2B vs B2C)
       let maxIntentosPlan = 5;
-      if (planStorage.includes('FULL') || planStorage.includes('ALTO')) {
-        maxIntentosPlan = 8;
+      if (esB2B) {
+        maxIntentosPlan = planStorage.includes('ALTO') ? 3 : 1;
+      } else {
+        if (planStorage.includes('FULL') || planStorage.includes('ALTO')) {
+          maxIntentosPlan = 8;
+        }
       }
 
       const demoRealizada = localStorage.getItem('audicion_demo_completada') === 'true';
 
-      if (isDemoURL) {
-        modoActual = 'DEMO';
-      } else if (numEnsayosRealizados >= maxIntentosPlan) {
+      if (numEnsayosRealizados >= maxIntentosPlan) {
         modoActual = 'BLOQUEADO';
-      } else if (!demoRealizada && numEnsayosRealizados === 0) {
+      } else if (isDemoURL || (!demoRealizada && numEnsayosRealizados === 0)) {
         modoActual = 'DEMO';
       } else {
         modoActual = 'OFICIAL';
@@ -178,14 +180,14 @@
       if (modoActual === 'BLOQUEADO') {
         cajaCheck.style.display = 'none';
         btnIniciar.style.display = 'none';
-        badgeFase.innerText = `✓ Plan ${planStorage} Completado (${numEnsayosRealizados}/${maxIntentosPlan})`;
+        badgeFase.innerText = esB2B ? `✓ Evaluación B2B Registrada (${numEnsayosRealizados}/${maxIntentosPlan})` : `✓ Plan ${planStorage} Completado (${numEnsayosRealizados}/${maxIntentosPlan})`;
         badgeFase.style.color = '#10b981';
         lblOido.innerText = '✓ MÓDULO REGISTRADO';
         lblFrecuencia.innerText = 'Completado';
         lblUmbral.innerText = 'Evaluación registrada en el sistema';
         mEstado.innerText = 'Completado';
         mEstado.style.color = '#10b981';
-        statusText.innerText = `Has completado la cuota de ${maxIntentosPlan} simulaciones de tu Plan ${planStorage}. Retorna al menú.`;
+        statusText.innerText = esB2B ? 'Evaluación corporativa finalizada. Retorna al menú de evaluaciones.' : `Has completado la cuota de ${maxIntentosPlan} simulaciones de tu Plan ${planStorage}. Retorna al menú.`;
       } else if (modoActual === 'DEMO') {
         badgeFase.innerText = 'Paso 1: Calibración Demo (1/1)';
         badgeFase.style.borderColor = '#e5b324';
@@ -194,10 +196,10 @@
         btnIniciar.style.backgroundColor = '#e5b324';
       } else {
         const siguienteSimu = numEnsayosRealizados + 1;
-        badgeFase.innerText = esB2B ? `🔴 Tamizaje Auditivo B2B (S${siguienteSimu})` : `🔴 Tamizaje Auditivo Oficial S${siguienteSimu} de ${maxIntentosPlan}`;
+        badgeFase.innerText = esB2B ? `🔴 Tamizaje Auditivo B2B (Simulación Oficial)` : `🔴 Tamizaje Auditivo Oficial S${siguienteSimu} de ${maxIntentosPlan}`;
         badgeFase.style.borderColor = 'rgba(56, 189, 248, 0.35)';
         badgeFase.style.color = '#38bdf8';
-        btnIniciar.innerText = `INICIAR SIMULACIÓN OFICIAL (S${siguienteSimu} DE ${maxIntentosPlan})`;
+        btnIniciar.innerText = esB2B ? `INICIAR SIMULACIÓN OFICIAL B2B` : `INICIAR SIMULACIÓN OFICIAL (S${siguienteSimu} DE ${maxIntentosPlan})`;
         btnIniciar.style.backgroundColor = '#0284c7';
       }
     }
@@ -390,10 +392,7 @@
         localStorage.setItem('sensometrika_historial_audicion', JSON.stringify(historial));
 
         const planStorage = (localStorage.getItem('sensometrika_plan_contratado') || 'PLUS').toUpperCase();
-        let maxIntentosPlan = 5;
-        if (planStorage.includes('FULL') || planStorage.includes('ALTO')) {
-          maxIntentosPlan = 8;
-        }
+        let maxIntentosPlan = esB2B ? (planStorage.includes('ALTO') ? 3 : 1) : (planStorage.includes('FULL') || planStorage.includes('ALTO') ? 8 : 5);
 
         if (historial.length >= maxIntentosPlan) {
           let modulosRendidos = JSON.parse(localStorage.getItem('sensometrika_modulos_rendidos')) || {};
@@ -414,7 +413,7 @@
       const historial = JSON.parse(localStorage.getItem('sensometrika_historial_auditivo')) || [];
       const numSimu = historial.length;
 
-      const tituloModal = esDemo ? 'CALIBRACIÓN DEMO COMPLETADA' : (esB2B ? `Simulación Oficial B2B (S${numSimu}) Registrada` : `Simulación Oficial S${numSimu} Registrada`);
+      const tituloModal = esDemo ? 'CALIBRACIÓN DEMO COMPLETADA' : (esB2B ? `Simulación Oficial B2B Registrada` : `Simulación Oficial S${numSimu} Registrada`);
       const mensajeModal = esDemo ? 'Has finalizado tu ensayo. Ya puedes realizar tu Simulación Oficial.' : '<b>¡Evaluación registrada correctamente!</b>';
 
       const modalHtml = `
