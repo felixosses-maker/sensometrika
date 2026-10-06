@@ -205,7 +205,7 @@
 
     <!-- BANNER DE PLAN -->
     <div id="boxHeaderPlan" class="badge-plan-header">
-      <span id="txtTipoPlan" style="font-size:0.88rem; font-weight:900;">EVALUACIÓN • B2B / B2C</span>
+      <span id="txtTipoPlan" style="font-size:0.88rem; font-weight:900;">EVALUACIÓN PARTICULAR • B2C</span>
       <span id="txtInfoEvaluado" style="font-size:0.72rem; color:var(--text-muted); font-weight:600;">Evaluado: - | RUT: -</span>
     </div>
 
@@ -308,7 +308,7 @@
 
     <!-- BOTÓN DE CIERRE -->
     <button id="btnFinalizarGeneral" onclick="finalizarEvaluacion()" class="btn-action-main">
-      FINALIZAR Y GENERAR INFORME →
+      🎓 FINALIZAR Y OBTENER CERTIFICADO DIGITAL →
     </button>
   </div>
 
@@ -374,7 +374,21 @@
   </div>
 
   <script>
-    let isB2C = true;
+    // ==========================================
+    // 🛡️ GUARDIÁN ANTI-DESVÍO B2B (LÍNEA 1)
+    // ==========================================
+    (function() {
+      const params = new URLSearchParams(window.location.search);
+      const mode = params.get('mode');
+      const b2cModeStorage = localStorage.getItem('sensometrika_b2c_mode');
+      
+      const esB2B = (mode === 'b2b') || (b2cModeStorage === 'false');
+      
+      if (esB2B) {
+        window.location.href = `menu_B2B.html?${params.toString()}`;
+      }
+    })();
+
     let globalParamsQuery = "";
 
     document.addEventListener('DOMContentLoaded', () => {
@@ -384,9 +398,8 @@
       }
 
       const urlParams = new URLSearchParams(window.location.search);
-      const modeParam = urlParams.get('mode');
 
-      // PRIORIDAD Y SINCRONIZACIÓN DEL PLAN
+      // PRIORIDAD Y SINCRONIZACIÓN DEL PLAN B2C
       let planGuardado = localStorage.getItem('sensometrika_plan_contratado') || localStorage.getItem('sensometrika_plan_seleccionado');
       let planUrl = urlParams.get('plan');
       let planParam = (planGuardado || planUrl || 'BASICO').toUpperCase().trim();
@@ -409,23 +422,12 @@
 
       let intentoActual = parseInt(localStorage.getItem('sensometrika_intento_actual') || '1');
 
-      if (modeParam === 'b2c' || localStorage.getItem('sensometrika_b2c_mode') === 'true') {
-        isB2C = true;
-        document.getElementById('txtTipoPlan').textContent = `EVALUACIÓN PARTICULAR • PLAN ${planParam.replace('_', ' ')} (B2C)`;
-        document.getElementById('lblSimulacionesCuota').textContent = `INTENTO ${intentoActual} DE ${totalSimulacionesPlan}`;
-        document.getElementById('btnFinalizarGeneral').textContent = '🎓 FINALIZAR Y OBTENER CERTIFICADO DIGITAL';
-      } else {
-        isB2C = false;
-        document.getElementById('txtTipoPlan').textContent = `EVALUACIÓN B2B • PLAN ${planParam.replace('_', ' ')}`;
-        document.getElementById('boxContadorSimulaciones').style.display = 'none';
-        document.getElementById('btnFinalizarGeneral').textContent = '📊 FINALIZAR Y ENVIAR INFORME AL APR';
-      }
-
+      document.getElementById('txtTipoPlan').textContent = `EVALUACIÓN PARTICULAR • PLAN ${planParam.replace('_', ' ')} (B2C)`;
+      document.getElementById('lblSimulacionesCuota').textContent = `INTENTO ${intentoActual} DE ${totalSimulacionesPlan}`;
+      document.getElementById('btnFinalizarGeneral').textContent = '🎓 FINALIZAR Y OBTENER CERTIFICADO DIGITAL';
       document.getElementById('txtInfoEvaluado').textContent = `EVALUADO: ${decodeURIComponent(nombre)} | RUT: ${rut}`;
 
       // HABILITACIÓN DINÁMICA DE MÓDULOS SEGÚN EL PLAN B2C
-      // Plan BÁSICO: Módulos 1, 2 y 3 (Reactímetro, Palancas, Punteo)
-      // Plan PLUS y FULL: Módulos 1, 2, 3, 4 y 5 (+ Auditivo y Visual)
       if (planParam.includes('PLUS') || planParam.includes('FULL') || planParam.includes('ALTO')) {
         document.getElementById('cardModAuditivo').style.display = 'flex';
         document.getElementById('cardModVisual').style.display = 'flex';
@@ -438,7 +440,7 @@
       }
 
       urlParams.set('plan', planParam);
-      urlParams.set('mode', isB2C ? 'b2c' : 'b2b');
+      urlParams.set('mode', 'b2c');
       globalParamsQuery = urlParams.toString();
 
       revisarModulosRendidos();
@@ -460,6 +462,7 @@
         currentParams.set('demo', 'true');
         currentParams.set('fase', 'demo');
       }
+      currentParams.set('mode', 'b2c');
 
       return `${nombreModulo}.html?${currentParams.toString()}`;
     }
@@ -504,7 +507,7 @@
         }
       });
 
-      // Sincronización del intento global
+      // Sincronización del intento global B2C
       const reactHist = (JSON.parse(localStorage.getItem('sensometrika_historial_reactimetro')) || []).length;
       const palHist = (JSON.parse(localStorage.getItem('sensometrika_historial_palancas')) || []).length;
       const puntHist = (JSON.parse(localStorage.getItem('sensometrika_historial_punteo')) || []).length;
@@ -523,12 +526,7 @@
     function finalizarEvaluacion() {
       const planStorage = localStorage.getItem('sensometrika_plan_contratado') || 'BASICO';
       const queryStr = window.location.search.substring(1);
-
-      if (isB2C) {
-        window.location.href = `informe.html?${queryStr}&plan=${planStorage}`;
-      } else {
-        window.location.href = `informe-b2b.html?${queryStr}&plan=${planStorage}`;
-      }
+      window.location.href = `informe.html?${queryStr}&plan=${planStorage}&mode=b2c`;
     }
   </script>
 </body>
