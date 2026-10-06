@@ -367,9 +367,10 @@
         let isDemoURL = urlParams.get('demo') === 'true' || urlParams.get('fase') === 'demo';
         let modoActual = isDemoURL ? 'DEMO' : 'OFICIAL';
 
+        // REDIRECCIÓN DINÁMICA DE RETORNO SEGÚN MODO
         function ejecutarRetornoMenu() {
-            const queryStr = urlParams.toString();
-            window.location.href = `menu_B2C.html?${queryStr}`;
+            const menuDestino = esB2B ? 'menu_B2B.html' : 'menu_B2C.html';
+            window.location.href = `${menuDestino}?${urlParams.toString()}`;
         }
 
         btnVolverNav.addEventListener('click', ejecutarRetornoMenu);
@@ -382,27 +383,34 @@
             const historial = JSON.parse(localStorage.getItem('sensometrika_historial_reactimetro')) || [];
             const numEnsayosRealizados = historial.length;
 
-            // DETERMINAR LÍMITE SEGÚN EL PLAN CONTRATADO
             const planStorage = (localStorage.getItem('sensometrika_plan_contratado') || urlParams.get('plan') || 'BASICO').toUpperCase();
+            
+            // LÍMITES ESTRICTOS B2B (1/1) Y B2C (3, 5, 8)
             let maxIntentosPlan = 3;
-            if (planStorage.includes('PLUS')) maxIntentosPlan = 5;
-            if (planStorage.includes('FULL') || planStorage.includes('ALTO')) maxIntentosPlan = 8;
+            if (esB2B) {
+                maxIntentosPlan = planStorage.includes('ALTO') ? 3 : 1;
+            } else {
+                if (planStorage.includes('PLUS')) maxIntentosPlan = 5;
+                if (planStorage.includes('FULL') || planStorage.includes('ALTO')) maxIntentosPlan = 8;
+            }
 
-            if (isDemoURL) {
-                modoActual = 'DEMO';
-            } else if (numEnsayosRealizados >= maxIntentosPlan) {
+            const demoRealizada = localStorage.getItem('reactimetro_demo_completada') === 'true';
+
+            if (numEnsayosRealizados >= maxIntentosPlan) {
                 modoActual = 'BLOQUEADO';
+            } else if (isDemoURL || (!demoRealizada && numEnsayosRealizados === 0)) {
+                modoActual = 'DEMO';
             } else {
                 modoActual = 'OFICIAL';
             }
 
             if (modoActual === 'BLOQUEADO') {
-                badgeText.textContent = `PLAN ${planStorage} COMPLETADO (${numEnsayosRealizados}/${maxIntentosPlan})`;
+                badgeText.textContent = esB2B ? `EVALUACIÓN REGISTRADA (${numEnsayosRealizados}/${maxIntentosPlan})` : `PLAN ${planStorage} COMPLETADO (${numEnsayosRealizados}/${maxIntentosPlan})`;
                 badgeDot.style.backgroundColor = "#10b981"; 
                 btnStart.style.display = 'none';
                 btnBrake.style.display = 'none';
                 salidaWrapper.style.display = 'flex';
-                instructionText.textContent = `Has alcanzado el límite de ${maxIntentosPlan} simulaciones de tu Plan ${planStorage}. Retorna al menú.`;
+                instructionText.textContent = esB2B ? 'Evaluación B2B finalizada con éxito. Retorna al menú.' : `Has alcanzado el límite de ${maxIntentosPlan} simulaciones de tu Plan ${planStorage}. Retorna al menú.`;
             } else if (modoActual === 'DEMO') {
                 badgeText.textContent = "Paso 1: Calibración Demo (1/1)";
                 badgeDot.style.backgroundColor = "#e5b324"; 
@@ -414,9 +422,9 @@
                 instructionText.textContent = "Modo Demo: Se realizarán 6 estímulos de ensayo para familiarizarte antes de la prueba oficial.";
             } else {
                 const siguienteSimu = numEnsayosRealizados + 1;
-                badgeText.textContent = esB2B ? `Simulación Oficial B2B (S${siguienteSimu})` : `Simulación Oficial S${siguienteSimu} de ${maxIntentosPlan}`;
+                badgeText.textContent = esB2B ? `Simulación Oficial B2B` : `Simulación Oficial S${siguienteSimu} de ${maxIntentosPlan}`;
                 badgeDot.style.backgroundColor = "#0284c7"; 
-                btnStart.textContent = `INICIAR SIMULACIÓN OFICIAL (S${siguienteSimu} DE ${maxIntentosPlan})`;
+                btnStart.textContent = esB2B ? `INICIAR SIMULACIÓN OFICIAL B2B` : `INICIAR SIMULACIÓN OFICIAL (S${siguienteSimu} DE ${maxIntentosPlan})`;
                 btnStart.style.display = 'block';
                 btnStart.style.backgroundColor = "#0284c7";
                 btnBrake.style.display = 'none';
@@ -468,9 +476,7 @@
                 localStorage.setItem('sensometrika_historial_reactimetro', JSON.stringify(historial));
 
                 const planStorage = (localStorage.getItem('sensometrika_plan_contratado') || 'BASICO').toUpperCase();
-                let maxIntentosPlan = 3;
-                if (planStorage.includes('PLUS')) maxIntentosPlan = 5;
-                if (planStorage.includes('FULL') || planStorage.includes('ALTO')) maxIntentosPlan = 8;
+                let maxIntentosPlan = esB2B ? (planStorage.includes('ALTO') ? 3 : 1) : (planStorage.includes('PLUS') ? 5 : (planStorage.includes('FULL') || planStorage.includes('ALTO') ? 8 : 3));
 
                 if (historial.length >= maxIntentosPlan) {
                     let rendidos = JSON.parse(localStorage.getItem('sensometrika_modulos_rendidos')) || {};
@@ -479,12 +485,13 @@
                 }
 
                 const numSimu = historial.length;
+                const tituloModal = esB2B ? "SIMULACIÓN OFICIAL B2B REGISTRADA" : `SIMULACIÓN S${numSimu} REGISTRADA`;
 
                 mostrarAlertaSistema(
-                    `SIMULACIÓN S${numSimu} REGISTRADA`,
+                    tituloModal,
                     `Promedio Neto de Frenado: <b>${res.promedioTiempo} ms</b> (${res.promedioTiempo <= 450 ? '✓ En Norma' : '⚠ Latencia Elevada'})<br>` +
                     `Anticipaciones: <b>${res.anticipaciones}</b><br><br>` +
-                    `<b>Simulación S${numSimu} de ${maxIntentosPlan} guardada con éxito.</b>`,
+                    `<b>Resultado guardado con éxito.</b>`,
                     () => {
                         ejecutarRetornoMenu();
                     }
