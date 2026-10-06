@@ -242,7 +242,7 @@
       </div>
 
       <div class="instructions-card" id="boxInstrucciones">
-        📌 <b>Control Biométrico por Malla Facial:</b> Mantenga la distancia entre <b>50 cm y 60 cm</b>. Si se acerca (< 45 cm) o aleja (> 65 cm), la prueba se bloqueará automáticamente.
+        📌 <b>Control Biométrico por Malla Facial:</b> Mantenga la distancia entre <b>50 cm y 60 cm</b>. Si se acerca (&lt; 45 cm) o aleja (&gt; 65 cm), la prueba se bloqueará automáticamente.
       </div>
 
       <div class="stage-box">
@@ -302,6 +302,10 @@
   </div>
 
   <script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const modeParam = urlParams.get('mode') || (localStorage.getItem('sensometrika_b2c_mode') === 'true' ? 'b2c' : 'b2b');
+    const esB2B = (modeParam === 'b2b');
+
     let audioCtx = null;
     let esDemo = true;
     let ensayoActual = 0;
@@ -320,11 +324,24 @@
     const tamaniosExigentes = ['5.0rem', '3.8rem', '2.8rem', '2.0rem', '1.5rem', '1.1rem', '0.85rem', '0.65rem'];
 
     document.addEventListener('DOMContentLoaded', () => {
-      const urlParams = new URLSearchParams(window.location.search);
+      const historial = JSON.parse(localStorage.getItem('sensometrika_historial_visual')) || [];
+      const numEnsayosRealizados = historial.length;
+
+      const planStorage = (localStorage.getItem('sensometrika_plan_contratado') || urlParams.get('plan') || 'BASICO').toUpperCase();
+      let maxIntentosPlan = esB2B ? (planStorage.includes('ALTO') ? 3 : 1) : (planStorage.includes('PLUS') ? 5 : (planStorage.includes('FULL') || planStorage.includes('ALTO') ? 8 : 3));
+
       const paramDemo = urlParams.get('demo');
       const paramFase = urlParams.get('fase');
+      const demoRealizada = localStorage.getItem('visual_demo_completada') === 'true';
 
-      if (paramDemo === 'false' || paramFase === 'oficial' || localStorage.getItem('visual_demo_completada') === 'true') {
+      if (numEnsayosRealizados >= maxIntentosPlan) {
+        document.getElementById('lblFaseBadge').textContent = esB2B ? `EVALUACIÓN REGISTRADA (${numEnsayosRealizados}/${maxIntentosPlan})` : `PLAN COMPLETADO (${numEnsayosRealizados}/${maxIntentosPlan})`;
+        document.getElementById('lblFaseBadge').style.borderColor = 'var(--accent-green)';
+        document.getElementById('lblFaseBadge').style.color = 'var(--accent-green)';
+        document.getElementById('btnIniciarExamen').style.display = 'none';
+        document.getElementById('btnSiguienteFase').style.display = 'block';
+        document.getElementById('btnSiguienteFase').textContent = '← RETORNAR AL MENÚ DE EVALUACIONES';
+      } else if (paramDemo === 'false' || paramFase === 'oficial' || demoRealizada) {
         iniciarModoOficialUI();
       } else {
         esDemo = true;
@@ -337,14 +354,17 @@
 
     function iniciarModoOficialUI() {
       esDemo = false;
-      document.getElementById('lblFaseBadge').textContent = 'Paso 2: Evaluación Oficial D.S. N° 170';
+      const historial = JSON.parse(localStorage.getItem('sensometrika_historial_visual')) || [];
+      const numSimu = historial.length + 1;
+
+      document.getElementById('lblFaseBadge').textContent = esB2B ? 'Paso 2: Simulación Oficial B2B' : `Paso 2: Evaluación Oficial S${numSimu}`;
       document.getElementById('lblFaseBadge').style.borderColor = 'var(--accent-cyan)';
       document.getElementById('lblFaseBadge').style.color = 'var(--accent-cyan)';
       document.getElementById('lblFaseBadge').style.background = 'rgba(0, 191, 255, 0.1)';
       
       document.getElementById('btnSiguienteFase').style.display = 'none';
       document.getElementById('btnIniciarExamen').style.display = 'block';
-      document.getElementById('btnIniciarExamen').textContent = 'INICIAR EVALUACIÓN OFICIAL →';
+      document.getElementById('btnIniciarExamen').textContent = esB2B ? 'INICIAR SIMULACIÓN OFICIAL B2B →' : 'INICIAR EVALUACIÓN OFICIAL →';
       document.getElementById('boxKeypad').style.display = 'none';
       document.getElementById('lblFaseExamen').textContent = '0 / 8';
       document.getElementById('lblAciertos').textContent = '0 / 8';
@@ -414,7 +434,6 @@
       const dy = leftEye.y - rightEye.y;
       const eyeDistanceNormalized = Math.sqrt(dx * dx + dy * dy);
 
-      // CALIBRACIÓN FOCAL MILIMÉTRICA (Constante 9.5)
       let distCalculada = Math.round(9.5 / eyeDistanceNormalized);
 
       distanciaMedidaCm = Math.round(distanciaMedidaCm * 0.5 + distCalculada * 0.5);
@@ -558,15 +577,11 @@
       if (esDemo) {
         btnSig.textContent = 'CONTINUAR A LA SIMULACIÓN OFICIAL →';
       } else {
-        btnSig.textContent = 'FINALIZAR Y VOLVER AL MENÚ →';
+        btnSig.textContent = 'FINALIZAR Y REGISTRAR PRUEBA →';
       }
     }
 
     function finalizarFase() {
-      const urlParams = new URLSearchParams(window.location.search);
-      const isB2C = urlParams.get('mode') === 'b2c' || localStorage.getItem('sensometrika_b2c_mode') === 'true';
-      const menuDestino = isB2C ? 'menu_B2C.html' : 'menu_B2B.html';
-
       if (esDemo) {
         localStorage.setItem('visual_demo_completada', 'true');
         iniciarModoOficialUI();
@@ -601,15 +616,13 @@
         });
 
         localStorage.setItem('sensometrika_historial_visual', JSON.stringify(historial));
-        localStorage.removeItem('visual_demo_completada');
-        window.location.href = `${menuDestino}?${urlParams.toString()}`;
+        
+        volverPortal();
       }
     }
 
     function volverPortal() {
-      const urlParams = new URLSearchParams(window.location.search);
-      const isB2C = urlParams.get('mode') === 'b2c' || localStorage.getItem('sensometrika_b2c_mode') === 'true';
-      const menuDestino = isB2C ? 'menu_B2C.html' : 'menu_B2B.html';
+      const menuDestino = esB2B ? 'menu_B2B.html' : 'menu_B2C.html';
       window.location.href = `${menuDestino}?${urlParams.toString()}`;
     }
 
