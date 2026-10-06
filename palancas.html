@@ -226,7 +226,6 @@
             display: none;
         }
 
-        /* GRID DE MÉTRICAS AMPLIADO A 4 COLUMNAS PARA INCLUIR T. ERROR Y PRECISIÓN */
         .metrics-grid {
             display: grid;
             grid-template-columns: 1fr 1fr 1fr 1fr;
@@ -361,7 +360,6 @@
         </div>
     </div>
 
-    <script src="palancas.js"></script>
     <script>
         const canvas = document.getElementById('palancasCanvas');
         const ctx = canvas.getContext('2d');
@@ -391,7 +389,7 @@
         let evaluacionActiva = false;
         let contactosCount = 0;
         let estaEnBorde = false;
-        let tiempoErrorMs = 0; // ACUMULADOR DE TIEMPO EN ERROR (MS)
+        let tiempoErrorMs = 0;
         let inicioBordeMs = null;
 
         let tiempoTranscurrido = 0;
@@ -404,7 +402,6 @@
         let trackPoints = [];
         let keys = { left: false, right: false, up: false, down: false };
 
-        // GENERADOR ANTI-MEMORIZACIÓN DE CIRCUITO BAYONETA
         function generarCircuitoAntiMemorizacion(numSimu) {
             const variante = numSimu % 4;
             const altPuente = 95 + ((numSimu * 13) % 30);
@@ -425,7 +422,6 @@
                     meta: {x: 350, y: 75}
                 };
             } else if (variante === 2) {
-                // Sentido Espejo / Invertido
                 return {
                     pista: [
                         {x: 350, y: 220},
@@ -440,7 +436,6 @@
                     meta: {x: 50, y: 75}
                 };
             } else if (variante === 3) {
-                // Inversión Vertical
                 return {
                     pista: [
                         {x: 50, y: 80},
@@ -455,7 +450,6 @@
                     meta: {x: 350, y: 225}
                 };
             } else {
-                // Trazado Bayoneta Clásico
                 return {
                     pista: [
                         {x: 60, y: 220},
@@ -472,8 +466,10 @@
             }
         }
 
+        // REDIRECCIÓN DINÁMICA DE RETORNO SEGÚN MODO
         function ejecutarRetornoMenu() {
-            window.location.href = `menu_B2C.html?${urlParams.toString()}`;
+            const menuDestino = esB2B ? 'menu_B2B.html' : 'menu_B2C.html';
+            window.location.href = `${menuDestino}?${urlParams.toString()}`;
         }
 
         function actualizarEstadoUI() {
@@ -481,19 +477,26 @@
             const numEnsayosRealizados = historial.length;
 
             const planStorage = (localStorage.getItem('sensometrika_plan_contratado') || urlParams.get('plan') || 'BASICO').toUpperCase();
+            
+            // LÍMITES ESTRICTOS B2B (1/1) Y B2C (3, 5, 8)
             let maxIntentosPlan = 3;
-            if (planStorage.includes('PLUS')) maxIntentosPlan = 5;
-            if (planStorage.includes('FULL') || planStorage.includes('ALTO')) maxIntentosPlan = 8;
+            if (esB2B) {
+                maxIntentosPlan = planStorage.includes('ALTO') ? 3 : 1;
+            } else {
+                if (planStorage.includes('PLUS')) maxIntentosPlan = 5;
+                if (planStorage.includes('FULL') || planStorage.includes('ALTO')) maxIntentosPlan = 8;
+            }
 
-            if (isDemoURL) {
-                modoActual = 'DEMO';
-            } else if (numEnsayosRealizados >= maxIntentosPlan) {
+            const demoRealizada = localStorage.getItem('palancas_demo_completada') === 'true';
+
+            if (numEnsayosRealizados >= maxIntentosPlan) {
                 modoActual = 'BLOQUEADO';
+            } else if (isDemoURL || (!demoRealizada && numEnsayosRealizados === 0)) {
+                modoActual = 'DEMO';
             } else {
                 modoActual = 'OFICIAL';
             }
 
-            // Cargar trazado correspondiente
             const simuActual = numEnsayosRealizados + 1;
             const circuito = generarCircuitoAntiMemorizacion(simuActual);
             trackPoints = circuito.pista;
@@ -503,11 +506,11 @@
             pua.y = posicionInicio.y;
 
             if (modoActual === 'BLOQUEADO') {
-                badgeText.textContent = `PLAN ${planStorage} COMPLETADO (${numEnsayosRealizados}/${maxIntentosPlan})`;
+                badgeText.textContent = esB2B ? `EVALUACIÓN REGISTRADA (${numEnsayosRealizados}/${maxIntentosPlan})` : `PLAN ${planStorage} COMPLETADO (${numEnsayosRealizados}/${maxIntentosPlan})`;
                 badgeDot.style.backgroundColor = "#10b981"; 
                 btnStart.style.display = 'none';
                 btnNext.style.display = 'block';
-                instructionText.textContent = `Has alcanzado el límite de ${maxIntentosPlan} simulaciones de tu Plan ${planStorage}. Retorna al menú.`;
+                instructionText.textContent = esB2B ? 'Evaluación B2B finalizada con éxito. Retorna al menú.' : `Has alcanzado el límite de ${maxIntentosPlan} simulaciones de tu Plan ${planStorage}. Retorna al menú.`;
             } else if (modoActual === 'DEMO') {
                 badgeText.textContent = "Paso 1: Calibración Demo (1/1)";
                 badgeDot.style.backgroundColor = "#e5b324"; 
@@ -517,9 +520,9 @@
                 btnNext.style.display = 'none';
                 instructionText.textContent = "Modo Demo: Guía la púa con ambos pulgares hasta la meta verde.";
             } else {
-                badgeText.textContent = esB2B ? `Simulación Oficial B2B (S${simuActual})` : `Simulación Oficial S${simuActual} de ${maxIntentosPlan}`;
-                badgeDot.style.backgroundColor = "#ef4444"; 
-                btnStart.textContent = `INICIAR SIMULACIÓN OFICIAL (S${simuActual} DE ${maxIntentosPlan})`;
+                badgeText.textContent = esB2B ? `Simulación Oficial B2B` : `Simulación Oficial S${simuActual} de ${maxIntentosPlan}`;
+                badgeDot.style.backgroundColor = "#38bdf8"; 
+                btnStart.textContent = esB2B ? `INICIAR SIMULACIÓN OFICIAL B2B` : `INICIAR SIMULACIÓN OFICIAL (S${simuActual} DE ${maxIntentosPlan})`;
                 btnStart.style.backgroundColor = "#0284c7";
                 btnStart.style.display = 'block';
                 btnNext.style.display = 'none';
@@ -532,7 +535,6 @@
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
             if (trackPoints.length > 0) {
-                // Dibujar Canal Pista
                 ctx.strokeStyle = '#0284c7';
                 ctx.lineWidth = 28;
                 ctx.lineCap = 'round';
@@ -544,14 +546,12 @@
                 }
                 ctx.stroke();
 
-                // Línea Central Discontinua
                 ctx.strokeStyle = 'rgba(255, 255, 255, 0.35)';
                 ctx.lineWidth = 2;
                 ctx.setLineDash([5, 5]);
                 ctx.stroke();
                 ctx.setLineDash([]);
 
-                // Punto de Inicio (Amarillo)
                 ctx.fillStyle = '#e5b324';
                 ctx.beginPath();
                 ctx.arc(posicionInicio.x, posicionInicio.y, 10, 0, Math.PI * 2);
@@ -560,7 +560,6 @@
                 ctx.lineWidth = 2;
                 ctx.stroke();
 
-                // Punto de Meta (Verde)
                 ctx.fillStyle = '#10b981';
                 ctx.beginPath();
                 ctx.arc(posicionMeta.x, posicionMeta.y, 14, 0, Math.PI * 2);
@@ -570,14 +569,12 @@
                 ctx.stroke();
             }
 
-            // Movimiento Bimanual
             if (evaluacionActiva) {
                 if (keys.left) pua.x = Math.max(12, pua.x - pua.speed);
                 if (keys.right) pua.x = Math.min(canvas.width - 12, pua.x + pua.speed);
                 if (keys.up) pua.y = Math.max(12, pua.y - pua.speed);
                 if (keys.down) pua.y = Math.min(canvas.height - 12, pua.y + pua.speed);
 
-                // Detección de contacto con flag de borde (+1 por incursión)
                 let enPista = false;
                 for(let i = 0; i < trackPoints.length - 1; i++) {
                     if (distToSegment(pua, trackPoints[i], trackPoints[i+1]) <= 12) {
@@ -593,7 +590,6 @@
                         estaEnBorde = true;
                         inicioBordeMs = ahora;
                     } else {
-                        // MEDIR TIEMPO EN ERROR ACUMULADO
                         tiempoErrorMs += (ahora - inicioBordeMs);
                         inicioBordeMs = ahora;
                         metricTiempoError.textContent = `${(tiempoErrorMs / 1000).toFixed(1)} s`;
@@ -603,17 +599,14 @@
                     inicioBordeMs = null;
                 }
 
-                // CÁLCULO DE PRECISIÓN PONDERADA (%)
                 const precPonderada = Math.max(0, Math.round(100 - (contactosCount * 4) - ((tiempoErrorMs / 1000) * 6)));
                 metricPrecision.textContent = `${precPonderada}%`;
 
-                // Detección de Meta
                 if (Math.hypot(pua.x - posicionMeta.x, pua.y - posicionMeta.y) <= 14) {
                     finalizarPrueba();
                 }
             }
 
-            // Dibujar Púa
             ctx.fillStyle = estaEnBorde ? '#ef4444' : '#ffffff';
             ctx.beginPath();
             ctx.arc(pua.x, pua.y, pua.r, 0, Math.PI * 2);
@@ -633,7 +626,6 @@
             return Math.hypot(p.x - (v.x + t * (w.x - v.x)), p.y - (v.y + t * (w.y - v.y)));
         }
 
-        // Asignación de Mandos Bimanuales
         const setupBtn = (id, key) => {
             const el = document.getElementById(id);
             const on = (e) => { e.preventDefault(); keys[key] = true; };
@@ -710,9 +702,7 @@
                 localStorage.setItem('sensometrika_historial_palancas', JSON.stringify(historial));
 
                 const planStorage = (localStorage.getItem('sensometrika_plan_contratado') || 'BASICO').toUpperCase();
-                let maxIntentosPlan = 3;
-                if (planStorage.includes('PLUS')) maxIntentosPlan = 5;
-                if (planStorage.includes('FULL') || planStorage.includes('ALTO')) maxIntentosPlan = 8;
+                let maxIntentosPlan = esB2B ? (planStorage.includes('ALTO') ? 3 : 1) : (planStorage.includes('PLUS') ? 5 : (planStorage.includes('FULL') || planStorage.includes('ALTO') ? 8 : 3));
 
                 if (historial.length >= maxIntentosPlan) {
                     let rendidos = JSON.parse(localStorage.getItem('sensometrika_modulos_rendidos')) || {};
@@ -721,10 +711,11 @@
                 }
 
                 const numSimu = historial.length;
+                const tituloModal = esB2B ? "SIMULACIÓN OFICIAL B2B REGISTRADA" : `SIMULACIÓN S${numSimu} REGISTRADA`;
 
                 mostrarModal(
-                    `SIMULACIÓN S${numSimu} REGISTRADA`,
-                    `Tiempo Recorrido: <b>${tiempoTranscurrido} s</b><br>Toques en Borde: <b>${contactosCount}</b><br>Tiempo en Error: <b>${tErrorSeg} s</b><br>Precisión Bimanual: <b>${precisionFinal}%</b><br><br><b>Simulación S${numSimu} de ${maxIntentosPlan} guardada con éxito.</b>`,
+                    tituloModal,
+                    `Tiempo Recorrido: <b>${tiempoTranscurrido} s</b><br>Toques en Borde: <b>${contactosCount}</b><br>Tiempo en Error: <b>${tErrorSeg} s</b><br>Precisión Bimanual: <b>${precisionFinal}%</b><br><br><b>Resultado guardado con éxito.</b>`,
                     () => { ejecutarRetornoMenu(); }
                 );
             }
