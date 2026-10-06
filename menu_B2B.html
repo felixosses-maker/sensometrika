@@ -288,31 +288,11 @@
       revisarModulosRendidosB2B();
     });
 
-    function construirUrlModulo(nombreModulo) {
-      const currentParams = new URLSearchParams(globalParamsQuery || window.location.search);
-      const demoRealizada = localStorage.getItem(`${nombreModulo}_demo_completada`) === 'true';
-
-      if (demoRealizada) {
-        currentParams.set('demo', 'false');
-        currentParams.set('fase', 'oficial');
-      } else {
-        currentParams.set('demo', 'true');
-        currentParams.set('fase', 'demo');
-      }
-      currentParams.set('mode', 'b2b');
-
-      return `${nombreModulo}.html?${currentParams.toString()}`;
-    }
-
     function revisarModulosRendidosB2B() {
       const planParam = (localStorage.getItem('sensometrika_plan_contratado') || 'BASICO').toUpperCase();
       
       // REGLA B2B ESTÁNDAR: EXACTAMENTE 1 SIMULACIÓN OFICIAL ÚNICA POR MÓDULO (1 DEMO + 1 SIMU)
-      // Excepción únicamente para la batería corporativa especial de Alto Riesgo (3 simu)
-      let maxIntentosPlan = 1;
-      if (planParam.includes('ALTO')) {
-        maxIntentosPlan = 3;
-      }
+      let maxIntentosPlan = planParam.includes('ALTO') ? 3 : 1;
 
       const listaConfig = [
         { id: 'reactimetro', statusElem: 'statusMod1', linkElem: 'linkMod1' },
@@ -331,17 +311,27 @@
 
         const historial = JSON.parse(localStorage.getItem(`sensometrika_historial_${mod.id}`)) || [];
         const numEnsayos = historial.length;
-        const urlDestino = construirUrlModulo(mod.id);
+        const demoHecha = localStorage.getItem(`${mod.id}_demo_completada`) === 'true';
+
+        // Armado preciso de parámetros
+        const currentParams = new URLSearchParams(globalParamsQuery || window.location.search);
+        currentParams.set('mode', 'b2b');
 
         if (numEnsayos >= maxIntentosPlan) {
-          statusContainer.innerHTML = `<span class="btn-done" style="background: rgba(16, 185, 129, 0.15); border: 1px solid var(--accent-green); color: var(--accent-green);">EVALUACIÓN REGISTRADA (1/1)</span>`;
+          // 1. Simulación completada -> Bloqueo
+          statusContainer.innerHTML = `<span class="btn-done" style="background: rgba(16, 185, 129, 0.15); border: 1px solid var(--accent-green); color: var(--accent-green);">EVALUACIÓN REGISTRADA (${numEnsayos}/${maxIntentosPlan})</span>`;
+        } else if (!demoHecha) {
+          // 2. Demo no realizada -> Forzar Demo
+          currentParams.set('demo', 'true');
+          currentParams.set('fase', 'demo');
+          const urlDemo = `${mod.id}.html?${currentParams.toString()}`;
+          statusContainer.innerHTML = `<a id="${mod.linkElem}" href="${urlDemo}" class="btn-start">INICIAR DEMO →</a>`;
         } else {
-          const demoRealizada = localStorage.getItem(`${mod.id}_demo_completada`) === 'true';
-          if (demoRealizada) {
-            statusContainer.innerHTML = `<a id="${mod.linkElem}" href="${urlDestino}" class="btn-oficial">SIMULACIÓN OFICIAL B2B →</a>`;
-          } else {
-            statusContainer.innerHTML = `<a id="${mod.linkElem}" href="${urlDestino}" class="btn-start">INICIAR DEMO →</a>`;
-          }
+          // 3. Demo lista -> Habilitar Simulación Oficial Única
+          currentParams.set('demo', 'false');
+          currentParams.set('fase', 'oficial');
+          const urlOficial = `${mod.id}.html?${currentParams.toString()}`;
+          statusContainer.innerHTML = `<a id="${mod.linkElem}" href="${urlOficial}" class="btn-oficial">SIMULACIÓN OFICIAL B2B →</a>`;
         }
       });
     }
