@@ -258,7 +258,6 @@
         datosUsuario = JSON.parse(localStorage.getItem('sensometrika_datos_usuario')) || {};
       } catch(e){}
 
-      // OBTENER DATOS DINÁMICOS O PEDIR INGRESARLOS SI NO EXISTEN
       const rut = urlParams.get('rut') || datosUsuario.rut || '';
       const nombre = urlParams.get('nombre') || datosUsuario.nombre || 'EVALUADO B2B';
 
@@ -271,7 +270,7 @@
       localStorage.setItem('sensometrika_plan_contratado', planParam);
       document.getElementById('txtTipoPlan').textContent = `EVALUACIÓN B2B • PLAN ${planParam.replace('_', ' ')}`;
 
-      // Configurar tarjetas visibles por plan
+      // Visibilidad de módulos según plan
       if (planParam.includes('PLUS') || planParam.includes('FULL') || planParam.includes('ALTO')) {
         document.getElementById('cardModAuditivo').style.display = 'flex';
       }
@@ -295,10 +294,33 @@
       }
     });
 
+    function obtenerHistorialModulo(modId, cleanRut) {
+      // Intenta obtener por clave aislada por RUT
+      let h = JSON.parse(localStorage.getItem(`sensometrika_historial_${modId}_${cleanRut}`)) || [];
+      if (h.length > 0) return h;
+
+      // Intenta claves alternativas frecuentes
+      if (modId === 'audicion') {
+        h = JSON.parse(localStorage.getItem(`sensometrika_historial_auditivo_${cleanRut}`)) || [];
+      } else if (modId === 'reactimetro') {
+        h = JSON.parse(localStorage.getItem(`sensometrika_historial_reactimetro_${cleanRut}`)) || [];
+      } else if (modId === 'palancas') {
+        h = JSON.parse(localStorage.getItem(`sensometrika_historial_palancas_${cleanRut}`)) || [];
+      } else if (modId === 'punteo') {
+        h = JSON.parse(localStorage.getItem(`sensometrika_historial_punteo_${cleanRut}`)) || [];
+      } else if (modId === 'visual') {
+        h = JSON.parse(localStorage.getItem(`sensometrika_historial_visual_${cleanRut}`)) || [];
+      }
+
+      // Si aún no encuentra, busca en la clave global por compatibilidad
+      if (h.length === 0) {
+        h = JSON.parse(localStorage.getItem(`sensometrika_historial_${modId}`)) || [];
+      }
+      return h;
+    }
+
     function revisarModulosRendidosB2B(rutEvaluado, planParam) {
       const cleanRut = rutEvaluado.replace(/[^0-9Kk]/g, '');
-
-      // Cuota en B2B
       const maxIntentos = planParam.includes('ALTO') ? 3 : 1;
 
       const listaConfig = [
@@ -316,14 +338,11 @@
         const statusContainer = document.getElementById(mod.statusElem);
         if (!statusContainer) return;
 
-        let historial = JSON.parse(localStorage.getItem(`sensometrika_historial_${mod.id}_${cleanRut}`)) || [];
-        
-        if (historial.length === 0 && mod.id === 'audicion') {
-          historial = JSON.parse(localStorage.getItem(`sensometrika_historial_auditivo_${cleanRut}`)) || [];
-        }
-
+        const historial = obtenerHistorialModulo(mod.id, cleanRut);
         const numEnsayos = Math.min(historial.length, maxIntentos);
-        const demoHecha = (localStorage.getItem(`${mod.id}_demo_completada_${cleanRut}`) === 'true');
+        
+        const demoHecha = (localStorage.getItem(`${mod.id}_demo_completada_${cleanRut}`) === 'true') ||
+                          (localStorage.getItem(`${mod.id}_demo_completada`) === 'true');
 
         const currentParams = new URLSearchParams(globalParamsQuery);
 
@@ -344,7 +363,6 @@
     function finalizarEvaluacionB2B() {
       const currentParams = new URLSearchParams(globalParamsQuery || window.location.search);
       currentParams.set('mode', 'b2b');
-
       window.location.href = `informe-b2b.html?${currentParams.toString()}`;
     }
   </script>
