@@ -294,11 +294,11 @@
       <div class="data-card">
         <div>
           <span class="lbl-title">TRABAJADOR EVALUADO:</span>
-          <span id="lblNombreTrabajador" class="val-content">ANDRES PEREZ</span>
+          <span id="lblNombreTrabajador" class="val-content">GONZALO BARRÍA</span>
         </div>
         <div>
           <span class="lbl-title">RUT TRABAJADOR:</span>
-          <span id="lblRutTrabajador" class="val-content">13.766.987-1</span>
+          <span id="lblRutTrabajador" class="val-content">6.067.084-1</span>
         </div>
         <div>
           <span class="lbl-title">CARGO / FUNCIÓN OPERATIVA:</span>
@@ -306,11 +306,11 @@
         </div>
         <div>
           <span class="lbl-title">EMPRESA MANDANTE / CONTRATISTA:</span>
-          <span id="lblEmpresaTrabajador" class="val-content">MINERA / FORESTAL</span>
+          <span id="lblEmpresaTrabajador" class="val-content">CONSTRUCTORA</span>
         </div>
         <div>
           <span class="lbl-title">FOLIO DE VERIFICACIÓN:</span>
-          <span id="lblFolioVerificacion" class="val-content" style="color:#0284c7;">SMK-810941</span>
+          <span id="lblFolioVerificacion" class="val-content" style="color:#0284c7;">SMK-606708</span>
         </div>
         <div>
           <span class="lbl-title">FECHA Y HORA DE EMISIÓN:</span>
@@ -373,8 +373,8 @@
     <div class="firmas-grid">
       <div class="box-firma">
         <img id="imgFirmaTrabajador" class="img-firma-trabajador" src="" alt="Firma Manuscrita" style="display: none;">
-        <span style="font-weight:800; color:#0f172a; margin-bottom:2px;" id="lblFirmaTrabajador">Andres Perez</span>
-        <span id="lblRutFirmaTrabajador">RUT: 13.766.987-1</span>
+        <span style="font-weight:800; color:#0f172a; margin-bottom:2px;" id="lblFirmaTrabajador">Gonzalo Barría</span>
+        <span id="lblRutFirmaTrabajador">RUT: 6.067.084-1</span>
         <span style="border-top:1px solid #cbd5e1; width:85%; margin-top:4px; padding-top:2px;">FIRMA Y DECLARACIÓN JURADA TRABAJADOR</span>
       </div>
       <div class="box-firma">
@@ -391,7 +391,7 @@
 
     <div style="background:#f0fdf4; border:1px solid #bbf7d0; text-align:center; padding:5px; border-radius:6px; font-size:0.62rem; color:#166534; font-weight:700;">
       ✓ V°B° VALIDADO EN SISTEMA - SENSOMETRIKA FORENSIC ENGINE<br>
-      Hash de Inmutabilidad de Datos: <span id="lblHashB2B" style="font-family:monospace; color:#0284c7;">SMK-B2B-SHA256-81094190</span>
+      Hash de Inmutabilidad de Datos: <span id="lblHashB2B" style="font-family:monospace; color:#0284c7;">SMK-B2B-SHA256-606708</span>
     </div>
 
     <a id="btnVolverMenuB2B" href="menu_B2B.html" class="btn-return-b2b">← VOLVER AL PORTAL EMPRESA</a>
@@ -404,17 +404,18 @@
       
       const planStorage = localStorage.getItem('sensometrika_plan_contratado');
       const planUrl = urlParams.get('plan');
-      let planParam = (planStorage || planUrl || 'BASICO').toUpperCase();
+      let planParam = (planUrl || planStorage || 'BASICO').toUpperCase().trim();
 
       let datosUsuario = {};
       try {
         datosUsuario = JSON.parse(localStorage.getItem('sensometrika_datos_usuario')) || {};
       } catch(e){}
 
-      const rut = urlParams.get('rut') || datosUsuario.rut || '13.766.987-1';
-      const nombre = datosUsuario.nombre || urlParams.get('nombre') || 'ANDRES PEREZ';
-      const correoAPR = localStorage.getItem('sensometrika_b2b_correo') || 'apr@empresa.cl';
-      const empresa = localStorage.getItem('sensometrika_b2b_empresa') || 'MINERA / FORESTAL';
+      const rut = urlParams.get('rut') || datosUsuario.rut || '6.067.084-1';
+      const cleanRut = rut.replace(/[^0-9Kk]/g, '');
+      const nombre = urlParams.get('nombre') || datosUsuario.nombre || 'GONZALO BARRÍA';
+      const correoAPR = localStorage.getItem('sensometrika_b2b_correo') || 'felix.osorio@gmail.com';
+      const empresa = localStorage.getItem('sensometrika_b2b_empresa') || 'CONSTRUCTORA';
 
       document.getElementById('lblNombreTrabajador').textContent = decodeURIComponent(nombre).toUpperCase();
       document.getElementById('lblRutTrabajador').textContent = rut;
@@ -424,7 +425,6 @@
       document.getElementById('lblEmpresaTrabajador').textContent = empresa.toUpperCase();
       document.getElementById('txtNombrePlanContratado').textContent = `PLAN ${planParam.replace('_', ' ')}`;
 
-      // Configurar enlace de retorno conservando parámetros de sesión
       const btnVolver = document.getElementById('btnVolverMenuB2B');
       if (btnVolver) {
         btnVolver.href = `menu_B2B.html?${urlParams.toString()}`;
@@ -447,12 +447,6 @@
       } else if (/iPhone|iPad|iPod/i.test(ua)) {
         tipoDispositivo = "Smartphone";
         sistemaOp = "iOS";
-      } else if (/Macintosh|Mac OS X/i.test(ua)) {
-        tipoDispositivo = "PC Escritorio";
-        sistemaOp = "macOS";
-      } else if (/Linux/i.test(ua)) {
-        tipoDispositivo = "PC Escritorio";
-        sistemaOp = "Linux";
       }
 
       document.getElementById('lblDispositivoTerminal').textContent = `${tipoDispositivo} / ${sistemaOp}`;
@@ -460,7 +454,7 @@
       const latenciaGuardada = localStorage.getItem('sensometrika_latencia_ms') || '152';
       document.getElementById('lblLatenciaHardware').textContent = `${latenciaGuardada} ms (Promedio)`;
 
-      const folio = 'SMK-' + rut.replace(/[^0-9Kk]/g, '').substring(0, 6);
+      const folio = 'SMK-' + cleanRut.substring(0, 6);
       document.getElementById('lblFolioVerificacion').textContent = folio;
 
       const baseUrl = window.location.origin;
@@ -494,14 +488,14 @@
 
       const modulosRendidos = JSON.parse(localStorage.getItem('sensometrika_modulos_rendidos')) || {};
 
-      const histReact = JSON.parse(localStorage.getItem('sensometrika_historial_reactimetro')) || [];
-      const histPalan = JSON.parse(localStorage.getItem('sensometrika_historial_palancas')) || [];
-      const histPunt = JSON.parse(localStorage.getItem('sensometrika_historial_punteo')) || [];
-      const histAud = JSON.parse(localStorage.getItem('sensometrika_historial_auditivo')) || JSON.parse(localStorage.getItem('sensometrika_historial_audicion')) || [];
-      const histVis = JSON.parse(localStorage.getItem('sensometrika_historial_visual')) || JSON.parse(localStorage.getItem('sensometrika_historial_tamizaje_visual')) || [];
-      const histAnt = JSON.parse(localStorage.getItem('sensometrika_historial_anticipacion')) || [];
-      const histEst = JSON.parse(localStorage.getItem('sensometrika_historial_estereopsis')) || JSON.parse(localStorage.getItem('sensometrika_historial_estereopsis3d')) || [];
-      const histFat = JSON.parse(localStorage.getItem('sensometrika_historial_fatiga')) || [];
+      const histReact = JSON.parse(localStorage.getItem(`sensometrika_historial_reactimetro_${cleanRut}`)) || JSON.parse(localStorage.getItem('sensometrika_historial_reactimetro')) || [];
+      const histPalan = JSON.parse(localStorage.getItem(`sensometrika_historial_palancas_${cleanRut}`)) || JSON.parse(localStorage.getItem('sensometrika_historial_palancas')) || [];
+      const histPunt = JSON.parse(localStorage.getItem(`sensometrika_historial_punteo_${cleanRut}`)) || JSON.parse(localStorage.getItem('sensometrika_historial_punteo')) || [];
+      const histAud = JSON.parse(localStorage.getItem(`sensometrika_historial_audicion_${cleanRut}`)) || JSON.parse(localStorage.getItem('sensometrika_historial_audicion')) || [];
+      const histVis = JSON.parse(localStorage.getItem(`sensometrika_historial_visual_${cleanRut}`)) || JSON.parse(localStorage.getItem('sensometrika_historial_visual')) || [];
+      const histAnt = JSON.parse(localStorage.getItem(`sensometrika_historial_anticipacion_${cleanRut}`)) || JSON.parse(localStorage.getItem('sensometrika_historial_anticipacion')) || [];
+      const histEst = JSON.parse(localStorage.getItem(`sensometrika_historial_estereopsis_${cleanRut}`)) || JSON.parse(localStorage.getItem('sensometrika_historial_estereopsis')) || [];
+      const histFat = JSON.parse(localStorage.getItem(`sensometrika_historial_fatiga_${cleanRut}`)) || JSON.parse(localStorage.getItem('sensometrika_historial_fatiga')) || [];
 
       let ultReactTime = histReact.length > 0 ? histReact[histReact.length - 1].promedioTiempo : 280;
       let ultPalanPrec = histPalan.length > 0 ? histPalan[histPalan.length - 1].precision : 95;
@@ -526,9 +520,9 @@
       document.getElementById('lblFechaVencimiento').textContent = `${fechaVencimiento.toLocaleDateString('es-CL', opcSimple)} (${mesesVigencia} MESES)`;
       document.getElementById('lblJustificacionVigencia').textContent = textoJustificacion;
 
-      // ACTIVACIÓN CORREGIDA DE PLANES B2B PARA TAMIZAJE VISUAL
+      // MATRIZ INNEGOCIABLE DE COBERTURA DE PLAN
       const tieneAuditivo = (planParam.includes('PLUS') || planParam.includes('FULL') || planParam.includes('ALTO'));
-      const tieneVisual = (planParam.includes('PLUS') || planParam.includes('FULL') || planParam.includes('ALTO')) || (histVis.length > 0 || modulosRendidos.visual === true || modulosRendidos.tamizaje_visual === true);
+      const tieneVisual = (planParam.includes('FULL') || planParam.includes('ALTO'));
       const tieneAltoDesempenio = planParam.includes('ALTO');
 
       let modulosCompletadosCount = 0;
@@ -582,7 +576,7 @@
         tbody.innerHTML += `<tr><td><b>4. Tamizaje Auditivo Ocupacional</b><br><span style="color:#64748b; font-size:0.58rem;">Frecuencias críticas faena</span></td><td>≤ 25 dB (Normal)</td><td>No contratado en plan</td><td><span class="badge-nosol">NO SOLICITADO</span></td></tr>`;
       }
 
-      // MÓDULO 5: Tamizaje Visual Integral (INCORPORADO PLAN PLUS + RECONOCIMIENTO MULTICLAVE)
+      // MÓDULO 5: Tamizaje Visual Integral
       if (tieneVisual) {
         if (modulosRendidos.visual === true || modulosRendidos.tamizaje_visual === true || histVis.length > 0) {
           modulosCompletadosCount++;
@@ -614,11 +608,7 @@
 
       // MÓDULO 7: Estereopsis y Profundidad 3D
       if (tieneAltoDesempenio) {
-        const esEstereopsisRendido = modulosRendidos.estereopsis === true || 
-                                     modulosRendidos.estereopsis3d === true || 
-                                     histEst.length > 0;
-
-        if (esEstereopsisRendido) {
+        if (modulosRendidos.estereopsis === true || modulosRendidos.estereopsis3d === true || histEst.length > 0) {
           modulosCompletadosCount++;
           const ultEst = histEst.length > 0 ? histEst[histEst.length - 1] : {};
           const precision = ultEst.precision || ultEst.porcentaje || 88;
