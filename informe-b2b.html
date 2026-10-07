@@ -345,7 +345,7 @@
       <div><span style="color:#94a3b8; display:block;">Calibración Terminal:</span><strong id="lblDispositivoTerminal">Smartphone / Mobile</strong></div>
       <div><span style="color:#94a3b8; display:block;">Telemetría de Red:</span><strong style="color:#10b981;">35 ms (Estable)</strong></div>
       <div><span style="color:#94a3b8; display:block;">Latencia del Sensor:</span><strong style="color:#38bdf8;" id="lblLatenciaHardware">152 ms (Promedio)</strong></div>
-      <div><span style="color:#94a3b8; display:block;">Estado de Sensores:</span><strong style="color:#10b981;">V°B° Calibrado</strong></div>
+      <div><span style="color:#94a3b8; display:block;">Estado de Sensores:</span><strong id="lblEstadoSensores" style="color:#10b981;">V°B° Calibrado</strong></div>
     </div>
 
     <div id="boxBannerDictamen" class="dictamen-banner-ok">
@@ -490,7 +490,7 @@
       document.getElementById('lblFechaEmision').textContent = ahora.toLocaleDateString('es-CL', opcionesFecha).replace(',', '');
 
       // =========================================================================
-      // LECTURA ESTRICTA POR RUT (SE ELIMINAN HISTORIALES GLOBALES VIEJOS)
+      // LECTURA ESTRICTA POR RUT
       // =========================================================================
       const histReact = JSON.parse(localStorage.getItem(`sensometrika_historial_reactimetro_${cleanRut}`)) || [];
       const histPalan = JSON.parse(localStorage.getItem(`sensometrika_historial_palancas_${cleanRut}`)) || [];
@@ -500,6 +500,16 @@
       const histAnt   = JSON.parse(localStorage.getItem(`sensometrika_historial_anticipacion_${cleanRut}`)) || [];
       const histEst   = JSON.parse(localStorage.getItem(`sensometrika_historial_estereopsis_${cleanRut}`)) || [];
       const histFat   = JSON.parse(localStorage.getItem(`sensometrika_historial_fatiga_${cleanRut}`)) || [];
+
+      // Ajuste dinámico de estado de sensores B2B
+      const elEstadoSensores = document.getElementById('lblEstadoSensores');
+      if (histReact.length > 0 || histPalan.length > 0 || histPunt.length > 0) {
+        elEstadoSensores.textContent = 'V°B° Calibrado';
+        elEstadoSensores.style.color = '#10b981';
+      } else {
+        elEstadoSensores.textContent = 'Sin Registro';
+        elEstadoSensores.style.color = '#94a3b8';
+      }
 
       let ultReactTime = histReact.length > 0 ? histReact[histReact.length - 1].promedioTiempo : 280;
       let ultPalanPrec = histPalan.length > 0 ? histPalan[histPalan.length - 1].precision : 95;

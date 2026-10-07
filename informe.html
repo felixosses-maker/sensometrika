@@ -189,21 +189,21 @@
       </div>
     </div>
 
-    <!-- ANTECEDENTES DE CALIBRACIÓN Y AUDITORÍA TELEMÉTRICA -->
+    <!-- ANTECEDENTES DE CALIBRACIÓN Y AUDITORÍA TELEMÉTRICA DINÁMICA -->
     <div class="card-box-report" style="border-color: rgba(56, 189, 248, 0.4);">
       <h4 class="title-sub-report">🛠️ ANTECEDENTES DE CALIBRACIÓN Y AUDITORÍA TELEMÉTRICA</h4>
       <div class="grid-3col">
         <div class="metric-card">
           <span class="metric-label">LATENCIA PANTALLA / SENSOR</span>
-          <span class="metric-val" style="color:var(--accent-green);" id="lblCalibLatencia">18 ms (ÓPTIMO)</span>
+          <span class="metric-val" style="color:var(--accent-green);" id="lblCalibLatencia">-- ms</span>
         </div>
         <div class="metric-card">
           <span class="metric-label">DISTANCIA BIOMÉTRICA VISUAL</span>
-          <span class="metric-val" style="color:var(--accent-cyan);" id="lblCalibDistancia">52 cm (50-60 cm OK)</span>
+          <span class="metric-val" id="lblCalibDistancia" style="color:var(--text-muted);">NO APLICA / PENDIENTE</span>
         </div>
         <div class="metric-card">
           <span class="metric-label">ESTÁNDAR AUDIO / ESTÉREO</span>
-          <span class="metric-val" style="color:var(--accent-green);" id="lblCalibAudio">AUDÍFONOS OK</span>
+          <span class="metric-val" id="lblCalibAudio" style="color:var(--text-muted);">NO APLICA / PENDIENTE</span>
         </div>
       </div>
     </div>
@@ -306,7 +306,7 @@
 
     <!-- DICTAMEN TÉCNICO Y REGISTRO PERICIAL -->
     <div class="card-box-report" style="border-color: var(--accent-cyan);">
-      <h4 class="title-sub-report">⚖️️ DICTAMEN TÉCNICO & REGISTRO PERICIAL</h4>
+      <h4 class="title-sub-report">⚖ DICTAMEN TÉCNICO & REGISTRO PERICIAL</h4>
       <p id="txtDictamenFinal" style="font-size:0.78rem; line-height:1.45; color:var(--text-main);">
         Cargando dictamen consolidado...
       </p>
@@ -342,6 +342,7 @@
 
       const nombre = urlParams.get('nombre') || datosUsuario.nombre || 'Evaluado Particular';
       const rut = urlParams.get('rut') || datosUsuario.rut || '13.543.222-5';
+      const cleanRut = rut.replace(/[^0-9Kk]/g, '');
 
       const planStorage = (localStorage.getItem('sensometrika_plan_contratado') || urlParams.get('plan') || 'BASICO').toUpperCase();
       document.getElementById('lblPlan').textContent = `PLAN ${planStorage} B2C`;
@@ -355,21 +356,52 @@
         document.getElementById('contenedorModulosExtra').style.display = 'grid';
       }
 
-      cargarResumenModuloTarjetas();
-      renderizarMatrizCompleta();
-      renderizarGraficoCurva();
+      cargarCalibracionDinamica(cleanRut, planStorage);
+      cargarResumenModuloTarjetas(cleanRut);
+      renderizarMatrizCompleta(cleanRut);
+      renderizarGraficoCurva(cleanRut);
     });
 
     function generarHashDemo(rut) {
       return 'SHA256-' + Math.abs(rut.split('').reduce((a,b)=>{a=((a<<5)-a)+b.charCodeAt(0);return a&a},0)).toString(16).toUpperCase();
     }
 
-    function cargarResumenModuloTarjetas() {
-      const hReact = JSON.parse(localStorage.getItem('sensometrika_historial_reactimetro')) || [];
-      const hPalan = JSON.parse(localStorage.getItem('sensometrika_historial_palancas')) || [];
-      const hPunt = JSON.parse(localStorage.getItem('sensometrika_historial_punteo')) || [];
-      const hAud = JSON.parse(localStorage.getItem('sensometrika_historial_audicion')) || JSON.parse(localStorage.getItem('sensometrika_historial_auditivo')) || [];
-      const hVis = JSON.parse(localStorage.getItem('sensometrika_historial_visual')) || [];
+    function cargarCalibracionDinamica(cleanRut, planParam) {
+      // 1. Latencia Pantalla / Sensor (Siempre obtenida de la calibración inicial)
+      const latenciaReal = localStorage.getItem('sensometrika_latencia_ms') || '18';
+      document.getElementById('lblCalibLatencia').textContent = `${latenciaReal} ms (ÓPTIMO)`;
+
+      // 2. Distancia Biométrica Visual (Solo activa si existió ejecución del módulo visual)
+      const hVis = JSON.parse(localStorage.getItem(`sensometrika_historial_visual_${cleanRut}`)) || [];
+      const elDist = document.getElementById('lblCalibDistancia');
+      if (hVis.length > 0 && (planParam.includes('FULL') || planParam.includes('ALTO'))) {
+        const ultV = hVis[hVis.length - 1];
+        const distCalculada = ultV.distanciaCm || 52;
+        elDist.textContent = `${distCalculada} cm (50-60 cm OK)`;
+        elDist.style.color = 'var(--accent-cyan)';
+      } else {
+        elDist.textContent = 'NO APLICA / PENDIENTE';
+        elDist.style.color = 'var(--text-muted)';
+      }
+
+      // 3. Estándar Audio / Estéreo (Solo activo si existió ejecución del módulo auditivo)
+      const hAud = JSON.parse(localStorage.getItem(`sensometrika_historial_audicion_${cleanRut}`)) || JSON.parse(localStorage.getItem(`sensometrika_historial_auditivo_${cleanRut}`)) || [];
+      const elAudio = document.getElementById('lblCalibAudio');
+      if (hAud.length > 0 && (planParam.includes('PLUS') || planParam.includes('FULL') || planParam.includes('ALTO'))) {
+        elAudio.textContent = 'AUDÍFONOS OK';
+        elAudio.style.color = 'var(--accent-green)';
+      } else {
+        elAudio.textContent = 'NO APLICA / PENDIENTE';
+        elAudio.style.color = 'var(--text-muted)';
+      }
+    }
+
+    function cargarResumenModuloTarjetas(cleanRut) {
+      const hReact = JSON.parse(localStorage.getItem(`sensometrika_historial_reactimetro_${cleanRut}`)) || [];
+      const hPalan = JSON.parse(localStorage.getItem(`sensometrika_historial_palancas_${cleanRut}`)) || [];
+      const hPunt  = JSON.parse(localStorage.getItem(`sensometrika_historial_punteo_${cleanRut}`)) || [];
+      const hAud   = JSON.parse(localStorage.getItem(`sensometrika_historial_audicion_${cleanRut}`)) || [];
+      const hVis   = JSON.parse(localStorage.getItem(`sensometrika_historial_visual_${cleanRut}`)) || [];
 
       // Reactímetro
       if (hReact.length > 0) {
@@ -410,21 +442,21 @@
       }
     }
 
-    function renderizarMatrizCompleta() {
+    function renderizarMatrizCompleta(cleanRut) {
       const tbody = document.getElementById('tbodyMatrizDesglose');
       tbody.innerHTML = '';
 
-      const hReact = JSON.parse(localStorage.getItem('sensometrika_historial_reactimetro')) || [];
-      const hPalan = JSON.parse(localStorage.getItem('sensometrika_historial_palancas')) || [];
-      const hPunt = JSON.parse(localStorage.getItem('sensometrika_historial_punteo')) || [];
-      const hAud = JSON.parse(localStorage.getItem('sensometrika_historial_audicion')) || JSON.parse(localStorage.getItem('sensometrika_historial_auditivo')) || [];
-      const hVis = JSON.parse(localStorage.getItem('sensometrika_historial_visual')) || [];
+      const hReact = JSON.parse(localStorage.getItem(`sensometrika_historial_reactimetro_${cleanRut}`)) || [];
+      const hPalan = JSON.parse(localStorage.getItem(`sensometrika_historial_palancas_${cleanRut}`)) || [];
+      const hPunt  = JSON.parse(localStorage.getItem(`sensometrika_historial_punteo_${cleanRut}`)) || [];
+      const hAud   = JSON.parse(localStorage.getItem(`sensometrika_historial_audicion_${cleanRut}`)) || [];
+      const hVis   = JSON.parse(localStorage.getItem(`sensometrika_historial_visual_${cleanRut}`)) || [];
 
       const planParam = (localStorage.getItem('sensometrika_plan_contratado') || 'BASICO').toUpperCase();
       
-      let maxCuota = 3; // BÁSICO: 3 simulaciones
-      if (planParam.includes('PLUS')) maxCuota = 5; // PLUS: 5 simulaciones
-      if (planParam.includes('FULL') || planParam.includes('ALTO')) maxCuota = 8; // FULL: 8 simulaciones
+      let maxCuota = 3;
+      if (planParam.includes('PLUS')) maxCuota = 5;
+      if (planParam.includes('FULL') || planParam.includes('ALTO')) maxCuota = 8;
 
       const listaModulos = [
         { nombre: '1. Reactímetro (ms)', historial: hReact, minEsperado: maxCuota },
@@ -432,9 +464,10 @@
         { nombre: '3. Punteo (%)', historial: hPunt, minEsperado: maxCuota }
       ];
 
-      // Módulos 4 y 5 solo se integran si el plan es PLUS o FULL
       if (planParam.includes('PLUS') || planParam.includes('FULL') || planParam.includes('ALTO')) {
         listaModulos.push({ nombre: '4. Tamizaje Auditivo', historial: hAud, minEsperado: maxCuota });
+      }
+      if (planParam.includes('FULL') || planParam.includes('ALTO')) {
         listaModulos.push({ nombre: '5. Screening Visual', historial: hVis, minEsperado: maxCuota });
       }
 
@@ -453,8 +486,7 @@
 
             if (mod.nombre.includes('Reactímetro')) {
               const msVal = item.tiempo || item.promedioTiempo || 350;
-              const esAnticipado = item.anticipacion ? 'ANT. ' : '';
-              valDisplay = `${esAnticipado}${msVal}ms`;
+              valDisplay = `${msVal}ms`;
               suma += msVal;
             } else if (mod.nombre.includes('Palancas')) {
               const prec = item.precision !== undefined ? item.precision : 97;
@@ -514,16 +546,16 @@
       }
     }
 
-    function renderizarGraficoCurva() {
+    function renderizarGraficoCurva(cleanRut) {
       const ctx = document.getElementById('chartRendimiento').getContext('2d');
       
-      const hReact = JSON.parse(localStorage.getItem('sensometrika_historial_reactimetro')) || [];
-      const hPalan = JSON.parse(localStorage.getItem('sensometrika_historial_palancas')) || [];
-      const hPunt = JSON.parse(localStorage.getItem('sensometrika_historial_punteo')) || [];
+      const hReact = JSON.parse(localStorage.getItem(`sensometrika_historial_reactimetro_${cleanRut}`)) || [];
+      const hPalan = JSON.parse(localStorage.getItem(`sensometrika_historial_palancas_${cleanRut}`)) || [];
+      const hPunt  = JSON.parse(localStorage.getItem(`sensometrika_historial_punteo_${cleanRut}`)) || [];
 
       const labels = ['S1', 'S2', 'S3', 'S4', 'S5', 'S6', 'S7', 'S8'];
       const dataPalan = labels.map((_, i) => hPalan[i] ? hPalan[i].precision : null);
-      const dataPunt = labels.map((_, i) => hPunt[i] ? hPunt[i].precision : null);
+      const dataPunt  = labels.map((_, i) => hPunt[i] ? hPunt[i].precision : null);
       const dataReact = labels.map((_, i) => hReact[i] ? (hReact[i].tiempo || hReact[i].promedioTiempo) : null);
 
       if (chartInstancia) chartInstancia.destroy();
