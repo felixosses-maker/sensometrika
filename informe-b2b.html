@@ -228,11 +228,12 @@
 
     .table-modulos { width: 100%; border-collapse: collapse; font-size: 0.68rem; }
     .table-modulos th { background: #0f172a; color: #fff; text-transform: uppercase; padding: 6px 8px; font-size: 0.60rem; text-align: left; }
-    .table-modulos td { padding: 6px 8px; border-bottom: 1px solid #e2e8f0; font-weight: 600; }
+    .table-modulos td { padding: 6px 8px; border-bottom: 1px solid #e2e8f0; font-weight: 600; vertical-align: middle; }
 
-    .badge-ok { background: #dcfce7; color: #15803d; border: 1px solid #86efac; padding: 2px 6px; border-radius: 4px; font-weight: 800; font-size: 0.62rem; }
-    .badge-pend { background: #fef3c7; color: #b45309; border: 1px solid #fde68a; padding: 2px 6px; border-radius: 4px; font-weight: 800; font-size: 0.62rem; }
-    .badge-nosol { background: #f1f5f9; color: #64748b; border: 1px solid #cbd5e1; padding: 2px 6px; border-radius: 4px; font-weight: 700; font-size: 0.62rem; text-transform: uppercase; }
+    .badge-ok { background: #dcfce7; color: #15803d; border: 1px solid #86efac; padding: 2px 6px; border-radius: 4px; font-weight: 800; font-size: 0.62rem; display: inline-block; }
+    .badge-fail { background: #fee2e2; color: #dc2626; border: 1px solid #fca5a5; padding: 2px 6px; border-radius: 4px; font-weight: 800; font-size: 0.62rem; display: inline-block; }
+    .badge-pend { background: #fef3c7; color: #b45309; border: 1px solid #fde68a; padding: 2px 6px; border-radius: 4px; font-weight: 800; font-size: 0.62rem; display: inline-block; }
+    .badge-nosol { background: #f1f5f9; color: #64748b; border: 1px solid #cbd5e1; padding: 2px 6px; border-radius: 4px; font-weight: 700; font-size: 0.62rem; text-transform: uppercase; display: inline-block; }
 
     .firmas-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 6px; }
     .box-firma { border: 1.5px dashed #cbd5e1; border-radius: 8px; height: 95px; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; padding: 6px; font-size: 0.60rem; color: #64748b; text-align: center; position: relative; }
@@ -359,7 +360,7 @@
           <tr>
             <th>MÓDULO DEL PORTAFOLIO SENSOMÉTRICO</th>
             <th>ESTÁNDAR EXIGIDO (FAENA)</th>
-            <th>RESULTADO OBTENIDO</th>
+            <th>RESULTADO & TELEMETRÍA DETALLADA</th>
             <th>DICTAMEN MÓDULO</th>
           </tr>
         </thead>
@@ -397,7 +398,6 @@
   </div>
 
   <script>
-    // FUNCIÓN DE LECTURA MULTICLAVE FLEXIBLE POR RUT (CON O SIN GUION/PUNTOS)
     function obtenerHistorialPorRut(modulo, rawRut) {
       const cleanRut = rawRut.replace(/[^0-9Kk]/g, '');
       const formatRut = rawRut.trim();
@@ -408,7 +408,6 @@
       h = JSON.parse(localStorage.getItem(`sensometrika_historial_${modulo}_${formatRut}`)) || [];
       if (h.length > 0) return h;
 
-      // Claves variantes de nombre de módulo
       if (modulo === 'audicion') {
         h = JSON.parse(localStorage.getItem(`sensometrika_historial_auditivo_${cleanRut}`)) || [];
       } else if (modulo === 'visual') {
@@ -512,7 +511,7 @@
       document.getElementById('lblFechaEmision').textContent = ahora.toLocaleDateString('es-CL', opcionesFecha).replace(',', '');
 
       // =========================================================================
-      // LECTURA ROBUSTA MULTICLAVE POR RUT
+      // LECTURA DE HISTORIALES
       // =========================================================================
       const histReact = obtenerHistorialPorRut('reactimetro', rut);
       const histPalan = obtenerHistorialPorRut('palancas', rut);
@@ -533,17 +532,18 @@
       }
 
       let ultReactTime = histReact.length > 0 ? (histReact[histReact.length - 1].promedioTiempo || histReact[histReact.length - 1].tiempo) : 280;
-      let ultPalanPrec = histPalan.length > 0 ? histPalan[histPalan.length - 1].precision : 95;
+      let ultPalanPrec = histPalan.length > 0 ? (histPalan[histPalan.length - 1].precision !== undefined ? histPalan[histPalan.length - 1].precision : 95) : 95;
+      let ultPuntPrec  = histPunt.length > 0 ? (histPunt[histPunt.length - 1].precision !== undefined ? histPunt[histPunt.length - 1].precision : 90) : 90;
 
       let mesesVigencia = 12;
       let textoJustificacion = "";
 
-      if (ultReactTime > 340 || ultPalanPrec < 82) {
+      if (ultReactTime > 340 || ultPalanPrec < 80 || ultPuntPrec < 78) {
         mesesVigencia = 3;
-        textoJustificacion = "CRITERIO PREVENTIVO B (3 MESES): Registro de tiempos de respuesta en el límite de la tolerancia reglamentaria (≤350ms) o dispersión en coordinación bimanual. Se determina reevaluación preventiva a corto plazo para vigilar la curva de fatiga u operabilidad.";
-      } else if (ultReactTime > 300 || ultPalanPrec < 90) {
+        textoJustificacion = "CRITERIO PREVENTIVO B (3 MESES): Registro de tiempos de respuesta en el límite normativo (≤350ms) o efectividad psicomotriz bajo estándar (Palancas <80% / Punteo <78%). Se determina reevaluación a corto plazo para vigilar operabilidad.";
+      } else if (ultReactTime > 300 || ultPalanPrec < 90 || ultPuntPrec < 85) {
         mesesVigencia = 6;
-        textoJustificacion = "CRITERIO ESTÁNDAR A2 (6 MESES): Desempeño acorde a las exigencias normativas del D.S. N° 170 MTT con holgura moderada. Se recomienda reevaluación semestral periódica dentro del programa de vigilancia ocupacional de faena.";
+        textoJustificacion = "CRITERIO ESTÁNDAR A2 (6 MESES): Desempeño acorde a las exigencias normativas del D.S. N° 170 MTT con holgura moderada. Se recomienda reevaluación semestral periódica dentro del programa de vigilancia ocupacional.";
       } else {
         mesesVigencia = 12;
         textoJustificacion = "CRITERIO SOBRESALIENTE A1 (12 MESES): Excelente velocidad de respuesta psicomotriz (≤300ms), alto control bimanual y respuesta sensorial óptima. Se concede la vigencia anual máxima recomendada por el Estándar CORMA/SGSST.";
@@ -568,106 +568,215 @@
       const tbody = document.getElementById('tbodyModulosB2B');
       tbody.innerHTML = '';
 
-      // MÓDULO 1: Reactímetro
+      // -------------------------------------------------------------------------
+      // MÓDULO 1: Reactímetro Simple
+      // -------------------------------------------------------------------------
       if (histReact.length > 0) {
         modulosCompletadosCount++;
         const ultReact = histReact[histReact.length - 1];
-        tbody.innerHTML += `<tr><td><b>1. Reactímetro Simple</b><br><span style="color:#64748b; font-size:0.58rem;">Frenado simple de emergencia</span></td><td>≤ 350 ms</td><td>${ultReact.promedioTiempo || ultReact.tiempo || 280} ms (Aprobado)</td><td><span class="badge-ok">APROBADO</span></td></tr>`;
+        const tReaccion = ultReact.promedioTiempo || ultReact.tiempo || 280;
+        const ant = ultReact.anticipaciones || 0;
+        const esAprobado = tReaccion <= 350;
+
+        tbody.innerHTML += `<tr>
+          <td><b>1. Reactímetro Simple</b><br><span style="color:#64748b; font-size:0.58rem;">Frenado simple de emergencia</span></td>
+          <td>≤ 350 ms</td>
+          <td>
+            <b>T. Reacción Promedio:</b> ${tReaccion} ms<br>
+            <span style="color:#64748b; font-size:0.58rem;">Anticipaciones / Errores: ${ant}</span>
+          </td>
+          <td>${esAprobado ? '<span class="badge-ok">APROBADO</span>' : '<span class="badge-fail">REPROBADO</span>'}</td>
+        </tr>`;
       } else {
-        tbody.innerHTML += `<tr><td><b>1. Reactímetro Simple</b><br><span style="color:#64748b; font-size:0.58rem;">Frenado simple de emergencia</span></td><td>≤ 350 ms</td><td>En espera de simulación</td><td><span class="badge-pend">PENDIENTE / EN EJECUCIÓN</span></td></tr>`;
+        tbody.innerHTML += `<tr><td><b>1. Reactímetro Simple</b><br><span style="color:#64748b; font-size:0.58rem;">Frenado simple de emergencia</span></td><td>≤ 350 ms</td><td>En espera de simulación</td><td><span class="badge-pend">PENDIENTE</span></td></tr>`;
       }
 
-      // MÓDULO 2: Palancas
+      // -------------------------------------------------------------------------
+      // MÓDULO 2: Test de Palancas
+      // -------------------------------------------------------------------------
       if (histPalan.length > 0) {
         modulosCompletadosCount++;
         const ultPalan = histPalan[histPalan.length - 1];
-        const contactos = ultPalan.contactos !== undefined ? ultPalan.contactos : (ultPalan.toques || 0);
-        const tiempoErrorSec = ultPalan.tiempoError ? (ultPalan.tiempoError / 1000).toFixed(1) : "0.0";
         const precision = ultPalan.precision !== undefined ? ultPalan.precision : 95;
-        tbody.innerHTML += `<tr><td><b>2. Test de Palancas</b><br><span style="color:#64748b; font-size:0.58rem;">Coordinación motriz bimanual</span></td><td>≥ 80% / ≤ 1 contacto</td><td>${precision}% (${contactos} cont. / ${tiempoErrorSec}s error)</td><td><span class="badge-ok">APROBADO</span></td></tr>`;
+        const contactos = ultPalan.contactos !== undefined ? ultPalan.contactos : (ultPalan.toques || 0);
+        const tErrorSec = ultPalan.tiempoError ? (ultPalan.tiempoError / 1000).toFixed(1) : "0.0";
+        const tEjecucionSec = ultPalan.tiempoTotal ? (ultPalan.tiempoTotal / 1000).toFixed(1) : "12.0";
+        const esAprobado = precision >= 80;
+
+        tbody.innerHTML += `<tr>
+          <td><b>2. Test de Palancas</b><br><span style="color:#64748b; font-size:0.58rem;">Coordinación motriz bimanual</span></td>
+          <td>≥ 80% / ≤ 1 contacto</td>
+          <td>
+            <b>Precisión Motriz:</b> ${precision}%<br>
+            <span style="color:#dc2626; font-size:0.58rem; font-weight:700;">T. en Error: ${tErrorSec} s (${contactos} toques)</span><br>
+            <span style="color:#64748b; font-size:0.58rem;">T. Ejecución Total: ${tEjecucionSec} s</span>
+          </td>
+          <td>${esAprobado ? '<span class="badge-ok">APROBADO</span>' : '<span class="badge-fail">REPROBADO</span>'}</td>
+        </tr>`;
       } else {
-        tbody.innerHTML += `<tr><td><b>2. Test de Palancas</b><br><span style="color:#64748b; font-size:0.58rem;">Coordinación motriz bimanual</span></td><td>≥ 80% / ≤ 1 contacto</td><td>En espera de simulación</td><td><span class="badge-pend">PENDIENTE / EN EJECUCIÓN</span></td></tr>`;
+        tbody.innerHTML += `<tr><td><b>2. Test de Palancas</b><br><span style="color:#64748b; font-size:0.58rem;">Coordinación motriz bimanual</span></td><td>≥ 80% / ≤ 1 contacto</td><td>En espera de simulación</td><td><span class="badge-pend">PENDIENTE</span></td></tr>`;
       }
 
-      // MÓDULO 3: Punteo
+      // -------------------------------------------------------------------------
+      // MÓDULO 3: Punteo y Ritmo (Lahy) - CORREGIDO
+      // -------------------------------------------------------------------------
       if (histPunt.length > 0) {
         modulosCompletadosCount++;
         const ultPunt = histPunt[histPunt.length - 1];
-        tbody.innerHTML += `<tr><td><b>3. Punteo y Ritmo (Lahy)</b><br><span style="color:#64748b; font-size:0.58rem;">Estabilidad psicomotriz</span></td><td>≥ 78% efectividad</td><td>${ultPunt.precision !== undefined ? ultPunt.precision : 90}% (Efectivo)</td><td><span class="badge-ok">APROBADO</span></td></tr>`;
+        const prec = ultPunt.precision !== undefined ? ultPunt.precision : 0;
+        const toquesAlt = ultPunt.toquesFuera !== undefined ? ultPunt.toquesFuera : (ultPunt.fallos || 0);
+        const tDesfaseSec = ultPunt.tiempoError ? (ultPunt.tiempoError / 1000).toFixed(1) : "0.0";
+        
+        // Evaluación estricta >= 78%
+        const esAprobado = prec >= 78;
+        const badgeEstado = esAprobado ? '<span class="badge-ok">APROBADO</span>' : '<span class="badge-fail">REPROBADO</span>';
+        const txtEstado = esAprobado ? 'Efectivo' : 'Bajo Norma';
+
+        tbody.innerHTML += `<tr>
+          <td><b>3. Punteo y Ritmo (Lahy)</b><br><span style="color:#64748b; font-size:0.58rem;">Estabilidad psicomotriz</span></td>
+          <td>≥ 78% efectividad</td>
+          <td>
+            <b>Efectividad de Ritmo:</b> ${prec}% (${txtEstado})<br>
+            <span style="color:#dc2626; font-size:0.58rem; font-weight:700;">T. Fuera de Ritmo / Error: ${tDesfaseSec} s</span><br>
+            <span style="color:#64748b; font-size:0.58rem;">Impactos fuera de eje: ${toquesAlt}</span>
+          </td>
+          <td>${badgeEstado}</td>
+        </tr>`;
       } else {
-        tbody.innerHTML += `<tr><td><b>3. Punteo y Ritmo (Lahy)</b><br><span style="color:#64748b; font-size:0.58rem;">Estabilidad psicomotriz</span></td><td>≥ 78% efectividad</td><td>En espera de simulación</td><td><span class="badge-pend">PENDIENTE / EN EJECUCIÓN</span></td></tr>`;
+        tbody.innerHTML += `<tr><td><b>3. Punteo y Ritmo (Lahy)</b><br><span style="color:#64748b; font-size:0.58rem;">Estabilidad psicomotriz</span></td><td>≥ 78% efectividad</td><td>En espera de simulación</td><td><span class="badge-pend">PENDIENTE</span></td></tr>`;
       }
 
-      // MÓDULO 4: Auditivo
+      // -------------------------------------------------------------------------
+      // MÓDULO 4: Tamizaje Auditivo Ocupacional
+      // -------------------------------------------------------------------------
       if (tieneAuditivo) {
         if (histAud.length > 0) {
           modulosCompletadosCount++;
           const ultAud = histAud[histAud.length - 1];
           const aciertos = ultAud.aciertos !== undefined ? ultAud.aciertos : 8;
           const latAudMs = ultAud.latenciaMs || 340;
-          tbody.innerHTML += `<tr><td><b>4. Tamizaje Auditivo Ocupacional</b><br><span style="color:#64748b; font-size:0.58rem;">Frecuencias críticas faena</span></td><td>≤ 25 dB (Normal)</td><td>${aciertos} / 8 Aciertos (${latAudMs} ms resp.)</td><td><span class="badge-ok">APROBADO</span></td></tr>`;
+          const esAprobado = aciertos >= 6;
+
+          tbody.innerHTML += `<tr>
+            <td><b>4. Tamizaje Auditivo Ocupacional</b><br><span style="color:#64748b; font-size:0.58rem;">Frecuencias críticas faena</span></td>
+            <td>≤ 25 dB (Normal)</td>
+            <td>
+              <b>Aciertos Auditivos:</b> ${aciertos} / 8<br>
+              <span style="color:#64748b; font-size:0.58rem;">T. Promedio Reacción Audio: ${latAudMs} ms</span>
+            </td>
+            <td>${esAprobado ? '<span class="badge-ok">APROBADO</span>' : '<span class="badge-fail">REPROBADO</span>'}</td>
+          </tr>`;
         } else {
-          tbody.innerHTML += `<tr><td><b>4. Tamizaje Auditivo Ocupacional</b><br><span style="color:#64748b; font-size:0.58rem;">Frecuencias críticas faena</span></td><td>≤ 25 dB (Normal)</td><td>En espera de evaluación</td><td><span class="badge-pend">PENDIENTE / EN EJECUCIÓN</span></td></tr>`;
+          tbody.innerHTML += `<tr><td><b>4. Tamizaje Auditivo Ocupacional</b><br><span style="color:#64748b; font-size:0.58rem;">Frecuencias críticas faena</span></td><td>≤ 25 dB (Normal)</td><td>En espera de evaluación</td><td><span class="badge-pend">PENDIENTE</span></td></tr>`;
         }
       } else {
         tbody.innerHTML += `<tr><td><b>4. Tamizaje Auditivo Ocupacional</b><br><span style="color:#64748b; font-size:0.58rem;">Frecuencias críticas faena</span></td><td>≤ 25 dB (Normal)</td><td>No contratado en plan</td><td><span class="badge-nosol">NO SOLICITADO</span></td></tr>`;
       }
 
-      // MÓDULO 5: Visual
+      // -------------------------------------------------------------------------
+      // MÓDULO 5: Screening Visual Integral
+      // -------------------------------------------------------------------------
       if (tieneVisual) {
         if (histVis.length > 0) {
           modulosCompletadosCount++;
           const ultVis = histVis[histVis.length - 1];
           const agudeza = ultVis.agudeza || '20/20 (1.0 - Sobresaliente)';
           const latVisMs = ultVis.latenciaMs || 310;
-          tbody.innerHTML += `<tr><td><b>5. Tamizaje Visual Integral</b><br><span style="color:#64748b; font-size:0.58rem;">Agudeza visual cromática</span></td><td>≥ 0.8 binocular</td><td>${agudeza} (${latVisMs} ms resp.)</td><td><span class="badge-ok">APROBADO</span></td></tr>`;
+          const distAvg = ultVis.distanciaAvg || 54;
+          const esAprobado = (ultVis.porcentaje !== undefined ? ultVis.porcentaje : 80) >= 70;
+
+          tbody.innerHTML += `<tr>
+            <td><b>5. Tamizaje Visual Integral</b><br><span style="color:#64748b; font-size:0.58rem;">Agudeza visual cromática</span></td>
+            <td>≥ 0.8 binocular</td>
+            <td>
+              <b>Agudeza:</b> ${agudeza}<br>
+              <span style="color:#64748b; font-size:0.58rem;">T. Reacción Visual: ${latVisMs} ms | Distancia Telemetría: ${distAvg} cm</span>
+            </td>
+            <td>${esAprobado ? '<span class="badge-ok">APROBADO</span>' : '<span class="badge-fail">REPROBADO</span>'}</td>
+          </tr>`;
         } else {
-          tbody.innerHTML += `<tr><td><b>5. Tamizaje Visual Integral</b><br><span style="color:#64748b; font-size:0.58rem;">Agudeza visual cromática</span></td><td>≥ 0.8 binocular</td><td>En espera de evaluación</td><td><span class="badge-pend">PENDIENTE / EN EJECUCIÓN</span></td></tr>`;
+          tbody.innerHTML += `<tr><td><b>5. Tamizaje Visual Integral</b><br><span style="color:#64748b; font-size:0.58rem;">Agudeza visual cromática</span></td><td>≥ 0.8 binocular</td><td>En espera de evaluación</td><td><span class="badge-pend">PENDIENTE</span></td></tr>`;
         }
       } else {
         tbody.innerHTML += `<tr><td><b>5. Tamizaje Visual Integral</b><br><span style="color:#64748b; font-size:0.58rem;">Agudeza visual cromática</span></td><td>≥ 0.8 binocular</td><td>No contratado en plan</td><td><span class="badge-nosol">NO SOLICITADO</span></td></tr>`;
       }
 
-      // MÓDULO 6: Anticipación
+      // -------------------------------------------------------------------------
+      // MÓDULO 6: Velocidad de Anticipación
+      // -------------------------------------------------------------------------
       if (tieneAltoDesempenio) {
         if (histAnt.length > 0) {
           modulosCompletadosCount++;
           const ultAnt = histAnt[histAnt.length - 1];
           const margen = ultAnt.margenMs || 140;
           const desvio = ultAnt.desvioMs !== undefined ? ultAnt.desvioMs : 18;
-          tbody.innerHTML += `<tr><td><b>6. Velocidad de Anticipación</b><br><span style="color:#64748b; font-size:0.58rem;">Cálculo de trayectoria ciega</span></td><td>≤ 220 ms margen</td><td>${margen} ms Margen (Desvío ${desvio} ms)</td><td><span class="badge-ok">APROBADO</span></td></tr>`;
+          const esAprobado = margen <= 220;
+
+          tbody.innerHTML += `<tr>
+            <td><b>6. Velocidad de Anticipación</b><br><span style="color:#64748b; font-size:0.58rem;">Cálculo de trayectoria ciega</span></td>
+            <td>≤ 220 ms margen</td>
+            <td>
+              <b>Margen Error Temporal:</b> ${margen} ms<br>
+              <span style="color:#64748b; font-size:0.58rem;">Desvío Estándar: ±${desvio} ms</span>
+            </td>
+            <td>${esAprobado ? '<span class="badge-ok">APROBADO</span>' : '<span class="badge-fail">REPROBADO</span>'}</td>
+          </tr>`;
         } else {
-          tbody.innerHTML += `<tr><td><b>6. Velocidad de Anticipación</b><br><span style="color:#64748b; font-size:0.58rem;">Cálculo de trayectoria ciega</span></td><td>≤ 220 ms margen</td><td>En espera de evaluación</td><td><span class="badge-pend">PENDIENTE / EN EJECUCIÓN</span></td></tr>`;
+          tbody.innerHTML += `<tr><td><b>6. Velocidad de Anticipación</b><br><span style="color:#64748b; font-size:0.58rem;">Cálculo de trayectoria ciega</span></td><td>≤ 220 ms margen</td><td>En espera de evaluación</td><td><span class="badge-pend">PENDIENTE</span></td></tr>`;
         }
       } else {
         tbody.innerHTML += `<tr><td><b>6. Velocidad de Anticipación</b><br><span style="color:#64748b; font-size:0.58rem;">Cálculo de trayectoria ciega</span></td><td>≤ 220 ms margen</td><td>Requiere Plan Alto Desempeño</td><td><span class="badge-nosol">NO SOLICITADO</span></td></tr>`;
       }
 
-      // MÓDULO 7: Estereopsis
+      // -------------------------------------------------------------------------
+      // MÓDULO 7: Estereopsis y Profundidad 3D
+      // -------------------------------------------------------------------------
       if (tieneAltoDesempenio) {
         if (histEst.length > 0) {
           modulosCompletadosCount++;
           const ultEst = histEst[histEst.length - 1];
           const precision = ultEst.precision || ultEst.porcentaje || 88;
           const latEstMs = ultEst.latenciaMs || 290;
-          tbody.innerHTML += `<tr><td><b>7. Estereopsis y Profundidad 3D</b><br><span style="color:#64748b; font-size:0.58rem;">Percepción espacial binocular</span></td><td>≥ 80% precisión</td><td>${precision}% Precisión (${latEstMs} ms resp.)</td><td><span class="badge-ok">APROBADO</span></td></tr>`;
+          const esAprobado = precision >= 80;
+
+          tbody.innerHTML += `<tr>
+            <td><b>7. Estereopsis y Profundidad 3D</b><br><span style="color:#64748b; font-size:0.58rem;">Percepción espacial binocular</span></td>
+            <td>≥ 80% precisión</td>
+            <td>
+              <b>Precisión 3D:</b> ${precision}%<br>
+              <span style="color:#64748b; font-size:0.58rem;">T. Reacción Profundidad: ${latEstMs} ms</span>
+            </td>
+            <td>${esAprobado ? '<span class="badge-ok">APROBADO</span>' : '<span class="badge-fail">REPROBADO</span>'}</td>
+          </tr>`;
         } else {
-          tbody.innerHTML += `<tr><td><b>7. Estereopsis y Profundidad 3D</b><br><span style="color:#64748b; font-size:0.58rem;">Percepción espacial binocular</span></td><td>≥ 80% precisión</td><td>En espera de evaluación</td><td><span class="badge-pend">PENDIENTE / EN EJECUCIÓN</span></td></tr>`;
+          tbody.innerHTML += `<tr><td><b>7. Estereopsis y Profundidad 3D</b><br><span style="color:#64748b; font-size:0.58rem;">Percepción espacial binocular</span></td><td>≥ 80% precisión</td><td>En espera de evaluación</td><td><span class="badge-pend">PENDIENTE</span></td></tr>`;
         }
       } else {
         tbody.innerHTML += `<tr><td><b>7. Estereopsis y Profundidad 3D</b><br><span style="color:#64748b; font-size:0.58rem;">Percepción espacial binocular</span></td><td>≥ 80% precisión</td><td>Requiere Plan Alto Desempeño</td><td><span class="badge-nosol">NO SOLICITADO</span></td></tr>`;
       }
 
-      // MÓDULO 8: Fatiga (PVT)
+      // -------------------------------------------------------------------------
+      // MÓDULO 8: Test de Fatiga (PVT)
+      // -------------------------------------------------------------------------
       if (tieneAltoDesempenio) {
         if (histFat.length > 0) {
           modulosCompletadosCount++;
           const ultFat = histFat[histFat.length - 1];
           const promTiempo = ultFat.promedioTiempo || 368;
           const lapsos = ultFat.lapsos !== undefined ? ultFat.lapsos : 0;
-          tbody.innerHTML += `<tr><td><b>8. Test de Fatiga (PVT)</b><br><span style="color:#64748b; font-size:0.58rem;">Control de somnolencia y lapsos</span></td><td>≤ 450 ms vigilancia</td><td>${promTiempo} ms Promed. (${lapsos} lapsos fatiga)</td><td><span class="badge-ok">APROBADO</span></td></tr>`;
+          const esAprobado = promTiempo <= 450 && lapsos <= 1;
+
+          tbody.innerHTML += `<tr>
+            <td><b>8. Test de Fatiga (PVT)</b><br><span style="color:#64748b; font-size:0.58rem;">Control de somnolencia y lapsos</span></td>
+            <td>≤ 450 ms vigilancia</td>
+            <td>
+              <b>T. Vigilancia Promedio:</b> ${promTiempo} ms<br>
+              <span style="color:#dc2626; font-size:0.58rem; font-weight:700;">Lapsos de Fatiga (&gt;500ms): ${lapsos}</span>
+            </td>
+            <td>${esAprobado ? '<span class="badge-ok">APROBADO</span>' : '<span class="badge-fail">REPROBADO</span>'}</td>
+          </tr>`;
         } else {
-          tbody.innerHTML += `<tr><td><b>8. Test de Fatiga (PVT)</b><br><span style="color:#64748b; font-size:0.58rem;">Control de somnolencia y lapsos</span></td><td>≤ 450 ms vigilancia</td><td>En espera de evaluación</td><td><span class="badge-pend">PENDIENTE / EN EJECUCIÓN</span></td></tr>`;
+          tbody.innerHTML += `<tr><td><b>8. Test de Fatiga (PVT)</b><br><span style="color:#64748b; font-size:0.58rem;">Control de somnolencia y lapsos</span></td><td>≤ 450 ms vigilancia</td><td>En espera de evaluación</td><td><span class="badge-pend">PENDIENTE</span></td></tr>`;
         }
       } else {
         tbody.innerHTML += `<tr><td><b>8. Test de Fatiga (PVT)</b><br><span style="color:#64748b; font-size:0.58rem;">Control de somnolencia y lapsos</span></td><td>≤ 450 ms vigilancia</td><td>Requiere Plan Alto Desempeño</td><td><span class="badge-nosol">NO SOLICITADO</span></td></tr>`;
