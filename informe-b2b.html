@@ -184,6 +184,17 @@
       box-shadow: 0 2px 6px rgba(0,0,0,0.15);
     }
 
+    .vigencia-date-badge-fail {
+      background: #dc2626;
+      color: #ffffff;
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-weight: 900;
+      font-size: 0.88rem;
+      letter-spacing: 0.5px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+    }
+
     .vigencia-body-text {
       font-size: 0.68rem;
       line-height: 1.35;
@@ -554,30 +565,6 @@
         elEstadoSensores.style.color = '#94a3b8';
       }
 
-      let ultReactTime = histReact.length > 0 ? (histReact[histReact.length - 1].promedioTiempo || histReact[histReact.length - 1].tiempo) : 280;
-      let ultPalanPrec = histPalan.length > 0 ? (histPalan[histPalan.length - 1].precision !== undefined ? histPalan[histPalan.length - 1].precision : 95) : 95;
-      let ultPuntPrec  = histPunt.length > 0 ? (histPunt[histPunt.length - 1].precision !== undefined ? histPunt[histPunt.length - 1].precision : 90) : 90;
-
-      let mesesVigencia = 12;
-      let textoJustificacion = "";
-
-      if (ultReactTime > 340 || ultPalanPrec < 80 || ultPuntPrec < 78) {
-        mesesVigencia = 3;
-        textoJustificacion = "CRITERIO PREVENTIVO B (3 MESES): Registro de tiempos de respuesta en el límite normativo (≤350ms) o efectividad psicomotriz bajo estándar (Palancas <80% / Punteo <78%). Se determina reevaluación a corto plazo para vigilar operabilidad.";
-      } else if (ultReactTime > 300 || ultPalanPrec < 90 || ultPuntPrec < 85) {
-        mesesVigencia = 6;
-        textoJustificacion = "CRITERIO ESTÁNDAR A2 (6 MESES): Desempeño acorde a las exigencias normativas del D.S. N° 170 MTT con holgura moderada. Se recomienda reevaluación semestral periódica dentro del programa de vigilancia ocupacional.";
-      } else {
-        mesesVigencia = 12;
-        textoJustificacion = "CRITERIO SOBRESALIENTE A1 (12 MESES): Excelente velocidad de respuesta psicomotriz (≤300ms), alto control bimanual y respuesta sensorial óptima. Se concede la vigencia anual máxima recomendada por el Estándar CORMA/SGSST.";
-      }
-
-      const fechaVencimiento = new Date();
-      fechaVencimiento.setMonth(ahora.getMonth() + mesesVigencia);
-      const opcSimple = { day: '2-digit', month: '2-digit', year: 'numeric' };
-      document.getElementById('lblFechaVencimiento').textContent = `${fechaVencimiento.toLocaleDateString('es-CL', opcSimple)} (${mesesVigencia} MESES)`;
-      document.getElementById('lblJustificacionVigencia').textContent = textoJustificacion;
-
       // =========================================================================
       // MATRIZ DE COBERTURA DE PLANES B2B
       // =========================================================================
@@ -798,12 +785,14 @@
       }
 
       // =========================================================================
-      // CÁLCULO DE DICTAMEN GLOBAL CON LÓGICA VETO Y ESPECIFICIDAD DE ROL
+      // CÁLCULO DE DICTAMEN GLOBAL Y VIGENCIA (NUEVOS RANGOS: 6, 9, 12 MESES / SIN VIGENCIA)
       // =========================================================================
       const alcancelRolTexto = determinarAlcanceRol(cargo);
       const boxBanner = document.getElementById('boxBannerDictamen');
+      const badgeVigencia = document.getElementById('lblFechaVencimiento');
+      const txtJustificacion = document.getElementById('lblJustificacionVigencia');
 
-      // Detectar reprobados en módulos rendidos
+      // Detectar si hay reprobados entre los módulos rendidos
       const hayReprobados = (
         (!esReactAprobado && histReact.length > 0) ||
         (!esPalanAprobado && histPalan.length > 0) ||
@@ -816,19 +805,60 @@
       const bateriaCompleta = modulosCompletadosCount >= totalModulosRequeridos;
 
       if (hayReprobados) {
+        // DICTAMEN REPROBADO (VETO DIRECTO)
         boxBanner.className = 'dictamen-banner-fail';
         boxBanner.style.backgroundColor = '#ef4444';
         boxBanner.style.boxShadow = '0 4px 12px rgba(239, 68, 68, 0.4)';
         boxBanner.textContent = `❌ DICTAMEN: NO APTO PARA ${alcancelRolTexto} (D.S. N° 170) - REQUIERE REEVALUACIÓN`;
+
+        // TARJETA DE VIGENCIA: SIN VIGENCIA / REEVALUAR
+        badgeVigencia.className = 'vigencia-date-badge-fail';
+        badgeVigencia.textContent = "SIN VIGENCIA (REEVALUAR)";
+        txtJustificacion.textContent = "DICTAMEN NO APTO: El trabajador presenta al menos un módulo reprobado en su batería sensotécnica. No se otorga vigencia pericial hasta rendir y aprobar la reevaluación correspondiente del módulo afectado.";
+
       } else if (bateriaCompleta) {
+        // DICTAMEN APTO
         boxBanner.className = 'dictamen-banner-ok';
         boxBanner.style.backgroundColor = '#10b981';
         boxBanner.textContent = `✓ DICTAMEN: APTO PARA ${alcancelRolTexto} (D.S. N° 170)`;
+
+        // RANGOS DE VIGENCIA: 6, 9 O 12 MESES
+        let ultReactTime = histReact.length > 0 ? (histReact[histReact.length - 1].promedioTiempo || histReact[histReact.length - 1].tiempo) : 280;
+        let ultPalanPrec = histPalan.length > 0 ? (histPalan[histPalan.length - 1].precision !== undefined ? histPalan[histPalan.length - 1].precision : 95) : 95;
+        let ultPuntPrec  = histPunt.length > 0 ? (histPunt[histPunt.length - 1].precision !== undefined ? histPunt[histPunt.length - 1].precision : 90) : 90;
+
+        let mesesVigencia = 12;
+        let textoJustificacion = "";
+
+        if (ultReactTime > 330 || ultPalanPrec < 85 || ultPuntPrec < 80) {
+          mesesVigencia = 6;
+          textoJustificacion = "CRITERIO PREVENTIVO B (6 MESES): Registro de tiempos de respuesta en la franja superior normativa (≤350ms) o precisión al límite (Palancas <85% / Punteo <80%). Se determina reevaluación semestral para vigilar operabilidad.";
+        } else if (ultReactTime > 295 || ultPalanPrec < 92 || ultPuntPrec < 88) {
+          mesesVigencia = 9;
+          textoJustificacion = "CRITERIO ESTÁNDAR A2 (9 MESES): Desempeño acorde a las exigencias normativas del D.S. N° 170 MTT con holgura moderada. Se otorga vigencia de 9 meses dentro del programa de vigilancia ocupacional de faena.";
+        } else {
+          mesesVigencia = 12;
+          textoJustificacion = "CRITERIO SOBRESALIENTE A1 (12 MESES): Excelente velocidad de respuesta psicomotriz (≤300ms), alto control bimanual y respuesta sensorial óptima. Se concede la vigencia anual máxima recomendada por el Estándar CORMA/SGSST.";
+        }
+
+        const fechaVencimiento = new Date();
+        fechaVencimiento.setMonth(ahora.getMonth() + mesesVigencia);
+        const opcSimple = { day: '2-digit', month: '2-digit', year: 'numeric' };
+
+        badgeVigencia.className = 'vigencia-date-badge';
+        badgeVigencia.textContent = `${fechaVencimiento.toLocaleDateString('es-CL', opcSimple)} (${mesesVigencia} MESES)`;
+        txtJustificacion.textContent = textoJustificacion;
+
       } else {
+        // BATERÍA EN CURSO (INCOMPLETA)
         const porcentaje = Math.round((modulosCompletadosCount / totalModulosRequeridos) * 100);
         boxBanner.className = 'dictamen-banner-pend';
         boxBanner.style.backgroundColor = '#f59e0b';
         boxBanner.textContent = `⏳ DICTAMEN EN CURSO: BATERÍA COMPLETA AL ${porcentaje}% (${modulosCompletadosCount} DE ${totalModulosRequeridos} MÓDULOS RENDIDOS)`;
+
+        badgeVigencia.className = 'vigencia-date-badge';
+        badgeVigencia.textContent = "EN EVALUACIÓN";
+        txtJustificacion.textContent = "EVALUACIÓN EN CURSO: Pendiente completar la totalidad de módulos contratados para la emisión de la vigencia pericial definitiva.";
       }
     });
   </script>
