@@ -191,7 +191,7 @@
         </div>
       </div>
 
-      <!-- 4. Auditivo -->
+      <!-- 4. Auditivo (Plus, Full, Alto Desempeño) -->
       <div class="module-card" id="cardModAuditivo" style="display: none;">
         <div class="module-info">
           <span class="module-title">4. Tamizaje Auditivo Ocupacional</span>
@@ -202,7 +202,7 @@
         </div>
       </div>
 
-      <!-- 5. Visual -->
+      <!-- 5. Visual (Full, Alto Desempeño) -->
       <div class="module-card" id="cardModVisual" style="display: none;">
         <div class="module-info">
           <span class="module-title">5. Tamizaje Visual Integral</span>
@@ -213,7 +213,7 @@
         </div>
       </div>
 
-      <!-- Módulos Especiales (Batería de Alto Riesgo B2B) -->
+      <!-- Módulos Especiales (Alto Desempeño B2B) -->
       <div class="module-card" id="cardModAnticipacion" style="display: none;">
         <div class="module-info">
           <span class="module-title">6. Velocidad de Anticipación</span>
@@ -269,9 +269,12 @@
       document.getElementById('txtTipoPlan').textContent = `EVALUACIÓN B2B • PLAN ${planParam.replace('_', ' ')}`;
       document.getElementById('txtInfoEvaluado').textContent = `EVALUADO: ${decodeURIComponent(nombre)} | RUT: ${rut}`;
 
-      // ACTIVACIÓN DE MÓDULOS SEGÚN PLAN B2B
+      // LÓGICA DE ACTIVACIÓN DE MÓDULOS SEGÚN PLAN B2B
       if (planParam.includes('PLUS') || planParam.includes('FULL') || planParam.includes('ALTO')) {
         document.getElementById('cardModAuditivo').style.display = 'flex';
+      }
+
+      if (planParam.includes('FULL') || planParam.includes('ALTO')) {
         document.getElementById('cardModVisual').style.display = 'flex';
       }
 
@@ -295,33 +298,39 @@
       let maxIntentosPlan = planParam.includes('ALTO') ? 3 : 1;
 
       const listaConfig = [
-        { id: 'reactimetro', statusElem: 'statusMod1', linkElem: 'linkMod1' },
-        { id: 'palancas', statusElem: 'statusMod2', linkElem: 'linkMod2' },
-        { id: 'punteo', statusElem: 'statusMod3', linkElem: 'linkMod3' },
-        { id: 'audicion', statusElem: 'statusMod4', linkElem: 'linkMod4' },
-        { id: 'visual', statusElem: 'statusMod5', linkElem: 'linkMod5' },
-        { id: 'anticipacion', statusElem: 'statusMod6', linkElem: 'linkMod6' },
-        { id: 'estereopsis', statusElem: 'statusMod7', linkElem: 'linkMod7' },
-        { id: 'fatiga', statusElem: 'statusMod8', linkElem: 'linkMod8' }
+        { id: 'reactimetro', altKeys: [], statusElem: 'statusMod1', linkElem: 'linkMod1' },
+        { id: 'palancas', altKeys: [], statusElem: 'statusMod2', linkElem: 'linkMod2' },
+        { id: 'punteo', altKeys: [], statusElem: 'statusMod3', linkElem: 'linkMod3' },
+        { id: 'audicion', altKeys: ['auditivo'], statusElem: 'statusMod4', linkElem: 'linkMod4' },
+        { id: 'visual', altKeys: ['tamizaje_visual', 'screening_visual'], statusElem: 'statusMod5', linkElem: 'linkMod5' },
+        { id: 'anticipacion', altKeys: [], statusElem: 'statusMod6', linkElem: 'linkMod6' },
+        { id: 'estereopsis', altKeys: ['estereopsis3d'], statusElem: 'statusMod7', linkElem: 'linkMod7' },
+        { id: 'fatiga', altKeys: [], statusElem: 'statusMod8', linkElem: 'linkMod8' }
       ];
 
       listaConfig.forEach(mod => {
         const statusContainer = document.getElementById(mod.statusElem);
         if (!statusContainer) return;
 
-        const historial = JSON.parse(localStorage.getItem(`sensometrika_historial_${mod.id}`)) || [];
-        const numEnsayos = historial.length;
+        // Búsqueda resiliente en LocalStorage (unificación de claves)
+        let historial = JSON.parse(localStorage.getItem(`sensometrika_historial_${mod.id}`)) || [];
+        mod.altKeys.forEach(alt => {
+          const hAlt = JSON.parse(localStorage.getItem(`sensometrika_historial_${alt}`)) || [];
+          if (hAlt.length > historial.length) historial = hAlt;
+        });
+
+        const numEnsayos = Math.min(historial.length, maxIntentosPlan);
         const demoHecha = localStorage.getItem(`${mod.id}_demo_completada`) === 'true';
 
-        // Armado preciso de parámetros
+        // Armado de parámetros conservando datos del evaluado
         const currentParams = new URLSearchParams(globalParamsQuery || window.location.search);
         currentParams.set('mode', 'b2b');
 
         if (numEnsayos >= maxIntentosPlan) {
-          // 1. Simulación completada -> Bloqueo
-          statusContainer.innerHTML = `<span class="btn-done" style="background: rgba(16, 185, 129, 0.15); border: 1px solid var(--accent-green); color: var(--accent-green);">EVALUACIÓN REGISTRADA (${numEnsayos}/${maxIntentosPlan})</span>`;
+          // 1. Simulación completada -> Bloqueo (1/1)
+          statusContainer.innerHTML = `<span class="btn-done">EVALUACIÓN REGISTRADA (${numEnsayos}/${maxIntentosPlan})</span>`;
         } else if (!demoHecha) {
-          // 2. Demo no realizada -> Forzar Demo
+          // 2. Demo no realizada -> Forzar Demo inicial
           currentParams.set('demo', 'true');
           currentParams.set('fase', 'demo');
           const urlDemo = `${mod.id}.html?${currentParams.toString()}`;
@@ -337,9 +346,13 @@
     }
 
     function finalizarEvaluacionB2B() {
-      const planStorage = localStorage.getItem('sensometrika_plan_contratado') || 'BASICO';
-      const queryStr = window.location.search.substring(1);
-      window.location.href = `informe-b2b.html?${queryStr}&plan=${planStorage}&mode=b2b`;
+      const planStorage = (localStorage.getItem('sensometrika_plan_contratado') || 'BASICO').toUpperCase();
+      
+      const currentParams = new URLSearchParams(window.location.search);
+      currentParams.set('plan', planStorage);
+      currentParams.set('mode', 'b2b');
+
+      window.location.href = `informe-b2b.html?${currentParams.toString()}`;
     }
   </script>
 </body>
