@@ -214,6 +214,18 @@
       box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
     }
 
+    .dictamen-banner-fail {
+      background: #ef4444;
+      color: #ffffff;
+      padding: 10px;
+      border-radius: 8px;
+      text-align: center;
+      font-weight: 900;
+      font-size: 0.88rem;
+      letter-spacing: 0.5px;
+      box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+    }
+
     .dictamen-banner-pend {
       background: #f59e0b;
       color: #ffffff;
@@ -420,6 +432,17 @@
       return h;
     }
 
+    function determinarAlcanceRol(cargoTexto) {
+      const c = (cargoTexto || '').toUpperCase();
+      const esOperador = c.includes('OPERADOR') || c.includes('MECANIZADO') || c.includes('HARVESTER') || c.includes('FORWARDER') || c.includes('SKIDDER');
+      const esConductor = c.includes('CONDUCTOR') || c.includes('CHOFER') || c.includes('CAMION') || c.includes('LICENCIA');
+
+      if (esOperador && esConductor) return "CONDUCCIÓN Y OPERACIÓN DE MAQUINARIA";
+      if (esOperador) return "OPERACIÓN DE MAQUINARIA PESADA";
+      if (esConductor) return "CONDUCCIÓN DE VEHÍCULOS";
+      return "CONDUCCIÓN Y OPERACIÓN (ESTÁNDAR GENERAL)";
+    }
+
     document.addEventListener('DOMContentLoaded', () => {
       const urlParams = new URLSearchParams(window.location.search);
       
@@ -511,7 +534,7 @@
       document.getElementById('lblFechaEmision').textContent = ahora.toLocaleDateString('es-CL', opcionesFecha).replace(',', '');
 
       // =========================================================================
-      // LECTURA DE HISTORIALES
+      // LECTURA DE HISTORIALES DE MÓDULOS
       // =========================================================================
       const histReact = obtenerHistorialPorRut('reactimetro', rut);
       const histPalan = obtenerHistorialPorRut('palancas', rut);
@@ -565,18 +588,25 @@
       let modulosCompletadosCount = 0;
       let totalModulosRequeridos = 3 + (tieneAuditivo ? 1 : 0) + (tieneVisual ? 1 : 0) + (tieneAltoDesempenio ? 3 : 0);
 
+      let esReactAprobado = false;
+      let esPalanAprobado = false;
+      let esPuntAprobado  = false;
+      let esAudAprobado   = false;
+      let esVisAprobado   = false;
+      let esAntAprobado   = false;
+      let esEstAprobado   = false;
+      let esFatAprobado   = false;
+
       const tbody = document.getElementById('tbodyModulosB2B');
       tbody.innerHTML = '';
 
-      // -------------------------------------------------------------------------
       // MÓDULO 1: Reactímetro Simple
-      // -------------------------------------------------------------------------
       if (histReact.length > 0) {
         modulosCompletadosCount++;
         const ultReact = histReact[histReact.length - 1];
         const tReaccion = ultReact.promedioTiempo || ultReact.tiempo || 280;
         const ant = ultReact.anticipaciones || 0;
-        const esAprobado = tReaccion <= 350;
+        esReactAprobado = tReaccion <= 350;
 
         tbody.innerHTML += `<tr>
           <td><b>1. Reactímetro Simple</b><br><span style="color:#64748b; font-size:0.58rem;">Frenado simple de emergencia</span></td>
@@ -585,15 +615,13 @@
             <b>T. Reacción Promedio:</b> ${tReaccion} ms<br>
             <span style="color:#64748b; font-size:0.58rem;">Anticipaciones / Errores: ${ant}</span>
           </td>
-          <td>${esAprobado ? '<span class="badge-ok">APROBADO</span>' : '<span class="badge-fail">REPROBADO</span>'}</td>
+          <td>${esReactAprobado ? '<span class="badge-ok">APROBADO</span>' : '<span class="badge-fail">REPROBADO</span>'}</td>
         </tr>`;
       } else {
         tbody.innerHTML += `<tr><td><b>1. Reactímetro Simple</b><br><span style="color:#64748b; font-size:0.58rem;">Frenado simple de emergencia</span></td><td>≤ 350 ms</td><td>En espera de simulación</td><td><span class="badge-pend">PENDIENTE</span></td></tr>`;
       }
 
-      // -------------------------------------------------------------------------
       // MÓDULO 2: Test de Palancas
-      // -------------------------------------------------------------------------
       if (histPalan.length > 0) {
         modulosCompletadosCount++;
         const ultPalan = histPalan[histPalan.length - 1];
@@ -601,7 +629,7 @@
         const contactos = ultPalan.contactos !== undefined ? ultPalan.contactos : (ultPalan.toques || 0);
         const tErrorSec = ultPalan.tiempoError ? (ultPalan.tiempoError / 1000).toFixed(1) : "0.0";
         const tEjecucionSec = ultPalan.tiempoTotal ? (ultPalan.tiempoTotal / 1000).toFixed(1) : "12.0";
-        const esAprobado = precision >= 80;
+        esPalanAprobado = precision >= 80;
 
         tbody.innerHTML += `<tr>
           <td><b>2. Test de Palancas</b><br><span style="color:#64748b; font-size:0.58rem;">Coordinación motriz bimanual</span></td>
@@ -611,15 +639,13 @@
             <span style="color:#dc2626; font-size:0.58rem; font-weight:700;">T. en Error: ${tErrorSec} s (${contactos} toques)</span><br>
             <span style="color:#64748b; font-size:0.58rem;">T. Ejecución Total: ${tEjecucionSec} s</span>
           </td>
-          <td>${esAprobado ? '<span class="badge-ok">APROBADO</span>' : '<span class="badge-fail">REPROBADO</span>'}</td>
+          <td>${esPalanAprobado ? '<span class="badge-ok">APROBADO</span>' : '<span class="badge-fail">REPROBADO</span>'}</td>
         </tr>`;
       } else {
         tbody.innerHTML += `<tr><td><b>2. Test de Palancas</b><br><span style="color:#64748b; font-size:0.58rem;">Coordinación motriz bimanual</span></td><td>≥ 80% / ≤ 1 contacto</td><td>En espera de simulación</td><td><span class="badge-pend">PENDIENTE</span></td></tr>`;
       }
 
-      // -------------------------------------------------------------------------
-      // MÓDULO 3: Punteo y Ritmo (Lahy) - CORREGIDO
-      // -------------------------------------------------------------------------
+      // MÓDULO 3: Punteo y Ritmo (Lahy)
       if (histPunt.length > 0) {
         modulosCompletadosCount++;
         const ultPunt = histPunt[histPunt.length - 1];
@@ -627,10 +653,9 @@
         const toquesAlt = ultPunt.toquesFuera !== undefined ? ultPunt.toquesFuera : (ultPunt.fallos || 0);
         const tDesfaseSec = ultPunt.tiempoError ? (ultPunt.tiempoError / 1000).toFixed(1) : "0.0";
         
-        // Evaluación estricta >= 78%
-        const esAprobado = prec >= 78;
-        const badgeEstado = esAprobado ? '<span class="badge-ok">APROBADO</span>' : '<span class="badge-fail">REPROBADO</span>';
-        const txtEstado = esAprobado ? 'Efectivo' : 'Bajo Norma';
+        esPuntAprobado = prec >= 78;
+        const badgeEstado = esPuntAprobado ? '<span class="badge-ok">APROBADO</span>' : '<span class="badge-fail">REPROBADO</span>';
+        const txtEstado = esPuntAprobado ? 'Efectivo' : 'Bajo Norma';
 
         tbody.innerHTML += `<tr>
           <td><b>3. Punteo y Ritmo (Lahy)</b><br><span style="color:#64748b; font-size:0.58rem;">Estabilidad psicomotriz</span></td>
@@ -646,16 +671,14 @@
         tbody.innerHTML += `<tr><td><b>3. Punteo y Ritmo (Lahy)</b><br><span style="color:#64748b; font-size:0.58rem;">Estabilidad psicomotriz</span></td><td>≥ 78% efectividad</td><td>En espera de simulación</td><td><span class="badge-pend">PENDIENTE</span></td></tr>`;
       }
 
-      // -------------------------------------------------------------------------
       // MÓDULO 4: Tamizaje Auditivo Ocupacional
-      // -------------------------------------------------------------------------
       if (tieneAuditivo) {
         if (histAud.length > 0) {
           modulosCompletadosCount++;
           const ultAud = histAud[histAud.length - 1];
           const aciertos = ultAud.aciertos !== undefined ? ultAud.aciertos : 8;
           const latAudMs = ultAud.latenciaMs || 340;
-          const esAprobado = aciertos >= 6;
+          esAudAprobado = aciertos >= 6;
 
           tbody.innerHTML += `<tr>
             <td><b>4. Tamizaje Auditivo Ocupacional</b><br><span style="color:#64748b; font-size:0.58rem;">Frecuencias críticas faena</span></td>
@@ -664,7 +687,7 @@
               <b>Aciertos Auditivos:</b> ${aciertos} / 8<br>
               <span style="color:#64748b; font-size:0.58rem;">T. Promedio Reacción Audio: ${latAudMs} ms</span>
             </td>
-            <td>${esAprobado ? '<span class="badge-ok">APROBADO</span>' : '<span class="badge-fail">REPROBADO</span>'}</td>
+            <td>${esAudAprobado ? '<span class="badge-ok">APROBADO</span>' : '<span class="badge-fail">REPROBADO</span>'}</td>
           </tr>`;
         } else {
           tbody.innerHTML += `<tr><td><b>4. Tamizaje Auditivo Ocupacional</b><br><span style="color:#64748b; font-size:0.58rem;">Frecuencias críticas faena</span></td><td>≤ 25 dB (Normal)</td><td>En espera de evaluación</td><td><span class="badge-pend">PENDIENTE</span></td></tr>`;
@@ -673,9 +696,7 @@
         tbody.innerHTML += `<tr><td><b>4. Tamizaje Auditivo Ocupacional</b><br><span style="color:#64748b; font-size:0.58rem;">Frecuencias críticas faena</span></td><td>≤ 25 dB (Normal)</td><td>No contratado en plan</td><td><span class="badge-nosol">NO SOLICITADO</span></td></tr>`;
       }
 
-      // -------------------------------------------------------------------------
       // MÓDULO 5: Screening Visual Integral
-      // -------------------------------------------------------------------------
       if (tieneVisual) {
         if (histVis.length > 0) {
           modulosCompletadosCount++;
@@ -683,7 +704,7 @@
           const agudeza = ultVis.agudeza || '20/20 (1.0 - Sobresaliente)';
           const latVisMs = ultVis.latenciaMs || 310;
           const distAvg = ultVis.distanciaAvg || 54;
-          const esAprobado = (ultVis.porcentaje !== undefined ? ultVis.porcentaje : 80) >= 70;
+          esVisAprobado = (ultVis.porcentaje !== undefined ? ultVis.porcentaje : 80) >= 70;
 
           tbody.innerHTML += `<tr>
             <td><b>5. Tamizaje Visual Integral</b><br><span style="color:#64748b; font-size:0.58rem;">Agudeza visual cromática</span></td>
@@ -692,7 +713,7 @@
               <b>Agudeza:</b> ${agudeza}<br>
               <span style="color:#64748b; font-size:0.58rem;">T. Reacción Visual: ${latVisMs} ms | Distancia Telemetría: ${distAvg} cm</span>
             </td>
-            <td>${esAprobado ? '<span class="badge-ok">APROBADO</span>' : '<span class="badge-fail">REPROBADO</span>'}</td>
+            <td>${esVisAprobado ? '<span class="badge-ok">APROBADO</span>' : '<span class="badge-fail">REPROBADO</span>'}</td>
           </tr>`;
         } else {
           tbody.innerHTML += `<tr><td><b>5. Tamizaje Visual Integral</b><br><span style="color:#64748b; font-size:0.58rem;">Agudeza visual cromática</span></td><td>≥ 0.8 binocular</td><td>En espera de evaluación</td><td><span class="badge-pend">PENDIENTE</span></td></tr>`;
@@ -701,16 +722,14 @@
         tbody.innerHTML += `<tr><td><b>5. Tamizaje Visual Integral</b><br><span style="color:#64748b; font-size:0.58rem;">Agudeza visual cromática</span></td><td>≥ 0.8 binocular</td><td>No contratado en plan</td><td><span class="badge-nosol">NO SOLICITADO</span></td></tr>`;
       }
 
-      // -------------------------------------------------------------------------
       // MÓDULO 6: Velocidad de Anticipación
-      // -------------------------------------------------------------------------
       if (tieneAltoDesempenio) {
         if (histAnt.length > 0) {
           modulosCompletadosCount++;
           const ultAnt = histAnt[histAnt.length - 1];
           const margen = ultAnt.margenMs || 140;
           const desvio = ultAnt.desvioMs !== undefined ? ultAnt.desvioMs : 18;
-          const esAprobado = margen <= 220;
+          esAntAprobado = margen <= 220;
 
           tbody.innerHTML += `<tr>
             <td><b>6. Velocidad de Anticipación</b><br><span style="color:#64748b; font-size:0.58rem;">Cálculo de trayectoria ciega</span></td>
@@ -719,7 +738,7 @@
               <b>Margen Error Temporal:</b> ${margen} ms<br>
               <span style="color:#64748b; font-size:0.58rem;">Desvío Estándar: ±${desvio} ms</span>
             </td>
-            <td>${esAprobado ? '<span class="badge-ok">APROBADO</span>' : '<span class="badge-fail">REPROBADO</span>'}</td>
+            <td>${esAntAprobado ? '<span class="badge-ok">APROBADO</span>' : '<span class="badge-fail">REPROBADO</span>'}</td>
           </tr>`;
         } else {
           tbody.innerHTML += `<tr><td><b>6. Velocidad de Anticipación</b><br><span style="color:#64748b; font-size:0.58rem;">Cálculo de trayectoria ciega</span></td><td>≤ 220 ms margen</td><td>En espera de evaluación</td><td><span class="badge-pend">PENDIENTE</span></td></tr>`;
@@ -728,16 +747,14 @@
         tbody.innerHTML += `<tr><td><b>6. Velocidad de Anticipación</b><br><span style="color:#64748b; font-size:0.58rem;">Cálculo de trayectoria ciega</span></td><td>≤ 220 ms margen</td><td>Requiere Plan Alto Desempeño</td><td><span class="badge-nosol">NO SOLICITADO</span></td></tr>`;
       }
 
-      // -------------------------------------------------------------------------
       // MÓDULO 7: Estereopsis y Profundidad 3D
-      // -------------------------------------------------------------------------
       if (tieneAltoDesempenio) {
         if (histEst.length > 0) {
           modulosCompletadosCount++;
           const ultEst = histEst[histEst.length - 1];
           const precision = ultEst.precision || ultEst.porcentaje || 88;
           const latEstMs = ultEst.latenciaMs || 290;
-          const esAprobado = precision >= 80;
+          esEstAprobado = precision >= 80;
 
           tbody.innerHTML += `<tr>
             <td><b>7. Estereopsis y Profundidad 3D</b><br><span style="color:#64748b; font-size:0.58rem;">Percepción espacial binocular</span></td>
@@ -746,7 +763,7 @@
               <b>Precisión 3D:</b> ${precision}%<br>
               <span style="color:#64748b; font-size:0.58rem;">T. Reacción Profundidad: ${latEstMs} ms</span>
             </td>
-            <td>${esAprobado ? '<span class="badge-ok">APROBADO</span>' : '<span class="badge-fail">REPROBADO</span>'}</td>
+            <td>${esEstAprobado ? '<span class="badge-ok">APROBADO</span>' : '<span class="badge-fail">REPROBADO</span>'}</td>
           </tr>`;
         } else {
           tbody.innerHTML += `<tr><td><b>7. Estereopsis y Profundidad 3D</b><br><span style="color:#64748b; font-size:0.58rem;">Percepción espacial binocular</span></td><td>≥ 80% precisión</td><td>En espera de evaluación</td><td><span class="badge-pend">PENDIENTE</span></td></tr>`;
@@ -755,16 +772,14 @@
         tbody.innerHTML += `<tr><td><b>7. Estereopsis y Profundidad 3D</b><br><span style="color:#64748b; font-size:0.58rem;">Percepción espacial binocular</span></td><td>≥ 80% precisión</td><td>Requiere Plan Alto Desempeño</td><td><span class="badge-nosol">NO SOLICITADO</span></td></tr>`;
       }
 
-      // -------------------------------------------------------------------------
       // MÓDULO 8: Test de Fatiga (PVT)
-      // -------------------------------------------------------------------------
       if (tieneAltoDesempenio) {
         if (histFat.length > 0) {
           modulosCompletadosCount++;
           const ultFat = histFat[histFat.length - 1];
           const promTiempo = ultFat.promedioTiempo || 368;
           const lapsos = ultFat.lapsos !== undefined ? ultFat.lapsos : 0;
-          const esAprobado = promTiempo <= 450 && lapsos <= 1;
+          esFatAprobado = promTiempo <= 450 && lapsos <= 1;
 
           tbody.innerHTML += `<tr>
             <td><b>8. Test de Fatiga (PVT)</b><br><span style="color:#64748b; font-size:0.58rem;">Control de somnolencia y lapsos</span></td>
@@ -773,7 +788,7 @@
               <b>T. Vigilancia Promedio:</b> ${promTiempo} ms<br>
               <span style="color:#dc2626; font-size:0.58rem; font-weight:700;">Lapsos de Fatiga (&gt;500ms): ${lapsos}</span>
             </td>
-            <td>${esAprobado ? '<span class="badge-ok">APROBADO</span>' : '<span class="badge-fail">REPROBADO</span>'}</td>
+            <td>${esFatAprobado ? '<span class="badge-ok">APROBADO</span>' : '<span class="badge-fail">REPROBADO</span>'}</td>
           </tr>`;
         } else {
           tbody.innerHTML += `<tr><td><b>8. Test de Fatiga (PVT)</b><br><span style="color:#64748b; font-size:0.58rem;">Control de somnolencia y lapsos</span></td><td>≤ 450 ms vigilancia</td><td>En espera de evaluación</td><td><span class="badge-pend">PENDIENTE</span></td></tr>`;
@@ -782,13 +797,37 @@
         tbody.innerHTML += `<tr><td><b>8. Test de Fatiga (PVT)</b><br><span style="color:#64748b; font-size:0.58rem;">Control de somnolencia y lapsos</span></td><td>≤ 450 ms vigilancia</td><td>Requiere Plan Alto Desempeño</td><td><span class="badge-nosol">NO SOLICITADO</span></td></tr>`;
       }
 
+      // =========================================================================
+      // CÁLCULO DE DICTAMEN GLOBAL CON LÓGICA VETO Y ESPECIFICIDAD DE ROL
+      // =========================================================================
+      const alcancelRolTexto = determinarAlcanceRol(cargo);
       const boxBanner = document.getElementById('boxBannerDictamen');
-      if (modulosCompletadosCount >= totalModulosRequeridos) {
+
+      // Detectar reprobados en módulos rendidos
+      const hayReprobados = (
+        (!esReactAprobado && histReact.length > 0) ||
+        (!esPalanAprobado && histPalan.length > 0) ||
+        (!esPuntAprobado  && histPunt.length > 0)  ||
+        (tieneAuditivo && !esAudAprobado && histAud.length > 0) ||
+        (tieneVisual   && !esVisAprobado && histVis.length > 0) ||
+        (tieneAltoDesempenio && (!esAntAprobado || !esEstAprobado || !esFatAprobado))
+      );
+
+      const bateriaCompleta = modulosCompletadosCount >= totalModulosRequeridos;
+
+      if (hayReprobados) {
+        boxBanner.className = 'dictamen-banner-fail';
+        boxBanner.style.backgroundColor = '#ef4444';
+        boxBanner.style.boxShadow = '0 4px 12px rgba(239, 68, 68, 0.4)';
+        boxBanner.textContent = `❌ DICTAMEN: NO APTO PARA ${alcancelRolTexto} (D.S. N° 170) - REQUIERE REEVALUACIÓN`;
+      } else if (bateriaCompleta) {
         boxBanner.className = 'dictamen-banner-ok';
-        boxBanner.textContent = '✓ DICTAMEN: APTO PARA CONDUCCIÓN Y OPERACIÓN (D.S. N° 170)';
+        boxBanner.style.backgroundColor = '#10b981';
+        boxBanner.textContent = `✓ DICTAMEN: APTO PARA ${alcancelRolTexto} (D.S. N° 170)`;
       } else {
         const porcentaje = Math.round((modulosCompletadosCount / totalModulosRequeridos) * 100);
         boxBanner.className = 'dictamen-banner-pend';
+        boxBanner.style.backgroundColor = '#f59e0b';
         boxBanner.textContent = `⏳ DICTAMEN EN CURSO: BATERÍA COMPLETA AL ${porcentaje}% (${modulosCompletadosCount} DE ${totalModulosRequeridos} MÓDULOS RENDIDOS)`;
       }
     });
