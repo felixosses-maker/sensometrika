@@ -13,7 +13,6 @@
       --accent-cyan: #00bfff;
       --accent-cyan-glow: rgba(0, 191, 255, 0.45);
       --accent-green: #10b981;
-      --accent-gold: #e5b324;
       --text-main: #f8fafc;
       --text-muted: #94a3b8;
     }
@@ -104,7 +103,6 @@
       text-transform: uppercase;
       text-decoration: none;
       white-space: nowrap;
-      box-shadow: 0 2px 10px rgba(2, 132, 199, 0.4);
     }
 
     .btn-done {
@@ -114,9 +112,8 @@
       padding: 8px 14px;
       border-radius: 8px;
       font-weight: 800;
-      font-size: 0.75rem;
+      font-size: 0.72rem;
       text-transform: uppercase;
-      opacity: 0.9;
       text-decoration: none;
       white-space: nowrap;
     }
@@ -145,13 +142,13 @@
     <header class="brand-header">
       <img src="sensometrica.jpg" alt="SENSOMETRIKA" class="brand-logo-img">
       <span style="color: var(--accent-cyan); font-size: 0.72rem; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase;">
-        EVALUACIÓN B2B · ACCESO CORPORATIVO / APR
+        EVALUACIÓN B2B • ACCESO CORPORATIVO / APR
       </span>
     </header>
 
     <div id="boxHeaderPlan" class="badge-plan-header">
-      <span id="txtTipoPlan" style="font-size:0.88rem; font-weight:900;">EVALUACIÓN B2B • PLAN BASICO</span>
-      <span id="txtInfoEvaluado" style="font-size:0.72rem; color:var(--text-muted); font-weight:600;">Evaluado: - | RUT: -</span>
+      <span id="txtTipoPlan" style="font-size:0.88rem; font-weight:900;">EVALUACIÓN B2B • PLAN BÁSICO</span>
+      <span id="txtInfoEvaluado" style="font-size:0.72rem; color:var(--text-muted); font-weight:600;">EVALUADO: - | RUT: -</span>
     </div>
 
     <div class="card-box" id="boxModulos">
@@ -210,31 +207,33 @@
         </div>
       </div>
 
-      <!-- Módulos Especiales (Alto Desempeño) -->
+      <!-- 6. Anticipación -->
       <div class="module-card" id="cardModAnticipacion" style="display: none;">
         <div class="module-info">
           <span class="module-title">6. Velocidad de Anticipación</span>
-          <span class="module-desc">Cálculo de velocidad relativa y trayectoria en zona ciega.</span>
+          <span class="module-desc">Cálculo de velocidad y trayectoria a ciegas.</span>
         </div>
         <div id="statusMod6">
           <a id="linkMod6" href="anticipacion.html" class="btn-start">INICIAR DEMO →</a>
         </div>
       </div>
 
+      <!-- 7. Estereopsis -->
       <div class="module-card" id="cardModEstereopsis" style="display: none;">
         <div class="module-info">
           <span class="module-title">7. Estereopsis y Profundidad 3D</span>
-          <span class="module-desc">Percepción espacial binocular y cálculo de distancias.</span>
+          <span class="module-desc">Percepción de profundidad y visión tridimensional.</span>
         </div>
         <div id="statusMod7">
           <a id="linkMod7" href="estereopsis.html" class="btn-start">INICIAR DEMO →</a>
         </div>
       </div>
 
+      <!-- 8. Fatiga (PVT) -->
       <div class="module-card" id="cardModFatiga" style="display: none;">
         <div class="module-info">
-          <span class="module-title">8. Test de Fatiga y Vigilancia (PVT)</span>
-          <span class="module-desc">Control de somnolencia, lapsos de micro-sueño y atención.</span>
+          <span class="module-title">8. Test de Fatiga (PVT)</span>
+          <span class="module-desc">Evaluación de somnolencia y lapsos de atención.</span>
         </div>
         <div id="statusMod8">
           <a id="linkMod8" href="fatiga.html" class="btn-start">INICIAR DEMO →</a>
@@ -242,7 +241,7 @@
       </div>
     </div>
 
-    <button id="btnFinalizarGeneral" onclick="finalizarEvaluacionB2B()" class="btn-action-main">
+    <button id="btnFinalizarB2B" onclick="finalizarEvaluacionB2B()" class="btn-action-main">
       📊 FINALIZAR Y ENVIAR INFORME AL APR
     </button>
   </div>
@@ -259,97 +258,89 @@
         datosUsuario = JSON.parse(localStorage.getItem('sensometrika_datos_usuario')) || {};
       } catch(e){}
 
-      const rut = urlParams.get('rut') || datosUsuario.rut || '6.067.084-1';
-      const nombre = urlParams.get('nombre') || datosUsuario.nombre || 'GONZALO BARRÍA';
+      const rut = urlParams.get('rut') || datosUsuario.rut || '6.876.333-1';
+      const nombre = urlParams.get('nombre') || datosUsuario.nombre || 'HERIBERTO PEREZ MUÑOZ';
 
       localStorage.setItem('sensometrika_plan_contratado', planParam);
 
       document.getElementById('txtTipoPlan').textContent = `EVALUACIÓN B2B • PLAN ${planParam.replace('_', ' ')}`;
-      document.getElementById('txtInfoEvaluado').textContent = `EVALUADO: ${decodeURIComponent(nombre)} | RUT: ${rut}`;
+      document.getElementById('txtInfoEvaluado').textContent = `EVALUADO: ${decodeURIComponent(nombre).toUpperCase()} | RUT: ${rut}`;
 
-      // VISIBILIDAD DE TARJETAS POR PLAN B2B
+      // Configurar visibilidad de tarjetas según el plan B2B
       if (planParam.includes('PLUS') || planParam.includes('FULL') || planParam.includes('ALTO')) {
         document.getElementById('cardModAuditivo').style.display = 'flex';
-      } else {
-        document.getElementById('cardModAuditivo').style.display = 'none';
       }
-
       if (planParam.includes('FULL') || planParam.includes('ALTO')) {
         document.getElementById('cardModVisual').style.display = 'flex';
-      } else {
-        document.getElementById('cardModVisual').style.display = 'none';
       }
-
       if (planParam.includes('ALTO')) {
         document.getElementById('cardModAnticipacion').style.display = 'flex';
         document.getElementById('cardModEstereopsis').style.display = 'flex';
         document.getElementById('cardModFatiga').style.display = 'flex';
-      } else {
-        document.getElementById('cardModAnticipacion').style.display = 'none';
-        document.getElementById('cardModEstereopsis').style.display = 'none';
-        document.getElementById('cardModFatiga').style.display = 'none';
       }
 
       urlParams.set('plan', planParam);
       urlParams.set('mode', 'b2b');
+      urlParams.set('rut', rut);
+      urlParams.set('nombre', nombre);
       globalParamsQuery = urlParams.toString();
 
-      revisarModulosRendidosB2B(rut);
+      revisarModulosRendidosB2B(rut, planParam);
     });
 
-    function revisarModulosRendidosB2B(rutEvaluado) {
-      const planParam = (localStorage.getItem('sensometrika_plan_contratado') || 'BASICO').toUpperCase();
-      let maxIntentosPlan = planParam.includes('ALTO') ? 3 : 1;
-
+    function revisarModulosRendidosB2B(rutEvaluado, planParam) {
       const cleanRut = rutEvaluado.replace(/[^0-9Kk]/g, '');
 
+      // Cuota esperada en B2B es 1 por módulo (o 3 para Plan Alto Desempeño)
+      const maxIntentos = planParam.includes('ALTO') ? 3 : 1;
+
       const listaConfig = [
-        { id: 'reactimetro', statusElem: 'statusMod1', linkElem: 'linkMod1' },
-        { id: 'palancas', statusElem: 'statusMod2', linkElem: 'linkMod2' },
-        { id: 'punteo', statusElem: 'statusMod3', linkElem: 'linkMod3' },
-        { id: 'audicion', statusElem: 'statusMod4', linkElem: 'linkMod4' },
-        { id: 'visual', statusElem: 'statusMod5', linkElem: 'linkMod5' },
-        { id: 'anticipacion', statusElem: 'statusMod6', linkElem: 'linkMod6' },
-        { id: 'estereopsis', statusElem: 'statusMod7', linkElem: 'linkMod7' },
-        { id: 'fatiga', statusElem: 'statusMod8', linkElem: 'linkMod8' }
+        { id: 'reactimetro', statusElem: 'statusMod1', file: 'reactimetro.html' },
+        { id: 'palancas', statusElem: 'statusMod2', file: 'palancas.html' },
+        { id: 'punteo', statusElem: 'statusMod3', file: 'punteo.html' },
+        { id: 'audicion', statusElem: 'statusMod4', file: 'audicion.html' },
+        { id: 'visual', statusElem: 'statusMod5', file: 'visual.html' },
+        { id: 'anticipacion', statusElem: 'statusMod6', file: 'anticipacion.html' },
+        { id: 'estereopsis', statusElem: 'statusMod7', file: 'estereopsis.html' },
+        { id: 'fatiga', statusElem: 'statusMod8', file: 'fatiga.html' }
       ];
 
       listaConfig.forEach(mod => {
         const statusContainer = document.getElementById(mod.statusElem);
         if (!statusContainer) return;
 
+        // BÚSQUEDA AISLADA DE HISTORIAL POR RUT
         let historial = JSON.parse(localStorage.getItem(`sensometrika_historial_${mod.id}_${cleanRut}`)) || [];
+        
+        // También verifica la clave genérica o variante por compatibilidad
+        if (historial.length === 0 && mod.id === 'audicion') {
+          historial = JSON.parse(localStorage.getItem(`sensometrika_historial_auditivo_${cleanRut}`)) || [];
+        }
 
-        // AISLAMIENTO STRICTO DE DEMO POR RUT (EVITA HEREDAR VALORES GLOBALES VIEJOS)
-        const demoHecha = localStorage.getItem(`${mod.id}_demo_completada_${cleanRut}`) === 'true';
+        const numEnsayos = Math.min(historial.length, maxIntentos);
+        const demoHecha = (localStorage.getItem(`${mod.id}_demo_completada_${cleanRut}`) === 'true') || (localStorage.getItem(`${mod.id}_demo_completada`) === 'true');
 
-        const numEnsayos = Math.min(historial.length, maxIntentosPlan);
+        const currentParams = new URLSearchParams(globalParamsQuery);
 
-        const currentParams = new URLSearchParams(globalParamsQuery || window.location.search);
-        currentParams.set('mode', 'b2b');
-
-        if (numEnsayos >= maxIntentosPlan) {
-          statusContainer.innerHTML = `<span class="btn-done">EVALUACIÓN REGISTRADA (${numEnsayos}/${maxIntentosPlan})</span>`;
-        } else if (!demoHecha) {
+        if (numEnsayos >= maxIntentos) {
+          statusContainer.innerHTML = `<span class="btn-done">EVALUACIÓN REGISTRADA (${numEnsayos}/${maxIntentos})</span>`;
+        } else if (!demoHecha && numEnsayos === 0) {
           currentParams.set('demo', 'true');
           currentParams.set('fase', 'demo');
-          const urlDemo = `${mod.id}.html?${currentParams.toString()}`;
-          statusContainer.innerHTML = `<a id="${mod.linkElem}" href="${urlDemo}" class="btn-start">INICIAR DEMO →</a>`;
+          statusContainer.innerHTML = `<a href="${mod.file}?${currentParams.toString()}" class="btn-start">INICIAR DEMO →</a>`;
         } else {
           currentParams.set('demo', 'false');
           currentParams.set('fase', 'oficial');
-          const urlOficial = `${mod.id}.html?${currentParams.toString()}`;
-          statusContainer.innerHTML = `<a id="${mod.linkElem}" href="${urlOficial}" class="btn-oficial">SIMULACIÓN OFICIAL B2B →</a>`;
+          statusContainer.innerHTML = `<a href="${mod.file}?${currentParams.toString()}" class="btn-oficial">SIMULACIÓN B2B →</a>`;
         }
       });
     }
 
     function finalizarEvaluacionB2B() {
-      const planStorage = (localStorage.getItem('sensometrika_plan_contratado') || 'BASICO').toUpperCase();
-      const currentParams = new URLSearchParams(window.location.search);
-      currentParams.set('plan', planStorage);
+      const currentParams = new URLSearchParams(globalParamsQuery || window.location.search);
       currentParams.set('mode', 'b2b');
 
+      // Redirección directa al informe oficial pericial B2B
       window.location.href = `informe-b2b.html?${currentParams.toString()}`;
     }
   </script>
