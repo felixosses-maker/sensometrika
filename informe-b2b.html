@@ -414,15 +414,20 @@
       const rut = urlParams.get('rut') || datosUsuario.rut || '6.067.084-1';
       const cleanRut = rut.replace(/[^0-9Kk]/g, '');
       const nombre = urlParams.get('nombre') || datosUsuario.nombre || 'GONZALO BARRÍA';
-      const correoAPR = localStorage.getItem('sensometrika_b2b_correo') || 'felix.osorio@gmail.com';
-      const empresa = localStorage.getItem('sensometrika_b2b_empresa') || 'CONSTRUCTORA';
+      
+      // EXTRACCIÓN DINÁMICA DEL CARGO INGRESDO EN EL APR
+      const cargo = urlParams.get('cargo') || datosUsuario.cargo || localStorage.getItem('sensometrika_b2b_cargo') || 'OPERADOR / CONDUCTOR';
+
+      const correoAPR = localStorage.getItem('sensometrika_b2b_correo') || 'felix.osses@gmail.com';
+      const empresa = urlParams.get('empresa') || localStorage.getItem('sensometrika_b2b_empresa') || 'CONSTRUCTORA';
 
       document.getElementById('lblNombreTrabajador').textContent = decodeURIComponent(nombre).toUpperCase();
       document.getElementById('lblRutTrabajador').textContent = rut;
+      document.getElementById('lblCargoTrabajador').textContent = decodeURIComponent(cargo).toUpperCase();
       document.getElementById('lblFirmaTrabajador').textContent = decodeURIComponent(nombre);
       document.getElementById('lblRutFirmaTrabajador').textContent = `RUT: ${rut}`;
       document.getElementById('lblCorreoAPR').textContent = correoAPR;
-      document.getElementById('lblEmpresaTrabajador').textContent = empresa.toUpperCase();
+      document.getElementById('lblEmpresaTrabajador').textContent = decodeURIComponent(empresa).toUpperCase();
       document.getElementById('txtNombrePlanContratado').textContent = `PLAN ${planParam.replace('_', ' ')}`;
 
       const btnVolver = document.getElementById('btnVolverMenuB2B');
@@ -520,7 +525,6 @@
       document.getElementById('lblFechaVencimiento').textContent = `${fechaVencimiento.toLocaleDateString('es-CL', opcSimple)} (${mesesVigencia} MESES)`;
       document.getElementById('lblJustificacionVigencia').textContent = textoJustificacion;
 
-      // MATRIZ INNEGOCIABLE DE COBERTURA DE PLAN
       const tieneAuditivo = (planParam.includes('PLUS') || planParam.includes('FULL') || planParam.includes('ALTO'));
       const tieneVisual = (planParam.includes('FULL') || planParam.includes('ALTO'));
       const tieneAltoDesempenio = planParam.includes('ALTO');
@@ -531,7 +535,7 @@
       const tbody = document.getElementById('tbodyModulosB2B');
       tbody.innerHTML = '';
 
-      // MÓDULO 1: Reactímetro Simple
+      // MÓDULO 1: Reactímetro
       if (modulosRendidos.reactimetro === true || histReact.length > 0) {
         modulosCompletadosCount++;
         const valReact = histReact.length > 0 ? `${histReact[histReact.length-1].promedioTiempo} ms (Aprobado)` : '418 ms (Aprobado)';
@@ -540,7 +544,7 @@
         tbody.innerHTML += `<tr><td><b>1. Reactímetro Simple</b><br><span style="color:#64748b; font-size:0.58rem;">Frenado simple de emergencia</span></td><td>≤ 350 ms</td><td>En espera de simulación</td><td><span class="badge-pend">PENDIENTE / EN EJECUCIÓN</span></td></tr>`;
       }
 
-      // MÓDULO 2: Test de Palancas
+      // MÓDULO 2: Palancas
       if (modulosRendidos.palancas === true || histPalan.length > 0) {
         modulosCompletadosCount++;
         const ultPalan = histPalan.length > 0 ? histPalan[histPalan.length - 1] : {};
@@ -552,7 +556,7 @@
         tbody.innerHTML += `<tr><td><b>2. Test de Palancas</b><br><span style="color:#64748b; font-size:0.58rem;">Coordinación motriz bimanual</span></td><td>≥ 80% / ≤ 1 contacto</td><td>En espera de simulación</td><td><span class="badge-pend">PENDIENTE / EN EJECUCIÓN</span></td></tr>`;
       }
 
-      // MÓDULO 3: Punteo y Ritmo
+      // MÓDULO 3: Punteo
       if (modulosRendidos.punteo === true || histPunt.length > 0) {
         modulosCompletadosCount++;
         const valPunt = histPunt.length > 0 ? `${histPunt[histPunt.length-1].precision}% (Efectivo)` : '100% (Efectivo)';
@@ -561,7 +565,7 @@
         tbody.innerHTML += `<tr><td><b>3. Punteo y Ritmo (Lahy)</b><br><span style="color:#64748b; font-size:0.58rem;">Estabilidad psicomotriz</span></td><td>≥ 78% efectividad</td><td>En espera de simulación</td><td><span class="badge-pend">PENDIENTE / EN EJECUCIÓN</span></td></tr>`;
       }
 
-      // MÓDULO 4: Tamizaje Auditivo Ocupacional
+      // MÓDULO 4: Auditivo
       if (tieneAuditivo) {
         if (modulosRendidos.audicion === true || modulosRendidos.auditivo === true || histAud.length > 0) {
           modulosCompletadosCount++;
@@ -576,7 +580,7 @@
         tbody.innerHTML += `<tr><td><b>4. Tamizaje Auditivo Ocupacional</b><br><span style="color:#64748b; font-size:0.58rem;">Frecuencias críticas faena</span></td><td>≤ 25 dB (Normal)</td><td>No contratado en plan</td><td><span class="badge-nosol">NO SOLICITADO</span></td></tr>`;
       }
 
-      // MÓDULO 5: Tamizaje Visual Integral
+      // MÓDULO 5: Visual
       if (tieneVisual) {
         if (modulosRendidos.visual === true || modulosRendidos.tamizaje_visual === true || histVis.length > 0) {
           modulosCompletadosCount++;
@@ -591,7 +595,7 @@
         tbody.innerHTML += `<tr><td><b>5. Tamizaje Visual Integral</b><br><span style="color:#64748b; font-size:0.58rem;">Agudeza visual cromática</span></td><td>≥ 0.8 binocular</td><td>No contratado en plan</td><td><span class="badge-nosol">NO SOLICITADO</span></td></tr>`;
       }
 
-      // MÓDULO 6: Velocidad de Anticipación
+      // MÓDULO 6: Anticipación
       if (tieneAltoDesempenio) {
         if (modulosRendidos.anticipacion === true || histAnt.length > 0) {
           modulosCompletadosCount++;
@@ -606,7 +610,7 @@
         tbody.innerHTML += `<tr><td><b>6. Velocidad de Anticipación</b><br><span style="color:#64748b; font-size:0.58rem;">Cálculo de trayectoria ciega</span></td><td>≤ 220 ms margen</td><td>Requiere Plan Alto Desempeño</td><td><span class="badge-nosol">NO SOLICITADO</span></td></tr>`;
       }
 
-      // MÓDULO 7: Estereopsis y Profundidad 3D
+      // MÓDULO 7: Estereopsis
       if (tieneAltoDesempenio) {
         if (modulosRendidos.estereopsis === true || modulosRendidos.estereopsis3d === true || histEst.length > 0) {
           modulosCompletadosCount++;
@@ -621,7 +625,7 @@
         tbody.innerHTML += `<tr><td><b>7. Estereopsis y Profundidad 3D</b><br><span style="color:#64748b; font-size:0.58rem;">Percepción espacial binocular</span></td><td>≥ 80% precisión</td><td>Requiere Plan Alto Desempeño</td><td><span class="badge-nosol">NO SOLICITADO</span></td></tr>`;
       }
 
-      // MÓDULO 8: Test de Fatiga (PVT)
+      // MÓDULO 8: Fatiga (PVT)
       if (tieneAltoDesempenio) {
         if (modulosRendidos.fatiga === true || histFat.length > 0) {
           modulosCompletadosCount++;
