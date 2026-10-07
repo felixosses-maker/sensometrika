@@ -364,10 +364,17 @@
         const modeParam = urlParams.get('mode') || (localStorage.getItem('sensometrika_b2c_mode') === 'true' ? 'b2c' : 'b2b');
         const esB2B = (modeParam === 'b2b');
 
+        let datosUsuario = {};
+        try {
+            datosUsuario = JSON.parse(localStorage.getItem('sensometrika_datos_usuario')) || {};
+        } catch(e){}
+
+        const rutEvaluado = urlParams.get('rut') || datosUsuario.rut || 'GENERICO';
+        const cleanRut = rutEvaluado.replace(/[^0-9Kk]/g, '');
+
         let isDemoURL = urlParams.get('demo') === 'true' || urlParams.get('fase') === 'demo';
         let modoActual = isDemoURL ? 'DEMO' : 'OFICIAL';
 
-        // REDIRECCIÓN DINÁMICA DE RETORNO SEGÚN MODO
         function ejecutarRetornoMenu() {
             const menuDestino = esB2B ? 'menu_B2B.html' : 'menu_B2C.html';
             window.location.href = `${menuDestino}?${urlParams.toString()}`;
@@ -380,12 +387,11 @@
         btnCloseInstrucciones.addEventListener('click', () => { modalInstrucciones.style.display = 'none'; });
 
         function actualizarEstadoPlanUI() {
-            const historial = JSON.parse(localStorage.getItem('sensometrika_historial_reactimetro')) || [];
+            const historial = JSON.parse(localStorage.getItem(`sensometrika_historial_reactimetro_${cleanRut}`)) || [];
             const numEnsayosRealizados = historial.length;
 
             const planStorage = (localStorage.getItem('sensometrika_plan_contratado') || urlParams.get('plan') || 'BASICO').toUpperCase();
             
-            // LÍMITES ESTRICTOS B2B (1/1) Y B2C (3, 5, 8)
             let maxIntentosPlan = 3;
             if (esB2B) {
                 maxIntentosPlan = planStorage.includes('ALTO') ? 3 : 1;
@@ -394,7 +400,7 @@
                 if (planStorage.includes('FULL') || planStorage.includes('ALTO')) maxIntentosPlan = 8;
             }
 
-            const demoRealizada = localStorage.getItem('reactimetro_demo_completada') === 'true';
+            const demoRealizada = localStorage.getItem(`reactimetro_demo_completada_${cleanRut}`) === 'true';
 
             if (numEnsayosRealizados >= maxIntentosPlan) {
                 modoActual = 'BLOQUEADO';
@@ -445,11 +451,21 @@
 
         const moduloReactimetro = new ModuloReactimetro(canvas, { width: 400, height: 300, totalEstimulos: 6 }, (res) => {
             btnBrake.style.display = 'none';
-            metricTiempo.textContent = `${res.promedioTiempo} ms`;
+
+            // =========================================================================
+            // COMPENSACIÓN TELEMÉTRICA DE LATENCIA HARDWARE
+            // =========================================================================
+            const latenciaHardware = parseInt(localStorage.getItem('sensometrika_latencia_ms') || '0', 10);
+            
+            // Descontar latencia al promedio neto
+            const tiempoNetoCompensado = Math.max(100, res.promedioTiempo - latenciaHardware);
+            const tiemposDetalleCompensados = (res.tiemposDetalle || []).map(t => Math.max(100, t - latenciaHardware));
+
+            metricTiempo.textContent = `${tiempoNetoCompensado} ms`;
             metricEstimulo.textContent = `6 / 6`;
 
             if (modoActual === 'DEMO') {
-                localStorage.setItem('reactimetro_demo_completada', 'true');
+                localStorage.setItem(`reactimetro_demo_completada_${cleanRut}`, 'true');
                 
                 isDemoURL = false;
                 modoActual = 'OFICIAL';
@@ -460,20 +476,22 @@
                 
                 mostrarAlertaSistema(
                     "CALIBRACIÓN DEMO COMPLETADA",
-                    `Promedio Neto: <b>${res.promedioTiempo} ms</b><br>Anticipaciones: <b>${res.anticipaciones}</b><br><br>Has completado el ensayo. Ya puedes rendir tu simulación oficial.`,
+                    `Promedio Neto: <b>${tiempoNetoCompensado} ms</b> (Compensado -${latenciaHardware} ms hardware)<br>Anticipaciones: <b>${res.anticipaciones}</b><br><br>Has completado el ensayo. Ya puedes rendir tu simulación oficial.`,
                     () => {
                         actualizarEstadoPlanUI();
                     }
                 );
             } else if (modoActual === 'OFICIAL') {
-                let historial = JSON.parse(localStorage.getItem('sensometrika_historial_reactimetro')) || [];
+                let historial = JSON.parse(localStorage.getItem(`sensometrika_historial_reactimetro_${cleanRut}`)) || [];
                 historial.push({
-                    promedioTiempo: res.promedioTiempo,
-                    tiemposDetalle: res.tiemposDetalle,
+                    promedioTiempo: tiempoNetoCompensado,
+                    tiempoBruto: res.promedioTiempo,
+                    latenciaCompensadaMs: latenciaHardware,
+                    tiemposDetalle: tiemposDetalleCompensados,
                     anticipaciones: res.anticipaciones,
                     fecha: new Date().toISOString()
                 });
-                localStorage.setItem('sensometrika_historial_reactimetro', JSON.stringify(historial));
+                localStorage.setItem(`sensometrika_historial_reactimetro_${cleanRut}`, JSON.stringify(historial));
 
                 const planStorage = (localStorage.getItem('sensometrika_plan_contratado') || 'BASICO').toUpperCase();
                 let maxIntentosPlan = esB2B ? (planStorage.includes('ALTO') ? 3 : 1) : (planStorage.includes('PLUS') ? 5 : (planStorage.includes('FULL') || planStorage.includes('ALTO') ? 8 : 3));
@@ -489,7 +507,8 @@
 
                 mostrarAlertaSistema(
                     tituloModal,
-                    `Promedio Neto de Frenado: <b>${res.promedioTiempo} ms</b> (${res.promedioTiempo <= 450 ? '✓ En Norma' : '⚠ Latencia Elevada'})<br>` +
+                    `Promedio Neto Frenado: <b>${tiempoNetoCompensado} ms</b> (${tiempoNetoCompensado <= 450 ? '✓ En Norma' : '⚠ Latencia Elevada'})<br>` +
+                    `<span style="font-size:0.75rem; color:#94a3b8;">(Compensación telemétrica de hardware: -${latenciaHardware} ms)</span><br>` +
                     `Anticipaciones: <b>${res.anticipaciones}</b><br><br>` +
                     `<b>Resultado guardado con éxito.</b>`,
                     () => {
