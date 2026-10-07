@@ -146,27 +146,27 @@
                 <div style="display: flex; flex-direction: column; gap: 12px;">
                     <div class="form-group">
                         <label>RUT Empresa / Razón Social *</label>
-                        <input type="text" id="inputRutEmpresa" value="76.123.435-1" required>
+                        <input type="text" id="inputRutEmpresa" placeholder="Ej: 76.123.435-1" required>
                     </div>
 
                     <div class="form-group">
                         <label>Nombre Fantasía / Empresa *</label>
-                        <input type="text" id="inputRazonSocial" value="Minerales" required>
+                        <input type="text" id="inputRazonSocial" placeholder="Ej: Minera del Norte SpA" required>
                     </div>
 
                     <div class="form-group">
                         <label>Nombre del Encargado / Prevencionista (APR) *</label>
-                        <input type="text" id="inputEncargado" value="Raul Hernandez" required>
+                        <input type="text" id="inputEncargado" placeholder="Ej: Raúl Hernández" required>
                     </div>
 
                     <div class="form-group">
                         <label>Correo para Despacho de Informes *</label>
-                        <input type="email" id="inputCorreo" value="felix.osses@gmail.com" required>
+                        <input type="email" id="inputCorreo" placeholder="correo@empresa.cl" required>
                     </div>
 
                     <div class="form-group">
                         <label>Teléfono de Contacto</label>
-                        <input type="text" id="inputTelefono" value="+56998846813">
+                        <input type="text" id="inputTelefono" placeholder="+56912345678">
                     </div>
 
                     <button type="submit" class="btn-submit">
@@ -178,18 +178,35 @@
     </div>
 
     <script>
+        function limpiarCacheTrabajadoresAnteriores() {
+            // Eliminar claves globales de trabajadores
+            localStorage.removeItem('sensometrika_datos_usuario');
+            localStorage.removeItem('sensometrika_modulos_rendidos');
+            localStorage.removeItem('sensometrika_session_burned');
+            localStorage.removeItem('sensometrika_b2b_cargo');
+            localStorage.removeItem('sensometrika_firma_trabajador');
+            localStorage.removeItem('sensometrika_foto_evaluado');
+            localStorage.removeItem('sensometrika_foto_trabajador');
+
+            // Limpiar claves antiguas de demos
+            localStorage.removeItem('reactimetro_demo_completada');
+            localStorage.removeItem('palancas_demo_completada');
+            localStorage.removeItem('punteo_demo_completada');
+            localStorage.removeItem('visual_demo_completada');
+            localStorage.removeItem('audicion_demo_completada');
+        }
+
         function confirmarYIrADashboard(e) {
             e.preventDefault();
 
-            // Limpiar datos previos de trabajador
-            localStorage.removeItem('sensometrika_modulos_rendidos');
-            localStorage.removeItem('sensometrika_session_burned');
-            localStorage.removeItem('sensometrika_datos_usuario');
+            // Ejecutar purga de datos antiguos
+            limpiarCacheTrabajadoresAnteriores();
 
             const rutEmpresa = document.getElementById('inputRutEmpresa').value.trim();
             const razonSocial = document.getElementById('inputRazonSocial').value.trim();
             const encargado = document.getElementById('inputEncargado').value.trim();
             const correo = document.getElementById('inputCorreo').value.trim();
+            const telefono = document.getElementById('inputTelefono').value.trim();
 
             const tokenB2B = 'B2B-SMK-' + Math.floor(1000 + Math.random() * 9000);
 
@@ -198,13 +215,16 @@
                 razonSocial: razonSocial,
                 encargado: encargado,
                 correo: correo,
+                telefono: telefono,
                 token: tokenB2B
             };
 
             localStorage.setItem('sensometrika_b2b_contratacion', JSON.stringify(contratacion));
             localStorage.setItem('sensometrika_b2b_token', tokenB2B);
+            localStorage.setItem('sensometrika_b2b_empresa', razonSocial);
+            localStorage.setItem('sensometrika_b2b_correo', correo);
 
-            // REDIRECCIÓN A DASHBOARD-APR.HTML (CON GUION MEDIO)
+            // Redirección al Dashboard
             window.location.href = `dashboard-apr.html?token=${tokenB2B}`;
         }
     </script>
