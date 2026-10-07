@@ -148,7 +148,7 @@
 
     <div id="boxHeaderPlan" class="badge-plan-header">
       <span id="txtTipoPlan" style="font-size:0.88rem; font-weight:900;">EVALUACIÓN B2B • PLAN BÁSICO</span>
-      <span id="txtInfoEvaluado" style="font-size:0.72rem; color:var(--text-muted); font-weight:600;">EVALUADO: - | RUT: -</span>
+      <span id="txtInfoEvaluado" style="font-size:0.72rem; color:var(--text-muted); font-weight:600;">EVALUADO: CARGANDO...</span>
     </div>
 
     <div class="card-box" id="boxModulos">
@@ -258,15 +258,20 @@
         datosUsuario = JSON.parse(localStorage.getItem('sensometrika_datos_usuario')) || {};
       } catch(e){}
 
-      const rut = urlParams.get('rut') || datosUsuario.rut || '6.876.333-1';
-      const nombre = urlParams.get('nombre') || datosUsuario.nombre || 'HERIBERTO PEREZ MUÑOZ';
+      // OBTENER DATOS DINÁMICOS O PEDIR INGRESARLOS SI NO EXISTEN
+      const rut = urlParams.get('rut') || datosUsuario.rut || '';
+      const nombre = urlParams.get('nombre') || datosUsuario.nombre || 'EVALUADO B2B';
+
+      if (!rut) {
+        document.getElementById('txtInfoEvaluado').textContent = `EVALUADO NO REGISTRADO (INGRESE VÍA LINK OFICIAL)`;
+      } else {
+        document.getElementById('txtInfoEvaluado').textContent = `EVALUADO: ${decodeURIComponent(nombre).toUpperCase()} | RUT: ${rut}`;
+      }
 
       localStorage.setItem('sensometrika_plan_contratado', planParam);
-
       document.getElementById('txtTipoPlan').textContent = `EVALUACIÓN B2B • PLAN ${planParam.replace('_', ' ')}`;
-      document.getElementById('txtInfoEvaluado').textContent = `EVALUADO: ${decodeURIComponent(nombre).toUpperCase()} | RUT: ${rut}`;
 
-      // Configurar visibilidad de tarjetas según el plan B2B
+      // Configurar tarjetas visibles por plan
       if (planParam.includes('PLUS') || planParam.includes('FULL') || planParam.includes('ALTO')) {
         document.getElementById('cardModAuditivo').style.display = 'flex';
       }
@@ -281,17 +286,19 @@
 
       urlParams.set('plan', planParam);
       urlParams.set('mode', 'b2b');
-      urlParams.set('rut', rut);
-      urlParams.set('nombre', nombre);
+      if (rut) urlParams.set('rut', rut);
+      if (nombre) urlParams.set('nombre', nombre);
       globalParamsQuery = urlParams.toString();
 
-      revisarModulosRendidosB2B(rut, planParam);
+      if (rut) {
+        revisarModulosRendidosB2B(rut, planParam);
+      }
     });
 
     function revisarModulosRendidosB2B(rutEvaluado, planParam) {
       const cleanRut = rutEvaluado.replace(/[^0-9Kk]/g, '');
 
-      // Cuota esperada en B2B es 1 por módulo (o 3 para Plan Alto Desempeño)
+      // Cuota en B2B
       const maxIntentos = planParam.includes('ALTO') ? 3 : 1;
 
       const listaConfig = [
@@ -309,16 +316,14 @@
         const statusContainer = document.getElementById(mod.statusElem);
         if (!statusContainer) return;
 
-        // BÚSQUEDA AISLADA DE HISTORIAL POR RUT
         let historial = JSON.parse(localStorage.getItem(`sensometrika_historial_${mod.id}_${cleanRut}`)) || [];
         
-        // También verifica la clave genérica o variante por compatibilidad
         if (historial.length === 0 && mod.id === 'audicion') {
           historial = JSON.parse(localStorage.getItem(`sensometrika_historial_auditivo_${cleanRut}`)) || [];
         }
 
         const numEnsayos = Math.min(historial.length, maxIntentos);
-        const demoHecha = (localStorage.getItem(`${mod.id}_demo_completada_${cleanRut}`) === 'true') || (localStorage.getItem(`${mod.id}_demo_completada`) === 'true');
+        const demoHecha = (localStorage.getItem(`${mod.id}_demo_completada_${cleanRut}`) === 'true');
 
         const currentParams = new URLSearchParams(globalParamsQuery);
 
@@ -340,7 +345,6 @@
       const currentParams = new URLSearchParams(globalParamsQuery || window.location.search);
       currentParams.set('mode', 'b2b');
 
-      // Redirección directa al informe oficial pericial B2B
       window.location.href = `informe-b2b.html?${currentParams.toString()}`;
     }
   </script>
