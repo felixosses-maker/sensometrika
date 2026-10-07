@@ -130,9 +130,7 @@
 
     .photo-label {
       position: absolute;
-      bottom: 0;
-      left: 0;
-      right: 0;
+      bottom: 0; left: 0; right: 0;
       background: rgba(2, 132, 199, 0.95);
       color: #fff;
       font-size: 0.52rem;
@@ -287,7 +285,7 @@
     </header>
 
     <div class="banner-despacho">
-      <span>✉ Despacho Automatizado: Copia oficial remitida en tiempo real al correo de supervisión de faena: <strong id="lblCorreoAPR">apr@empresa.cl</strong></span>
+      <span>✉ Despacho Automatizado: Copia oficial remitida en tiempo real al correo de supervisión de faena: <strong id="lblCorreoAPR">felix.osses@gmail.com</strong></span>
     </div>
 
     <div class="data-profile-wrapper">
@@ -298,11 +296,11 @@
         </div>
         <div>
           <span class="lbl-title">RUT TRABAJADOR:</span>
-          <span id="lblRutTrabajador" class="val-content">6.067.084-1</span>
+          <span id="lblRutTrabajador" class="val-content">12.432.657-5</span>
         </div>
         <div>
           <span class="lbl-title">CARGO / FUNCIÓN OPERATIVA:</span>
-          <span id="lblCargoTrabajador" class="val-content">CONDUCTOR / OPERADOR</span>
+          <span id="lblCargoTrabajador" class="val-content">OPERADOR HARVESTER</span>
         </div>
         <div>
           <span class="lbl-title">EMPRESA MANDANTE / CONTRATISTA:</span>
@@ -310,7 +308,7 @@
         </div>
         <div>
           <span class="lbl-title">FOLIO DE VERIFICACIÓN:</span>
-          <span id="lblFolioVerificacion" class="val-content" style="color:#0284c7;">SMK-606708</span>
+          <span id="lblFolioVerificacion" class="val-content" style="color:#0284c7;">SMK-124326</span>
         </div>
         <div>
           <span class="lbl-title">FECHA Y HORA DE EMISIÓN:</span>
@@ -321,7 +319,7 @@
       <div class="photo-box">
         <img id="imgFotoTrabajador" src="" alt="Fotografía Webcam" style="display: none;">
         <div id="phFotoBox" class="photo-placeholder">
-          <svg width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M68 20a2 2 0 002 2h10a2 2 0 002-2V8a2 2 0 00-2-2h-3l-2-2H9L7 6H4a2 2 0 00-2 2v12z"/><circle cx="12" cy="13" r="4"/></svg>
+          <svg width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M6 20a2 2 0 002 2h10a2 2 0 002-2V8a2 2 0 00-2-2h-3l-2-2H9L7 6H4a2 2 0 00-2 2v12z"/><circle cx="12" cy="13" r="4"/></svg>
           <span style="margin-top:2px; font-weight:700;">CAPTURA WEBCAM</span>
         </div>
         <div class="photo-label">EVALUADO BIOMÉTRICO</div>
@@ -374,7 +372,7 @@
       <div class="box-firma">
         <img id="imgFirmaTrabajador" class="img-firma-trabajador" src="" alt="Firma Manuscrita" style="display: none;">
         <span style="font-weight:800; color:#0f172a; margin-bottom:2px;" id="lblFirmaTrabajador">Gonzalo Barría</span>
-        <span id="lblRutFirmaTrabajador">RUT: 6.067.084-1</span>
+        <span id="lblRutFirmaTrabajador">RUT: 12.432.657-5</span>
         <span style="border-top:1px solid #cbd5e1; width:85%; margin-top:4px; padding-top:2px;">FIRMA Y DECLARACIÓN JURADA TRABAJADOR</span>
       </div>
       <div class="box-firma">
@@ -391,7 +389,7 @@
 
     <div style="background:#f0fdf4; border:1px solid #bbf7d0; text-align:center; padding:5px; border-radius:6px; font-size:0.62rem; color:#166534; font-weight:700;">
       ✓ V°B° VALIDADO EN SISTEMA - SENSOMETRIKA FORENSIC ENGINE<br>
-      Hash de Inmutabilidad de Datos: <span id="lblHashB2B" style="font-family:monospace; color:#0284c7;">SMK-B2B-SHA256-606708</span>
+      Hash de Inmutabilidad de Datos: <span id="lblHashB2B" style="font-family:monospace; color:#0284c7;">SMK-B2B-SHA256-124326</span>
     </div>
 
     <a id="btnVolverMenuB2B" href="menu_B2B.html" class="btn-return-b2b">← VOLVER AL PORTAL EMPRESA</a>
@@ -399,6 +397,30 @@
   </div>
 
   <script>
+    // FUNCIÓN DE LECTURA MULTICLAVE FLEXIBLE POR RUT (CON O SIN GUION/PUNTOS)
+    function obtenerHistorialPorRut(modulo, rawRut) {
+      const cleanRut = rawRut.replace(/[^0-9Kk]/g, '');
+      const formatRut = rawRut.trim();
+
+      let h = JSON.parse(localStorage.getItem(`sensometrika_historial_${modulo}_${cleanRut}`)) || [];
+      if (h.length > 0) return h;
+
+      h = JSON.parse(localStorage.getItem(`sensometrika_historial_${modulo}_${formatRut}`)) || [];
+      if (h.length > 0) return h;
+
+      // Claves variantes de nombre de módulo
+      if (modulo === 'audicion') {
+        h = JSON.parse(localStorage.getItem(`sensometrika_historial_auditivo_${cleanRut}`)) || [];
+      } else if (modulo === 'visual') {
+        h = JSON.parse(localStorage.getItem(`sensometrika_historial_tamizaje_visual_${cleanRut}`)) || [];
+      }
+
+      if (h.length === 0) {
+        h = JSON.parse(localStorage.getItem(`sensometrika_historial_${modulo}`)) || [];
+      }
+      return h;
+    }
+
     document.addEventListener('DOMContentLoaded', () => {
       const urlParams = new URLSearchParams(window.location.search);
       
@@ -411,10 +433,10 @@
         datosUsuario = JSON.parse(localStorage.getItem('sensometrika_datos_usuario')) || {};
       } catch(e){}
 
-      const rut = urlParams.get('rut') || datosUsuario.rut || '6.067.084-1';
+      const rut = urlParams.get('rut') || datosUsuario.rut || '12.432.657-5';
       const cleanRut = rut.replace(/[^0-9Kk]/g, '');
       const nombre = urlParams.get('nombre') || datosUsuario.nombre || 'GONZALO BARRÍA';
-      const cargo = urlParams.get('cargo') || datosUsuario.cargo || localStorage.getItem('sensometrika_b2b_cargo') || 'OPERADOR / CONDUCTOR';
+      const cargo = urlParams.get('cargo') || datosUsuario.cargo || localStorage.getItem('sensometrika_b2b_cargo') || 'OPERADOR HARVESTER';
 
       const correoAPR = localStorage.getItem('sensometrika_b2b_correo') || 'felix.osses@gmail.com';
       const empresa = urlParams.get('empresa') || localStorage.getItem('sensometrika_b2b_empresa') || 'CONSTRUCTORA';
@@ -490,18 +512,17 @@
       document.getElementById('lblFechaEmision').textContent = ahora.toLocaleDateString('es-CL', opcionesFecha).replace(',', '');
 
       // =========================================================================
-      // LECTURA ESTRICTA POR RUT
+      // LECTURA ROBUSTA MULTICLAVE POR RUT
       // =========================================================================
-      const histReact = JSON.parse(localStorage.getItem(`sensometrika_historial_reactimetro_${cleanRut}`)) || [];
-      const histPalan = JSON.parse(localStorage.getItem(`sensometrika_historial_palancas_${cleanRut}`)) || [];
-      const histPunt  = JSON.parse(localStorage.getItem(`sensometrika_historial_punteo_${cleanRut}`)) || [];
-      const histAud   = JSON.parse(localStorage.getItem(`sensometrika_historial_audicion_${cleanRut}`)) || [];
-      const histVis   = JSON.parse(localStorage.getItem(`sensometrika_historial_visual_${cleanRut}`)) || [];
-      const histAnt   = JSON.parse(localStorage.getItem(`sensometrika_historial_anticipacion_${cleanRut}`)) || [];
-      const histEst   = JSON.parse(localStorage.getItem(`sensometrika_historial_estereopsis_${cleanRut}`)) || [];
-      const histFat   = JSON.parse(localStorage.getItem(`sensometrika_historial_fatiga_${cleanRut}`)) || [];
+      const histReact = obtenerHistorialPorRut('reactimetro', rut);
+      const histPalan = obtenerHistorialPorRut('palancas', rut);
+      const histPunt  = obtenerHistorialPorRut('punteo', rut);
+      const histAud   = obtenerHistorialPorRut('audicion', rut);
+      const histVis   = obtenerHistorialPorRut('visual', rut);
+      const histAnt   = obtenerHistorialPorRut('anticipacion', rut);
+      const histEst   = obtenerHistorialPorRut('estereopsis', rut);
+      const histFat   = obtenerHistorialPorRut('fatiga', rut);
 
-      // Ajuste dinámico de estado de sensores B2B
       const elEstadoSensores = document.getElementById('lblEstadoSensores');
       if (histReact.length > 0 || histPalan.length > 0 || histPunt.length > 0) {
         elEstadoSensores.textContent = 'V°B° Calibrado';
@@ -511,7 +532,7 @@
         elEstadoSensores.style.color = '#94a3b8';
       }
 
-      let ultReactTime = histReact.length > 0 ? histReact[histReact.length - 1].promedioTiempo : 280;
+      let ultReactTime = histReact.length > 0 ? (histReact[histReact.length - 1].promedioTiempo || histReact[histReact.length - 1].tiempo) : 280;
       let ultPalanPrec = histPalan.length > 0 ? histPalan[histPalan.length - 1].precision : 95;
 
       let mesesVigencia = 12;
@@ -551,7 +572,7 @@
       if (histReact.length > 0) {
         modulosCompletadosCount++;
         const ultReact = histReact[histReact.length - 1];
-        tbody.innerHTML += `<tr><td><b>1. Reactímetro Simple</b><br><span style="color:#64748b; font-size:0.58rem;">Frenado simple de emergencia</span></td><td>≤ 350 ms</td><td>${ultReact.promedioTiempo || 280} ms (Aprobado)</td><td><span class="badge-ok">APROBADO</span></td></tr>`;
+        tbody.innerHTML += `<tr><td><b>1. Reactímetro Simple</b><br><span style="color:#64748b; font-size:0.58rem;">Frenado simple de emergencia</span></td><td>≤ 350 ms</td><td>${ultReact.promedioTiempo || ultReact.tiempo || 280} ms (Aprobado)</td><td><span class="badge-ok">APROBADO</span></td></tr>`;
       } else {
         tbody.innerHTML += `<tr><td><b>1. Reactímetro Simple</b><br><span style="color:#64748b; font-size:0.58rem;">Frenado simple de emergencia</span></td><td>≤ 350 ms</td><td>En espera de simulación</td><td><span class="badge-pend">PENDIENTE / EN EJECUCIÓN</span></td></tr>`;
       }
@@ -560,9 +581,9 @@
       if (histPalan.length > 0) {
         modulosCompletadosCount++;
         const ultPalan = histPalan[histPalan.length - 1];
-        const contactos = ultPalan.contactos !== undefined ? ultPalan.contactos : 0;
+        const contactos = ultPalan.contactos !== undefined ? ultPalan.contactos : (ultPalan.toques || 0);
         const tiempoErrorSec = ultPalan.tiempoError ? (ultPalan.tiempoError / 1000).toFixed(1) : "0.0";
-        const precision = ultPalan.precision || 95;
+        const precision = ultPalan.precision !== undefined ? ultPalan.precision : 95;
         tbody.innerHTML += `<tr><td><b>2. Test de Palancas</b><br><span style="color:#64748b; font-size:0.58rem;">Coordinación motriz bimanual</span></td><td>≥ 80% / ≤ 1 contacto</td><td>${precision}% (${contactos} cont. / ${tiempoErrorSec}s error)</td><td><span class="badge-ok">APROBADO</span></td></tr>`;
       } else {
         tbody.innerHTML += `<tr><td><b>2. Test de Palancas</b><br><span style="color:#64748b; font-size:0.58rem;">Coordinación motriz bimanual</span></td><td>≥ 80% / ≤ 1 contacto</td><td>En espera de simulación</td><td><span class="badge-pend">PENDIENTE / EN EJECUCIÓN</span></td></tr>`;
@@ -572,7 +593,7 @@
       if (histPunt.length > 0) {
         modulosCompletadosCount++;
         const ultPunt = histPunt[histPunt.length - 1];
-        tbody.innerHTML += `<tr><td><b>3. Punteo y Ritmo (Lahy)</b><br><span style="color:#64748b; font-size:0.58rem;">Estabilidad psicomotriz</span></td><td>≥ 78% efectividad</td><td>${ultPunt.precision || 90}% (Efectivo)</td><td><span class="badge-ok">APROBADO</span></td></tr>`;
+        tbody.innerHTML += `<tr><td><b>3. Punteo y Ritmo (Lahy)</b><br><span style="color:#64748b; font-size:0.58rem;">Estabilidad psicomotriz</span></td><td>≥ 78% efectividad</td><td>${ultPunt.precision !== undefined ? ultPunt.precision : 90}% (Efectivo)</td><td><span class="badge-ok">APROBADO</span></td></tr>`;
       } else {
         tbody.innerHTML += `<tr><td><b>3. Punteo y Ritmo (Lahy)</b><br><span style="color:#64748b; font-size:0.58rem;">Estabilidad psicomotriz</span></td><td>≥ 78% efectividad</td><td>En espera de simulación</td><td><span class="badge-pend">PENDIENTE / EN EJECUCIÓN</span></td></tr>`;
       }
