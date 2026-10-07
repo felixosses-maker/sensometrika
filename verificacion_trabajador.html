@@ -168,7 +168,7 @@
       </div>
     </div>
 
-    <!-- REGISTRO FOTOGRÁFICO DE IDENTIDAD (SOLO B2B) -->
+    <!-- REGISTRO FOTOGRÁFICO WEBCAM -->
     <div class="card-box" id="boxFotoBiometrica" style="display: none;">
       <div class="card-title">📷 REGISTRO FOTOGRÁFICO DE IDENTIDAD WEBCAM</div>
       <div style="position: relative; width: 100%;">
@@ -180,7 +180,7 @@
       </button>
     </div>
 
-    <!-- FIRMA DIGITAL DEL EVALUADO (SOLO B2B) -->
+    <!-- FIRMA DIGITAL -->
     <div class="card-box" id="boxFirmaDigital" style="display: none;">
       <div class="card-title">✍️ FIRMA DIGITAL DEL EVALUADO</div>
       <div class="signature-container">
@@ -192,7 +192,7 @@
       </div>
     </div>
 
-    <!-- CALIBRACIÓN DE LATENCIA DEL HARDWARE -->
+    <!-- CALIBRACIÓN DE LATENCIA HARDWARE -->
     <div class="card-box">
       <div class="card-title">📱 CALIBRACIÓN DE LATENCIA DEL HARDWARE</div>
       
@@ -244,6 +244,10 @@
       const modeParam = urlParams.get('mode');
       const b2cModeStorage = localStorage.getItem('sensometrika_b2c_mode');
 
+      // PRESERVAR Y PROPAGAR PLAN DESDE LA URL
+      const planParam = (urlParams.get('plan') || localStorage.getItem('sensometrika_plan_contratado') || 'PLUS').toUpperCase();
+      localStorage.setItem('sensometrika_plan_contratado', planParam);
+
       let datosUsuario = {};
       try {
         datosUsuario = JSON.parse(localStorage.getItem('sensometrika_datos_usuario')) || {};
@@ -255,7 +259,6 @@
       document.getElementById('lblRut').textContent = rut || 'SIN RUT';
       document.getElementById('lblNombre').textContent = decodeURIComponent(nombre) || 'SIN NOMBRE';
 
-      // REGLA DE LIMPIEZA TOTAL DE RESULTADOS PREVIOS AL INGRESAR NUEVO TRABAJADOR
       const rutGuardado = localStorage.getItem('sensometrika_evaluado_rut');
       if (rutGuardado !== rut) {
         localStorage.removeItem('sensometrika_modulos_rendidos');
@@ -307,7 +310,6 @@
 
       const fotoCapturadaB64 = canvasTmp.toDataURL('image/jpeg');
       
-      // Guardar con ambas claves para asegurar compatibilidad total en informes B2B
       localStorage.setItem('sensometrika_foto_trabajador', fotoCapturadaB64);
       localStorage.setItem('sensometrika_foto_evaluado', fotoCapturadaB64);
 
@@ -421,18 +423,18 @@
       const urlParams = new URLSearchParams(window.location.search);
       const rut = urlParams.get('rut') || '';
       const nombre = urlParams.get('nombre') || '';
-      const plan = urlParams.get('plan') || 'BASICO';
+      const plan = (urlParams.get('plan') || localStorage.getItem('sensometrika_plan_contratado') || 'PLUS').toUpperCase();
 
       if (!isB2C && canvas) {
         localStorage.setItem('sensometrika_firma_trabajador', canvas.toDataURL());
       }
       
-      // FORZAR MODO DEMO PREVIO OBLIGATORIO AL INGRESAR
       localStorage.setItem('sensometrika_estado_fase', 'demo');
       localStorage.setItem('sensometrika_modo_demo', 'true');
       localStorage.setItem('sensometrika_fase_evaluacion', 'demo');
 
-      window.location.href = `menu_B2C.html?rut=${encodeURIComponent(rut)}&nombre=${encodeURIComponent(nombre)}&plan=${plan}&mode=${isB2C ? 'b2c' : 'b2b'}&fase=demo&demo=true`;
+      const menuDestino = isB2C ? 'menu_B2C.html' : 'menu_B2B.html';
+      window.location.href = `${menuDestino}?rut=${encodeURIComponent(rut)}&nombre=${encodeURIComponent(nombre)}&plan=${plan}&mode=${isB2C ? 'b2c' : 'b2b'}&fase=demo&demo=true`;
     }
   </script>
 </body>

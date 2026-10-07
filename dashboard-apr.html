@@ -179,7 +179,6 @@
     .badge-status { padding: 3px 8px; border-radius: 4px; font-weight: 800; font-size: 0.62rem; text-transform: uppercase; }
     .badge-ok { background: rgba(16, 185, 129, 0.15); color: var(--accent-green); border: 1px solid var(--accent-green); }
 
-    /* Modal Integrado en la App */
     .modal-overlay {
       position: fixed;
       top: 0; left: 0;
@@ -293,7 +292,6 @@
             </tr>
           </thead>
           <tbody id="tablaNominaAPR">
-            <!-- Renderizado dinámico -->
           </tbody>
         </table>
       </div>
@@ -323,7 +321,6 @@
         datosUsuario = JSON.parse(localStorage.getItem('sensometrika_datos_usuario')) || {};
       } catch(e){}
 
-      // BÚSQUEDA ROBUSTA DE VARIABLES DE RESPALDO (URL -> localStorage -> Sesión)
       const empresaResuelta = urlParams.get('empresa') || 
                               contratacion.razonSocial || 
                               localStorage.getItem('sensometrika_b2b_empresa') || 
@@ -339,8 +336,6 @@
 
       document.getElementById('lblEmpresa').innerText = decodeURIComponent(empresaResuelta).toUpperCase();
       document.getElementById('lblEncargado').innerText = decodeURIComponent(encargadoResuelto);
-
-      // Pre-llenar input de empresa mandante en el formulario
       document.getElementById('inputEmpresa').value = decodeURIComponent(empresaResuelta).toUpperCase();
 
       renderizarNomina();
@@ -367,8 +362,12 @@
 
       const tokenB2B = 'B2B-SMK-' + Math.floor(1000 + Math.random() * 9000);
       
+      // RECURSO CRÍTICO: PROPAGAR EL PLAN ACTIVO
+      const urlParams = new URLSearchParams(window.location.search);
+      const planActivo = (urlParams.get('plan') || localStorage.getItem('sensometrika_plan_contratado') || 'PLUS').toUpperCase();
+
       const originUrl = window.location.origin;
-      const urlCompleta = `${originUrl}/verificacion_trabajador.html?token=${tokenB2B}&rut=${encodeURIComponent(rut)}&nombre=${encodeURIComponent(nombre)}&cargo=${encodeURIComponent(cargo)}&empresa=${encodeURIComponent(empresa)}`;
+      const urlCompleta = `${originUrl}/verificacion_trabajador.html?token=${tokenB2B}&rut=${encodeURIComponent(rut)}&nombre=${encodeURIComponent(nombre)}&cargo=${encodeURIComponent(cargo)}&empresa=${encodeURIComponent(empresa)}&plan=${planActivo}&mode=b2b`;
 
       localStorage.setItem('sensometrika_datos_usuario', JSON.stringify({
         nombre: nombre,
@@ -388,6 +387,7 @@
         cargo: cargo,
         empresa: empresa,
         token: tokenB2B,
+        plan: planActivo,
         url: urlCompleta,
         fecha: new Date().toLocaleDateString('es-CL')
       };
@@ -426,7 +426,10 @@
         return;
       }
 
+      const planActivoGlobal = (localStorage.getItem('sensometrika_plan_contratado') || 'PLUS').toUpperCase();
+
       trabajadores.forEach((t) => {
+        const planTrabajador = t.plan || planActivoGlobal;
         const tr = document.createElement('tr');
         tr.innerHTML = `
           <td>
@@ -446,7 +449,7 @@
             </button>
           </td>
           <td>
-            <a href="informe-b2b.html?token=${t.token}&rut=${encodeURIComponent(t.rut)}" target="_blank" style="color:var(--accent-cyan); font-weight:800; text-decoration:underline;">
+            <a href="informe-b2b.html?token=${t.token}&rut=${encodeURIComponent(t.rut)}&plan=${planTrabajador}&mode=b2b" target="_blank" style="color:var(--accent-cyan); font-weight:800; text-decoration:underline;">
               📄 Ver Informe
             </a>
           </td>

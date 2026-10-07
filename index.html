@@ -54,7 +54,6 @@
       padding: 0 8px;
     }
 
-    /* Switch B2C / B2B */
     .switch-tab-container {
       background: #030712;
       border: 1px solid var(--card-border);
@@ -89,7 +88,6 @@
       box-shadow: 0 0 16px var(--accent-cyan-glow);
     }
 
-    /* Tarjetas de Planes */
     .plan-card {
       background-color: var(--card-bg);
       border: 1px solid var(--card-border);
@@ -152,7 +150,6 @@
       color: var(--accent-gold);
     }
 
-    /* Precio */
     .price-box {
       background-color: var(--inner-price-bg);
       border-radius: 10px;
@@ -189,7 +186,6 @@
       box-shadow: 0 4px 16px rgba(229, 179, 36, 0.4);
     }
 
-    /* Selector de Bolsa B2B */
     .bolsa-selector-box {
       background: #030712;
       border: 1px solid var(--card-border);
@@ -212,7 +208,6 @@
       cursor: pointer;
     }
 
-    /* Modales */
     .modal-overlay {
       position: fixed;
       top: 0; left: 0;
@@ -286,7 +281,6 @@
     <!-- VISTA PARTICULARES (B2C) -->
     <div id="vistaB2C" style="display: flex; flex-direction: column; gap: 14px;">
       
-      <!-- Pase Básico B2C -->
       <div class="plan-card">
         <div class="plan-header-row">
           <span class="plan-title">Pase Básico (B2C)</span>
@@ -306,7 +300,6 @@
         <button class="btn-action-cyan" onclick="abrirModalB2C('BASICO')">Elegir Plan Básico (3 Sim) →</button>
       </div>
 
-      <!-- Pase Plus B2C -->
       <div class="plan-card">
         <div class="plan-header-row">
           <span class="plan-title">Pase Plus (B2C)</span>
@@ -325,7 +318,6 @@
         <button class="btn-action-cyan" onclick="abrirModalB2C('PLUS')">Elegir Plan Plus (5 Sim) →</button>
       </div>
 
-      <!-- Pase Full B2C -->
       <div class="plan-card">
         <div class="plan-header-row">
           <span class="plan-title">Pase Full (B2C)</span>
@@ -421,7 +413,7 @@
         </button>
       </div>
 
-      <!-- 4. Plan Alto Desempeño / Pericial Corporativo B2B -->
+      <!-- 4. Plan Alto Desempeño B2B -->
       <div class="plan-card plan-card-gold">
         <div class="plan-header-row">
           <span class="plan-title" style="color: var(--accent-gold);">Plan Alto Desempeño (B2B)</span>
@@ -574,7 +566,6 @@
     let cantidadBolsa = 10;
     let planSeleccionadoModal = 'BASICO';
 
-    // Precios unitarios B2B ajustados a la nueva densidad analítica
     const preciosUnitariosB2B = {
       1: 4990,   // Básico Laboral
       2: 9990,   // Plus
@@ -677,6 +668,7 @@
       const cargoEncargado = document.getElementById('modalB2BCargoEncargado').value.trim();
       const correoEncargado = document.getElementById('modalB2BCorreoEncargado').value.trim();
 
+      // REGISTRO Y PROPAGACIÓN DEL PLAN SELECCIONADO EN LOCALSTORAGE Y ENLACES DE B2B
       localStorage.setItem('sensometrika_b2b_token', 'B2B-TOKEN-' + Date.now());
       localStorage.setItem('sensometrika_b2b_empresa', nombreEmpresa);
       localStorage.setItem('sensometrika_b2b_rut_empresa', rutEmpresa);
@@ -687,6 +679,12 @@
       localStorage.setItem('sensometrika_bolsa_disponible', cantidadBolsa);
       localStorage.setItem('sensometrika_plan_contratado', planSeleccionadoModal);
       localStorage.setItem('sensometrika_b2c_mode', 'false');
+
+      // ACTUALIZAR EL ENLACE AL DASHBOARD APR CON EL PLAN CORRESPONDIENTE
+      const btnAPR = document.getElementById('btnIrDashboardAPR');
+      if (btnAPR) {
+        btnAPR.href = `dashboard-apr.html?plan=${planSeleccionadoModal}&empresa=${encodeURIComponent(nombreEmpresa)}&encargado=${encodeURIComponent(nombreEncargado)}`;
+      }
 
       document.getElementById('formModalB2B').style.display = 'none';
       document.getElementById('txtBolsaConfirmada').textContent = `${cantidadBolsa} unidades (${nombreEmpresa})`;
