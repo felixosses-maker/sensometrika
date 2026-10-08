@@ -157,10 +157,16 @@
       window.location.href = `${menuDestino}?${urlParams.toString()}`;
     }
 
+    // SANITIZACIÓN Y OBTENCIÓN ESTRICTA DE ENSAYOS COMPLETOS POR RUT
     function obtenerHistorialAuditivoRut() {
-      let h = JSON.parse(localStorage.getItem(`sensometrika_historial_auditivo_${cleanRut}`)) || [];
-      if (h.length > 0) return h;
-      return JSON.parse(localStorage.getItem(`sensometrika_historial_audicion_${cleanRut}`)) || [];
+      let raw = JSON.parse(localStorage.getItem(`sensometrika_historial_auditivo_${cleanRut}`)) || [];
+      if (!Array.isArray(raw) || raw.length === 0) {
+        raw = JSON.parse(localStorage.getItem(`sensometrika_historial_audicion_${cleanRut}`)) || [];
+      }
+
+      // Sanitización: Filtrar únicamente los objetos que representan una EVALUACIÓN COMPLETA
+      const historialValido = raw.filter(item => item && (item.total === 8 || item.precision !== undefined || item.dictamen !== undefined));
+      return historialValido;
     }
 
     function actualizarEstadoUI() {
