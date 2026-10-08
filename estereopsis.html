@@ -138,6 +138,18 @@
   </main>
 
   <script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const modeParam = urlParams.get('mode') || (localStorage.getItem('sensometrika_b2c_mode') === 'true' ? 'b2c' : 'b2b');
+    const esB2B = (modeParam === 'b2b');
+
+    let datosUsuario = {};
+    try {
+      datosUsuario = JSON.parse(localStorage.getItem('sensometrika_datos_usuario')) || {};
+    } catch(e){}
+
+    const rut = urlParams.get('rut') || datosUsuario.rut || 'GENERICO';
+    const cleanRut = rut.replace(/[^0-9Kk]/g, '');
+
     const btnIniciar = document.getElementById('btnIniciarEstereo');
     const statusText = document.getElementById('statusText');
     const badgeFase = document.getElementById('badgeFase');
@@ -160,12 +172,34 @@
     let timerBarra = null;
 
     document.addEventListener('DOMContentLoaded', () => {
+      actualizarEstadoUI();
       construirMatrizVisual();
     });
 
     function volverAlMenu() {
-      const search = window.location.search;
-      window.location.href = `menu_B2C.html${search}`;
+      const menuDestino = esB2B ? 'menu_B2B.html' : 'menu_B2C.html';
+      window.location.href = `${menuDestino}?${urlParams.toString()}`;
+    }
+
+    function actualizarEstadoUI() {
+      const historial = JSON.parse(localStorage.getItem(`sensometrika_historial_estereopsis_${cleanRut}`)) || [];
+      const numEnsayosRealizados = historial.length;
+
+      const planStorage = (localStorage.getItem('sensometrika_plan_contratado') || urlParams.get('plan') || 'FULL').toUpperCase();
+      let maxIntentosPlan = esB2B ? (planStorage.includes('ALTO') ? 3 : 1) : 5;
+
+      if (numEnsayosRealizados >= maxIntentosPlan) {
+        badgeFase.innerText = esB2B ? `✓ Evaluación Registrada (${numEnsayosRealizados}/${maxIntentosPlan})` : `✓ Plan Completado (${numEnsayosRealizados}/${maxIntentosPlan})`;
+        badgeFase.style.color = '#10b981';
+        badgeFase.style.borderColor = '#10b981';
+        btnIniciar.innerText = '← RETORNAR AL MENÚ DE EVALUACIONES';
+        btnIniciar.onclick = volverAlMenu;
+        statusText.innerText = esB2B ? 'Evaluación B2B registrada exitosamente. Retorna al menú.' : 'Has completado las simulaciones de tu plan. Retorna al menú.';
+      } else {
+        const siguienteSimu = numEnsayosRealizados + 1;
+        badgeFase.innerText = esB2B ? `🎯 Simulación Oficial Estereopsis B2B` : `🎯 Simulación S${siguienteSimu} de ${maxIntentosPlan}`;
+        btnIniciar.innerText = esB2B ? '▶ INICIAR SIMULACIÓN OFICIAL B2B' : `▶ INICIAR SIMULACIÓN S${siguienteSimu} (5 RONDAS)`;
+      }
     }
 
     function construirMatrizVisual() {
@@ -203,6 +237,15 @@
     }
 
     function iniciarPruebaEstereo() {
+      const historial = JSON.parse(localStorage.getItem(`sensometrika_historial_estereopsis_${cleanRut}`)) || [];
+      const planStorage = (localStorage.getItem('sensometrika_plan_contratado') || urlParams.get('plan') || 'FULL').toUpperCase();
+      let maxIntentosPlan = esB2B ? (planStorage.includes('ALTO') ? 3 : 1) : 5;
+
+      if (historial.length >= maxIntentosPlan) {
+        volverAlMenu();
+        return;
+      }
+
       juegoActivo = true;
       rondaActual = 0;
       aciertos = 0;
@@ -303,27 +346,22 @@
 
       const aprobado = precisionFinal >= 80 && aprobadoLatencia;
 
-      const resultado = {
+      // GUARDADO ISOLADO Y ESTRICTO POR RUT DE TRABAJADOR
+      let historial = JSON.parse(localStorage.getItem(`sensometrika_historial_estereopsis_${cleanRut}`)) || [];
+      historial.push({
         precision: precisionFinal,
         aciertos: aciertos,
         total: totalRondas,
         latenciaPromedio: latenciaFinal,
         categoriaLatencia: categoriaLatencia,
         aprobado: aprobado,
-        modo: 'B2B OFICIAL 5 RONDAS',
+        dictamen: aprobado ? 'APROBADO' : 'OBSERVADO',
         fecha: new Date().toISOString()
-      };
+      });
 
-      // GUARDADO DUAL: REGISTRO INDIVIDUAL + REGISTRO DE MÓDULO RENDIDO
-      localStorage.setItem('sensometrika_estereopsis', JSON.stringify(resultado));
+      localStorage.setItem(`sensometrika_historial_estereopsis_${cleanRut}`, JSON.stringify(historial));
 
-      let modulosRendidos = {};
-      try {
-        modulosRendidos = JSON.parse(localStorage.getItem('sensometrika_modulos_rendidos')) || {};
-      } catch(e){}
-      modulosRendidos.estereopsis = true;
-      localStorage.setItem('sensometrika_modulos_rendidos', JSON.stringify(modulosRendidos));
-
+      actualizarEstadoUI();
       mostrarModalResultadoEstereopsis(precisionFinal, latenciaFinal, categoriaLatencia, aprobado);
     }
 
