@@ -235,7 +235,7 @@
             
             <div class="user-header-box">
                 <div class="user-plan-title" id="lblPlanHeader">EVALUACIÓN B2B • PLAN PLUS</div>
-                <div class="user-info-text" id="lblUserData">EVALUADO: ARTURO PRAT | RUT: 13.874.445-1</div>
+                <div class="user-info-text" id="lblUserData">EVALUADO: JUAN ROJAS ROJAS | RUT: 13.873.008-1</div>
             </div>
 
             <div class="modules-list">
@@ -329,49 +329,30 @@
             datosUsuario = JSON.parse(localStorage.getItem('sensometrika_datos_usuario')) || {};
         } catch(e){}
 
-        const rawRut = urlParams.get('rut') || datosUsuario.rut || '13.874.445-1';
+        const rawRut = urlParams.get('rut') || datosUsuario.rut || '13.873.008-1';
         const cleanRut = rawRut.replace(/[^0-9Kk]/g, '');
-        const nombreUsuario = urlParams.get('nombre') || datosUsuario.nombre || 'ARTURO PRAT';
+        const nombreUsuario = urlParams.get('nombre') || datosUsuario.nombre || 'JUAN ROJAS ROJAS';
         const planContratado = (urlParams.get('plan') || localStorage.getItem('sensometrika_plan_contratado') || 'PLUS').toUpperCase().trim();
 
         document.getElementById('lblUserData').textContent = `EVALUADO: ${decodeURIComponent(nombreUsuario).toUpperCase()} | RUT: ${rawRut}`;
         document.getElementById('lblPlanHeader').textContent = `EVALUACIÓN B2B • PLAN ${planContratado.replace('_', ' ')}`;
 
+        // VERIFICACIÓN STRICTA POR RUT: CERO FALLBACKS GLOBALES
         function verifRendidoRut(moduloKey) {
             if (!cleanRut) return false;
 
-            // Claves de consulta aisladas por RUT
-            const clavesPosibles = [
-                `sensometrika_historial_${moduloKey}_${cleanRut}`,
-                `sensometrika_historial_auditivo_${cleanRut}`,
-                `sensometrika_historial_audicion_${cleanRut}`,
-                `sensometrika_historial_punteo_${cleanRut}`,
-                `sensometrika_historial_reactimetro_${cleanRut}`,
-                `sensometrika_historial_palancas_${cleanRut}`,
-                `sensometrika_historial_tamizaje_visual_${cleanRut}`,
-                `sensometrika_historial_visual_${cleanRut}`,
-                `sensometrika_historial_anticipacion_${cleanRut}`,
-                `sensometrika_historial_estereopsis_${cleanRut}`,
-                `sensometrika_historial_fatiga_${cleanRut}`
-            ];
+            const keyExplicita = `sensometrika_historial_${moduloKey}_${cleanRut}`;
+            let h = JSON.parse(localStorage.getItem(keyExplicita)) || [];
 
-            for (let k of clavesPosibles) {
-                if (k.endsWith(`_${cleanRut}`)) {
-                    let h = JSON.parse(localStorage.getItem(k)) || [];
-                    if (Array.isArray(h) && h.length > 0) {
-                        // Validar que exista al menos 1 ensayo real completado con métricas válidas > 0
-                        const valido = h.some(i => i && (
-                            i.promedioTiempo > 0 || 
-                            i.tiempoBruto > 0 || 
-                            (i.precision !== undefined && (i.totalImpactos > 0 || i.aciertos !== undefined)) || 
-                            i.dictamen !== undefined || 
-                            i.aciertos !== undefined
-                        ));
-                        if (valido) return true;
-                    }
-                }
-            }
-            return false;
+            if (!Array.isArray(h) || h.length === 0) return false;
+
+            return h.some(i => i && (
+                i.promedioTiempo > 0 || 
+                i.tiempoBruto > 0 || 
+                (i.precision !== undefined && (i.totalImpactos > 0 || i.aciertos !== undefined)) || 
+                i.dictamen !== undefined || 
+                i.aciertos !== undefined
+            ));
         }
 
         function renderizarMenuB2B() {
