@@ -155,13 +155,6 @@
       transform: scale(0.97);
     }
 
-    .btn-b2b-disabled {
-      background: transparent;
-      border: none;
-      padding: 0;
-      pointer-events: none;
-    }
-
     .badge-ok-b2b {
       background-color: rgba(16, 185, 129, 0.12);
       border: 1px solid rgba(16, 185, 129, 0.4);
@@ -218,7 +211,7 @@
 
     <div class="plan-card-info">
       <span class="plan-title" id="lblPlanHeader">EVALUACIÓN B2B • PLAN BÁSICO</span>
-      <span class="user-info-text" id="lblUsuarioHeader">EVALUADO: GONZALO BARRÍA | RUT: 12.432.657-5</span>
+      <span class="user-info-text" id="lblUsuarioHeader">EVALUADO: JUAN SOCIAS SOTO | RUT: 23.233.456-5</span>
     </div>
 
     <div class="modules-card">
@@ -304,28 +297,27 @@
 
   <script>
     // =========================================================================
-    // VERIFICACIÓN ESTRUCTURAL DE HISTORIAL AISLADO POR RUT (SIN FALLBACK GLOBAL)
+    // CONSULTA ESTRICTA DE HISTORIAL AISLADO POR RUT DEL EVALUADO
     // =========================================================================
-    function consultarHistorialAisladoRut(modulo, rawRut) {
+    function consultarHistorialEstrictoRut(modulo, rawRut) {
       if (!rawRut) return [];
       const cleanRut = rawRut.replace(/[^0-9Kk]/g, '');
 
-      // Consulta de claves estrictas por RUT
       let h = JSON.parse(localStorage.getItem(`sensometrika_historial_${modulo}_${cleanRut}`)) || [];
       if (h.length > 0) return h;
 
-      // Aliases por módulo aislados por RUT
       if (modulo === 'audicion' || modulo === 'auditivo') {
         h = JSON.parse(localStorage.getItem(`sensometrika_historial_auditivo_${cleanRut}`)) || [];
         if (h.length > 0) return h;
         h = JSON.parse(localStorage.getItem(`sensometrika_historial_audicion_${cleanRut}`)) || [];
-      } else if (modulo === 'visual') {
-        h = JSON.parse(localStorage.getItem(`sensometrika_historial_tamizaje_visual_${cleanRut}`)) || [];
-      } else if (modulo === 'fatiga') {
-        h = JSON.parse(localStorage.getItem(`sensometrika_historial_fatiga_${cleanRut}`)) || [];
+      } else if (modulo === 'punteo') {
+        h = JSON.parse(localStorage.getItem(`sensometrika_historial_punteo_${cleanRut}`)) || [];
+      } else if (modulo === 'palancas') {
+        h = JSON.parse(localStorage.getItem(`sensometrika_historial_palancas_${cleanRut}`)) || [];
+      } else if (modulo === 'reactimetro') {
+        h = JSON.parse(localStorage.getItem(`sensometrika_historial_reactimetro_${cleanRut}`)) || [];
       }
 
-      // ESTRICTO: Nunca retornar claves globales sin RUT
       return h;
     }
 
@@ -337,10 +329,10 @@
         datosUsuario = JSON.parse(localStorage.getItem('sensometrika_datos_usuario')) || {};
       } catch(e){}
 
-      const rut = urlParams.get('rut') || datosUsuario.rut || '12.432.657-5';
-      const nombre = urlParams.get('nombre') || datosUsuario.nombre || 'GONZALO BARRÍA';
+      const rut = urlParams.get('rut') || datosUsuario.rut || '23.233.456-5';
+      const nombre = urlParams.get('nombre') || datosUsuario.nombre || 'JUAN SOCIAS SOTO';
       const planStorage = localStorage.getItem('sensometrika_plan_contratado');
-      const plan = (urlParams.get('plan') || planStorage || 'BASICO').toUpperCase().trim();
+      const plan = (urlParams.get('plan') || planStorage || 'PLUS').toUpperCase().trim();
 
       document.getElementById('lblPlanHeader').textContent = `EVALUACIÓN B2B • PLAN ${plan.replace('_', ' ')}`;
       document.getElementById('lblUsuarioHeader').textContent = `EVALUADO: ${decodeURIComponent(nombre).toUpperCase()} | RUT: ${rut}`;
@@ -348,41 +340,41 @@
       const btnInforme = document.getElementById('btnFinalizarB2B');
       btnInforme.href = `informe-b2b.html?${urlParams.toString()}`;
 
-      // COBERTURA SEGÚN PLANES
+      // COBERTURA SEGÚN PLAN
       const tieneAuditivo = (plan.includes('PLUS') || plan.includes('FULL') || plan.includes('ALTO'));
       const tieneVisual   = (plan.includes('FULL') || plan.includes('ALTO'));
       const tieneAltoDesempenio = plan.includes('ALTO');
 
       // 1. Reactímetro
-      const histReact = consultarHistorialAisladoRut('reactimetro', rut);
+      const histReact = consultarHistorialEstrictoRut('reactimetro', rut);
       configurarBoton('btnReactimetro', 'reactimetro.html', histReact, true, plan, urlParams);
 
       // 2. Palancas
-      const histPalan = consultarHistorialAisladoRut('palancas', rut);
+      const histPalan = consultarHistorialEstrictoRut('palancas', rut);
       configurarBoton('btnPalancas', 'palancas.html', histPalan, true, plan, urlParams);
 
       // 3. Punteo
-      const histPunt = consultarHistorialAisladoRut('punteo', rut);
+      const histPunt = consultarHistorialEstrictoRut('punteo', rut);
       configurarBoton('btnPunteo', 'punteo.html', histPunt, true, plan, urlParams);
 
       // 4. Auditivo
-      const histAud = consultarHistorialAisladoRut('audicion', rut);
+      const histAud = consultarHistorialEstrictoRut('auditivo', rut);
       configurarBoton('btnAuditivo', 'audicion.html', histAud, tieneAuditivo, plan, urlParams);
 
       // 5. Visual
-      const histVis = consultarHistorialAisladoRut('visual', rut);
+      const histVis = consultarHistorialEstrictoRut('visual', rut);
       configurarBoton('btnVisual', 'tamizaje_visual.html', histVis, tieneVisual, plan, urlParams);
 
       // 6. Anticipación
-      const histAnt = consultarHistorialAisladoRut('anticipacion', rut);
+      const histAnt = consultarHistorialEstrictoRut('anticipacion', rut);
       configurarBoton('btnAnticipacion', 'anticipacion.html', histAnt, tieneAltoDesempenio, plan, urlParams);
 
       // 7. Estereopsis 3D
-      const histEst = consultarHistorialAisladoRut('estereopsis', rut);
+      const histEst = consultarHistorialEstrictoRut('estereopsis', rut);
       configurarBoton('btnEstereopsis', 'estereopsis.html', histEst, tieneAltoDesempenio, plan, urlParams);
 
       // 8. Test de Fatiga (PVT)
-      const histFat = consultarHistorialAisladoRut('fatiga', rut);
+      const histFat = consultarHistorialEstrictoRut('fatiga', rut);
       configurarBoton('btnFatiga', 'fatiga.html', histFat, tieneAltoDesempenio, plan, urlParams);
     });
 
