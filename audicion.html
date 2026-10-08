@@ -122,7 +122,7 @@
     let datosUsuario = {};
     try { datosUsuario = JSON.parse(localStorage.getItem('sensometrika_datos_usuario')) || {}; } catch(e){}
 
-    const rut = urlParams.get('rut') || datosUsuario.rut || '12.432.657-5';
+    const rut = urlParams.get('rut') || datosUsuario.rut || 'GENERICO';
     const cleanRut = rut.replace(/[^0-9Kk]/g, '');
 
     const isDemoURL = urlParams.get('demo') === 'true' || urlParams.get('fase') === 'demo';
@@ -157,14 +157,13 @@
       window.location.href = `${menuDestino}?${urlParams.toString()}`;
     }
 
-    // SANITIZACIÓN Y OBTENCIÓN ESTRICTA DE ENSAYOS COMPLETOS POR RUT
+    // OBTENCIÓN Y SANITIZACIÓN ESTRICTA POR RUT (AISLADO POR TRABAJADOR)
     function obtenerHistorialAuditivoRut() {
       let raw = JSON.parse(localStorage.getItem(`sensometrika_historial_auditivo_${cleanRut}`)) || [];
       if (!Array.isArray(raw) || raw.length === 0) {
         raw = JSON.parse(localStorage.getItem(`sensometrika_historial_audicion_${cleanRut}`)) || [];
       }
 
-      // Sanitización: Filtrar únicamente los objetos que representan una EVALUACIÓN COMPLETA
       const historialValido = raw.filter(item => item && (item.total === 8 || item.precision !== undefined || item.dictamen !== undefined));
       return historialValido;
     }
@@ -405,18 +404,9 @@
           dictamen: aprobado ? 'APROBADO' : 'OBSERVADO'
         });
 
+        // GUARDADO STRICTO POR RUT (SIN REGISTROS GLOBALES CONTAMINANTES)
         localStorage.setItem(`sensometrika_historial_auditivo_${cleanRut}`, JSON.stringify(historial));
         localStorage.setItem(`sensometrika_historial_audicion_${cleanRut}`, JSON.stringify(historial));
-
-        const planStorage = (localStorage.getItem('sensometrika_plan_contratado') || 'PLUS').toUpperCase();
-        let maxIntentosPlan = esB2B ? (planStorage.includes('ALTO') ? 3 : 1) : (planStorage.includes('FULL') || planStorage.includes('ALTO') ? 8 : 5);
-
-        if (historial.length >= maxIntentosPlan) {
-          let modulosRendidos = JSON.parse(localStorage.getItem('sensometrika_modulos_rendidos')) || {};
-          modulosRendidos.auditivo = true;
-          modulosRendidos.audicion = true;
-          localStorage.setItem('sensometrika_modulos_rendidos', JSON.stringify(modulosRendidos));
-        }
 
         actualizarEstadoUI();
         mostrarModalResultadoAudio(aciertosTotales, aprobado, false);
