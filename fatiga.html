@@ -235,12 +235,24 @@
   </div>
 
   <script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const modeParam = urlParams.get('mode') || (localStorage.getItem('sensometrika_b2c_mode') === 'true' ? 'b2c' : 'b2b');
+    const esB2B = (modeParam === 'b2b');
+
+    let datosUsuario = {};
+    try {
+      datosUsuario = JSON.parse(localStorage.getItem('sensometrika_datos_usuario')) || {};
+    } catch(e){}
+
+    const rutEvaluado = urlParams.get('rut') || datosUsuario.rut || 'GENERICO';
+    const cleanRut = rutEvaluado.replace(/[^0-9Kk]/g, '');
+
     function abrirModalGuia() { document.getElementById('modalGuia').style.display = 'flex'; }
     function cerrarModalGuia() { document.getElementById('modalGuia').style.display = 'none'; }
 
     function volverMenu() {
-      const params = new URLSearchParams(window.location.search).toString();
-      window.location.href = `menu_B2C.html?${params}`;
+      const menuDestino = esB2B ? 'menu_B2B.html' : 'menu_B2C.html';
+      window.location.href = `${menuDestino}?${urlParams.toString()}`;
     }
 
     function mostrarModalInterno(titulo, mensaje, callback) {
@@ -265,7 +277,9 @@
     let timerContador = null;
     let activo = false;
     let esperando = false;
-    let tiemposOficiales = [];
+    let tiemposOficialesBrutos = [];
+    let tiemposOficialesNetos = [];
+    let lapsosCount = 0; // Tiempos > 500 ms (signos de fatiga o micro-sueño)
 
     function manejarAccionBtn() {
       const btn = document.getElementById('btn-accion');
@@ -315,15 +329,26 @@
       clearTimeout(timerEstmulo);
       clearInterval(timerContador);
 
-      const tReaccion = Math.round(performance.now() - tInicio);
+      const tBruto = Math.round(performance.now() - tInicio);
+
+      // =========================================================================
+      // COMPENSACIÓN TELEMÉTRICA DE HARDWARE (D.S. N° 170 / CORMA)
+      // =========================================================================
+      const latenciaHardware = parseInt(localStorage.getItem('sensometrika_latencia_ms') || '0', 10);
+      const tNeto = Math.max(100, tBruto - latenciaHardware);
+
+      if (tNeto > 500) {
+        lapsosCount++;
+      }
+
       const display = document.getElementById('displayPvt');
-      display.innerText = `${tReaccion} ms`;
+      display.innerText = `${tNeto} ms`;
       display.style.color = "#38bdf8";
 
       if (fase === 0) {
         mostrarModalInterno(
           "Demo de Fatiga Completada",
-          `Tiempo registrado en práctica: <strong>${tReaccion} ms</strong>.<br><br>A continuación, darán inicio las 3 Evaluaciones Oficiales de Vigilancia.`,
+          `Tiempo neto de práctica: <strong>${tNeto} ms</strong> (Compensado -${latenciaHardware} ms hardware).<br><br>A continuación, darán inicio las 3 Evaluaciones Oficiales de Vigilancia.`,
           () => {
             fase = 1;
             document.getElementById('titulo-fase').innerText = `Test de Fatiga y Vigilancia (Ensayo Oficial 1 de 3)`;
@@ -332,10 +357,12 @@
           }
         );
       } else {
-        tiemposOficiales.push(tReaccion);
-        const suma = tiemposOficiales.reduce((a,b) => a+b, 0);
-        const promedio = Math.round(suma / tiemposOficiales.length);
-        document.getElementById('txt-resultado-actual').innerText = `${promedio} ms`;
+        tiemposOficialesBrutos.push(tBruto);
+        tiemposOficialesNetos.push(tNeto);
+
+        const sumaNetos = tiemposOficialesNetos.reduce((a,b) => a+b, 0);
+        const promedioNeto = Math.round(sumaNetos / tiemposOficialesNetos.length);
+        document.getElementById('txt-resultado-actual').innerText = `${promedioNeto} ms`;
 
         if (fase < 3) {
           fase++;
@@ -343,23 +370,26 @@
           document.getElementById('btn-accion').innerText = `▶ Iniciar Ensayo Oficial ${fase} de 3`;
           document.getElementById('btn-accion').style.display = 'block';
         } else {
-          finalizarPruebaFatiga(promedio);
+          finalizarPruebaFatiga(promedioNeto, latenciaHardware);
         }
       }
     }
 
-    function finalizarPruebaFatiga(promedioFinal) {
-      const aprobado = promedioFinal <= 450;
+    function finalizarPruebaFatiga(promedioFinalNeto, latenciaHardware) {
+      const aprobado = promedioFinalNeto <= 450 && lapsosCount <= 1;
 
-      // Registrar historial global de fatiga
-      let historial = JSON.parse(localStorage.getItem('sensometrika_historial_fatiga')) || [];
+      // Registrar en historial aislado por RUT
+      let historial = JSON.parse(localStorage.getItem(`sensometrika_historial_fatiga_${cleanRut}`)) || [];
       historial.push({
-        promedioTiempo: promedioFinal,
-        tiempos: tiemposOficiales,
+        promedioTiempo: promedioFinalNeto,
+        tiempos: tiemposOficialesNetos,
+        tiemposBrutos: tiemposOficialesBrutos,
+        latenciaCompensadaMs: latenciaHardware,
+        lapsos: lapsosCount,
         aprobado: aprobado,
         fecha: new Date().toISOString()
       });
-      localStorage.setItem('sensometrika_historial_fatiga', JSON.stringify(historial));
+      localStorage.setItem(`sensometrika_historial_fatiga_${cleanRut}`, JSON.stringify(historial));
 
       // Marcar módulo 8 como Rendido
       let modulosRendidos = JSON.parse(localStorage.getItem('sensometrika_modulos_rendidos')) || {};
@@ -368,7 +398,10 @@
 
       mostrarModalInterno(
         "Evaluación de Fatiga Finalizada",
-        `Promedio de vigilancia (3 Rondas): <strong>${promedioFinal} ms</strong>.<br><br>Estado: <strong>${aprobado ? 'APROBADO' : 'OBSERVADO'}</strong>`,
+        `Promedio Neto de Vigilancia: <strong>${promedioFinalNeto} ms</strong>.<br>` +
+        `<span style="font-size:0.75rem; color:#94a3b8;">(Compensación telemétrica de hardware: -${latenciaHardware} ms)</span><br>` +
+        `Lapsos de micro-sueño (>500ms): <strong>${lapsosCount}</strong><br><br>` +
+        `Estado: <strong>${aprobado ? '✓ APROBADO' : '⚠ OBSERVADO'}</strong>`,
         () => {
           volverMenu();
         }
