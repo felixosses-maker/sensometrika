@@ -286,12 +286,24 @@
   </div>
 
   <script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const modeParam = urlParams.get('mode') || (localStorage.getItem('sensometrika_b2c_mode') === 'true' ? 'b2c' : 'b2b');
+    const esB2B = (modeParam === 'b2b');
+
+    let datosUsuario = {};
+    try {
+      datosUsuario = JSON.parse(localStorage.getItem('sensometrika_datos_usuario')) || {};
+    } catch(e){}
+
+    const rut = urlParams.get('rut') || datosUsuario.rut || 'GENERICO';
+    const cleanRut = rut.replace(/[^0-9Kk]/g, '');
+
     function abrirModalGuia() { document.getElementById('modalGuia').style.display = 'flex'; }
     function cerrarModalGuia() { document.getElementById('modalGuia').style.display = 'none'; }
 
     function regresarAlMenu() {
-      const urlParams = new URLSearchParams(window.location.search);
-      window.location.href = `menu_B2C.html?${urlParams.toString()}`;
+      const menuDestino = esB2B ? 'menu_B2B.html' : 'menu_B2C.html';
+      window.location.href = `${menuDestino}?${urlParams.toString()}`;
     }
 
     function mostrarModalInterno(titulo, mensaje, callback) {
@@ -319,7 +331,36 @@
     let faseActual = 0; 
     let erroresOficiales = [];
 
+    document.addEventListener('DOMContentLoaded', () => {
+      actualizarEstadoUI();
+    });
+
+    function actualizarEstadoUI() {
+      const historial = JSON.parse(localStorage.getItem(`sensometrika_historial_anticipacion_${cleanRut}`)) || [];
+      const numEnsayosRealizados = historial.length;
+
+      const planStorage = (localStorage.getItem('sensometrika_plan_contratado') || urlParams.get('plan') || 'FULL').toUpperCase();
+      let maxIntentosPlan = esB2B ? (planStorage.includes('ALTO') ? 3 : 1) : 5;
+
+      if (numEnsayosRealizados >= maxIntentosPlan) {
+        document.getElementById('titulo-fase').innerText = esB2B ? `EVALUACIÓN REGISTRADA (${numEnsayosRealizados}/${maxIntentosPlan})` : `PLAN COMPLETADO (${numEnsayosRealizados}/${maxIntentosPlan})`;
+        document.getElementById('panel-estado').innerText = esB2B ? 'Evaluación corporativa B2B registrada exitosamente.' : 'Has completado la cuota de simulaciones contratadas.';
+        const btn = document.getElementById('btn-accion');
+        btn.innerText = '← RETORNAR AL MENÚ DE EVALUACIONES';
+        btn.onclick = regresarAlMenu;
+      }
+    }
+
     function manejarAccion() {
+      const historial = JSON.parse(localStorage.getItem(`sensometrika_historial_anticipacion_${cleanRut}`)) || [];
+      const planStorage = (localStorage.getItem('sensometrika_plan_contratado') || urlParams.get('plan') || 'FULL').toUpperCase();
+      let maxIntentosPlan = esB2B ? (planStorage.includes('ALTO') ? 3 : 1) : 5;
+
+      if (historial.length >= maxIntentosPlan) {
+        regresarAlMenu();
+        return;
+      }
+
       const btn = document.getElementById('btn-accion');
       if (!simulando) {
         if (faseActual === 0) {
@@ -387,22 +428,18 @@
     function finalizarPruebaTotal(promedioFinal) {
       const aprobado = promedioFinal <= 220;
 
-      // 1. Guardar en historial acumulativo de anticipación
-      let histAnt = JSON.parse(localStorage.getItem('sensometrika_historial_anticipacion')) || [];
+      // 1. GUARDADO AISLADO STRICTO POR RUT DE TRABAJADOR
+      let histAnt = JSON.parse(localStorage.getItem(`sensometrika_historial_anticipacion_${cleanRut}`)) || [];
       histAnt.push({
         errorMs: promedioFinal,
         rondas: erroresOficiales,
         aprobado: aprobado,
+        dictamen: aprobado ? 'APROBADO' : 'OBSERVADO',
         fecha: new Date().toISOString()
       });
-      localStorage.setItem('sensometrika_historial_anticipacion', JSON.stringify(histAnt));
+      localStorage.setItem(`sensometrika_historial_anticipacion_${cleanRut}`, JSON.stringify(histAnt));
 
-      // 2. Marcar módulo rendido en la sesión del menú
-      let modulosRendidos = JSON.parse(localStorage.getItem('sensometrika_modulos_rendidos')) || {};
-      modulosRendidos.anticipacion = true;
-      localStorage.setItem('sensometrika_modulos_rendidos', JSON.stringify(modulosRendidos));
-
-      // 3. Regresar preservando la URL y parámetros
+      // 2. Regresar preservando la URL y parámetros
       regresarAlMenu();
     }
   </script>
