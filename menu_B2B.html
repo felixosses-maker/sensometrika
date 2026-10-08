@@ -296,59 +296,32 @@
   </div>
 
   <script>
+    // CONSULTA ESTRICTA AISLADA POR RUT (PROHIBIDO LEER CLAVES GLOBALES SIN RUT)
     function consultarHistorialAisladoRut(modulo, rawRut) {
       if (!rawRut) return [];
       const cleanRut = rawRut.replace(/[^0-9Kk]/g, '');
-      const formatRut = rawRut.trim();
 
-      const clavesABuscar = [
+      // Solamente se consultan claves que incluyan explícitamente el cleanRut
+      const clavesEspecificasRut = [
         `sensometrika_historial_${modulo}_${cleanRut}`,
-        `sensometrika_historial_${modulo}_${formatRut}`,
-        `sensometrika_historial_${modulo}`
+        `sensometrika_historial_auditivo_${cleanRut}`,
+        `sensometrika_historial_audicion_${cleanRut}`,
+        `sensometrika_historial_punteo_${cleanRut}`,
+        `sensometrika_historial_reactimetro_${cleanRut}`,
+        `sensometrika_historial_palancas_${cleanRut}`,
+        `sensometrika_historial_tamizaje_visual_${cleanRut}`,
+        `sensometrika_historial_visual_${cleanRut}`,
+        `sensometrika_historial_anticipacion_${cleanRut}`,
+        `sensometrika_historial_estereopsis_${cleanRut}`,
+        `sensometrika_historial_fatiga_${cleanRut}`
       ];
 
-      if (modulo === 'punteo') {
-        clavesABuscar.push(`sensometrika_historial_punteo_${cleanRut}`);
-        clavesABuscar.push(`sensometrika_historial_punteo_${formatRut}`);
-        clavesABuscar.push(`sensometrika_historial_punteo`);
-      } else if (modulo === 'reactimetro') {
-        clavesABuscar.push(`sensometrika_historial_reactimetro_${cleanRut}`);
-        clavesABuscar.push(`sensometrika_historial_reactimetro_${formatRut}`);
-        clavesABuscar.push(`sensometrika_historial_reactimetro`);
-      } else if (modulo === 'palancas') {
-        clavesABuscar.push(`sensometrika_historial_palancas_${cleanRut}`);
-        clavesABuscar.push(`sensometrika_historial_palancas_${formatRut}`);
-        clavesABuscar.push(`sensometrika_historial_palancas`);
-      } else if (modulo === 'audicion' || modulo === 'auditivo') {
-        clavesABuscar.push(`sensometrika_historial_auditivo_${cleanRut}`);
-        clavesABuscar.push(`sensometrika_historial_audicion_${cleanRut}`);
-        clavesABuscar.push(`sensometrika_historial_auditivo_${formatRut}`);
-        clavesABuscar.push(`sensometrika_historial_audicion_${formatRut}`);
-      } else if (modulo === 'visual') {
-        clavesABuscar.push(`sensometrika_historial_tamizaje_visual_${cleanRut}`);
-        clavesABuscar.push(`sensometrika_historial_visual_${cleanRut}`);
-        clavesABuscar.push(`sensometrika_historial_tamizaje_visual_${formatRut}`);
-      } else if (modulo === 'anticipacion') {
-        clavesABuscar.push(`sensometrika_historial_anticipacion_${cleanRut}`);
-      } else if (modulo === 'estereopsis') {
-        clavesABuscar.push(`sensometrika_historial_estereopsis_${cleanRut}`);
-      } else if (modulo === 'fatiga') {
-        clavesABuscar.push(`sensometrika_historial_fatiga_${cleanRut}`);
-      }
-
-      for (let k of clavesABuscar) {
-        let h = JSON.parse(localStorage.getItem(k)) || [];
-        if (Array.isArray(h) && h.length > 0) return h;
-      }
-
-      // Verificación secundaria: lectura de la bandera 'sensometrika_modulos_rendidos'
-      try {
-        const rendidosObj = JSON.parse(localStorage.getItem('sensometrika_modulos_rendidos')) || {};
-        const modKey = (modulo === 'audicion') ? 'auditivo' : modulo;
-        if (rendidosObj[modKey] === true || rendidosObj[modulo] === true) {
-          return [{ rendidoPorFlag: true }];
+      for (let k of clavesEspecificasRut) {
+        if (k.includes(cleanRut)) {
+          let h = JSON.parse(localStorage.getItem(k)) || [];
+          if (Array.isArray(h) && h.length > 0) return h;
         }
-      } catch(e){}
+      }
 
       return [];
     }
@@ -364,12 +337,10 @@
       const rut = urlParams.get('rut') || datosUsuario.rut || '12.432.657-5';
       const nombre = urlParams.get('nombre') || datosUsuario.nombre || 'GONZALO BARRÍA';
       
-      // PRIORIZAR EL PLAN VIENE DESDE LA URL (Evita que el localStorage lo fuerce a BASICO)
       const planUrl = urlParams.get('plan');
       const planStorage = localStorage.getItem('sensometrika_plan_contratado');
       const plan = (planUrl || planStorage || 'BASICO').toUpperCase().trim();
 
-      // Guardar el plan correcto en localStorage para mantener coherencia en toda la sesión
       localStorage.setItem('sensometrika_plan_contratado', plan);
 
       document.getElementById('lblPlanHeader').textContent = `EVALUACIÓN B2B • PLAN ${plan.replace('_', ' ')}`;
