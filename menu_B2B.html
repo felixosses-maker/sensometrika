@@ -337,22 +337,32 @@
         document.getElementById('lblUserData').textContent = `EVALUADO: ${decodeURIComponent(nombreUsuario).toUpperCase()} | RUT: ${rawRut}`;
         document.getElementById('lblPlanHeader').textContent = `EVALUACIÓN B2B • PLAN ${planContratado.replace('_', ' ')}`;
 
-        // VERIFICACIÓN STRICTA POR RUT: CERO FALLBACKS GLOBALES
+        // VERIFICACIÓN STRICTA MULTICLAVE POR RUT (SOPORTE DE ALIAS HISTÓRICOS)
         function verifRendidoRut(moduloKey) {
             if (!cleanRut) return false;
 
-            const keyExplicita = `sensometrika_historial_${moduloKey}_${cleanRut}`;
-            let h = JSON.parse(localStorage.getItem(keyExplicita)) || [];
+            const posiblesClaves = [
+                `sensometrika_historial_${moduloKey}_${cleanRut}`
+            ];
 
-            if (!Array.isArray(h) || h.length === 0) return false;
+            if (moduloKey === 'auditivo') posiblesClaves.push(`sensometrika_historial_audicion_${cleanRut}`);
+            if (moduloKey === 'visual') posiblesClaves.push(`sensometrika_historial_tamizaje_visual_${cleanRut}`);
 
-            return h.some(i => i && (
-                i.promedioTiempo > 0 || 
-                i.tiempoBruto > 0 || 
-                (i.precision !== undefined && (i.totalImpactos > 0 || i.aciertos !== undefined)) || 
-                i.dictamen !== undefined || 
-                i.aciertos !== undefined
-            ));
+            for (let k of posiblesClaves) {
+                let h = JSON.parse(localStorage.getItem(k)) || [];
+                if (Array.isArray(h) && h.length > 0) {
+                    const valido = h.some(i => i && (
+                        i.promedioTiempo > 0 || 
+                        i.tiempoBruto > 0 || 
+                        (i.precision !== undefined && (i.totalImpactos > 0 || i.aciertos !== undefined)) || 
+                        i.dictamen !== undefined || 
+                        i.aciertos !== undefined
+                    ));
+                    if (valido) return true;
+                }
+            }
+
+            return false;
         }
 
         function renderizarMenuB2B() {
@@ -388,12 +398,12 @@
                 document.getElementById('actionAuditivo').innerHTML = `<span class="badge-mod-nosol">NO SOLICITADO</span>`;
             }
 
-            // 5. Visual
+            // 5. Visual (REDIRECCIÓN A visual.html)
             if (tieneVisual) {
                 const rVis = verifRendidoRut('visual');
                 document.getElementById('actionVisual').innerHTML = rVis ? 
                     `<span class="badge-mod-ok">✓ EVALUACIÓN REGISTRADA (1/1)</span>` : 
-                    `<a href="tamizaje_visual.html?${urlParams.toString()}&mode=b2b" class="btn-mod-start">SIMULACIÓN B2B →</a>`;
+                    `<a href="visual.html?${urlParams.toString()}&mode=b2b" class="btn-mod-start">SIMULACIÓN B2B →</a>`;
             } else {
                 document.getElementById('actionVisual').innerHTML = `<span class="badge-mod-nosol">NO SOLICITADO</span>`;
             }
@@ -430,7 +440,7 @@
         }
 
         function abrirInformePericial() {
-            window.location.href = `informe-b2b.html?${urlParams.toString()}`;
+            window.location.href = `informe_b2b.html?${urlParams.toString()}`;
         }
 
         document.addEventListener('DOMContentLoaded', renderizarMenuB2B);
