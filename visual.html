@@ -362,7 +362,6 @@
     });
 
     function iniciarModoOficialUI() {
-      // CORRECCIÓN CLAVE: FORZAR MODO OFICIAL
       esDemo = false;
       const historial = JSON.parse(localStorage.getItem(`sensometrika_historial_visual_${cleanRut}`)) || [];
       const numSimu = historial.length + 1;
@@ -595,7 +594,6 @@
       if (esDemo) {
         localStorage.setItem(`visual_demo_completada_${cleanRut}`, 'true');
         
-        // CORRECCIÓN AUTOMÁTICA EN URL Y MODO
         urlParams.set('demo', 'false');
         urlParams.set('fase', 'oficial');
         window.history.replaceState({}, '', `${window.location.pathname}?${urlParams.toString()}`);
@@ -607,22 +605,16 @@
         let dictamen = "APROBADO";
 
         if (porcentaje < 70) {
-          agudezaTexto = `20/50 (${(porcentaje/100).toFixed(1)} - Deficiente)`;
+          agudezaTexto = `20/50 (${(porcentaje/100).toFixed(1)} Deficiente)`;
           dictamen = "REPROBADO";
         } else if (porcentaje < 85) {
           agudezaTexto = "20/25 (0.8 - Norma D.S. 170 OK)";
           dictamen = "APROBADO";
         }
 
-        let modulosRendidos = JSON.parse(localStorage.getItem('sensometrika_modulos_rendidos')) || {};
-        modulosRendidos.visual = true;
-        modulosRendidos.tamizaje_visual = true;
-        modulosRendidos.screening_visual = true;
-        localStorage.setItem('sensometrika_modulos_rendidos', JSON.stringify(modulosRendidos));
-
         let promLat = latenciasMs.length > 0 ? Math.round(latenciasMs.reduce((a,b)=>a+b,0)/latenciasMs.length) : 310;
 
-        // GUARDADO AISLADO POR RUT DE TRABAJADOR ACTIVO
+        // GUARDADO AISLADO POR RUT DE TRABAJADOR ACTIVO (SIN MARCAS GLOBALES)
         let historial = JSON.parse(localStorage.getItem(`sensometrika_historial_visual_${cleanRut}`)) || [];
         historial.push({
           agudeza: agudezaTexto,
