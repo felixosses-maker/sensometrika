@@ -212,7 +212,7 @@
     <!-- CUOTA SIMULACIONES B2C -->
     <div id="boxContadorSimulaciones" class="counter-box">
       <span style="color: var(--text-muted); font-size: 0.72rem; font-weight: 700;">🔄 SIMULACIONES DISPONIBLES:</span>
-      <strong id="lblSimulacionesCuota" style="color: var(--accent-cyan); font-size: 0.88rem; font-weight: 900;">INTENTO 1 DE 3</strong>
+      <strong id="lblSimulacionesCuota" style="color: var(--accent-cyan); font-size: 0.88rem; font-weight: 900;">SIMULACIÓN 1 DE 3</strong>
     </div>
 
     <!-- MÓDULOS DE EVALUACIÓN -->
@@ -375,7 +375,7 @@
 
   <script>
     // ==========================================
-    // 🛡️ GUARDIÁN ANTI-DESVÍO B2B (LÍNEA 1)
+    // 🛡️ GUARDIÁN ANTI-DESVÍO B2B
     // ==========================================
     (function() {
       const params = new URLSearchParams(window.location.search);
@@ -390,6 +390,7 @@
     })();
 
     let globalParamsQuery = "";
+    let cleanRut = "";
 
     document.addEventListener('DOMContentLoaded', () => {
       const yaMostradaInsession = sessionStorage.getItem('sensometrika_welcome_shown');
@@ -413,21 +414,19 @@
       } catch(e){}
 
       const rut = urlParams.get('rut') || datosUsuario.rut || '13.543.222-5';
+      cleanRut = rut.replace(/[^0-9Kk]/g, '');
       const nombre = datosUsuario.nombre || urlParams.get('nombre') || 'Ricardo Romero';
 
-      // REGLA B2C DE SIMULACIONES POR MÓDULO
+      // ASIGNACIÓN DE CUOTA CONTRATADA (3, 5 U 8 SIMULACIONES OFICIALES)
       let totalSimulacionesPlan = 3;
       if (planParam.includes('PLUS')) totalSimulacionesPlan = 5;
       if (planParam.includes('FULL') || planParam.includes('ALTO_DESEMPENIO') || planParam.includes('ALTO')) totalSimulacionesPlan = 8;
 
-      let intentoActual = parseInt(localStorage.getItem('sensometrika_intento_actual') || '1');
-
       document.getElementById('txtTipoPlan').textContent = `EVALUACIÓN PARTICULAR • PLAN ${planParam.replace('_', ' ')} (B2C)`;
-      document.getElementById('lblSimulacionesCuota').textContent = `INTENTO ${intentoActual} DE ${totalSimulacionesPlan}`;
       document.getElementById('btnFinalizarGeneral').textContent = '🎓 FINALIZAR Y OBTENER CERTIFICADO DIGITAL';
       document.getElementById('txtInfoEvaluado').textContent = `EVALUADO: ${decodeURIComponent(nombre)} | RUT: ${rut}`;
 
-      // HABILITACIÓN DINÁMICA DE MÓDULOS SEGÚN EL PLAN B2C
+      // HABILITACIÓN DINÁMICA DE MÓDULOS SEGÚN PLAN B2C
       if (planParam.includes('PLUS') || planParam.includes('FULL') || planParam.includes('ALTO')) {
         document.getElementById('cardModAuditivo').style.display = 'flex';
         document.getElementById('cardModVisual').style.display = 'flex';
@@ -453,7 +452,8 @@
 
     function construirUrlModulo(nombreModulo) {
       const currentParams = new URLSearchParams(globalParamsQuery || window.location.search);
-      const demoRealizada = localStorage.getItem(`${nombreModulo}_demo_completada`) === 'true';
+      const fileKey = (nombreModulo === 'audicion') ? 'audicion' : ((nombreModulo === 'visual') ? 'visual' : nombreModulo);
+      const demoRealizada = localStorage.getItem(`${fileKey}_demo_completada_${cleanRut}`) === 'true';
 
       if (demoRealizada) {
         currentParams.set('demo', 'false');
@@ -464,7 +464,23 @@
       }
       currentParams.set('mode', 'b2c');
 
-      return `${nombreModulo}.html?${currentParams.toString()}`;
+      const fileName = (nombreModulo === 'audicion') ? 'audicion.html' : ((nombreModulo === 'visual') ? 'visual.html' : `${nombreModulo}.html`);
+      return `${fileName}?${currentParams.toString()}`;
+    }
+
+    function obtenerHistorialModuloRut(modId) {
+      const posiblesClaves = [
+        `sensometrika_historial_${modId}_${cleanRut}`
+      ];
+
+      if (modId === 'audicion') posiblesClaves.push(`sensometrika_historial_auditivo_${cleanRut}`);
+      if (modId === 'visual') posiblesClaves.push(`sensometrika_historial_tamizaje_visual_${cleanRut}`);
+
+      for (let k of posiblesClaves) {
+        let h = JSON.parse(localStorage.getItem(k)) || [];
+        if (Array.isArray(h) && h.length > 0) return h;
+      }
+      return [];
     }
 
     function revisarModulosRendidos() {
@@ -488,38 +504,44 @@
         const statusContainer = document.getElementById(mod.statusElem);
         if (!statusContainer) return;
 
-        const historial = JSON.parse(localStorage.getItem(`sensometrika_historial_${mod.id}`)) || [];
-        const numEnsayos = historial.length;
+        const historial = obtenerHistorialModuloRut(mod.id);
+        const numEnsayosRealizados = historial.length; // SIMULACIONES OFICIALES REALES
         const urlDestino = construirUrlModulo(mod.id);
 
-        if (numEnsayos >= maxIntentosPlan) {
-          statusContainer.innerHTML = `<span class="btn-done" style="background: rgba(16, 185, 129, 0.15); border: 1px solid var(--accent-green); color: var(--accent-green);">PLAN COMPLETADO (${numEnsayos}/${maxIntentosPlan})</span>`;
-        } else if (numEnsayos > 0) {
-          const sigSimu = numEnsayos + 1;
-          statusContainer.innerHTML = `<a id="${mod.linkElem}" href="${urlDestino}" class="btn-oficial">SIMULACIÓN S${sigSimu} →</a>`;
+        const fileKey = (mod.id === 'audicion') ? 'audicion' : ((mod.id === 'visual') ? 'visual' : mod.id);
+        const demoRealizada = localStorage.getItem(`${fileKey}_demo_completada_${cleanRut}`) === 'true';
+
+        if (numEnsayosRealizados >= maxIntentosPlan) {
+          statusContainer.innerHTML = `<span class="btn-done">✓ PLAN COMPLETADO (${numEnsayosRealizados}/${maxIntentosPlan})</span>`;
+        } else if (!demoRealizada && numEnsayosRealizados === 0) {
+          // FASE DEMO: NO CONSUME NI DESCUENTA CUOTA
+          statusContainer.innerHTML = `<a id="${mod.linkElem}" href="${urlDestino}" class="btn-start">INICIAR DEMO →</a>`;
         } else {
-          const demoRealizada = localStorage.getItem(`${mod.id}_demo_completada`) === 'true';
-          if (demoRealizada) {
-            statusContainer.innerHTML = `<a id="${mod.linkElem}" href="${urlDestino}" class="btn-oficial">SIMULACIÓN S1 →</a>`;
-          } else {
-            statusContainer.innerHTML = `<a id="${mod.linkElem}" href="${urlDestino}" class="btn-start">INICIAR DEMO →</a>`;
-          }
+          // FASE OFICIAL: MUESTRA EL NÚMERO DE SIMULACIÓN CORRESPONDIENTE
+          const sigSimu = numEnsayosRealizados + 1;
+          statusContainer.innerHTML = `<a id="${mod.linkElem}" href="${urlDestino}" class="btn-oficial">SIMULACIÓN S${sigSimu} DE ${maxIntentosPlan} →</a>`;
         }
       });
 
-      // Sincronización del intento global B2C
-      const reactHist = (JSON.parse(localStorage.getItem('sensometrika_historial_reactimetro')) || []).length;
-      const palHist = (JSON.parse(localStorage.getItem('sensometrika_historial_palancas')) || []).length;
-      const puntHist = (JSON.parse(localStorage.getItem('sensometrika_historial_punteo')) || []).length;
+      // CONTRATACIÓN Y DESCUENTO GLOBAL B2C BASADO EN ENSAYOS OFICIALES REALIZADOS
+      const reactHist = obtenerHistorialModuloRut('reactimetro').length;
+      const palHist = obtenerHistorialModuloRut('palancas').length;
+      const puntHist = obtenerHistorialModuloRut('punteo').length;
       
       const minPsicomotriz = Math.min(reactHist, palHist, puntHist);
-      const intentoGlobal = Math.min(maxIntentosPlan, minPsicomotriz + 1);
+      const intentoGlobalDisplay = Math.min(maxIntentosPlan, minPsicomotriz + 1);
 
-      localStorage.setItem('sensometrika_intento_actual', intentoGlobal.toString());
+      localStorage.setItem(`sensometrika_intento_actual_${cleanRut}`, intentoGlobalDisplay.toString());
       
       const lblCuota = document.getElementById('lblSimulacionesCuota');
       if (lblCuota) {
-        lblCuota.textContent = `INTENTO ${intentoGlobal} DE ${maxIntentosPlan}`;
+        if (minPsicomotriz >= maxIntentosPlan) {
+          lblCuota.textContent = `COMPLETADO (${maxIntentosPlan} DE ${maxIntentosPlan})`;
+          lblCuota.style.color = '#10b981';
+        } else {
+          lblCuota.textContent = `SIMULACIÓN OFICIAL ${intentoGlobalDisplay} DE ${maxIntentosPlan}`;
+          lblCuota.style.color = '#00bfff';
+        }
       }
     }
 
