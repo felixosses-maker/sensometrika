@@ -296,13 +296,13 @@
   </div>
 
   <script>
-    // CONSULTA ESTRICTA AISLADA POR RUT (PROHIBIDO LEER CLAVES GLOBALES SIN RUT)
+    // CONSULTA ESTRICTA POR RUT (PROHIBIDO LEER O DEVOLVER CLAVES GLOBALES)
     function consultarHistorialAisladoRut(modulo, rawRut) {
       if (!rawRut) return [];
       const cleanRut = rawRut.replace(/[^0-9Kk]/g, '');
 
-      // Solamente se consultan claves que incluyan explícitamente el cleanRut
-      const clavesEspecificasRut = [
+      // Solamente claves que incluyan explícitamente el cleanRut del evaluado activo
+      const listaClavesRut = [
         `sensometrika_historial_${modulo}_${cleanRut}`,
         `sensometrika_historial_auditivo_${cleanRut}`,
         `sensometrika_historial_audicion_${cleanRut}`,
@@ -316,10 +316,13 @@
         `sensometrika_historial_fatiga_${cleanRut}`
       ];
 
-      for (let k of clavesEspecificasRut) {
-        if (k.includes(cleanRut)) {
+      for (let k of listaClavesRut) {
+        if (k.endsWith(`_${cleanRut}`)) {
           let h = JSON.parse(localStorage.getItem(k)) || [];
-          if (Array.isArray(h) && h.length > 0) return h;
+          if (Array.isArray(h) && h.length > 0) {
+            // Filtrar únicamente objetos válidos (ensayos completos)
+            return h.filter(item => item && (item.total === 8 || item.precision !== undefined || item.dictamen !== undefined || item.tiempoTotal !== undefined || item.aciertos !== undefined));
+          }
         }
       }
 
