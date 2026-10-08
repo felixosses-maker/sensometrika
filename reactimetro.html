@@ -387,7 +387,10 @@
         btnCloseInstrucciones.addEventListener('click', () => { modalInstrucciones.style.display = 'none'; });
 
         function actualizarEstadoPlanUI() {
-            const historial = JSON.parse(localStorage.getItem(`sensometrika_historial_reactimetro_${cleanRut}`)) || [];
+            // LECTURA FILTRADA ESTRICTA: Solo contar registros oficiales con tiempos netos validos > 0
+            const rawHistorial = JSON.parse(localStorage.getItem(`sensometrika_historial_reactimetro_${cleanRut}`)) || [];
+            const historial = rawHistorial.filter(item => item && (item.promedioTiempo > 0 || item.tiempoBruto > 0));
+            
             const numEnsayosRealizados = historial.length;
 
             const planStorage = (localStorage.getItem('sensometrika_plan_contratado') || urlParams.get('plan') || 'BASICO').toUpperCase();
@@ -452,9 +455,7 @@
         const moduloReactimetro = new ModuloReactimetro(canvas, { width: 400, height: 300, totalEstimulos: 6 }, (res) => {
             btnBrake.style.display = 'none';
 
-            // =========================================================================
             // COMPENSACIÓN TELEMÉTRICA DE LATENCIA HARDWARE
-            // =========================================================================
             const latenciaHardware = parseInt(localStorage.getItem('sensometrika_latencia_ms') || '0', 10);
             
             // Descontar latencia al promedio neto
