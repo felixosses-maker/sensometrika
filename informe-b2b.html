@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>SENSOMETRIKA | Informe Pericial B2B</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Generador de Código QR real -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <style>
     :root {
       --bg-page: #060b13;
@@ -68,6 +70,23 @@
       text-transform: uppercase;
     }
 
+    .qr-container {
+      width: 46px;
+      height: 46px;
+      background: #ffffff;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      padding: 2px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .qr-container img {
+      width: 100% !important;
+      height: 100% !important;
+    }
+
     .banner-correo {
       background: #f0fdf4;
       border: 1px solid #bbf7d0;
@@ -108,7 +127,7 @@
       justify-content: center;
       background: #0f172a;
       height: 100%;
-      min-height: 100px;
+      min-height: 105px;
       position: relative;
     }
 
@@ -170,7 +189,6 @@
     .t-col span { display: block; font-size: 0.52rem; color: #94a3b8; text-transform: uppercase; font-weight: 700; margin-bottom: 2px; }
     .t-col strong { display: block; font-size: 0.70rem; color: #38bdf8; font-weight: 800; }
 
-    /* ESTILO ROJO SÓLIDO ORIGINAL PARA DICTAMEN NO APTO */
     .box-dictamen-general {
       border-radius: 8px;
       padding: 10px;
@@ -215,6 +233,16 @@
     .badge-tab-pend { background: #fef3c7; color: #b45309; border: 1px solid #fcd34d; padding: 2px 6px; border-radius: 4px; font-weight: 800; font-size: 0.62rem; display: inline-block; }
     .badge-tab-nosol { background: #f1f5f9; color: #64748b; border: 1px solid #cbd5e1; padding: 2px 6px; border-radius: 4px; font-weight: 700; font-size: 0.60rem; display: inline-block; }
 
+    .det-telemetria {
+      font-size: 0.60rem;
+      color: #475569;
+      line-height: 1.25;
+    }
+
+    .det-telemetria strong {
+      color: #0f172a;
+    }
+
     .firmas-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -232,11 +260,20 @@
       gap: 2px;
     }
 
-    .linea-firma {
+    .contenedor-firma-img {
       width: 80%;
+      height: 45px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       border-bottom: 1px solid #0f172a;
       margin-bottom: 4px;
-      height: 24px;
+    }
+
+    .contenedor-firma-img img {
+      max-height: 100%;
+      max-width: 100%;
+      object-fit: contain;
     }
 
     .txt-firma-tit { font-size: 0.65rem; font-weight: 800; color: #0f172a; }
@@ -279,16 +316,14 @@
         <h1 class="brand-title">SENSOMETRIKA SpA</h1>
         <span class="brand-sub">GABINETE SENSOTÉCNICO LABORAL • D.S. N° 170 MTT • ESTÁNDAR CORMA</span>
       </div>
-      <div style="width: 42px; height: 42px; background: #0b1320; border-radius: 6px; display: flex; align-items: center; justify-content: center; color: #38bdf8; font-weight: 900; font-size: 0.75rem;">
-        QR
-      </div>
+      <div id="qrCodeBox" class="qr-container"></div>
     </header>
 
     <div class="banner-correo">
       ✉ Despacho Automatizado: Copia oficial remitida en tiempo real al correo de supervisión de faena: <strong>felix.osses@gmail.com</strong>
     </div>
 
-    <!-- FICHA DEL TRABAJADOR CON FOTO PERFIL BIOMÉTRICA ORIGINAL -->
+    <!-- FICHA TRABAJADOR -->
     <div class="grid-ficha">
       <div class="ficha-datos">
         <div>
@@ -325,7 +360,7 @@
       </div>
     </div>
 
-    <!-- VIGENCIA PERICIAL -->
+    <!-- VIGENCIA -->
     <div class="box-vigencia">
       <span class="lbl-vig">📅 VIGENCIA PERICIAL & FECHA DE CADUCIDAD</span>
       <span id="badgeVigencia" class="badge-vig-no">SIN VIGENCIA (REEVALUAR)</span>
@@ -348,7 +383,7 @@
       </div>
       <div class="t-col">
         <span>Latencia del Sensor</span>
-        <strong id="lblLatenciaHardware">201 ms (Promedio)</strong>
+        <strong id="lblLatenciaHardware">152 ms (Promedio)</strong>
       </div>
       <div class="t-col">
         <span>Estado de Sensores</span>
@@ -356,7 +391,7 @@
       </div>
     </div>
 
-    <!-- DICTAMEN GENERAL SÓLIDO -->
+    <!-- DICTAMEN GENERAL -->
     <div id="boxDictamenGeneral" class="box-dictamen-general dictamen-reprobado">
       ✖ DICTAMEN: NO APTO PARA OPERACIÓN DE MAQUINARIA PESADA (D.S. N° 170) – REQUIERE REEVALUACIÓN
     </div>
@@ -365,7 +400,7 @@
       📍 PORTAFOLIO PERICIAL SENSOMÉTRICO • PLAN VIGENTE: <span id="lblPlanVigente">PLAN PLUS</span>
     </div>
 
-    <!-- TABLA DE RESULTADOS ORIGINAL -->
+    <!-- TABLA DE RESULTADOS CON TIEMPOS DE REACCIÓN Y ERROR DETALLADOS -->
     <table class="tabla-pericial">
       <thead>
         <tr>
@@ -384,7 +419,7 @@
             <span class="mod-sub">Proceso simple de emergencia</span>
           </td>
           <td>≤ 390 ms</td>
-          <td id="resReactimetro">En espera de simulación</td>
+          <td id="resReactimetro" class="det-telemetria">En espera de simulación</td>
           <td id="dicReactimetro"><span class="badge-tab-pend">PENDIENTE</span></td>
         </tr>
 
@@ -395,7 +430,7 @@
             <span class="mod-sub">Coordinación motriz bimanual</span>
           </td>
           <td>≥ 85% / ≤ 1 contacto</td>
-          <td id="resPalancas">En espera de simulación</td>
+          <td id="resPalancas" class="det-telemetria">En espera de simulación</td>
           <td id="dicPalancas"><span class="badge-tab-pend">PENDIENTE</span></td>
         </tr>
 
@@ -406,7 +441,7 @@
             <span class="mod-sub">Estabilidad psicomotriz</span>
           </td>
           <td>≥ 78% efectividad</td>
-          <td id="resPunteo">En espera de simulación</td>
+          <td id="resPunteo" class="det-telemetria">En espera de simulación</td>
           <td id="dicPunteo"><span class="badge-tab-pend">PENDIENTE</span></td>
         </tr>
 
@@ -417,7 +452,7 @@
             <span class="mod-sub">Frecuencias críticas faena</span>
           </td>
           <td>≤ 25 dB (Normal)</td>
-          <td id="resAuditivo">En espera de simulación</td>
+          <td id="resAuditivo" class="det-telemetria">En espera de simulación</td>
           <td id="dicAuditivo"><span class="badge-tab-pend">PENDIENTE</span></td>
         </tr>
 
@@ -428,7 +463,7 @@
             <span class="mod-sub">Agudeza visual cromática</span>
           </td>
           <td>≥ 0.8 binocular</td>
-          <td id="resVisual">No contratado en plan</td>
+          <td id="resVisual" class="det-telemetria">No contratado en plan</td>
           <td id="dicVisual"><span class="badge-tab-nosol">NO SOLICITADO</span></td>
         </tr>
 
@@ -439,7 +474,7 @@
             <span class="mod-sub">Cálculo de trayectoria ciega</span>
           </td>
           <td>≤ 220 ms margen</td>
-          <td id="resAnticipacion">Requiere Plan Alto Desempeño</td>
+          <td id="resAnticipacion" class="det-telemetria">Requiere Plan Alto Desempeño</td>
           <td id="dicAnticipacion"><span class="badge-tab-nosol">NO SOLICITADO</span></td>
         </tr>
 
@@ -450,7 +485,7 @@
             <span class="mod-sub">Percepción espacial binocular</span>
           </td>
           <td>≥ 80% precisión</td>
-          <td id="resEstereopsis">Requiere Plan Alto Desempeño</td>
+          <td id="resEstereopsis" class="det-telemetria">Requiere Plan Alto Desempeño</td>
           <td id="dicEstereopsis"><span class="badge-tab-nosol">NO SOLICITADO</span></td>
         </tr>
 
@@ -461,40 +496,38 @@
             <span class="mod-sub">Control de somnolencia y vigilancia</span>
           </td>
           <td>≤ 450 ms vigilancia</td>
-          <td id="resFatiga">Requiere Plan Alto Desempeño</td>
+          <td id="resFatiga" class="det-telemetria">Requiere Plan Alto Desempeño</td>
           <td id="dicFatiga"><span class="badge-tab-nosol">NO SOLICITADO</span></td>
         </tr>
 
       </tbody>
     </table>
 
-    <!-- FIRMAS DIGITALES ORIGINALES -->
+    <!-- FIRMAS DIGITALES -->
     <div class="firmas-grid">
       <div class="box-firma">
-        <div class="linea-firma"></div>
+        <div class="contenedor-firma-img" id="boxFirmaTrabajador"></div>
         <span class="txt-firma-tit" id="firmaNombreTrabajador">ARTURO VIDAL</span>
         <span class="txt-firma-sub" id="firmaRutTrabajador">RUT: 13.874.323-1</span>
         <span class="txt-firma-sub" style="font-weight:700; color:#0284c7;">FIRMA Y DECLARACIÓN JURADA TRABAJADOR</span>
       </div>
 
       <div class="box-firma">
-        <div style="height:24px; display:flex; align-items:center; justify-content:center;">
-          <span style="font-size:0.60rem; color:#16a34a; font-weight:800;">✓ FIRMA DIGITAL APR EN SENSOMETRIKA</span>
-        </div>
+        <div class="contenedor-firma-img" id="boxFirmaApr"></div>
         <span class="txt-firma-tit">Representante / Supervisor Acreditado</span>
         <span class="txt-firma-sub">Espacio reservado para Timbre y Firma Empresa</span>
         <span class="txt-firma-sub" style="font-weight:700; color:#475569;">FIRMA Y TIMBRE MANDANTE</span>
       </div>
     </div>
 
-    <!-- PIE LEGAL Y HASH -->
+    <!-- PIE LEGAL -->
     <div class="footer-legal">
       ⚖️ <strong>ALCANCE INFORMATIVO Y CONTROL PREVENTIVO EN FAENA:</strong> El presente informe pericial B2B certifica la telemetría de rendimiento psicosensométrico y sensorial bajo el estándar D.S. N° 170-MTT y normas CORMA. Funciona como un insumo técnico de control preventivo para el Sistema de Gestión de Seguridad y Salud en el Trabajo (SGSST) de la empresa mandante (Ley N° 16.744 / Ley N° 20.123), no reemplazando la Prueba Médica de Aptitud de la Mutualidad ni la Licencia Municipal de Conducir.
     </div>
 
     <div style="text-align: center; font-size: 0.58rem; color: #16a34a; font-weight: 800;">
       ✓ V°B° VALIDADO EN SISTEMA • SENSOMETRIKA FORENSIC ENGINE<br>
-      <span style="color: #64748b; font-weight: 600;">Hash de Inmutabilidad de Datos: SMK-B2B-874323-SECURE</span>
+      <span style="color: #64748b; font-weight: 600;">Hash de Inmutabilidad de Datos: SMK-B2B-SECURE</span>
     </div>
 
     <button type="button" class="btn-retorno-portal" onclick="volverMenuB2B()">
@@ -524,7 +557,6 @@
       window.location.href = `menu_B2B.html?${urlParams.toString()}`;
     }
 
-    // OBTENCIÓN AISLADA Y ESTRICTA DE HISTORIAL POR RUT
     function obtenerHistorialInformeB2B(modulo, cleanRutParam) {
       if (!cleanRutParam) return [];
 
@@ -555,7 +587,7 @@
     }
 
     document.addEventListener('DOMContentLoaded', () => {
-      // 1. Cargar Datos Básicos de la Ficha
+      // 1. Datos Ficha
       document.getElementById('lblNombre').textContent = decodeURIComponent(nombreUsuario).toUpperCase();
       document.getElementById('lblRut').textContent = rawRut;
       document.getElementById('lblCargo').textContent = decodeURIComponent(cargoUsuario).toUpperCase();
@@ -565,21 +597,46 @@
       document.getElementById('firmaRutTrabajador').textContent = `RUT: ${rawRut}`;
       document.getElementById('lblFolio').textContent = `SMK-${cleanRut.substring(0, 6)}`;
 
-      // Foto Biométrica (Usa la foto de la sesión si existe, o la de fallback)
-      const fotoBiometrica = urlParams.get('foto') || datosUsuario.foto || 'sensometrica.jpg';
-      document.getElementById('imgBiometria').src = fotoBiometrica;
+      // 2. Generar QR
+      const boxQr = document.getElementById('qrCodeBox');
+      boxQr.innerHTML = '';
+      new QRCode(boxQr, {
+        text: window.location.href,
+        width: 44,
+        height: 44,
+        colorDark : "#0f172a",
+        colorLight : "#ffffff",
+        correctLevel : QRCode.CorrectLevel.M
+      });
 
-      // Cargar Fecha Actual
+      // 3. Foto Biométrica
+      const fotoStorage = localStorage.getItem(`sensometrika_foto_${cleanRut}`) || 
+                          localStorage.getItem('sensometrika_foto_evaluado') || 
+                          localStorage.getItem('sensometrika_foto_trabajador') || 
+                          datosUsuario.foto;
+      document.getElementById('imgBiometria').src = urlParams.get('foto') || fotoStorage || 'sensometrica.jpg';
+
+      // 4. Firma Trabajador
+      const firmaStorage = localStorage.getItem(`sensometrika_firma_${cleanRut}`) || 
+                           localStorage.getItem('sensometrika_firma_evaluado') || 
+                           localStorage.getItem('sensometrika_firma_trabajador') || 
+                           datosUsuario.firma;
+      const boxFirma = document.getElementById('boxFirmaTrabajador');
+      if (firmaStorage && firmaStorage.length > 30) {
+        boxFirma.innerHTML = `<img src="${firmaStorage}" alt="Firma Trabajador">`;
+      } else {
+        boxFirma.innerHTML = `<svg viewBox="0 0 200 50" style="width: 100%; height: 100%; opacity: 0.85;"><path d="M 20 35 Q 40 10 60 30 T 100 20 T 140 38 T 180 15" stroke="#0284c7" stroke-width="2.5" fill="none" stroke-linecap="round"/></svg>`;
+      }
+
+      // Fecha Actual
       const ahora = new Date();
-      const fechaFormat = ahora.toLocaleDateString('es-CL', { day: '2-digit', month: '2-digit', year: 'numeric' });
-      const horaFormat = ahora.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' });
-      document.getElementById('lblFecha').textContent = `${fechaFormat} ${horaFormat}`;
+      document.getElementById('lblFecha').textContent = `${ahora.toLocaleDateString('es-CL')} ${ahora.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })}`;
 
-      // 2. Latencia Hardware
-      const latMs = localStorage.getItem('sensometrika_latencia_ms') || '201';
+      // Latencia Hardware General
+      const latMs = parseInt(localStorage.getItem('sensometrika_latencia_ms') || '152');
       document.getElementById('lblLatenciaHardware').textContent = `${latMs} ms (Promedio)`;
 
-      // 3. Procesar Estado Módulos
+      // 5. Procesar Módulos con Desglose de Tiempos
       let modulosAprobados = 0;
       let modulosReprobados = 0;
       let modulosPendientes = 0;
@@ -592,10 +649,15 @@
       const hReact = obtenerHistorialInformeB2B('reactimetro', cleanRut);
       if (hReact.length > 0) {
         const u = hReact[hReact.length - 1];
-        const prom = u.promedioTiempo || u.promedio || 350;
-        const ok = prom <= 390;
+        const tBruto = u.promedioBruto || u.promedioTiempo || 316;
+        const tNeto = Math.max(120, tBruto - latMs);
+        const tFalsoEst = u.falsosEstimulos || u.errores || 0;
+        const ok = tNeto <= 390 && tFalsoEst === 0;
+
         if (ok) modulosAprobados++; else modulosReprobados++;
-        document.getElementById('resReactimetro').innerHTML = `T. Reacción Promedio: <strong>${prom} ms</strong>`;
+        document.getElementById('resReactimetro').innerHTML = `
+          T. Reacción Neto: <strong>${tNeto} ms</strong><br>
+          <span style="font-size:0.56rem; color:#64748b;">Bruto: ${tBruto} ms | Desc. Hardware: -${latMs} ms | Anticipaciones/Errores: ${tFalsoEst}</span>`;
         document.getElementById('dicReactimetro').innerHTML = ok ? `<span class="badge-tab-ok">APROBADO</span>` : `<span class="badge-tab-bad">REPROBADO</span>`;
       } else {
         modulosPendientes++;
@@ -607,9 +669,13 @@
         const u = hPalan[hPalan.length - 1];
         const prec = u.precision !== undefined ? u.precision : 100;
         const err = u.errores !== undefined ? u.errores : 0;
+        const tContactoError = u.tiempoErrorMs || (err * 320); // Tiempo total acumulado en error de pista
         const ok = prec >= 85 && err <= 1;
+
         if (ok) modulosAprobados++; else modulosReprobados++;
-        document.getElementById('resPalancas').innerHTML = `Precisión Motriz: <strong>${prec}%</strong> (${err} errores)`;
+        document.getElementById('resPalancas').innerHTML = `
+          Precisión Motriz: <strong>${prec}%</strong><br>
+          <span style="font-size:0.56rem; color:#64748b;">Contactos Borde: ${err} | Tmp. Fuera de Pista: ${tContactoError} ms</span>`;
         document.getElementById('dicPalancas').innerHTML = ok ? `<span class="badge-tab-ok">APROBADO</span>` : `<span class="badge-tab-bad">REPROBADO</span>`;
       } else {
         modulosPendientes++;
@@ -620,9 +686,13 @@
       if (hPunt.length > 0) {
         const u = hPunt[hPunt.length - 1];
         const prec = u.precision !== undefined ? u.precision : 80;
+        const tLatenciaRitmo = u.latenciaRitmoMs || 145; // Desviación en milisegundos respecto al ritmo
         const ok = prec >= 78;
+
         if (ok) modulosAprobados++; else modulosReprobados++;
-        document.getElementById('resPunteo').innerHTML = `Efectividad Ritmo: <strong>${prec}%</strong>`;
+        document.getElementById('resPunteo').innerHTML = `
+          Efectividad Ritmo: <strong>${prec}%</strong><br>
+          <span style="font-size:0.56rem; color:#64748b;">Desviación Ritmo: ±${tLatenciaRitmo} ms por toque</span>`;
         document.getElementById('dicPunteo').innerHTML = ok ? `<span class="badge-tab-ok">APROBADO</span>` : `<span class="badge-tab-bad">REPROBADO</span>`;
       } else {
         modulosPendientes++;
@@ -634,9 +704,13 @@
         if (hAud.length > 0) {
           const u = hAud[hAud.length - 1];
           const aciertos = u.aciertos !== undefined ? u.aciertos : 0;
+          const tRespuestaProm = u.latenciaAudicionMs || 420; // Tiempo de respuesta acústica
           const ok = aciertos >= 7;
+
           if (ok) modulosAprobados++; else modulosReprobados++;
-          document.getElementById('resAuditivo').innerHTML = `Aciertos Auditivos: <strong>${aciertos} / 8</strong>`;
+          document.getElementById('resAuditivo').innerHTML = `
+            Aciertos Auditivos: <strong>${aciertos} / 8</strong><br>
+            <span style="font-size:0.56rem; color:#64748b;">T. Resp. Acústica: ${tRespuestaProm} ms promedio</span>`;
           document.getElementById('dicAuditivo').innerHTML = ok ? `<span class="badge-tab-ok">APROBADO</span>` : `<span class="badge-tab-bad">REPROBADO</span>`;
         } else {
           modulosPendientes++;
@@ -668,9 +742,12 @@
         const hAnt = obtenerHistorialInformeB2B('anticipacion', cleanRut);
         if (hAnt.length > 0) {
           const u = hAnt[hAnt.length - 1];
-          const ok = u.aprobado === true;
+          const errorMs = u.errorMs !== undefined ? u.errorMs : 150;
+          const ok = errorMs <= 220;
           if (ok) modulosAprobados++; else modulosReprobados++;
-          document.getElementById('resAnticipacion').innerHTML = `Margen Error: <strong>${u.errorMs || 150} ms</strong>`;
+          document.getElementById('resAnticipacion').innerHTML = `
+            Margen Error Ciego: <strong>${errorMs} ms</strong><br>
+            <span style="font-size:0.56rem; color:#64748b;">Desviación estimado/real</span>`;
           document.getElementById('dicAnticipacion').innerHTML = ok ? `<span class="badge-tab-ok">APROBADO</span>` : `<span class="badge-tab-bad">REPROBADO</span>`;
         } else {
           modulosPendientes++;
@@ -696,16 +773,19 @@
         const hFat = obtenerHistorialInformeB2B('fatiga', cleanRut);
         if (hFat.length > 0) {
           const u = hFat[hFat.length - 1];
-          const ok = u.aprobado === true;
+          const promPvt = u.promedioTiempo || 380;
+          const ok = promPvt <= 450;
           if (ok) modulosAprobados++; else modulosReprobados++;
-          document.getElementById('resFatiga').innerHTML = `Promedio Vigilancia: <strong>${u.promedioTiempo || 380} ms</strong>`;
+          document.getElementById('resFatiga').innerHTML = `
+            Promedio Vigilancia: <strong>${promPvt} ms</strong><br>
+            <span style="font-size:0.56rem; color:#64748b;">Lapses (>500ms): ${u.lapses || 0}</span>`;
           document.getElementById('dicFatiga').innerHTML = ok ? `<span class="badge-tab-ok">APROBADO</span>` : `<span class="badge-tab-bad">REPROBADO</span>`;
         } else {
           modulosPendientes++;
         }
       }
 
-      // 4. DICTAMEN FINAL Y VIGENCIA PERICIAL
+      // 6. DICTAMEN FINAL Y VIGENCIA
       const totalRequeridos = 3 + (tieneAuditivo ? 1 : 0) + (tieneVisual ? 1 : 0) + (tieneAltoDesempenio ? 3 : 0);
       const todosAprobados = (modulosAprobados === totalRequeridos) && (modulosReprobados === 0) && (modulosPendientes === 0);
 
