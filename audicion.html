@@ -119,6 +119,12 @@
     const modeParam = urlParams.get('mode') || (localStorage.getItem('sensometrika_b2c_mode') === 'true' ? 'b2c' : 'b2b');
     const esB2B = (modeParam === 'b2b');
 
+    let datosUsuario = {};
+    try { datosUsuario = JSON.parse(localStorage.getItem('sensometrika_datos_usuario')) || {}; } catch(e){}
+
+    const rut = urlParams.get('rut') || datosUsuario.rut || '12.432.657-5';
+    const cleanRut = rut.replace(/[^0-9Kk]/g, '');
+
     const isDemoURL = urlParams.get('demo') === 'true' || urlParams.get('fase') === 'demo';
     let modoActual = isDemoURL ? 'DEMO' : 'OFICIAL';
 
@@ -151,13 +157,18 @@
       window.location.href = `${menuDestino}?${urlParams.toString()}`;
     }
 
+    function obtenerHistorialAuditivoRut() {
+      let h = JSON.parse(localStorage.getItem(`sensometrika_historial_auditivo_${cleanRut}`)) || [];
+      if (h.length > 0) return h;
+      return JSON.parse(localStorage.getItem(`sensometrika_historial_audicion_${cleanRut}`)) || [];
+    }
+
     function actualizarEstadoUI() {
-      const historial = JSON.parse(localStorage.getItem('sensometrika_historial_auditivo')) || JSON.parse(localStorage.getItem('sensometrika_historial_audicion')) || [];
+      const historial = obtenerHistorialAuditivoRut();
       const numEnsayosRealizados = historial.length;
 
       const planStorage = (localStorage.getItem('sensometrika_plan_contratado') || urlParams.get('plan') || 'PLUS').toUpperCase();
       
-      // DISCRIMINACIÓN ESTRICTA DE CUOTAS POR MODO (B2B vs B2C)
       let maxIntentosPlan = 5;
       if (esB2B) {
         maxIntentosPlan = planStorage.includes('ALTO') ? 3 : 1;
@@ -167,7 +178,7 @@
         }
       }
 
-      const demoRealizada = localStorage.getItem('audicion_demo_completada') === 'true';
+      const demoRealizada = localStorage.getItem(`audicion_demo_completada_${cleanRut}`) === 'true';
 
       if (numEnsayosRealizados >= maxIntentosPlan) {
         modoActual = 'BLOQUEADO';
@@ -363,7 +374,7 @@
       const precisionVal = Math.round((aciertosTotales / 8) * 100);
 
       if (modoActual === 'DEMO') {
-        localStorage.setItem('audicion_demo_completada', 'true');
+        localStorage.setItem(`audicion_demo_completada_${cleanRut}`, 'true');
 
         urlParams.set('demo', 'false');
         urlParams.set('fase', 'oficial');
@@ -376,7 +387,7 @@
 
         mostrarModalResultadoAudio(aciertosTotales, aprobado, true);
       } else if (modoActual === 'OFICIAL') {
-        let historial = JSON.parse(localStorage.getItem('sensometrika_historial_auditivo')) || JSON.parse(localStorage.getItem('sensometrika_historial_audicion')) || [];
+        let historial = obtenerHistorialAuditivoRut();
         
         historial.push({
           simulacion: historial.length + 1,
@@ -388,8 +399,8 @@
           dictamen: aprobado ? 'APROBADO' : 'OBSERVADO'
         });
 
-        localStorage.setItem('sensometrika_historial_auditivo', JSON.stringify(historial));
-        localStorage.setItem('sensometrika_historial_audicion', JSON.stringify(historial));
+        localStorage.setItem(`sensometrika_historial_auditivo_${cleanRut}`, JSON.stringify(historial));
+        localStorage.setItem(`sensometrika_historial_audicion_${cleanRut}`, JSON.stringify(historial));
 
         const planStorage = (localStorage.getItem('sensometrika_plan_contratado') || 'PLUS').toUpperCase();
         let maxIntentosPlan = esB2B ? (planStorage.includes('ALTO') ? 3 : 1) : (planStorage.includes('FULL') || planStorage.includes('ALTO') ? 8 : 5);
@@ -410,7 +421,7 @@
       const modalExistente = document.getElementById('modalResultadoAudio');
       if (modalExistente) modalExistente.remove();
 
-      const historial = JSON.parse(localStorage.getItem('sensometrika_historial_auditivo')) || [];
+      const historial = obtenerHistorialAuditivoRut();
       const numSimu = historial.length;
 
       const tituloModal = esDemo ? 'CALIBRACIÓN DEMO COMPLETADA' : (esB2B ? `Simulación Oficial B2B Registrada` : `Simulación Oficial S${numSimu} Registrada`);
