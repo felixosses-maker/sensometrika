@@ -313,6 +313,14 @@
         const modeParam = urlParams.get('mode') || (localStorage.getItem('sensometrika_b2c_mode') === 'true' ? 'b2c' : 'b2b');
         const esB2B = (modeParam === 'b2b');
 
+        let datosUsuario = {};
+        try {
+            datosUsuario = JSON.parse(localStorage.getItem('sensometrika_datos_usuario')) || {};
+        } catch(e){}
+
+        const rutEvaluado = urlParams.get('rut') || datosUsuario.rut || 'GENERICO';
+        const cleanRut = rutEvaluado.replace(/[^0-9Kk]/g, '');
+
         let isDemoURL = urlParams.get('demo') === 'true' || urlParams.get('fase') === 'demo';
         let modoActual = isDemoURL ? 'DEMO' : 'OFICIAL';
 
@@ -337,8 +345,16 @@
             window.location.href = `${menuDestino}?${urlParams.toString()}`;
         }
 
+        function obtenerHistorialPunteoRut() {
+            if (!cleanRut) return [];
+            // Lectura por RUT específico aislando B2B/B2C
+            let raw = JSON.parse(localStorage.getItem(`sensometrika_historial_punteo_${cleanRut}`)) || JSON.parse(localStorage.getItem('sensometrika_historial_punteo')) || [];
+            // Solo considerar registros reales que contengan precisión o aciertos calculados
+            return raw.filter(item => item && (item.precision !== undefined || item.aciertos !== undefined));
+        }
+
         function actualizarEstadoUI() {
-            const historial = JSON.parse(localStorage.getItem('sensometrika_historial_punteo')) || [];
+            const historial = obtenerHistorialPunteoRut();
             const numEnsayosRealizados = historial.length;
 
             const planStorage = (localStorage.getItem('sensometrika_plan_contratado') || urlParams.get('plan') || 'BASICO').toUpperCase();
@@ -352,7 +368,7 @@
                 if (planStorage.includes('FULL') || planStorage.includes('ALTO')) maxIntentosPlan = 8;
             }
 
-            const demoRealizada = localStorage.getItem('punteo_demo_completada') === 'true';
+            const demoRealizada = localStorage.getItem(`punteo_demo_completada_${cleanRut}`) === 'true' || localStorage.getItem('punteo_demo_completada') === 'true';
 
             if (numEnsayosRealizados >= maxIntentosPlan) {
                 modoActual = 'BLOQUEADO';
@@ -520,6 +536,7 @@
             const latenciaMediaVal = tiemposReaccion.length > 0 ? Math.round(tiemposReaccion.reduce((a, b) => a + b, 0) / tiemposReaccion.length) : 0;
 
             if (modoActual === 'DEMO') {
+                localStorage.setItem(`punteo_demo_completada_${cleanRut}`, 'true');
                 localStorage.setItem('punteo_demo_completada', 'true');
 
                 isDemoURL = false;
@@ -537,26 +554,33 @@
                     }
                 );
             } else if (modoActual === 'OFICIAL') {
-                let historial = JSON.parse(localStorage.getItem('sensometrika_historial_punteo')) || [];
-                historial.push({ 
+                const registroData = { 
                     aciertos: aciertos, 
                     errores: errores, 
                     latencia: latenciaMediaVal,
                     precision: precisionVal, 
                     fecha: new Date().toISOString() 
-                });
-                localStorage.setItem('sensometrika_historial_punteo', JSON.stringify(historial));
+                };
+
+                // Guardar tanto en la clave general como en la clave con RUT específico
+                let hRut = JSON.parse(localStorage.getItem(`sensometrika_historial_punteo_${cleanRut}`)) || [];
+                hRut.push(registroData);
+                localStorage.setItem(`sensometrika_historial_punteo_${cleanRut}`, JSON.stringify(hRut));
+
+                let hGen = JSON.parse(localStorage.getItem('sensometrika_historial_punteo')) || [];
+                hGen.push(registroData);
+                localStorage.setItem('sensometrika_historial_punteo', JSON.stringify(hGen));
 
                 const planStorage = (localStorage.getItem('sensometrika_plan_contratado') || 'BASICO').toUpperCase();
                 let maxIntentosPlan = esB2B ? (planStorage.includes('ALTO') ? 3 : 1) : (planStorage.includes('PLUS') ? 5 : (planStorage.includes('FULL') || planStorage.includes('ALTO') ? 8 : 3));
 
-                if (historial.length >= maxIntentosPlan) {
+                if (hRut.length >= maxIntentosPlan) {
                     let rendidos = JSON.parse(localStorage.getItem('sensometrika_modulos_rendidos')) || {};
                     rendidos.punteo = true;
                     localStorage.setItem('sensometrika_modulos_rendidos', JSON.stringify(rendidos));
                 }
 
-                const numSimu = historial.length;
+                const numSimu = hRut.length;
                 const tituloModal = esB2B ? "SIMULACIÓN OFICIAL B2B REGISTRADA" : `SIMULACIÓN S${numSimu} REGISTRADA`;
 
                 mostrarModal(
