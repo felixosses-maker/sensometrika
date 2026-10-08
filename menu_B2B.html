@@ -270,7 +270,7 @@
       localStorage.setItem('sensometrika_plan_contratado', planParam);
       document.getElementById('txtTipoPlan').textContent = `EVALUACIÓN B2B • PLAN ${planParam.replace('_', ' ')}`;
 
-      // Visibilidad de módulos según el plan B2B
+      // Visibilidad de módulos según plan
       if (planParam.includes('PLUS') || planParam.includes('FULL') || planParam.includes('ALTO')) {
         document.getElementById('cardModAuditivo').style.display = 'flex';
       }
@@ -294,30 +294,28 @@
       }
     });
 
-    function obtenerHistorialModulo(modId, cleanRut, rawRut) {
-      // 1. Búsqueda por clave aislada con RUT limpio
+    function obtenerHistorialModulo(modId, cleanRut) {
+      // Intenta obtener por clave aislada por RUT
       let h = JSON.parse(localStorage.getItem(`sensometrika_historial_${modId}_${cleanRut}`)) || [];
       if (h.length > 0) return h;
 
-      // 2. Búsqueda por clave con RUT con formato original
-      h = JSON.parse(localStorage.getItem(`sensometrika_historial_${modId}_${rawRut}`)) || [];
-      if (h.length > 0) return h;
-
-      // 3. Claves variantes por alias de módulo
+      // Intenta claves alternativas frecuentes
       if (modId === 'audicion') {
-        h = JSON.parse(localStorage.getItem(`sensometrika_historial_auditivo_${cleanRut}`)) ||
-            JSON.parse(localStorage.getItem(`sensometrika_historial_audicion_${cleanRut}`)) || [];
-      } else if (modId === 'visual') {
-        h = JSON.parse(localStorage.getItem(`sensometrika_historial_visual_${cleanRut}`)) ||
-            JSON.parse(localStorage.getItem(`sensometrika_historial_tamizaje_visual_${cleanRut}`)) || [];
+        h = JSON.parse(localStorage.getItem(`sensometrika_historial_auditivo_${cleanRut}`)) || [];
       } else if (modId === 'reactimetro') {
         h = JSON.parse(localStorage.getItem(`sensometrika_historial_reactimetro_${cleanRut}`)) || [];
       } else if (modId === 'palancas') {
         h = JSON.parse(localStorage.getItem(`sensometrika_historial_palancas_${cleanRut}`)) || [];
       } else if (modId === 'punteo') {
         h = JSON.parse(localStorage.getItem(`sensometrika_historial_punteo_${cleanRut}`)) || [];
+      } else if (modId === 'visual') {
+        h = JSON.parse(localStorage.getItem(`sensometrika_historial_visual_${cleanRut}`)) || [];
       }
 
+      // Si aún no encuentra, busca en la clave global por compatibilidad
+      if (h.length === 0) {
+        h = JSON.parse(localStorage.getItem(`sensometrika_historial_${modId}`)) || [];
+      }
       return h;
     }
 
@@ -340,12 +338,11 @@
         const statusContainer = document.getElementById(mod.statusElem);
         if (!statusContainer) return;
 
-        const historial = obtenerHistorialModulo(mod.id, cleanRut, rutEvaluado);
+        const historial = obtenerHistorialModulo(mod.id, cleanRut);
         const numEnsayos = Math.min(historial.length, maxIntentos);
         
-        // Verificación estricta de estado de Demo por RUT
         const demoHecha = (localStorage.getItem(`${mod.id}_demo_completada_${cleanRut}`) === 'true') ||
-                          (localStorage.getItem(`${mod.id}_demo_completada_${rutEvaluado}`) === 'true');
+                          (localStorage.getItem(`${mod.id}_demo_completada`) === 'true');
 
         const currentParams = new URLSearchParams(globalParamsQuery);
 
