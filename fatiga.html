@@ -281,7 +281,36 @@
     let tiemposOficialesNetos = [];
     let lapsosCount = 0; // Tiempos > 500 ms (signos de fatiga o micro-sueño)
 
+    document.addEventListener('DOMContentLoaded', () => {
+      actualizarEstadoUI();
+    });
+
+    function actualizarEstadoUI() {
+      const historial = JSON.parse(localStorage.getItem(`sensometrika_historial_fatiga_${cleanRut}`)) || [];
+      const numEnsayosRealizados = historial.length;
+
+      const planStorage = (localStorage.getItem('sensometrika_plan_contratado') || urlParams.get('plan') || 'FULL').toUpperCase();
+      let maxIntentosPlan = esB2B ? (planStorage.includes('ALTO') ? 3 : 1) : 5;
+
+      if (numEnsayosRealizados >= maxIntentosPlan) {
+        document.getElementById('titulo-fase').innerText = esB2B ? `EVALUACIÓN REGISTRADA (${numEnsayosRealizados}/${maxIntentosPlan})` : `PLAN COMPLETADO (${numEnsayosRealizados}/${maxIntentosPlan})`;
+        document.getElementById('panel-estado').innerText = esB2B ? 'Evaluación corporativa B2B registrada exitosamente.' : 'Has completado la cuota de simulaciones contratadas.';
+        const btn = document.getElementById('btn-accion');
+        btn.innerText = '← RETORNAR AL MENÚ DE EVALUACIONES';
+        btn.onclick = volverMenu;
+      }
+    }
+
     function manejarAccionBtn() {
+      const historial = JSON.parse(localStorage.getItem(`sensometrika_historial_fatiga_${cleanRut}`)) || [];
+      const planStorage = (localStorage.getItem('sensometrika_plan_contratado') || urlParams.get('plan') || 'FULL').toUpperCase();
+      let maxIntentosPlan = esB2B ? (planStorage.includes('ALTO') ? 3 : 1) : 5;
+
+      if (historial.length >= maxIntentosPlan) {
+        volverMenu();
+        return;
+      }
+
       const btn = document.getElementById('btn-accion');
       btn.style.display = 'none';
       iniciarEstímulo();
@@ -387,14 +416,10 @@
         latenciaCompensadaMs: latenciaHardware,
         lapsos: lapsosCount,
         aprobado: aprobado,
+        dictamen: aprobado ? 'APROBADO' : 'OBSERVADO',
         fecha: new Date().toISOString()
       });
       localStorage.setItem(`sensometrika_historial_fatiga_${cleanRut}`, JSON.stringify(historial));
-
-      // Marcar módulo 8 como Rendido
-      let modulosRendidos = JSON.parse(localStorage.getItem('sensometrika_modulos_rendidos')) || {};
-      modulosRendidos.fatiga = true;
-      localStorage.setItem('sensometrika_modulos_rendidos', JSON.stringify(modulosRendidos));
 
       mostrarModalInterno(
         "Evaluación de Fatiga Finalizada",
