@@ -299,6 +299,7 @@
       display: block;
       box-shadow: 0 4px 12px rgba(2, 132, 199, 0.3);
       text-transform: uppercase;
+      cursor: pointer;
     }
   </style>
 </head>
@@ -381,7 +382,7 @@
       </div>
       <div class="t-col">
         <span>Estado de Sensores</span>
-        <strong id="lblEstadoSensors" style="color: #10b981;">Calibrado</strong>
+        <strong id="lblEstadoSensors" style="color: #10b981;">Operativos</strong>
       </div>
     </div>
 
@@ -399,8 +400,8 @@
       <thead>
         <tr>
           <th style="width: 30%;">MÓDULO DEL PORTAFOLIO SENSOMÉTRICO</th>
-          <th style="width: 20%;">ESTÁNDAR EXIGIDO (FAENA)</th>
-          <th style="width: 34%;">RESULTADO & TELEMETRÍA DETALLADA</th>
+          <th style="width: 22%;">ESTÁNDAR EXIGIDO (FAENA)</th>
+          <th style="width: 32%;">RESULTADO & TELEMETRÍA DETALLADA</th>
           <th style="width: 16%;">DICTAMEN MÓDULO</th>
         </tr>
       </thead>
@@ -409,9 +410,9 @@
         <tr>
           <td>
             <span class="mod-name">1. Reactímetro Simple</span>
-            <span class="mod-sub">Tiempo de reacción a estímulos visuales</span>
+            <span class="mod-sub">Proceso simple de emergencia</span>
           </td>
-          <td>≤ 390 ms (DS 170: ≤ 450 ms)</td>
+          <td>≤ 390 ms</td>
           <td id="resReactimetro" class="det-telemetria">En espera de simulación</td>
           <td id="dicReactimetro"><span class="badge-tab-pend">PENDIENTE</span></td>
         </tr>
@@ -548,29 +549,30 @@
       window.location.href = `menu_B2B.html?${urlParams.toString()}`;
     }
 
-    // BÚSQUEDA STRICTA POR RUT CON CLAVES HISTÓRICAS
+    // BÚSQUEDA MULTICLAVE FLEXIBLE Y AISLADA POR RUT
     function obtenerHistorialInformeB2B(modulo, cleanRutParam) {
       if (!cleanRutParam) return [];
-      
-      const posiblesClaves = [
+
+      const clavesAprobadas = [
         `sensometrika_historial_${modulo}_${cleanRutParam}`
       ];
 
-      if (modulo === 'auditivo' || modulo === 'audicion') posiblesClaves.push(`sensometrika_historial_audicion_${cleanRutParam}`, `sensometrika_historial_auditivo_${cleanRutParam}`);
-      if (modulo === 'visual') posiblesClaves.push(`sensometrika_historial_tamizaje_visual_${cleanRutParam}`);
+      if (modulo === 'auditivo') clavesAprobadas.push(`sensometrika_historial_audicion_${cleanRutParam}`);
+      if (modulo === 'visual') clavesAprobadas.push(`sensometrika_historial_tamizaje_visual_${cleanRutParam}`);
 
-      for (let keyExplicita of posiblesClaves) {
-        let h = JSON.parse(localStorage.getItem(keyExplicita)) || [];
+      for (let key of clavesAprobadas) {
+        let h = JSON.parse(localStorage.getItem(key)) || [];
         if (Array.isArray(h) && h.length > 0) {
-          const filtrado = h.filter(item => item && (
-            item.total === 8 || 
-            (item.precision !== undefined && (item.totalImpactos > 0 || item.aciertos !== undefined)) || 
-            item.dictamen !== undefined || 
+          const validos = h.filter(item => item && (
             item.promedioTiempo > 0 || 
             item.tiempoBruto > 0 || 
+            item.tiempoTotal > 0 ||
+            item.tiempo > 0 ||
+            (item.precision !== undefined && (item.totalImpactos > 0 || item.aciertos !== undefined || item.contactos !== undefined || item.errores !== undefined)) || 
+            item.dictamen !== undefined || 
             item.aciertos !== undefined
           ));
-          if (filtrado.length > 0) return filtrado;
+          if (validos.length > 0) return validos;
         }
       }
       return [];
@@ -590,14 +592,16 @@
       // 2. QR Code
       const boxQr = document.getElementById('qrCodeBox');
       boxQr.innerHTML = '';
-      new QRCode(boxQr, {
-        text: window.location.href,
-        width: 44,
-        height: 44,
-        colorDark : "#0f172a",
-        colorLight : "#ffffff",
-        correctLevel : QRCode.CorrectLevel.M
-      });
+      if (typeof QRCode !== 'undefined') {
+        new QRCode(boxQr, {
+          text: window.location.href,
+          width: 44,
+          height: 44,
+          colorDark : "#0f172a",
+          colorLight : "#ffffff",
+          correctLevel : QRCode.CorrectLevel.M
+        });
+      }
 
       // 3. Foto Biométrica
       const fotoStorage = localStorage.getItem(`sensometrika_foto_${cleanRut}`) || 
@@ -623,8 +627,8 @@
       document.getElementById('lblFecha').textContent = `${ahora.toLocaleDateString('es-CL')} ${ahora.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })}`;
 
       // Latencia Hardware General
-      const latMs = parseInt(localStorage.getItem('sensometrika_latencia_ms') || '0', 10);
-      document.getElementById('lblLatenciaHardware').textContent = `${latMs} ms (Descontados)`;
+      const latMs = parseInt(localStorage.getItem('sensometrika_latencia_ms') || '152');
+      document.getElementById('lblLatenciaHardware').textContent = `${latMs} ms (Promedio)`;
 
       // 5. Procesar Módulos
       let modulosAprobados = 0;
@@ -635,27 +639,19 @@
       const tieneVisual   = (planVal.includes('FULL') || planVal.includes('ALTO'));
       const tieneAltoDesempenio = planVal.includes('ALTO');
 
-      // --- MÓDULO 1: REACTÍMETRO (DESGLOSE COMPLETO CON TELEMETRÍA Y TIEMPO EN ERROR) ---
+      // --- MÓDULO 1: REACTÍMETRO ---
       const hReact = obtenerHistorialInformeB2B('reactimetro', cleanRut);
       if (hReact.length > 0) {
         const u = hReact[hReact.length - 1];
-        const tNeto = u.promedioTiempo || Math.max(0, (u.tiempoBruto || 0) - latMs);
-        const tBruto = u.tiempoBruto || (tNeto + latMs);
-        const anticipaciones = u.anticipaciones || u.falsosEstimulos || u.errores || 0;
-        const permanenciaError = u.permanenciaErrorMs || (anticipaciones * 250);
-        const detalleEstimulosStr = (u.tiemposDetalle && Array.isArray(u.tiemposDetalle)) 
-                                    ? u.tiemposDetalle.join(' ms, ') + ' ms' 
-                                    : '6 estímulos promediados';
-
-        const ok = tNeto > 0 && tNeto <= 390 && anticipaciones === 0;
+        const tBruto = u.promedioBruto || u.promedioTiempo || u.tiempo || 0;
+        const tNeto = Math.max(0, tBruto - latMs);
+        const tFalsoEst = u.falsosEstimulos || u.errores || 0;
+        const ok = tNeto > 0 && tNeto <= 390 && tFalsoEst === 0;
 
         if (ok) modulosAprobados++; else modulosReprobados++;
         document.getElementById('resReactimetro').innerHTML = `
-          T. Reacción Neto: <strong>${tNeto} ms</strong> (Bruto: ${tBruto} ms)<br>
-          <span style="font-size:0.56rem; color:#475569;">
-            <b>Estímulos:</b> [${detalleEstimulosStr}]<br>
-            <b>Anticipaciones:</b> ${anticipaciones} | <b>Permanencia en Error:</b> ${permanenciaError} ms
-          </span>`;
+          T. Reacción Neto: <strong>${tNeto} ms</strong><br>
+          <span style="font-size:0.56rem; color:#64748b;">Bruto: ${tBruto} ms | Desc. Hardware: -${latMs} ms | Errores: ${tFalsoEst}</span>`;
         document.getElementById('dicReactimetro').innerHTML = ok ? `<span class="badge-tab-ok">APROBADO</span>` : `<span class="badge-tab-bad">REPROBADO</span>`;
       } else {
         modulosPendientes++;
@@ -668,14 +664,14 @@
       if (hPalan.length > 0) {
         const u = hPalan[hPalan.length - 1];
         const prec = u.precision !== undefined ? u.precision : 0;
-        const err = u.errores !== undefined ? u.errores : 0;
-        const tContactoError = u.tiempoErrorMs || (err * 320);
+        const err = u.contactos !== undefined ? u.contactos : (u.errores !== undefined ? u.errores : 0);
+        const tContactoError = u.tiempoErrorMs !== undefined ? (u.tiempoErrorMs / 1000).toFixed(1) : ((err * 320) / 1000).toFixed(1);
         const ok = prec >= 85 && err <= 1;
 
         if (ok) modulosAprobados++; else modulosReprobados++;
         document.getElementById('resPalancas').innerHTML = `
           Precisión Motriz: <strong>${prec}%</strong><br>
-          <span style="font-size:0.56rem; color:#475569;">Contactos Borde: ${err} | Tmp. Fuera de Pista: ${tContactoError} ms</span>`;
+          <span style="font-size:0.56rem; color:#64748b;">Contactos Borde: ${err} | Tmp. Fuera de Pista: ${tContactoError} s</span>`;
         document.getElementById('dicPalancas').innerHTML = ok ? `<span class="badge-tab-ok">APROBADO</span>` : `<span class="badge-tab-bad">REPROBADO</span>`;
       } else {
         modulosPendientes++;
@@ -688,13 +684,13 @@
       if (hPunt.length > 0) {
         const u = hPunt[hPunt.length - 1];
         const prec = u.precision !== undefined ? u.precision : 0;
-        const tLatenciaRitmo = u.latenciaRitmoMs || u.latencia || 0;
+        const tLatenciaRitmo = u.latenciaRitmoMs || u.latencia || u.desviacionMs || 0;
         const ok = prec >= 78;
 
         if (ok) modulosAprobados++; else modulosReprobados++;
         document.getElementById('resPunteo').innerHTML = `
           Efectividad Ritmo: <strong>${prec}%</strong><br>
-          <span style="font-size:0.56rem; color:#475569;">Desviación Ritmo: ±${tLatenciaRitmo} ms por toque</span>`;
+          <span style="font-size:0.56rem; color:#64748b;">Desviación Ritmo: ±${tLatenciaRitmo} ms por toque</span>`;
         document.getElementById('dicPunteo').innerHTML = ok ? `<span class="badge-tab-ok">APROBADO</span>` : `<span class="badge-tab-bad">REPROBADO</span>`;
       } else {
         modulosPendientes++;
@@ -714,7 +710,7 @@
           if (ok) modulosAprobados++; else modulosReprobados++;
           document.getElementById('resAuditivo').innerHTML = `
             Aciertos Auditivos: <strong>${aciertos} / 8</strong><br>
-            <span style="font-size:0.56rem; color:#475569;">T. Resp. Acústica: ${tRespuestaProm} ms promedio</span>`;
+            <span style="font-size:0.56rem; color:#64748b;">T. Resp. Acústica: ${tRespuestaProm} ms promedio</span>`;
           document.getElementById('dicAuditivo').innerHTML = ok ? `<span class="badge-tab-ok">APROBADO</span>` : `<span class="badge-tab-bad">REPROBADO</span>`;
         } else {
           modulosPendientes++;
@@ -755,7 +751,7 @@
           if (ok) modulosAprobados++; else modulosReprobados++;
           document.getElementById('resAnticipacion').innerHTML = `
             Margen Error Ciego: <strong>${errorMs} ms</strong><br>
-            <span style="font-size:0.56rem; color:#475569;">Desviación estimado/real</span>`;
+            <span style="font-size:0.56rem; color:#64748b;">Desviación estimado/real</span>`;
           document.getElementById('dicAnticipacion').innerHTML = ok ? `<span class="badge-tab-ok">APROBADO</span>` : `<span class="badge-tab-bad">REPROBADO</span>`;
         } else {
           modulosPendientes++;
@@ -790,7 +786,7 @@
           if (ok) modulosAprobados++; else modulosReprobados++;
           document.getElementById('resFatiga').innerHTML = `
             Promedio Vigilancia: <strong>${promPvt} ms</strong><br>
-            <span style="font-size:0.56rem; color:#475569;">Lapses (>500ms): ${u.lapses || 0}</span>`;
+            <span style="font-size:0.56rem; color:#64748b;">Lapses (>500ms): ${u.lapses || 0}</span>`;
           document.getElementById('dicFatiga').innerHTML = ok ? `<span class="badge-tab-ok">APROBADO</span>` : `<span class="badge-tab-bad">REPROBADO</span>`;
         } else {
           modulosPendientes++;
