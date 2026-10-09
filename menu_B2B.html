@@ -337,7 +337,6 @@
         document.getElementById('lblUserData').textContent = `EVALUADO: ${decodeURIComponent(nombreUsuario).toUpperCase()} | RUT: ${rawRut}`;
         document.getElementById('lblPlanHeader').textContent = `EVALUACIÓN B2B • PLAN ${planContratado.replace('_', ' ')}`;
 
-        // VERIFICACIÓN STRICTA MULTICLAVE POR RUT (SOPORTE DE ALIAS HISTÓRICOS)
         function verifRendidoRut(moduloKey) {
             if (!cleanRut) return false;
 
@@ -354,7 +353,9 @@
                     const valido = h.some(i => i && (
                         i.promedioTiempo > 0 || 
                         i.tiempoBruto > 0 || 
-                        (i.precision !== undefined && (i.totalImpactos > 0 || i.aciertos !== undefined)) || 
+                        i.tiempoTotal > 0 ||
+                        i.tiempo > 0 ||
+                        (i.precision !== undefined && (i.totalImpactos > 0 || i.aciertos !== undefined || i.contactos !== undefined)) || 
                         i.dictamen !== undefined || 
                         i.aciertos !== undefined
                     ));
@@ -398,7 +399,7 @@
                 document.getElementById('actionAuditivo').innerHTML = `<span class="badge-mod-nosol">NO SOLICITADO</span>`;
             }
 
-            // 5. Visual (REDIRECCIÓN A visual.html)
+            // 5. Visual
             if (tieneVisual) {
                 const rVis = verifRendidoRut('visual');
                 document.getElementById('actionVisual').innerHTML = rVis ? 
