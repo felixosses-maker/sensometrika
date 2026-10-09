@@ -322,7 +322,7 @@
         const cleanRut = rutEvaluado.replace(/[^0-9Kk]/g, '');
 
         let isDemoURL = urlParams.get('demo') === 'true' || urlParams.get('fase') === 'demo';
-        let modoActual = isDemoURL ? 'DEMO' : 'OFICIAL';
+        let modoActual = 'DEMO'; // Inicialización por defecto en DEMO
 
         let evaluacionActiva = false;
         let aciertos = 0;
@@ -339,7 +339,6 @@
         let bola = { x: 200, y: -20, r: 18, vy: 3.2 };
         const targetZone = { yMin: 200, yMax: 270 };
 
-        // REDIRECCIÓN DINÁMICA DE RETORNO SEGÚN MODO
         function ejecutarRetornoMenu() {
             const menuDestino = esB2B ? 'menu_B2B.html' : 'menu_B2C.html';
             window.location.href = `${menuDestino}?${urlParams.toString()}`;
@@ -347,9 +346,7 @@
 
         function obtenerHistorialPunteoRut() {
             if (!cleanRut) return [];
-            // Lectura por RUT específico aislando B2B/B2C
-            let raw = JSON.parse(localStorage.getItem(`sensometrika_historial_punteo_${cleanRut}`)) || JSON.parse(localStorage.getItem('sensometrika_historial_punteo')) || [];
-            // Solo considerar registros reales que contengan precisión o aciertos calculados
+            let raw = JSON.parse(localStorage.getItem(`sensometrika_historial_punteo_${cleanRut}`)) || [];
             return raw.filter(item => item && (item.precision !== undefined || item.aciertos !== undefined));
         }
 
@@ -359,7 +356,6 @@
 
             const planStorage = (localStorage.getItem('sensometrika_plan_contratado') || urlParams.get('plan') || 'BASICO').toUpperCase();
             
-            // LÍMITES ESTRICTOS B2B (1/1) Y B2C (3, 5, 8)
             let maxIntentosPlan = 3;
             if (esB2B) {
                 maxIntentosPlan = planStorage.includes('ALTO') ? 3 : 1;
@@ -368,11 +364,12 @@
                 if (planStorage.includes('FULL') || planStorage.includes('ALTO')) maxIntentosPlan = 8;
             }
 
-            const demoRealizada = localStorage.getItem(`punteo_demo_completada_${cleanRut}`) === 'true' || localStorage.getItem('punteo_demo_completada') === 'true';
+            // Verificación estricta de Demo completada por RUT específico
+            const demoRealizada = localStorage.getItem(`punteo_demo_completada_${cleanRut}`) === 'true';
 
             if (numEnsayosRealizados >= maxIntentosPlan) {
                 modoActual = 'BLOQUEADO';
-            } else if (isDemoURL || (!demoRealizada && numEnsayosRealizados === 0)) {
+            } else if (!demoRealizada || isDemoURL) {
                 modoActual = 'DEMO';
             } else {
                 modoActual = 'OFICIAL';
@@ -385,7 +382,7 @@
                 btnNext.style.display = 'block';
                 instructionText.textContent = esB2B ? 'Evaluación B2B finalizada con éxito. Retorna al menú.' : `Has alcanzado el límite de ${maxIntentosPlan} simulaciones de tu Plan ${planStorage}. Retorna al menú.`;
             } else if (modoActual === 'DEMO') {
-                badgeText.textContent = "Paso 1: Calibración Demo (1/1)";
+                badgeText.textContent = esB2B ? "Calibración Demo B2B (1/1)" : "Paso 1: Calibración Demo (1/1)";
                 badgeDot.style.backgroundColor = "#e5b324"; 
                 btnStart.textContent = "INICIAR CALIBRACIÓN DEMO";
                 btnStart.style.backgroundColor = "#e5b324";
@@ -537,7 +534,6 @@
 
             if (modoActual === 'DEMO') {
                 localStorage.setItem(`punteo_demo_completada_${cleanRut}`, 'true');
-                localStorage.setItem('punteo_demo_completada', 'true');
 
                 isDemoURL = false;
                 modoActual = 'OFICIAL';
@@ -558,11 +554,12 @@
                     aciertos: aciertos, 
                     errores: errores, 
                     latencia: latenciaMediaVal,
+                    desviacionMs: latenciaMediaVal,
+                    latenciaRitmoMs: latenciaMediaVal,
                     precision: precisionVal, 
                     fecha: new Date().toISOString() 
                 };
 
-                // Guardar tanto en la clave general como en la clave con RUT específico
                 let hRut = JSON.parse(localStorage.getItem(`sensometrika_historial_punteo_${cleanRut}`)) || [];
                 hRut.push(registroData);
                 localStorage.setItem(`sensometrika_historial_punteo_${cleanRut}`, JSON.stringify(hRut));
