@@ -286,7 +286,7 @@
             </div>
 
             <div class="action-container">
-                <button id="btnStart" class="btn-start">INICIAR CALIBRACIÓN DEMO (6 ESTÍMULOS)</button>
+                <button id="btnStart" class="btn-start">INICIAR CALIBRACIÓN DEMO (4 ESTÍMULOS)</button>
                 <button id="btnBrake" class="btn-brake">🛑 FRENAR (ESPACIO)</button>
                 
                 <div id="salidaWrapper" class="salida-buttons-wrapper">
@@ -301,7 +301,7 @@
                 </div>
                 <div class="metric-item">
                     <span class="metric-label">ESTÍMULO</span>
-                    <span id="metricEstimulo" class="metric-value" style="color: #e5b324;">0 / 6</span>
+                    <span id="metricEstimulo" class="metric-value" style="color: #e5b324;">0 / 4</span>
                 </div>
                 <div class="metric-item">
                     <span class="metric-label">NORMA DS 170</span>
@@ -316,10 +316,11 @@
                 <div class="modal-body">
                     Esta prueba mide tu velocidad de reacción simple ante un estímulo visual imprevisto (D.S. N° 170):
                     <ul>
-                        <li><b>Secuencia:</b> La prueba consta de <b>6 estímulos visuales aleatorios</b>.</li>
-                        <li><b>Instrucción:</b> Presiona el botón <b>FRENAR</b> o la <b>barra espaciadora</b> en cuanto la luz cambie a <b>ROJO</b>.</li>
-                        <li><b>Anticipación:</b> Si frenas mientras el semáforo está amarillo, la prueba detectará anticipación y reiniciará el estímulo.</li>
-                        <li><b>Aprobación:</b> Un promedio igual o inferior a <b>450 ms</b> cumple con el estándar de la norma.</li>
+                        <li><b>Demo de Práctica:</b> Consta de <b>4 estímulos de calibración</b> para familiarización.</li>
+                        <li><b>Evaluación Oficial:</b> Consta de <b>6 estímulos visuales aleatorios</b>.</li>
+                        <li><b>Instrucción:</b> Presiona el botón <b>FRENAR</b> o la <b>barra espaciadora</b> tan pronto como la luz cambie a <b>ROJO</b>.</li>
+                        <li><b>Anticipación:</b> Si frenas antes del estímulo rojo, se registrará una anticipación/error de tiempo.</li>
+                        <li><b>Aprobación:</b> Un promedio igual o inferior a <b>450 ms</b> cumple con el estándar pericial.</li>
                     </ul>
                 </div>
                 <button id="btnCloseInstrucciones" class="modal-btn">Comprendido, volver a la prueba</button>
@@ -374,6 +375,7 @@
 
         let isDemoURL = urlParams.get('demo') === 'true' || urlParams.get('fase') === 'demo';
         let modoActual = isDemoURL ? 'DEMO' : 'OFICIAL';
+        let moduloReactimetro = null;
 
         function ejecutarRetornoMenu() {
             const menuDestino = esB2B ? 'menu_B2B.html' : 'menu_B2C.html';
@@ -387,10 +389,8 @@
         btnCloseInstrucciones.addEventListener('click', () => { modalInstrucciones.style.display = 'none'; });
 
         function actualizarEstadoPlanUI() {
-            // LECTURA FILTRADA ESTRICTA: Solo contar registros oficiales con tiempos netos validos > 0
             const rawHistorial = JSON.parse(localStorage.getItem(`sensometrika_historial_reactimetro_${cleanRut}`)) || [];
             const historial = rawHistorial.filter(item => item && (item.promedioTiempo > 0 || item.tiempoBruto > 0));
-            
             const numEnsayosRealizados = historial.length;
 
             const planStorage = (localStorage.getItem('sensometrika_plan_contratado') || urlParams.get('plan') || 'BASICO').toUpperCase();
@@ -413,22 +413,28 @@
                 modoActual = 'OFICIAL';
             }
 
+            // Inicialización o reconfiguración del motor con cantidad dinámica de estímulos
+            const totalEstimosFase = (modoActual === 'DEMO') ? 4 : 6;
+            moduloReactimetro = new ModuloReactimetro(canvas, { width: 400, height: 300, totalEstimulos: totalEstimosFase }, manejarFinEvaluacion);
+
             if (modoActual === 'BLOQUEADO') {
                 badgeText.textContent = esB2B ? `EVALUACIÓN REGISTRADA (${numEnsayosRealizados}/${maxIntentosPlan})` : `PLAN ${planStorage} COMPLETADO (${numEnsayosRealizados}/${maxIntentosPlan})`;
                 badgeDot.style.backgroundColor = "#10b981"; 
                 btnStart.style.display = 'none';
                 btnBrake.style.display = 'none';
                 salidaWrapper.style.display = 'flex';
+                metricEstimulo.textContent = `0 / ${totalEstimosFase}`;
                 instructionText.textContent = esB2B ? 'Evaluación B2B finalizada con éxito. Retorna al menú.' : `Has alcanzado el límite de ${maxIntentosPlan} simulaciones de tu Plan ${planStorage}. Retorna al menú.`;
             } else if (modoActual === 'DEMO') {
                 badgeText.textContent = "Paso 1: Calibración Demo (1/1)";
                 badgeDot.style.backgroundColor = "#e5b324"; 
-                btnStart.textContent = "INICIAR CALIBRACIÓN DEMO (6 ESTÍMULOS)";
+                btnStart.textContent = "INICIAR CALIBRACIÓN DEMO (4 ESTÍMULOS)";
                 btnStart.style.display = 'block';
                 btnStart.style.backgroundColor = "#e5b324";
                 btnBrake.style.display = 'none';
                 salidaWrapper.style.display = 'none';
-                instructionText.textContent = "Modo Demo: Se realizarán 6 estímulos de ensayo para familiarizarte antes de la prueba oficial.";
+                metricEstimulo.textContent = `0 / 4`;
+                instructionText.textContent = "Modo Demo: Se realizarán 4 estímulos de ensayo para familiarizarte antes de la prueba oficial.";
             } else {
                 const siguienteSimu = numEnsayosRealizados + 1;
                 badgeText.textContent = esB2B ? `Simulación Oficial B2B` : `Simulación Oficial S${siguienteSimu} de ${maxIntentosPlan}`;
@@ -438,6 +444,7 @@
                 btnStart.style.backgroundColor = "#0284c7";
                 btnBrake.style.display = 'none';
                 salidaWrapper.style.display = 'none';
+                metricEstimulo.textContent = `0 / 6`;
                 instructionText.textContent = `Simulación S${siguienteSimu}: Se promediarán 6 estímulos visuales aleatorios. Mantén la atención.`;
             }
         }
@@ -452,18 +459,16 @@
             };
         }
 
-        const moduloReactimetro = new ModuloReactimetro(canvas, { width: 400, height: 300, totalEstimulos: 6 }, (res) => {
+        function manejarFinEvaluacion(res) {
             btnBrake.style.display = 'none';
 
-            // COMPENSACIÓN TELEMÉTRICA DE LATENCIA HARDWARE
             const latenciaHardware = parseInt(localStorage.getItem('sensometrika_latencia_ms') || '0', 10);
-            
-            // Descontar latencia al promedio neto
             const tiempoNetoCompensado = Math.max(100, res.promedioTiempo - latenciaHardware);
             const tiemposDetalleCompensados = (res.tiemposDetalle || []).map(t => Math.max(100, t - latenciaHardware));
+            const totalEstimosFase = (modoActual === 'DEMO') ? 4 : 6;
 
             metricTiempo.textContent = `${tiempoNetoCompensado} ms`;
-            metricEstimulo.textContent = `6 / 6`;
+            metricEstimulo.textContent = `${totalEstimosFase} / ${totalEstimosFase}`;
 
             if (modoActual === 'DEMO') {
                 localStorage.setItem(`reactimetro_demo_completada_${cleanRut}`, 'true');
@@ -477,31 +482,25 @@
                 
                 mostrarAlertaSistema(
                     "CALIBRACIÓN DEMO COMPLETADA",
-                    `Promedio Neto: <b>${tiempoNetoCompensado} ms</b> (Compensado -${latenciaHardware} ms hardware)<br>Anticipaciones: <b>${res.anticipaciones}</b><br><br>Has completado el ensayo. Ya puedes rendir tu simulación oficial.`,
+                    `Promedio Neto: <b>${tiempoNetoCompensado} ms</b> (Compensado -${latenciaHardware} ms hardware)<br>Anticipaciones / Errores: <b>${res.anticipaciones}</b><br><br>Has completado el ensayo de 4 estímulos. Ya puedes rendir tu simulación oficial.`,
                     () => {
                         actualizarEstadoPlanUI();
                     }
                 );
             } else if (modoActual === 'OFICIAL') {
                 let historial = JSON.parse(localStorage.getItem(`sensometrika_historial_reactimetro_${cleanRut}`)) || [];
+                
                 historial.push({
                     promedioTiempo: tiempoNetoCompensado,
                     tiempoBruto: res.promedioTiempo,
                     latenciaCompensadaMs: latenciaHardware,
                     tiemposDetalle: tiemposDetalleCompensados,
                     anticipaciones: res.anticipaciones,
+                    permanenciaErrorMs: res.permanenciaErrorMs || (res.anticipaciones * 250),
                     fecha: new Date().toISOString()
                 });
+                
                 localStorage.setItem(`sensometrika_historial_reactimetro_${cleanRut}`, JSON.stringify(historial));
-
-                const planStorage = (localStorage.getItem('sensometrika_plan_contratado') || 'BASICO').toUpperCase();
-                let maxIntentosPlan = esB2B ? (planStorage.includes('ALTO') ? 3 : 1) : (planStorage.includes('PLUS') ? 5 : (planStorage.includes('FULL') || planStorage.includes('ALTO') ? 8 : 3));
-
-                if (historial.length >= maxIntentosPlan) {
-                    let rendidos = JSON.parse(localStorage.getItem('sensometrika_modulos_rendidos')) || {};
-                    rendidos.reactimetro = true;
-                    localStorage.setItem('sensometrika_modulos_rendidos', JSON.stringify(rendidos));
-                }
 
                 const numSimu = historial.length;
                 const tituloModal = esB2B ? "SIMULACIÓN OFICIAL B2B REGISTRADA" : `SIMULACIÓN S${numSimu} REGISTRADA`;
@@ -510,24 +509,26 @@
                     tituloModal,
                     `Promedio Neto Frenado: <b>${tiempoNetoCompensado} ms</b> (${tiempoNetoCompensado <= 450 ? '✓ En Norma' : '⚠ Latencia Elevada'})<br>` +
                     `<span style="font-size:0.75rem; color:#94a3b8;">(Compensación telemétrica de hardware: -${latenciaHardware} ms)</span><br>` +
-                    `Anticipaciones: <b>${res.anticipaciones}</b><br><br>` +
-                    `<b>Resultado guardado con éxito.</b>`,
+                    `Anticipaciones / Errores: <b>${res.anticipaciones}</b><br><br>` +
+                    `<b>Resultado registrado en informe pericial.</b>`,
                     () => {
                         ejecutarRetornoMenu();
                     }
                 );
             }
-        });
+        }
 
         btnStart.addEventListener('click', () => {
-            if (modoActual === 'BLOQUEADO') return;
+            if (modoActual === 'BLOQUEADO' || !moduloReactimetro) return;
             btnStart.style.display = 'none';
             btnBrake.style.display = 'block';
-            metricEstimulo.textContent = `1 / 6`;
+            const totalEstimosFase = (modoActual === 'DEMO') ? 4 : 6;
+            metricEstimulo.textContent = `1 / ${totalEstimosFase}`;
             moduloReactimetro.iniciarSimulacionCompleta();
         });
 
         btnBrake.addEventListener('click', () => {
+            if (!moduloReactimetro) return;
             const res = moduloReactimetro.registrarFrenado();
             if (res.tipo === 'PARCIAL') {
                 metricEstimulo.textContent = `${res.estimulo} / ${res.totalEstimulos}`;
@@ -539,14 +540,14 @@
         });
 
         window.addEventListener('keydown', (e) => {
-            if (e.code === 'Space' && (moduloReactimetro.estado === 'LISTO' || moduloReactimetro.estado === 'ESTIMULO')) {
+            if (e.code === 'Space' && moduloReactimetro && (moduloReactimetro.estado === 'LISTO' || moduloReactimetro.estado === 'ESTIMULO')) {
                 e.preventDefault();
                 btnBrake.click();
             }
         });
 
-        moduloReactimetro.draw();
         actualizarEstadoPlanUI();
+        if (moduloReactimetro) moduloReactimetro.draw();
     </script>
 </body>
 </html>
