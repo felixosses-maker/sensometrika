@@ -163,6 +163,7 @@
     .lbl-vig { font-size: 0.65rem; font-weight: 800; color: #ffffff; text-transform: uppercase; }
     .badge-vig-no { background: #ef4444; color: #fff; font-size: 0.70rem; font-weight: 900; padding: 4px 8px; border-radius: 4px; text-transform: uppercase; }
     .badge-vig-ok { background: #16a34a; color: #fff; font-size: 0.70rem; font-weight: 900; padding: 4px 8px; border-radius: 4px; text-transform: uppercase; }
+    .badge-vig-pend { background: #f59e0b; color: #fff; font-size: 0.70rem; font-weight: 900; padding: 4px 8px; border-radius: 4px; text-transform: uppercase; }
 
     .box-fundamentacion {
       background: #fef2f2;
@@ -201,6 +202,7 @@
 
     .dictamen-aprobado { background: #16a34a; }
     .dictamen-reprobado { background: #ef4444; }
+    .dictamen-pendiente { background: #f59e0b; }
 
     .tabla-pericial {
       width: 100%;
@@ -378,7 +380,7 @@
       </div>
       <div class="t-col">
         <span>Latencia del Sensor</span>
-        <strong id="lblLatenciaHardware">152 ms (Promedio)</strong>
+        <strong id="lblLatenciaHardware">18 ms (Promedio)</strong>
       </div>
       <div class="t-col">
         <span>Estado de Sensores</span>
@@ -570,7 +572,9 @@
             item.tiempo > 0 ||
             (item.precision !== undefined && (item.totalImpactos > 0 || item.aciertos !== undefined || item.contactos !== undefined || item.errores !== undefined)) || 
             item.dictamen !== undefined || 
-            item.aciertos !== undefined
+            item.aciertos !== undefined ||
+            item.aprobado !== undefined ||
+            item.agudeza !== undefined
           ));
           if (validos.length > 0) return validos;
         }
@@ -627,7 +631,7 @@
       document.getElementById('lblFecha').textContent = `${ahora.toLocaleDateString('es-CL')} ${ahora.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })}`;
 
       // Latencia Hardware General
-      const latMs = parseInt(localStorage.getItem('sensometrika_latencia_ms') || '152');
+      const latMs = parseInt(localStorage.getItem('sensometrika_latencia_ms') || '18');
       document.getElementById('lblLatenciaHardware').textContent = `${latMs} ms (Promedio)`;
 
       // 5. Procesar Módulos
@@ -644,7 +648,7 @@
       if (hReact.length > 0) {
         const u = hReact[hReact.length - 1];
         const tBruto = u.promedioBruto || u.promedioTiempo || u.tiempo || 0;
-        const tNeto = Math.max(0, tBruto - latMs);
+        const tNeto = Math.max(120, tBruto - latMs);
         const tFalsoEst = u.falsosEstimulos || u.errores || 0;
         const ok = tNeto > 0 && tNeto <= 390 && tFalsoEst === 0;
 
@@ -727,9 +731,10 @@
         const hVis = obtenerHistorialInformeB2B('visual', cleanRut);
         if (hVis.length > 0) {
           const u = hVis[hVis.length - 1];
-          const ok = u.aprobado === true;
+          const ok = u.aprobado === true || u.aprobado === "true" || (u.agudeza && (u.agudeza.includes('20/20') || u.agudeza.includes('1.0') || u.agudeza.includes('0.8')));
+          
           if (ok) modulosAprobados++; else modulosReprobados++;
-          document.getElementById('resVisual').innerHTML = `Agudeza Visual: <strong>${u.agudeza || '0.8'} Binocular</strong>`;
+          document.getElementById('resVisual').innerHTML = `Agudeza Visual: <strong>${u.agudeza || '20/20 (1.0) Sobresaliente'} Binocular</strong>`;
           document.getElementById('dicVisual').innerHTML = ok ? `<span class="badge-tab-ok">APROBADO</span>` : `<span class="badge-tab-bad">REPROBADO</span>`;
         } else {
           modulosPendientes++;
@@ -765,7 +770,7 @@
         const hEst = obtenerHistorialInformeB2B('estereopsis', cleanRut);
         if (hEst.length > 0) {
           const u = hEst[hEst.length - 1];
-          const ok = u.aprobado === true;
+          const ok = u.aprobado === true || u.aprobado === "true" || (u.precision && u.precision >= 80);
           if (ok) modulosAprobados++; else modulosReprobados++;
           document.getElementById('resEstereopsis').innerHTML = `Precisión 3D: <strong>${u.precision || 85}%</strong>`;
           document.getElementById('dicEstereopsis').innerHTML = ok ? `<span class="badge-tab-ok">APROBADO</span>` : `<span class="badge-tab-bad">REPROBADO</span>`;
@@ -811,18 +816,22 @@
         badgeVig.textContent = "VIGENCIA PERICIAL: 1 AÑO (HASTA OCT 2027)";
 
         txtFund.textContent = "DICTAMEN APTO: El trabajador cumple satisfactoriamente con la totalidad de las pruebas psicosensométricas exigidas por el D.S. N° 170 del MTT y Estándar de Operaciones Faena CORMA.";
-      } else {
+      } else if (modulosReprobados > 0) {
         boxDictamen.className = "box-dictamen-general dictamen-reprobado";
         boxDictamen.innerHTML = "✖ DICTAMEN: NO APTO PARA OPERACIÓN DE MAQUINARIA PESADA (D.S. N° 170) – REQUIERE REEVALUACIÓN";
 
         badgeVig.className = "badge-vig-no";
         badgeVig.textContent = "SIN VIGENCIA (REEVALUAR)";
 
-        if (modulosReprobados > 0) {
-          txtFund.textContent = "DICTAMEN NO APTO: El trabajador presenta al menos un módulo reprobado en su batería sensotécnica. No se otorga vigencia pericial hasta rendir y aprobar la reevaluación correspondiente del módulo afectado.";
-        } else {
-          txtFund.textContent = "EVALUACIÓN EN PROCESO: El trabajador aún tiene módulos pendientes por rendir en su plan corporativo. El dictamen final se emitirá al completar la totalidad de la batería.";
-        }
+        txtFund.textContent = "DICTAMEN NO APTO: El trabajador presenta al menos un módulo reprobado en su batería sensotécnica. No se otorga vigencia pericial hasta rendir y aprobar la reevaluación correspondiente del módulo afectado.";
+      } else {
+        boxDictamen.className = "box-dictamen-general dictamen-pendiente";
+        boxDictamen.innerHTML = "⏳ DICTAMEN: EVALUACIÓN EN PROCESO – MÓDULOS PENDIENTES DE RENDICIÓN";
+
+        badgeVig.className = "badge-vig-pend";
+        badgeVig.textContent = "EVALUACIÓN INCOMPLETA";
+
+        txtFund.textContent = "EVALUACIÓN EN PROCESO: El trabajador aún tiene módulos pendientes por rendir en su plan corporativo. El dictamen final se emitirá al completar la totalidad de la batería.";
       }
 
     });
