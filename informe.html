@@ -367,11 +367,9 @@
     }
 
     function cargarCalibracionDinamica(cleanRut, planParam) {
-      // 1. Latencia Pantalla / Sensor (Siempre obtenida de la calibración inicial)
       const latenciaReal = localStorage.getItem('sensometrika_latencia_ms') || '18';
       document.getElementById('lblCalibLatencia').textContent = `${latenciaReal} ms (ÓPTIMO)`;
 
-      // 2. Distancia Biométrica Visual (Solo activa si existió ejecución del módulo visual)
       const hVis = JSON.parse(localStorage.getItem(`sensometrika_historial_visual_${cleanRut}`)) || [];
       const elDist = document.getElementById('lblCalibDistancia');
       if (hVis.length > 0 && (planParam.includes('FULL') || planParam.includes('ALTO'))) {
@@ -384,7 +382,6 @@
         elDist.style.color = 'var(--text-muted)';
       }
 
-      // 3. Estándar Audio / Estéreo (Solo activo si existió ejecución del módulo auditivo)
       const hAud = JSON.parse(localStorage.getItem(`sensometrika_historial_audicion_${cleanRut}`)) || JSON.parse(localStorage.getItem(`sensometrika_historial_auditivo_${cleanRut}`)) || [];
       const elAudio = document.getElementById('lblCalibAudio');
       if (hAud.length > 0 && (planParam.includes('PLUS') || planParam.includes('FULL') || planParam.includes('ALTO'))) {
@@ -400,13 +397,13 @@
       const hReact = JSON.parse(localStorage.getItem(`sensometrika_historial_reactimetro_${cleanRut}`)) || [];
       const hPalan = JSON.parse(localStorage.getItem(`sensometrika_historial_palancas_${cleanRut}`)) || [];
       const hPunt  = JSON.parse(localStorage.getItem(`sensometrika_historial_punteo_${cleanRut}`)) || [];
-      const hAud   = JSON.parse(localStorage.getItem(`sensometrika_historial_audicion_${cleanRut}`)) || [];
+      const hAud   = JSON.parse(localStorage.getItem(`sensometrika_historial_audicion_${cleanRut}`)) || JSON.parse(localStorage.getItem(`sensometrika_historial_auditivo_${cleanRut}`)) || [];
       const hVis   = JSON.parse(localStorage.getItem(`sensometrika_historial_visual_${cleanRut}`)) || [];
 
       // Reactímetro
       if (hReact.length > 0) {
         const ult = hReact[hReact.length - 1];
-        const valTiempo = ult.tiempo || ult.promedioTiempo || 350;
+        const valTiempo = ult.promedioTiempo || ult.tiempo || 350;
         document.getElementById('valReactProm').textContent = `${valTiempo} ms`;
         document.getElementById('valReactEstado').innerHTML = '<span class="badge-ok">COMPLETADO ✓</span>';
       } else {
@@ -424,8 +421,8 @@
       // Auditivo
       if (hAud.length > 0) {
         const ultA = hAud[hAud.length - 1];
-        const latAud = ultA.latenciaMs || 240;
-        document.getElementById('valAudAciertos').textContent = `${ultA.aciertos || 7} / 8 (${latAud} ms)`;
+        const latAud = ultA.latenciaMs || ultA.latenciaAudicionMs || 240;
+        document.getElementById('valAudAciertos').textContent = `${ultA.aciertos !== undefined ? ultA.aciertos : 7} / 8 (${latAud} ms)`;
         document.getElementById('valAudEstado').innerHTML = '<span class="badge-ok">COMPLETADO ✓</span>';
       } else {
         document.getElementById('valAudEstado').innerHTML = '<span class="badge-pend">PENDIENTE</span>';
@@ -449,7 +446,7 @@
       const hReact = JSON.parse(localStorage.getItem(`sensometrika_historial_reactimetro_${cleanRut}`)) || [];
       const hPalan = JSON.parse(localStorage.getItem(`sensometrika_historial_palancas_${cleanRut}`)) || [];
       const hPunt  = JSON.parse(localStorage.getItem(`sensometrika_historial_punteo_${cleanRut}`)) || [];
-      const hAud   = JSON.parse(localStorage.getItem(`sensometrika_historial_audicion_${cleanRut}`)) || [];
+      const hAud   = JSON.parse(localStorage.getItem(`sensometrika_historial_audicion_${cleanRut}`)) || JSON.parse(localStorage.getItem(`sensometrika_historial_auditivo_${cleanRut}`)) || [];
       const hVis   = JSON.parse(localStorage.getItem(`sensometrika_historial_visual_${cleanRut}`)) || [];
 
       const planParam = (localStorage.getItem('sensometrika_plan_contratado') || 'BASICO').toUpperCase();
@@ -485,7 +482,7 @@
             let valDisplay = '';
 
             if (mod.nombre.includes('Reactímetro')) {
-              const msVal = item.tiempo || item.promedioTiempo || 350;
+              const msVal = item.promedioTiempo || item.tiempo || 350;
               valDisplay = `${msVal}ms`;
               suma += msVal;
             } else if (mod.nombre.includes('Palancas')) {
@@ -556,7 +553,7 @@
       const labels = ['S1', 'S2', 'S3', 'S4', 'S5', 'S6', 'S7', 'S8'];
       const dataPalan = labels.map((_, i) => hPalan[i] ? hPalan[i].precision : null);
       const dataPunt  = labels.map((_, i) => hPunt[i] ? hPunt[i].precision : null);
-      const dataReact = labels.map((_, i) => hReact[i] ? (hReact[i].tiempo || hReact[i].promedioTiempo) : null);
+      const dataReact = labels.map((_, i) => hReact[i] ? (hReact[i].promedioTiempo || hReact[i].tiempo) : null);
 
       if (chartInstancia) chartInstancia.destroy();
 
