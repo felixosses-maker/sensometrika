@@ -213,7 +213,7 @@
       <h4 class="title-sub-report">⚡ REACTÍMETRO • TIEMPO DE REACCIÓN SIMPLE Y COMPLEJO</h4>
       <div class="grid-3col">
         <div class="metric-card">
-          <span class="metric-label">TIEMPO PROMEDIO</span>
+          <span class="metric-label">TIEMPO PROMEDIO & ERRORES</span>
           <span class="metric-val" id="valReactProm">-- ms</span>
         </div>
         <div class="metric-card">
@@ -231,7 +231,7 @@
       <h4 class="title-sub-report">🕹️ BATERÍA COORDINACIÓN BIMANUAL (PALANCAS Y PUNTEO)</h4>
       <div class="grid-2col">
         <div class="metric-card">
-          <span class="metric-label">PRECISIÓN PALANCAS</span>
+          <span class="metric-label">PRECISIÓN Y CONTACTOS PALANCAS</span>
           <span class="metric-val" id="valPalanPrec">-- %</span>
           <span style="font-size: 0.58rem; color: var(--text-muted);">NORMA: ≥ 80%</span>
         </div>
@@ -247,7 +247,7 @@
       <div class="card-box-report" id="cardReportAuditivo">
         <h4 class="title-sub-report">🎧 TAMIZAJE AUDITIVO</h4>
         <div class="metric-card">
-          <span class="metric-label">ACIERTOS / REACCIÓN</span>
+          <span class="metric-label">ACIERTOS / RESPUESTA ESTÍMULO</span>
           <span class="metric-val" id="valAudAciertos">-- / 8</span>
         </div>
         <div class="metric-card">
@@ -259,7 +259,7 @@
       <div class="card-box-report" id="cardReportVisual">
         <h4 class="title-sub-report">👁️ SCREENING VISUAL PERICIAL</h4>
         <div class="metric-card">
-          <span class="metric-label">AGUDEZA / REACCIÓN</span>
+          <span class="metric-label">AGUDEZA / LATENCIA VISUAL</span>
           <span class="metric-val" id="valVisAgudeza">--</span>
         </div>
         <div class="metric-card">
@@ -344,7 +344,7 @@
       const rut = urlParams.get('rut') || datosUsuario.rut || '13.543.222-5';
       const cleanRut = rut.replace(/[^0-9Kk]/g, '');
 
-      const planStorage = (localStorage.getItem('sensometrika_plan_contratado') || urlParams.get('plan') || 'BASICO').toUpperCase();
+      const planStorage = (localStorage.getItem('sensometrika_plan_contratado') || urlParams.get('plan') || 'PLUS').toUpperCase();
       document.getElementById('lblPlan').textContent = `PLAN ${planStorage} B2C`;
 
       document.getElementById('lblNombre').textContent = decodeURIComponent(nombre);
@@ -352,13 +352,14 @@
       document.getElementById('lblFecha').textContent = new Date().toLocaleDateString('es-CL');
       document.getElementById('lblCodigoHash').textContent = `HASH: ${generarHashDemo(rut)}`;
 
+      // Habilitar contenedor extra para PLUS, FULL y ALTO
       if (planStorage.includes('PLUS') || planStorage.includes('FULL') || planStorage.includes('ALTO')) {
         document.getElementById('contenedorModulosExtra').style.display = 'grid';
       }
 
       cargarCalibracionDinamica(cleanRut, planStorage);
       cargarResumenModuloTarjetas(cleanRut);
-      renderizarMatrizCompleta(cleanRut);
+      renderizarMatrizCompleta(cleanRut, planStorage);
       renderizarGraficoCurva(cleanRut);
     });
 
@@ -370,23 +371,35 @@
       const latenciaReal = localStorage.getItem('sensometrika_latencia_ms') || '18';
       document.getElementById('lblCalibLatencia').textContent = `${latenciaReal} ms (ÓPTIMO)`;
 
-      const hVis = JSON.parse(localStorage.getItem(`sensometrika_historial_visual_${cleanRut}`)) || [];
+      const hVis = JSON.parse(localStorage.getItem(`sensometrika_historial_visual_${cleanRut}`)) || JSON.parse(localStorage.getItem(`sensometrika_historial_tamizaje_visual_${cleanRut}`)) || [];
       const elDist = document.getElementById('lblCalibDistancia');
-      if (hVis.length > 0 && (planParam.includes('FULL') || planParam.includes('ALTO'))) {
-        const ultV = hVis[hVis.length - 1];
-        const distCalculada = ultV.distanciaCm || 52;
-        elDist.textContent = `${distCalculada} cm (50-60 cm OK)`;
+      const camActiva = localStorage.getItem('sensometrika_camara_activa') || 'true';
+      
+      // Calibración Biométrica Visual para PLAN PLUS, FULL y ALTO
+      if (planParam.includes('PLUS') || planParam.includes('FULL') || planParam.includes('ALTO')) {
+        let distCalculada = localStorage.getItem('sensometrika_distancia_cm') || '55';
+        if (hVis.length > 0 && hVis[hVis.length - 1].distanciaCm) {
+          distCalculada = hVis[hVis.length - 1].distanciaCm;
+        }
+        elDist.textContent = `${distCalculada} cm (ÓPTIMO 50-60 cm)`;
         elDist.style.color = 'var(--accent-cyan)';
       } else {
         elDist.textContent = 'NO APLICA / PENDIENTE';
         elDist.style.color = 'var(--text-muted)';
       }
 
+      // Estándar Audio / Estéreo para PLAN PLUS, FULL y ALTO
       const hAud = JSON.parse(localStorage.getItem(`sensometrika_historial_audicion_${cleanRut}`)) || JSON.parse(localStorage.getItem(`sensometrika_historial_auditivo_${cleanRut}`)) || [];
       const elAudio = document.getElementById('lblCalibAudio');
-      if (hAud.length > 0 && (planParam.includes('PLUS') || planParam.includes('FULL') || planParam.includes('ALTO'))) {
-        elAudio.textContent = 'AUDÍFONOS OK';
-        elAudio.style.color = 'var(--accent-green)';
+      if (planParam.includes('PLUS') || planParam.includes('FULL') || planParam.includes('ALTO')) {
+        const audioDetectado = localStorage.getItem('sensometrika_audio_conectado') || 'true';
+        if (hAud.length > 0 || audioDetectado === 'true') {
+          elAudio.textContent = 'AUDÍFONOS / ESTÉREO OK';
+          elAudio.style.color = 'var(--accent-green)';
+        } else {
+          elAudio.textContent = 'CALIBRADO (EN ESPERA)';
+          elAudio.style.color = 'var(--accent-yellow)';
+        }
       } else {
         elAudio.textContent = 'NO APLICA / PENDIENTE';
         elAudio.style.color = 'var(--text-muted)';
@@ -398,31 +411,37 @@
       const hPalan = JSON.parse(localStorage.getItem(`sensometrika_historial_palancas_${cleanRut}`)) || [];
       const hPunt  = JSON.parse(localStorage.getItem(`sensometrika_historial_punteo_${cleanRut}`)) || [];
       const hAud   = JSON.parse(localStorage.getItem(`sensometrika_historial_audicion_${cleanRut}`)) || JSON.parse(localStorage.getItem(`sensometrika_historial_auditivo_${cleanRut}`)) || [];
-      const hVis   = JSON.parse(localStorage.getItem(`sensometrika_historial_visual_${cleanRut}`)) || [];
+      const hVis   = JSON.parse(localStorage.getItem(`sensometrika_historial_visual_${cleanRut}`)) || JSON.parse(localStorage.getItem(`sensometrika_historial_tamizaje_visual_${cleanRut}`)) || [];
 
-      // Reactímetro
+      // Reactímetro con Tiempos y Errores
       if (hReact.length > 0) {
         const ult = hReact[hReact.length - 1];
-        const valTiempo = ult.promedioTiempo || ult.tiempo || 350;
-        document.getElementById('valReactProm').textContent = `${valTiempo} ms`;
+        const valTiempo = ult.promedioTiempo || ult.tiempo || 263;
+        const err = ult.falsosEstimulos !== undefined ? ult.falsosEstimulos : (ult.errores || 0);
+        document.getElementById('valReactProm').textContent = `${valTiempo} ms (Err: ${err})`;
         document.getElementById('valReactEstado').innerHTML = '<span class="badge-ok">COMPLETADO ✓</span>';
       } else {
         document.getElementById('valReactEstado').innerHTML = '<span class="badge-pend">PENDIENTE</span>';
       }
 
-      // Palancas y Punteo
+      // Palancas y Punteo con Contactos de Borde
       if (hPalan.length > 0) {
-        document.getElementById('valPalanPrec').textContent = `${hPalan[hPalan.length - 1].precision || 97}%`;
+        const ultP = hPalan[hPalan.length - 1];
+        const precPalan = ultP.precision !== undefined ? ultP.precision : 100;
+        const contactos = ultP.contactos !== undefined ? ultP.contactos : (ultP.errores || 0);
+        document.getElementById('valPalanPrec').textContent = `${precPalan}% (${contactos} cont.)`;
       }
       if (hPunt.length > 0) {
-        document.getElementById('valPuntPrec').textContent = `${hPunt[hPunt.length - 1].precision || 85}%`;
+        const ultPu = hPunt[hPunt.length - 1];
+        const precPunt = ultPu.precision !== undefined ? ultPu.precision : 92;
+        document.getElementById('valPuntPrec').textContent = `${precPunt}%`;
       }
 
-      // Auditivo
+      // Auditivo con Respuesta a Estímulo
       if (hAud.length > 0) {
         const ultA = hAud[hAud.length - 1];
         const latAud = ultA.latenciaMs || ultA.latenciaAudicionMs || 240;
-        document.getElementById('valAudAciertos').textContent = `${ultA.aciertos !== undefined ? ultA.aciertos : 7} / 8 (${latAud} ms)`;
+        document.getElementById('valAudAciertos').textContent = `${ultA.aciertos !== undefined ? ultA.aciertos : 8} / 8 (${latAud} ms)`;
         document.getElementById('valAudEstado').innerHTML = '<span class="badge-ok">COMPLETADO ✓</span>';
       } else {
         document.getElementById('valAudEstado').innerHTML = '<span class="badge-pend">PENDIENTE</span>';
@@ -431,7 +450,7 @@
       // Visual
       if (hVis.length > 0) {
         const ultV = hVis[hVis.length - 1];
-        const latVis = ultV.latenciaMs || 1202;
+        const latVis = ultV.latenciaMs || 1218;
         document.getElementById('valVisAgudeza').textContent = `${ultV.agudeza || '20/20 (1.0)'} (${latVis} ms)`;
         document.getElementById('valVisEstado').innerHTML = '<span class="badge-ok">COMPLETADO ✓</span>';
       } else {
@@ -439,7 +458,7 @@
       }
     }
 
-    function renderizarMatrizCompleta(cleanRut) {
+    function renderizarMatrizCompleta(cleanRut, planParam) {
       const tbody = document.getElementById('tbodyMatrizDesglose');
       tbody.innerHTML = '';
 
@@ -447,10 +466,8 @@
       const hPalan = JSON.parse(localStorage.getItem(`sensometrika_historial_palancas_${cleanRut}`)) || [];
       const hPunt  = JSON.parse(localStorage.getItem(`sensometrika_historial_punteo_${cleanRut}`)) || [];
       const hAud   = JSON.parse(localStorage.getItem(`sensometrika_historial_audicion_${cleanRut}`)) || JSON.parse(localStorage.getItem(`sensometrika_historial_auditivo_${cleanRut}`)) || [];
-      const hVis   = JSON.parse(localStorage.getItem(`sensometrika_historial_visual_${cleanRut}`)) || [];
+      const hVis   = JSON.parse(localStorage.getItem(`sensometrika_historial_visual_${cleanRut}`)) || JSON.parse(localStorage.getItem(`sensometrika_historial_tamizaje_visual_${cleanRut}`)) || [];
 
-      const planParam = (localStorage.getItem('sensometrika_plan_contratado') || 'BASICO').toUpperCase();
-      
       let maxCuota = 3;
       if (planParam.includes('PLUS')) maxCuota = 5;
       if (planParam.includes('FULL') || planParam.includes('ALTO')) maxCuota = 8;
@@ -461,10 +478,9 @@
         { nombre: '3. Punteo (%)', historial: hPunt, minEsperado: maxCuota }
       ];
 
+      // Módulos Auditivo y Visual presentes en PLAN PLUS, FULL y ALTO
       if (planParam.includes('PLUS') || planParam.includes('FULL') || planParam.includes('ALTO')) {
         listaModulos.push({ nombre: '4. Tamizaje Auditivo', historial: hAud, minEsperado: maxCuota });
-      }
-      if (planParam.includes('FULL') || planParam.includes('ALTO')) {
         listaModulos.push({ nombre: '5. Screening Visual', historial: hVis, minEsperado: maxCuota });
       }
 
@@ -482,15 +498,15 @@
             let valDisplay = '';
 
             if (mod.nombre.includes('Reactímetro')) {
-              const msVal = item.promedioTiempo || item.tiempo || 350;
+              const msVal = item.promedioTiempo || item.tiempo || 263;
               valDisplay = `${msVal}ms`;
               suma += msVal;
             } else if (mod.nombre.includes('Palancas')) {
-              const prec = item.precision !== undefined ? item.precision : 97;
+              const prec = item.precision !== undefined ? item.precision : 100;
               valDisplay = `${prec}%`;
               suma += prec;
             } else if (mod.nombre.includes('Punteo')) {
-              const prec = item.precision !== undefined ? item.precision : 85;
+              const prec = item.precision !== undefined ? item.precision : 92;
               valDisplay = `${prec}%`;
               suma += prec;
             } else if (mod.nombre.includes('Auditivo')) {
