@@ -1,8 +1,8 @@
 /* ==========================================================================
    SENSOMETRIKA - MÓDULO: VELOCIDAD DE ANTICIPACIÓN (anticipacion.js)
    • Faenas Mineras y Forestales - Cálculo de trayectoria y tiempo
-   • DEMO: 2 simulaciones oficiales (1/2 y 2/2)
-   • B2C PAGADO: Básico (3), Plus (5), Full (8)
+   • DEMO / B2B APR / ALTO DESEMPEÑO: Ejecución fluida sin bloqueo
+   • B2C / B2B PAGADO: Control inmutable de cuotas
    ========================================================================== */
 
 const objetoMovil = document.getElementById('objetoMovil');
@@ -13,10 +13,22 @@ const displayDesfase = document.getElementById('displayDesfase');
 const displayPrecision = document.getElementById('displayPrecision');
 const badgeFase = document.getElementById('simulacionActualBadge');
 
-// DETECCIÓN DINÁMICA DE CUOTA (Siguiendo el estándar de Palancas y Reactímetro)
+// DETECCIÓN DINÁMICA DE PARÁMETROS URL Y MODO DEMO
+const urlParams = new URLSearchParams(window.location.search);
+const esModoDemo = urlParams.get('demo') === 'true' || urlParams.get('single') === 'true';
+const returnUrl = urlParams.get('returnUrl') ? decodeURIComponent(urlParams.get('returnUrl')) : null;
+
+// LIMPIEZA EXCLUSIVA DE CUOTAS CUANDO ES DEMOSTRACIÓN (No afecta a pagos B2C/B2B)
+if (esModoDemo) {
+  localStorage.removeItem('simulaciones_anticipacion');
+  localStorage.removeItem('sensometrika_anticipacion_completado');
+}
+
 function obtenerMaximoSimulacionesAnticipacion() {
-  const esDemo = Boolean(sessionStorage.getItem('smk_token') || localStorage.getItem('sensometrika_demo_token'));
-  if (esDemo) return 2; // DEMO ESTRICTAMENTE 2
+  if (esModoDemo) return 1; // En modo demo/single se ejecuta 1 simulación
+
+  const esDemoToken = Boolean(sessionStorage.getItem('smk_token') || localStorage.getItem('sensometrika_demo_token'));
+  if (esDemoToken) return 2;
 
   let sesion = {};
   try { sesion = JSON.parse(localStorage.getItem('sensometrika_sesion')) || {}; } catch(e){}
@@ -28,7 +40,7 @@ function obtenerMaximoSimulacionesAnticipacion() {
 
 let fase = 'DEMO';
 let intentoActual = 0;
-let totalIntentosTanda = 3; // 3 intentos para demo, 5 para oficial
+let totalIntentosTanda = 3; // 3 ensayos de prueba
 let erroresTanda = [];
 let isRunning = false;
 let tiempoInicioMovimiento = 0;
@@ -39,7 +51,7 @@ window.addEventListener('DOMContentLoaded', () => {
   const max = obtenerMaximoSimulacionesAnticipacion();
   const consumidas = parseInt(localStorage.getItem('simulaciones_anticipacion')) || 0;
 
-  if (consumidas >= max) {
+  if (!esModoDemo && consumidas >= max) {
     bloquearModulo(max);
     return;
   }
@@ -65,12 +77,12 @@ function bloquearModulo(max) {
 function prepararFaseDemo() {
   fase = 'DEMO';
   intentoActual = 0;
-  totalIntentosTanda = 3;
+  totalIntentosTanda = esModoDemo ? 2 : 3;
   erroresTanda = [];
   isRunning = false;
 
   if (badgeFase) {
-    badgeFase.innerText = '🟡 Calibración Anticipación (Demo 3 intentos)';
+    badgeFase.innerText = esModoDemo ? '🟡 Ensayo de Calibración' : '🟡 Calibración Anticipación (Demo)';
     badgeFase.style.color = '#facc15';
   }
   if (statusText) {
@@ -80,7 +92,7 @@ function prepararFaseDemo() {
   if (btnAccion) {
     btnAccion.disabled = false;
     btnAccion.style.backgroundColor = '#0284c7';
-    btnAccion.innerText = 'Iniciar Calibración Demo (3 int)';
+    btnAccion.innerText = 'Iniciar Calibración Demo';
   }
 
   if (displayIntento) displayIntento.innerText = `0 / ${totalIntentosTanda}`;
@@ -91,7 +103,7 @@ function prepararFaseDemo() {
 function prepararFaseOficial() {
   fase = 'OFICIAL';
   intentoActual = 0;
-  totalIntentosTanda = 5;
+  totalIntentosTanda = esModoDemo ? 3 : 5;
   erroresTanda = [];
   isRunning = false;
 
@@ -100,7 +112,7 @@ function prepararFaseOficial() {
   const actual = consumidas + 1;
 
   if (badgeFase) {
-    badgeFase.innerText = `🔴 Simulación Oficial ${actual} de ${max} (5 intentos)`;
+    badgeFase.innerText = `🔴 Simulación Oficial ${actual} de ${max}`;
     badgeFase.style.color = '#38bdf8';
   }
   if (statusText) {
@@ -148,27 +160,29 @@ function iniciarSiguienteIntento() {
   }
 
   intentoActual++;
-  displayIntento.innerText = `${intentoActual} / ${totalIntentosTanda}`;
-  statusText.innerText = "Atento... el móvil se desplaza tras la zona ciega.";
+  if (displayIntento) displayIntento.innerText = `${intentoActual} / ${totalIntentosTanda}`;
+  if (statusText) statusText.innerText = "Atento... el móvil se desplaza tras la zona ciega.";
 
   // Reset posición
-  objetoMovil.style.transition = 'none';
-  objetoMovil.style.left = '0%';
-  void objetoMovil.offsetWidth; // Reflow
+  if (objetoMovil) {
+    objetoMovil.style.transition = 'none';
+    objetoMovil.style.left = '0%';
+    void objetoMovil.offsetWidth; // Reflow
 
-  const duracionTrayectoMs = 2800; // 2.8 segundos de recorrido total
-  objetoMovil.style.transition = `left ${duracionTrayectoMs}ms linear`;
-  objetoMovil.style.left = '92%'; // Posición de la línea de meta
+    const duracionTrayectoMs = 2800; // 2.8 segundos de recorrido total
+    objetoMovil.style.transition = `left ${duracionTrayectoMs}ms linear`;
+    objetoMovil.style.left = '92%'; // Posición de la línea de meta
 
-  tiempoInicioMovimiento = performance.now();
-  tiempoEsperadoLlegada = tiempoInicioMovimiento + duracionTrayectoMs;
-  isRunning = true;
+    tiempoInicioMovimiento = performance.now();
+    tiempoEsperadoLlegada = tiempoInicioMovimiento + duracionTrayectoMs;
+    isRunning = true;
 
-  animacionTimeout = setTimeout(() => {
-    if (isRunning) {
-      registrarImpacto(450); // Penalización por tiempo agotado
-    }
-  }, duracionTrayectoMs + 600);
+    animacionTimeout = setTimeout(() => {
+      if (isRunning) {
+        registrarImpacto(450); // Penalización por tiempo agotado
+      }
+    }, duracionTrayectoMs + 600);
+  }
 }
 
 function registrarImpacto(desfaseForzado = null) {
@@ -180,20 +194,22 @@ function registrarImpacto(desfaseForzado = null) {
   const desfaseMs = desfaseForzado !== null ? desfaseForzado : Math.round(tiempoClick - tiempoEsperadoLlegada);
   erroresTanda.push(Math.abs(desfaseMs));
 
-  displayDesfase.innerText = `${desfaseMs > 0 ? '+' : ''}${desfaseMs} ms`;
+  if (displayDesfase) displayDesfase.innerText = `${desfaseMs > 0 ? '+' : ''}${desfaseMs} ms`;
   
-  if (Math.abs(desfaseMs) <= 150) {
-    displayPrecision.innerText = "Excelente";
-    displayDesfase.className = "badge-tiempo-verde";
-  } else if (Math.abs(desfaseMs) <= 250) {
-    displayPrecision.innerText = "Aceptable";
-    displayDesfase.className = "badge-tiempo-verde";
-  } else {
-    displayPrecision.innerText = "Desviado";
-    displayDesfase.className = "col-metrica strong rojo";
+  if (displayPrecision && displayDesfase) {
+    if (Math.abs(desfaseMs) <= 150) {
+      displayPrecision.innerText = "Excelente";
+      displayDesfase.className = "badge-tiempo-verde";
+    } else if (Math.abs(desfaseMs) <= 250) {
+      displayPrecision.innerText = "Aceptable";
+      displayDesfase.className = "badge-tiempo-verde";
+    } else {
+      displayPrecision.innerText = "Desviado";
+      displayDesfase.className = "col-metrica strong rojo";
+    }
   }
 
-  statusText.innerText = `Intento registrado. Desfase: ${desfaseMs} ms.`;
+  if (statusText) statusText.innerText = `Intento registrado. Desfase: ${desfaseMs} ms.`;
 
   setTimeout(() => {
     iniciarSiguienteIntento();
@@ -201,10 +217,10 @@ function registrarImpacto(desfaseForzado = null) {
 }
 
 function finalizarTanda() {
-  const promedioError = Math.round(erroresTanda.reduce((a, b) => a + b, 0) / erroresTanda.length);
+  const promedioError = Math.round(erroresTanda.reduce((a, b) => a + b, 0) / (erroresTanda.length || 1));
 
   if (fase === 'DEMO') {
-    statusText.innerText = `Calibración finalizada (Error promedio: ${promedioError} ms). Listo para oficial.`;
+    if (statusText) statusText.innerText = `Calibración finalizada (Error promedio: ${promedioError} ms). Listo para oficial.`;
     prepararFaseOficial();
   } else {
     procesarCierreOficialAnticipacion(promedioError);
@@ -214,7 +230,10 @@ function finalizarTanda() {
 function procesarCierreOficialAnticipacion(promedioError) {
   const max = obtenerMaximoSimulacionesAnticipacion();
   let consumidas = (parseInt(localStorage.getItem('simulaciones_anticipacion')) || 0) + 1;
-  localStorage.setItem('simulaciones_anticipacion', consumidas);
+  
+  if (!esModoDemo) {
+    localStorage.setItem('simulaciones_anticipacion', consumidas);
+  }
 
   const aprobado = promedioError <= 220;
 
@@ -224,28 +243,15 @@ function procesarCierreOficialAnticipacion(promedioError) {
     fecha: new Date().toISOString()
   }));
 
-  let historial = [];
-  try {
-    historial = JSON.parse(localStorage.getItem('sensometrika_historial_anticipacion')) || [];
-  } catch(e) {}
-
-  historial.push({
-    simulacion: consumidas,
-    promedioError,
-    aprobado
-  });
-  localStorage.setItem('sensometrika_historial_anticipacion', JSON.stringify(historial));
-
   mostrarModalResultadoAnticipacion(consumidas, max, promedioError, aprobado);
 }
 
 function mostrarModalResultadoAnticipacion(consumidas, max, promedioError, aprobado) {
-  const quedanSimulaciones = consumidas < max;
   const modalPrevio = document.getElementById('modal-fin-anticipacion');
   if (modalPrevio) modalPrevio.remove();
 
-  const esDemo = Boolean(sessionStorage.getItem('smk_token') || localStorage.getItem('sensometrika_demo_token'));
-  const urlRetorno = esDemo ? 'demo.html' : 'menu.html';
+  // DESTINO DE RETORNO INTELIGENTE (Prioriza returnUrl para no romper los Demos B2B / B2C)
+  const urlDestino = returnUrl || (esModoDemo ? 'demo_b2b_apr.html' : 'menu.html');
 
   const modalHtml = `
     <div id="modal-fin-anticipacion" style="position: fixed; inset: 0; background: rgba(3, 7, 18, 0.9); backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center; z-index: 99999; padding: 16px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
@@ -253,7 +259,7 @@ function mostrarModalResultadoAnticipacion(consumidas, max, promedioError, aprob
         
         <h3 style="color: #ffffff; margin: 0 0 4px 0; font-size: 1.25rem; font-weight: 800;">Simulación Finalizada</h3>
         <p style="color: #38bdf8; margin: 0 0 16px 0; font-size: 0.85rem; font-weight: 600;">
-          Simulación Oficial ${consumidas} de ${max}
+          ${esModoDemo ? 'Evaluación de Muestra Técnica' : `Simulación Oficial ${consumidas} de${max}`}
         </p>
 
         <div style="margin-bottom: 18px;">
@@ -264,22 +270,12 @@ function mostrarModalResultadoAnticipacion(consumidas, max, promedioError, aprob
 
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; background: #070b14; border: 1px solid #1e293b; border-radius: 12px; padding: 14px 10px; margin-bottom: 20px; text-align: left;">
           <div><span style="display: block; font-size: 0.68rem; color: #94a3b8;">Error Promedio</span><strong style="color: #ffffff;">${promedioError} ms</strong></div>
-          <div><span style="display: block; font-size: 0.68rem; color: #94a3b8;">Restantes</span><strong style="color: #34d399;">${max - consumidas}</strong></div>
+          <div><span style="display: block; font-size: 0.68rem; color: #94a3b8;">Estado</span><strong style="color: #34d399;">${esModoDemo ? 'Registrado' : 'Guardado'}</strong></div>
         </div>
 
         <div style="display: flex; flex-direction: column; gap: 10px;">
-          ${quedanSimulaciones ? `
-            <button id="btn-repetir-anticipacion" style="width: 100%; background: #0284c7; color: #ffffff; border: none; border-radius: 10px; padding: 12px; font-weight: 700; cursor: pointer; font-size: 0.88rem;">
-              🔄 Iniciar Oficial (${consumidas + 1}/${max})
-            </button>
-          ` : `
-            <button onclick="window.location.href='demo.html'" style="width: 100%; background: #0284c7; color: #ffffff; border: none; border-radius: 10px; padding: 12px; font-weight: 700; cursor: pointer; font-size: 0.88rem;">
-              Completado · Volver al Menú →
-            </button>
-          `}
-
-          <button onclick="window.location.href='${urlRetorno}'" style="width: 100%; background: #1e293b; color: #cbd5e1; border: 1px solid #334155; border-radius: 10px; padding: 10px; font-weight: 600; cursor: pointer; font-size: 0.85rem;">
-            Volver al Menú Pruebas
+          <button onclick="window.location.href='${urlDestino}'" style="width: 100%; background: #10b981; color: #000000; border: none; border-radius: 10px; padding: 12px; font-weight: 800; cursor: pointer; font-size: 0.88rem; text-transform: uppercase;">
+            Volver al Menú de Pruebas →
           </button>
         </div>
 
@@ -288,12 +284,4 @@ function mostrarModalResultadoAnticipacion(consumidas, max, promedioError, aprob
   `;
 
   document.body.insertAdjacentHTML('beforeend', modalHtml);
-
-  const btnRepetir = document.getElementById('btn-repetir-anticipacion');
-  if (btnRepetir) {
-    btnRepetir.addEventListener('click', () => {
-      document.getElementById('modal-fin-anticipacion').remove();
-      prepararFaseOficial();
-    });
-  }
 }
