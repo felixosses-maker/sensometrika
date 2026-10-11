@@ -254,6 +254,10 @@
             <input type="text" id="inputNombre" placeholder="Ej: Juan Pérez" required>
           </div>
           <div class="form-group">
+            <label>Correo Electrónico (Notificación)</label>
+            <input type="email" id="inputEmail" placeholder="Ej: felix.osses@gmail.com" required>
+          </div>
+          <div class="form-group">
             <label>Cargo / Función a Evaluar</label>
             <input type="text" id="inputCargo" placeholder="Ej: Operador Harvester / Conductor" required>
           </div>
@@ -262,17 +266,17 @@
             <input type="text" id="inputEmpresa" placeholder="Ej: Minerales" required>
           </div>
         </div>
-        <button type="submit" class="btn-generate">GENERAR ENLACE DE EVALUACIÓN CON CARGO 🔗</button>
+        <button type="submit" id="btnEnviarAcreditacion" class="btn-generate">GENERAR ENLACE Y DESPACHAR POR CORREO 📧🔗</button>
       </form>
 
       <!-- Caja Enlace Generado -->
       <div id="boxLinkResultado" class="link-out-box">
         <span style="font-size: 0.70rem; color: var(--text-muted); font-weight: 800; text-transform: uppercase;">
-          Enlace Individual Generado (Listo para enviar al trabajador):
+          Enlace Individual Generado y Remitido por Correo:
         </span>
         <input type="text" id="txtLinkGenerado" class="link-out-input" readonly>
         <button type="button" class="btn-copy" onclick="copiarLinkGenerado()">
-          📋 COPIAR LINK Y ENVIAR AL TRABAJADOR
+          📋 COPIAR LINK (OPCIÓN WHATSAPP)
         </button>
       </div>
     </div>
@@ -325,18 +329,21 @@
                               contratacion.razonSocial || 
                               localStorage.getItem('sensometrika_b2b_empresa') || 
                               datosUsuario.empresa || 
-                              'SOCADEP LTDA';
+                              'CONSTRUCTORA';
 
       const encargadoResuelto = urlParams.get('encargado') || 
                                 urlParams.get('nombre') || 
                                 contratacion.encargado || 
                                 localStorage.getItem('sensometrika_b2b_encargado') || 
                                 datosUsuario.nombre || 
-                                'Félix Osses';
+                                'Martin Ribas';
+
+      const emailDefecto = urlParams.get('email') || datosUsuario.email || 'felix.osses@gmail.com';
 
       document.getElementById('lblEmpresa').innerText = decodeURIComponent(empresaResuelta).toUpperCase();
       document.getElementById('lblEncargado').innerText = decodeURIComponent(encargadoResuelto);
       document.getElementById('inputEmpresa').value = decodeURIComponent(empresaResuelta).toUpperCase();
+      document.getElementById('inputEmail').value = emailDefecto;
 
       renderizarNomina();
     });
@@ -352,28 +359,34 @@
       };
     }
 
-    function generarAcreditacion(e) {
+    async function generarAcreditacion(e) {
       e.preventDefault();
       
       const rut = document.getElementById('inputRut').value.trim();
       const nombre = document.getElementById('inputNombre').value.trim();
+      const email = document.getElementById('inputEmail').value.trim();
       const cargo = document.getElementById('inputCargo').value.trim();
       const empresa = document.getElementById('inputEmpresa').value.trim();
 
+      const btnSubmit = document.getElementById('btnEnviarAcreditacion');
+      btnSubmit.disabled = true;
+      btnSubmit.textContent = "PROCESANDO Y DESPACHANDO CORREO... ⏳";
+
       const tokenB2B = 'B2B-SMK-' + Math.floor(1000 + Math.random() * 9000);
       
-      // RECURSO CRÍTICO: PROPAGAR EL PLAN ACTIVO
       const urlParams = new URLSearchParams(window.location.search);
       const planActivo = (urlParams.get('plan') || localStorage.getItem('sensometrika_plan_contratado') || 'PLUS').toUpperCase();
 
       const originUrl = window.location.origin;
       const urlCompleta = `${originUrl}/verificacion_trabajador.html?token=${tokenB2B}&rut=${encodeURIComponent(rut)}&nombre=${encodeURIComponent(nombre)}&cargo=${encodeURIComponent(cargo)}&empresa=${encodeURIComponent(empresa)}&plan=${planActivo}&mode=b2b`;
 
+      // Guardar datos en localStorage
       localStorage.setItem('sensometrika_datos_usuario', JSON.stringify({
         nombre: nombre,
         rut: rut,
         cargo: cargo,
-        correo: 'felix.osses@gmail.com'
+        email: email,
+        empresa: empresa
       }));
       localStorage.setItem('sensometrika_b2b_empresa', empresa);
 
@@ -384,6 +397,7 @@
       const nuevoTrabajador = {
         rut: rut,
         nombre: nombre,
+        email: email,
         cargo: cargo,
         empresa: empresa,
         token: tokenB2B,
@@ -395,6 +409,40 @@
       trabajadores.unshift(nuevoTrabajador);
       localStorage.setItem('sensometrika_apr_nomina', JSON.stringify(trabajadores));
       renderizarNomina();
+
+      // INVOCAR SERVERLESS API PARA EL DESPACHO REAL DE CORREO
+      try {
+        const respuesta = await fetch('/api/enviar-correo', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            tipo: 'b2c_pago', // Reutiliza plantilla corporativa con botón de acceso
+            emailDestino: email,
+            nombreTrabajador: nombre,
+            rutTrabajador: rut,
+            planNombre: `Acreditación B2B - Cargo ${cargo}`,
+            monto: 'Bolsa Corporativa',
+            linkAcceso: urlCompleta
+          })
+        });
+
+        const resData = await respuesta.json();
+        console.log("🟢 Correo de Acreditación B2B despachado:", resData);
+
+        mostrarModalIntegrado(
+          "ACREDITACIÓN GENERADA Y ENVIADA ✉️",
+          `El enlace de evaluación ha sido remitido exitosamente a <strong>${email}</strong>.<br><br>También puedes copiar el link directo abajo.`
+        );
+      } catch (err) {
+        console.error("🔴 Error al conectar con /api/enviar-correo:", err);
+        mostrarModalIntegrado(
+          "ENLACE GENERADO (CORREO EN SIMULACIÓN) 🔗",
+          `El enlace fue creado correctamente. Si no recibes el correo en tu bandeja de entrada, asegúrate de tener la variable <code>RESEND_API_KEY</code> configurada en Vercel.`
+        );
+      } finally {
+        btnSubmit.disabled = false;
+        btnSubmit.textContent = "GENERAR ENLACE Y DESPACHAR POR CORREO 📧🔗";
+      }
     }
 
     function copiarLinkGenerado() {
@@ -449,7 +497,7 @@
             </button>
           </td>
           <td>
-            <a href="informe-b2b.html?token=${t.token}&rut=${encodeURIComponent(t.rut)}&plan=${planTrabajador}&mode=b2b" target="_blank" style="color:var(--accent-cyan); font-weight:800; text-decoration:underline;">
+            <a href="informe_b2b.html?token=${t.token}&rut=${encodeURIComponent(t.rut)}&plan=${planTrabajador}&mode=b2b" target="_blank" style="color:var(--accent-cyan); font-weight:800; text-decoration:underline;">
               📄 Ver Informe
             </a>
           </td>
