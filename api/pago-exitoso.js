@@ -10,7 +10,7 @@ module.exports = async (req, res) => {
   // Rescatar el token enviado por Flow (admite POST y GET)
   const token = (req.body && req.body.token) || req.query.token || '';
 
-  // Redirigir por GET hacia la página visual de confirmación
+  // Redirigir por GET hacia la página visual de confirmación con el token
   const urlDestino = token 
     ? `/pago-resultado.html?token=${encodeURIComponent(token)}` 
     : '/pago-resultado.html';
