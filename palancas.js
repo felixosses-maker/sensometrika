@@ -1,7 +1,19 @@
 /**
  * Sensometrika - Módulo de Coordinación Bimanual (Palancas)
  * Motor Anti-Memorización Dinámico & Alerta Rojo Neón (D.S. N° 170)
+ * Integrado con bypass de demostración y retorno dinámico vía returnUrl
  */
+
+// DETECCIÓN DINÁMICA DE PARÁMETROS URL Y MODO DEMO
+const urlParamsPalancas = new URLSearchParams(window.location.search);
+const esModoDemoPalancas = urlParamsPalancas.get('demo') === 'true' || urlParamsPalancas.get('single') === 'true';
+const returnUrlPalancas = urlParamsPalancas.get('returnUrl') ? decodeURIComponent(urlParamsPalancas.get('returnUrl')) : null;
+
+// LIMPIEZA EXCLUSIVA EN MODO DEMOSTRACIÓN (Sin afectar ejecuciones reales pagadas)
+if (esModoDemoPalancas) {
+    localStorage.removeItem('sensometrika_palancas_completado');
+    localStorage.removeItem('sensometrika_historial_palancas');
+}
 
 class ModuloPalancas {
     constructor(canvas, options = {}, onComplete) {
@@ -246,11 +258,22 @@ class ModuloPalancas {
             tiempoTotal: this.tiempoAcumulado,
             contactos: this.contactos,
             porcentaje: Math.max(10, Math.min(100, 100 - (this.contactos * 8))),
-            circuito: 'Trazado Dinámico (Anti-Memorización)'
+            circuito: 'Trazado Dinámico (Anti-Memorización)',
+            returnUrl: returnUrlPalancas || (esModoDemoPalancas ? 'demo_b2b_apr.html' : 'menu.html')
         };
+
+        localStorage.setItem('sensometrika_palancas', JSON.stringify({
+            tiempoTotal: this.tiempoAcumulado,
+            contactos: this.contactos,
+            porcentaje: resultados.porcentaje,
+            aprobado: resultados.porcentaje >= 80,
+            fecha: new Date().toISOString()
+        }));
 
         if (typeof this.onComplete === 'function') {
             this.onComplete(resultados);
+        } else {
+            window.location.href = resultados.returnUrl;
         }
     }
 }
