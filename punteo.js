@@ -1,7 +1,19 @@
 /**
  * Sensometrika - Módulo de Punteo e Impacto Rítmico
  * Arquitectura de Evaluación Psicotécnica (D.S. N° 170)
+ * Integrado con bypass de demostración y retorno dinámico vía returnUrl
  */
+
+// DETECCIÓN DINÁMICA DE PARÁMETROS URL Y MODO DEMO
+const urlParamsPunteo = new URLSearchParams(window.location.search);
+const esModoDemoPunteo = urlParamsPunteo.get('demo') === 'true' || urlParamsPunteo.get('single') === 'true';
+const returnUrlPunteo = urlParamsPunteo.get('returnUrl') ? decodeURIComponent(urlParamsPunteo.get('returnUrl')) : null;
+
+// LIMPIEZA EXCLUSIVA EN MODO DEMOSTRACIÓN (Sin afectar cuotas pagadas)
+if (esModoDemoPunteo) {
+    localStorage.removeItem('sensometrika_punteo_completado');
+    localStorage.removeItem('sensometrika_historial_punteo');
+}
 
 class ModuloPunteo {
     constructor(canvas, options = {}, onComplete) {
@@ -11,7 +23,8 @@ class ModuloPunteo {
 
         this.width = options.width || 400;
         this.height = options.height || 300;
-        this.duracionSegundos = options.duracion || 30;
+        // Si es demo reducimos la duración a 15 segundos para acelerar la muestra comercial
+        this.duracionSegundos = esModoDemoPunteo ? 15 : (options.duracion || 30);
 
         // Estado de la prueba
         this.activo = false;
@@ -194,17 +207,30 @@ class ModuloPunteo {
         if (this.intervalTimer) clearInterval(this.intervalTimer);
         if (this.timerReset) clearTimeout(this.timerReset);
 
+        const efectividad = this.obtenerEfectividad();
+
         const resultados = {
             modulo: 'Punteo e Impacto Rítmico',
             tiempo: this.duracionSegundos,
             aciertos: this.aciertos,
             totalImpactos: this.totalImpactos,
-            efectividad: this.obtenerEfectividad(),
-            eventos: this.logEventos
+            efectividad: efectividad,
+            eventos: this.logEventos,
+            returnUrl: returnUrlPunteo || (esModoDemoPunteo ? 'demo_b2b_apr.html' : 'menu.html')
         };
+
+        localStorage.setItem('sensometrika_punteo', JSON.stringify({
+            aciertos: this.aciertos,
+            totalImpactos: this.totalImpactos,
+            efectividad: efectividad,
+            aprobado: efectividad >= 78,
+            fecha: new Date().toISOString()
+        }));
 
         if (typeof this.onComplete === 'function') {
             this.onComplete(resultados);
+        } else {
+            window.location.href = resultados.returnUrl;
         }
     }
 }
