@@ -4,7 +4,8 @@
    • Desbloqueo activo del motor Web Audio API (AudioContext)
    • Batería aleatoria anti-memorización (500 a 4000 Hz)
    • Fase Demo (2 tonos) -> Fase Oficial (6 tonos)
-   • Descuento estricto en CreditManager y salida directa a informe.html
+   • MODO DEMO / SINGLE: Bypass de cuota y retorno dinámico
+   • B2C / B2B PAGADO: Control inmutable en CreditManager y salida a informe
    ========================================================================== */
 
 const chkAudifonos = document.getElementById('chk-audifonos');
@@ -33,6 +34,17 @@ const btnCerrarAyuda = document.getElementById('btn-cerrar-ayuda');
 if (btnAbrirAyuda) btnAbrirAyuda.onclick = () => modalGuia.style.display = 'flex';
 if (btnCerrarAyuda) btnCerrarAyuda.onclick = () => modalGuia.style.display = 'none';
 
+// DETECCIÓN DINÁMICA DE PARÁMETROS URL Y MODO DEMO
+const urlParams = new URLSearchParams(window.location.search);
+const esModoDemo = urlParams.get('demo') === 'true' || urlParams.get('single') === 'true';
+const returnUrl = urlParams.get('returnUrl') ? decodeURIComponent(urlParams.get('returnUrl')) : null;
+
+// LIMPIEZA EXCLUSIVA DE CUOTAS CUANDO ES DEMOSTRACIÓN (Sin afectar pagos B2C/B2B)
+if (esModoDemo) {
+  localStorage.removeItem('sensometrika_auditivo_completado');
+  localStorage.removeItem('sensometrika_historial_audicion');
+}
+
 let audioCtx = null;
 let fase = 'DEMO'; // 'DEMO', 'PAUSA_OFICIAL', 'OFICIAL', 'FINALIZADO'
 let bateriaActiva = [];
@@ -44,7 +56,7 @@ let timeoutFallo = null;
 const FRECUENCIAS = [500, 1000, 2000, 4000];
 
 window.addEventListener('DOMContentLoaded', () => {
-  if (typeof CreditManager !== 'undefined') {
+  if (!esModoDemo && typeof CreditManager !== 'undefined') {
     if (!CreditManager.puedeRendir('auditivo')) {
       bloquearModuloPorCupo();
       return;
@@ -79,7 +91,7 @@ chkAudifonos.addEventListener('change', () => {
     btnIniciar.disabled = false;
     panelInstruccion.innerText = (fase === 'DEMO') 
       ? 'Presiona para iniciar los 2 tonos de calibración.' 
-      : 'Presiona para iniciar tu evaluación oficial.';
+      : 'Presiona para iniciar tu evaluación.';
     panelInstruccion.style.color = '#38bdf8';
   } else {
     btnIniciar.disabled = true;
@@ -94,7 +106,7 @@ function configurarDemo() {
   pasoActual = 0;
   aciertos = 0;
 
-  badgeModo.innerText = '🟡 Calibración Acústica (Demo)';
+  badgeModo.innerText = esModoDemo ? '🟡 Ensayo de Calibración' : '🟡 Calibración Acústica (Demo)';
   badgeModo.style.color = '#facc15';
   badgeModo.style.background = 'rgba(250, 204, 21, 0.1)';
   badgeModo.style.borderColor = 'rgba(250, 204, 21, 0.25)';
@@ -133,7 +145,6 @@ function generarBateria(cantidad) {
 
 // 4. INICIO DE LA PRUEBA (DESBLOQUEA AUDIO API)
 btnIniciar.addEventListener('click', () => {
-  // Inicialización explícita dentro del gesto del usuario para evitar bloqueo del navegador
   if (!audioCtx) {
     const AudioContextClass = window.AudioContext || window.webkitAudioContext;
     audioCtx = new AudioContextClass();
@@ -148,7 +159,7 @@ btnIniciar.addEventListener('click', () => {
 
   pasoActual = 0;
   aciertos = 0;
-  bateriaActiva = (fase === 'DEMO') ? generarBateria(2) : generarBateria(6);
+  bateriaActiva = (fase === 'DEMO') ? generarBateria(2) : generarBateria(esModoDemo ? 4 : 6);
 
   metricaPaso.innerText = `0 / ${bateriaActiva.length}`;
   lanzarEstimulo();
@@ -262,14 +273,14 @@ function concluirDemo() {
   const num = typeof CreditManager !== 'undefined' ? CreditManager.obtenerNumeroSimulacionActual('auditivo') : 1;
   const max = typeof CreditManager !== 'undefined' ? CreditManager.obtenerLimiteModulo('auditivo') : 4;
 
-  badgeModo.innerText = `🔴 Simulación Oficial: ${num} de ${max}`;
+  badgeModo.innerText = esModoDemo ? '🔴 Evaluación Muestra Técnica' : `🔴 Simulación Oficial: ${num} de ${max}`;
   badgeModo.style.color = '#38bdf8';
   badgeModo.style.background = 'rgba(56, 189, 248, 0.1)';
   badgeModo.style.borderColor = 'rgba(56, 189, 248, 0.25)';
 
   txtPlacaModo.innerText = '🔴 Evaluación Activa';
   txtPlacaModo.style.color = '#38bdf8';
-  txtPlacaSub.innerText = '6 Tonos Clínicos';
+  txtPlacaSub.innerText = esModoDemo ? '4 Tonos de Muestra' : '6 Tonos Clínicos';
 
   txtEstadoAudio.innerText = '¡Calibración estéreo completada!';
   txtEstadoAudio.style.color = '#4ade80';
@@ -280,9 +291,9 @@ function concluirDemo() {
   btnIniciar.style.display = 'block';
   btnIniciar.disabled = true;
   btnIniciar.style.backgroundColor = '#22c55e';
-  btnIniciar.innerText = `Iniciar Simulación Oficial (${num} de ${max})`;
+  btnIniciar.innerText = esModoDemo ? 'Iniciar Muestra Técnica' : `Iniciar Simulación Oficial (${num} de ${max})`;
 
-  panelInstruccion.innerText = 'Vuelve a confirmar tus audífonos para iniciar el examen oficial.';
+  panelInstruccion.innerText = 'Vuelve a confirmar tus audífonos para iniciar el examen.';
   panelInstruccion.style.color = '#94a3b8';
 }
 
@@ -292,7 +303,7 @@ function finalizarPruebaAuditiva() {
   grillaDiscriminacion.style.display = 'none';
 
   let consumidas = 1;
-  if (typeof CreditManager !== 'undefined') {
+  if (!esModoDemo && typeof CreditManager !== 'undefined') {
     consumidas = CreditManager.registrarConsumo('auditivo');
   }
 
@@ -309,34 +320,36 @@ function finalizarPruebaAuditiva() {
     fecha: new Date().toISOString()
   }));
 
-  let historial = JSON.parse(localStorage.getItem('sensometrika_historial_audicion')) || [];
-  historial.push({
-    simulacion: consumidas,
-    efectividad: pct,
-    aprobado: aprobado
-  });
-  localStorage.setItem('sensometrika_historial_audicion', JSON.stringify(historial));
+  if (!esModoDemo) {
+    let historial = JSON.parse(localStorage.getItem('sensometrika_historial_audicion')) || [];
+    historial.push({
+      simulacion: consumidas,
+      efectividad: pct,
+      aprobado: aprobado
+    });
+    localStorage.setItem('sensometrika_historial_audicion', JSON.stringify(historial));
+  }
 
   txtEstadoAudio.innerText = `Evaluación Finalizada: ${pct}% de discriminación`;
   txtEstadoAudio.style.color = aprobado ? '#4ade80' : '#f87171';
   panelInstruccion.innerText = aprobado ? 'Audición normal sin alteraciones referenciales' : 'Observado: Frecuencias no percibidas';
   panelInstruccion.style.color = aprobado ? '#4ade80' : '#f87171';
 
+  // DESTINO DE RETORNO INTELIGENTE (Prioriza returnUrl para los demos B2B / B2C)
+  const urlDestino = returnUrl || (esModoDemo ? 'demo_b2b_apr.html' : 'informe.html');
+
   zonaCoordinacion.innerHTML = `
     <div style="background:#090e1c; border:1.5px solid ${aprobado ? '#22c55e' : '#ef4444'}; border-radius:12px; padding:16px; text-align:center; margin-top:8px;">
       <h3 style="color:${aprobado ? '#4ade80' : '#f87171'}; margin:0 0 6px 0; font-size:1.05rem;">
-        ¡Simulación ${consumidas} de ${max} Finalizada!
+        ¡${esModoDemo ? 'Muestra Técnica Finalizada' : `Simulación ${consumidas} de${max} Finalizada`}!
       </h3>
       <p style="color:#94a3b8; font-size:0.85rem; margin:0 0 12px 0;">
         Efectividad Global: <strong style="color:#38bdf8;">${pct}%</strong> &nbsp;|&nbsp; 
         Aciertos: <strong style="color:#fff;">${aciertos}/${bateriaActiva.length}</strong>
       </p>
       <div style="display:flex; flex-direction:column; gap:8px;">
-        <a href="informe.html" style="display:flex; justify-content:center; align-items:center; height:42px; background:#0284c7; color:#fff; text-decoration:none; border-radius:8px; font-weight:bold; font-size:0.92rem;">
-          📊 Ver Informe y Dictamen Final →
-        </a>
-        <a href="menu.html" style="color:#64748b; font-size:0.8rem; text-decoration:none; padding:4px;">
-          Volver al Menú Principal
+        <a href="${urlDestino}" style="display:flex; justify-content:center; align-items:center; height:42px; background:#10b981; color:#000; text-decoration:none; border-radius:8px; font-weight:800; font-size:0.92rem; text-transform:uppercase;">
+          Volver al Menú de Pruebas →
         </a>
       </div>
     </div>
