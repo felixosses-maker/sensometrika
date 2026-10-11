@@ -317,7 +317,7 @@
     </header>
 
     <div class="banner-correo">
-      ✉ Despacho Automatizado: Copia oficial remitida en tiempo real al correo de supervisión de faena: <strong>felix.osses@gmail.com</strong>
+      ✉ Despacho Automatizado: Copia oficial remitida en tiempo real al correo de supervisión de faena: <strong id="lblEmailSupervision">felix.osses@gmail.com</strong>
     </div>
 
     <!-- FICHA TRABAJADOR -->
@@ -543,9 +543,12 @@
     const nombreUsuario = urlParams.get('nombre') || datosUsuario.nombre || 'JUAN ROJAS ROJAS';
     const cargoUsuario = urlParams.get('cargo') || datosUsuario.cargo || 'OPERADOR HARVESTER';
     const empresaUsuario = urlParams.get('empresa') || datosUsuario.empresa || 'CONSTRUCTORA';
+    const emailSupervision = urlParams.get('email') || datosUsuario.email || 'felix.osses@gmail.com';
     
     const planStorage = localStorage.getItem('sensometrika_plan_contratado');
     const planVal = (urlParams.get('plan') || planStorage || 'PLUS').toUpperCase().trim();
+
+    let correoEnviado = false;
 
     function volverMenuB2B() {
       window.location.href = `menu_B2B.html?${urlParams.toString()}`;
@@ -582,12 +585,45 @@
       return [];
     }
 
+    // DESPACHO AUTOMÁTICO DE CORREO A SERVERLESS API
+    async function notificarPorCorreo() {
+      if (correoEnviado) return;
+
+      const nombreTrabajador = decodeURIComponent(nombreUsuario).toUpperCase();
+      const rutTrabajador = rawRut;
+      const empresaTrabajador = decodeURIComponent(empresaUsuario).toUpperCase();
+      const boxDictamen = document.getElementById('boxDictamenGeneral');
+      const dictamenTexto = boxDictamen ? boxDictamen.textContent.trim() : 'EVALUACIÓN B2B';
+
+      try {
+        const respuesta = await fetch('/api/enviar-correo', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            emailDestino: emailSupervision,
+            nombreTrabajador: nombreTrabajador,
+            rutTrabajador: rutTrabajador,
+            dictamen: dictamenTexto,
+            linkInforme: window.location.href,
+            empresa: empresaTrabajador
+          })
+        });
+
+        const resData = await respuesta.json();
+        console.log("🟢 Respuesta API Correo:", resData);
+        correoEnviado = true;
+      } catch (e) {
+        console.error("🔴 Error al conectar con /api/enviar-correo:", e);
+      }
+    }
+
     document.addEventListener('DOMContentLoaded', () => {
       // 1. Datos Ficha
       document.getElementById('lblNombre').textContent = decodeURIComponent(nombreUsuario).toUpperCase();
       document.getElementById('lblRut').textContent = rawRut;
       document.getElementById('lblCargo').textContent = decodeURIComponent(cargoUsuario).toUpperCase();
       document.getElementById('lblEmpresa').textContent = decodeURIComponent(empresaUsuario).toUpperCase();
+      document.getElementById('lblEmailSupervision').textContent = emailSupervision;
       document.getElementById('lblPlanVigente').textContent = `PLAN ${planVal.replace('_', ' ')}`;
       document.getElementById('firmaNombreTrabajador').textContent = decodeURIComponent(nombreUsuario).toUpperCase();
       document.getElementById('firmaRutTrabajador').textContent = `RUT: ${rawRut}`;
@@ -670,7 +706,7 @@
         const prec = u.precision !== undefined ? u.precision : 0;
         const err = u.contactos !== undefined ? u.contactos : (u.errores !== undefined ? u.errores : 0);
         const tContactoError = u.tiempoErrorMs !== undefined ? (u.tiempoErrorMs / 1000).toFixed(1) : ((err * 320) / 1000).toFixed(1);
-        const ok = prec >= 85 && err <= 1;
+        const ok = prec >= 85 && err <= 1 && !u.timeout;
 
         if (ok) modulosAprobados++; else modulosReprobados++;
         document.getElementById('resPalancas').innerHTML = `
@@ -833,6 +869,11 @@
 
         txtFund.textContent = "EVALUACIÓN EN PROCESO: El trabajador aún tiene módulos pendientes por rendir en su plan corporativo. El dictamen final se emitirá al completar la totalidad de la batería.";
       }
+
+      // DISPARAR NOTIFICACIÓN AUTOMÁTICA POR CORREO LUEGO DEL RENDERIZADO
+      setTimeout(() => {
+        notificarPorCorreo();
+      }, 1200);
 
     });
   </script>
