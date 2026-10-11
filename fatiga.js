@@ -1,6 +1,7 @@
 /* ==========================================================================
    SENSOMETRIKA - MÓDULO: RESISTENCIA A LA FATIGA / PVT (fatiga.js)
    • Monitoreo de atención sostenida y detección de micro-sueños
+   • MODO DEMO / SINGLE: Bypass de cuotas y retorno dinámico vía returnUrl
    ========================================================================== */
 
 const visor = document.getElementById('visorFatiga');
@@ -12,10 +13,20 @@ const lblEstimulo = document.getElementById('lblEstimulo');
 const lblLatencia = document.getElementById('lblLatencia');
 const lblLapsos = document.getElementById('lblLapsos');
 
+// DETECCIÓN DINÁMICA DE PARÁMETROS URL Y MODO DEMO
+const urlParams = new URLSearchParams(window.location.search);
+const esModoDemo = urlParams.get('demo') === 'true' || urlParams.get('single') === 'true';
+const returnUrl = urlParams.get('returnUrl') ? decodeURIComponent(urlParams.get('returnUrl')) : null;
+
+// LIMPIEZA EXCLUSIVA EN MODO DEMOSTRACIÓN (Sin afectar ejecuciones reales pagadas)
+if (esModoDemo) {
+  localStorage.removeItem('sensometrika_fatiga_completado');
+}
+
 let fase = 'DEMO';
 let estado = 'IDLE'; // IDLE, WAITING, ACTIVE
 let estimuloActual = 0;
-let totalEstimulos = 5;
+let totalEstimulos = esModoDemo ? 2 : 5; // 2 estímulos en demo para agilizar
 let tiemposRespuesta = [];
 let lapsosAtencion = 0;
 let timerEstimulo = null;
@@ -23,6 +34,7 @@ let tiempoInicio = 0;
 
 function obtenerMaximoSimulacionesFatiga() {
   if (window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost') return 99;
+  if (esModoDemo) return 1;
   const esDemo = Boolean(sessionStorage.getItem('smk_token') || localStorage.getItem('sensometrika_demo_token'));
   if (esDemo) return 2;
   return 3;
@@ -56,10 +68,14 @@ function iniciarTanda() {
   estimuloActual = 0;
   tiemposRespuesta = [];
   lapsosAtencion = 0;
-  lblLapsos.innerText = '0';
+  if (lblLapsos) lblLapsos.innerText = '0';
   
-  badgeFase.innerText = fase === 'DEMO' ? '🟡 Test de Fatiga (Demo)' : '🔴 Test de Fatiga (Oficial)';
-  statusText.innerText = 'Atención constante... Esperando estímulo.';
+  if (badgeFase) {
+    badgeFase.innerText = fase === 'DEMO' 
+      ? (esModoDemo ? '🟡 ensayando Calibración' : '🟡 Test de Fatiga (Demo)') 
+      : '🔴 Test de Fatiga (Oficial)';
+  }
+  if (statusText) statusText.innerText = 'Atención constante... Esperando estímulo.';
   
   lanzarSiguienteEstimulo();
 }
@@ -71,11 +87,11 @@ function lanzarSiguienteEstimulo() {
   }
 
   estado = 'WAITING';
-  txtVisor.innerText = 'Esperando...';
-  visor.className = 'contenedor-visor';
+  if (txtVisor) txtVisor.innerText = 'Esperando...';
+  if (visor) visor.className = 'contenedor-visor';
 
-  // Intervalo aleatorio entre 2 y 5 segundos para evitar automatismo
-  const demora = Math.floor(Math.random() * 3000) + 2000;
+  // Intervalo aleatorio entre 1.5 y 3.5 segundos
+  const demora = Math.floor(Math.random() * 2000) + 1500;
 
   clearTimeout(timerEstimulo);
   timerEstimulo = setTimeout(() => {
@@ -86,19 +102,19 @@ function lanzarSiguienteEstimulo() {
 function activarEstimuloVisual() {
   estado = 'ACTIVE';
   tiempoInicio = performance.now();
-  txtVisor.innerText = '¡PRESIONE!';
-  visor.className = 'contenedor-visor activo';
+  if (txtVisor) txtVisor.innerText = '¡PRESIONE!';
+  if (visor) visor.className = 'contenedor-visor activo';
 }
 
 function procesarAccion() {
   if (estado === 'WAITING') {
     // Anticipación en prueba de fatiga
     lapsosAtencion++;
-    lblLapsos.innerText = lapsosAtencion;
+    if (lblLapsos) lblLapsos.innerText = lapsosAtencion;
     clearTimeout(timerEstimulo);
-    txtVisor.innerText = '⚠️ ¡Anticipación!';
-    visor.className = 'contenedor-visor';
-    statusText.innerText = 'Presionaste antes de tiempo. Mantén la calma.';
+    if (txtVisor) txtVisor.innerText = '⚠️ ¡Anticipación!';
+    if (visor) visor.className = 'contenedor-visor';
+    if (statusText) statusText.innerText = 'Presionaste antes de tiempo. Mantén la calma.';
     
     setTimeout(() => {
       lanzarSiguienteEstimulo();
@@ -109,14 +125,14 @@ function procesarAccion() {
     tiemposRespuesta.push(latencia);
     estimuloActual++;
 
-    lblEstimulo.innerText = `${estimuloActual} / ${totalEstimulos}`;
-    lblLatencia.innerText = `${latencia} ms`;
-    txtVisor.innerText = `${latencia} ms`;
-    visor.className = 'contenedor-visor';
+    if (lblEstimulo) lblEstimulo.innerText = `${estimuloActual} / ${totalEstimulos}`;
+    if (lblLatencia) lblLatencia.innerText = `${latencia} ms`;
+    if (txtVisor) txtVisor.innerText = `${latencia} ms`;
+    if (visor) visor.className = 'contenedor-visor';
 
     if (latencia > 500) {
       lapsosAtencion++;
-      lblLapsos.innerText = lapsosAtencion;
+      if (lblLapsos) lblLapsos.innerText = lapsosAtencion;
     }
 
     if ('vibrate' in navigator) navigator.vibrate(30);
@@ -129,28 +145,36 @@ function procesarAccion() {
 
 function finalizarPrueba() {
   estado = 'IDLE';
-  const promedio = Math.round(tiemposRespuesta.reduce((a,b)=>a+b,0) / tiemposRespuesta.length);
+  const promedio = Math.round(tiemposRespuesta.reduce((a, b) => a + b, 0) / (tiemposRespuesta.length || 1));
   
   if (fase === 'DEMO') {
-    statusText.innerText = `Calibración lista (Promedio: ${promedio} ms). Iniciando Oficial...`;
+    if (statusText) statusText.innerText = `Calibración lista (Promedio: ${promedio} ms). Iniciando Oficial...`;
     fase = 'OFICIAL';
-    totalEstimulos = 10; // 10 estímulos para la prueba oficial de fatiga
+    totalEstimulos = esModoDemo ? 3 : 10; // 3 estímulos en modo demo, 10 en oficial real
     setTimeout(() => {
       iniciarTanda();
-    }, 2000);
+    }, 1500);
   } else {
-    statusText.innerText = `Prueba de Fatiga Completa. Promedio: ${promedio} ms | Lapsos: ${lapsosAtencion}`;
-    txtVisor.innerText = 'COMPLETADO';
-    btnIniciar.disabled = false;
-    btnIniciar.innerText = 'Reiniciar Prueba';
+    if (statusText) statusText.innerText = `Prueba Completa. Promedio: ${promedio} ms | Lapsos: ${lapsosAtencion}`;
+    if (txtVisor) txtVisor.innerText = 'COMPLETADO';
+    if (btnIniciar) {
+      btnIniciar.disabled = false;
+      btnIniciar.innerText = 'Reiniciar Prueba';
+    }
 
     localStorage.setItem('sensometrika_fatiga', JSON.stringify({
       promedioLatencia: promedio,
       lapsos: lapsosAtencion,
-      aprobado: promedio <= 400 && lapsosAtencion <= 1
+      aprobado: promedio <= 400 && lapsosAtencion <= 1,
+      fecha: new Date().toISOString()
     }));
 
-    alert(`Test de Resistencia a la Fatiga Finalizado\nLatencia Media: ${promedio} ms\nLapsos detectados: ${lapsosAtencion}\nEstado: ${promedio <= 400 && lapsosAtencion <= 1 ? 'APROBADO' : 'OBSERVADO'}`);
-    window.location.href = 'demo.html';
+    // DESTINO DE RETORNO INTELIGENTE (Prioriza returnUrl enviado desde las demos)
+    const urlDestino = returnUrl || (esModoDemo ? 'demo_b2b_apr.html' : 'menu.html');
+
+    setTimeout(() => {
+      alert(`Test de Resistencia a la Fatiga Finalizado\nLatencia Media: ${promedio} ms\nLapsos detectados: ${lapsosAtencion}\nEstado: ${promedio <= 400 && lapsosAtencion <= 1 ? 'APROBADO' : 'OBSERVADO'}`);
+      window.location.href = urlDestino;
+    }, 400);
   }
 }
