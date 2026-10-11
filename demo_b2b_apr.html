@@ -238,22 +238,14 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            // LIMPIEZA FORZADA DE SESIONES RESIDUALES
+            // Limpieza forzada de sesiones residuales de pruebas oficiales
             localStorage.removeItem('sensometrika_sesion_b2b');
             localStorage.removeItem('sensometrika_trabajador_actual');
 
             const urlParams = new URLSearchParams(window.location.search);
-            const token = urlParams.get('token');
             const prospecto = urlParams.get('prospecto') || 'EMPRESA DEMO';
 
             document.getElementById('lblNombreProspecto').textContent = decodeURIComponent(prospecto);
-
-            if (token) {
-                const tokenQuemado = localStorage.getItem('sensometrika_token_quemado_' + token);
-                if (tokenQuemado === 'true') {
-                    alert('⚠️ Este pase de demostración ya fue utilizado.');
-                }
-            }
         });
 
         function ejecutarPrueba(modulo) {
@@ -261,6 +253,7 @@
             const token = urlParams.get('token') || '';
             const prospecto = urlParams.get('prospecto') || '';
 
+            // Construir la URL de retorno exacta para reingresar al menú demo B2B APR
             const returnUrl = encodeURIComponent(`demo_b2b_apr.html?token=${token}&prospecto=${prospecto}`);
 
             const rutas = {
@@ -269,17 +262,13 @@
                 'punteo': `punteo.html?demo=true&single=true&returnUrl=${returnUrl}`,
                 'auditivo': `audicion.html?demo=true&single=true&returnUrl=${returnUrl}`
             };
-            window.location.href = rutas[modulo] || `reactimetro.html?demo=true&returnUrl=${returnUrl}`;
+
+            window.location.href = rutas[modulo] || `reactimetro.html?demo=true&single=true&returnUrl=${returnUrl}`;
         }
 
         function generarInformeMuestra() {
             const urlParams = new URLSearchParams(window.location.search);
-            const token = urlParams.get('token');
             const prospecto = urlParams.get('prospecto') || 'EMPRESA CLIENTE';
-
-            if (token) {
-                localStorage.setItem('sensometrika_token_quemado_' + token, 'true');
-            }
 
             document.getElementById('lblInfEmpresa').textContent = decodeURIComponent(prospecto);
             document.getElementById('boxMenuB2B').style.display = 'none';
