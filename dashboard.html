@@ -39,7 +39,7 @@
         /* Cabecera */
         header {
             display: flex;
-            justify-content: space-between;
+            flex-direction: column;
             align-items: center;
             background: var(--card-bg);
             padding: 20px 30px;
@@ -47,26 +47,32 @@
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
             border: 1px solid var(--border-color);
             margin-bottom: 20px;
+            text-align: center;
         }
 
-        .header-brand {
-            display: flex;
-            align-items: center;
-            gap: 15px;
+        .header-brand-box {
+            background: rgba(11, 19, 36, 0.9);
+            border: 1px solid #1e293b;
+            padding: 8px 16px;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.6);
         }
 
-        .header-brand img {
-            height: 45px;
-            width: auto;
-            object-fit: contain;
-            border-radius: 6px;
+        .header-brand-box img {
+            width: 170px;
+            height: auto;
+            display: block;
+            border-radius: 4px;
+            filter: drop-shadow(0 0 10px rgba(56, 189, 248, 0.6));
         }
 
-        header h1 {
-            margin: 0;
-            font-size: 24px;
-            color: var(--primary-color);
-            letter-spacing: 0.5px;
+        .brand-subtitle {
+            margin-top: 8px;
+            color: var(--demo-color);
+            font-size: 0.78rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
         }
 
         /* Barra de Estado de Servicios Cloud */
@@ -199,12 +205,12 @@
 
     <div class="container">
         <!-- Cabecera -->
-<header class="brand-header" style="text-align: center; padding: 12px 0; display: flex; flex-direction: column; align-items: center; gap: 4px;">
-      <div style="background: rgba(11, 19, 36, 0.9); border: 1px solid #1e293b; padding: 8px 16px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.6);">
-        <img src="sensometrica.jpg" alt="SENSOMETRIKA Calibration Technology" style="width: 170px; height: auto; display: block; border-radius: 4px; filter: drop-shadow(0 0 10px rgba(56, 189, 248, 0.6));">
-      </div>
-      <span class="brand-subtitle" style="margin-top: 4px; color: var(--texto-gris); font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;">Tamizaje Auditivo Oficial (1 de 1)</span>
-    </header>
+        <header>
+            <div class="header-brand-box">
+                <img src="sensometrica.jpg" alt="SENSOMETRIKA Calibration Technology">
+            </div>
+            <span class="brand-subtitle">CENTRO DE MANDO UNIFICADO & CONTROL DE ACCESOS GLOBAL</span>
+        </header>
 
         <!-- Barra de Estado de Servicios Cloud -->
         <div class="cloud-status-bar">
@@ -221,14 +227,18 @@
                 <span class="service-indicator"><span class="dot dot-ok"></span> <strong style="color:var(--success-color)">OK</strong></span>
             </div>
             <div class="service-badge">
-                <span>Mails (B2B/B2C)</span>
+                <span>Mails (Serverless)</span>
                 <span class="service-indicator"><span class="dot dot-ok"></span> <strong style="color:var(--success-color)">OK</strong></span>
             </div>
         </div>
 
-        <!-- Gráfico de Red -->
+        <!-- Gráfico de Telemetría Network -->
         <div class="card" style="padding: 12px 20px; margin-bottom: 20px;">
-            <div style="height: 70px; position: relative;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                <span style="font-size:0.75rem; color:var(--text-muted); font-weight:700;">TELEMETRÍA DE RED & LATENCIA CLOUD:</span>
+                <span id="currentPing" style="font-size:0.75rem; color:var(--success-color); font-weight:800;">25 ms</span>
+            </div>
+            <div style="height: 60px; position: relative;">
                 <canvas id="networkChart"></canvas>
             </div>
         </div>
@@ -373,13 +383,6 @@
                         </tr>
                     </thead>
                     <tbody id="tablaHistorialUnificado">
-                        <tr>
-                            <td>23/09/2026 - 12:40</td>
-                            <td><span style="color: var(--demo-color); font-weight: bold;">DEMO</span></td>
-                            <td>Forestal Arauco</td>
-                            <td>Demo 1 Estándar Básico (Token Activo)</td>
-                            <td><span class="status-completed">Link Activo / Token OK</span></td>
-                        </tr>
                     </tbody>
                 </table>
             </div>
@@ -388,12 +391,14 @@
 
     <!-- Scripts de Control -->
     <script>
-        // Inicializar contador de demos emitidas en localStorage si no existe
-        if (!localStorage.getItem('sensometrika_total_demos')) {
-            localStorage.setItem('sensometrika_total_demos', '38');
-        } else {
-            document.getElementById('contadorDemosEmitidas').textContent = localStorage.getItem('sensometrika_total_demos');
-        }
+        document.addEventListener('DOMContentLoaded', () => {
+            if (!localStorage.getItem('sensometrika_total_demos')) {
+                localStorage.setItem('sensometrika_total_demos', '38');
+            } else {
+                document.getElementById('contadorDemosEmitidas').textContent = localStorage.getItem('sensometrika_total_demos');
+            }
+            cargarHistorialGuardado();
+        });
 
         function switchTab(type) {
             ['B2B', 'B2C', 'Demo'].forEach(t => {
@@ -412,7 +417,7 @@
             const razon = document.getElementById('b2bCompany').value.trim();
             if(!razon) { alert('Ingrese la empresa.'); return; }
             const token = 'smk_b2b_' + Math.random().toString(36).substring(2, 8);
-            const url = `${window.location.origin}/menu-b2b.html?token=${token}`;
+            const url = `${window.location.origin}/menu_B2B.html?token=${token}&empresa=${encodeURIComponent(razon)}`;
             document.getElementById('inputLinkB2B').value = url;
             document.getElementById('boxLinkB2B').style.display = 'block';
             agregarFilaHistorial('B2B', razon, 'Plan B2B Corporativo');
@@ -422,13 +427,13 @@
             const nombre = document.getElementById('b2cName').value.trim();
             if(!nombre) { alert('Ingrese el nombre.'); return; }
             const token = 'smk_b2c_' + Math.random().toString(36).substring(2, 8);
-            const url = `${window.location.origin}/index.html?token=${token}`;
+            const url = `${window.location.origin}/menu_B2C.html?token=${token}&nombre=${encodeURIComponent(nombre)}`;
             document.getElementById('inputLinkB2C').value = url;
             document.getElementById('boxLinkB2C').style.display = 'block';
             agregarFilaHistorial('B2C', 'Particular', nombre);
         }
 
-        function generarLinkDemo(canal) {
+        async function generarLinkDemo(canal) {
             const prospecto = document.getElementById('demoProspecto').value.trim();
             const correo = document.getElementById('demoCorreo').value.trim();
             const telefono = document.getElementById('demoWhatsapp').value.trim();
@@ -471,7 +476,25 @@
                     alert('⚠️ Ingrese un correo electrónico para despachar el acceso.');
                     return;
                 }
-                alert(`✅ Enlace con token interno generado y despachado con éxito a ${correo}.`);
+
+                try {
+                    await fetch('/api/enviar-correo', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            tipo: 'b2c_pago',
+                            emailDestino: correo,
+                            nombreTrabajador: prospecto,
+                            rutTrabajador: 'PROSPECTO-DEMO',
+                            planNombre: `Demostración Comercial (${horas} hrs)`,
+                            monto: 'Cortesía Comercial',
+                            linkAcceso: url
+                        })
+                    });
+                    alert(`✅ Enlace de demostración despachado exitosamente a ${correo}.`);
+                } catch(e) {
+                    alert(`✅ Enlace con token generado para ${prospecto}.`);
+                }
             } else {
                 alert(`✅ Enlace con token interno generado para ${prospecto}. Listo para compartir.`);
             }
@@ -485,19 +508,42 @@
         }
 
         function agregarFilaHistorial(segmento, entidad, detalle) {
-            const tbody = document.getElementById('tablaHistorialUnificado');
-            const fecha = new Date().toLocaleString();
-            const color = segmento === 'B2B' ? 'var(--b2b-color)' : segmento === 'B2C' ? 'var(--b2c-color)' : 'var(--demo-color)';
+            const historial = JSON.parse(localStorage.getItem('sensometrika_historial_admin')) || [];
+            const nuevoRegistro = {
+                fecha: new Date().toLocaleString('es-CL'),
+                segmento: segmento,
+                entidad: entidad,
+                detalle: detalle
+            };
+            historial.unshift(nuevoRegistro);
+            localStorage.setItem('sensometrika_historial_admin', JSON.stringify(historial));
+            cargarHistorialGuardado();
+        }
 
-            const tr = document.createElement('tr');
-            tr.innerHTML = `
-                <td>${fecha}</td>
-                <td><span style="color: ${color}; font-weight: bold;">${segmento}</span></td>
-                <td>${entidad}</td>
-                <td>${detalle}</td>
-                <td><span class="status-completed">Link Activo / Token</span></td>
-            `;
-            tbody.insertBefore(tr, tbody.firstChild);
+        function cargarHistorialGuardado() {
+            const tbody = document.getElementById('tablaHistorialUnificado');
+            tbody.innerHTML = '';
+            const historial = JSON.parse(localStorage.getItem('sensometrika_historial_admin')) || [
+                {
+                    fecha: '23/09/2026 - 12:40',
+                    segmento: 'DEMO',
+                    entidad: 'Forestal Arauco',
+                    detalle: 'Demo 1 Estándar Básico (Token Activo)'
+                }
+            ];
+
+            historial.forEach(item => {
+                const color = item.segmento === 'B2B' ? 'var(--b2b-color)' : item.segmento === 'B2C' ? 'var(--b2c-color)' : 'var(--demo-color)';
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${item.fecha}</td>
+                    <td><span style="color: ${color}; font-weight: bold;">${item.segmento}</span></td>
+                    <td>${item.entidad}</td>
+                    <td>${item.detalle}</td>
+                    <td><span class="status-completed">Link Activo / Token OK</span></td>
+                `;
+                tbody.appendChild(tr);
+            });
         }
 
         // Gráfico Latencia
@@ -523,7 +569,8 @@
             const p = Math.floor(Math.random() * (35 - 16 + 1)) + 16;
             const d = networkChart.data.datasets[0].data;
             d.shift(); d.push(p);
-            document.getElementById('currentPing').textContent = p + ' ms';
+            const pingLabel = document.getElementById('currentPing');
+            if (pingLabel) pingLabel.textContent = p + ' ms';
             networkChart.update();
         }, 300);
     </script>
