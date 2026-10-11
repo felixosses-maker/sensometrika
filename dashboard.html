@@ -204,7 +204,7 @@
 <body>
 
     <div class="container">
-        <!-- Cabecera -->
+        <!-- Cabecera Corregida -->
         <header>
             <div class="header-brand-box">
                 <img src="sensometrica.jpg" alt="SENSOMETRIKA Calibration Technology">
@@ -232,7 +232,7 @@
             </div>
         </div>
 
-        <!-- Gráfico de Telemetría Network -->
+        <!-- Gráfico de Telemetría Network con Ping Etiquetado -->
         <div class="card" style="padding: 12px 20px; margin-bottom: 20px;">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
                 <span style="font-size:0.75rem; color:var(--text-muted); font-weight:700;">TELEMETRÍA DE RED & LATENCIA CLOUD:</span>
@@ -478,11 +478,12 @@
                 }
 
                 try {
-                    await fetch('/api/enviar-correo', {
+                    const res = await fetch('/api/enviar-correo', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
                             tipo: 'b2c_pago',
+                            email: correo,
                             emailDestino: correo,
                             nombreTrabajador: prospecto,
                             rutTrabajador: 'PROSPECTO-DEMO',
@@ -491,9 +492,18 @@
                             linkAcceso: url
                         })
                     });
-                    alert(`✅ Enlace de demostración despachado exitosamente a ${correo}.`);
+
+                    const resJson = await res.json();
+
+                    if (res.ok) {
+                        alert(`✅ Enlace de demostración despachado exitosamente a ${correo}.`);
+                    } else {
+                        console.error("Respuesta error de la API:", resJson);
+                        alert(`⚠️ Error al enviar correo (${res.status}): ${resJson.error || resJson.details || 'Verifique Vercel Logs'}`);
+                    }
                 } catch(e) {
-                    alert(`✅ Enlace con token generado para ${prospecto}.`);
+                    console.error("Error de conexión con la API:", e);
+                    alert(`✅ Enlace con token generado localmente para ${prospecto}.`);
                 }
             } else {
                 alert(`✅ Enlace con token interno generado para ${prospecto}. Listo para compartir.`);
