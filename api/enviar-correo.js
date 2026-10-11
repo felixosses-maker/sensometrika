@@ -33,11 +33,17 @@ module.exports = async (req, res) => {
   }
 
   try {
-    let { tipo, email, nombre, enlace, detalles, duracion_minutos } = req.body || {};
+    let { tipo, email, emailDestino, nombre, nombreTrabajador, enlace, linkAcceso, detalles, duracion_minutos } = req.body || {};
 
-    if (!email) {
-      return res.status(400).json({ error: 'Falta parámetro obligatorio: email.' });
+    // Aceptar tanto 'email' como 'emailDestino' para máxima compatibilidad
+    const correoFinal = email || emailDestino;
+
+    if (!correoFinal) {
+      return res.status(400).json({ error: 'Falta parámetro obligatorio: email o emailDestino.' });
     }
+
+    const enlaceEntrante = enlace || linkAcceso;
+    const destinatarioNombre = nombre || nombreTrabajador || (tipo === 'b2b' ? 'Supervisión Técnica' : 'Postulante');
 
     const tipoToken = (tipo === 'demo' || tipo === 'b2b') ? tipo : 'b2c';
     
@@ -55,9 +61,9 @@ module.exports = async (req, res) => {
 
     let enlaceFinal = '';
 
-    if (typeof enlace === 'string' && enlace.includes('?token=')) {
-      const matchCustom = enlace.match(/https?:\/\/[^\s\]\)\'\"]+/);
-      enlaceFinal = matchCustom ? matchCustom[0] : enlace.trim();
+    if (typeof enlaceEntrante === 'string' && enlaceEntrante.length > 5) {
+      const matchCustom = enlaceEntrante.match(/https?:\/\/[^\s\]\)\'\"]+/);
+      enlaceFinal = matchCustom ? matchCustom[0] : enlaceEntrante.trim();
     } else {
       const generatedToken = crypto.randomUUID();
       const expiresAt = new Date(Date.now() + minutosVigencia * 60 * 1000).toISOString();
@@ -75,7 +81,7 @@ module.exports = async (req, res) => {
             body: JSON.stringify({
               token: generatedToken,
               type: tipoToken,
-              email: email,
+              email: correoFinal,
               metadata: detalles || {},
               expires_at: expiresAt
             })
@@ -88,7 +94,6 @@ module.exports = async (req, res) => {
       enlaceFinal = `${cleanDomain}/demo.html?token=${generatedToken}`;
     }
 
-    const destinatarioNombre = nombre || (tipo === 'b2b' ? 'Supervisión Técnica' : 'Postulante');
     let asunto = '';
     let htmlContent = '';
 
@@ -178,6 +183,7 @@ module.exports = async (req, res) => {
       `;
     }
 
+    // Usar la dirección de pruebas autorizada por Resend
     const remitente = process.env.EMAIL_FROM || 'Sensometrika <onboarding@resend.dev>';
 
     const resendResponse = await fetch('https://api.resend.com/emails', {
@@ -188,7 +194,7 @@ module.exports = async (req, res) => {
       },
       body: JSON.stringify({
         from: remitente,
-        to: [email],
+        to: [correoFinal],
         subject: asunto,
         html: htmlContent
       })
@@ -200,14 +206,15 @@ module.exports = async (req, res) => {
       console.error('Error desde Resend:', data);
       return res.status(resendResponse.status).json({
         success: false,
-        error: data.message || 'Error al enviar correo mediante Resend.'
+        error: data.message || 'Error al enviar correo mediante Resend.',
+        details: data
       });
     }
 
     return res.status(200).json({
       success: true,
       id: data.id,
-      destinatario: email,
+      destinatario: correoFinal,
       enlaceGenerado: enlaceFinal
     });
 
