@@ -305,13 +305,13 @@
             </div>
 
             <div class="instruction-text" id="instructionText">
-                Evaluación Oficial: Recorre la pista con ambos pulgares hasta la meta.
+                Evaluación Oficial: Recorre la pista con ambos pulgares hasta la meta. (Límite: 45s)
             </div>
 
             <div class="metrics-grid">
                 <div class="metric-item">
                     <span class="metric-label">TIEMPO</span>
-                    <span id="metricTiempo" class="metric-value" style="color:#38bdf8;">0 s</span>
+                    <span id="metricTiempo" class="metric-value" style="color:#38bdf8;">0 / 45 s</span>
                 </div>
                 <div class="metric-item">
                     <span class="metric-label">TOQUES</span>
@@ -360,6 +360,7 @@
     </div>
 
     <script>
+        const TIEMPO_LIMITE_MAX_SEG = 45; // Límite normativo
         const canvas = document.getElementById('palancasCanvas');
         const ctx = canvas.getContext('2d');
         const btnStart = document.getElementById('btnStart');
@@ -431,7 +432,6 @@
                         inicio: {x: 50 + offsetX, y: 220},
                         meta: {x: 350 + offsetX, y: 75}
                     };
-
                 case 1:
                     return {
                         pista: [
@@ -446,7 +446,6 @@
                         inicio: {x: 350 + offsetX, y: 225},
                         meta: {x: 50 + offsetX, y: 75}
                     };
-
                 case 2:
                     return {
                         pista: [
@@ -461,7 +460,6 @@
                         inicio: {x: 50, y: 75 + offsetY},
                         meta: {x: 350, y: 225}
                     };
-
                 case 3:
                     return {
                         pista: [
@@ -475,7 +473,6 @@
                         inicio: {x: 60, y: 230},
                         meta: {x: 340, y: 70}
                     };
-
                 default:
                     return {
                         pista: [
@@ -543,7 +540,7 @@
                 btnStart.style.backgroundColor = "#e5b324";
                 btnStart.style.display = 'block';
                 btnNext.style.display = 'none';
-                instructionText.textContent = "Modo Demo: Guía la púa con ambos pulgares hasta la meta verde.";
+                instructionText.textContent = "Modo Demo: Guía la púa hasta la meta en menos de 45 segundos.";
             } else {
                 badgeText.textContent = esB2B ? `Simulación Oficial B2B` : `Simulación Oficial S${simuActual} de ${maxIntentosPlan}`;
                 badgeDot.style.backgroundColor = "#38bdf8"; 
@@ -551,7 +548,7 @@
                 btnStart.style.backgroundColor = "#0284c7";
                 btnStart.style.display = 'block';
                 btnNext.style.display = 'none';
-                instructionText.textContent = `Evaluación Oficial (Geometría S${simuActual}): Recorre la pista con ambos pulgares hasta la meta.`;
+                instructionText.textContent = `Evaluación Oficial (Geometría S${simuActual}): Recorre la pista hasta la meta verde (Tiempo máx: 45s).`;
             }
         }
 
@@ -628,7 +625,7 @@
                 metricPrecision.textContent = `${precPonderada}%`;
 
                 if (Math.hypot(pua.x - posicionMeta.x, pua.y - posicionMeta.y) <= 14) {
-                    finalizarPrueba();
+                    finalizarPrueba(false); // Completado a tiempo
                 }
             }
 
@@ -686,17 +683,23 @@
 
             metricContactos.textContent = '0';
             metricTiempoError.textContent = '0.0 s';
-            metricTiempo.textContent = '0 s';
+            metricTiempo.textContent = `0 / ${TIEMPO_LIMITE_MAX_SEG} s`;
             metricPrecision.textContent = '100%';
             btnStart.style.display = 'none';
 
+            if (timerInterval) clearInterval(timerInterval);
+
             timerInterval = setInterval(() => {
                 tiempoTranscurrido++;
-                metricTiempo.textContent = `${tiempoTranscurrido} s`;
+                metricTiempo.textContent = `${tiempoTranscurrido} / ${TIEMPO_LIMITE_MAX_SEG} s`;
+
+                if (tiempoTranscurrido >= TIEMPO_LIMITE_MAX_SEG) {
+                    finalizarPrueba(true); // Finalizado por TIMEOUT
+                }
             }, 1000);
         }
 
-        function finalizarPrueba() {
+        function finalizarPrueba(esTimeout = false) {
             evaluacionActiva = false;
             clearInterval(timerInterval);
 
@@ -708,7 +711,10 @@
             const tErrorMsNeto = Math.max(0, tiempoErrorMs - latenciaHardware);
             const tErrorSeg = (tErrorMsNeto / 1000).toFixed(1);
 
-            const precisionFinal = Math.max(0, Math.round(100 - (contactosCount * 4) - ((tErrorMsNeto / 1000) * 6)));
+            let precisionFinal = Math.max(0, Math.round(100 - (contactosCount * 4) - ((tErrorMsNeto / 1000) * 6)));
+            if (esTimeout) {
+                precisionFinal = Math.max(0, precisionFinal - 35); // Penalización severa por exceder los 45s
+            }
 
             if (modoActual === 'DEMO') {
                 localStorage.setItem(`palancas_demo_completada_${cleanRut}`, 'true');
@@ -720,17 +726,14 @@
                 urlParams.set('fase', 'oficial');
                 window.history.replaceState({}, '', `${window.location.pathname}?${urlParams.toString()}`);
 
-                mostrarModal(
-                    "CALIBRACIÓN DEMO COMPLETADA",
-                    `Tiempo Recorrido: <b>${tiempoTotalSecNeto} s</b><br>Toques en Borde: <b>${contactosCount}</b><br>Tiempo en Error: <b>${tErrorSeg} s</b><br>Precisión Bimanual: <b>${precisionFinal}%</b><br><br>Has finalizado el ensayo. Ya puedes rendir tu Simulación Oficial.`,
-                    () => {
-                        actualizarEstadoUI();
-                    }
-                );
+                const msgBody = esTimeout 
+                    ? `<span style="color:#ef4444; font-weight:800;">⏰ TIEMPO AGOTADO (LÍMITE 45s)</span><br>Tiempo: <b>45 s</b><br>Toques en Borde: <b>${contactosCount}</b><br>Precisión: <b>${precisionFinal}%</b><br><br>Superaste el tiempo límite. Puedes repetir en tu Simulación Oficial.`
+                    : `Tiempo Recorrido: <b>${tiempoTotalSecNeto} s</b><br>Toques en Borde: <b>${contactosCount}</b><br>Tiempo en Error: <b>${tErrorSeg} s</b><br>Precisión Bimanual: <b>${precisionFinal}%</b><br><br>Has finalizado el ensayo. Ya puedes rendir tu Simulación Oficial.`;
+
+                mostrarModal("CALIBRACIÓN DEMO COMPLETADA", msgBody, () => { actualizarEstadoUI(); });
             } else if (modoActual === 'OFICIAL') {
                 let historial = JSON.parse(localStorage.getItem(`sensometrika_historial_palancas_${cleanRut}`)) || [];
                 
-                // GUARDADO CON NOMBRES DE PROPIEDADES COMPATIBLES CON MENÚ E INFORME B2B / B2C
                 historial.push({
                     tiempoTotal: tiempoTotalMsNeto,
                     tiempo: tiempoTotalSecNeto,
@@ -739,6 +742,7 @@
                     tiempoError: parseFloat(tErrorSeg) * 1000,
                     tiempoErrorMs: parseFloat(tErrorSeg) * 1000,
                     precision: precisionFinal,
+                    timeout: esTimeout,
                     latenciaCompensadaMs: latenciaHardware,
                     fecha: new Date().toISOString()
                 });
@@ -748,11 +752,11 @@
                 const numSimu = historial.length;
                 const tituloModal = esB2B ? "SIMULACIÓN OFICIAL B2B REGISTRADA" : `SIMULACIÓN S${numSimu} REGISTRADA`;
 
-                mostrarModal(
-                    tituloModal,
-                    `Tiempo Recorrido: <b>${tiempoTotalSecNeto} s</b><br>Toques en Borde: <b>${contactosCount}</b><br>Tiempo en Error: <b>${tErrorSeg} s</b><br>Precisión Bimanual: <b>${precisionFinal}%</b> (${precisionFinal >= 85 ? '✓ En Norma' : '⚠ Deficiente'})<br><br><b>Resultado guardado con éxito.</b>`,
-                    () => { ejecutarRetornoMenu(); }
-                );
+                const msgBody = esTimeout
+                    ? `<span style="color:#ef4444; font-weight:800;">⏰ REPROBADO POR TIMEOUT (45s Excedidos)</span><br>Tiempo Transcurrido: <b>45 s</b><br>Toques en Borde: <b>${contactosCount}</b><br>Precisión Final: <b>${precisionFinal}%</b><br><br><b>Resultado registrado en el historial pericial.</b>`
+                    : `Tiempo Recorrido: <b>${tiempoTotalSecNeto} s</b><br>Toques en Borde: <b>${contactosCount}</b><br>Tiempo en Error: <b>${tErrorSeg} s</b><br>Precisión Bimanual: <b>${precisionFinal}%</b> (${precisionFinal >= 80 ? '✓ En Norma' : '⚠ Deficiente'})<br><br><b>Resultado guardado con éxito.</b>`;
+
+                mostrarModal(tituloModal, msgBody, () => { ejecutarRetornoMenu(); });
             }
         }
 
@@ -769,7 +773,7 @@
         btnStart.addEventListener('click', iniciarPrueba);
 
         document.getElementById('btnInfo').addEventListener('click', () => {
-            mostrarModal("¿CÓMO FUNCIONA?", "Usa los botones bimanuales para desplazar la púa desde el punto amarillo inicial hasta la meta verde evitando rozar los bordes.");
+            mostrarModal("¿CÓMO FUNCIONA?", "Usa los botones bimanuales para desplazar la púa hasta la meta verde antes de 45 segundos evitando rozar los bordes.");
         });
 
         actualizarEstadoUI();
