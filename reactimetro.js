@@ -1,7 +1,19 @@
 /**
  * Sensometrika - Módulo Reactímetro Simple (Tiempo de Frenado)
  * Medición de Latencia y Tiempos de Reacción Multiestímulo (D.S. N° 170)
+ * Integrado con bypass de demostración y retorno dinámico vía returnUrl
  */
+
+// DETECCIÓN DINÁMICA DE PARÁMETROS URL Y MODO DEMO
+const urlParamsReactimetro = new URLSearchParams(window.location.search);
+const esModoDemoReactimetro = urlParamsReactimetro.get('demo') === 'true' || urlParamsReactimetro.get('single') === 'true';
+const returnUrlReactimetro = urlParamsReactimetro.get('returnUrl') ? decodeURIComponent(urlParamsReactimetro.get('returnUrl')) : null;
+
+// LIMPIEZA EXCLUSIVA EN MODO DEMOSTRACIÓN (Sin afectar cuotas pagadas)
+if (esModoDemoReactimetro) {
+    localStorage.removeItem('sensometrika_reactimetro_completado');
+    localStorage.removeItem('sensometrika_historial_reactimetro');
+}
 
 class ModuloReactimetro {
     constructor(canvas, options = {}, onComplete) {
@@ -12,8 +24,8 @@ class ModuloReactimetro {
         this.width = options.width || 400;
         this.height = options.height || 300;
 
-        // Configuración Multiestímulo (entre 5 y 8 por simulación)
-        this.totalEstimulosPorSimulacion = options.totalEstimulos || 6; 
+        // Configuración Multiestímulo (3 estímulos en modo demo para agilizar, 6 en oficial)
+        this.totalEstimulosPorSimulacion = esModoDemoReactimetro ? 3 : (options.totalEstimulos || 6); 
         this.estimuloActual = 0;
         this.tiemposRegistrados = [];
 
@@ -39,10 +51,10 @@ class ModuloReactimetro {
         this.estimuloActual++;
         this.estado = 'LISTO';
         this.colorSemaforo = '#e5b324'; // Amarillo de espera
-        this.textoSemaforo = `ESTÍMULO ${this.estimuloActual}/${this.totalEstimulosPorSimulacion} • ESPERE ROJO...`;
+        this.textoSemaforo = `ESTÍMULO ${this.estimuloActual}/${this.totalEstimulosPorSimulacion} - ESPERE ROJO...`;
         this.draw();
 
-        // Tiempo de espera aleatorio entre 1.8 y 4.2 segundos para evitar habituación
+        // Tiempo de espera aleatorio entre 1.8 y 4.2 segundos
         const tiempoEspera = Math.floor(Math.random() * 2400) + 1800;
 
         if (this.timeoutEstimulo) clearTimeout(this.timeoutEstimulo);
@@ -97,12 +109,14 @@ class ModuloReactimetro {
             } else {
                 // Cálculo de promedio final de la simulación
                 const suma = this.tiemposRegistrados.reduce((a, b) => a + b, 0);
-                const promedio = Math.round(suma / this.tiemposRegistrados.length);
+                const promedio = Math.round(suma / (this.tiemposRegistrados.length || 1));
 
                 this.estado = 'FINALIZADO';
                 this.colorSemaforo = '#10b981';
                 this.textoSemaforo = `PROMEDIO FINAL: ${promedio} ms`;
                 this.draw();
+
+                const urlDestino = returnUrlReactimetro || (esModoDemoReactimetro ? 'demo_b2b_apr.html' : 'menu.html');
 
                 const resultado = {
                     exito: true,
@@ -111,11 +125,23 @@ class ModuloReactimetro {
                     tiemposDetalle: this.tiemposRegistrados,
                     latenciaDescontada: this.offsetLatenciaHardware,
                     anticipaciones: this.anticipaciones,
-                    modulo: 'Reactímetro (Tiempo de Frenado)'
+                    modulo: 'Reactímetro (Tiempo de Frenado)',
+                    returnUrl: urlDestino
                 };
+
+                localStorage.setItem('sensometrika_reactimetro', JSON.stringify({
+                    promedioTiempo: promedio,
+                    anticipaciones: this.anticipaciones,
+                    aprobado: promedio <= 390,
+                    fecha: new Date().toISOString()
+                }));
 
                 if (typeof this.onComplete === 'function') {
                     this.onComplete(resultado);
+                } else {
+                    setTimeout(() => {
+                        window.location.href = urlDestino;
+                    }, 1200);
                 }
 
                 return resultado;
