@@ -4,6 +4,7 @@
    • Generador Estocástico Anti-Memorización (Ishihara + Optotipo E)
    • 1 Demo de 2 Láminas + Examen Oficial de 6 Láminas
    • Auditoría facial continua y bloqueo reactivo ante proximidad (<45 cm)
+   • MODO DEMO / SINGLE: Bypass de cuotas y retorno dinámico vía returnUrl
    • Persistencia compatible con menu.html e informe.html
    ========================================================================== */
 
@@ -38,6 +39,18 @@ if (btnAbrirAyuda) btnAbrirAyuda.onclick = () => modalGuia.style.display = 'flex
 if (btnCerrarAyuda) btnCerrarAyuda.onclick = () => modalGuia.style.display = 'none';
 if (modalX) modalX.onclick = () => modalGuia.style.display = 'none';
 
+// DETECCIÓN DINÁMICA DE PARÁMETROS URL Y MODO DEMO
+const urlParamsVisual = new URLSearchParams(window.location.search);
+const esModoDemoVisual = urlParamsVisual.get('demo') === 'true' || urlParamsVisual.get('single') === 'true';
+const returnUrlVisual = urlParamsVisual.get('returnUrl') ? decodeURIComponent(urlParamsVisual.get('returnUrl')) : null;
+
+// LIMPIEZA EXCLUSIVA DE CUOTAS EN DEMOSTRACIONES (Sin afectar pagos B2C/B2B)
+if (esModoDemoVisual) {
+  localStorage.removeItem('sensometrika_visual_completado');
+  localStorage.removeItem('sensometrika_historial_visual');
+  localStorage.removeItem('simulaciones_visual');
+}
+
 // BANCO DE DATOS CROMÁTICOS (ISHIHARA)
 const BANCO_ISHIHARA = [
   { valor: '12', opciones: ['12', '74', '8', 'No distingo'] },
@@ -50,8 +63,8 @@ const BANCO_ISHIHARA = [
 
 // ÁNGULOS POSIBLES PARA EL OPTOTIPO 'E'
 const ORIENTACIONES_E = [
-  { rot: 0,             dir: 'Derecha' },
-  { rot: Math.PI,        dir: 'Izquierda' },
+  { rot: 0,            dir: 'Derecha' },
+  { rot: Math.PI,       dir: 'Izquierda' },
   { rot: -Math.PI / 2,   dir: 'Arriba' },
   { rot: Math.PI / 2,    dir: 'Abajo' }
 ];
@@ -81,13 +94,15 @@ function generarBateriaDemo() {
 }
 
 function generarBateriaOficial() {
-  const cromaticas = barajar(BANCO_ISHIHARA).slice(0, 3).map(item => ({
+  const cantidadCromatica = esModoDemoVisual ? 2 : 3;
+  const cromaticas = barajar(BANCO_ISHIHARA).slice(0, cantidadCromatica).map(item => ({
     tipo: 'ishihara',
     valor: item.valor,
     opciones: barajar(item.opciones)
   }));
 
-  const agudezas = [0, 1, 2].map(() => {
+  const cantidadSnellen = esModoDemoVisual ? 2 : 3;
+  const agudezas = Array.from({ length: cantidadSnellen }).map(() => {
     const elegido = ORIENTACIONES_E[Math.floor(Math.random() * ORIENTACIONES_E.length)];
     return {
       tipo: 'snellen',
@@ -109,7 +124,7 @@ let distanciaPermitida = true;
 let pruebaFinalizada = false;
 
 window.addEventListener('DOMContentLoaded', () => {
-  if (typeof CreditManager !== 'undefined') {
+  if (!esModoDemoVisual && typeof CreditManager !== 'undefined') {
     if (!CreditManager.puedeRendir('visual')) {
       bloquearModuloPorCupo();
       return;
@@ -143,7 +158,7 @@ function iniciarFaseDemo() {
   pasoActual = 0;
   aciertos = 0;
 
-  badgeModo.innerText = '🟡 Calibración Técnica (Demo)';
+  badgeModo.innerText = esModoDemoVisual ? '🟡 Ensayo de Calibración' : '🟡 Calibración Técnica (Demo)';
   badgeModo.style.color = '#facc15';
   badgeModo.style.background = 'rgba(250, 204, 21, 0.1)';
   badgeModo.style.borderColor = 'rgba(250, 204, 21, 0.25)';
@@ -167,12 +182,11 @@ function prepararFaseOficial() {
   pasoActual = 0;
   aciertos = 0;
 
-  // Cuota según plan
   const hist = JSON.parse(localStorage.getItem('sensometrika_historial_visual')) || [];
   const num = hist.length + 1;
-  const max = 2; // Tamizaje visual contempla 2 simulaciones
+  const max = 2;
 
-  badgeModo.innerText = `🔴 Simulación Oficial: ${num} de ${max}`;
+  badgeModo.innerText = esModoDemoVisual ? '🔴 Evaluación Muestra Técnica' : `🔴 Simulación Oficial: ${num} de ${max}`;
   badgeModo.style.color = '#38bdf8';
   badgeModo.style.background = 'rgba(56, 189, 248, 0.1)';
   badgeModo.style.borderColor = 'rgba(56, 189, 248, 0.25)';
@@ -379,7 +393,6 @@ function dibujarPlacaIshihara(numero) {
       ctx.fillStyle = paletaVerdes[(Math.floor(x * 3 + y * 7)) % paletaVerdes.length];
       ctx.fill();
 
-      // Micro-borde sutil
       ctx.strokeStyle = 'rgba(0,0,0,0.25)';
       ctx.lineWidth = 0.5;
       ctx.stroke();
@@ -430,7 +443,6 @@ function dibujarOptotipoSnellen(rotacion) {
   ctx.shadowColor = 'rgba(56, 189, 248, 0.85)';
   ctx.shadowBlur = 14;
 
-  // Proporción 5x5 oficial de optotipo
   ctx.fillRect(-35, -35, 14, 70); // Barra vertical
   ctx.fillRect(-35, -35, 70, 14); // Barra superior
   ctx.fillRect(-35, -7, 48, 14);  // Barra media
@@ -454,7 +466,7 @@ function concluirDemo() {
   modo = 'PAUSA_ENTRE_FASES';
   zonaBotones.style.display = 'none';
 
-  txtPregunta.innerText = '¡Calibración completada! Pulsa para iniciar la evaluación oficial.';
+  txtPregunta.innerText = '¡Calibración completada! Pulsa para iniciar la evaluación.';
   txtPregunta.style.color = '#4ade80';
 
   const hist = JSON.parse(localStorage.getItem('sensometrika_historial_visual')) || [];
@@ -462,7 +474,7 @@ function concluirDemo() {
   const max = 2;
 
   btnIniciarOficial.style.display = 'block';
-  btnIniciarOficial.innerText = `Iniciar Simulación Oficial (${num} de ${max})`;
+  btnIniciarOficial.innerText = esModoDemoVisual ? 'Iniciar Muestra Técnica' : `Iniciar Simulación Oficial (${num} de ${max})`;
 }
 
 function finalizarPruebaVisual() {
@@ -488,23 +500,25 @@ function finalizarPruebaVisual() {
     timestamp: new Date().toISOString()
   };
 
-  historial.push(attemptData);
-  localStorage.setItem('sensometrika_historial_visual', JSON.stringify(historial));
-  localStorage.setItem('simulaciones_visual', Math.min(max, historial.length).toString());
+  if (!esModoDemoVisual) {
+    historial.push(attemptData);
+    localStorage.setItem('sensometrika_historial_visual', JSON.stringify(historial));
+    localStorage.setItem('simulaciones_visual', Math.min(max, historial.length).toString());
 
-  // Consolidado para informe.html
-  localStorage.setItem('sensometrika_visual', JSON.stringify({
-    estado: (historial.length >= max) ? 'COMPLETADO' : 'EN_CURSO',
-    efectividad: pct,
-    porcentaje: pct,
-    aciertos: aciertos,
-    total: pruebasActivas.length,
-    aprobado: aprobado,
-    resultado: aprobado ? 'APROBADO' : 'OBSERVADO',
-    simulaciones: Math.min(max, historial.length),
-    historial: historial,
-    fecha: new Date().toISOString()
-  }));
+    // Consolidado para informe.html
+    localStorage.setItem('sensometrika_visual', JSON.stringify({
+      estado: (historial.length >= max) ? 'COMPLETADO' : 'EN_CURSO',
+      efectividad: pct,
+      porcentaje: pct,
+      aciertos: aciertos,
+      total: pruebasActivas.length,
+      aprobado: aprobado,
+      resultado: aprobado ? 'APROBADO' : 'OBSERVADO',
+      simulaciones: Math.min(max, historial.length),
+      historial: historial,
+      fecha: new Date().toISOString()
+    }));
+  }
 
   zonaBotones.style.display = 'none';
   btnIniciarOficial.style.display = 'none';
@@ -512,21 +526,21 @@ function finalizarPruebaVisual() {
   txtPregunta.innerText = `Evaluación Finalizada: ${pct}% (${aprobado ? 'Aprobado' : 'Observado'})`;
   txtPregunta.style.color = aprobado ? '#4ade80' : '#f87171';
 
+  // DESTINO DE RETORNO INTELIGENTE
+  const urlDestino = returnUrlVisual || (esModoDemoVisual ? 'demo_b2b_apr.html' : 'informe.html');
+
   zonaCoordinacion.innerHTML = `
     <div style="background:#090e1c; border:1.5px solid ${aprobado ? '#22c55e' : '#ef4444'}; border-radius:14px; padding:18px; text-align:center; margin-top:8px; box-shadow: 0 10px 30px rgba(0,0,0,0.6);">
       <h3 style="color:${aprobado ? '#4ade80' : '#f87171'}; margin:0 0 6px 0; font-size:1.15rem;">
-        ¡Simulación ${simActual} de ${max} Finalizada!
+        ¡${esModoDemoVisual ? 'Muestra Técnica Finalizada' : `Simulación ${simActual} de${max} Finalizada`}!
       </h3>
       <p style="color:#94a3b8; font-size:0.88rem; margin:0 0 14px 0;">
         Efectividad Visual: <strong style="color:#38bdf8;">${pct}%</strong> &nbsp;|&nbsp; 
         Aciertos: <strong style="color:#fff;">${aciertos}/${pruebasActivas.length}</strong>
       </p>
       <div style="display:flex; flex-direction:column; gap:10px;">
-        <a href="informe.html" style="display:flex; justify-content:center; align-items:center; height:44px; background:#0284c7; color:#fff; text-decoration:none; border-radius:8px; font-weight:700; font-size:0.95rem;">
-          📊 Ver Diagnóstico en Pantalla →
-        </a>
-        <a href="menu.html" style="color:#64748b; font-size:0.82rem; text-decoration:none; padding:4px;">
-          Volver al Menú Principal
+        <a href="${urlDestino}" style="display:flex; justify-content:center; align-items:center; height:44px; background:#10b981; color:#000; text-decoration:none; border-radius:8px; font-weight:800; font-size:0.95rem; text-transform:uppercase;">
+          Volver al Menú de Pruebas →
         </a>
       </div>
     </div>
