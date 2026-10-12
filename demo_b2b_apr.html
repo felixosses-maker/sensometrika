@@ -155,7 +155,7 @@
         </header>
 
         <div class="watermark-banner">
-            🛡️ MODO DEMOSTRACIÓN CORPORATIVA — BATERÍA DE 1 PRUEBA POR MÓDULO
+            🛡️ ENTORNO AISLADO — MUESTRA DEMOSTRATIVA CORPORATIVA
         </div>
 
         <div id="boxMenuB2B" class="card-box">
@@ -171,7 +171,7 @@
                     <strong style="font-size: 0.82rem; display: block;">1. Reactímetro (Frenado)</strong>
                     <span style="font-size: 0.68rem; color: var(--text-muted);">Estándar: ≤ 390 ms</span>
                 </div>
-                <button class="btn-sim" onclick="ejecutarPrueba('reactimetro')">PROBAR →</button>
+                <button class="btn-sim" onclick="ejecutarDemo('reactimetro')">PROBAR →</button>
             </div>
 
             <div class="modulo-item">
@@ -179,7 +179,7 @@
                     <strong style="font-size: 0.82rem; display: block;">2. Palancas (Coordinación)</strong>
                     <span style="font-size: 0.68rem; color: var(--text-muted);">Estándar: ≥ 85% precisión</span>
                 </div>
-                <button class="btn-sim" onclick="ejecutarPrueba('palancas')">PROBAR →</button>
+                <button class="btn-sim" onclick="ejecutarDemo('palancas')">PROBAR →</button>
             </div>
 
             <div class="modulo-item">
@@ -187,7 +187,7 @@
                     <strong style="font-size: 0.82rem; display: block;">3. Punteo y Ritmo (Lahy)</strong>
                     <span style="font-size: 0.68rem; color: var(--text-muted);">Estándar: ≥ 78% efectividad</span>
                 </div>
-                <button class="btn-sim" onclick="ejecutarPrueba('punteo')">PROBAR →</button>
+                <button class="btn-sim" onclick="ejecutarDemo('punteo')">PROBAR →</button>
             </div>
 
             <div class="modulo-item">
@@ -195,7 +195,7 @@
                     <strong style="font-size: 0.82rem; display: block;">4. Tamizaje Auditivo Ocupacional</strong>
                     <span style="font-size: 0.68rem; color: var(--text-muted);">Tonal f critical ≤ 25 dB</span>
                 </div>
-                <button class="btn-sim" onclick="ejecutarPrueba('auditivo')">PROBAR →</button>
+                <button class="btn-sim" onclick="ejecutarDemo('auditivo')">PROBAR →</button>
             </div>
 
             <button onclick="generarInformeMuestra()" class="btn-green" style="margin-top: 8px;">
@@ -218,14 +218,14 @@
                 </div>
 
                 <div style="font-size: 0.72rem; color: #334155; display: grid; grid-template-columns: 1fr 1fr; gap: 6px; background: #f8fafc; padding: 8px; border-radius: 6px;">
-                    <div><strong>EVALUADO:</strong> <span>[EVALUACIÓN DEMOSTRATIVA]</span></div>
+                    <div><strong>EVALUADO:</strong> <span>MUESTRA DEMOSTRATIVA</span></div>
                     <div><strong>RUT:</strong> XX.XXX.XXX-X</div>
                     <div><strong>EMPRESA:</strong> <span id="lblInfEmpresa">EMPRESA CLIENTE</span></div>
                     <div><strong>DICTAMEN:</strong> <span style="color: #059669; font-weight: 800;">APTO (DEMO)</span></div>
                 </div>
 
                 <div style="font-size: 0.68rem; color: #64748b; border: 1px dashed #cbd5e1; padding: 8px; border-radius: 6px; text-align: center;">
-                    ⚠️ <em>Este documento es una muestra demostrativa sin validez legal. Los pases corporativos activan folios oficiales y QR inmutable.</em>
+                    ⚠️ <em>Certificado de Muestra Técnica. Sin emisión de folio ni QR inmutable hasta la activación de contrato B2B.</em>
                 </div>
             </div>
 
@@ -243,32 +243,16 @@
         document.addEventListener('DOMContentLoaded', () => {
             const urlParams = new URLSearchParams(window.location.search);
             const prospecto = urlParams.get('prospecto') || 'EMPRESA DEMO';
-
             document.getElementById('lblNombreProspecto').textContent = decodeURIComponent(prospecto);
         });
 
-        function ejecutarPrueba(modulo) {
-            // LIMPIEZA FORZADA DE REGISTROS PREVIOS AL MOMENTO DE PRESIONAR PROBAR
-            localStorage.removeItem('sensometrika_reactimetro');
-            localStorage.removeItem('sensometrika_palancas');
-            localStorage.removeItem('sensometrika_punteo');
-            localStorage.removeItem('sensometrika_audicion');
-            localStorage.removeItem('sensometrika_visual');
-
+        function ejecutarDemo(moduloKey) {
             const urlParams = new URLSearchParams(window.location.search);
             const token = urlParams.get('token') || '';
             const prospecto = urlParams.get('prospecto') || '';
 
-            const returnUrl = encodeURIComponent(`demo_b2b_apr.html?token=${token}&prospecto=${prospecto}`);
-
-            const rutas = {
-                'reactimetro': `reactimetro.html?demo=true&single=true&returnUrl=${returnUrl}`,
-                'palancas': `palancas.html?demo=true&single=true&returnUrl=${returnUrl}`,
-                'punteo': `punteo.html?demo=true&single=true&returnUrl=${returnUrl}`,
-                'auditivo': `audicion.html?demo=true&single=true&returnUrl=${returnUrl}`
-            };
-
-            window.location.href = rutas[modulo] || `reactimetro.html?demo=true&single=true&returnUrl=${returnUrl}`;
+            // Lanza al motor aislado demo_engine.html
+            window.location.href = `demo_engine.html?mod=${moduloKey}&token=${token}&prospecto=${prospecto}`;
         }
 
         function generarInformeMuestra() {

@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>SENSOMETRIKA | Simulador de Muestra B2B</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        :root {
+            --bg-principal: #040810;
+            --bg-card: #091120;
+            --border-card: #132238;
+            --accent-cyan: #00bfff;
+            --accent-green: #10b981;
+            --text-main: #f8fafc;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+
+        body {
+            background-color: var(--bg-principal);
+            color: var(--text-main);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            min-height: 100vh;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .container-demo { width: 100%; max-width: 480px; display: flex; flex-direction: column; gap: 14px; }
+
+        .card-box {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-card);
+            border-radius: 14px;
+            padding: 18px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+            text-align: center;
+        }
+
+        .canvas-container {
+            width: 100%;
+            height: 260px;
+            background: #020610;
+            border: 1px solid #1a2a42;
+            border-radius: 10px;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        canvas { width: 100%; height: 100%; display: block; }
+
+        .btn-action {
+            background: #0284c7;
+            color: #fff;
+            font-weight: 800;
+            padding: 14px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            text-transform: uppercase;
+            font-size: 0.9rem;
+            box-shadow: 0 4px 14px rgba(2, 132, 199, 0.4);
+        }
+
+        .btn-return {
+            background: #1e293b;
+            color: #94a3b8;
+            font-weight: 700;
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid #334155;
+            cursor: pointer;
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            text-decoration: none;
+            display: block;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container-demo">
+        <header style="text-align: center;">
+            <img src="sensometrica.jpg" alt="SENSOMETRIKA" style="width: 150px; height: auto; mix-blend-mode: lighten;">
+            <div id="txtSubtitulo" style="color: #00bfff; font-size: 0.75rem; font-weight: 800; text-transform: uppercase; margin-top: 4px;">
+                MUESTRA TÉCNICA
+            </div>
+        </header>
+
+        <div class="card-box">
+            <h2 id="txtTituloModulo" style="font-size: 1rem; font-weight: 800; color: #f8fafc;">EVALUACIÓN DEMO</h2>
+            
+            <div class="canvas-container">
+                <canvas id="canvasDemo" width="400" height="260"></canvas>
+            </div>
+
+            <div id="txtInstruccion" style="font-size: 0.82rem; color: #94a3b8;">
+                Presiona el botón para iniciar la simulación demostrativa.
+            </div>
+
+            <button id="btnEjecutar" class="btn-action">INICIAR DEMO</button>
+
+            <!-- CONTROLES BIMANUALES (SOLO PARA PALANCAS) -->
+            <div id="controlesPalancas" style="display: none; grid-template-columns: 1fr 1fr; gap: 8px;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 4px;">
+                    <button id="btnLeft" style="background:#1e293b; color:#fff; padding:10px; border-radius:6px; font-weight:bold;">◄</button>
+                    <button id="btnRight" style="background:#1e293b; color:#fff; padding:10px; border-radius:6px; font-weight:bold;">►</button>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 4px;">
+                    <button id="btnUp" style="background:#1e293b; color:#fff; padding:10px; border-radius:6px; font-weight:bold;">▲</button>
+                    <button id="btnDown" style="background:#1e293b; color:#fff; padding:10px; border-radius:6px; font-weight:bold;">▼</button>
+                </div>
+            </div>
+
+            <a id="btnVolverDemo" href="#" class="btn-return">← VOLVER A MUESTRA APR</a>
+        </div>
+    </div>
+
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const modulo = urlParams.get('mod') || 'reactimetro';
+        const token = urlParams.get('token') || '';
+        const prospecto = urlParams.get('prospecto') || '';
+
+        const returnUrl = `demo_b2b_apr.html?token=${token}&prospecto=${prospecto}`;
+        document.getElementById('btnVolverDemo').href = returnUrl;
+
+        const canvas = document.getElementById('canvasDemo');
+        const ctx = canvas.getContext('2d');
+        const btnEjecutar = document.getElementById('btnEjecutar');
+        const txtTitulo = document.getElementById('txtTituloModulo');
+        const txtInstruccion = document.getElementById('txtInstruccion');
+        const controlesPalancas = document.getElementById('controlesPalancas');
+
+        let juegoActivo = false;
+
+        // MOTOR RESTRINGIDO EXCLUSIVO PARA DEMO
+        if (modulo === 'reactimetro') {
+            txtTitulo.innerText = '1. REACTÍMETRO (TIEMPO DE FRENADO)';
+            let tiempoInicio = 0;
+            let estado = 'IDLE';
+
+            btnEjecutar.onclick = () => {
+                if (estado === 'IDLE') {
+                    estado = 'WAITING';
+                    btnEjecutar.innerText = 'ESPERE LUZ ROJA...';
+                    btnEjecutar.style.background = '#e5b324';
+                    txtInstruccion.innerText = 'Atención constante. No presiones antes de tiempo.';
+                    
+                    setTimeout(() => {
+                        estado = 'ACTIVE';
+                        tiempoInicio = performance.now();
+                        btnEjecutar.innerText = '¡FRENE AHORA!';
+                        btnEjecutar.style.background = '#ef4444';
+                        dibujarSemaforo('#ef4444');
+                    }, Math.floor(Math.random() * 2000) + 1500);
+
+                    dibujarSemaforo('#e5b324');
+                } else if (estado === 'ACTIVE') {
+                    const latencia = Math.round(performance.now() - tiempoInicio);
+                    estado = 'FINISHED';
+                    btnEjecutar.innerText = 'DEMO COMPLETADA';
+                    btnEjecutar.style.background = '#10b981';
+                    txtInstruccion.innerText = `Tiempo de Reacción Registrado: ${latencia} ms (Estándar APTO ≤ 390 ms)`;
+                    dibujarSemaforo('#10b981');
+
+                    setTimeout(() => { window.location.href = returnUrl; }, 1800);
+                } else if (estado === 'WAITING') {
+                    txtInstruccion.innerText = '⚠️ Anticipación detectada. Inténtalo de nuevo.';
+                    estado = 'IDLE';
+                    btnEjecutar.innerText = 'REINTENTAR DEMO';
+                    btnEjecutar.style.background = '#0284c7';
+                }
+            };
+
+            function dibujarSemaforo(color) {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.beginPath();
+                ctx.arc(canvas.width / 2, canvas.height / 2, 50, 0, Math.PI * 2);
+                ctx.fillStyle = color;
+                ctx.fill();
+                ctx.strokeStyle = '#334155';
+                ctx.lineWidth = 4;
+                ctx.stroke();
+            }
+
+            dibujarSemaforo('#334155');
+
+        } else if (modulo === 'palancas') {
+            txtTitulo.innerText = '2. PALANCAS (COORDINACIÓN BIMANUAL)';
+            controlesPalancas.style.display = 'grid';
+            
+            let posX = 40, posY = 130;
+            let contactos = 0;
+
+            btnEjecutar.onclick = () => {
+                juegoActivo = true;
+                btnEjecutar.style.display = 'none';
+                txtInstruccion.innerText = 'Usa las flechas para llevar la esfera hasta la meta verde.';
+                loopPalancas();
+            };
+
+            const mov = { left: false, right: false, up: false, down: false };
+            const bind = (id, k) => {
+                const el = document.getElementById(id);
+                el.onmousedown = el.ontouchstart = () => mov[k] = true;
+                el.onmouseup = el.ontouchend = () => mov[k] = false;
+            };
+            bind('btnLeft', 'left'); bind('btnRight', 'right');
+            bind('btnUp', 'up'); bind('btnDown', 'down');
+
+            function loopPalancas() {
+                if (!juegoActivo) return;
+                if (mov.left) posX -= 2; if (mov.right) posX += 2;
+                if (mov.up) posY -= 2; if (mov.down) posY += 2;
+
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                
+                // Carril
+                ctx.beginPath();
+                ctx.moveTo(40, 130); ctx.lineTo(180, 130); ctx.lineTo(180, 60); ctx.lineTo(340, 60); ctx.lineTo(340, 200);
+                ctx.lineWidth = 26; ctx.strokeStyle = '#0284c7'; ctx.stroke();
+
+                // Meta
+                ctx.beginPath(); ctx.arc(340, 200, 14, 0, Math.PI * 2); ctx.fillStyle = '#10b981'; ctx.fill();
+
+                // Esfera
+                ctx.beginPath(); ctx.arc(posX, posY, 8, 0, Math.PI * 2); ctx.fillStyle = '#e5b324'; ctx.fill();
+
+                if (Math.hypot(posX - 340, posY - 200) < 16) {
+                    juegoActivo = false;
+                    txtInstruccion.innerText = '¡Meta alcanzada! Precisión: 100% (APTO)';
+                    setTimeout(() => { window.location.href = returnUrl; }, 1500);
+                } else {
+                    requestAnimationFrame(loopPalancas);
+                }
+            }
+
+        } else if (modulo === 'punteo') {
+            txtTitulo.innerText = '3. PUNTEO Y RITMO VISO-MOTRIZ';
+            let esferaY = 0;
+
+            btnEjecutar.onclick = () => {
+                juegoActivo = true;
+                btnEjecutar.innerText = '¡PRESIONA AL CRUZAR LA ZONA!';
+                btnEjecutar.style.background = '#e5b324';
+                loopPunteo();
+            };
+
+            function loopPunteo() {
+                if (!juegoActivo) return;
+                esferaY += 3;
+                if (esferaY > canvas.height) esferaY = 0;
+
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                // Zona
+                ctx.fillStyle = 'rgba(229, 179, 36, 0.2)';
+                ctx.fillRect(20, 190, 360, 40);
+                ctx.strokeStyle = '#e5b324'; ctx.strokeRect(20, 190, 360, 40);
+
+                // Esfera
+                ctx.beginPath(); ctx.arc(200, esferaY, 12, 0, Math.PI * 2); ctx.fillStyle = '#38bdf8'; ctx.fill();
+
+                requestAnimationFrame(loopPunteo);
+            }
+
+            canvas.onclick = () => {
+                if (!juegoActivo) return;
+                juegoActivo = false;
+                const acierto = esferaY >= 180 && esferaY <= 230;
+                txtInstruccion.innerText = acierto ? '¡Impacto Rítmico Correcto! 100% Efectividad (APTO)' : 'Impacto fuera de rango.';
+                setTimeout(() => { window.location.href = returnUrl; }, 1500);
+            };
+
+        } else if (modulo === 'auditivo') {
+            txtTitulo.innerText = '4. TAMIZAJE AUDITIVO OCUPACIONAL';
+            btnEjecutar.onclick = () => {
+                btnEjecutar.innerText = 'EMITIENDO TONO 1000 Hz...';
+                btnEjecutar.style.background = '#8b5cf6';
+                
+                try {
+                    const ctxAudio = new (window.AudioContext || window.webkitAudioContext)();
+                    const osc = ctxAudio.createOscillator();
+                    osc.frequency.value = 1000;
+                    osc.connect(ctxAudio.destination);
+                    osc.start();
+                    setTimeout(() => { osc.stop(); }, 1000);
+                } catch(e){}
+
+                setTimeout(() => {
+                    btnEjecutar.innerText = 'AUDIOMETRÍA DEMO OK';
+                    btnEjecutar.style.background = '#10b981';
+                    txtInstruccion.innerText = 'Umbral Auditivo Detectado: 15 dB (Norma Ocupacional APTO)';
+                    setTimeout(() => { window.location.href = returnUrl; }, 1500);
+                }, 1200);
+            };
+        }
+    </script>
+</body>
+</html>
