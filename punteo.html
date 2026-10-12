@@ -339,9 +339,17 @@
         let bola = { x: 200, y: -20, r: 18, vy: 3.2 };
         const targetZone = { yMin: 200, yMax: 270 };
 
+        // --- FUNCIÓN CORREGIDA CON SOPORTE PARA returnUrl ---
         function ejecutarRetornoMenu() {
-            const menuDestino = esB2B ? 'menu_B2B.html' : 'menu_B2C.html';
-            window.location.href = `${menuDestino}?${urlParams.toString()}`;
+            const returnUrlParam = urlParams.get('returnUrl');
+            if (returnUrlParam) {
+                // Redirige dinámicamente al menú Demo de origen (e.g. demo_b2b_full.html o demo_b2b_apr.html)
+                window.location.href = decodeURIComponent(returnUrlParam);
+            } else {
+                // Fallback de producción para flujos regulares B2B o B2C
+                const menuDestino = esB2B ? 'menu_B2B.html' : 'menu_B2C.html';
+                window.location.href = `${menuDestino}?${urlParams.toString()}`;
+            }
         }
 
         function obtenerHistorialPunteoRut() {
@@ -546,7 +554,7 @@
                     "CALIBRACIÓN DEMO COMPLETADA",
                     `Aciertos: <b>${aciertos}</b><br>Pérdidas/Errores: <b>${errores}</b><br>Latencia Media: <b>${latenciaMediaVal} ms</b><br>Precisión Rítmica: <b>${precisionVal}%</b><br><br>Has finalizado el ensayo. Ya puedes rendir tu Simulación Oficial.`,
                     () => {
-                        actualizarEstadoUI();
+                        ejecutarRetornoMenu();
                     }
                 );
             } else if (modoActual === 'OFICIAL') {

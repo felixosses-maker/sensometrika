@@ -614,7 +614,7 @@
 
         let promLat = latenciasMs.length > 0 ? Math.round(latenciasMs.reduce((a,b)=>a+b,0)/latenciasMs.length) : 310;
 
-        // GUARDADO AISLADO POR RUT DE TRABAJADOR ACTIVO (SIN MARCAS GLOBALES)
+        // GUARDADO AISLADO POR RUT DE TRABAJADOR ACTIVO
         let historial = JSON.parse(localStorage.getItem(`sensometrika_historial_visual_${cleanRut}`)) || [];
         historial.push({
           agudeza: agudezaTexto,
@@ -632,13 +632,19 @@
       }
     }
 
+    // --- FUNCIÓN CORREGIDA CON SOPORTE PARA returnUrl ---
     function volverPortal() {
-      const planStorage = (localStorage.getItem('sensometrika_plan_contratado') || urlParams.get('plan') || 'PLUS').toUpperCase();
-      urlParams.set('plan', planStorage);
-      urlParams.set('mode', esB2B ? 'b2b' : 'b2c');
+      const returnUrlParam = urlParams.get('returnUrl');
+      if (returnUrlParam) {
+        window.location.href = decodeURIComponent(returnUrlParam);
+      } else {
+        const planStorage = (localStorage.getItem('sensometrika_plan_contratado') || urlParams.get('plan') || 'PLUS').toUpperCase();
+        urlParams.set('plan', planStorage);
+        urlParams.set('mode', esB2B ? 'b2b' : 'b2c');
 
-      const menuDestino = esB2B ? 'menu_B2B.html' : 'menu_B2C.html';
-      window.location.href = `${menuDestino}?${urlParams.toString()}`;
+        const menuDestino = esB2B ? 'menu_B2B.html' : 'menu_B2C.html';
+        window.location.href = `${menuDestino}?${urlParams.toString()}`;
+      }
     }
 
     function volverMenu() { volverPortal(); }

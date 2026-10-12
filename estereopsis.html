@@ -176,9 +176,15 @@
       construirMatrizVisual();
     });
 
+    // --- FUNCIÓN CORREGIDA PARA PRESERVAR Y LEER EL PARÁMETRO returnUrl ---
     function volverAlMenu() {
-      const menuDestino = esB2B ? 'menu_B2B.html' : 'menu_B2C.html';
-      window.location.href = `${menuDestino}?${urlParams.toString()}`;
+      const returnUrlParam = urlParams.get('returnUrl');
+      if (returnUrlParam) {
+        window.location.href = decodeURIComponent(returnUrlParam);
+      } else {
+        const menuDestino = esB2B ? 'menu_B2B.html' : 'menu_B2C.html';
+        window.location.href = `${menuDestino}?${urlParams.toString()}`;
+      }
     }
 
     function actualizarEstadoUI() {
@@ -346,7 +352,7 @@
 
       const aprobado = precisionFinal >= 80 && aprobadoLatencia;
 
-      // GUARDADO ISOLADO Y ESTRICTO POR RUT DE TRABAJADOR
+      // GUARDADO AISLADO POR RUT DE TRABAJADOR
       let historial = JSON.parse(localStorage.getItem(`sensometrika_historial_estereopsis_${cleanRut}`)) || [];
       historial.push({
         precision: precisionFinal,

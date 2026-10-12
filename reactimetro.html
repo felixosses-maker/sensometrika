@@ -377,9 +377,17 @@
         let modoActual = isDemoURL ? 'DEMO' : 'OFICIAL';
         let moduloReactimetro = null;
 
+        // --- FUNCIÓN CORREGIDA CON SOPORTE COMPLETO PARA returnUrl ---
         function ejecutarRetornoMenu() {
-            const menuDestino = esB2B ? 'menu_B2B.html' : 'menu_B2C.html';
-            window.location.href = `${menuDestino}?${urlParams.toString()}`;
+            const returnUrlParam = urlParams.get('returnUrl');
+            if (returnUrlParam) {
+                // Redirige dinámicamente al entorno Demo correspondiente (e.g. demo_b2b_full.html o demo_b2b_apr.html)
+                window.location.href = decodeURIComponent(returnUrlParam);
+            } else {
+                // Fallback de producción estándar para flujos regulares B2B o B2C
+                const menuDestino = esB2B ? 'menu_B2B.html' : 'menu_B2C.html';
+                window.location.href = `${menuDestino}?${urlParams.toString()}`;
+            }
         }
 
         btnVolverNav.addEventListener('click', ejecutarRetornoMenu);
@@ -484,7 +492,7 @@
                     "CALIBRACIÓN DEMO COMPLETADA",
                     `Promedio Neto: <b>${tiempoNetoCompensado} ms</b> (Compensado -${latenciaHardware} ms hardware)<br>Anticipaciones / Errores: <b>${res.anticipaciones}</b><br><br>Has completado el ensayo de 4 estímulos. Ya puedes rendir tu simulación oficial.`,
                     () => {
-                        actualizarEstadoPlanUI();
+                        ejecutarRetornoMenu();
                     }
                 );
             } else if (modoActual === 'OFICIAL') {
