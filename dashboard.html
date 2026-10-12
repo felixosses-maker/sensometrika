@@ -329,11 +329,11 @@
                         <input type="text" id="demoWhatsapp" placeholder="+569...">
                     </div>
                     <div class="form-group">
-                        <label for="demoTipo">Seleccionar Tipo de Demo</label>
+                        <label for="demoTipo">Seleccionar Tipo de Demo Comercial</label>
                         <select id="demoTipo">
-                            <option value="demo_b2c.html">Demo 1 • Hook Particular B2C (1 Módulo a Elección)</option>
-                            <option value="demo_b2b_apr.html" selected>Demo 2 • Experiencia APR & Faena (1 Prueba por Módulo)</option>
-                            <option value="demo_b2b_apr.html">Demo 3 • Alto Desempeño (Minería / Forestal Heavy)</option>
+                            <option value="b2c_demo">1. Demo B2C Particular (3 Módulos Básicos sin Informe)</option>
+                            <option value="b2b_link1">2. Demo B2B APR - Link 1 (Latencia + 5 Módulos + Informe Demo)</option>
+                            <option value="b2b_link2" selected>3. Demo B2B Alto Desempeño - Link 2 (Latencia + 8 Módulos + Informe Demo)</option>
                         </select>
                     </div>
                     <div class="form-group">
@@ -437,7 +437,7 @@
             const prospecto = document.getElementById('demoProspecto').value.trim();
             const correo = document.getElementById('demoCorreo').value.trim();
             const telefono = document.getElementById('demoWhatsapp').value.trim();
-            const archivoDemo = document.getElementById('demoTipo').value;
+            const tipoDemo = document.getElementById('demoTipo').value;
             const horas = parseInt(document.getElementById('demoVigencia').value);
 
             if(!prospecto) { alert('Ingrese el nombre del prospecto o empresa.'); return; }
@@ -449,8 +449,23 @@
             localStorage.setItem(`sensometrika_token_exp_${tokenUnico}`, expiracionMs);
             localStorage.setItem(`sensometrika_token_estado_${tokenUnico}`, 'activo');
 
-            const url = `${window.location.origin}/${archivoDemo}?token=${tokenUnico}&prospecto=${encodeURIComponent(prospecto)}`;
-            
+            let url = '';
+            let detalleHistorial = '';
+
+            // Enrutamiento dinámico según el tipo de demo seleccionado
+            if (tipoDemo === 'b2c_demo') {
+                url = `${window.location.origin}/demo_b2c.html?token=${tokenUnico}&prospecto=${encodeURIComponent(prospecto)}`;
+                detalleHistorial = `Demo B2C (3 Módulos Básicos - ${horas}h)`;
+            } else if (tipoDemo === 'b2b_link1') {
+                const returnUrl = encodeURIComponent(`demo_b2b_apr.html?token=${tokenUnico}&prospecto=${encodeURIComponent(prospecto)}`);
+                url = `${window.location.origin}/latencia.html?demo=true&single=true&returnUrl=${returnUrl}`;
+                detalleHistorial = `Demo B2B Link 1 (APR - 5 Módulos - ${horas}h)`;
+            } else if (tipoDemo === 'b2b_link2') {
+                const returnUrl = encodeURIComponent(`demo_b2b_full.html?token=${tokenUnico}&prospecto=${encodeURIComponent(prospecto)}`);
+                url = `${window.location.origin}/latencia.html?demo=true&single=true&returnUrl=${returnUrl}`;
+                detalleHistorial = `Demo B2B Link 2 (Alto Desempeño - 8 Módulos - ${horas}h)`;
+            }
+
             document.getElementById('inputLinkDemo').value = url;
             document.getElementById('boxLinkDemo').style.display = 'block';
 
@@ -468,7 +483,7 @@
             localStorage.setItem('sensometrika_total_demos', totalDemos);
             document.getElementById('contadorDemosEmitidas').textContent = totalDemos;
 
-            agregarFilaHistorial('DEMO', prospecto, `Demo Comercial (Vigencia: ${horas}h)`);
+            agregarFilaHistorial('DEMO', prospecto, detalleHistorial);
 
             if (canal === 'correo') {
                 if(!correo) {
@@ -537,7 +552,7 @@
                     fecha: '23/09/2026 - 12:40',
                     segmento: 'DEMO',
                     entidad: 'Forestal Arauco',
-                    detalle: 'Demo 1 Hook B2C (Token Activo)'
+                    detalle: 'Demo B2B Link 2 (Alto Desempeño)'
                 }
             ];
 
