@@ -311,7 +311,7 @@
     <header class="header-pericial">
       <div>
         <h1 class="brand-title">SENSOMETRIKA SpA</h1>
-        <span class="brand-sub">GABINETE SENSOTÉCNICO LABORAL • D.S. N° 170 MTT • ESTÁNDAR CORMA</span>
+        <span class="brand-sub">GABINETE SENSOTÉCNICO LABORAL • D.S. N° 170 MTT • ESTÁNDAR OCUPACIONAL</span>
       </div>
       <div id="qrCodeBox" class="qr-container"></div>
     </header>
@@ -517,7 +517,7 @@
 
     <!-- PIE LEGAL -->
     <div class="footer-legal">
-      ⚖️ <strong>ALCANCE INFORMATIVO Y CONTROL PREVENTIVO EN FAENA:</strong> El presente informe pericial B2B certifica la telemetría de rendimiento psicosensométrico y sensorial bajo el estándar D.S. N° 170-MTT y normas CORMA. Funciona como un insumo técnico de control preventivo para el Sistema de Gestión de Seguridad y Salud en el Trabajo (SGSST) de la empresa mandante (Ley N° 16.744 / Ley N° 20.123), no reemplazando la Prueba Médica de Aptitud de la Mutualidad ni la Licencia Municipal de Conducir.
+      ⚖️ <strong>ALCANCE INFORMATIVO Y CONTROL PREVENTIVO EN FAENA:</strong> El presente informe pericial B2B certifica la telemetría de rendimiento psicosensométrico y sensorial bajo normativas de Seguridad Industrial y Faena (D.S. N° 170-MTT). Funciona como un insumo técnico de control preventivo para el Sistema de Gestión de Seguridad y Salud en el Trabajo (SGSST) de la empresa mandante (Ley N° 16.744 / Ley N° 20.123), no reemplazando la Prueba Médica de Aptitud de la Mutualidad ni la Licencia Municipal de Conducir.
     </div>
 
     <div style="text-align: center; font-size: 0.58rem; color: #16a34a; font-weight: 800;">
@@ -525,7 +525,7 @@
       <span style="color: #64748b; font-weight: 600;">Hash de Inmutabilidad de Datos: SMK-B2B-SECURE</span>
     </div>
 
-    <button type="button" class="btn-retorno-portal" onclick="volverMenuB2B()">
+    <button type="button" id="btnVolverPortal" class="btn-retorno-portal" onclick="volverMenuB2B()">
       ← VOLVER AL PORTAL EMPRESA
     </button>
   </div>
@@ -540,7 +540,7 @@
 
     const rawRut = urlParams.get('rut') || datosUsuario.rut || '13.873.008-1';
     const cleanRut = rawRut.replace(/[^0-9Kk]/g, '');
-    const nombreUsuario = urlParams.get('nombre') || datosUsuario.nombre || 'JUAN ROJAS ROJAS';
+    const nombreUsuario = urlParams.get('trabajador') || urlParams.get('nombre') || datosUsuario.nombre || 'JUAN ROJAS ROJAS';
     const cargoUsuario = urlParams.get('cargo') || datosUsuario.cargo || 'OPERADOR HARVESTER';
     const empresaUsuario = urlParams.get('empresa') || datosUsuario.empresa || 'CONSTRUCTORA';
     const emailSupervision = urlParams.get('email') || datosUsuario.email || 'felix.osses@gmail.com';
@@ -551,7 +551,12 @@
     let correoEnviado = false;
 
     function volverMenuB2B() {
-      window.location.href = `menu_B2B.html?${urlParams.toString()}`;
+      const returnUrl = urlParams.get('returnUrl') ? decodeURIComponent(urlParams.get('returnUrl')) : null;
+      if (returnUrl) {
+        window.location.href = returnUrl;
+      } else {
+        window.location.href = `menu_B2B.html?${urlParams.toString()}`;
+      }
     }
 
     // BÚSQUEDA MULTICLAVE FLEXIBLE Y AISLADA POR RUT
@@ -618,6 +623,12 @@
     }
 
     document.addEventListener('DOMContentLoaded', () => {
+      // Ajustar texto de botón de retorno según origen demo
+      const returnUrl = urlParams.get('returnUrl');
+      if (returnUrl) {
+        document.getElementById('btnVolverPortal').textContent = '← VOLVER A LA BATERÍA DE PRUEBAS DEMO';
+      }
+
       // 1. Datos Ficha
       document.getElementById('lblNombre').textContent = decodeURIComponent(nombreUsuario).toUpperCase();
       document.getElementById('lblRut').textContent = rawRut;
@@ -667,7 +678,7 @@
       document.getElementById('lblFecha').textContent = `${ahora.toLocaleDateString('es-CL')} ${ahora.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })}`;
 
       // Latencia Hardware General
-      const latMs = parseInt(localStorage.getItem('sensometrika_latencia_ms') || '18');
+      const latMs = parseInt(localStorage.getItem('sensometrika_latencia_ms') || localStorage.getItem('sensometrika_latencia_hardware_ms') || '18');
       document.getElementById('lblLatenciaHardware').textContent = `${latMs} ms (Promedio)`;
 
       // 5. Procesar Módulos
@@ -851,7 +862,7 @@
         badgeVig.className = "badge-vig-ok";
         badgeVig.textContent = "VIGENCIA PERICIAL: 1 AÑO (HASTA OCT 2027)";
 
-        txtFund.textContent = "DICTAMEN APTO: El trabajador cumple satisfactoriamente con la totalidad de las pruebas psicosensométricas exigidas por el D.S. N° 170 del MTT y Estándar de Operaciones Faena CORMA.";
+        txtFund.textContent = "DICTAMEN APTO: El trabajador cumple satisfactoriamente con la totalidad de las pruebas psicosensométricas exigidas por el D.S. N° 170 del MTT y Estándar de Operaciones Faenas Mineras e Industriales.";
       } else if (modulosReprobados > 0) {
         boxDictamen.className = "box-dictamen-general dictamen-reprobado";
         boxDictamen.innerHTML = "✖ DICTAMEN: NO APTO PARA OPERACIÓN DE MAQUINARIA PESADA (D.S. N° 170) – REQUIERE REEVALUACIÓN";
