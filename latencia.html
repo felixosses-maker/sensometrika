@@ -81,14 +81,16 @@
 
     .btn-continuar {
       background: var(--accent-green);
-      color: #fff;
+      color: #000;
       border: none;
       border-radius: 10px;
       padding: 14px;
       font-size: 0.9rem;
-      font-weight: 800;
+      font-weight: 900;
       cursor: pointer;
       display: none;
+      text-transform: uppercase;
+      box-shadow: 0 4px 14px rgba(16, 185, 129, 0.4);
     }
   </style>
 </head>
@@ -104,7 +106,7 @@
     <div class="latencia-card">
       <h2 class="titulo-latencia">⚙️ CALIBRACIÓN DE HARDWARE (5 TOQUES)</h2>
       <p class="desc-latencia">
-        Presiona la zona central 5 veces. Se promediarán los toques 2, 3 y 4 para descontar la latencia propia de tu pantalla.
+        Presiona la zona central 5 veces. Se promediarán los toques 2, 3 y 4 para descontar la latencia propia de tu pantalla o digitalizador.
       </p>
 
       <div id="tapZone" class="tap-zone" onclick="registrarToque()">
@@ -127,6 +129,11 @@
   </div>
 
   <script>
+    // DETECCIÓN DINÁMICA DE PARÁMETROS URL Y NAVEGACIÓN
+    const urlParamsLatencia = new URLSearchParams(window.location.search);
+    const esModoDemoLatencia = urlParamsLatencia.get('demo') === 'true' || urlParamsLatencia.get('single') === 'true';
+    const returnUrlLatencia = urlParamsLatencia.get('returnUrl') ? decodeURIComponent(urlParamsLatencia.get('returnUrl')) : null;
+
     let muestras = [];
     let toqueActual = 0;
     let latenciaFinalPromedio = 0;
@@ -166,11 +173,13 @@
     }
 
     function guardarYAvanzar() {
+      // Guardar valor calibrado en el almacenamiento local
       localStorage.setItem('sensometrika_latencia_hardware_ms', latenciaFinalPromedio.toString());
       localStorage.setItem('sensometrika_terminal_calibrado', 'true');
       
-      // Redirige directamente al menú principal de evaluaciones
-      window.location.href = 'menu_B2C.html';
+      // Retorno dinámico inteligente según el contexto de origen
+      const destinoFinal = returnUrlLatencia || (esModoDemoLatencia ? 'demo_b2b_apr.html' : 'menu_B2C.html');
+      window.location.href = destinoFinal;
     }
 
     window.addEventListener('keydown', (e) => {
