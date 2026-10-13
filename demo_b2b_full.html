@@ -191,7 +191,8 @@
                 <a id="btnMod8" href="fatiga.html?demo=true&returnUrl=demo_b2b_full.html" class="btn-prob">PROBAR →</a>
             </div>
 
-            <a href="informe_b2b.html?returnUrl=demo_b2b_full.html" class="btn-report mt-2">
+            <!-- Botón ajustado para direccionar al informe oscuro informe_demo.html -->
+            <a id="btnGenerarInforme" href="informe_demo.html?returnUrl=demo_b2b_full.html" class="btn-report mt-2">
                 📄 GENERAR INFORME DEMOSTRATIVO DE MUESTRA →
             </a>
         </div>
@@ -208,6 +209,16 @@
         const cleanRut = rutEvaluado.replace(/[^0-9Kk]/g, '');
 
         document.addEventListener('DOMContentLoaded', () => {
+            // Actualizar dinámicamente la URL del botón para conservar todos los parámetros actuales
+            const btnReport = document.getElementById('btnGenerarInforme');
+            if (btnReport) {
+                const paramsAcc = new URLSearchParams(window.location.search);
+                if (!paramsAcc.has('returnUrl')) {
+                    paramsAcc.set('returnUrl', 'demo_b2b_full.html');
+                }
+                btnReport.href = `informe_demo.html?${paramsAcc.toString()}`;
+            }
+
             // 1. Verificar Latencia Hardware
             const latenciaSaved = localStorage.getItem('sensometrika_latencia_ms');
             if (latenciaSaved) {
@@ -243,7 +254,7 @@
                         btn.textContent = '✓ COMPLETADO';
                         btn.classList.add('btn-completed');
                         btn.removeAttribute('href');
-                        btn.style.pointerEvents = 'none'; // Desactiva clics por completo
+                        btn.style.pointerEvents = 'none';
                     }
                 }
             });
