@@ -3,261 +3,215 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SENSOMETRIKA | Demo Interactivo Conductores</title>
+    <title>SENSOMETRIKA | Batería Ocupacional Demo</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         :root {
-            --bg-principal: #040810;
-            --bg-card: #091120;
-            --border-card: #132238;
-            --accent-cyan: #00bfff;
-            --accent-cyan-glow: rgba(0, 191, 255, 0.4);
+            --bg-color: #060b13;
+            --card-bg: #0b1320;
+            --card-border: #1a2638;
+            --accent-cyan: #38bdf8;
             --accent-green: #10b981;
-            --accent-orange: #f59e0b;
-            --text-main: #f8fafc;
+            --accent-amber: #f59e0b;
+            --text-main: #f1f5f9;
             --text-muted: #94a3b8;
         }
 
-        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
-
         body {
-            background-color: var(--bg-principal);
+            background-color: var(--bg-color);
             color: var(--text-main);
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            min-height: 100vh;
-            padding: 16px;
             display: flex;
-            flex-direction: column;
-            align-items: center;
             justify-content: center;
+            min-height: 100vh;
+            padding: 20px 10px;
         }
 
-        .main-container {
+        .container-menu {
             width: 100%;
-            max-width: 440px;
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
-        }
-
-        .brand-header {
-            text-align: center;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 6px;
-        }
-
-        .brand-logo-img {
-            width: 180px;
-            height: auto;
-            mix-blend-mode: lighten;
-            filter: drop-shadow(0 0 12px var(--accent-cyan-glow));
-        }
-
-        .card-box {
-            background-color: var(--bg-card);
-            border: 1px solid var(--border-card);
-            border-radius: 16px;
-            padding: 20px;
+            max-width: 480px;
             display: flex;
             flex-direction: column;
             gap: 14px;
-            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.7);
         }
 
-        .card-title {
-            font-size: 0.82rem;
-            font-weight: 800;
-            color: var(--accent-cyan);
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            border-bottom: 1px solid var(--border-card);
-            padding-bottom: 8px;
-            text-align: center;
-        }
-
-        .modulos-grid {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 10px;
-        }
-
-        .modulo-btn {
-            background: #0d182e;
-            border: 1px solid #1e2d4a;
-            border-radius: 10px;
-            padding: 14px;
+        .card-module {
+            background-color: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            padding: 14px 16px;
             display: flex;
-            align-items: center;
             justify-content: space-between;
-            color: #fff;
-            font-weight: 700;
-            font-size: 0.85rem;
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-
-        .modulo-btn:hover {
-            border-color: var(--accent-cyan);
-            background: #12213f;
-            transform: translateY(-2px);
-        }
-
-        .modulo-btn span.badge-demo {
-            font-size: 0.65rem;
-            background: rgba(0, 191, 255, 0.15);
-            color: var(--accent-cyan);
-            padding: 3px 8px;
-            border-radius: 4px;
-            border: 1px solid var(--accent-cyan);
+            align-items: center;
         }
 
         .btn-action {
-            display: block;
-            width: 100%;
-            background: #0284c7;
+            background-color: #0284c7;
             color: #ffffff;
+            font-weight: 700;
+            font-size: 0.82rem;
+            padding: 8px 16px;
+            border-radius: 8px;
+            text-transform: uppercase;
+            transition: all 0.2s;
+        }
+
+        .btn-completed {
+            background-color: rgba(16, 185, 129, 0.15) !important;
+            border: 1px solid #10b981 !important;
+            color: #10b981 !important;
+            font-weight: 800 !important;
+            cursor: default;
+        }
+
+        .btn-report {
+            background-color: #10b981;
+            color: #ffffff;
+            font-weight: 800;
             padding: 14px;
             border-radius: 10px;
-            font-weight: 800;
+            text-align: center;
+            width: 100%;
             text-transform: uppercase;
-            text-decoration: none;
-            text-align: center;
-            font-size: 0.88rem;
-            box-shadow: 0 4px 14px rgba(2, 132, 199, 0.4);
-            cursor: pointer;
-            border: none;
-        }
-
-        .btn-green {
-            background: var(--accent-green) !important;
-            color: #000 !important;
-            box-shadow: 0 4px 14px rgba(16, 185, 129, 0.4) !important;
-        }
-
-        .box-bloqueo {
-            display: none;
-            flex-direction: column;
-            align-items: center;
-            text-align: center;
-            gap: 12px;
-            background: rgba(239, 68, 68, 0.08);
-            border: 1px solid rgba(239, 68, 68, 0.3);
-            border-radius: 14px;
-            padding: 20px;
+            box-shadow: 0 4px 14px rgba(16, 185, 129, 0.4);
         }
     </style>
 </head>
 <body>
 
-    <div class="main-container">
-        <header class="brand-header">
-            <img src="sensometrica.jpg" alt="SENSOMETRIKA" class="brand-logo-img">
-            <span style="color: var(--accent-cyan); font-size: 0.72rem; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase;">
-                DEMO DE DEMOSTRACIÓN D.S. N° 170 MTT
-            </span>
+    <div class="container-menu">
+        <header class="text-center py-2">
+            <img src="sensometrica.jpg" alt="SENSOMETRIKA" class="w-44 mx-auto mb-2 rounded border border-slate-700">
+            <h1 class="text-xs font-bold text-sky-400 tracking-widest uppercase">Batería Completa de Evaluación Ocupacional Demo</h1>
+            <p class="text-xs text-slate-400 mt-1">PROSPECTO / EMPRESA: <strong id="lblEmpresa" class="text-white">SOCADEP</strong></p>
         </header>
 
-        <!-- PANTALLA DE ACCESO QUEMADO / EXPIRADO -->
-        <div id="boxTokenQuemado" class="box-bloqueo">
-            <div style="font-size: 2.2rem;">🔒</div>
-            <h3 style="color: #ef4444; font-size: 1.05rem; font-weight: 900;">PASE DEMO UTILIZADO</h3>
-            <p style="font-size: 0.80rem; color: var(--text-muted); line-height: 1.4;">
-                Este enlace de prueba de 1 solo uso ya ha sido completado en este dispositivo.
-            </p>
-            <a href="index.html" class="btn-action btn-green" style="margin-top: 8px;">
-                🚀 OBTENER BATERÍA COMPLETA ($4.990)
-            </a>
-        </div>
-
-        <!-- CONTENIDO PRINCIPAL DEMO B2C -->
-        <div id="boxMainDemo" class="card-box">
-            <div class="card-title">🎯 SELECCIONA 1 MÓDULO A PROBAR</div>
-            <p style="font-size: 0.78rem; color: var(--text-muted); text-align: center; line-height: 1.4;">
-                Tienes <strong style="color: var(--accent-cyan);">1 prueba de ensayo</strong> de cortesía. Selecciona el test psicotécnico que deseas evaluar:
-            </p>
-
-            <div class="modulos-grid">
-                <button class="modulo-btn" onclick="iniciarPruebaDemo('reactimetro')">
-                    <span>⚡ Reactímetro (Frenado)</span>
-                    <span class="badge-demo">PROBAR AHORA</span>
-                </button>
-                <button class="modulo-btn" onclick="iniciarPruebaDemo('palancas')">
-                    <span>🕹️ Palancas (Coordinación)</span>
-                    <span class="badge-demo">PROBAR AHORA</span>
-                </button>
-                <button class="modulo-btn" onclick="iniciarPruebaDemo('punteo')">
-                    <span>🎯 Punteo & Ritmo (Lahy)</span>
-                    <span class="badge-demo">PROBAR AHORA</span>
-                </button>
-                <button class="modulo-btn" onclick="iniciarPruebaDemo('auditivo')">
-                    <span>🎧 Tamizaje Auditivo D.S. 170</span>
-                    <span class="badge-demo">PROBAR AHORA</span>
-                </button>
-                <button class="modulo-btn" onclick="iniciarPruebaDemo('estereopsis')">
-                    <span>👁️ Visión y Profundidad</span>
-                    <span class="badge-demo">PROBAR AHORA</span>
-                </button>
+        <!-- Módulo 0: Latencia -->
+        <div class="card-module">
+            <div>
+                <h3 class="text-sm font-bold text-white">0. Calibración Latencia Hardware</h3>
+                <p class="text-xs text-slate-400">Ajuste pericial pantalla/touch</p>
             </div>
+            <a id="btnMod0" href="latencia.html?returnUrl=demo_b2c.html" class="btn-action">CALIBRAR →</a>
         </div>
 
-        <!-- RESULTADO PARCIAL Y GANCHO B2C -->
-        <div id="boxResultadoParcial" class="card-box" style="display: none; text-align: center;">
-            <div style="font-size: 2.2rem;">📊</div>
-            <h3 style="color: var(--accent-green); font-size: 1.1rem; font-weight: 900;">¡DEMOSTRACIÓN COMPLETADA!</h3>
-            <p style="font-size: 0.82rem; color: var(--text-main); line-height: 1.4;">
-                Tu desempeño en el módulo de muestra fue registrado con exito.
-            </p>
-            <div style="background: #040810; border: 1px solid var(--border-card); padding: 14px; border-radius: 10px; margin: 10px 0;">
-                <span style="font-size: 0.70rem; color: var(--text-muted); text-transform: uppercase; display: block;">Métrica de Muestra</span>
-                <strong id="lblResultadoMuestra" style="font-size: 1.2rem; color: var(--accent-cyan);">--</strong>
+        <!-- Módulo 1: Reactímetro -->
+        <div class="card-module">
+            <div>
+                <h3 class="text-sm font-bold text-white">1. Reactímetro (Tiempo Frenado)</h3>
+                <p class="text-xs text-slate-400">D.S. 170: ≤ 390 ms</p>
             </div>
-            <p style="font-size: 0.75rem; color: var(--text-muted); line-height: 1.4;">
-                Desbloquea tus 3 o 5 evaluaciones completas con informe psicomotor oficial y curva de aprendizaje.
-            </p>
-            <a href="index.html" class="btn-action btn-green">
-                🚀 COMPRAR PASE COMPLETO ($4.990)
-            </a>
+            <a id="btnMod1" href="reactimetro.html?demo=true&returnUrl=demo_b2c.html" class="btn-action">PROBAR →</a>
         </div>
+
+        <!-- Módulo 2: Palancas -->
+        <div class="card-module">
+            <div>
+                <h3 class="text-sm font-bold text-white">2. Palancas (Coordinación Bimanual)</h3>
+                <p class="text-xs text-slate-400">Precisión: ≥ 85%</p>
+            </div>
+            <a id="btnMod2" href="palancas.html?demo=true&returnUrl=demo_b2c.html" class="btn-action">PROBAR →</a>
+        </div>
+
+        <!-- Módulo 3: Punteo -->
+        <div class="card-module">
+            <div>
+                <h3 class="text-sm font-bold text-white">3. Punteo y Ritmo Viso-Motriz</h3>
+                <p class="text-xs text-slate-400">Efectividad: ≥ 78%</p>
+            </div>
+            <a id="btnMod3" href="punteo.html?demo=true&returnUrl=demo_b2c.html" class="btn-action">PROBAR →</a>
+        </div>
+
+        <!-- Módulo 4: Audición -->
+        <div class="card-module">
+            <div>
+                <h3 class="text-sm font-bold text-white">4. Tamizaje Auditivo Ocupacional</h3>
+                <p class="text-xs text-slate-400">Frecuencias críticas: ≤ 25 dB</p>
+            </div>
+            <a id="btnMod4" href="audicion.html?demo=true&returnUrl=demo_b2c.html" class="btn-action">PROBAR →</a>
+        </div>
+
+        <!-- Módulo 5: Visual -->
+        <div class="card-module">
+            <div>
+                <h3 class="text-sm font-bold text-white">5. Tamizaje Visual e Ishihara</h3>
+                <p class="text-xs text-slate-400">Agudeza + Visión Cromática</p>
+            </div>
+            <a id="btnMod5" href="visual.html?demo=true&returnUrl=demo_b2c.html" class="btn-action">PROBAR →</a>
+        </div>
+
+        <!-- Módulo 6: Anticipación -->
+        <div class="card-module">
+            <div>
+                <h3 class="text-sm font-bold text-white">6. Anticipación / Tiempo Estimado</h3>
+                <p class="text-xs text-slate-400">Desviación: ≤ 0.35 s</p>
+            </div>
+            <a id="btnMod6" href="anticipacion.html?demo=true&returnUrl=demo_b2c.html" class="btn-action">PROBAR →</a>
+        </div>
+
+        <!-- Módulo 7: Estereopsis -->
+        <div class="card-module">
+            <div>
+                <h3 class="text-sm font-bold text-white">7. Estereopsis / Profundidad 3D</h3>
+                <p class="text-xs text-slate-400">Percepción tridimensional</p>
+            </div>
+            <a id="btnMod7" href="estereopsis.html?demo=true&returnUrl=demo_b2c.html" class="btn-action">PROBAR →</a>
+        </div>
+
+        <!-- Módulo 8: Fatiga -->
+        <div class="card-module">
+            <div>
+                <h3 class="text-sm font-bold text-white">8. Test Somnolencia y Fatiga (PVT)</h3>
+                <p class="text-xs text-slate-400">Escala Karolinska / Stanford</p>
+            </div>
+            <a id="btnMod8" href="fatiga.html?demo=true&returnUrl=demo_b2c.html" class="btn-action">PROBAR →</a>
+        </div>
+
+        <a href="informe_demo.html" class="btn-report block mt-2">
+            📄 GENERAR INFORME DEMOSTRATIVO DE MUESTRA →
+        </a>
     </div>
 
     <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        let datosUsuario = {};
+        try {
+            datosUsuario = JSON.parse(localStorage.getItem('sensometrika_datos_usuario')) || {};
+        } catch(e){}
+
+        const rutEvaluado = urlParams.get('rut') || datosUsuario.rut || 'GENERICO';
+        const cleanRut = rutEvaluado.replace(/[^0-9Kk]/g, '');
+
         document.addEventListener('DOMContentLoaded', () => {
-            const urlParams = new URLSearchParams(window.location.search);
-            const token = urlParams.get('token');
+            // 1. Verificar Latencia
+            const latenciaSaved = localStorage.getItem('sensometrika_latencia_ms');
+            if (latenciaSaved) {
+                const btn0 = document.getElementById('btnMod0');
+                btn0.textContent = `✓ ${latenciaSaved} MS`;
+                btn0.classList.add('btn-completed');
+            }
 
-            // CONTROL DEL TOKEN EFÍMERO (BURNER TOKEN)
-            if (token) {
-                const tokenEstado = localStorage.getItem('sensometrika_token_quemado_' + token);
-                if (tokenEstado === 'true') {
-                    document.getElementById('boxMainDemo').style.display = 'none';
-                    document.getElementById('boxTokenQuemado').style.display = 'flex';
-                    return;
+            // 2. Verificar Módulos Rendidos
+            const modulos = [
+                { id: 'btnMod1', key: `sensometrika_historial_reactimetro_${cleanRut}` },
+                { id: 'btnMod2', key: `sensometrika_historial_palancas_${cleanRut}` },
+                { id: 'btnMod3', key: `sensometrika_historial_punteo_${cleanRut}` },
+                { id: 'btnMod4', key: `sensometrika_historial_audicion_${cleanRut}` },
+                { id: 'btnMod5', key: `sensometrika_historial_visual_${cleanRut}` },
+                { id: 'btnMod6', key: `sensometrika_historial_anticipacion_${cleanRut}` },
+                { id: 'btnMod7', key: `sensometrika_historial_estereopsis_${cleanRut}` },
+                { id: 'btnMod8', key: `sensometrika_historial_fatiga_${cleanRut}` },
+            ];
+
+            modulos.forEach(m => {
+                const historial = JSON.parse(localStorage.getItem(m.key)) || [];
+                if (historial.length > 0) {
+                    const btn = document.getElementById(m.id);
+                    btn.textContent = '✓ COMPLETADO';
+                    btn.classList.add('btn-completed');
                 }
-            }
+            });
         });
-
-        function iniciarPruebaDemo(modulo) {
-            const urlParams = new URLSearchParams(window.location.search);
-            const token = urlParams.get('token');
-
-            // "QUEMAR" EL TOKEN INMEDIATAMENTE AL INICIAR LA PRUEBA
-            if (token) {
-                localStorage.setItem('sensometrika_token_quemado_' + token, 'true');
-            }
-
-            // Mapeo hacia la prueba correspondiente en modo demo reducido
-            const rutasModulo = {
-                'reactimetro': 'reactimetro.html?demo=true&single=true',
-                'palancas': 'palancas.html?demo=true&single=true',
-                'punteo': 'punteo.html?demo=true&single=true',
-                'auditivo': 'audicion.html?demo=true&single=true',
-                'estereopsis': 'estereopsis.html?demo=true&single=true'
-            };
-
-            window.location.href = rutasModulo[modulo] || 'reactimetro.html?demo=true&single=true';
-        }
     </script>
 </body>
 </html>
