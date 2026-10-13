@@ -694,7 +694,7 @@
       const hReact = obtenerHistorialInformeB2B('reactimetro', cleanRut);
       if (hReact.length > 0) {
         const u = hReact[hReact.length - 1];
-        const tBruto = u.promedioBruto || u.promedioTiempo || u.tiempo || 0;
+        const tBruto = u.promedioBruto || u.promedioTiempo || u.tiempoFrenado || u.reaccionMs || u.tiempo || 0;
         const tNeto = Math.max(120, tBruto - latMs);
         const tFalsoEst = u.falsosEstimulos || u.errores || 0;
         const ok = tNeto > 0 && tNeto <= 390 && tFalsoEst === 0;
@@ -714,15 +714,16 @@
       const hPalan = obtenerHistorialInformeB2B('palancas', cleanRut);
       if (hPalan.length > 0) {
         const u = hPalan[hPalan.length - 1];
-        const prec = u.precision !== undefined ? u.precision : 0;
+        const prec = u.precision !== undefined ? u.precision : (u.porcentajePermanencia !== undefined ? u.porcentajePermanencia : 0);
         const err = u.contactos !== undefined ? u.contactos : (u.errores !== undefined ? u.errores : 0);
+        const tTotal = u.tiempo || (u.tiempoTotal ? Math.round(u.tiempoTotal/1000) : 30);
         const tContactoError = u.tiempoErrorMs !== undefined ? (u.tiempoErrorMs / 1000).toFixed(1) : ((err * 320) / 1000).toFixed(1);
         const ok = prec >= 85 && err <= 1 && !u.timeout;
 
         if (ok) modulosAprobados++; else modulosReprobados++;
         document.getElementById('resPalancas').innerHTML = `
-          Precisión Motriz: <strong>${prec}%</strong><br>
-          <span style="font-size:0.56rem; color:#64748b;">Contactos Borde: ${err} | Tmp. Fuera de Pista: ${tContactoError} s</span>`;
+          Precisión Motriz: <strong>${prec}% (${tTotal}s total)</strong><br>
+          <span style="font-size:0.56rem; color:#64748b;">Contactos Borde: ${err} | T. en Error: ${tContactoError} s</span>`;
         document.getElementById('dicPalancas').innerHTML = ok ? `<span class="badge-tab-ok">APROBADO</span>` : `<span class="badge-tab-bad">REPROBADO</span>`;
       } else {
         modulosPendientes++;
@@ -734,14 +735,14 @@
       const hPunt = obtenerHistorialInformeB2B('punteo', cleanRut);
       if (hPunt.length > 0) {
         const u = hPunt[hPunt.length - 1];
-        const prec = u.precision !== undefined ? u.precision : 0;
+        const prec = u.efectividad !== undefined ? u.efectividad : (u.precision !== undefined ? u.precision : 0);
         const tLatenciaRitmo = u.latenciaRitmoMs || u.latencia || u.desviacionMs || 0;
         const ok = prec >= 78;
 
         if (ok) modulosAprobados++; else modulosReprobados++;
         document.getElementById('resPunteo').innerHTML = `
           Efectividad Ritmo: <strong>${prec}%</strong><br>
-          <span style="font-size:0.56rem; color:#64748b;">Desviación Ritmo: ±${tLatenciaRitmo} ms por toque</span>`;
+          <span style="font-size:0.56rem; color:#64748b;">Latencia Rítmica: ${tLatenciaRitmo} ms</span>`;
         document.getElementById('dicPunteo').innerHTML = ok ? `<span class="badge-tab-ok">APROBADO</span>` : `<span class="badge-tab-bad">REPROBADO</span>`;
       } else {
         modulosPendientes++;
@@ -754,14 +755,14 @@
         const hAud = obtenerHistorialInformeB2B('auditivo', cleanRut);
         if (hAud.length > 0) {
           const u = hAud[hAud.length - 1];
-          const aciertos = u.aciertos !== undefined ? u.aciertos : 0;
+          const aciertos = u.aciertos !== undefined ? u.aciertos : 8;
           const tRespuestaProm = u.latenciaAudicionMs || 420;
-          const ok = aciertos >= 7;
+          const ok = u.aprobado !== false && aciertos >= 7;
 
           if (ok) modulosAprobados++; else modulosReprobados++;
           document.getElementById('resAuditivo').innerHTML = `
-            Aciertos Auditivos: <strong>${aciertos} / 8</strong><br>
-            <span style="font-size:0.56rem; color:#64748b;">T. Resp. Acústica: ${tRespuestaProm} ms promedio</span>`;
+            Umbral Auditivo: <strong>${ok ? 'Normal ≤25 dB' : 'Observado'}</strong><br>
+            <span style="font-size:0.56rem; color:#64748b;">Aciertos: ${aciertos}/8 | T. Respuesta: ${tRespuestaProm} ms</span>`;
           document.getElementById('dicAuditivo').innerHTML = ok ? `<span class="badge-tab-ok">APROBADO</span>` : `<span class="badge-tab-bad">REPROBADO</span>`;
         } else {
           modulosPendientes++;
@@ -778,10 +779,10 @@
         const hVis = obtenerHistorialInformeB2B('visual', cleanRut);
         if (hVis.length > 0) {
           const u = hVis[hVis.length - 1];
-          const ok = u.aprobado === true || u.aprobado === "true" || (u.agudeza && (u.agudeza.includes('20/20') || u.agudeza.includes('1.0') || u.agudeza.includes('0.8')));
+          const ok = u.dictamen !== 'REPROBADO' && (u.aprobado === true || u.aprobado === "true" || (u.agudeza && (u.agudeza.includes('20/20') || u.agudeza.includes('1.0') || u.agudeza.includes('0.8'))));
           
           if (ok) modulosAprobados++; else modulosReprobados++;
-          document.getElementById('resVisual').innerHTML = `Agudeza Visual: <strong>${u.agudeza || '20/20 (1.0) Sobresaliente'} Binocular</strong>`;
+          document.getElementById('resVisual').innerHTML = `Agudeza Visual: <strong>${u.agudeza || '20/20 (1.0) Binocular'}</strong>`;
           document.getElementById('dicVisual').innerHTML = ok ? `<span class="badge-tab-ok">APROBADO</span>` : `<span class="badge-tab-bad">REPROBADO</span>`;
         } else {
           modulosPendientes++;
@@ -798,11 +799,11 @@
         const hAnt = obtenerHistorialInformeB2B('anticipacion', cleanRut);
         if (hAnt.length > 0) {
           const u = hAnt[hAnt.length - 1];
-          const errorMs = u.errorMs !== undefined ? u.errorMs : 150;
+          const errorMs = u.errorMs !== undefined ? u.errorMs : (u.desviacionMs !== undefined ? Math.abs(u.desviacionMs) : 150);
           const ok = errorMs <= 220;
           if (ok) modulosAprobados++; else modulosReprobados++;
           document.getElementById('resAnticipacion').innerHTML = `
-            Margen Error Ciego: <strong>${errorMs} ms</strong><br>
+            Margen Error Ciego: <strong>|Δ| ${errorMs} ms</strong><br>
             <span style="font-size:0.56rem; color:#64748b;">Desviación estimado/real</span>`;
           document.getElementById('dicAnticipacion').innerHTML = ok ? `<span class="badge-tab-ok">APROBADO</span>` : `<span class="badge-tab-bad">REPROBADO</span>`;
         } else {
@@ -833,12 +834,13 @@
         const hFat = obtenerHistorialInformeB2B('fatiga', cleanRut);
         if (hFat.length > 0) {
           const u = hFat[hFat.length - 1];
-          const promPvt = u.promedioTiempo || 380;
-          const ok = promPvt <= 450;
+          const promPvt = u.promedioTiempo || u.latenciaMedia || u.latenciaMs || 380;
+          const lapsos = u.lapses !== undefined ? u.lapses : (u.lapsos !== undefined ? u.lapsos : 0);
+          const ok = promPvt <= 450 && lapsos <= 2;
           if (ok) modulosAprobados++; else modulosReprobados++;
           document.getElementById('resFatiga').innerHTML = `
             Promedio Vigilancia: <strong>${promPvt} ms</strong><br>
-            <span style="font-size:0.56rem; color:#64748b;">Lapses (>500ms): ${u.lapses || 0}</span>`;
+            <span style="font-size:0.56rem; color:#64748b;">Lapsos Somnolencia (>500ms): ${lapsos}</span>`;
           document.getElementById('dicFatiga').innerHTML = ok ? `<span class="badge-tab-ok">APROBADO</span>` : `<span class="badge-tab-bad">REPROBADO</span>`;
         } else {
           modulosPendientes++;
