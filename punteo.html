@@ -322,7 +322,7 @@
         const cleanRut = rutEvaluado.replace(/[^0-9Kk]/g, '');
 
         let isDemoURL = urlParams.get('demo') === 'true' || urlParams.get('fase') === 'demo';
-        let modoActual = 'DEMO'; // Inicialización por defecto en DEMO
+        let modoActual = 'DEMO';
 
         let evaluacionActiva = false;
         let aciertos = 0;
@@ -339,14 +339,11 @@
         let bola = { x: 200, y: -20, r: 18, vy: 3.2 };
         const targetZone = { yMin: 200, yMax: 270 };
 
-        // --- FUNCIÓN CORREGIDA CON SOPORTE PARA returnUrl ---
         function ejecutarRetornoMenu() {
             const returnUrlParam = urlParams.get('returnUrl');
             if (returnUrlParam) {
-                // Redirige dinámicamente al menú Demo de origen (e.g. demo_b2b_full.html o demo_b2b_apr.html)
                 window.location.href = decodeURIComponent(returnUrlParam);
             } else {
-                // Fallback de producción para flujos regulares B2B o B2C
                 const menuDestino = esB2B ? 'menu_B2B.html' : 'menu_B2C.html';
                 window.location.href = `${menuDestino}?${urlParams.toString()}`;
             }
@@ -355,7 +352,7 @@
         function obtenerHistorialPunteoRut() {
             if (!cleanRut) return [];
             let raw = JSON.parse(localStorage.getItem(`sensometrika_historial_punteo_${cleanRut}`)) || [];
-            return raw.filter(item => item && (item.precision !== undefined || item.aciertos !== undefined));
+            return raw.filter(item => item && (item.precision !== undefined || item.aciertos !== undefined || item.efectividad !== undefined));
         }
 
         function actualizarEstadoUI() {
@@ -372,12 +369,21 @@
                 if (planStorage.includes('FULL') || planStorage.includes('ALTO')) maxIntentosPlan = 8;
             }
 
-            // Verificación estricta de Demo completada por RUT específico
-            const demoRealizada = localStorage.getItem(`punteo_demo_completada_${cleanRut}`) === 'true';
+            // Verificación estricta de Demo completada
+            const demoRealizada = (localStorage.getItem(`punteo_demo_completada_${cleanRut}`) === 'true') ||
+                                  (localStorage.getItem(`btnMod3_demo_completada_${cleanRut}`) === 'true');
+
+            // BLOQUEO INMEDIATO SI ES URL DEMO Y YA SE RINDIÓ
+            if (isDemoURL && (demoRealizada || numEnsayosRealizados > 0)) {
+                mostrarModal("MÓDULO DEMO YA COMPLETADO", "Ya has ejecutado la calibración demo para este ensayo. Retornando al menú de pruebas...", () => {
+                    ejecutarRetornoMenu();
+                });
+                return;
+            }
 
             if (numEnsayosRealizados >= maxIntentosPlan) {
                 modoActual = 'BLOQUEADO';
-            } else if (!demoRealizada || isDemoURL) {
+            } else if (isDemoURL || !demoRealizada) {
                 modoActual = 'DEMO';
             } else {
                 modoActual = 'OFICIAL';
@@ -540,50 +546,38 @@
             const precisionVal = total > 0 ? Math.round((aciertos / total) * 100) : 100;
             const latenciaMediaVal = tiemposReaccion.length > 0 ? Math.round(tiemposReaccion.reduce((a, b) => a + b, 0) / tiemposReaccion.length) : 0;
 
+            const registroData = { 
+                aciertos: aciertos, 
+                errores: errores, 
+                efectividad: precisionVal,
+                latencia: latenciaMediaVal,
+                desviacionMs: latenciaMediaVal,
+                latenciaRitmoMs: latenciaMediaVal,
+                precision: precisionVal, 
+                fecha: new Date().toISOString() 
+            };
+
+            // QUEMADO DE REGISTRO
+            let hRut = JSON.parse(localStorage.getItem(`sensometrika_historial_punteo_${cleanRut}`)) || [];
+            hRut.push(registroData);
+            localStorage.setItem(`sensometrika_historial_punteo_${cleanRut}`, JSON.stringify(hRut));
+
             if (modoActual === 'DEMO') {
+                // Quemar flags de demo
                 localStorage.setItem(`punteo_demo_completada_${cleanRut}`, 'true');
-
-                isDemoURL = false;
-                modoActual = 'OFICIAL';
-
-                urlParams.set('demo', 'false');
-                urlParams.set('fase', 'oficial');
-                window.history.replaceState({}, '', `${window.location.pathname}?${urlParams.toString()}`);
+                localStorage.setItem(`btnMod3_demo_completada_${cleanRut}`, 'true');
 
                 mostrarModal(
                     "CALIBRACIÓN DEMO COMPLETADA",
-                    `Aciertos: <b>${aciertos}</b><br>Pérdidas/Errores: <b>${errores}</b><br>Latencia Media: <b>${latenciaMediaVal} ms</b><br>Precisión Rítmica: <b>${precisionVal}%</b><br><br>Has finalizado el ensayo. Ya puedes rendir tu Simulación Oficial.`,
+                    `Aciertos: <b>${aciertos}</b><br>Pérdidas/Errores: <b>${errores}</b><br>Latencia Media: <b>${latenciaMediaVal} ms</b><br>Efectividad: <b>${precisionVal}%</b><br><br>Has completado el ensayo demo. Retornando a la batería de pruebas...`,
                     () => {
                         ejecutarRetornoMenu();
                     }
                 );
             } else if (modoActual === 'OFICIAL') {
-                const registroData = { 
-                    aciertos: aciertos, 
-                    errores: errores, 
-                    latencia: latenciaMediaVal,
-                    desviacionMs: latenciaMediaVal,
-                    latenciaRitmoMs: latenciaMediaVal,
-                    precision: precisionVal, 
-                    fecha: new Date().toISOString() 
-                };
-
-                let hRut = JSON.parse(localStorage.getItem(`sensometrika_historial_punteo_${cleanRut}`)) || [];
-                hRut.push(registroData);
-                localStorage.setItem(`sensometrika_historial_punteo_${cleanRut}`, JSON.stringify(hRut));
-
                 let hGen = JSON.parse(localStorage.getItem('sensometrika_historial_punteo')) || [];
                 hGen.push(registroData);
                 localStorage.setItem('sensometrika_historial_punteo', JSON.stringify(hGen));
-
-                const planStorage = (localStorage.getItem('sensometrika_plan_contratado') || 'BASICO').toUpperCase();
-                let maxIntentosPlan = esB2B ? (planStorage.includes('ALTO') ? 3 : 1) : (planStorage.includes('PLUS') ? 5 : (planStorage.includes('FULL') || planStorage.includes('ALTO') ? 8 : 3));
-
-                if (hRut.length >= maxIntentosPlan) {
-                    let rendidos = JSON.parse(localStorage.getItem('sensometrika_modulos_rendidos')) || {};
-                    rendidos.punteo = true;
-                    localStorage.setItem('sensometrika_modulos_rendidos', JSON.stringify(rendidos));
-                }
 
                 const numSimu = hRut.length;
                 const tituloModal = esB2B ? "SIMULACIÓN OFICIAL B2B REGISTRADA" : `SIMULACIÓN S${numSimu} REGISTRADA`;
