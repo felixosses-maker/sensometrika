@@ -219,6 +219,44 @@
       line-height: 1.35;
       text-align: center;
     }
+
+    .modal-overlay {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(6, 11, 19, 0.88);
+      backdrop-filter: blur(5px);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+
+    .modal-content {
+      background-color: var(--card-bg);
+      border: 1px solid #1e3a5f;
+      border-radius: 14px;
+      padding: 22px;
+      width: 90%;
+      max-width: 420px;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.8);
+    }
+
+    .modal-title { color: #38bdf8; font-size: 1.1rem; font-weight: 800; }
+    .modal-body { font-size: 0.9rem; color: var(--text-main); line-height: 1.5; }
+    .modal-btn {
+      background-color: var(--accent-green);
+      color: #ffffff;
+      border: none;
+      padding: 12px;
+      border-radius: 8px;
+      font-weight: 700;
+      cursor: pointer;
+    }
   </style>
 </head>
 <body>
@@ -296,8 +334,16 @@
       </div>
 
       <button id="btnSiguienteFase" onclick="finalizarFase()" class="btn-action-main" style="display: none; background: var(--accent-green);">
-        CONTINUAR A LA SIMULACIÓN OFICIAL →
+        CONTINUAR AL MENÚ DE PRUEBAS →
       </button>
+    </div>
+  </div>
+
+  <div id="modalSistema" class="modal-overlay">
+    <div class="modal-content">
+      <div id="modalTitle" class="modal-title">PRUEBA FINALIZADA</div>
+      <div id="modalBody" class="modal-body">Resultados registrados.</div>
+      <button id="modalBtnClose" class="modal-btn">Continuar</button>
     </div>
   </div>
 
@@ -331,6 +377,21 @@
     const clasesRotacion = { 'DERECHA': 'rot-0', 'ABAJO': 'rot-90', 'IZQUIERDA': 'rot-180', 'ARRIBA': 'rot-270' };
     const tamaniosExigentes = ['5.0rem', '3.8rem', '2.8rem', '2.0rem', '1.5rem', '1.1rem', '0.85rem', '0.65rem'];
 
+    const modal = document.getElementById('modalSistema');
+    const modalTitle = document.getElementById('modalTitle');
+    const modalBody = document.getElementById('modalBody');
+    const modalBtnClose = document.getElementById('modalBtnClose');
+
+    function mostrarModal(titulo, cuerpo, callback) {
+      modalTitle.textContent = titulo;
+      modalBody.innerHTML = cuerpo;
+      modal.style.display = 'flex';
+      modalBtnClose.onclick = () => {
+        modal.style.display = 'none';
+        if (callback) callback();
+      };
+    }
+
     document.addEventListener('DOMContentLoaded', () => {
       const historial = JSON.parse(localStorage.getItem(`sensometrika_historial_visual_${cleanRut}`)) || [];
       const numEnsayosRealizados = historial.length;
@@ -338,9 +399,17 @@
       const planStorage = (localStorage.getItem('sensometrika_plan_contratado') || urlParams.get('plan') || 'PLUS').toUpperCase();
       let maxIntentosPlan = esB2B ? (planStorage.includes('ALTO') ? 3 : 1) : (planStorage.includes('PLUS') ? 5 : (planStorage.includes('FULL') || planStorage.includes('ALTO') ? 8 : 3));
 
-      const paramDemo = urlParams.get('demo');
-      const paramFase = urlParams.get('fase');
-      const demoRealizada = localStorage.getItem(`visual_demo_completada_${cleanRut}`) === 'true';
+      const isDemoURL = urlParams.get('demo') === 'true' || urlParams.get('fase') === 'demo';
+      const demoRealizada = (localStorage.getItem(`visual_demo_completada_${cleanRut}`) === 'true') || 
+                            (localStorage.getItem(`btnMod5_demo_completada_${cleanRut}`) === 'true');
+
+      // BLOQUEO ESTRICTO SI EL DEMO YA FUE COMPLETADO
+      if (isDemoURL && (demoRealizada || numEnsayosRealizados > 0)) {
+        mostrarModal("MÓDULO DEMO YA COMPLETADO", "Ya has ejecutado la calibración demo para este ensayo. Retornando al menú de pruebas...", () => {
+          volverPortal();
+        });
+        return;
+      }
 
       if (numEnsayosRealizados >= maxIntentosPlan) {
         document.getElementById('lblFaseBadge').textContent = esB2B ? `EVALUACIÓN REGISTRADA (${numEnsayosRealizados}/${maxIntentosPlan})` : `PLAN COMPLETADO (${numEnsayosRealizados}/${maxIntentosPlan})`;
@@ -349,11 +418,11 @@
         document.getElementById('btnIniciarExamen').style.display = 'none';
         document.getElementById('btnSiguienteFase').style.display = 'block';
         document.getElementById('btnSiguienteFase').textContent = '← RETORNAR AL MENÚ DE EVALUACIONES';
-      } else if (paramDemo === 'false' || paramFase === 'oficial' || demoRealizada) {
+      } else if (!isDemoURL && demoRealizada) {
         iniciarModoOficialUI();
       } else {
         esDemo = true;
-        document.getElementById('lblFaseBadge').textContent = 'Paso 1: Calibración Demo (1/1)';
+        document.getElementById('lblFaseBadge').textContent = esB2B ? 'Calibración Demo B2B (1/1)' : 'Paso 1: Calibración Demo (1/1)';
         document.getElementById('btnIniciarExamen').textContent = 'INICIAR DEMO (8 ENSAYOS) →';
       }
 
@@ -584,55 +653,57 @@
       btnSig.style.display = 'block';
 
       if (esDemo) {
-        btnSig.textContent = 'CONTINUAR A LA SIMULACIÓN OFICIAL →';
+        btnSig.textContent = 'RETORNAR AL MENÚ DE PRUEBAS →';
       } else {
         btnSig.textContent = 'FINALIZAR Y REGISTRAR PRUEBA →';
       }
     }
 
     function finalizarFase() {
+      const porcentaje = Math.round((aciertosReales / 8) * 100);
+      let agudezaTexto = "20/20 (1.0 - Sobresaliente)";
+      let dictamen = "APROBADO";
+
+      if (porcentaje < 70) {
+        agudezaTexto = `20/50 (${(porcentaje/100).toFixed(1)} Deficiente)`;
+        dictamen = "REPROBADO";
+      } else if (porcentaje < 85) {
+        agudezaTexto = "20/25 (0.8 - Norma D.S. 170 OK)";
+        dictamen = "APROBADO";
+      }
+
+      let promLat = latenciasMs.length > 0 ? Math.round(latenciasMs.reduce((a,b)=>a+b,0)/latenciasMs.length) : 310;
+
+      let historial = JSON.parse(localStorage.getItem(`sensometrika_historial_visual_${cleanRut}`)) || [];
+      historial.push({
+        agudeza: agudezaTexto,
+        aciertos: aciertosReales,
+        porcentaje: porcentaje,
+        latenciaMs: promLat,
+        distanciaAvg: distanciaMedidaCm,
+        dictamen: dictamen,
+        fecha: new Date().toISOString()
+      });
+
+      localStorage.setItem(`sensometrika_historial_visual_${cleanRut}`, JSON.stringify(historial));
+
       if (esDemo) {
         localStorage.setItem(`visual_demo_completada_${cleanRut}`, 'true');
-        
-        urlParams.set('demo', 'false');
-        urlParams.set('fase', 'oficial');
-        window.history.replaceState({}, '', `${window.location.pathname}?${urlParams.toString()}`);
+        localStorage.setItem(`btnMod5_demo_completada_${cleanRut}`, 'true');
 
-        iniciarModoOficialUI();
+        mostrarModal(
+          "CALIBRACIÓN DEMO COMPLETADA",
+          `Aciertos: <b>${aciertosReales} / 8</b><br>Agudeza Estimada: <b>${agudezaTexto}</b><br>Latencia Media: <b>${promLat} ms</b><br><br>Has completado la calibración demo. Retornando a la batería de pruebas...`,
+          () => {
+            volverPortal();
+          }
+        );
       } else {
-        const porcentaje = Math.round((aciertosReales / 8) * 100);
-        let agudezaTexto = "20/20 (1.0 - Sobresaliente)";
-        let dictamen = "APROBADO";
-
-        if (porcentaje < 70) {
-          agudezaTexto = `20/50 (${(porcentaje/100).toFixed(1)} Deficiente)`;
-          dictamen = "REPROBADO";
-        } else if (porcentaje < 85) {
-          agudezaTexto = "20/25 (0.8 - Norma D.S. 170 OK)";
-          dictamen = "APROBADO";
-        }
-
-        let promLat = latenciasMs.length > 0 ? Math.round(latenciasMs.reduce((a,b)=>a+b,0)/latenciasMs.length) : 310;
-
-        // GUARDADO AISLADO POR RUT DE TRABAJADOR ACTIVO
-        let historial = JSON.parse(localStorage.getItem(`sensometrika_historial_visual_${cleanRut}`)) || [];
-        historial.push({
-          agudeza: agudezaTexto,
-          aciertos: aciertosReales,
-          porcentaje: porcentaje,
-          latenciaMs: promLat,
-          distanciaAvg: distanciaMedidaCm,
-          dictamen: dictamen,
-          fecha: new Date().toISOString()
-        });
-
-        localStorage.setItem(`sensometrika_historial_visual_${cleanRut}`, JSON.stringify(historial));
-        
         volverPortal();
       }
     }
 
-    // --- FUNCIÓN CORREGIDA CON SOPORTE PARA returnUrl ---
+    // --- FUNCIÓN DE RETORNO CON SOPORTE PARA returnUrl ---
     function volverPortal() {
       const returnUrlParam = urlParams.get('returnUrl');
       if (returnUrlParam) {
