@@ -191,7 +191,7 @@
                 <a id="btnMod8" href="fatiga.html?demo=true&returnUrl=demo_b2b_full.html" class="btn-prob">PROBAR →</a>
             </div>
 
-            <!-- Botón ajustado para direccionar al informe oscuro informe_demo.html -->
+            <!-- Botón ajustado para direccionar al informe oscuro informe_demo.html transmitiendo el RUT activo -->
             <a id="btnGenerarInforme" href="informe_demo.html?returnUrl=demo_b2b_full.html" class="btn-report mt-2">
                 📄 GENERAR INFORME DEMOSTRATIVO DE MUESTRA →
             </a>
@@ -205,14 +205,27 @@
             datosUsuario = JSON.parse(localStorage.getItem('sensometrika_datos_usuario')) || {};
         } catch(e){}
 
-        const rutEvaluado = urlParams.get('rut') || datosUsuario.rut || 'GENERICO';
-        const cleanRut = rutEvaluado.replace(/[^0-9Kk]/g, '');
+        const rawRut = urlParams.get('rut') || datosUsuario.rut || '12.345.678-K';
+        const cleanRut = rawRut.replace(/[^0-9Kk]/g, '');
 
         document.addEventListener('DOMContentLoaded', () => {
-            // Actualizar dinámicamente la URL del botón para conservar todos los parámetros actuales
+            // Actualizar dinámicamente el href de todos los botones de módulos para incluir el RUT actual
+            const modulosBtns = ['btnMod0', 'btnMod1', 'btnMod2', 'btnMod3', 'btnMod4', 'btnMod5', 'btnMod6', 'btnMod7', 'btnMod8'];
+            modulosBtns.forEach(btnId => {
+                const btn = document.getElementById(btnId);
+                if (btn && btn.getAttribute('href')) {
+                    const currentHref = btn.getAttribute('href');
+                    if (!currentHref.includes('rut=')) {
+                        btn.setAttribute('href', `${currentHref}&rut=${encodeURIComponent(rawRut)}`);
+                    }
+                }
+            });
+
+            // Actualizar dinámicamente la URL del botón del informe para inyectar explícitamente el RUT
             const btnReport = document.getElementById('btnGenerarInforme');
             if (btnReport) {
                 const paramsAcc = new URLSearchParams(window.location.search);
+                paramsAcc.set('rut', rawRut);
                 if (!paramsAcc.has('returnUrl')) {
                     paramsAcc.set('returnUrl', 'demo_b2b_full.html');
                 }
@@ -233,18 +246,18 @@
 
             // 2. Mapeo Módulos y Verificación Estricta de Historial / Demo
             const modulos = [
-                { id: 'btnMod1', prefix: 'reactimetro', key: `sensometrika_historial_reactimetro_${cleanRut}` },
-                { id: 'btnMod2', prefix: 'palancas', key: `sensometrika_historial_palancas_${cleanRut}` },
-                { id: 'btnMod3', prefix: 'punteo', key: `sensometrika_historial_punteo_${cleanRut}` },
-                { id: 'btnMod4', prefix: 'audicion', key: `sensometrika_historial_audicion_${cleanRut}` },
-                { id: 'btnMod5', prefix: 'visual', key: `sensometrika_historial_visual_${cleanRut}` },
-                { id: 'btnMod6', prefix: 'anticipacion', key: `sensometrika_historial_anticipacion_${cleanRut}` },
-                { id: 'btnMod7', prefix: 'estereopsis', key: `sensometrika_historial_estereopsis_${cleanRut}` },
-                { id: 'btnMod8', prefix: 'fatiga', key: `sensometrika_historial_fatiga_${cleanRut}` }
+                { id: 'btnMod1', prefix: 'reactimetro', key: `sensometrika_historial_reactimetro_${cleanRut}`, keyAlt: 'sensometrika_historial_reactimetro' },
+                { id: 'btnMod2', prefix: 'palancas', key: `sensometrika_historial_palancas_${cleanRut}`, keyAlt: 'sensometrika_historial_palancas' },
+                { id: 'btnMod3', prefix: 'punteo', key: `sensometrika_historial_punteo_${cleanRut}`, keyAlt: 'sensometrika_historial_punteo' },
+                { id: 'btnMod4', prefix: 'audicion', key: `sensometrika_historial_audicion_${cleanRut}`, keyAlt: 'sensometrika_historial_audicion' },
+                { id: 'btnMod5', prefix: 'visual', key: `sensometrika_historial_visual_${cleanRut}`, keyAlt: 'sensometrika_historial_visual' },
+                { id: 'btnMod6', prefix: 'anticipacion', key: `sensometrika_historial_anticipacion_${cleanRut}`, keyAlt: 'sensometrika_historial_anticipacion' },
+                { id: 'btnMod7', prefix: 'estereopsis', key: `sensometrika_historial_estereopsis_${cleanRut}`, keyAlt: 'sensometrika_historial_estereopsis' },
+                { id: 'btnMod8', prefix: 'fatiga', key: `sensometrika_historial_fatiga_${cleanRut}`, keyAlt: 'sensometrika_historial_fatiga' }
             ];
 
             modulos.forEach(m => {
-                const historial = JSON.parse(localStorage.getItem(m.key)) || [];
+                const historial = JSON.parse(localStorage.getItem(m.key)) || JSON.parse(localStorage.getItem(m.keyAlt)) || [];
                 const demoByPrefix = localStorage.getItem(`${m.prefix}_demo_completada_${cleanRut}`) === 'true';
                 const demoById = localStorage.getItem(`${m.id}_demo_completada_${cleanRut}`) === 'true';
 
