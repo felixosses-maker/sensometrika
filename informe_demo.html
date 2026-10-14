@@ -212,10 +212,16 @@
             }
         }
 
+        // BÚSQUEDA MULTI-CLAVE FLEXIBLE Y ROBUSTA
         function obtenerHistorialModulo(modulo) {
-            if (!cleanRut) return [];
-            const key = `sensometrika_historial_${modulo}_${cleanRut}`;
-            return JSON.parse(localStorage.getItem(key)) || [];
+            const claveRut = `sensometrika_historial_${modulo}_${cleanRut}`;
+            const claveGlobal = `sensometrika_historial_${modulo}`;
+            
+            let historial = JSON.parse(localStorage.getItem(claveRut)) || [];
+            if (!Array.isArray(historial) || historial.length === 0) {
+                historial = JSON.parse(localStorage.getItem(claveGlobal)) || [];
+            }
+            return historial;
         }
 
         document.addEventListener('DOMContentLoaded', () => {
@@ -242,6 +248,9 @@
 
             modulosConfig.forEach(m => {
                 const historial = obtenerHistorialModulo(m.id);
+                const demoByPrefix = localStorage.getItem(`${m.id}_demo_completada_${cleanRut}`) === 'true' || 
+                                     localStorage.getItem(`${m.id}_demo_completada`) === 'true';
+
                 const tr = document.createElement('tr');
 
                 if (historial.length > 0) {
@@ -259,9 +268,12 @@
 
                         case 'palancas':
                             const precP = u.precision !== undefined ? u.precision : 0;
-                            const errP = u.contactos !== undefined ? u.contactos : 0;
-                            ok = precP >= 85 && errP <= 1;
-                            telemetriaTxt = `Precisión: <strong>${precP}%</strong><br><span style="font-size:0.52rem; color:#64748b;">Contactos: ${errP}</span>`;
+                            const errP = u.contactos !== undefined ? u.contactos : (u.errores !== undefined ? u.errores : 0);
+                            const tErrorSeg = u.tiempoErrorMs ? (u.tiempoErrorMs / 1000).toFixed(1) : (u.tiempoError ? (u.tiempoError / 1000).toFixed(1) : '0.0');
+                            const tTotalRec = u.tiempo !== undefined ? u.tiempo : (u.tiempoTotal ? Math.round(u.tiempoTotal/1000) : 0);
+                            
+                            ok = precP >= 85 && errP <= 1 && !u.timeout;
+                            telemetriaTxt = `Precisión: <strong>${precP}% (${tTotalRec}s recorrido)</strong><br><span style="font-size:0.52rem; color:#64748b;">T. en Error: ${tErrorSeg}s (${errP} toques)</span>`;
                             break;
 
                         case 'punteo':
@@ -285,6 +297,15 @@
                             <span class="sem-badge ${ok ? 'sem-ok' : 'sem-bad'}">${ok ? 'APROBADO' : 'REPROBADO'}</span>
                         </td>
                     `;
+                } else if (demoByPrefix) {
+                    totalAprobados++;
+                    tr.innerHTML = `
+                        <td class="font-bold text-white">${m.nombre}</td>
+                        <td class="text-slate-300">Calibración Demo Registrada</td>
+                        <td style="text-align: right;">
+                            <span class="sem-badge sem-ok">APROBADO</span>
+                        </td>
+                    `;
                 } else {
                     totalPendientes++;
                     tr.innerHTML = `
@@ -298,7 +319,7 @@
                 tbody.appendChild(tr);
             });
 
-            // LÓGICA RIGUROSA DE EVALUACIÓN DEL DICTAMEN GENERAL
+            // EVALUACIÓN RIGUROSA DEL DICTAMEN GENERAL
             const boxDictamen = document.getElementById('boxDictamen');
             const lblDictamenSub = document.getElementById('lblDictamenSub');
 
