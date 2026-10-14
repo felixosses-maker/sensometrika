@@ -191,10 +191,18 @@
                 <a id="btnMod8" href="fatiga.html?demo=true&returnUrl=demo_b2b_full.html" class="btn-prob">PROBAR →</a>
             </div>
 
-            <!-- Botón ajustado para direccionar al informe oscuro informe_demo.html transmitiendo el RUT activo -->
-            <a id="btnGenerarInforme" href="informe_demo.html?returnUrl=demo_b2b_full.html" class="btn-report mt-2">
-                📄 GENERAR INFORME DEMOSTRATIVO DE MUESTRA →
-            </a>
+            <!-- ÁREA DE INFORMES HÍBRIDA -->
+            <div class="flex flex-col gap-2 mt-2">
+                <!-- Botón Principal: Certificado Oficial B2B (Modo Claro / Hoja Acreditación) -->
+                <a id="btnInformeOficial" href="informe_b2b.html?returnUrl=demo_b2b_full.html" class="btn-report">
+                    📄 VER CERTIFICADO PERICIAL B2B (OFICIAL D.S. N° 170) →
+                </a>
+
+                <!-- Botón Secundario: Resumen Telemétrico en Pantalla (Modo Oscuro Demo) -->
+                <a id="btnInformeDemo" href="informe_demo.html?returnUrl=demo_b2b_full.html" class="w-full text-center py-2.5 px-3 text-xs font-bold text-sky-400 bg-slate-900/80 hover:bg-slate-800 border border-sky-500/30 rounded-lg transition-all uppercase">
+                    📊 Ver Resumen Telemétrico Rápido en Pantalla
+                </a>
+            </div>
         </div>
     </div>
 
@@ -221,16 +229,17 @@
                 }
             });
 
-            // Actualizar dinámicamente la URL del botón del informe para inyectar explícitamente el RUT
-            const btnReport = document.getElementById('btnGenerarInforme');
-            if (btnReport) {
-                const paramsAcc = new URLSearchParams(window.location.search);
-                paramsAcc.set('rut', rawRut);
-                if (!paramsAcc.has('returnUrl')) {
-                    paramsAcc.set('returnUrl', 'demo_b2b_full.html');
-                }
-                btnReport.href = `informe_demo.html?${paramsAcc.toString()}`;
+            // Actualizar dinámicamente la URL de los botones de informe para inyectar explícitamente el RUT
+            const btnOficial = document.getElementById('btnInformeOficial');
+            const btnDemo = document.getElementById('btnInformeDemo');
+            const paramsAcc = new URLSearchParams(window.location.search);
+            paramsAcc.set('rut', rawRut);
+            if (!paramsAcc.has('returnUrl')) {
+                paramsAcc.set('returnUrl', 'demo_b2b_full.html');
             }
+
+            if (btnOficial) btnOficial.href = `informe_b2b.html?${paramsAcc.toString()}`;
+            if (btnDemo) btnDemo.href = `informe_demo.html?${paramsAcc.toString()}`;
 
             // 1. Verificar Latencia Hardware
             const latenciaSaved = localStorage.getItem('sensometrika_latencia_ms');
