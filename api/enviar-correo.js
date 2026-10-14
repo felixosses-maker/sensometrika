@@ -1,13 +1,18 @@
 /**
  * Sensometrika - Servicio Serverless de Despacho de Correos (Resend API)
+ * Archivo: api/enviar-correo.js
  */
 const crypto = require('crypto');
 
 module.exports = async (req, res) => {
+  // Configuración de cabeceras CORS
   res.setHeader('Access-Control-Allow-Credentials', true);
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,POST');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
+  res.setHeader(
+    'Access-Control-Allow-Headers',
+    'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version'
+  );
 
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
@@ -33,7 +38,20 @@ module.exports = async (req, res) => {
   }
 
   try {
-    let { tipo, email, emailDestino, nombre, nombreTrabajador, enlace, linkAcceso, detalles, duracion_minutos } = req.body || {};
+    let {
+      tipo,
+      email,
+      emailDestino,
+      nombre,
+      nombreTrabajador,
+      rutTrabajador,
+      planNombre,
+      monto,
+      enlace,
+      linkAcceso,
+      detalles,
+      duracion_minutos
+    } = req.body || {};
 
     // Aceptar tanto 'email' como 'emailDestino' para máxima compatibilidad
     const correoFinal = email || emailDestino;
@@ -43,16 +61,17 @@ module.exports = async (req, res) => {
     }
 
     const enlaceEntrante = enlace || linkAcceso;
-    const destinatarioNombre = nombre || nombreTrabajador || (tipo === 'b2b' ? 'Supervisión Técnica' : 'Postulante');
+    const destinatarioNombre = nombreTrabajador || nombre || (tipo === 'b2b' ? 'Supervisión Técnica' : 'Postulante');
+    const rutFinal = rutTrabajador || (detalles && detalles.rutTrabajador) || 'N/A';
 
     const tipoToken = (tipo === 'demo' || tipo === 'b2b') ? tipo : 'b2c';
-    
-    // DEMO FIJADO EN 6 MINUTOS EXACTOS
+
+    // Duración de vigencias por defecto (minutos)
     let minutosVigencia = 2880; // 48 horas B2C
     if (tipoToken === 'demo') {
-      minutosVigencia = 6;
+      minutosVigencia = 6; // 6 minutos para demos
     } else if (tipoToken === 'b2b') {
-      minutosVigencia = 4320;
+      minutosVigencia = 4320; // 72 horas B2B
     }
 
     if (duracion_minutos && Number(duracion_minutos) > 0) {
@@ -61,6 +80,7 @@ module.exports = async (req, res) => {
 
     let enlaceFinal = '';
 
+    // Sanitización o generación de enlace con token
     if (typeof enlaceEntrante === 'string' && enlaceEntrante.length > 5) {
       const matchCustom = enlaceEntrante.match(/https?:\/\/[^\s\]\)\'\"]+/);
       enlaceFinal = matchCustom ? matchCustom[0] : enlaceEntrante.trim();
@@ -91,7 +111,7 @@ module.exports = async (req, res) => {
         }
       }
 
-      enlaceFinal = `${cleanDomain}/demo.html?token=${generatedToken}`;
+      enlaceFinal = `${cleanDomain}/demo_b2b_full.html?token=${generatedToken}`;
     }
 
     let asunto = '';
@@ -142,10 +162,13 @@ module.exports = async (req, res) => {
         </html>
       `;
     } else {
-      const nombrePlan = (detalles && detalles.nombrePlan) ? detalles.nombrePlan : (tipoToken === 'demo' ? 'Pase de Demostración' : 'Pase Psicomotriz (3 Sim)');
+      const nombrePlan = planNombre || (detalles && detalles.nombrePlan) || (tipoToken === 'demo' ? 'Pase de Demostración' : 'Pase Psicomotriz (3 Sim)');
       const vigenciaTexto = (detalles && detalles.vigencia) ? detalles.vigencia : (tipoToken === 'demo' ? '6 minutos' : '48 horas');
 
-      asunto = `Tu Enlace de Acceso: Evaluación Psicotécnica — Sensometrika`;
+      asunto = tipo === 'b2c_pago' 
+        ? `Acceso Habilitado: ${nombrePlan} — Sensometrika`
+        : `Tu Enlace de Acceso: Evaluación Psicotécnica — Sensometrika`;
+
       htmlContent = `
         <!DOCTYPE html>
         <html>
@@ -161,9 +184,19 @@ module.exports = async (req, res) => {
                 Acceso Habilitado
               </span>
               <h2 style="font-size: 18px; margin: 0 0 12px 0; color: #ffffff;">¡Hola, ${destinatarioNombre}!</h2>
-              <p style="font-size: 13px; line-height: 1.6; color: #94a3b8; margin: 0 0 20px 0;">
+              <p style="font-size: 13px; line-height: 1.6; color: #94a3b8; margin: 0 0 16px 0;">
                 Tu acceso para <strong style="color: #ffffff;">${nombrePlan}</strong> ha sido activado exitosamente (${vigenciaTexto}). Ya puedes ingresar al simulador para preparar tu examen psicotécnico de licencia de conducir o faena laboral.
               </p>
+
+              <div style="background: #0b1320; border: 1px solid #1e293b; border-radius: 10px; padding: 14px; margin-bottom: 20px; text-align: left;">
+                <div style="font-size: 11px; color: #94a3b8; text-transform: uppercase; font-weight: 700; margin-bottom: 4px;">RUT Evaluado:</div>
+                <div style="font-size: 13px; font-weight: 800; color: #ffffff; margin-bottom: 8px;">${rutFinal}</div>
+                ${monto ? `
+                  <div style="font-size: 11px; color: #94a3b8; text-transform: uppercase; font-weight: 700; margin-bottom: 4px;">Detalle / Estado:</div>
+                  <div style="font-size: 13px; font-weight: 800; color: #34d399;">${monto}</div>
+                ` : ''}
+              </div>
+
               <div style="background: #131b2e; border: 1px solid #1e293b; border-radius: 12px; padding: 22px; text-align: center; margin-bottom: 24px;">
                 <a href="${enlaceFinal}" target="_blank" style="display: inline-block; background: #0284c7; color: #ffffff; text-decoration: none; font-weight: 800; font-size: 14px; padding: 13px 28px; border-radius: 10px; box-shadow: 0 4px 15px rgba(2, 132, 199, 0.4);">
                   Comenzar Evaluación Ahora →
@@ -183,7 +216,7 @@ module.exports = async (req, res) => {
       `;
     }
 
-    // Usar la dirección de pruebas autorizada por Resend
+    // Remitente por defecto autorizado por la API de Resend
     const remitente = process.env.EMAIL_FROM || 'Sensometrika <onboarding@resend.dev>';
 
     const resendResponse = await fetch('https://api.resend.com/emails', {
