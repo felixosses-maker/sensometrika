@@ -296,7 +296,7 @@
                     </div>
                     <div class="ficha-item">
                         <span class="ficha-label">FECHA Y HORA EMISIÓN</span>
-                        <span class="ficha-val" id="lblFechaEmision">14-10-2026 05:15 a. m.</span>
+                        <span class="ficha-val" id="lblFechaEmision">14-10-2026 05:40 a. m.</span>
                     </div>
                 </div>
             </div>
@@ -323,7 +323,7 @@
             </div>
             <div class="telemetry-item">
                 <span class="telemetry-title">LATENCIA DEL SENSOR</span>
-                <span class="telemetry-val text-sky-400" id="lblLatenciaSensor">147 ms (Promedio)</span>
+                <span class="telemetry-val text-sky-400" id="lblLatenciaSensor">23 ms (Promedio)</span>
             </div>
             <div class="telemetry-item">
                 <span class="telemetry-title">ESTADO DE SENSORES</span>
@@ -352,7 +352,6 @@
             </tbody>
         </table>
 
-        <!-- FIRMAS DE MUESTRA CORPORATIVA -->
         <div class="firmas-container">
             <div class="firma-box">
                 <div class="firma-graphic-box">
@@ -388,10 +387,9 @@
             datosUsuario = JSON.parse(localStorage.getItem('sensometrika_datos_usuario')) || {};
         } catch(e){}
 
-        // Datos totalmente genéricos para la muestra comercial demo
         const rawRut = urlParams.get('rut') || '12.345.678-K';
         const cleanRut = rawRut.replace(/[^0-9Kk]/g, '');
-        const latenciaSaved = parseInt(localStorage.getItem('sensometrika_latencia_ms') || '147');
+        const latenciaSaved = parseInt(localStorage.getItem('sensometrika_latencia_ms') || localStorage.getItem('latencia_ms') || '23');
 
         function volverMenuB2B() {
             const returnUrl = urlParams.get('returnUrl') ? decodeURIComponent(urlParams.get('returnUrl')) : null;
@@ -419,7 +417,6 @@
             document.getElementById('lblFirmaNombre').textContent = 'USUARIO DEMOSTRACIÓN B2B';
             document.getElementById('lblLatenciaSensor').textContent = `${latenciaSaved} ms (Promedio)`;
 
-            // Trazo genérico estandarizado de firma demo
             const imgFirma = document.getElementById('imgFirmaTrabajador');
             const svgFirmaRespaldo = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="60" viewBox="0 0 200 60"><path d="M 15 35 Q 35 15, 65 30 T 105 18 T 155 38 Q 175 48, 185 25" fill="none" stroke="%230f172a" stroke-width="2" stroke-linecap="round"/><path d="M 45 42 Q 85 52, 135 32" fill="none" stroke="%230f172a" stroke-width="1.8" stroke-linecap="round"/></svg>`;
             imgFirma.src = svgFirmaRespaldo;
@@ -444,12 +441,9 @@
 
             modulosConfig.forEach(m => {
                 const historial = obtenerHistorialModulo(m.id);
-                const demoCompletada = localStorage.getItem(`${m.id}_demo_completada_${cleanRut}`) === 'true' ||
-                                       localStorage.getItem(`${m.id}_demo_completada`) === 'true' ||
-                                       localStorage.getItem(`btnMod2_demo_completada_${cleanRut}`) === 'true';
-
                 const tr = document.createElement('tr');
 
+                // SOLAMENTE SI EXISTE REGISTRO REAL EN EL HISTORIAL SE EVALÚA APROBADO O REPROBADO
                 if (historial.length > 0) {
                     const u = historial[historial.length - 1];
                     let ok = false;
@@ -495,16 +489,6 @@
                             <span class="badge-sem ${ok ? 'sem-ok' : 'sem-bad'}">${ok ? 'APROBADO' : 'REPROBADO'}</span>
                         </td>
                     `;
-                } else if (demoCompletada) {
-                    totalAprobados++;
-                    tr.innerHTML = `
-                        <td class="font-bold text-slate-800">${m.nombre}</td>
-                        <td class="text-slate-600">${m.est}</td>
-                        <td class="text-slate-700">Ensayo de Calibración Demo Registrado</td>
-                        <td style="text-align: right;">
-                            <span class="badge-sem sem-ok">APROBADO</span>
-                        </td>
-                    `;
                 } else {
                     totalPendientes++;
                     tr.innerHTML = `
@@ -530,21 +514,18 @@
                 lblDictamenSub.textContent = "FUNDAMENTACIÓN TÉCNICA: EL TRABAJADOR PRESENTA PARÁMETROS CRÍTICOS FUERA DE LA NORMA D.S. N° 170 / CORMA.";
                 lblEstadoVigencia.textContent = "EVALUACIÓN REPROBADA";
                 lblEstadoVigencia.className = "vigencia-orange bg-red-600";
-                boxDictamen.appendChild(lblDictamenSub);
             } else if (totalPendientes > 0) {
                 boxDictamen.className = "banner-dictamen dictamen-pendiente";
                 boxDictamen.innerHTML = "⏳ DICTAMEN: EVALUACIÓN EN PROCESO – MÓDULOS PENDIENTES DE RENDICIÓN";
                 lblDictamenSub.textContent = `FUNDAMENTACIÓN TÉCNICA DEL PLAZO RECOMENDADO: EVALUACIÓN EN PROCESO. El trabajador aún tiene módulos pendientes por rendir en su plan corporativo. El dictamen final se emitirá al completar la totalidad de la batería.`;
                 lblEstadoVigencia.textContent = "EVALUACIÓN INCOMPLETA";
                 lblEstadoVigencia.className = "vigencia-orange";
-                boxDictamen.appendChild(lblDictamenSub);
             } else {
                 boxDictamen.className = "banner-dictamen dictamen-aprobado";
                 boxDictamen.innerHTML = "✔ DICTAMEN PERICIAL B2B: APROBADO (ALTO DESEMPEÑO)";
                 lblDictamenSub.textContent = "FUNDAMENTACIÓN TÉCNICA: Todos los registros telemétricos cumplen con las exigencias del D.S. N° 170.";
                 lblEstadoVigencia.textContent = "VIGENTE 1 AÑO (D.S. N° 170)";
                 lblEstadoVigencia.className = "vigencia-orange bg-emerald-600";
-                boxDictamen.appendChild(lblDictamenSub);
             }
         });
     </script>
