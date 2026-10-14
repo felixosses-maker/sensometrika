@@ -205,24 +205,50 @@
 
     <script>
         const urlParams = new URLSearchParams(window.location.search);
+        const tokenActual = urlParams.get('token') || '';
+        const prospecto = urlParams.get('prospecto') || urlParams.get('empresa') || 'SOCADEP';
+
+        // Manejo estricto de aislamiento por Token
+        if (tokenActual) {
+            const tokenGuardado = localStorage.getItem('sensometrika_active_demo_token');
+            if (tokenGuardado !== tokenActual) {
+                // Baro a Token: reseteamos almacenamiento local temporal para evitar arrastrar módulos anteriores
+                localStorage.setItem('sensometrika_active_demo_token', tokenActual);
+                localStorage.removeItem('sensometrika_latencia_ms');
+                localStorage.removeItem('latencia_ms');
+                
+                const keysToRemove = [];
+                for (let i = 0; i < localStorage.length; i++) {
+                    const key = localStorage.key(i);
+                    if (key && (key.startsWith('sensometrika_historial_') || key.endsWith('_demo_completada'))) {
+                        keysToRemove.push(key);
+                    }
+                }
+                keysToRemove.forEach(k => localStorage.removeItem(k));
+            }
+        }
+
         let datosUsuario = {};
         try {
             datosUsuario = JSON.parse(localStorage.getItem('sensometrika_datos_usuario')) || {};
         } catch(e){}
 
-        const rawRut = urlParams.get('rut') || datosUsuario.rut || '12.345.678-K';
+        const rawRut = urlParams.get('rut') || (tokenActual ? tokenActual : '12.345.678-K');
         const cleanRut = rawRut.replace(/[^0-9Kk]/g, '');
 
         document.addEventListener('DOMContentLoaded', () => {
-            // Actualizar dinámicamente URL de módulos para incluir el RUT actual
+            document.getElementById('lblEmpresa').textContent = prospecto;
+
+            // Actualizar dinámicamente URL de módulos para incluir el RUT o Token actual
             const modulosBtns = ['btnMod0', 'btnMod1', 'btnMod2', 'btnMod3', 'btnMod4', 'btnMod5', 'btnMod6', 'btnMod7', 'btnMod8'];
             modulosBtns.forEach(btnId => {
                 const btn = document.getElementById(btnId);
                 if (btn && btn.getAttribute('href')) {
                     const currentHref = btn.getAttribute('href');
-                    if (!currentHref.includes('rut=')) {
-                        btn.setAttribute('href', `${currentHref}&rut=${encodeURIComponent(rawRut)}`);
-                    }
+                    let newHref = currentHref;
+                    if (!newHref.includes('rut=')) newHref += `&rut=${encodeURIComponent(rawRut)}`;
+                    if (tokenActual && !newHref.includes('token=')) newHref += `&token=${encodeURIComponent(tokenActual)}`;
+                    btn.setAttribute('href', newHref);
                 }
             });
 
@@ -231,15 +257,14 @@
             const btnDemo = document.getElementById('btnInformeDemo');
             const paramsAcc = new URLSearchParams(window.location.search);
             paramsAcc.set('rut', rawRut);
+            if (tokenActual) paramsAcc.set('token', tokenActual);
             if (!paramsAcc.has('returnUrl')) paramsAcc.set('returnUrl', 'demo_b2b_full.html');
 
             if (btnOficial) btnOficial.href = `informe_b2b.html?${paramsAcc.toString()}`;
             if (btnDemo) btnDemo.href = `informe_demo.html?${paramsAcc.toString()}`;
 
             // 1. VERIFICAR Y QUEMAR LATENCIA HARDWARE
-            const latenciaSaved = localStorage.getItem('sensometrika_latencia_ms') || 
-                                  localStorage.getItem('latencia_ms') || 
-                                  localStorage.getItem('sensometrika_latencia_promedio');
+            const latenciaSaved = localStorage.getItem('sensometrika_latencia_ms') || localStorage.getItem('latencia_ms');
 
             if (latenciaSaved) {
                 const btn0 = document.getElementById('btnMod0');
@@ -251,24 +276,23 @@
                 }
             }
 
-            // 2. VERIFICAR Y QUEMAR MÓDULOS DEL HISTORIAL / DEMO
+            // 2. VERIFICAR Y QUEMAR MÓDULOS DEL HISTORIAL
             const modulos = [
-                { id: 'btnMod1', prefix: 'reactimetro', key: `sensometrika_historial_reactimetro_${cleanRut}`, keyAlt: 'sensometrika_historial_reactimetro' },
-                { id: 'btnMod2', prefix: 'palancas', key: `sensometrika_historial_palancas_${cleanRut}`, keyAlt: 'sensometrika_historial_palancas' },
-                { id: 'btnMod3', prefix: 'punteo', key: `sensometrika_historial_punteo_${cleanRut}`, keyAlt: 'sensometrika_historial_punteo' },
-                { id: 'btnMod4', prefix: 'audicion', key: `sensometrika_historial_audicion_${cleanRut}`, keyAlt: 'sensometrika_historial_audicion' },
-                { id: 'btnMod5', prefix: 'visual', key: `sensometrika_historial_visual_${cleanRut}`, keyAlt: 'sensometrika_historial_visual' },
-                { id: 'btnMod6', prefix: 'anticipacion', key: `sensometrika_historial_anticipacion_${cleanRut}`, keyAlt: 'sensometrika_historial_anticipacion' },
-                { id: 'btnMod7', prefix: 'estereopsis', key: `sensometrika_historial_estereopsis_${cleanRut}`, keyAlt: 'sensometrika_historial_estereopsis' },
-                { id: 'btnMod8', prefix: 'fatiga', key: `sensometrika_historial_fatiga_${cleanRut}`, keyAlt: 'sensometrika_historial_fatiga' }
+                { id: 'btnMod1', prefix: 'reactimetro', key: `sensometrika_historial_reactimetro_${cleanRut}` },
+                { id: 'btnMod2', prefix: 'palancas', key: `sensometrika_historial_palancas_${cleanRut}` },
+                { id: 'btnMod3', prefix: 'punteo', key: `sensometrika_historial_punteo_${cleanRut}` },
+                { id: 'btnMod4', prefix: 'audicion', key: `sensometrika_historial_audicion_${cleanRut}` },
+                { id: 'btnMod5', prefix: 'visual', key: `sensometrika_historial_visual_${cleanRut}` },
+                { id: 'btnMod6', prefix: 'anticipacion', key: `sensometrika_historial_anticipacion_${cleanRut}` },
+                { id: 'btnMod7', prefix: 'estereopsis', key: `sensometrika_historial_estereopsis_${cleanRut}` },
+                { id: 'btnMod8', prefix: 'fatiga', key: `sensometrika_historial_fatiga_${cleanRut}` }
             ];
 
             modulos.forEach(m => {
-                const historial = JSON.parse(localStorage.getItem(m.key)) || JSON.parse(localStorage.getItem(m.keyAlt)) || [];
-                const demoByPrefix = localStorage.getItem(`${m.prefix}_demo_completada_${cleanRut}`) === 'true' || localStorage.getItem(`${m.prefix}_demo_completada`) === 'true';
-                const demoById = localStorage.getItem(`${m.id}_demo_completada_${cleanRut}`) === 'true' || localStorage.getItem(`${m.id}_demo_completada`) === 'true';
+                const historial = JSON.parse(localStorage.getItem(m.key)) || [];
+                const demoByPrefix = localStorage.getItem(`${m.prefix}_demo_completada_${cleanRut}`) === 'true';
 
-                if (historial.length > 0 || demoByPrefix || demoById) {
+                if (historial.length > 0 || demoByPrefix) {
                     const btn = document.getElementById(m.id);
                     if (btn) {
                         btn.textContent = '✓ COMPLETADO';
