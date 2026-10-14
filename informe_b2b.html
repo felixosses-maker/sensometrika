@@ -296,7 +296,7 @@
                     </div>
                     <div class="ficha-item">
                         <span class="ficha-label">FECHA Y HORA EMISIÓN</span>
-                        <span class="ficha-val" id="lblFechaEmision">14-10-2026 05:40 a. m.</span>
+                        <span class="ficha-val" id="lblFechaEmision">14-10-2026 05:50 a. m.</span>
                     </div>
                 </div>
             </div>
@@ -323,7 +323,7 @@
             </div>
             <div class="telemetry-item">
                 <span class="telemetry-title">LATENCIA DEL SENSOR</span>
-                <span class="telemetry-val text-sky-400" id="lblLatenciaSensor">23 ms (Promedio)</span>
+                <span class="telemetry-val text-sky-400" id="lblLatenciaSensor">21 ms (Promedio)</span>
             </div>
             <div class="telemetry-item">
                 <span class="telemetry-title">ESTADO DE SENSORES</span>
@@ -389,7 +389,7 @@
 
         const rawRut = urlParams.get('rut') || '12.345.678-K';
         const cleanRut = rawRut.replace(/[^0-9Kk]/g, '');
-        const latenciaSaved = parseInt(localStorage.getItem('sensometrika_latencia_ms') || localStorage.getItem('latencia_ms') || '23');
+        const latenciaSaved = parseInt(localStorage.getItem('sensometrika_latencia_ms') || localStorage.getItem('latencia_ms') || '21');
 
         function volverMenuB2B() {
             const returnUrl = urlParams.get('returnUrl') ? decodeURIComponent(urlParams.get('returnUrl')) : null;
@@ -441,9 +441,13 @@
 
             modulosConfig.forEach(m => {
                 const historial = obtenerHistorialModulo(m.id);
+                // Banderas explícitas de ejecución demo
+                const isCompletadoDemo = localStorage.getItem(`${m.id}_demo_completada_${cleanRut}`) === 'true' ||
+                                         localStorage.getItem(`${m.id}_demo_completada`) === 'true' ||
+                                         localStorage.getItem(`btnMod${m.id === 'reactimetro' ? 1 : m.id === 'palancas' ? 2 : 3}_demo_completada`) === 'true';
+
                 const tr = document.createElement('tr');
 
-                // SOLAMENTE SI EXISTE REGISTRO REAL EN EL HISTORIAL SE EVALÚA APROBADO O REPROBADO
                 if (historial.length > 0) {
                     const u = historial[historial.length - 1];
                     let ok = false;
@@ -487,6 +491,16 @@
                         <td class="text-slate-700">${telemetriaTxt}</td>
                         <td style="text-align: right;">
                             <span class="badge-sem ${ok ? 'sem-ok' : 'sem-bad'}">${ok ? 'APROBADO' : 'REPROBADO'}</span>
+                        </td>
+                    `;
+                } else if (isCompletadoDemo) {
+                    totalAprobados++;
+                    tr.innerHTML = `
+                        <td class="font-bold text-slate-800">${m.nombre}</td>
+                        <td class="text-slate-600">${m.est}</td>
+                        <td class="text-slate-700">Ensayo de Calibración Demo Registrado</td>
+                        <td style="text-align: right;">
+                            <span class="badge-sem sem-ok">APROBADO</span>
                         </td>
                     `;
                 } else {
