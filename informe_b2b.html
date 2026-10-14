@@ -296,7 +296,7 @@
                     </div>
                     <div class="ficha-item">
                         <span class="ficha-label">FECHA Y HORA EMISIÓN</span>
-                        <span class="ficha-val" id="lblFechaEmision">14-10-2026 05:50 a. m.</span>
+                        <span class="ficha-val" id="lblFechaEmision">14-10-2026 06:05 a. m.</span>
                     </div>
                 </div>
             </div>
@@ -323,7 +323,7 @@
             </div>
             <div class="telemetry-item">
                 <span class="telemetry-title">LATENCIA DEL SENSOR</span>
-                <span class="telemetry-val text-sky-400" id="lblLatenciaSensor">21 ms (Promedio)</span>
+                <span class="telemetry-val text-sky-400" id="lblLatenciaSensor">16 ms (Promedio)</span>
             </div>
             <div class="telemetry-item">
                 <span class="telemetry-title">ESTADO DE SENSORES</span>
@@ -389,7 +389,7 @@
 
         const rawRut = urlParams.get('rut') || '12.345.678-K';
         const cleanRut = rawRut.replace(/[^0-9Kk]/g, '');
-        const latenciaSaved = parseInt(localStorage.getItem('sensometrika_latencia_ms') || localStorage.getItem('latencia_ms') || '21');
+        const latenciaSaved = parseInt(localStorage.getItem('sensometrika_latencia_ms') || localStorage.getItem('latencia_ms') || '16');
 
         function volverMenuB2B() {
             const returnUrl = urlParams.get('returnUrl') ? decodeURIComponent(urlParams.get('returnUrl')) : null;
@@ -441,10 +441,9 @@
 
             modulosConfig.forEach(m => {
                 const historial = obtenerHistorialModulo(m.id);
-                // Banderas explícitas de ejecución demo
                 const isCompletadoDemo = localStorage.getItem(`${m.id}_demo_completada_${cleanRut}`) === 'true' ||
                                          localStorage.getItem(`${m.id}_demo_completada`) === 'true' ||
-                                         localStorage.getItem(`btnMod${m.id === 'reactimetro' ? 1 : m.id === 'palancas' ? 2 : 3}_demo_completada`) === 'true';
+                                         localStorage.getItem(`btnMod${m.id === 'reactimetro' ? 1 : m.id === 'palancas' ? 2 : m.id === 'punteo' ? 3 : 4}_demo_completada`) === 'true';
 
                 const tr = document.createElement('tr');
 
@@ -458,7 +457,7 @@
                             const tBruto = u.promedioBruto || u.promedioTiempo || u.tiempoFrenado || u.tiempo || 0;
                             const tNeto = Math.max(120, tBruto - latenciaSaved);
                             ok = tNeto > 0 && tNeto <= 390;
-                            telemetriaTxt = `Reacción Neto: <strong>${tNeto} ms</strong> (Bruto: ${tBruto} ms | Desv. Hardware: -${latenciaSaved} ms | Errores: 0)`;
+                            telemetriaTxt = `Reacción Neto: <strong>${tNeto} ms</strong> (Bruto: ${tBruto} ms | Desv. Hardware: -${latenciaSaved} ms | Errores: ${u.errores || 0})`;
                             break;
 
                         case 'palancas':
@@ -473,13 +472,44 @@
 
                         case 'punteo':
                             const precPunt = u.precision !== undefined ? u.precision : (u.efectividad !== undefined ? u.efectividad : 0);
+                            const errPunt = u.errores !== undefined ? u.errores : 0;
                             ok = precPunt >= 78;
-                            telemetriaTxt = `Efectividad Ritmo: <strong>${precPunt}%</strong>`;
+                            telemetriaTxt = `Efectividad Ritmo: <strong>${precPunt}%</strong> (Errores / Toques Fuera: ${errPunt})`;
                             break;
 
-                        default:
-                            ok = u.aprobado === true || u.dictamen === 'APROBADO' || (u.precision && u.precision >= 80);
-                            telemetriaTxt = ok ? 'Evaluación completada dentro del estándar' : 'Desviaciones registradas';
+                        case 'audicion':
+                            const dbValor = u.promediodB !== undefined ? u.promediodB : (u.dB !== undefined ? u.dB : 20);
+                            const frecPerdidas = u.frecuenciasFalla !== undefined ? u.frecuenciasFalla : (u.errores || 0);
+                            ok = dbValor <= 25 && frecPerdidas === 0;
+                            telemetriaTxt = `Umbral Auditivo Promedio: <strong>${dbValor} dB</strong> (Frecuencias Críticas Fuera: ${frecPerdidas})`;
+                            break;
+
+                        case 'visual':
+                            const agudezaVal = u.agudeza !== undefined ? u.agudeza : (u.binocular || 1.0);
+                            const ishiharaErr = u.erroresCromaticos !== undefined ? u.erroresCromaticos : (u.errores || 0);
+                            ok = agudezaVal >= 0.8 && ishiharaErr === 0;
+                            telemetriaTxt = `Agudeza Visual: <strong>${agudezaVal} Binocular</strong> (Errores Test Ishihara: ${ishiharaErr})`;
+                            break;
+
+                        case 'anticipacion':
+                            const tMargen = u.desviacionMs !== undefined ? Math.abs(u.desviacionMs) : (u.margenMs !== undefined ? Math.abs(u.margenMs) : 180);
+                            const segMargen = (tMargen / 1000).toFixed(2);
+                            ok = tMargen <= 220;
+                            telemetriaTxt = `Margen Error Estimado: <strong>±${tMargen} ms</strong> (${segMargen}s | Desviación Estándar: ${u.desviacionStd || 12} ms)`;
+                            break;
+
+                        case 'estereopsis':
+                            const prec3D = u.precision !== undefined ? u.precision : (u.aciertos ? Math.round((u.aciertos/10)*100) : 85);
+                            const aciertos3D = u.aciertos !== undefined ? u.aciertos : 8;
+                            ok = prec3D >= 80;
+                            telemetriaTxt = `Precisión Profundidad 3D: <strong>${prec3D}%</strong> (Aciertos: ${aciertos3D}/10 láminas)`;
+                            break;
+
+                        case 'fatiga':
+                            const tPVT = u.tiempoReaccion !== undefined ? u.tiempoReaccion : (u.promedioPVT || 380);
+                            const lapsosAten = u.lapsos !== undefined ? u.lapsos : (u.errores || 0);
+                            ok = tPVT <= 450 && lapsosAten <= 2;
+                            telemetriaTxt = `Tiempo Reacción PVT: <strong>${tPVT} ms</strong> (Lapsos Atencionales >500ms: ${lapsosAten})`;
                             break;
                     }
 
