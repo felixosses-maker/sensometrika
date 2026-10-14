@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SENSOMETRIKA | Muestra Pericial B2B Corporativa</title>
+    <title>SENSOMETRIKA | Informe Pericial B2B Corporativo</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         :root {
@@ -275,35 +275,35 @@
             <div class="grid-ficha-info">
                 <div class="ficha-item">
                     <span class="ficha-label">TRABAJADOR EVALUADO</span>
-                    <span class="ficha-val" id="lblNombre">USUARIO DEMOSTRACIÓN B2B</span>
+                    <span class="ficha-val" id="lblNombre">CARGANDO...</span>
                 </div>
                 <div class="ficha-item">
                     <span class="ficha-label">RUT TRABAJADOR</span>
-                    <span class="ficha-val" id="lblRut">12.345.678-K</span>
+                    <span class="ficha-val" id="lblRut">CARGANDO...</span>
                 </div>
                 <div class="ficha-item">
                     <span class="ficha-label">CARGO / FUNCIÓN OPERATIVA</span>
-                    <span class="ficha-val" id="lblCargo">OPERADOR MULTIPROPÓSITO DEMO</span>
+                    <span class="ficha-val" id="lblCargo">OPERADOR DE FAENA / MULTIPROPÓSITO</span>
                 </div>
                 <div class="ficha-item">
                     <span class="ficha-label">EMPRESA MANDANTE / CONTRATISTA</span>
-                    <span class="ficha-val" id="lblEmpresa">EMPRESA DEMOSTRACIÓN / SOCADEP</span>
+                    <span class="ficha-val" id="lblEmpresa">EMPRESA MANDANTE</span>
                 </div>
                 <div style="display: flex; justify-content: space-between;" class="mt-1">
                     <div class="ficha-item">
                         <span class="ficha-label">FOLIO VERIFICACIÓN</span>
-                        <span class="ficha-val text-sky-600" id="lblFolio">SMK-DEMO-B2B</span>
+                        <span class="ficha-val text-sky-600" id="lblFolio">SMK-B2B-CERT</span>
                     </div>
                     <div class="ficha-item">
                         <span class="ficha-label">FECHA Y HORA EMISIÓN</span>
-                        <span class="ficha-val" id="lblFechaEmision">14-10-2026 06:05 a. m.</span>
+                        <span class="ficha-val" id="lblFechaEmision">14-10-2026</span>
                     </div>
                 </div>
             </div>
 
             <div class="biometric-box">
-                <img id="imgBiometrica" src="sensometrica.jpg" alt="Evaluado Biométrico Demo" class="biometric-img">
-                <div class="biometric-tag">EVALUADO DEMOSTRACIÓN</div>
+                <img id="imgBiometrica" src="sensometrica.jpg" alt="Evaluado Biométrico" class="biometric-img">
+                <div class="biometric-tag" id="lblTagBiometrico">REGISTRO EVALUADO</div>
             </div>
         </div>
 
@@ -355,10 +355,10 @@
         <div class="firmas-container">
             <div class="firma-box">
                 <div class="firma-graphic-box">
-                    <img id="imgFirmaTrabajador" src="" alt="Firma Digital Demo" class="firma-graphic-img">
+                    <img id="imgFirmaTrabajador" src="" alt="Firma Digital" class="firma-graphic-img">
                 </div>
                 <div class="linea-firma"></div>
-                <div class="firma-label" id="lblFirmaNombre">USUARIO DEMOSTRACIÓN B2B</div>
+                <div class="firma-label" id="lblFirmaNombre">NOMBRE TRABAJADOR</div>
                 <div class="firma-sub">FIRMA Y DECLARACIÓN JURADA TRABAJADOR</div>
             </div>
 
@@ -375,7 +375,7 @@
         </div>
 
         <button type="button" class="btn-action" onclick="volverMenuB2B()">
-            ← VOLVER A LA BATERÍA DE PRUEBAS DEMO
+            ← VOLVER A LA BATERÍA DE PRUEBAS
         </button>
     </div>
 
@@ -387,7 +387,12 @@
             datosUsuario = JSON.parse(localStorage.getItem('sensometrika_datos_usuario')) || {};
         } catch(e){}
 
-        const rawRut = urlParams.get('rut') || '12.345.678-K';
+        // Prioridad 1: URL query params / Prioridad 2: localStorage / Prioridad 3: Fallback
+        const rawNombre = urlParams.get('nombre') || datosUsuario.nombre || urlParams.get('prospecto') || 'TRABAJADOR EVALUADO';
+        const rawRut = urlParams.get('rut') || datosUsuario.rut || '12.345.678-K';
+        const rawCargo = urlParams.get('cargo') || datosUsuario.cargo || 'OPERADOR MULTIPROPÓSITO';
+        const rawEmpresa = urlParams.get('empresa') || datosUsuario.empresa || 'SOCADEP LTDA.';
+
         const cleanRut = rawRut.replace(/[^0-9Kk]/g, '');
         const latenciaSaved = parseInt(localStorage.getItem('sensometrika_latencia_ms') || localStorage.getItem('latencia_ms') || '16');
 
@@ -412,10 +417,25 @@
         }
 
         document.addEventListener('DOMContentLoaded', () => {
+            // Asignación Dinámica de Datos Reales
+            document.getElementById('lblNombre').textContent = rawNombre.toUpperCase();
             document.getElementById('lblRut').textContent = rawRut;
-            document.getElementById('lblNombre').textContent = 'USUARIO DEMOSTRACIÓN B2B';
-            document.getElementById('lblFirmaNombre').textContent = 'USUARIO DEMOSTRACIÓN B2B';
+            document.getElementById('lblCargo').textContent = rawCargo.toUpperCase();
+            document.getElementById('lblEmpresa').textContent = rawEmpresa.toUpperCase();
+            document.getElementById('lblFirmaNombre').textContent = rawNombre.toUpperCase();
             document.getElementById('lblLatenciaSensor').textContent = `${latenciaSaved} ms (Promedio)`;
+
+            const now = new Date();
+            const fechaTxt = `${now.getDate().toString().padStart(2, '0')}-${(now.getMonth()+1).toString().padStart(2, '0')}-${now.getFullYear()} ${now.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })}`;
+            document.getElementById('lblFechaEmision').textContent = fechaTxt;
+
+            if (rawNombre.includes('DEMO') || rawRut.includes('DEMO')) {
+                document.getElementById('lblFolio').textContent = 'SMK-DEMO-B2B';
+                document.getElementById('lblTagBiometrico').textContent = 'EVALUADO DEMOSTRACIÓN';
+            } else {
+                document.getElementById('lblFolio').textContent = `SMK-${cleanRut.substring(0, 6)}-${Math.floor(Math.random()*899+100)}`;
+                document.getElementById('lblTagBiometrico').textContent = 'EVALUADO VERIFICADO';
+            }
 
             const imgFirma = document.getElementById('imgFirmaTrabajador');
             const svgFirmaRespaldo = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="60" viewBox="0 0 200 60"><path d="M 15 35 Q 35 15, 65 30 T 105 18 T 155 38 Q 175 48, 185 25" fill="none" stroke="%230f172a" stroke-width="2" stroke-linecap="round"/><path d="M 45 42 Q 85 52, 135 32" fill="none" stroke="%230f172a" stroke-width="1.8" stroke-linecap="round"/></svg>`;
@@ -442,8 +462,7 @@
             modulosConfig.forEach(m => {
                 const historial = obtenerHistorialModulo(m.id);
                 const isCompletadoDemo = localStorage.getItem(`${m.id}_demo_completada_${cleanRut}`) === 'true' ||
-                                         localStorage.getItem(`${m.id}_demo_completada`) === 'true' ||
-                                         localStorage.getItem(`btnMod${m.id === 'reactimetro' ? 1 : m.id === 'palancas' ? 2 : m.id === 'punteo' ? 3 : 4}_demo_completada`) === 'true';
+                                         localStorage.getItem(`${m.id}_demo_completada`) === 'true';
 
                 const tr = document.createElement('tr');
 
@@ -528,7 +547,7 @@
                     tr.innerHTML = `
                         <td class="font-bold text-slate-800">${m.nombre}</td>
                         <td class="text-slate-600">${m.est}</td>
-                        <td class="text-slate-700">Ensayo de Calibración Demo Registrado</td>
+                        <td class="text-slate-700">Ensayo de Calibración Registrado</td>
                         <td style="text-align: right;">
                             <span class="badge-sem sem-ok">APROBADO</span>
                         </td>
