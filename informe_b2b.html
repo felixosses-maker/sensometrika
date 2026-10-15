@@ -437,9 +437,29 @@
                 document.getElementById('lblTagBiometrico').textContent = 'EVALUADO VERIFICADO';
             }
 
+            // --- LECTURA DINÁMICA DE FOTO BIOMÉTRICA DE WEBCAM ---
+            const imgBiometrica = document.getElementById('imgBiometrica');
+            const fotoGuardada = localStorage.getItem(`sensometrika_foto_${cleanRut}`) || 
+                                 localStorage.getItem('sensometrika_foto_evaluado') || 
+                                 localStorage.getItem('evaluado_foto') || 
+                                 urlParams.get('foto');
+            if (fotoGuardada) {
+                imgBiometrica.src = fotoGuardada;
+            }
+
+            // --- LECTURA DINÁMICA DE FIRMA DIGITAL ---
             const imgFirma = document.getElementById('imgFirmaTrabajador');
+            const firmaGuardada = localStorage.getItem(`sensometrika_firma_${cleanRut}`) || 
+                                  localStorage.getItem('sensometrika_firma_evaluado') || 
+                                  localStorage.getItem('evaluado_firma') || 
+                                  urlParams.get('firma');
             const svgFirmaRespaldo = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="60" viewBox="0 0 200 60"><path d="M 15 35 Q 35 15, 65 30 T 105 18 T 155 38 Q 175 48, 185 25" fill="none" stroke="%230f172a" stroke-width="2" stroke-linecap="round"/><path d="M 45 42 Q 85 52, 135 32" fill="none" stroke="%230f172a" stroke-width="1.8" stroke-linecap="round"/></svg>`;
-            imgFirma.src = svgFirmaRespaldo;
+
+            if (firmaGuardada) {
+                imgFirma.src = firmaGuardada;
+            } else {
+                imgFirma.src = svgFirmaRespaldo;
+            }
 
             const modulosConfig = [
                 { id: 'reactimetro', nombre: '1. Reactímetro Simple', est: '≤ 390 ms' },
