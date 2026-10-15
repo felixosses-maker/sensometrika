@@ -176,8 +176,12 @@
 
     th { background: #070d17; color: var(--accent-cyan); font-weight: 800; text-transform: uppercase; font-size: 0.65rem; }
 
-    .badge-status { padding: 3px 8px; border-radius: 4px; font-weight: 800; font-size: 0.62rem; text-transform: uppercase; }
+    /* ESTILOS DE ESTADOS DINÁMICOS EN NÓMINA */
+    .badge-status { padding: 3px 8px; border-radius: 4px; font-weight: 800; font-size: 0.62rem; text-transform: uppercase; display: inline-block; }
     .badge-ok { background: rgba(16, 185, 129, 0.15); color: var(--accent-green); border: 1px solid var(--accent-green); }
+    .badge-pending { background: rgba(245, 158, 11, 0.15); color: #f59e0b; border: 1px solid #f59e0b; }
+    .badge-progress { background: rgba(56, 189, 248, 0.15); color: var(--accent-cyan); border: 1px solid var(--accent-cyan); }
+    .badge-bad { background: rgba(239, 68, 68, 0.15); color: #ef4444; border: 1px solid #ef4444; }
 
     .modal-overlay {
       position: fixed;
@@ -359,6 +363,39 @@
       };
     }
 
+    // --- CÁLCULO DINÁMICO DE ESTADO SEGÚN TELEMETRÍA EN LOCALSTORAGE ---
+    function calcularEstadoTrabajador(rutRaw) {
+      if (!rutRaw) return { texto: 'PENDIENTE DE INICIO', clase: 'badge-pending' };
+      const cleanRut = rutRaw.replace(/[^0-9Kk]/g, '');
+      
+      const modulos = ['reactimetro', 'palancas', 'punteo', 'audicion', 'visual', 'anticipacion', 'estereopsis', 'fatiga'];
+      let completados = 0;
+      let reprobados = 0;
+
+      modulos.forEach(m => {
+        const histRut = JSON.parse(localStorage.getItem(`sensometrika_historial_${m}_${cleanRut}`)) || [];
+        const isDemoComp = localStorage.getItem(`${m}_demo_completada_${cleanRut}`) === 'true';
+        
+        if (histRut.length > 0) {
+          completados++;
+          const ultimo = histRut[histRut.length - 1];
+          if (ultimo.aprobado === false) reprobados++;
+        } else if (isDemoComp) {
+          completados++;
+        }
+      });
+
+      if (reprobados > 0) {
+        return { texto: 'REPROBADO D.S. N° 170', clase: 'badge-bad' };
+      } else if (completados === modulos.length && completados > 0) {
+        return { texto: 'APROBADO D.S. N° 170', clase: 'badge-ok' };
+      } else if (completados > 0) {
+        return { texto: 'EN EJECUCIÓN', clase: 'badge-progress' };
+      } else {
+        return { texto: 'PENDIENTE DE INICIO', clase: 'badge-pending' };
+      }
+    }
+
     async function generarAcreditacion(e) {
       e.preventDefault();
       
@@ -478,6 +515,8 @@
 
       trabajadores.forEach((t) => {
         const planTrabajador = t.plan || planActivoGlobal;
+        const estadoReal = calcularEstadoTrabajador(t.rut);
+
         const tr = document.createElement('tr');
         tr.innerHTML = `
           <td>
@@ -489,7 +528,7 @@
             <span style="font-size:0.68rem; color:var(--text-muted);">${t.empresa}</span>
           </td>
           <td>
-            <span class="badge-status badge-ok">APROBADO D.S. N° 170</span>
+            <span class="badge-status ${estadoReal.clase}">${estadoReal.texto}</span>
           </td>
           <td>
             <button onclick="copiarLinkFila('${t.url}')" style="background:#0284c7; color:#fff; border:none; padding:6px 10px; border-radius:4px; font-weight:700; cursor:pointer;">
