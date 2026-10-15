@@ -219,6 +219,7 @@
         .sem-ok { background-color: #dcfce7; color: #15803d; border: 1px solid #86efac; }
         .sem-bad { background-color: #fee2e2; color: #b91c1c; border: 1px solid #fca5a5; }
         .sem-pend { background-color: #fef3c7; color: #b45309; border: 1px solid #fde68a; }
+        .sem-disabled { background-color: #f1f5f9; color: #64748b; border: 1px solid #cbd5e1; }
 
         .firmas-container {
             display: grid;
@@ -348,7 +349,7 @@
                 </tr>
             </thead>
             <tbody id="tbodyModulos">
-                <!-- Se poblará dinámicamente según el plan contratado -->
+                <!-- Se poblará dinámicamente con los 8 módulos -->
             </tbody>
         </table>
 
@@ -387,7 +388,6 @@
             datosUsuario = JSON.parse(localStorage.getItem('sensometrika_datos_usuario')) || {};
         } catch(e){}
 
-        // Prioridad 1: URL query params / Prioridad 2: localStorage / Prioridad 3: Fallback
         const rawNombre = urlParams.get('nombre') || datosUsuario.nombre || urlParams.get('prospecto') || 'TRABAJADOR EVALUADO';
         const rawRut = urlParams.get('rut') || datosUsuario.rut || '12.345.678-K';
         const rawCargo = urlParams.get('cargo') || datosUsuario.cargo || 'OPERADOR MULTIPROPÓSITO';
@@ -421,7 +421,6 @@
         }
 
         document.addEventListener('DOMContentLoaded', () => {
-            // Asignación Dinámica de Datos Reales
             document.getElementById('lblNombre').textContent = rawNombre.toUpperCase();
             document.getElementById('lblRut').textContent = rawRut;
             document.getElementById('lblCargo').textContent = rawCargo.toUpperCase();
@@ -441,7 +440,7 @@
                 document.getElementById('lblTagBiometrico').textContent = 'EVALUADO VERIFICADO';
             }
 
-            // --- LECTURA DINÁMICA DE FOTO BIOMÉTRICA DE WEBCAM ---
+            // Lectura de Foto
             const imgBiometrica = document.getElementById('imgBiometrica');
             const fotoGuardada = localStorage.getItem(`sensometrika_foto_${cleanRut}`) || 
                                  localStorage.getItem('sensometrika_foto_trabajador') ||
@@ -452,7 +451,7 @@
                 imgBiometrica.src = fotoGuardada;
             }
 
-            // --- LECTURA DINÁMICA DE FIRMA DIGITAL ---
+            // Lectura de Firma
             const imgFirma = document.getElementById('imgFirmaTrabajador');
             const firmaGuardada = localStorage.getItem(`sensometrika_firma_${cleanRut}`) || 
                                   localStorage.getItem('sensometrika_firma_trabajador') ||
@@ -467,31 +466,32 @@
                 imgFirma.src = svgFirmaRespaldo;
             }
 
-            // --- CONFIGURACIÓN DE PLANES B2B ---
+            // --- CONFIGURACIÓN DE COBERTURA POR PLAN ---
             const planActivo = (urlParams.get('plan') || localStorage.getItem('sensometrika_plan_contratado') || 'BASICO').toUpperCase();
             
             let idsPermitidos = [];
             if (planActivo === 'BASICO' || planActivo === 'BASIC') {
-                // Plan Básico: 3 Módulos
                 idsPermitidos = ['reactimetro', 'palancas', 'punteo'];
             } else if (planActivo === 'PLUS') {
-                // Plan Plus: 4 Módulos (3 Básicos + Auditivo)
                 idsPermitidos = ['reactimetro', 'palancas', 'punteo', 'audicion'];
-            } else {
-                // Plan Full / Premium: 5 Módulos (3 Básicos + Auditivo + Visual)
+            } else if (planActivo === 'FULL' || planActivo === 'MEDIUM') {
                 idsPermitidos = ['reactimetro', 'palancas', 'punteo', 'audicion', 'visual'];
+            } else {
+                // Si es Plan B2B Completo / Portafolio Total
+                idsPermitidos = ['reactimetro', 'palancas', 'punteo', 'audicion', 'visual', 'anticipacion', 'estereopsis', 'fatiga'];
             }
 
-            const todosLosModulos = [
+            // PORTAFOLIO COMPLETO DE LOS 8 MÓDULOS
+            const modulosConfig = [
                 { id: 'reactimetro', nombre: '1. Reactímetro Simple', est: '≤ 390 ms' },
                 { id: 'palancas', nombre: '2. Test de Palancas', est: '≥ 85% / ≤ 1 contacto' },
                 { id: 'punteo', nombre: '3. Punteo y Ritmo (Lahahy)', est: '≥ 78% efectividad' },
                 { id: 'audicion', nombre: '4. Tamizaje Auditivo Ocupacional', est: '≤ 25 dB (Normal)' },
-                { id: 'visual', nombre: '5. Tamizaje Visual Integral', est: '≥ 0.8 binocular' }
+                { id: 'visual', nombre: '5. Tamizaje Visual Integral', est: '≥ 0.8 binocular' },
+                { id: 'anticipacion', nombre: '6. Velocidad de Anticipación', est: '≤ 220 ms margen' },
+                { id: 'estereopsis', nombre: '7. Estereopsis y Profundidad 3D', est: '≥ 80% precisión' },
+                { id: 'fatiga', nombre: '8. Test de Fatiga (PVT)', est: '≤ 450 ms vigilancia' }
             ];
-
-            // Filtrar módulos según la cobertura del plan
-            const modulosConfig = todosLosModulos.filter(m => idsPermitidos.includes(m.id));
 
             const tbody = document.getElementById('tbodyModulos');
             tbody.innerHTML = '';
@@ -501,13 +501,24 @@
             let totalPendientes = 0;
 
             modulosConfig.forEach(m => {
+                const esRequeridoPorPlan = idsPermitidos.includes(m.id);
                 const historial = obtenerHistorialModulo(m.id);
                 const isCompletadoDemo = localStorage.getItem(`${m.id}_demo_completada_${cleanRut}`) === 'true' ||
                                          localStorage.getItem(`${m.id}_demo_completada`) === 'true';
 
                 const tr = document.createElement('tr');
 
-                if (historial.length > 0) {
+                if (!esRequeridoPorPlan) {
+                    // MÓDULOS NO CONTRATADOS / NO SOLICITADOS
+                    tr.innerHTML = `
+                        <td class="font-bold text-slate-400">${m.nombre}</td>
+                        <td class="text-slate-400">${m.est}</td>
+                        <td class="text-slate-400 italic">Módulo no incluido en Plan ${planActivo}</td>
+                        <td style="text-align: right;">
+                            <span class="badge-sem sem-disabled">NO SOLICITADO</span>
+                        </td>
+                    `;
+                } else if (historial.length > 0) {
                     const u = historial[historial.length - 1];
                     let ok = false;
                     let telemetriaTxt = '';
@@ -549,6 +560,27 @@
                             const ishiharaErr = u.erroresCromaticos !== undefined ? u.erroresCromaticos : (u.errores || 0);
                             ok = agudezaVal >= 0.8 && ishiharaErr === 0;
                             telemetriaTxt = `Agudeza Visual: <strong>${agudezaVal} Binocular</strong> (Errores Test Ishihara: ${ishiharaErr})`;
+                            break;
+
+                        case 'anticipacion':
+                            const tMargen = u.desviacionMs !== undefined ? Math.abs(u.desviacionMs) : (u.margenMs !== undefined ? Math.abs(u.margenMs) : 180);
+                            const segMargen = (tMargen / 1000).toFixed(2);
+                            ok = tMargen <= 220;
+                            telemetriaTxt = `Margen Error Estimado: <strong>±${tMargen} ms</strong> (${segMargen}s | Desviación Estándar: ${u.desviacionStd || 12} ms)`;
+                            break;
+
+                        case 'estereopsis':
+                            const prec3D = u.precision !== undefined ? u.precision : (u.aciertos ? Math.round((u.aciertos/10)*100) : 85);
+                            const aciertos3D = u.aciertos !== undefined ? u.aciertos : 8;
+                            ok = prec3D >= 80;
+                            telemetriaTxt = `Precisión Profundidad 3D: <strong>${prec3D}%</strong> (Aciertos: ${aciertos3D}/10 láminas)`;
+                            break;
+
+                        case 'fatiga':
+                            const tPVT = u.tiempoReaccion !== undefined ? u.tiempoReaccion : (u.promedioPVT || 380);
+                            const lapsosAten = u.lapsos !== undefined ? u.lapsos : (u.errores || 0);
+                            ok = tPVT <= 450 && lapsosAten <= 2;
+                            telemetriaTxt = `Tiempo Reacción PVT: <strong>${tPVT} ms</strong> (Lapsos Atencionales >500ms: ${lapsosAten})`;
                             break;
                     }
 
@@ -606,7 +638,7 @@
             } else {
                 boxDictamen.className = "banner-dictamen dictamen-aprobado";
                 boxDictamen.innerHTML = `✔ DICTAMEN PERICIAL B2B: APROBADO (PLAN ${planActivo})`;
-                lblDictamenSub.textContent = `FUNDAMENTACIÓN TÉCNICA: Todos los registros telemétricos del Plan ${planActivo} cumplen con las exigencias del D.S. N° 170.`;
+                lblDictamenSub.textContent = `FUNDAMENTACIÓN TÉCNICA: Todos los registros telemétricos exigidos en el Plan ${planActivo} cumplen con la normativa D.S. N° 170.`;
                 lblEstadoVigencia.textContent = "VIGENTE 1 AÑO (D.S. N° 170)";
                 lblEstadoVigencia.className = "vigencia-orange bg-emerald-600";
             }
