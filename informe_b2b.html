@@ -348,7 +348,7 @@
                 </tr>
             </thead>
             <tbody id="tbodyModulos">
-                <!-- Se poblará dinámicamente -->
+                <!-- Se poblará dinámicamente según el plan contratado -->
             </tbody>
         </table>
 
@@ -467,16 +467,31 @@
                 imgFirma.src = svgFirmaRespaldo;
             }
 
-            const modulosConfig = [
+            // --- CONFIGURACIÓN DE PLANES B2B ---
+            const planActivo = (urlParams.get('plan') || localStorage.getItem('sensometrika_plan_contratado') || 'BASICO').toUpperCase();
+            
+            let idsPermitidos = [];
+            if (planActivo === 'BASICO' || planActivo === 'BASIC') {
+                // Plan Básico: 3 Módulos
+                idsPermitidos = ['reactimetro', 'palancas', 'punteo'];
+            } else if (planActivo === 'PLUS') {
+                // Plan Plus: 4 Módulos (3 Básicos + Auditivo)
+                idsPermitidos = ['reactimetro', 'palancas', 'punteo', 'audicion'];
+            } else {
+                // Plan Full / Premium: 5 Módulos (3 Básicos + Auditivo + Visual)
+                idsPermitidos = ['reactimetro', 'palancas', 'punteo', 'audicion', 'visual'];
+            }
+
+            const todosLosModulos = [
                 { id: 'reactimetro', nombre: '1. Reactímetro Simple', est: '≤ 390 ms' },
                 { id: 'palancas', nombre: '2. Test de Palancas', est: '≥ 85% / ≤ 1 contacto' },
                 { id: 'punteo', nombre: '3. Punteo y Ritmo (Lahahy)', est: '≥ 78% efectividad' },
                 { id: 'audicion', nombre: '4. Tamizaje Auditivo Ocupacional', est: '≤ 25 dB (Normal)' },
-                { id: 'visual', nombre: '5. Tamizaje Visual Integral', est: '≥ 0.8 binocular' },
-                { id: 'anticipacion', nombre: '6. Velocidad de Anticipación', est: '≤ 220 ms margen' },
-                { id: 'estereopsis', nombre: '7. Estereopsis y Profundidad 3D', est: '≥ 80% precisión' },
-                { id: 'fatiga', nombre: '8. Test de Fatiga (PVT)', est: '≤ 450 ms vigilancia' }
+                { id: 'visual', nombre: '5. Tamizaje Visual Integral', est: '≥ 0.8 binocular' }
             ];
+
+            // Filtrar módulos según la cobertura del plan
+            const modulosConfig = todosLosModulos.filter(m => idsPermitidos.includes(m.id));
 
             const tbody = document.getElementById('tbodyModulos');
             tbody.innerHTML = '';
@@ -535,27 +550,6 @@
                             ok = agudezaVal >= 0.8 && ishiharaErr === 0;
                             telemetriaTxt = `Agudeza Visual: <strong>${agudezaVal} Binocular</strong> (Errores Test Ishihara: ${ishiharaErr})`;
                             break;
-
-                        case 'anticipacion':
-                            const tMargen = u.desviacionMs !== undefined ? Math.abs(u.desviacionMs) : (u.margenMs !== undefined ? Math.abs(u.margenMs) : 180);
-                            const segMargen = (tMargen / 1000).toFixed(2);
-                            ok = tMargen <= 220;
-                            telemetriaTxt = `Margen Error Estimado: <strong>±${tMargen} ms</strong> (${segMargen}s | Desviación Estándar: ${u.desviacionStd || 12} ms)`;
-                            break;
-
-                        case 'estereopsis':
-                            const prec3D = u.precision !== undefined ? u.precision : (u.aciertos ? Math.round((u.aciertos/10)*100) : 85);
-                            const aciertos3D = u.aciertos !== undefined ? u.aciertos : 8;
-                            ok = prec3D >= 80;
-                            telemetriaTxt = `Precisión Profundidad 3D: <strong>${prec3D}%</strong> (Aciertos: ${aciertos3D}/10 láminas)`;
-                            break;
-
-                        case 'fatiga':
-                            const tPVT = u.tiempoReaccion !== undefined ? u.tiempoReaccion : (u.promedioPVT || 380);
-                            const lapsosAten = u.lapsos !== undefined ? u.lapsos : (u.errores || 0);
-                            ok = tPVT <= 450 && lapsosAten <= 2;
-                            telemetriaTxt = `Tiempo Reacción PVT: <strong>${tPVT} ms</strong> (Lapsos Atencionales >500ms: ${lapsosAten})`;
-                            break;
                     }
 
                     if (ok) totalAprobados++; else totalReprobados++;
@@ -606,13 +600,13 @@
             } else if (totalPendientes > 0) {
                 boxDictamen.className = "banner-dictamen dictamen-pendiente";
                 boxDictamen.innerHTML = "⏳ DICTAMEN: EVALUACIÓN EN PROCESO – MÓDULOS PENDIENTES DE RENDICIÓN";
-                lblDictamenSub.textContent = `FUNDAMENTACIÓN TÉCNICA DEL PLAZO RECOMENDADO: EVALUACIÓN EN PROCESO. El trabajador aún tiene módulos pendientes por rendir en su plan corporativo. El dictamen final se emitirá al completar la totalidad de la batería.`;
+                lblDictamenSub.textContent = `FUNDAMENTACIÓN TÉCNICA DEL PLAZO RECOMENDADO: EVALUACIÓN EN PROCESO. El trabajador aún tiene módulos pendientes por rendir en su plan corporativo (${planActivo}). El dictamen final se emitirá al completar la totalidad de la batería.`;
                 lblEstadoVigencia.textContent = "EVALUACIÓN INCOMPLETA";
                 lblEstadoVigencia.className = "vigencia-orange";
             } else {
                 boxDictamen.className = "banner-dictamen dictamen-aprobado";
-                boxDictamen.innerHTML = "✔ DICTAMEN PERICIAL B2B: APROBADO (ALTO DESEMPEÑO)";
-                lblDictamenSub.textContent = "FUNDAMENTACIÓN TÉCNICA: Todos los registros telemétricos cumplen con las exigencias del D.S. N° 170.";
+                boxDictamen.innerHTML = `✔ DICTAMEN PERICIAL B2B: APROBADO (PLAN ${planActivo})`;
+                lblDictamenSub.textContent = `FUNDAMENTACIÓN TÉCNICA: Todos los registros telemétricos del Plan ${planActivo} cumplen con las exigencias del D.S. N° 170.`;
                 lblEstadoVigencia.textContent = "VIGENTE 1 AÑO (D.S. N° 170)";
                 lblEstadoVigencia.className = "vigencia-orange bg-emerald-600";
             }
