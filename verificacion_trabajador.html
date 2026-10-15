@@ -221,7 +221,7 @@
     <div class="terms-box">
       <input type="checkbox" id="chkTerminos" onchange="validarTerminosYLatencia()">
       <label for="chkTerminos" style="cursor: pointer;">
-        Declaro que mis datos son fidedignos, acepto rendir las evaluaciones psicotécnicas bajo consentimiento informado y autorizo el procesamiento de resultados según los <strong style="color: var(--accent-cyan);">Términos y Condiciones del Servicio</strong>.
+        Declaro que mis datos son fidedignos, acepto rendir las evaluaciones psicotécnicas bajo consentimiento informed y autorizo el procesamiento de resultados según los <strong style="color: var(--accent-cyan);">Términos y Condiciones del Servicio</strong>.
       </label>
     </div>
 
@@ -309,9 +309,17 @@
       ctxTmp.drawImage(videoEl, 0, 0, canvasTmp.width, canvasTmp.height);
 
       const fotoCapturadaB64 = canvasTmp.toDataURL('image/jpeg');
-      
+      const urlParams = new URLSearchParams(window.location.search);
+      const rawRut = urlParams.get('rut') || localStorage.getItem('sensometrika_evaluado_rut') || '';
+      const cleanRut = rawRut.replace(/[^0-9Kk]/g, '');
+
+      // Guardar foto con claves generales y específicas por RUT
       localStorage.setItem('sensometrika_foto_trabajador', fotoCapturadaB64);
       localStorage.setItem('sensometrika_foto_evaluado', fotoCapturadaB64);
+      localStorage.setItem('evaluado_foto', fotoCapturadaB64);
+      if (cleanRut) {
+        localStorage.setItem(`sensometrika_foto_${cleanRut}`, fotoCapturadaB64);
+      }
 
       imgEl.src = fotoCapturadaB64;
       videoEl.style.display = 'none';
@@ -421,12 +429,20 @@
       if (!latenciaCompletada || !document.getElementById('chkTerminos').checked) return;
 
       const urlParams = new URLSearchParams(window.location.search);
-      const rut = urlParams.get('rut') || '';
+      const rut = urlParams.get('rut') || localStorage.getItem('sensometrika_evaluado_rut') || '';
       const nombre = urlParams.get('nombre') || '';
       const plan = (urlParams.get('plan') || localStorage.getItem('sensometrika_plan_contratado') || 'PLUS').toUpperCase();
+      const cleanRut = rut.replace(/[^0-9Kk]/g, '');
 
+      // Guardar la firma en las distintas claves utilizadas por el informe B2B
       if (!isB2C && canvas) {
-        localStorage.setItem('sensometrika_firma_trabajador', canvas.toDataURL());
+        const firmaB64 = canvas.toDataURL('image/png');
+        localStorage.setItem('sensometrika_firma_trabajador', firmaB64);
+        localStorage.setItem('sensometrika_firma_evaluado', firmaB64);
+        localStorage.setItem('evaluado_firma', firmaB64);
+        if (cleanRut) {
+          localStorage.setItem(`sensometrika_firma_${cleanRut}`, firmaB64);
+        }
       }
       
       localStorage.setItem('sensometrika_estado_fase', 'demo');

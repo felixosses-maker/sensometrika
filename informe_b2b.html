@@ -398,8 +398,12 @@
 
         function volverMenuB2B() {
             const returnUrl = urlParams.get('returnUrl') ? decodeURIComponent(urlParams.get('returnUrl')) : null;
+            const mode = urlParams.get('mode');
+
             if (returnUrl) {
                 window.location.href = returnUrl;
+            } else if (mode === 'b2b') {
+                window.location.href = `menu_B2B.html?${urlParams.toString()}`;
             } else {
                 window.location.href = `demo_b2b_full.html?${urlParams.toString()}`;
             }
@@ -440,22 +444,24 @@
             // --- LECTURA DINÁMICA DE FOTO BIOMÉTRICA DE WEBCAM ---
             const imgBiometrica = document.getElementById('imgBiometrica');
             const fotoGuardada = localStorage.getItem(`sensometrika_foto_${cleanRut}`) || 
+                                 localStorage.getItem('sensometrika_foto_trabajador') ||
                                  localStorage.getItem('sensometrika_foto_evaluado') || 
                                  localStorage.getItem('evaluado_foto') || 
                                  urlParams.get('foto');
-            if (fotoGuardada) {
+            if (fotoGuardada && fotoGuardada.startsWith('data:image')) {
                 imgBiometrica.src = fotoGuardada;
             }
 
             // --- LECTURA DINÁMICA DE FIRMA DIGITAL ---
             const imgFirma = document.getElementById('imgFirmaTrabajador');
             const firmaGuardada = localStorage.getItem(`sensometrika_firma_${cleanRut}`) || 
+                                  localStorage.getItem('sensometrika_firma_trabajador') ||
                                   localStorage.getItem('sensometrika_firma_evaluado') || 
                                   localStorage.getItem('evaluado_firma') || 
                                   urlParams.get('firma');
             const svgFirmaRespaldo = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="60" viewBox="0 0 200 60"><path d="M 15 35 Q 35 15, 65 30 T 105 18 T 155 38 Q 175 48, 185 25" fill="none" stroke="%230f172a" stroke-width="2" stroke-linecap="round"/><path d="M 45 42 Q 85 52, 135 32" fill="none" stroke="%230f172a" stroke-width="1.8" stroke-linecap="round"/></svg>`;
 
-            if (firmaGuardada) {
+            if (firmaGuardada && firmaGuardada.startsWith('data:image')) {
                 imgFirma.src = firmaGuardada;
             } else {
                 imgFirma.src = svgFirmaRespaldo;
