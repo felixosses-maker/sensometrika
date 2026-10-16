@@ -268,7 +268,7 @@
             </div>
         </header>
 
-        <div class="notice-banner">
+        <div class="notice-banner" id="lblNoticeBanner">
             ✉ Despacho Automatizado: Copia oficial remitida en tiempo real al correo de supervisión de faena.
         </div>
 
@@ -420,6 +420,50 @@
             return historial;
         }
 
+        async function despacharInformeCorreoAutomatico(planActivo, folioCert, dictamenTexto) {
+            const claveCorreoEnviado = `sensometrika_correo_despachado_${cleanRut}`;
+            const yaEnviado = localStorage.getItem(claveCorreoEnviado);
+
+            if (yaEnviado) {
+                console.log("ℹ️ El informe de correo ya fue despachado previamente para este RUT.");
+                return;
+            }
+
+            const emailDestino = datosUsuario.email || urlParams.get('email') || 'felix.osses@gmail.com';
+            const linkInformeActual = window.location.href;
+
+            try {
+                const res = await fetch('/api/enviar-correo', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        tipo: 'b2c_pago',
+                        emailDestino: emailDestino,
+                        nombreTrabajador: rawNombre,
+                        rutTrabajador: rawRut,
+                        planNombre: `Informe Pericial B2B Final (${dictamenTexto}) - Folio: ${folioCert}`,
+                        monto: `Acreditación ${planActivo}`,
+                        linkAcceso: linkInformeActual
+                    })
+                });
+
+                const resData = await res.json();
+
+                if (res.ok) {
+                    console.log("🟢 Informe Pericial B2B despachado automáticamente por correo:", resData);
+                    localStorage.setItem(claveCorreoEnviado, 'true');
+                    const banner = document.getElementById('lblNoticeBanner');
+                    if (banner) {
+                        banner.textContent = `✉ Informe Pericial B2B despachado exitosamente a ${emailDestino}`;
+                    }
+                } else {
+                    console.error("🔴 Error API correo:", resData);
+                }
+            } catch(e) {
+                console.error("🔴 Error de red enviando correo de informe:", e);
+            }
+        }
+
         document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('lblNombre').textContent = rawNombre.toUpperCase();
             document.getElementById('lblRut').textContent = rawRut;
@@ -432,11 +476,14 @@
             const fechaTxt = `${now.getDate().toString().padStart(2, '0')}-${(now.getMonth()+1).toString().padStart(2, '0')}-${now.getFullYear()} ${now.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })}`;
             document.getElementById('lblFechaEmision').textContent = fechaTxt;
 
+            let folioCert = '';
             if (rawNombre.includes('DEMO') || rawRut.includes('DEMO')) {
-                document.getElementById('lblFolio').textContent = 'SMK-DEMO-B2B';
+                folioCert = 'SMK-DEMO-B2B';
+                document.getElementById('lblFolio').textContent = folioCert;
                 document.getElementById('lblTagBiometrico').textContent = 'EVALUADO DEMOSTRACIÓN';
             } else {
-                document.getElementById('lblFolio').textContent = `SMK-${cleanRut.substring(0, 6)}-${Math.floor(Math.random()*899+100)}`;
+                folioCert = `SMK-${cleanRut.substring(0, 6)}-${Math.floor(Math.random()*899+100)}`;
+                document.getElementById('lblFolio').textContent = folioCert;
                 document.getElementById('lblTagBiometrico').textContent = 'EVALUADO VERIFICADO';
             }
 
@@ -477,7 +524,6 @@
             } else if (planActivo === 'FULL' || planActivo === 'MEDIUM') {
                 idsPermitidos = ['reactimetro', 'palancas', 'punteo', 'audicion', 'visual'];
             } else {
-                // Si es Plan B2B Completo / Portafolio Total
                 idsPermitidos = ['reactimetro', 'palancas', 'punteo', 'audicion', 'visual', 'anticipacion', 'estereopsis', 'fatiga'];
             }
 
@@ -509,7 +555,6 @@
                 const tr = document.createElement('tr');
 
                 if (!esRequeridoPorPlan) {
-                    // MÓDULOS NO CONTRATADOS / NO SOLICITADOS
                     tr.innerHTML = `
                         <td class="font-bold text-slate-400">${m.nombre}</td>
                         <td class="text-slate-400">${m.est}</td>
@@ -618,7 +663,7 @@
                 tbody.appendChild(tr);
             });
 
-            // DICTAMEN DE BATERÍA GLOBAL
+            // DICTAMEN DE BATERÍA GLOBAL Y DESPACHO AUTOMÁTICO
             const boxDictamen = document.getElementById('boxDictamen');
             const lblDictamenSub = document.getElementById('lblDictamenSub');
             const lblEstadoVigencia = document.getElementById('lblEstadoVigencia');
@@ -641,6 +686,9 @@
                 lblDictamenSub.textContent = `FUNDAMENTACIÓN TÉCNICA: Todos los registros telemétricos exigidos en el Plan ${planActivo} cumplen con la normativa D.S. N° 170.`;
                 lblEstadoVigencia.textContent = "VIGENTE 1 AÑO (D.S. N° 170)";
                 lblEstadoVigencia.className = "vigencia-orange bg-emerald-600";
+
+                // GATILLO: Despacho automático por correo al completar 100% el plan sin pendientes
+                despacharInformeCorreoAutomatico(planActivo, folioCert, "APROBADO");
             }
         });
     </script>
