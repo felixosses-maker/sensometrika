@@ -241,11 +241,11 @@
 
     document.addEventListener('DOMContentLoaded', () => {
       const urlParams = new URLSearchParams(window.location.search);
-      const modeParam = urlParams.get('mode');
+      const modeParam = urlParams.get('mode') || 'b2b';
       const b2cModeStorage = localStorage.getItem('sensometrika_b2c_mode');
 
       // PRESERVAR Y PROPAGAR PLAN DESDE LA URL
-      const planParam = (urlParams.get('plan') || localStorage.getItem('sensometrika_plan_contratado') || 'PLUS').toUpperCase();
+      const planParam = (urlParams.get('plan') || localStorage.getItem('sensometrika_plan_contratado') || 'BASICO').toUpperCase();
       localStorage.setItem('sensometrika_plan_contratado', planParam);
 
       let datosUsuario = {};
@@ -255,28 +255,44 @@
 
       const rut = urlParams.get('rut') || datosUsuario.rut || '';
       const nombre = urlParams.get('nombre') || datosUsuario.nombre || '';
+      const cleanRut = rut.replace(/[^0-9Kk]/g, '');
 
       document.getElementById('lblRut').textContent = rut || 'SIN RUT';
       document.getElementById('lblNombre').textContent = decodeURIComponent(nombre) || 'SIN NOMBRE';
 
-      // --- LIMPIEZA RIGUROSA DE HISTORIAL TELEMÉTRICO POR RUT AL ACREDITAR ---
-      const cleanRut = rut.replace(/[^0-9Kk]/g, '');
-      const modulosBateria = ['reactimetro', 'palancas', 'punteo', 'audicion', 'visual', 'anticipacion', 'estereopsis', 'fatiga'];
+      // --- ENRUTAMIENTO INTELIGENTE POR ESTADO DE AVANCE ---
+      if (cleanRut) {
+        const fotoExiste = localStorage.getItem(`sensometrika_foto_${cleanRut}`) || localStorage.getItem('sensometrika_foto_trabajador');
+        const firmaExiste = localStorage.getItem(`sensometrika_firma_${cleanRut}`) || localStorage.getItem('sensometrika_firma_trabajador');
+        const latenciaExiste = localStorage.getItem('sensometrika_latencia_ms');
 
-      // Limpiar claves dinámicas específicas del RUT y globales
-      modulosBateria.forEach(m => {
-        if (cleanRut) {
-          localStorage.removeItem(`sensometrika_historial_${m}_${cleanRut}`);
-          localStorage.removeItem(`${m}_demo_completada_${cleanRut}`);
+        // Determinar módulos requeridos según el plan
+        let idsRequeridos = ['reactimetro', 'palancas', 'punteo'];
+        if (planParam === 'PLUS') idsRequeridos.push('audicion');
+        if (planParam === 'FULL' || planParam === 'MEDIUM') idsRequeridos.push('audicion', 'visual');
+
+        // Contar módulos rendidos
+        let completados = 0;
+        idsRequeridos.forEach(m => {
+          const hist = JSON.parse(localStorage.getItem(`sensometrika_historial_${m}_${cleanRut}`)) || [];
+          if (hist.length > 0) completados++;
+        });
+
+        // 1. SI YA COMPLETÓ TODOS LOS MÓDULOS DE SU PLAN -> IR DIRECTO AL INFORME
+        if (completados >= idsRequeridos.length && idsRequeridos.length > 0) {
+          window.location.href = `informe_b2b.html?rut=${encodeURIComponent(rut)}&nombre=${encodeURIComponent(nombre)}&plan=${planParam}&mode=${modeParam}`;
+          return;
         }
-        localStorage.removeItem(`sensometrika_historial_${m}`);
-        localStorage.removeItem(`${m}_demo_completada`);
-      });
 
-      localStorage.removeItem('sensometrika_modulos_rendidos');
-      localStorage.removeItem('sensometrika_foto_trabajador');
-      localStorage.removeItem('sensometrika_foto_evaluado');
-      localStorage.removeItem('sensometrika_firma_trabajador');
+        // 2. SI YA SE ACREDITÓ (FOTO, FIRMA Y LATENCIA) PERO ESTÁ EN CURSO -> IR DIRECTO AL MENÚ DE MÓDULOS
+        if (fotoExiste && firmaExiste && latenciaExiste) {
+          const menuDestino = (modeParam === 'b2c' || b2cModeStorage === 'true') ? 'menu_B2C.html' : 'menu_B2B.html';
+          window.location.href = `${menuDestino}?rut=${encodeURIComponent(rut)}&nombre=${encodeURIComponent(nombre)}&plan=${planParam}&mode=${modeParam}&fase=demo&demo=true`;
+          return;
+        }
+      }
+
+      // Si no ha registrado su sesión previamente, se mantiene en el registro inicial
       localStorage.setItem('sensometrika_evaluado_rut', rut);
 
       if (modeParam === 'b2c' || b2cModeStorage === 'true') {
@@ -319,7 +335,6 @@
       const rawRut = urlParams.get('rut') || localStorage.getItem('sensometrika_evaluado_rut') || '';
       const cleanRut = rawRut.replace(/[^0-9Kk]/g, '');
 
-      // Guardar foto con claves generales y específicas por RUT
       localStorage.setItem('sensometrika_foto_trabajador', fotoCapturadaB64);
       localStorage.setItem('sensometrika_foto_evaluado', fotoCapturadaB64);
       localStorage.setItem('evaluado_foto', fotoCapturadaB64);
@@ -437,10 +452,9 @@
       const urlParams = new URLSearchParams(window.location.search);
       const rut = urlParams.get('rut') || localStorage.getItem('sensometrika_evaluado_rut') || '';
       const nombre = urlParams.get('nombre') || '';
-      const plan = (urlParams.get('plan') || localStorage.getItem('sensometrika_plan_contratado') || 'PLUS').toUpperCase();
+      const plan = (urlParams.get('plan') || localStorage.getItem('sensometrika_plan_contratado') || 'BASICO').toUpperCase();
       const cleanRut = rut.replace(/[^0-9Kk]/g, '');
 
-      // Guardar la firma en las distintas claves utilizadas por el informe B2B
       if (!isB2C && canvas) {
         const firmaB64 = canvas.toDataURL('image/png');
         localStorage.setItem('sensometrika_firma_trabajador', firmaB64);
