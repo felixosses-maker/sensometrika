@@ -295,7 +295,7 @@
                     </div>
                     <div class="ficha-item">
                         <span class="ficha-label">FECHA Y HORA EMISIÓN</span>
-                        <span class="ficha-val" id="lblFechaEmision">14-10-2026</span>
+                        <span class="ficha-val" id="lblFechaEmision">16-10-2026</span>
                     </div>
                 </div>
             </div>
@@ -347,7 +347,7 @@
                 </tr>
             </thead>
             <tbody id="tbodyModulos">
-                <!-- Se poblará dinámicamente con los 8 módulos -->
+                <!-- Se poblará dinámicamente -->
             </tbody>
         </table>
 
@@ -388,7 +388,7 @@
 
         const rawNombre = urlParams.get('nombre') || datosUsuario.nombre || urlParams.get('prospecto') || 'TRABAJADOR EVALUADO';
         const rawRut = urlParams.get('rut') || datosUsuario.rut || '12.345.678-K';
-        const rawCargo = urlParams.get('cargo') || datosUsuario.cargo || 'OPERADOR MULTIPROPÓSITO';
+        const rawCargo = urlParams.get('cargo') || datosUsuario.cargo || 'OPERADOR DE FAENA';
         const rawEmpresa = urlParams.get('empresa') || datosUsuario.empresa || 'SOCADEP LTDA.';
 
         const cleanRut = rawRut.replace(/[^0-9Kk]/g, '');
@@ -418,14 +418,26 @@
             return historial;
         }
 
+        function obtenerLeyendaAptitud(cargo) {
+            const cargoUpper = (cargo || '').toUpperCase();
+            
+            const esOperador = ['OPERADOR', 'GRÚA', 'GRUA', 'HARVESTER', 'SKIDDER', 'EXCAVADORA', 'MAQUINARIA', 'EQUIPO', 'FORKLIFT', 'YARDER', 'MOTONIVELADORA', 'RETROEXCAVADORA'].some(k => cargoUpper.includes(k));
+            const esConductor = ['CONDUCTOR', 'CHOFER', 'CAMIÓN', 'CAMION', 'CAMIONETA', 'CHOFERA', 'CONDUCTORA', 'TRANSPORTE'].some(k => cargoUpper.includes(k));
+
+            if (esOperador) {
+                return "FUNDAMENTACIÓN TÉCNICA: El trabajador cumple satisfactoriamente con la aptitud psicosensométrica para la OPERACIÓN SEGURA DE MAQUINARIA PESADA Y EQUIPOS DE FAENA, conforme a los parámetros exigidos por el D.S. N° 170-MTT y normativas de Seguridad Ocupacional.";
+            } else if (esConductor) {
+                return "FUNDAMENTACIÓN TÉCNICA: El trabajador cumple satisfactoriamente con la aptitud psicosensométrica para la CONDUCCIÓN DE VEHÍCULOS MOTORIZADOS, conforme a los estándares telemétricos de la Ley de Tránsito y D.S. N° 170-MTT.";
+            } else {
+                return "FUNDAMENTACIÓN TÉCNICA: El trabajador cumple satisfactoriamente con la aptitud psicosensométrica requerida para la OPERACIÓN DE EQUIPOS Y CONDUCCIÓN EN FAENA, conforme al D.S. N° 170-MTT.";
+            }
+        }
+
         async function despacharInformeCorreoAutomatico(planActivo, folioCert, dictamenTexto) {
             const claveCorreoEnviado = `sensometrika_correo_despachado_${cleanRut}`;
             const yaEnviado = localStorage.getItem(claveCorreoEnviado);
 
-            if (yaEnviado) {
-                console.log("ℹ️ El informe de correo ya fue despachado previamente para este RUT.");
-                return;
-            }
+            if (yaEnviado) return;
 
             const emailDestino = datosUsuario.email || urlParams.get('email') || 'felix.osses@gmail.com';
             const linkInformeActual = window.location.href;
@@ -445,21 +457,12 @@
                     })
                 });
 
-                const resData = await res.json();
-
                 if (res.ok) {
-                    console.log("🟢 Informe Pericial B2B despachado automáticamente por correo:", resData);
                     localStorage.setItem(claveCorreoEnviado, 'true');
                     const banner = document.getElementById('lblNoticeBanner');
-                    if (banner) {
-                        banner.textContent = `✉ Informe Pericial B2B despachado exitosamente a ${emailDestino}`;
-                    }
-                } else {
-                    console.error("🔴 Error API correo:", resData);
+                    if (banner) banner.textContent = `✉ Informe Pericial B2B despachado exitosamente a ${emailDestino}`;
                 }
-            } catch(e) {
-                console.error("🔴 Error de red enviando correo de informe:", e);
-            }
+            } catch(e) {}
         }
 
         document.addEventListener('DOMContentLoaded', () => {
@@ -474,6 +477,9 @@
             const fechaTxt = `${now.getDate().toString().padStart(2, '0')}-${(now.getMonth()+1).toString().padStart(2, '0')}-${now.getFullYear()} ${now.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })}`;
             document.getElementById('lblFechaEmision').textContent = fechaTxt;
 
+            const fechaExp = new Date(now.getFullYear() + 1, now.getMonth(), now.getDate());
+            const fechaExpTxt = `${fechaExp.getDate().toString().padStart(2, '0')}-${(fechaExp.getMonth()+1).toString().padStart(2, '0')}-${fechaExp.getFullYear()}`;
+
             let folioCert = '';
             if (rawNombre.includes('DEMO') || rawRut.includes('DEMO')) {
                 folioCert = 'SMK-DEMO-B2B';
@@ -485,15 +491,12 @@
                 document.getElementById('lblTagBiometrico').textContent = 'EVALUADO VERIFICADO';
             }
 
-            // --- MEJORA: GENERACIÓN DINÁMICA DE CÓDIGO QR DE VERIFICACIÓN OFICIAL ---
             const imgQr = document.getElementById('imgQrVerificacion');
             if (imgQr) {
-                // Captura la URL exacta y completa de este informe con todos sus parámetros de verificación
                 const urlCertificadoActual = window.location.href;
                 imgQr.src = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(urlCertificadoActual)}`;
             }
 
-            // Lectura de Foto
             const imgBiometrica = document.getElementById('imgBiometrica');
             const fotoGuardada = localStorage.getItem(`sensometrika_foto_${cleanRut}`) || 
                                  localStorage.getItem('sensometrika_foto_trabajador') ||
@@ -504,7 +507,6 @@
                 imgBiometrica.src = fotoGuardada;
             }
 
-            // Lectura de Firma
             const imgFirma = document.getElementById('imgFirmaTrabajador');
             const firmaGuardada = localStorage.getItem(`sensometrika_firma_${cleanRut}`) || 
                                   localStorage.getItem('sensometrika_firma_trabajador') ||
@@ -519,7 +521,6 @@
                 imgFirma.src = svgFirmaRespaldo;
             }
 
-            // --- CONFIGURACIÓN DE COBERTURA POR PLAN ---
             const planActivo = (urlParams.get('plan') || localStorage.getItem('sensometrika_plan_contratado') || 'BASICO').toUpperCase();
             
             let idsPermitidos = [];
@@ -533,7 +534,6 @@
                 idsPermitidos = ['reactimetro', 'palancas', 'punteo', 'audicion', 'visual', 'anticipacion', 'estereopsis', 'fatiga'];
             }
 
-            // PORTAFOLIO COMPLETO DE LOS 8 MÓDULOS
             const modulosConfig = [
                 { id: 'reactimetro', nombre: '1. Reactímetro Simple', est: '≤ 390 ms' },
                 { id: 'palancas', nombre: '2. Test de Palancas', est: '≥ 85% / ≤ 1 contacto' },
@@ -669,7 +669,6 @@
                 tbody.appendChild(tr);
             });
 
-            // DICTAMEN DE BATERÍA GLOBAL Y DESPACHO AUTOMÁTICO
             const boxDictamen = document.getElementById('boxDictamen');
             const lblDictamenSub = document.getElementById('lblDictamenSub');
             const lblEstadoVigencia = document.getElementById('lblEstadoVigencia');
@@ -689,11 +688,13 @@
             } else {
                 boxDictamen.className = "banner-dictamen dictamen-aprobado";
                 boxDictamen.innerHTML = `✔ DICTAMEN PERICIAL B2B: APROBADO (PLAN ${planActivo})`;
-                lblDictamenSub.textContent = `FUNDAMENTACIÓN TÉCNICA: Todos los registros telemétricos exigidos en el Plan ${planActivo} cumplen con la normativa D.S. N° 170.`;
-                lblEstadoVigencia.textContent = "VIGENTE 1 AÑO (D.S. N° 170)";
+                
+                // Leyenda dinámica adaptada al rol (Operador de Grúa vs Conductor)
+                lblDictamenSub.textContent = obtenerLeyendaAptitud(rawCargo);
+
+                lblEstadoVigencia.textContent = `VENCE: ${fechaExpTxt} (D.S. N° 170)`;
                 lblEstadoVigencia.className = "vigencia-orange bg-emerald-600";
 
-                // GATILLO: Despacho automático por correo al completar 100% el plan sin pendientes
                 despacharInformeCorreoAutomatico(planActivo, folioCert, "APROBADO");
             }
         });
