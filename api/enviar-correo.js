@@ -53,12 +53,8 @@ module.exports = async (req, res) => {
       duracion_minutos
     } = req.body || {};
 
-    // Aceptar tanto 'email' como 'emailDestino' para máxima compatibilidad
-    const correoFinal = email || emailDestino;
-
-    if (!correoFinal) {
-      return res.status(400).json({ error: 'Falta parámetro obligatorio: email o emailDestino.' });
-    }
+    // Correo del destinatario principal (Empresa Cliente o Evaluado)
+    const correoFinal = email || emailDestino || 'contacto@sensometrica.cl';
 
     const enlaceEntrante = enlace || linkAcceso;
     const destinatarioNombre = nombreTrabajador || nombre || (tipo === 'b2b' ? 'Supervisión Técnica' : 'Postulante');
@@ -117,6 +113,9 @@ module.exports = async (req, res) => {
     let asunto = '';
     let htmlContent = '';
 
+    // Determinación dinámica si corresponde al envío de un Informe Pericial Finalizado
+    const esInforme = tipo === 'informe' || (planNombre && planNombre.toLowerCase().includes('informe'));
+
     if (tipo === 'b2b') {
       const razonSocial = (detalles && detalles.razonSocial) ? detalles.razonSocial : 'Empresa Cliente';
       const rutEmpresa = (detalles && detalles.rutEmpresa) ? detalles.rutEmpresa : '--';
@@ -155,7 +154,7 @@ module.exports = async (req, res) => {
               </div>
             </div>
             <div style="padding: 16px; text-align: center; border-top: 1px solid #1e293b; background: #070d18; font-size: 10px; color: #64748b;">
-              Sensometrika SpA • Chillán, Región de Ñuble, Chile.
+              Sensometrika SpA • Plataforma de Calibración & Gestión Psicosensométrica • Chile • contacto@sensometrica.cl
             </div>
           </div>
         </body>
@@ -165,9 +164,20 @@ module.exports = async (req, res) => {
       const nombrePlan = planNombre || (detalles && detalles.nombrePlan) || (tipoToken === 'demo' ? 'Pase de Demostración' : 'Pase Psicomotriz (3 Sim)');
       const vigenciaTexto = (detalles && detalles.vigencia) ? detalles.vigencia : (tipoToken === 'demo' ? '6 minutos' : '48 horas');
 
-      asunto = tipo === 'b2c_pago' 
-        ? `Acceso Habilitado: ${nombrePlan} — Sensometrika`
-        : `Tu Enlace de Acceso: Evaluación Psicotécnica — Sensometrika`;
+      asunto = esInforme
+        ? `Informe Pericial Disponible: ${nombrePlan} — Sensometrika`
+        : (tipo === 'b2c_pago' ? `Acceso Habilitado: ${nombrePlan} — Sensometrika` : `Tu Enlace de Acceso: Evaluación Psicotécnica — Sensometrika`);
+
+      const textoInsignia = esInforme ? 'Informe Pericial Emitido' : 'Acceso Habilitado';
+      const colorInsignia = esInforme ? '#38bdf8' : '#34d399';
+      const bgInsignia = esInforme ? 'rgba(56, 189, 248, 0.15)' : 'rgba(16, 185, 129, 0.15)';
+      const borderInsignia = esInforme ? 'rgba(56, 189, 248, 0.4)' : 'rgba(16, 185, 129, 0.4)';
+
+      const textoMensaje = esInforme
+        ? `Tu informe pericial psicosensométrico oficial para <strong style="color: #ffffff;">${nombrePlan}</strong> ha sido generado y certificado exitosamente. Puedes revisar el detalle de tus resultados telemétricos y el dictamen oficial en el siguiente enlace:`
+        : `Tu acceso para <strong style="color: #ffffff;">${nombrePlan}</strong> ha sido activado exitosamente (${vigenciaTexto}). Ya puedes ingresar al simulador para preparar tu examen psicotécnico de licencia de conducir o faena laboral.`;
+
+      const textoBoton = esInforme ? 'Revisar Informe Pericial →' : 'Comenzar Evaluación Ahora →';
 
       htmlContent = `
         <!DOCTYPE html>
@@ -180,12 +190,12 @@ module.exports = async (req, res) => {
               <p style="margin: 4px 0 0 0; font-size: 10px; color: #94a3b8; letter-spacing: 1.5px; text-transform: uppercase;">Gabinete Sensotécnico Laboral • D.S. Nº 170 MTT</p>
             </div>
             <div style="padding: 28px 24px;">
-              <span style="display: inline-block; padding: 4px 12px; background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.4); border-radius: 20px; color: #34d399; font-size: 11px; font-weight: 700; text-transform: uppercase; margin-bottom: 14px;">
-                Acceso Habilitado
+              <span style="display: inline-block; padding: 4px 12px; background: ${bgInsignia}; border: 1px solid ${borderInsignia}; border-radius: 20px; color: ${colorInsignia}; font-size: 11px; font-weight: 700; text-transform: uppercase; margin-bottom: 14px;">
+                ${textoInsignia}
               </span>
               <h2 style="font-size: 18px; margin: 0 0 12px 0; color: #ffffff;">¡Hola, ${destinatarioNombre}!</h2>
               <p style="font-size: 13px; line-height: 1.6; color: #94a3b8; margin: 0 0 16px 0;">
-                Tu acceso para <strong style="color: #ffffff;">${nombrePlan}</strong> ha sido activado exitosamente (${vigenciaTexto}). Ya puedes ingresar al simulador para preparar tu examen psicotécnico de licencia de conducir o faena laboral.
+                ${textoMensaje}
               </p>
 
               <div style="background: #0b1320; border: 1px solid #1e293b; border-radius: 10px; padding: 14px; margin-bottom: 20px; text-align: left;">
@@ -199,7 +209,7 @@ module.exports = async (req, res) => {
 
               <div style="background: #131b2e; border: 1px solid #1e293b; border-radius: 12px; padding: 22px; text-align: center; margin-bottom: 24px;">
                 <a href="${enlaceFinal}" target="_blank" style="display: inline-block; background: #0284c7; color: #ffffff; text-decoration: none; font-weight: 800; font-size: 14px; padding: 13px 28px; border-radius: 10px; box-shadow: 0 4px 15px rgba(2, 132, 199, 0.4);">
-                  Comenzar Evaluación Ahora →
+                  ${textoBoton}
                 </a>
                 <p style="font-size: 11px; color: #64748b; margin: 14px 0 0 0; word-break: break-all;">
                   Si el botón no abre, haz clic directo en este enlace seguro:<br>
@@ -208,7 +218,7 @@ module.exports = async (req, res) => {
               </div>
             </div>
             <div style="padding: 16px; text-align: center; border-top: 1px solid #1e293b; background: #070d18; font-size: 10px; color: #64748b;">
-              Sensometrika SpA • Chillán, Región de Ñuble, Chile.
+              Sensometrika SpA • Plataforma de Calibración & Gestión Psicosensométrica • Chile • contacto@sensometrica.cl
             </div>
           </div>
         </body>
@@ -216,8 +226,16 @@ module.exports = async (req, res) => {
       `;
     }
 
-    // Remitente por defecto autorizado por la API de Resend
     const remitente = process.env.EMAIL_FROM || 'Sensometrika <onboarding@resend.dev>';
+
+    // Payload de envío: Destinatario principal + Copia Oculta de Respaldo Interno a contacto@sensometrica.cl
+    const emailPayload = {
+      from: remitente,
+      to: [correoFinal],
+      bcc: ['contacto@sensometrica.cl'],
+      subject: asunto,
+      html: htmlContent
+    };
 
     const resendResponse = await fetch('https://api.resend.com/emails', {
       method: 'POST',
@@ -225,12 +243,7 @@ module.exports = async (req, res) => {
         'Authorization': `Bearer ${RESEND_API_KEY}`,
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({
-        from: remitente,
-        to: [correoFinal],
-        subject: asunto,
-        html: htmlContent
-      })
+      body: JSON.stringify(emailPayload)
     });
 
     const data = await resendResponse.json();
