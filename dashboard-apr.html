@@ -363,16 +363,28 @@
       };
     }
 
-    // --- CÁLCULO DINÁMICO DE ESTADO SEGÚN TELEMETRÍA EN LOCALSTORAGE ---
-    function calcularEstadoTrabajador(rutRaw) {
+    // --- CÁLCULO DINÁMICO DE ESTADO SEGÚN PLAN Y TELEMETRÍA EN LOCALSTORAGE ---
+    function calcularEstadoTrabajador(rutRaw, planTrabajador) {
       if (!rutRaw) return { texto: 'PENDIENTE DE INICIO', clase: 'badge-pending' };
       const cleanRut = rutRaw.replace(/[^0-9Kk]/g, '');
-      
-      const modulos = ['reactimetro', 'palancas', 'punteo', 'audicion', 'visual', 'anticipacion', 'estereopsis', 'fatiga'];
+      const planActivo = (planTrabajador || localStorage.getItem('sensometrika_plan_contratado') || 'BASICO').toUpperCase();
+
+      // Definir módulos exigidos según el Plan
+      let modulosExigidos = [];
+      if (planActivo === 'BASICO' || planActivo === 'BASIC') {
+        modulosExigidos = ['reactimetro', 'palancas', 'punteo'];
+      } else if (planActivo === 'PLUS') {
+        modulosExigidos = ['reactimetro', 'palancas', 'punteo', 'audicion'];
+      } else if (planActivo === 'FULL' || planActivo === 'MEDIUM') {
+        modulosExigidos = ['reactimetro', 'palancas', 'punteo', 'audicion', 'visual'];
+      } else {
+        modulosExigidos = ['reactimetro', 'palancas', 'punteo', 'audicion', 'visual', 'anticipacion', 'estereopsis', 'fatiga'];
+      }
+
       let completados = 0;
       let reprobados = 0;
 
-      modulos.forEach(m => {
+      modulosExigidos.forEach(m => {
         const histRut = JSON.parse(localStorage.getItem(`sensometrika_historial_${m}_${cleanRut}`)) || [];
         const isDemoComp = localStorage.getItem(`${m}_demo_completada_${cleanRut}`) === 'true';
         
@@ -387,7 +399,7 @@
 
       if (reprobados > 0) {
         return { texto: 'REPROBADO D.S. N° 170', clase: 'badge-bad' };
-      } else if (completados === modulos.length && completados > 0) {
+      } else if (completados === modulosExigidos.length && completados > 0) {
         return { texto: 'APROBADO D.S. N° 170', clase: 'badge-ok' };
       } else if (completados > 0) {
         return { texto: 'EN EJECUCIÓN', clase: 'badge-progress' };
@@ -453,7 +465,7 @@
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            tipo: 'b2c_pago', // Reutiliza plantilla corporativa con botón de acceso
+            tipo: 'b2c_pago',
             emailDestino: email,
             nombreTrabajador: nombre,
             rutTrabajador: rut,
@@ -515,7 +527,7 @@
 
       trabajadores.forEach((t) => {
         const planTrabajador = t.plan || planActivoGlobal;
-        const estadoReal = calcularEstadoTrabajador(t.rut);
+        const estadoReal = calcularEstadoTrabajador(t.rut, planTrabajador);
 
         const tr = document.createElement('tr');
         tr.innerHTML = `
