@@ -221,7 +221,7 @@
     <div class="terms-box">
       <input type="checkbox" id="chkTerminos" onchange="validarTerminosYLatencia()">
       <label for="chkTerminos" style="cursor: pointer;">
-        Declaro que mis datos son fidedignos, acepto rendir las evaluaciones psicotécnicas bajo consentimiento informed y autorizo el procesamiento de resultados según los <strong style="color: var(--accent-cyan);">Términos y Condiciones del Servicio</strong>.
+        Declaro que mis datos son fidedignos, acepto rendir las evaluaciones psicotécnicas bajo consentimiento informado y autorizo el procesamiento de resultados según los <strong style="color: var(--accent-cyan);">Términos y Condiciones del Servicio</strong>.
       </label>
     </div>
 
@@ -259,19 +259,25 @@
       document.getElementById('lblRut').textContent = rut || 'SIN RUT';
       document.getElementById('lblNombre').textContent = decodeURIComponent(nombre) || 'SIN NOMBRE';
 
-      const rutGuardado = localStorage.getItem('sensometrika_evaluado_rut');
-      if (rutGuardado !== rut) {
-        localStorage.removeItem('sensometrika_modulos_rendidos');
-        localStorage.removeItem('sensometrika_historial_reactimetro');
-        localStorage.removeItem('sensometrika_historial_palancas');
-        localStorage.removeItem('sensometrika_historial_punteo');
-        localStorage.removeItem('sensometrika_historial_auditivo');
-        localStorage.removeItem('sensometrika_historial_visual');
-        localStorage.removeItem('sensometrika_foto_trabajador');
-        localStorage.removeItem('sensometrika_foto_evaluado');
-        localStorage.removeItem('sensometrika_firma_trabajador');
-        localStorage.setItem('sensometrika_evaluado_rut', rut);
-      }
+      // --- LIMPIEZA RIGUROSA DE HISTORIAL TELEMÉTRICO POR RUT AL ACREDITAR ---
+      const cleanRut = rut.replace(/[^0-9Kk]/g, '');
+      const modulosBateria = ['reactimetro', 'palancas', 'punteo', 'audicion', 'visual', 'anticipacion', 'estereopsis', 'fatiga'];
+
+      // Limpiar claves dinámicas específicas del RUT y globales
+      modulosBateria.forEach(m => {
+        if (cleanRut) {
+          localStorage.removeItem(`sensometrika_historial_${m}_${cleanRut}`);
+          localStorage.removeItem(`${m}_demo_completada_${cleanRut}`);
+        }
+        localStorage.removeItem(`sensometrika_historial_${m}`);
+        localStorage.removeItem(`${m}_demo_completada`);
+      });
+
+      localStorage.removeItem('sensometrika_modulos_rendidos');
+      localStorage.removeItem('sensometrika_foto_trabajador');
+      localStorage.removeItem('sensometrika_foto_evaluado');
+      localStorage.removeItem('sensometrika_firma_trabajador');
+      localStorage.setItem('sensometrika_evaluado_rut', rut);
 
       if (modeParam === 'b2c' || b2cModeStorage === 'true') {
         isB2C = true;
