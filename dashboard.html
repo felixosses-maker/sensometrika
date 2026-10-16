@@ -160,7 +160,7 @@
 
         .btn-reset-global:hover {
             background-color: #334155;
-            border-color: var(--accent-cyan, #38bdf8);
+            border-color: var(--demo-color);
         }
 
         .tab-content { display: none; }
@@ -218,11 +218,16 @@
 
         /* Tabla */
         .table-container { overflow-x: auto; }
-        table { width: 100%; border-collapse: collapse; text-align: left; font-size: 14px; }
+        table { width: 100%; border-collapse: collapse; text-align: left; font-size: 13px; }
         th, td { padding: 12px 15px; border-bottom: 1px solid var(--border-color); }
-        th { background-color: #0f172a; color: var(--text-muted); font-weight: 600; }
+        th { background-color: #0f172a; color: var(--text-muted); font-weight: 600; font-size: 11px; text-transform: uppercase; }
         tr:hover { background-color: rgba(255, 255, 255, 0.02); }
-        .status-completed { color: var(--success-color); font-weight: 500; }
+        
+        .badge-status { padding: 3px 8px; border-radius: 4px; font-weight: 800; font-size: 10px; text-transform: uppercase; display: inline-block; }
+        .badge-ok { background: rgba(34, 197, 94, 0.15); color: #22c55e; border: 1px solid #22c55e; }
+        .badge-pending { background: rgba(245, 158, 11, 0.15); color: #f59e0b; border: 1px solid #f59e0b; }
+        .badge-progress { background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid #38bdf8; }
+        .badge-bad { background: rgba(239, 68, 68, 0.15); color: #ef4444; border: 1px solid #ef4444; }
 
         /* Resultado Link Generado */
         .resultado-link-box { background: #0f172a; border: 1px dashed var(--demo-color); padding: 12px; border-radius: 6px; margin-top: 12px; display: none; }
@@ -300,8 +305,9 @@
                     <div class="form-group">
                         <label for="b2bPlanType">Nivel de Batería Requerido</label>
                         <select id="b2bPlanType">
-                            <option value="basico">Plan Básico Laboral ($6.500 + IVA)</option>
-                            <option value="alta_complejidad">Plan Alta Complejidad Minera/Forestal ($18.900 + IVA)</option>
+                            <option value="BASICO">Plan Básico Laboral (3 Módulos - $6.500 + IVA)</option>
+                            <option value="PLUS" selected>Plan Plus (3 Módulos + Auditivo - $12.900 + IVA)</option>
+                            <option value="FULL">Plan Full / Alta Complejidad (5 Módulos - $18.900 + IVA)</option>
                         </select>
                     </div>
                     <button class="btn-b2b" onclick="generarLinkB2B()">Generar Link Único B2B</button>
@@ -312,10 +318,10 @@
                     </div>
                 </div>
                 <div class="card" style="margin-bottom:0;">
-                    <h2>Métricas B2B</h2>
+                    <h2>Métricas B2B Reales</h2>
                     <div class="metrics-container">
-                        <div class="metric-box"><div class="metric-value" style="color: var(--b2b-color);">24</div><div class="metric-label">Empresas Activas</div></div>
-                        <div class="metric-box"><div class="metric-value" style="color: var(--b2b-color);">142</div><div class="metric-label">Links Emitidos</div></div>
+                        <div class="metric-box"><div class="metric-value" id="metricaEmpresas" style="color: var(--b2b-color);">0</div><div class="metric-label">Empresas Registradas</div></div>
+                        <div class="metric-box"><div class="metric-value" id="metricaLinksB2B" style="color: var(--b2b-color);">0</div><div class="metric-label">Trabajadores Acreditados</div></div>
                     </div>
                 </div>
             </div>
@@ -327,7 +333,7 @@
                 <div class="card" style="border-top: 4px solid var(--b2c-color); margin-bottom:0;">
                     <h2>Generación de Acceso Directo (Particular B2C)</h2>
                     <div class="form-group"><label>Nombre del Titular</label><input type="text" id="b2cName" placeholder="Juan Silva"></div>
-                    <div class="form-group"><label>RUT</label><input type="text" id="b2cRut" placeholder="12.333.765-3"></div>
+                    <div class="form-group"><label>RUT Titular</label><input type="text" id="b2cRut" placeholder="12.333.765-3"></div>
                     <button class="btn-b2c" onclick="generarLinkB2C()">Generar Link B2C</button>
                     <div id="boxLinkB2C" class="resultado-link-box" style="border-color: var(--b2c-color);">
                         <p>🔗 Enlace B2C Generado:</p>
@@ -336,16 +342,16 @@
                     </div>
                 </div>
                 <div class="card" style="margin-bottom:0;">
-                    <h2>Métricas B2C</h2>
+                    <h2>Métricas B2C Reales</h2>
                     <div class="metrics-container">
-                        <div class="metric-box"><div class="metric-value" style="color: var(--b2c-color);">89</div><div class="metric-label">Accesos Hoy</div></div>
-                        <div class="metric-box"><div class="metric-value" style="color: var(--b2c-color);">94%</div><div class="metric-label">Completitud</div></div>
+                        <div class="metric-box"><div class="metric-value" id="metricaAccesosB2C" style="color: var(--b2c-color);">0</div><div class="metric-label">Accesos B2C Emitidos</div></div>
+                        <div class="metric-box"><div class="metric-value" id="metricaCompletitudB2C" style="color: var(--b2c-color);">100%</div><div class="metric-label">Completitud Télemetrica</div></div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- VISTA DEMOS COMERCIALES INTEGRADA CON TOKEN -->
+        <!-- VISTA DEMOS COMERCIALES -->
         <div id="contentDemo" class="tab-content">
             <div class="grid-dashboard">
                 <div class="card" style="border-top: 4px solid var(--demo-color); margin-bottom:0;">
@@ -395,25 +401,26 @@
                 <div class="card" style="margin-bottom:0;">
                     <h2>Métricas de Demos Comerciales</h2>
                     <div class="metrics-container">
-                        <div class="metric-box"><div class="metric-value" id="contadorDemosEmitidas" style="color: var(--demo-color);">38</div><div class="metric-label">Demos Emitidas Mes</div></div>
-                        <div class="metric-box"><div class="metric-value" style="color: var(--demo-color);">68%</div><div class="metric-label">Conversión a Venta</div></div>
+                        <div class="metric-box"><div class="metric-value" id="contadorDemosEmitidas" style="color: var(--demo-color);">0</div><div class="metric-label">Demos Emitidas Mes</div></div>
+                        <div class="metric-box"><div class="metric-value" style="color: var(--demo-color);">100%</div><div class="metric-label">Tasa Disponibilidad</div></div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Historial Unificado -->
+        <!-- Historial Unificado Integrado -->
         <div class="card" style="margin-top: 25px;">
-            <h2>Historial General Unificado (B2B, B2C y Demos con Token)</h2>
+            <h2>Historial General Unificado (Evaluaciones B2B, B2C y Demos con Reporte)</h2>
             <div class="table-container">
                 <table>
                     <thead>
                         <tr>
                             <th>Fecha / Hora</th>
-                            <th>Segmento</th>
-                            <th>Entidad / Prospecto</th>
-                            <th>Detalle / Destino</th>
-                            <th>Estado</th>
+                            <th>Segmento / Plan</th>
+                            <th>Entidad / Evaluado</th>
+                            <th>Detalle / Función</th>
+                            <th>Estado Telemetría (D.S. N° 170)</th>
+                            <th>Acción / Informe</th>
                         </tr>
                     </thead>
                     <tbody id="tablaHistorialUnificado">
@@ -426,11 +433,7 @@
     <!-- Scripts de Control -->
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            if (!localStorage.getItem('sensometrika_total_demos')) {
-                localStorage.setItem('sensometrika_total_demos', '38');
-            } else {
-                document.getElementById('contadorDemosEmitidas').textContent = localStorage.getItem('sensometrika_total_demos');
-            }
+            actualizarMetricasYRendimiento();
             cargarHistorialGuardado();
         });
 
@@ -448,51 +451,124 @@
         }
 
         function reiniciarEstadoSesion() {
-            if (!confirm("¿Deseas reiniciar las variables temporales de sesión para generar una prueba limpia?")) {
+            if (!confirm("¿Deseas reiniciar el historial administrativo y las variables de prueba?")) {
                 return;
             }
 
-            // 1. Limpiar datos del usuario y firma
+            localStorage.removeItem('sensometrika_historial_admin');
+            localStorage.removeItem('sensometrika_apr_nomina');
             localStorage.removeItem('sensometrika_datos_usuario');
-            localStorage.removeItem('sensometrika_firma_temp');
             localStorage.removeItem('sensometrika_latencia_ms');
-            localStorage.removeItem('latencia_ms');
 
-            // 2. Limpiar banderas de prueba demo y registros de historial temporal
             const keysToRemove = [];
             for (let i = 0; i < localStorage.length; i++) {
                 const key = localStorage.key(i);
-                if (key && (key.startsWith('sensometrika_historial_') || key.endsWith('_demo_completada') || key.startsWith('sensometrika_firma_'))) {
+                if (key && (key.startsWith('sensometrika_historial_') || key.endsWith('_demo_completada') || key.startsWith('sensometrika_firma_') || key.startsWith('sensometrika_foto_'))) {
                     keysToRemove.push(key);
                 }
             }
             keysToRemove.forEach(k => localStorage.removeItem(k));
 
-            // 3. Ocultar cajas de enlaces
             document.querySelectorAll('.resultado-link-box').forEach(box => box.style.display = 'none');
-
-            alert("✅ Sesión reiniciada. Formulario y almacenamiento local listos para un nuevo enlace.");
+            alert("✅ Historial y almacenamiento local limpiados correctamente.");
             location.reload();
+        }
+
+        function calcularEstadoEvaluado(rutRaw, planTrabajador) {
+            if (!rutRaw) return { texto: 'PENDIENTE DE INICIO', clase: 'badge-pending' };
+            const cleanRut = rutRaw.replace(/[^0-9Kk]/g, '');
+            const planActivo = (planTrabajador || 'BASICO').toUpperCase();
+
+            let modulosExigidos = [];
+            if (planActivo === 'BASICO' || planActivo === 'BASIC') {
+                modulosExigidos = ['reactimetro', 'palancas', 'punteo'];
+            } else if (planActivo === 'PLUS') {
+                modulosExigidos = ['reactimetro', 'palancas', 'punteo', 'audicion'];
+            } else if (planActivo === 'FULL' || planActivo === 'MEDIUM') {
+                modulosExigidos = ['reactimetro', 'palancas', 'punteo', 'audicion', 'visual'];
+            } else {
+                modulosExigidos = ['reactimetro', 'palancas', 'punteo', 'audicion', 'visual', 'anticipacion', 'estereopsis', 'fatiga'];
+            }
+
+            let completados = 0;
+            let reprobados = 0;
+
+            modulosExigidos.forEach(m => {
+                const histRut = JSON.parse(localStorage.getItem(`sensometrika_historial_${m}_${cleanRut}`)) || [];
+                const isDemoComp = localStorage.getItem(`${m}_demo_completada_${cleanRut}`) === 'true';
+                
+                if (histRut.length > 0) {
+                    completados++;
+                    const ultimo = histRut[histRut.length - 1];
+                    if (ultimo.aprobado === false) reprobados++;
+                } else if (isDemoComp) {
+                    completados++;
+                }
+            });
+
+            if (reprobados > 0) {
+                return { texto: 'REPROBADO D.S. N° 170', clase: 'badge-bad' };
+            } else if (completados === modulosExigidos.length && completados > 0) {
+                return { texto: 'APROBADO D.S. N° 170', clase: 'badge-ok' };
+            } else if (completados > 0) {
+                return { texto: 'EN EJECUCIÓN', clase: 'badge-progress' };
+            } else {
+                return { texto: 'PENDIENTE DE INICIO', clase: 'badge-pending' };
+            }
+        }
+
+        function actualizarMetricasYRendimiento() {
+            const nominaAPR = JSON.parse(localStorage.getItem('sensometrika_apr_nomina')) || [];
+            const historialAdmin = JSON.parse(localStorage.getItem('sensometrika_historial_admin')) || [];
+
+            // Empresas Unicas
+            const empresasSet = new Set();
+            nominaAPR.forEach(t => { if(t.empresa) empresasSet.add(t.empresa.toUpperCase()); });
+            historialAdmin.forEach(h => { if(h.segmento === 'B2B' && h.entidad) empresasSet.add(h.entidad.toUpperCase()); });
+
+            document.getElementById('metricaEmpresas').textContent = empresasSet.size || '1';
+            document.getElementById('metricaLinksB2B').textContent = nominaAPR.length || historialAdmin.filter(h => h.segmento === 'B2B').length;
+
+            const b2cCount = historialAdmin.filter(h => h.segmento === 'B2C').length;
+            document.getElementById('metricaAccesosB2C').textContent = b2cCount;
+
+            const demoCount = historialAdmin.filter(h => h.segmento === 'DEMO').length;
+            document.getElementById('contadorDemosEmitidas').textContent = demoCount;
         }
 
         function generarLinkB2B() {
             const razon = document.getElementById('b2bCompany').value.trim();
-            if(!razon) { alert('Ingrese la empresa.'); return; }
+            const rutEmp = document.getElementById('b2bRutEmpresa').value.trim();
+            const plan = document.getElementById('b2bPlanType').value;
+
+            if(!razon) { alert('Ingrese la Razón Social de la Empresa.'); return; }
+            
             const token = 'smk_b2b_' + Math.random().toString(36).substring(2, 8);
-            const url = `${window.location.origin}/demo_b2b_full.html?token=${token}&empresa=${encodeURIComponent(razon)}&returnUrl=demo_b2b_full.html`;
+            const originUrl = window.location.origin;
+            const url = `${originUrl}/verificacion_trabajador.html?token=${token}&empresa=${encodeURIComponent(razon)}&plan=${plan}&mode=b2b`;
+            
             document.getElementById('inputLinkB2B').value = url;
             document.getElementById('boxLinkB2B').style.display = 'block';
-            agregarFilaHistorial('B2B', razon, 'Plan B2B Corporativo');
+
+            agregarFilaHistorial('B2B', razon, `Plan ${plan} (${rutEmp || 'Sin RUT'})`, url, '', plan);
+            actualizarMetricasYRendimiento();
         }
 
         function generarLinkB2C() {
             const nombre = document.getElementById('b2cName').value.trim();
-            if(!nombre) { alert('Ingrese el nombre.'); return; }
+            const rut = document.getElementById('b2cRut').value.trim();
+
+            if(!nombre) { alert('Ingrese el nombre del titular.'); return; }
+
             const token = 'smk_b2c_' + Math.random().toString(36).substring(2, 8);
-            const url = `${window.location.origin}/demo_b2b_full.html?token=${token}&nombre=${encodeURIComponent(nombre)}&returnUrl=demo_b2b_full.html`;
+            const originUrl = window.location.origin;
+            const url = `${originUrl}/verificacion_trabajador.html?token=${token}&nombre=${encodeURIComponent(nombre)}&rut=${encodeURIComponent(rut)}&plan=BASICO&mode=b2c`;
+
             document.getElementById('inputLinkB2C').value = url;
             document.getElementById('boxLinkB2C').style.display = 'block';
-            agregarFilaHistorial('B2C', 'Particular', nombre);
+
+            agregarFilaHistorial('B2C', nombre, `Particular (${rut || 'Sin RUT'})`, url, rut, 'BASICO');
+            actualizarMetricasYRendimiento();
         }
 
         async function generarLinkDemo(canal) {
@@ -513,52 +589,42 @@
 
             let url = '';
             let detalleHistorial = '';
+            let planAsociado = 'FULL';
+
+            const originUrl = window.location.origin;
 
             if (tipoDemo === 'b2c_demo') {
-                url = `${window.location.origin}/demo_b2b_full.html?token=${tokenUnico}&prospecto=${encodeURIComponent(prospecto)}&returnUrl=demo_b2b_full.html`;
-                detalleHistorial = `Demo B2C (3 Módulos Básicos - ${horas}h)`;
+                url = `${originUrl}/verificacion_trabajador.html?token=${tokenUnico}&prospecto=${encodeURIComponent(prospecto)}&plan=BASICO&mode=b2c&demo=true`;
+                detalleHistorial = `Demo B2C (3 Módulos - ${horas}h)`;
+                planAsociado = 'BASICO';
             } else if (tipoDemo === 'b2b_link1') {
-                const returnUrl = encodeURIComponent(`demo_b2b_full.html?token=${tokenUnico}&prospecto=${encodeURIComponent(prospecto)}`);
-                url = `${window.location.origin}/latencia.html?demo=true&single=true&returnUrl=${returnUrl}`;
-                detalleHistorial = `Demo B2B Link 1 (APR - 5 Módulos - ${horas}h)`;
+                url = `${originUrl}/verificacion_trabajador.html?token=${tokenUnico}&empresa=${encodeURIComponent(prospecto)}&plan=PLUS&mode=b2b&demo=true`;
+                detalleHistorial = `Demo B2B APR (4 Módulos - ${horas}h)`;
+                planAsociado = 'PLUS';
             } else if (tipoDemo === 'b2b_link2') {
-                const returnUrl = encodeURIComponent(`demo_b2b_full.html?token=${tokenUnico}&prospecto=${encodeURIComponent(prospecto)}`);
-                url = `${window.location.origin}/latencia.html?demo=true&single=true&returnUrl=${returnUrl}`;
-                detalleHistorial = `Demo B2B Link 2 (Alto Desempeño - 8 Módulos - ${horas}h)`;
+                url = `${originUrl}/verificacion_trabajador.html?token=${tokenUnico}&empresa=${encodeURIComponent(prospecto)}&plan=FULL&mode=b2b&demo=true`;
+                detalleHistorial = `Demo B2B Alto Desempeño (5 Módulos - ${horas}h)`;
+                planAsociado = 'FULL';
             }
 
             document.getElementById('inputLinkDemo').value = url;
             document.getElementById('boxLinkDemo').style.display = 'block';
 
-            const mensajeWp = encodeURIComponent(`Hola *${prospecto}*, aquí tienes tu acceso seguro de demostración para Sensometrika. Vigencia de ${horas} hrs:\n\n${url}`);
+            const mensajeWp = encodeURIComponent(`Hola *${prospecto}*, aquí tienes tu acceso de demostración Sensometrika. Vigencia ${horas} hrs:\n\n${url}`);
             const btnWp = document.getElementById('btnWhatsappDirecto');
-            if(telefono) {
-                let telClean = telefono.replace(/[^0-9+]/g, '');
-                btnWp.href = `https://wa.me/${telClean}?text=${mensajeWp}`;
-            } else {
-                btnWp.href = `https://wa.me/?text=${mensajeWp}`;
-            }
+            btnWp.href = telefono ? `https://wa.me/${telefono.replace(/[^0-9+]/g, '')}?text=${mensajeWp}` : `https://wa.me/?text=${mensajeWp}`;
 
-            let totalDemos = parseInt(localStorage.getItem('sensometrika_total_demos')) || 38;
-            totalDemos++;
-            localStorage.setItem('sensometrika_total_demos', totalDemos);
-            document.getElementById('contadorDemosEmitidas').textContent = totalDemos;
-
-            agregarFilaHistorial('DEMO', prospecto, detalleHistorial);
+            agregarFilaHistorial('DEMO', prospecto, detalleHistorial, url, 'DEMO-RUT', planAsociado);
+            actualizarMetricasYRendimiento();
 
             if (canal === 'correo') {
-                if(!correo) {
-                    alert('⚠️ Ingrese un correo electrónico para despachar el acceso.');
-                    return;
-                }
-
+                if(!correo) { alert('⚠️ Ingrese un correo electrónico.'); return; }
                 try {
                     const res = await fetch('/api/enviar-correo', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
                             tipo: 'b2c_pago',
-                            email: correo,
                             emailDestino: correo,
                             nombreTrabajador: prospecto,
                             rutTrabajador: 'PROSPECTO-DEMO',
@@ -567,21 +633,12 @@
                             linkAcceso: url
                         })
                     });
-
-                    const resJson = await res.json();
-
-                    if (res.ok) {
-                        alert(`✅ Enlace de demostración despachado exitosamente a ${correo}.`);
-                    } else {
-                        console.error("Respuesta error de la API:", resJson);
-                        alert(`⚠️ Error al enviar correo (${res.status}): ${resJson.error || resJson.details || 'Verifique Vercel Logs'}`);
-                    }
+                    if (res.ok) alert(`✅ Enlace despachado exitosamente a ${correo}.`);
                 } catch(e) {
-                    console.error("Error de conexión con la API:", e);
                     alert(`✅ Enlace con token generado localmente para ${prospecto}.`);
                 }
             } else {
-                alert(`✅ Enlace con token interno generado para ${prospecto}. Listo para compartir.`);
+                alert(`✅ Enlace generado para ${prospecto}. Listo para compartir.`);
             }
         }
 
@@ -592,13 +649,16 @@
             alert(`📋 ${mensaje}.`);
         }
 
-        function agregarFilaHistorial(segmento, entidad, detalle) {
+        function agregarFilaHistorial(segmento, entidad, detalle, url, rut, plan) {
             const historial = JSON.parse(localStorage.getItem('sensometrika_historial_admin')) || [];
             const nuevoRegistro = {
                 fecha: new Date().toLocaleString('es-CL'),
                 segmento: segmento,
                 entidad: entidad,
-                detalle: detalle
+                detalle: detalle,
+                url: url,
+                rut: rut || '',
+                plan: plan || 'BASICO'
             };
             historial.unshift(nuevoRegistro);
             localStorage.setItem('sensometrika_historial_admin', JSON.stringify(historial));
@@ -608,30 +668,55 @@
         function cargarHistorialGuardado() {
             const tbody = document.getElementById('tablaHistorialUnificado');
             tbody.innerHTML = '';
-            const historial = JSON.parse(localStorage.getItem('sensometrika_historial_admin')) || [
-                {
-                    fecha: '23/09/2026 - 12:40',
-                    segmento: 'DEMO',
-                    entidad: 'Forestal Arauco',
-                    detalle: 'Demo B2B Link 2 (Alto Desempeño)'
-                }
-            ];
 
-            historial.forEach(item => {
+            const historialAdmin = JSON.parse(localStorage.getItem('sensometrika_historial_admin')) || [];
+            const nominaAPR = JSON.parse(localStorage.getItem('sensometrika_apr_nomina')) || [];
+
+            // Consolidar nómina APR en la vista unificada si no existen
+            const listaConsolidada = [...historialAdmin];
+
+            nominaAPR.forEach(t => {
+                const existe = listaConsolidada.some(item => item.rut === t.rut);
+                if (!existe) {
+                    listaConsolidada.push({
+                        fecha: t.fecha || 'Reciente',
+                        segmento: 'B2B',
+                        entidad: t.nombre,
+                        detalle: `${t.cargo} - ${t.empresa}`,
+                        url: t.url,
+                        rut: t.rut,
+                        plan: t.plan || 'PLUS'
+                    });
+                }
+            });
+
+            if (listaConsolidada.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:var(--text-muted);">Sin registros en el historial.</td></tr>`;
+                return;
+            }
+
+            listaConsolidada.forEach(item => {
                 const color = item.segmento === 'B2B' ? 'var(--b2b-color)' : item.segmento === 'B2C' ? 'var(--b2c-color)' : 'var(--demo-color)';
+                const estadoReal = calcularEstadoEvaluado(item.rut, item.plan);
+
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td>${item.fecha}</td>
-                    <td><span style="color: ${color}; font-weight: bold;">${item.segmento}</span></td>
-                    <td>${item.entidad}</td>
+                    <td><span style="color: ${color}; font-weight: bold;">${item.segmento} (${item.plan || 'PLUS'})</span></td>
+                    <td><strong>${item.entidad}</strong></td>
                     <td>${item.detalle}</td>
-                    <td><span class="status-completed">Link Activo / Token OK</span></td>
+                    <td><span class="badge-status ${estadoReal.clase}">${estadoReal.texto}</span></td>
+                    <td>
+                        <a href="${item.url || 'informe_b2b.html?rut=' + encodeURIComponent(item.rut || '')}" target="_blank" style="color: var(--demo-color); font-weight: bold; text-decoration: underline;">
+                            📄 Ver / Enlace
+                        </a>
+                    </td>
                 `;
                 tbody.appendChild(tr);
             });
         }
 
-        // Gráfico Latencia
+        // Gráfico Latencia Cloud
         const ctx = document.getElementById('networkChart').getContext('2d');
         const networkChart = new Chart(ctx, {
             type: 'line',
