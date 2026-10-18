@@ -234,8 +234,8 @@
         <div class="eval-card">
             
             <div class="user-header-box">
-                <div class="user-plan-title" id="lblPlanHeader">EVALUACIÓN B2B • PLAN PLUS</div>
-                <div class="user-info-text" id="lblUserData">EVALUADO: JUAN ROJAS ROJAS | RUT: 13.873.008-1</div>
+                <div class="user-plan-title" id="lblPlanHeader">EVALUACIÓN B2B • PLAN BASICO</div>
+                <div class="user-info-text" id="lblUserData">EVALUADO: CARGANDO... | RUT: --</div>
             </div>
 
             <div class="modules-list">
@@ -329,120 +329,115 @@
             datosUsuario = JSON.parse(localStorage.getItem('sensometrika_datos_usuario')) || {};
         } catch(e){}
 
-        const rawRut = urlParams.get('rut') || datosUsuario.rut || '13.873.008-1';
+        const tokenEntrante = urlParams.get('token') || urlParams.get('session') || '';
+        const rawRut = urlParams.get('rut') || datosUsuario.rut || '12.345.678-K';
         const cleanRut = rawRut.replace(/[^0-9Kk]/g, '');
-        const nombreUsuario = urlParams.get('nombre') || datosUsuario.nombre || 'JUAN ROJAS ROJAS';
-        const planContratado = (urlParams.get('plan') || localStorage.getItem('sensometrika_plan_contratado') || 'PLUS').toUpperCase().trim();
+        const nombreUsuario = urlParams.get('nombre') || datosUsuario.nombre || 'TRABAJADOR EVALUADO';
+        
+        // Identificador de sesión activo para aislar cada rendición
+        const sessionId = urlParams.get('session') || localStorage.getItem('sensometrika_session_activa') || (tokenEntrante || `SESION_${cleanRut}_${Date.now()}`);
+        localStorage.setItem('sensometrika_session_activa', sessionId);
+
+        // Plan contratado con sanitización estricta
+        const planContratado = (urlParams.get('plan') || datosUsuario.plan || localStorage.getItem('sensometrika_plan_contratado') || 'BASICO').toUpperCase().trim();
+        localStorage.setItem('sensometrika_plan_contratado', planContratado);
 
         document.getElementById('lblUserData').textContent = `EVALUADO: ${decodeURIComponent(nombreUsuario).toUpperCase()} | RUT: ${rawRut}`;
         document.getElementById('lblPlanHeader').textContent = `EVALUACIÓN B2B • PLAN ${planContratado.replace('_', ' ')}`;
 
+        /**
+         * Verifica si el módulo fue rendido DENTRO DE LA SESIÓN ACTUAL
+         */
         function verifRendidoRut(moduloKey) {
             if (!cleanRut) return false;
 
-            const posiblesClaves = [
-                `sensometrika_historial_${moduloKey}_${cleanRut}`
-            ];
+            // Clave de sesión específica
+            const claveSesion = `sensometrika_historial_${moduloKey}_${cleanRut}_${sessionId}`;
+            const datosSesion = localStorage.getItem(claveSesion);
+            if (datosSesion) return true;
 
-            if (moduloKey === 'auditivo') posiblesClaves.push(`sensometrika_historial_audicion_${cleanRut}`);
-            if (moduloKey === 'visual') posiblesClaves.push(`sensometrika_historial_tamizaje_visual_${cleanRut}`);
-
-            for (let k of posiblesClaves) {
-                let h = JSON.parse(localStorage.getItem(k)) || [];
-                if (Array.isArray(h) && h.length > 0) {
-                    const valido = h.some(i => i && (
-                        i.promedioTiempo > 0 || 
-                        i.tiempoBruto > 0 || 
-                        i.tiempoTotal > 0 ||
-                        i.tiempo > 0 ||
-                        (i.precision !== undefined && (i.totalImpactos > 0 || i.aciertos !== undefined || i.contactos !== undefined)) || 
-                        i.dictamen !== undefined || 
-                        i.aciertos !== undefined
-                    ));
-                    if (valido) return true;
-                }
+            // Mappings alternativos por compatibilidad
+            if (moduloKey === 'auditivo') {
+                if (localStorage.getItem(`sensometrika_historial_audicion_${cleanRut}_${sessionId}`)) return true;
+            }
+            if (moduloKey === 'visual') {
+                if (localStorage.getItem(`sensometrika_historial_tamizaje_visual_${cleanRut}_${sessionId}`)) return true;
             }
 
             return false;
         }
 
         function renderizarMenuB2B() {
-            const tieneAuditivo = (planContratado.includes('PLUS') || planContratado.includes('FULL') || planContratado.includes('ALTO'));
-            const tieneVisual = (planContratado.includes('FULL') || planContratado.includes('ALTO'));
-            const tieneAltoDesempenio = planContratado.includes('ALTO');
+            // Criterios de habilitación según el Plan
+            const esBasico = (planContratado === 'BASICO' || planContratado === 'BASIC');
+            const tieneAuditivo = (planContratado.includes('PLUS') || planContratado.includes('FULL') || planContratado.includes('ALTO') || planContratado.includes('MEDIUM'));
+            const tieneVisual = (planContratado.includes('FULL') || planContratado.includes('ALTO') || planContratado.includes('MEDIUM'));
+            const tieneAltoDesempenio = (planContratado.includes('FULL') || planContratado.includes('ALTO'));
 
-            // 1. Reactímetro
-            const rReact = verifRendidoRut('reactimetro');
-            document.getElementById('actionReactimetro').innerHTML = rReact ? 
-                `<span class="badge-mod-ok">✓ EVALUACIÓN REGISTRADA (1/1)</span>` : 
-                `<a href="reactimetro.html?${urlParams.toString()}&mode=b2b" class="btn-mod-start">SIMULACIÓN B2B →</a>`;
+            const queryParamsString = new URLSearchParams({
+                rut: rawRut,
+                nombre: nombreUsuario,
+                plan: planContratado,
+                session: sessionId,
+                mode: 'b2b'
+            }).toString();
 
-            // 2. Palancas
-            const rPalan = verifRendidoRut('palancas');
-            document.getElementById('actionPalancas').innerHTML = rPalan ? 
-                `<span class="badge-mod-ok">✓ EVALUACIÓN REGISTRADA (1/1)</span>` : 
-                `<a href="palancas.html?${urlParams.toString()}&mode=b2b" class="btn-mod-start">SIMULACIÓN B2B →</a>`;
+            if (tokenEntrante) queryParamsString.concat(`&token=${tokenEntrante}`);
 
-            // 3. Punteo
-            const rPunt = verifRendidoRut('punteo');
-            document.getElementById('actionPunteo').innerHTML = rPunt ? 
-                `<span class="badge-mod-ok">✓ EVALUACIÓN REGISTRADA (1/1)</span>` : 
-                `<a href="punteo.html?${urlParams.toString()}&mode=b2b" class="btn-mod-start">SIMULACIÓN B2B →</a>`;
+            // Helper para renderizar cada celda de acción
+            function setModuloAction(elementId, moduloKey, habilitado) {
+                const container = document.getElementById(elementId);
+                if (!container) return;
 
-            // 4. Auditivo
-            if (tieneAuditivo) {
-                const rAud = verifRendidoRut('auditivo');
-                document.getElementById('actionAuditivo').innerHTML = rAud ? 
-                    `<span class="badge-mod-ok">✓ EVALUACIÓN REGISTRADA (1/1)</span>` : 
-                    `<a href="audicion.html?${urlParams.toString()}&mode=b2b" class="btn-mod-start">SIMULACIÓN B2B →</a>`;
-            } else {
-                document.getElementById('actionAuditivo').innerHTML = `<span class="badge-mod-nosol">NO SOLICITADO</span>`;
+                if (!habilitado) {
+                    container.innerHTML = `<span class="badge-mod-nosol">NO SOLICITADO</span>`;
+                    return;
+                }
+
+                const rendido = verifRendidoRut(moduloKey);
+                if (rendido) {
+                    container.innerHTML = `<span class="badge-mod-ok">✓ EVALUACIÓN REGISTRADA (1/1)</span>`;
+                } else {
+                    container.innerHTML = `<a href="${moduloKey}.html?${queryParamsString}" class="btn-mod-start">SIMULACIÓN B2B →</a>`;
+                }
             }
 
-            // 5. Visual
-            if (tieneVisual) {
-                const rVis = verifRendidoRut('visual');
-                document.getElementById('actionVisual').innerHTML = rVis ? 
-                    `<span class="badge-mod-ok">✓ EVALUACIÓN REGISTRADA (1/1)</span>` : 
-                    `<a href="visual.html?${urlParams.toString()}&mode=b2b" class="btn-mod-start">SIMULACIÓN B2B →</a>`;
-            } else {
-                document.getElementById('actionVisual').innerHTML = `<span class="badge-mod-nosol">NO SOLICITADO</span>`;
-            }
+            // 1. Reactímetro (Siempre en todo plan B2B)
+            setModuloAction('actionReactimetro', 'reactimetro', true);
 
-            // 6. Anticipación
-            if (tieneAltoDesempenio) {
-                const rAnt = verifRendidoRut('anticipacion');
-                document.getElementById('actionAnticipacion').innerHTML = rAnt ? 
-                    `<span class="badge-mod-ok">✓ EVALUACIÓN REGISTRADA (1/1)</span>` : 
-                    `<a href="anticipacion.html?${urlParams.toString()}&mode=b2b" class="btn-mod-start">SIMULACIÓN B2B →</a>`;
-            } else {
-                document.getElementById('actionAnticipacion').innerHTML = `<span class="badge-mod-nosol">NO SOLICITADO</span>`;
-            }
+            // 2. Palancas (Siempre en todo plan B2B)
+            setModuloAction('actionPalancas', 'palancas', true);
 
-            // 7. Estereopsis
-            if (tieneAltoDesempenio) {
-                const rEst = verifRendidoRut('estereopsis');
-                document.getElementById('actionEstereopsis').innerHTML = rEst ? 
-                    `<span class="badge-mod-ok">✓ EVALUACIÓN REGISTRADA (1/1)</span>` : 
-                    `<a href="estereopsis.html?${urlParams.toString()}&mode=b2b" class="btn-mod-start">SIMULACIÓN B2B →</a>`;
-            } else {
-                document.getElementById('actionEstereopsis').innerHTML = `<span class="badge-mod-nosol">NO SOLICITADO</span>`;
-            }
+            // 3. Punteo (Siempre en todo plan B2B)
+            setModuloAction('actionPunteo', 'punteo', true);
 
-            // 8. Fatiga
-            if (tieneAltoDesempenio) {
-                const rFat = verifRendidoRut('fatiga');
-                document.getElementById('actionFatiga').innerHTML = rFat ? 
-                    `<span class="badge-mod-ok">✓ EVALUACIÓN REGISTRADA (1/1)</span>` : 
-                    `<a href="fatiga.html?${urlParams.toString()}&mode=b2b" class="btn-mod-start">SIMULACIÓN B2B →</a>`;
-            } else {
-                document.getElementById('actionFatiga').innerHTML = `<span class="badge-mod-nosol">NO SOLICITADO</span>`;
-            }
+            // 4. Auditivo (Plus / Full)
+            setModuloAction('actionAuditivo', 'audicion', tieneAuditivo);
+
+            // 5. Visual (Full / Medium / Alto)
+            setModuloAction('actionVisual', 'visual', tieneVisual);
+
+            // 6. Anticipación (Full / Alto)
+            setModuloAction('actionAnticipacion', 'anticipacion', tieneAltoDesempenio);
+
+            // 7. Estereopsis (Full / Alto)
+            setModuloAction('actionEstereopsis', 'estereopsis', tieneAltoDesempenio);
+
+            // 8. Fatiga (Full / Alto)
+            setModuloAction('actionFatiga', 'fatiga', tieneAltoDesempenio);
         }
 
         function abrirInformePericial() {
-            // Se mantiene el guion bajo informe_b2b.html o informe-b2b.html según tu nombre de archivo
-            window.location.href = `informe_b2b.html?${urlParams.toString()}`;
+            const params = new URLSearchParams({
+                rut: rawRut,
+                nombre: nombreUsuario,
+                plan: planContratado,
+                session: sessionId,
+                mode: 'b2b'
+            });
+            if (tokenEntrante) params.set('token', tokenEntrante);
+
+            window.location.href = `informe_b2b.html?${params.toString()}`;
         }
 
         document.addEventListener('DOMContentLoaded', renderizarMenuB2B);

@@ -390,6 +390,8 @@
         const rawRut = urlParams.get('rut') || datosUsuario.rut || '12.345.678-K';
         const rawCargo = urlParams.get('cargo') || datosUsuario.cargo || 'OPERADOR DE FAENA';
         const rawEmpresa = urlParams.get('empresa') || datosUsuario.empresa || 'SOCADEP LTDA.';
+        const tokenActual = urlParams.get('token') || urlParams.get('session') || '';
+        const sessionId = urlParams.get('session') || localStorage.getItem('sensometrika_session_activa') || (tokenActual || `SESION_${rawRut}_${Date.now()}`);
 
         const cleanRut = rawRut.replace(/[^0-9Kk]/g, '');
         const latenciaSaved = parseInt(localStorage.getItem('sensometrika_latencia_ms') || localStorage.getItem('latencia_ms') || '16');
@@ -408,10 +410,14 @@
         }
 
         function obtenerHistorialModulo(modulo) {
+            const claveSesion = `sensometrika_historial_${modulo}_${cleanRut}_${sessionId}`;
             const claveRut = `sensometrika_historial_${modulo}_${cleanRut}`;
             const claveGlobal = `sensometrika_historial_${modulo}`;
             
-            let historial = JSON.parse(localStorage.getItem(claveRut)) || [];
+            let historial = JSON.parse(localStorage.getItem(claveSesion)) || [];
+            if (!Array.isArray(historial) || historial.length === 0) {
+                historial = JSON.parse(localStorage.getItem(claveRut)) || [];
+            }
             if (!Array.isArray(historial) || historial.length === 0) {
                 historial = JSON.parse(localStorage.getItem(claveGlobal)) || [];
             }
@@ -425,7 +431,7 @@
             const esConductor = ['CONDUCTOR', 'CHOFER', 'CAMIÓN', 'CAMION', 'CAMIONETA', 'CHOFERA', 'CONDUCTORA', 'TRANSPORTE'].some(k => cargoUpper.includes(k));
 
             if (esOperador) {
-                return "FUNDAMENTACIÓN TÉCNICA: El trabajador cumple satisfactoriamente con la aptitud psicosensométrica para la OPERACIÓN SEGURA DE MAQUINARIA PESADA Y EQUIPOS DE FAENA, conforme a los parámetros exigidos por el D.S. N° 170-MTT y normativas de Seguridad Ocupacional.";
+                return "FUNDAMENTACIÓN TÉCNICA: El trabajador cumple satisfactorily con la aptitud psicosensométrica para la OPERACIÓN SEGURA DE MAQUINARIA PESADA Y EQUIPOS DE FAENA, conforme a los parámetros exigidos por el D.S. N° 170-MTT y normativas de Seguridad Ocupacional.";
             } else if (esConductor) {
                 return "FUNDAMENTACIÓN TÉCNICA: El trabajador cumple satisfactoriamente con la aptitud psicosensométrica para la CONDUCCIÓN DE VEHÍCULOS MOTORIZADOS, conforme a los estándares telemétricos de la Ley de Tránsito y D.S. N° 170-MTT.";
             } else {
@@ -434,12 +440,11 @@
         }
 
         async function despacharInformeCorreoAutomatico(planActivo, folioCert, dictamenTexto) {
-            const claveCorreoEnviado = `sensometrika_correo_despachado_${cleanRut}`;
+            const claveCorreoEnviado = `sensometrika_correo_despachado_${cleanRut}_${sessionId}`;
             const yaEnviado = localStorage.getItem(claveCorreoEnviado);
 
             if (yaEnviado) return;
 
-            // Dirección principal unificada a contacto@sensometrica.cl
             const emailDestino = datosUsuario.email || urlParams.get('email') || 'contacto@sensometrica.cl';
             const linkInformeActual = window.location.href;
 
@@ -689,8 +694,6 @@
             } else {
                 boxDictamen.className = "banner-dictamen dictamen-aprobado";
                 boxDictamen.innerHTML = `✔ DICTAMEN PERICIAL B2B: APROBADO (PLAN ${planActivo})`;
-                
-                // Leyenda dinámica adaptada al rol (Operador de Grúa vs Conductor)
                 lblDictamenSub.textContent = obtenerLeyendaAptitud(rawCargo);
 
                 lblEstadoVigencia.textContent = `VENCE: ${fechaExpTxt} (D.S. N° 170)`;
