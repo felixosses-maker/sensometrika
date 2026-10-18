@@ -53,6 +53,13 @@
             border-radius: 10px;
             padding: 12px;
             gap: 10px;
+            transition: all 0.2s ease;
+        }
+
+        .mod-row-disabled {
+            opacity: 0.4;
+            filter: grayscale(1);
+            pointer-events: none;
         }
 
         .mod-title { font-size: 0.85rem; font-weight: 800; color: #fff; }
@@ -83,6 +90,14 @@
             cursor: default !important;
         }
 
+        .btn-disabled-plan {
+            background-color: #1e293b !important;
+            color: #64748b !important;
+            border: 1px solid #334155 !important;
+            pointer-events: none !important;
+            cursor: not-allowed !important;
+        }
+
         .btn-report {
             background-color: #10b981;
             color: #000;
@@ -106,12 +121,15 @@
         <header class="brand-header">
             <img src="sensometrica.jpg" alt="SENSOMETRIKA" class="brand-logo-img">
             <span class="text-xs font-bold text-sky-400 tracking-wider uppercase">BATERÍA COMPLETA DE EVALUACIÓN OCUPACIONAL DEMO</span>
-            <span class="text-[10px] text-slate-400 font-semibold">PROSPECTO / EMPRESA: <strong class="text-white" id="lblEmpresa">SOCADEP</strong></span>
+            <div class="flex items-center gap-2">
+                <span class="text-[10px] text-slate-400 font-semibold">EMPRESA: <strong class="text-white" id="lblEmpresa">SOCADEP LTDA.</strong></span>
+                <span class="text-[10px] bg-sky-950 border border-sky-500/40 text-sky-300 font-black px-2 py-0.5 rounded-full uppercase" id="badgePlan">PLAN BASICO</span>
+            </div>
         </header>
 
         <div class="b2b-card">
             <!-- 0. Calibración Latencia -->
-            <div class="mod-row">
+            <div class="mod-row" id="rowMod0">
                 <div>
                     <span class="mod-title">0. Calibración Latencia Hardware</span>
                     <span class="mod-sub">Ajuste pericial pantalla/touch</span>
@@ -120,7 +138,7 @@
             </div>
 
             <!-- 1. Reactímetro -->
-            <div class="mod-row">
+            <div class="mod-row" id="rowMod1">
                 <div>
                     <span class="mod-title">1. Reactímetro (Tiempo Frenado)</span>
                     <span class="mod-sub">D.S. 170: ≤ 390 ms</span>
@@ -129,7 +147,7 @@
             </div>
 
             <!-- 2. Palancas -->
-            <div class="mod-row">
+            <div class="mod-row" id="rowMod2">
                 <div>
                     <span class="mod-title">2. Palancas (Coordinación Bimanual)</span>
                     <span class="mod-sub">Precisión: ≥ 85%</span>
@@ -138,7 +156,7 @@
             </div>
 
             <!-- 3. Punteo -->
-            <div class="mod-row">
+            <div class="mod-row" id="rowMod3">
                 <div>
                     <span class="mod-title">3. Punteo y Ritmo Viso-Motriz</span>
                     <span class="mod-sub">Efectividad: ≥ 78%</span>
@@ -147,7 +165,7 @@
             </div>
 
             <!-- 4. Audición -->
-            <div class="mod-row">
+            <div class="mod-row" id="rowMod4">
                 <div>
                     <span class="mod-title">4. Tamizaje Auditivo Ocupacional</span>
                     <span class="mod-sub">Frecuencias críticas: ≤ 25 dB</span>
@@ -156,7 +174,7 @@
             </div>
 
             <!-- 5. Visual -->
-            <div class="mod-row">
+            <div class="mod-row" id="rowMod5">
                 <div>
                     <span class="mod-title">5. Tamizaje Visual e Ishihara</span>
                     <span class="mod-sub">Agudeza + Visión Cromática</span>
@@ -165,7 +183,7 @@
             </div>
 
             <!-- 6. Anticipación -->
-            <div class="mod-row">
+            <div class="mod-row" id="rowMod6">
                 <div>
                     <span class="mod-title">6. Anticipación / Tiempo Estimado</span>
                     <span class="mod-sub">Desviación: ≤ 0.35 s</span>
@@ -174,7 +192,7 @@
             </div>
 
             <!-- 7. Estereopsis -->
-            <div class="mod-row">
+            <div class="mod-row" id="rowMod7">
                 <div>
                     <span class="mod-title">7. Estereopsis / Profundidad 3D</span>
                     <span class="mod-sub">Percepción tridimensional</span>
@@ -183,7 +201,7 @@
             </div>
 
             <!-- 8. Fatiga -->
-            <div class="mod-row">
+            <div class="mod-row" id="rowMod8">
                 <div>
                     <span class="mod-title">8. Test Somnolencia y Fatiga (PVT)</span>
                     <span class="mod-sub">Escala Karolinska / Stanford</span>
@@ -205,100 +223,142 @@
 
     <script>
         const urlParams = new URLSearchParams(window.location.search);
-        const tokenActual = urlParams.get('token') || '';
-        const prospecto = urlParams.get('prospecto') || urlParams.get('empresa') || 'SOCADEP';
+        const tokenActual = urlParams.get('token') || urlParams.get('session') || '';
+        const prospecto = urlParams.get('prospecto') || urlParams.get('empresa') || 'SOCADEP LTDA.';
+        const planActivo = (urlParams.get('plan') || localStorage.getItem('sensometrika_plan_contratado') || 'BASICO').toUpperCase();
 
-        // Manejo estricto de aislamiento por Token
-        if (tokenActual) {
-            const tokenGuardado = localStorage.getItem('sensometrika_active_demo_token');
-            if (tokenGuardado !== tokenActual) {
-                // Baro a Token: reseteamos almacenamiento local temporal para evitar arrastrar módulos anteriores
-                localStorage.setItem('sensometrika_active_demo_token', tokenActual);
-                localStorage.removeItem('sensometrika_latencia_ms');
-                localStorage.removeItem('latencia_ms');
-                
-                const keysToRemove = [];
-                for (let i = 0; i < localStorage.length; i++) {
-                    const key = localStorage.key(i);
-                    if (key && (key.startsWith('sensometrika_historial_') || key.endsWith('_demo_completada'))) {
-                        keysToRemove.push(key);
-                    }
-                }
-                keysToRemove.forEach(k => localStorage.removeItem(k));
-            }
+        // 1. GESTIÓN Y SANITIZACIÓN DE LA SESIÓN POR TOKEN
+        const sessionId = tokenActual || `SESION_DEMO_${Date.now()}`;
+        const tokenPrevio = localStorage.getItem('sensometrika_token_actual');
+
+        if (tokenActual && tokenActual !== tokenPrevio) {
+            localStorage.setItem('sensometrika_token_actual', tokenActual);
+            localStorage.setItem('sensometrika_session_activa', tokenActual);
+            localStorage.removeItem('sensometrika_latencia_ms');
+            localStorage.removeItem('latencia_ms');
+        } else {
+            localStorage.setItem('sensometrika_session_activa', sessionId);
         }
 
-        let datosUsuario = {};
-        try {
-            datosUsuario = JSON.parse(localStorage.getItem('sensometrika_datos_usuario')) || {};
-        } catch(e){}
+        localStorage.setItem('sensometrika_plan_contratado', planActivo);
 
+        // Guardar estructura global de usuario para consultas internas
         const rawRut = urlParams.get('rut') || (tokenActual ? tokenActual : '12.345.678-K');
         const cleanRut = rawRut.replace(/[^0-9Kk]/g, '');
 
-        document.addEventListener('DOMContentLoaded', () => {
-            document.getElementById('lblEmpresa').textContent = prospecto;
+        const datosUsuario = {
+            nombre: urlParams.get('nombre') || 'TRABAJADOR EVALUADO',
+            rut: rawRut,
+            cargo: urlParams.get('cargo') || 'OPERADOR DE FAENA',
+            empresa: prospecto,
+            email: urlParams.get('email') || 'contacto@sensometrica.cl',
+            plan: planActivo,
+            sessionId: sessionId
+        };
+        localStorage.setItem('sensometrika_datos_usuario', JSON.stringify(datosUsuario));
 
-            // Actualizar dinámicamente URL de módulos para incluir el RUT o Token actual
-            const modulosBtns = ['btnMod0', 'btnMod1', 'btnMod2', 'btnMod3', 'btnMod4', 'btnMod5', 'btnMod6', 'btnMod7', 'btnMod8'];
-            modulosBtns.forEach(btnId => {
-                const btn = document.getElementById(btnId);
-                if (btn && btn.getAttribute('href')) {
-                    const currentHref = btn.getAttribute('href');
-                    let newHref = currentHref;
+        // 2. DETERMINACIÓN DE MÓDULOS PERMITIDOS SEGÚN EL PLAN
+        let idsPermitidos = [];
+        if (planActivo === 'BASICO' || planActivo === 'BASIC') {
+            idsPermitidos = ['reactimetro', 'palancas', 'punteo'];
+        } else if (planActivo === 'PLUS') {
+            idsPermitidos = ['reactimetro', 'palancas', 'punteo', 'audicion'];
+        } else {
+            // FULL / MEDIUM / B2B ALTO DESEMPEÑO
+            idsPermitidos = ['reactimetro', 'palancas', 'punteo', 'audicion', 'visual', 'anticipacion', 'estereopsis', 'fatiga'];
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('lblEmpresa').textContent = prospecto.toUpperCase();
+            document.getElementById('badgePlan').textContent = `PLAN: ${planActivo}`;
+
+            // Mappings de Botones a Módulos
+            const modulosConfig = [
+                { btnId: 'btnMod1', rowId: 'rowMod1', prefix: 'reactimetro' },
+                { btnId: 'btnMod2', rowId: 'rowMod2', prefix: 'palancas' },
+                { btnId: 'btnMod3', rowId: 'rowMod3', prefix: 'punteo' },
+                { btnId: 'btnMod4', rowId: 'rowMod4', prefix: 'audicion' },
+                { btnId: 'btnMod5', rowId: 'rowMod5', prefix: 'visual' },
+                { btnId: 'btnMod6', rowId: 'rowMod6', prefix: 'anticipacion' },
+                { btnId: 'btnMod7', rowId: 'rowMod7', prefix: 'estereopsis' },
+                { btnId: 'btnMod8', rowId: 'rowMod8', prefix: 'fatiga' }
+            ];
+
+            // A. Actualizar Enlaces de Módulos
+            modulosConfig.forEach(m => {
+                const btn = document.getElementById(m.btnId);
+                const row = document.getElementById(m.rowId);
+                const esPermitido = idsPermitidos.includes(m.prefix);
+
+                if (!esPermitido) {
+                    if (row) row.classList.add('mod-row-disabled');
+                    if (btn) {
+                        btn.textContent = 'NO INCLUIDO';
+                        btn.classList.add('btn-disabled-plan');
+                        btn.removeAttribute('href');
+                    }
+                } else if (btn && btn.getAttribute('href')) {
+                    let newHref = btn.getAttribute('href');
                     if (!newHref.includes('rut=')) newHref += `&rut=${encodeURIComponent(rawRut)}`;
+                    if (!newHref.includes('session=')) newHref += `&session=${encodeURIComponent(sessionId)}`;
                     if (tokenActual && !newHref.includes('token=')) newHref += `&token=${encodeURIComponent(tokenActual)}`;
+                    if (!newHref.includes('plan=')) newHref += `&plan=${encodeURIComponent(planActivo)}`;
                     btn.setAttribute('href', newHref);
                 }
             });
 
-            // Actualizar URL de informes
+            // Actualizar Botón 0 (Calibración)
+            const btn0 = document.getElementById('btnMod0');
+            if (btn0 && btn0.getAttribute('href')) {
+                let newHref0 = btn0.getAttribute('href');
+                if (!newHref0.includes('rut=')) newHref0 += `&rut=${encodeURIComponent(rawRut)}`;
+                if (!newHref0.includes('session=')) newHref0 += `&session=${encodeURIComponent(sessionId)}`;
+                btn0.setAttribute('href', newHref0);
+            }
+
+            // Actualizar Enlaces a los Informes
             const btnOficial = document.getElementById('btnInformeOficial');
             const btnDemo = document.getElementById('btnInformeDemo');
             const paramsAcc = new URLSearchParams(window.location.search);
+            
             paramsAcc.set('rut', rawRut);
+            paramsAcc.set('session', sessionId);
+            paramsAcc.set('plan', planActivo);
             if (tokenActual) paramsAcc.set('token', tokenActual);
             if (!paramsAcc.has('returnUrl')) paramsAcc.set('returnUrl', 'demo_b2b_full.html');
 
             if (btnOficial) btnOficial.href = `informe_b2b.html?${paramsAcc.toString()}`;
             if (btnDemo) btnDemo.href = `informe_demo.html?${paramsAcc.toString()}`;
 
-            // 1. VERIFICAR Y QUEMAR LATENCIA HARDWARE
+            // B. Verificar y marcar Calibración de Latencia completada
             const latenciaSaved = localStorage.getItem('sensometrika_latencia_ms') || localStorage.getItem('latencia_ms');
-
-            if (latenciaSaved) {
-                const btn0 = document.getElementById('btnMod0');
-                if (btn0) {
-                    btn0.textContent = `✓ ${latenciaSaved} MS`;
-                    btn0.classList.add('btn-completed');
-                    btn0.removeAttribute('href');
-                    btn0.style.pointerEvents = 'none';
-                }
+            if (latenciaSaved && btn0) {
+                btn0.textContent = `✓ ${latenciaSaved} MS`;
+                btn0.classList.add('btn-completed');
+                btn0.removeAttribute('href');
+                btn0.style.pointerEvents = 'none';
             }
 
-            // 2. VERIFICAR Y QUEMAR MÓDULOS DEL HISTORIAL
-            const modulos = [
-                { id: 'btnMod1', prefix: 'reactimetro', key: `sensometrika_historial_reactimetro_${cleanRut}` },
-                { id: 'btnMod2', prefix: 'palancas', key: `sensometrika_historial_palancas_${cleanRut}` },
-                { id: 'btnMod3', prefix: 'punteo', key: `sensometrika_historial_punteo_${cleanRut}` },
-                { id: 'btnMod4', prefix: 'audicion', key: `sensometrika_historial_audicion_${cleanRut}` },
-                { id: 'btnMod5', prefix: 'visual', key: `sensometrika_historial_visual_${cleanRut}` },
-                { id: 'btnMod6', prefix: 'anticipacion', key: `sensometrika_historial_anticipacion_${cleanRut}` },
-                { id: 'btnMod7', prefix: 'estereopsis', key: `sensometrika_historial_estereopsis_${cleanRut}` },
-                { id: 'btnMod8', prefix: 'fatiga', key: `sensometrika_historial_fatiga_${cleanRut}` }
-            ];
+            // C. Verificar y marcar Módulos Completados EN LA SESIÓN ACTUAL
+            modulosConfig.forEach(m => {
+                const esPermitido = idsPermitidos.includes(m.prefix);
+                if (esPermitido) {
+                    const claveSesion = `sensometrika_historial_${m.prefix}_${cleanRut}_${sessionId}`;
+                    const rSesion = localStorage.getItem(claveSesion);
+                    
+                    const claveGlobal = `sensometrika_historial_${m.prefix}_${cleanRut}`;
+                    const historialGlobal = JSON.parse(localStorage.getItem(claveGlobal)) || [];
 
-            modulos.forEach(m => {
-                const historial = JSON.parse(localStorage.getItem(m.key)) || [];
-                const demoByPrefix = localStorage.getItem(`${m.prefix}_demo_completada_${cleanRut}`) === 'true';
+                    const demoCompletada = localStorage.getItem(`${m.prefix}_demo_completada_${cleanRut}`) === 'true';
 
-                if (historial.length > 0 || demoByPrefix) {
-                    const btn = document.getElementById(m.id);
-                    if (btn) {
-                        btn.textContent = '✓ COMPLETADO';
-                        btn.classList.add('btn-completed');
-                        btn.removeAttribute('href');
-                        btn.style.pointerEvents = 'none';
+                    if (rSesion !== null || historialGlobal.length > 0 || demoCompletada) {
+                        const btn = document.getElementById(m.btnId);
+                        if (btn) {
+                            btn.textContent = '✓ COMPLETADO';
+                            btn.classList.add('btn-completed');
+                            btn.removeAttribute('href');
+                            btn.style.pointerEvents = 'none';
+                        }
                     }
                 }
             });
