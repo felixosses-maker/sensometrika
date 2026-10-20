@@ -244,7 +244,7 @@
       const modeParam = urlParams.get('mode') || 'b2b';
       const b2cModeStorage = localStorage.getItem('sensometrika_b2c_mode');
 
-      // PRESERVAR Y PROPAGAR PLAN DESDE LA URL
+      // PRESERVAR Y PROPAGAR PLAN Y SESIÓN
       const planParam = (urlParams.get('plan') || localStorage.getItem('sensometrika_plan_contratado') || 'BASICO').toUpperCase();
       localStorage.setItem('sensometrika_plan_contratado', planParam);
 
@@ -256,6 +256,7 @@
       const rut = urlParams.get('rut') || datosUsuario.rut || '';
       const nombre = urlParams.get('nombre') || datosUsuario.nombre || '';
       const cleanRut = rut.replace(/[^0-9Kk]/g, '');
+      const sessionId = urlParams.get('session') || localStorage.getItem('sensometrika_session_activa') || `SESION_${cleanRut}_${Date.now()}`;
 
       document.getElementById('lblRut').textContent = rut || 'SIN RUT';
       document.getElementById('lblNombre').textContent = decodeURIComponent(nombre) || 'SIN NOMBRE';
@@ -271,28 +272,28 @@
         if (planParam === 'PLUS') idsRequeridos.push('audicion');
         if (planParam === 'FULL' || planParam === 'MEDIUM') idsRequeridos.push('audicion', 'visual');
 
-        // Contar módulos rendidos
+        // Contar módulos rendidos en la sesión activa
         let completados = 0;
         idsRequeridos.forEach(m => {
-          const hist = JSON.parse(localStorage.getItem(`sensometrika_historial_${m}_${cleanRut}`)) || [];
-          if (hist.length > 0) completados++;
+          const histSesion = JSON.parse(localStorage.getItem(`sensometrika_historial_${m}_${cleanRut}_${sessionId}`)) || 
+                             JSON.parse(localStorage.getItem(`sensometrika_historial_${m}_${cleanRut}`)) || [];
+          if (histSesion.length > 0) completados++;
         });
 
         // 1. SI YA COMPLETÓ TODOS LOS MÓDULOS DE SU PLAN -> IR DIRECTO AL INFORME
         if (completados >= idsRequeridos.length && idsRequeridos.length > 0) {
-          window.location.href = `informe_b2b.html?rut=${encodeURIComponent(rut)}&nombre=${encodeURIComponent(nombre)}&plan=${planParam}&mode=${modeParam}`;
+          window.location.href = `informe_b2b.html?rut=${encodeURIComponent(rut)}&nombre=${encodeURIComponent(nombre)}&plan=${planParam}&mode=${modeParam}&session=${sessionId}`;
           return;
         }
 
         // 2. SI YA SE ACREDITÓ (FOTO, FIRMA Y LATENCIA) PERO ESTÁ EN CURSO -> IR DIRECTO AL MENÚ DE MÓDULOS
         if (fotoExiste && firmaExiste && latenciaExiste) {
           const menuDestino = (modeParam === 'b2c' || b2cModeStorage === 'true') ? 'menu_B2C.html' : 'menu_B2B.html';
-          window.location.href = `${menuDestino}?rut=${encodeURIComponent(rut)}&nombre=${encodeURIComponent(nombre)}&plan=${planParam}&mode=${modeParam}&fase=demo&demo=true`;
+          window.location.href = `${menuDestino}?rut=${encodeURIComponent(rut)}&nombre=${encodeURIComponent(nombre)}&plan=${planParam}&mode=${modeParam}&session=${sessionId}&fase=demo&demo=true`;
           return;
         }
       }
 
-      // Si no ha registrado su sesión previamente, se mantiene en el registro inicial
       localStorage.setItem('sensometrika_evaluado_rut', rut);
 
       if (modeParam === 'b2c' || b2cModeStorage === 'true') {
@@ -453,7 +454,9 @@
       const rut = urlParams.get('rut') || localStorage.getItem('sensometrika_evaluado_rut') || '';
       const nombre = urlParams.get('nombre') || '';
       const plan = (urlParams.get('plan') || localStorage.getItem('sensometrika_plan_contratado') || 'BASICO').toUpperCase();
+      const token = urlParams.get('token') || '';
       const cleanRut = rut.replace(/[^0-9Kk]/g, '');
+      const sessionId = urlParams.get('session') || localStorage.getItem('sensometrika_session_activa') || `SESION_${cleanRut}_${Date.now()}`;
 
       if (!isB2C && canvas) {
         const firmaB64 = canvas.toDataURL('image/png');
@@ -470,7 +473,18 @@
       localStorage.setItem('sensometrika_fase_evaluacion', 'demo');
 
       const menuDestino = isB2C ? 'menu_B2C.html' : 'menu_B2B.html';
-      window.location.href = `${menuDestino}?rut=${encodeURIComponent(rut)}&nombre=${encodeURIComponent(nombre)}&plan=${plan}&mode=${isB2C ? 'b2c' : 'b2b'}&fase=demo&demo=true`;
+      const paramsRedir = new URLSearchParams({
+        rut: rut,
+        nombre: nombre,
+        plan: plan,
+        mode: isB2C ? 'b2c' : 'b2b',
+        session: sessionId,
+        fase: 'demo',
+        demo: 'true'
+      });
+      if (token) paramsRedir.set('token', token);
+
+      window.location.href = `${menuDestino}?${paramsRedir.toString()}`;
     }
   </script>
 </body>
