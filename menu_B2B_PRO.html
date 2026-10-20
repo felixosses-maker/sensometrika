@@ -317,7 +317,7 @@
 
       document.getElementById('lblTrabajador').textContent = `${nombre} (${rut})`;
       document.getElementById('lblCargo').textContent = cargo;
-      document.getElementById('lblPlan').textContent = planParam === 'PRE_OCUPACIONAL' ? 'FILTRO PRE-OCUPACIONAL (6 MÓDULOS)' : 'ALTO DESEMPEÑO (8 MÓDULOS)';
+      document.getElementById('lblPlan').textContent = (planParam === 'PRE_OCUPACIONAL' || planParam === 'PRE_CONTRATO' || planParam === 'SELECCION') ? 'FILTRO PRE-OCUPACIONAL (6 MÓDULOS)' : 'ALTO DESEMPEÑO (8 MÓDULOS)';
 
       // Definir módulos permitidos según plan
       let idsPermitidos = [];
@@ -327,7 +327,7 @@
         idsPermitidos = ['reactimetro', 'visomotriz', 'punteo', 'audicion'];
       } else if (planParam === 'FULL' || planParam === 'MEDIUM') {
         idsPermitidos = ['reactimetro', 'visomotriz', 'punteo', 'audicion', 'visual'];
-      } else if (planParam === 'PRE_OCUPACIONAL' || planParam === 'PRE_CONTRATO') {
+      } else if (planParam === 'PRE_OCUPACIONAL' || planParam === 'PRE_CONTRATO' || planParam === 'SELECCION') {
         idsPermitidos = ['reactimetro', 'visomotriz', 'punteo', 'audicion', 'visual', 'anticipacion'];
       } else {
         idsPermitidos = ['punteo', 'reactimetro', 'visomotriz', 'anticipacion', 'audicion', 'visual', 'estereopsis', 'fatiga'];
@@ -359,7 +359,6 @@
       Object.keys(rutasModulos).forEach(modKey => {
         const btnEl = document.getElementById(`btn_${modKey}`);
         const badgeEl = document.getElementById(`badge_${modKey}`);
-        const cardEl = document.getElementById(`card_${modKey}`);
 
         if (!idsPermitidos.includes(modKey)) {
           // Módulo no contratado en este plan
@@ -373,11 +372,16 @@
             btnEl.removeAttribute('href');
           }
         } else {
-          // Verificar si ya fue rendido en la sesión activa
-          const histSesion = JSON.parse(localStorage.getItem(`sensometrika_historial_${modKey}_${cleanRut}_${sessionId}`)) || [];
+          // Obtener historial con fallback alternativo para visomotriz/palancas
+          let histSesion = JSON.parse(localStorage.getItem(`sensometrika_historial_${modKey}_${cleanRut}_${sessionId}`)) || [];
+          if ((!Array.isArray(histSesion) || histSesion.length === 0) && (modKey === 'visomotriz' || modKey === 'palancas')) {
+            const altKey = modKey === 'visomotriz' ? 'palancas' : 'visomotriz';
+            histSesion = JSON.parse(localStorage.getItem(`sensometrika_historial_${altKey}_${cleanRut}_${sessionId}`)) || [];
+          }
+
           const isCompDemo = localStorage.getItem(`${modKey}_demo_completada_${cleanRut}_${sessionId}`) === 'true';
 
-          if (histSesion.length > 0 || isCompDemo) {
+          if ((Array.isArray(histSesion) && histSesion.length > 0) || isCompDemo) {
             if (badgeEl) {
               badgeEl.textContent = '✓ COMPLETADO';
               badgeEl.className = 'badge-status badge-ok';
