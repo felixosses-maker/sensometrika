@@ -62,17 +62,30 @@
       font-weight: 600; 
       cursor: pointer; 
       transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: 4px;
     }
-    button.btn-mode:hover {
+    button.btn-mode:hover:not(:disabled) {
       background: #475569;
       color: #f8fafc;
     }
     button.btn-mode.active {
-      background: #22c55e !important;
-      color: #022c22 !important;
-      border-color: #4ade80 !important;
-      box-shadow: 0 0 12px rgba(34, 197, 94, 0.5);
-      transform: scale(1.03);
+      background: #0284c7 !important;
+      color: #ffffff !important;
+      border-color: #38bdf8 !important;
+      box-shadow: 0 0 12px rgba(2, 132, 199, 0.5);
+      transform: scale(1.02);
+    }
+    /* ESTADO COMPLETADO Y BLOQUEADO (VERDE SÓLIDO) */
+    button.btn-mode.completed {
+      background: #10b981 !important;
+      color: #ffffff !important;
+      border-color: #059669 !important;
+      box-shadow: 0 0 10px rgba(16, 185, 129, 0.4);
+      cursor: not-allowed !important;
+      pointer-events: none !important;
+      opacity: 0.95;
     }
     
     #canvas-container { 
@@ -120,6 +133,13 @@
       cursor: pointer;
       box-shadow: 0 4px 12px rgba(2, 132, 199, 0.4);
     }
+    .btn-action:disabled {
+      background: #334155 !important;
+      color: #64748b !important;
+      cursor: not-allowed !important;
+      box-shadow: none !important;
+      pointer-events: none !important;
+    }
 
     .metrics-panel { 
       width: 100%; 
@@ -150,6 +170,27 @@
       border-radius: 6px;
       font-weight: bold;
       font-size: 0.85rem;
+      width: 100%;
+      max-width: 400px;
+    }
+
+    .btn-nav-next {
+      display: none;
+      margin-top: 12px;
+      width: 100%;
+      max-width: 400px;
+      padding: 14px;
+      background: #10b981;
+      color: #000;
+      font-weight: 900;
+      text-align: center;
+      border-radius: 8px;
+      text-decoration: none;
+      text-transform: uppercase;
+      font-size: 0.88rem;
+      box-shadow: 0 4px 14px rgba(16, 185, 129, 0.3);
+      border: none;
+      cursor: pointer;
     }
   </style>
 </head>
@@ -174,7 +215,7 @@
     <div id="overlay" class="start-overlay">
       <h2 id="overlay-title" style="color:#38bdf8; font-size:1.1rem;">Selecciona una modalidad</h2>
       <p id="overlay-msg" style="color:#94a3b8; font-size:0.85rem; line-height:1.4; max-width:320px;">
-        Elija una prueba para medir la precisión en seguimiento de trayectoria.
+        Haz clic en una de las pruebas superiores para medir seguimiento de trayectoria.
       </p>
       <button id="btn-start" class="btn-action" style="display:none;" onclick="runCurrentTest()">INICIAR EVALUACIÓN (20s)</button>
     </div>
@@ -182,20 +223,74 @@
 
   <div class="metrics-panel">
     <div class="metric-row"><span>Tiempo Restante:</span><strong id="m-timer" style="color:#eab308; font-size:1rem;">20.0 s</strong></div>
-    <div class="metric-row"><span>Precisión en Pista:</span><strong id="m-accuracy" style="color:#4ade80;">100 %</strong></div>
+    <div class="metric-row"><span>Precisión en Pista:</span><strong id="m-accuracy" style="color:#4ade80;">100.0 %</strong></div>
     <div class="metric-row"><span>Tiempo Fuera de Pista:</span><strong id="m-time-off" style="color:#f87171;">0.0 s</strong></div>
     <div class="metric-row"><span>Número de Salidas / Errores:</span><strong id="m-off-count" style="color:#f87171;">0</strong></div>
+    <div class="metric-row"><span>Validez Pericial:</span><strong id="m-validity" style="color:#94a3b8;">Pendiente</strong></div>
   </div>
 
   <div id="report-status" class="report-badge"></div>
 
+  <button id="btn-volver-menu" class="btn-nav-next" onclick="irAlMenuB2BPro()">
+    VOLVER A LA CONSOLA B2B PRO →
+  </button>
+
   <script>
+    // Parámetros de Sesión
+    const urlParams = new URLSearchParams(window.location.search);
+    const rawRut = urlParams.get('rut') || '12345678K';
+    const cleanRut = rawRut.replace(/[^0-9Kk]/g, '');
+    const sessionId = urlParams.get('session') || `SESION_${cleanRut}_ACTIVA`;
+
     const SUPABASE_URL = "https://kytuewhkhshrjddzoknv.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt5dHVld2hraHNocmpkZHpva252Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkxMzc4MzcsImV4cCI6MjEwNDcxMzgzN30.gNWbr8E7oF-56yKnNIDVvGIaGXfHkCCcKonWVDthp2k";
 
     let supabaseClient = null;
     if (window.supabase) {
       supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    }
+
+    const subModos = ['3A', '3B'];
+    const minPrecisionValida = 40.0; // Umbral mínimo pericial para validez
+
+    function actualizarEstadoBotonesNavegacion() {
+      let completadosTotal = 0;
+
+      subModos.forEach(m => {
+        const btn = document.getElementById(`btn-${m}`);
+        const isCompletado = localStorage.getItem(`sensometrika_visomotriz_${m}_${cleanRut}_${sessionId}`) === 'true' ||
+                             localStorage.getItem(`sensometrika_palancas_${m}_${cleanRut}_${sessionId}`) === 'true';
+
+        if (isCompletado) {
+          completadosTotal++;
+          btn.className = 'btn-mode completed';
+          btn.disabled = true;
+          btn.innerHTML = `✓ ${obtenerLabelSubModo(m)}`;
+        }
+      });
+
+      if (completadosTotal >= subModos.length) {
+        document.getElementById('btn-volver-menu').style.display = 'block';
+        localStorage.setItem(`sensometrika_historial_visomotriz_${cleanRut}_${sessionId}`, JSON.stringify([{ completado: true }]));
+        localStorage.setItem(`sensometrika_historial_palancas_${cleanRut}_${sessionId}`, JSON.stringify([{ completado: true }]));
+        localStorage.setItem(`visomotriz_demo_completada_${cleanRut}_${sessionId}`, 'true');
+      }
+    }
+
+    function obtenerLabelSubModo(m) {
+      switch(m) {
+        case '3A': return '3A. Continuo';
+        case '3B': return '3B. Adaptativo';
+      }
+    }
+
+    function irAlMenuB2BPro() {
+      const returnUrl = urlParams.get('returnUrl');
+      if (returnUrl) {
+        window.location.href = decodeURIComponent(returnUrl);
+      } else {
+        window.location.href = `menu_B2B_PRO.html?${urlParams.toString()}`;
+      }
     }
 
     class LatencyTuner {
@@ -247,22 +342,26 @@
     }
 
     const tuner = new LatencyTuner();
+    const canvas = document.getElementById('visomotrizCanvas');
+    const ctx = canvas.getContext('2d');
+
     let selectedMode = null;
     let isRunning = false;
+    const durationSec = 20;
     let countdownInterval = null;
     let animFrame = null;
 
-    const durationSec = 20;
     let timeOffTrackMs = 0;
     let offTrackCount = 0;
     let isOffTrack = false;
     let lastFrameTime = 0;
 
-    let target = { x: 0, y: 0, radius: 35, angle: 0, speed: 0.03 };
-    let userPos = { x: -100, y: -100 };
-
-    const canvas = document.getElementById('visomotrizCanvas');
-    const ctx = canvas.getContext('2d');
+    // Física y predicción de entrada
+    let target = { x: 0, y: 0, radius: 45, angle: 0, speed: 0.009 };
+    let rawUserPos = { x: -100, y: -100 };
+    let predictedUserPos = { x: -100, y: -100 };
+    let lastTouchTime = 0;
+    let isTouching = false;
 
     async function initTelemetry() {
       const hz = await tuner.detectScreenRefreshRate();
@@ -279,10 +378,19 @@
     }
 
     window.selectMode = function(mode) {
+      const isCompletado = localStorage.getItem(`sensometrika_visomotriz_${mode}_${cleanRut}_${sessionId}`) === 'true';
+      if (isCompletado) return;
+
       selectedMode = mode;
-      document.querySelectorAll('.btn-mode').forEach(btn => btn.classList.remove('active'));
+      document.querySelectorAll('.btn-mode').forEach(btn => {
+        if (!btn.classList.contains('completed')) {
+          btn.classList.remove('active');
+        }
+      });
       const activeBtn = document.getElementById(`btn-${mode}`);
-      if (activeBtn) activeBtn.classList.add('active');
+      if (activeBtn && !activeBtn.classList.contains('completed')) {
+        activeBtn.classList.add('active');
+      }
 
       const modeTitles = {
         '3A': 'Modalidad 3A: Tracking Continuo',
@@ -290,8 +398,8 @@
       };
 
       const modeInstructions = {
-        '3A': 'Mantenga su dedo presionado sobre el círculo móvil objetivo sin salirse de la trayectoria.',
-        '3B': 'Siga el círculo móvil. La velocidad aumentará progresivamente para medir su resistencia al estrés.'
+        '3A': 'Mantenga su dedo sobre el círculo objetivo sin salirse de la trayectoria.',
+        '3B': 'Siga el objetivo. La velocidad responderá dinámicamente a su precisión de toque.'
       };
 
       document.getElementById('overlay-title').textContent = modeTitles[mode];
@@ -299,52 +407,94 @@
 
       const startBtn = document.getElementById('btn-start');
       startBtn.style.display = 'block';
+      startBtn.disabled = false;
       startBtn.textContent = 'INICIAR EVALUACIÓN (20s)';
       document.getElementById('overlay').style.display = 'flex';
     };
 
+    function updatePointer(e) {
+      if (!isRunning) return;
+      const now = performance.now();
+      const rect = canvas.getBoundingClientRect();
+      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+      const newX = clientX - rect.left;
+      const newY = clientY - rect.top;
+
+      tuner.registerCalibrationTap(e);
+      document.getElementById('offset-val').textContent = tuner.hardwareOffsetMs + ' ms';
+
+      // PREDICCIÓN VECTORIAL CINEMÁTICA ANTE EL LAG TÁCTIL PANTALLA
+      if (lastTouchTime > 0) {
+        const dtMs = Math.max(1, now - lastTouchTime);
+        const vx = (newX - rawUserPos.x) / dtMs;
+        const vy = (newY - rawUserPos.y) / dtMs;
+
+        const offsetToPredict = Math.max(15, tuner.hardwareOffsetMs);
+        predictedUserPos.x = newX + (vx * offsetToPredict);
+        predictedUserPos.y = newY + (vy * offsetToPredict);
+      } else {
+        predictedUserPos.x = newX;
+        predictedUserPos.y = newY;
+      }
+
+      rawUserPos.x = newX;
+      rawUserPos.y = newY;
+      lastTouchTime = now;
+    }
+
+    canvas.addEventListener('pointerdown', (e) => {
+      if (!isRunning) return;
+      isTouching = true;
+      lastTouchTime = 0;
+      updatePointer(e);
+    });
+
+    canvas.addEventListener('pointermove', (e) => {
+      if (!isRunning || !isTouching) return;
+      updatePointer(e);
+    });
+
+    window.addEventListener('pointerup', () => { isTouching = false; });
+    window.addEventListener('pointercancel', () => { isTouching = false; });
+
     window.runCurrentTest = function() {
+      if (!selectedMode) return;
+
       document.getElementById('overlay').style.display = 'none';
       document.getElementById('report-status').style.display = 'none';
 
       resizeCanvas();
+
       isRunning = true;
       timeOffTrackMs = 0;
       offTrackCount = 0;
       isOffTrack = false;
       lastFrameTime = performance.now();
+      lastTouchTime = 0;
 
       target.angle = 0;
-      target.speed = selectedMode === '3B' ? 0.02 : 0.03;
+      target.speed = selectedMode === '3B' ? 0.008 : 0.009;
 
       let remainingSec = durationSec;
       document.getElementById('m-timer').textContent = remainingSec.toFixed(1) + ' s';
 
+      if (countdownInterval) clearInterval(countdownInterval);
       countdownInterval = setInterval(() => {
         remainingSec -= 0.1;
-        if (selectedMode === '3B') target.speed += 0.001; // Aceleración progresiva
 
         if (remainingSec <= 0) {
           remainingSec = 0;
           clearInterval(countdownInterval);
-          cancelAnimationFrame(animFrame);
+          if (animFrame) cancelAnimationFrame(animFrame);
           finishTest();
         } else {
           document.getElementById('m-timer').textContent = remainingSec.toFixed(1) + ' s';
         }
       }, 100);
 
-      const updatePointer = (e) => {
-        if (!isRunning) return;
-        const rect = canvas.getBoundingClientRect();
-        userPos.x = e.clientX - rect.left;
-        userPos.y = e.clientY - rect.top;
-        tuner.registerCalibrationTap(e);
-      };
-
-      canvas.onpointerdown = updatePointer;
-      canvas.onpointermove = updatePointer;
-
+      if (animFrame) cancelAnimationFrame(animFrame);
       loop();
     };
 
@@ -359,88 +509,161 @@
       const w = rect.width;
       const h = rect.height;
 
-      // Movimiento en trayectoria curva tipo Lissajous
+      // Movimiento elíptico controlado
       target.angle += target.speed;
-      target.x = (w / 2) + Math.sin(target.angle) * (w * 0.35);
-      target.y = (h / 2) + Math.sin(target.angle * 2) * (h * 0.28);
+      target.x = (w / 2) + Math.cos(target.angle) * (w * 0.32);
+      target.y = (h / 2) + Math.sin(target.angle * 0.7) * (h * 0.25);
 
-      // Colisión
-      const dist = Math.hypot(userPos.x - target.x, userPos.y - target.y);
-      if (dist > target.radius) {
+      // Evaluación de Colisión con posición estimada
+      let dist = 9999;
+      if (isTouching) {
+        dist = Math.hypot(predictedUserPos.x - target.x, predictedUserPos.y - target.y);
+      }
+
+      const isInTrack = isTouching && (dist <= target.radius + 6);
+
+      if (!isInTrack) {
         timeOffTrackMs += deltaMs;
         if (!isOffTrack) {
           offTrackCount++;
           isOffTrack = true;
         }
+        if (selectedMode === '3B') {
+          target.speed = Math.max(0.005, target.speed - 0.0001);
+        }
       } else {
         isOffTrack = false;
+        if (selectedMode === '3B') {
+          target.speed = Math.min(0.016, target.speed + 0.00004);
+        }
       }
 
       // Renderizado Canvas
       ctx.clearRect(0, 0, w, h);
 
+      // Guía de Pista
+      ctx.beginPath();
+      for (let a = 0; a < Math.PI * 2; a += 0.05) {
+        const px = (w / 2) + Math.cos(a) * (w * 0.32);
+        const py = (h / 2) + Math.sin(a * 0.7) * (h * 0.25);
+        if (a === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+      }
+      ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+      ctx.lineWidth = 4;
+      ctx.stroke();
+
       // Objetivo
       ctx.beginPath();
       ctx.arc(target.x, target.y, target.radius, 0, Math.PI * 2);
-      ctx.fillStyle = isOffTrack ? 'rgba(239, 68, 68, 0.4)' : 'rgba(34, 197, 94, 0.4)';
+      ctx.fillStyle = isInTrack ? 'rgba(34, 197, 94, 0.35)' : 'rgba(239, 68, 68, 0.35)';
       ctx.fill();
-      ctx.strokeStyle = isOffTrack ? '#ef4444' : '#22c55e';
+      ctx.strokeStyle = isInTrack ? '#22c55e' : '#ef4444';
       ctx.lineWidth = 3;
       ctx.stroke();
 
-      // Cursor Usuario
-      if (userPos.x > 0) {
+      ctx.beginPath();
+      ctx.arc(target.x, target.y, 8, 0, Math.PI * 2);
+      ctx.fillStyle = isInTrack ? '#22c55e' : '#ef4444';
+      ctx.fill();
+
+      // Puntero Táctil Usuario
+      if (isTouching) {
         ctx.beginPath();
-        ctx.arc(userPos.x, userPos.y, 8, 0, Math.PI * 2);
-        ctx.fillStyle = '#FFFFFF';
+        ctx.arc(predictedUserPos.x, predictedUserPos.y, 10, 0, Math.PI * 2);
+        ctx.fillStyle = '#38bdf8';
         ctx.fill();
+        ctx.strokeStyle = '#FFFFFF';
+        ctx.lineWidth = 2;
+        ctx.stroke();
       }
 
-      // Actualizar Panel
+      // Panel
       const totalTimeMs = durationSec * 1000;
       const percentOnTrack = Math.max(0, (((totalTimeMs - timeOffTrackMs) / totalTimeMs) * 100).toFixed(1));
       document.getElementById('m-accuracy').textContent = percentOnTrack + ' %';
       document.getElementById('m-time-off').textContent = (timeOffTrackMs / 1000).toFixed(1) + ' s';
       document.getElementById('m-off-count').textContent = offTrackCount;
-      document.getElementById('offset-val').textContent = tuner.hardwareOffsetMs + ' ms';
 
       animFrame = requestAnimationFrame(loop);
     }
 
     async function finishTest() {
       isRunning = false;
+      if (animFrame) cancelAnimationFrame(animFrame);
+
       const totalTimeMs = durationSec * 1000;
-      const percentOnTrack = Math.max(0, (((totalTimeMs - timeOffTrackMs) / totalTimeMs) * 100).toFixed(1));
+      const percentOnTrack = Math.max(0, Number((((totalTimeMs - timeOffTrackMs) / totalTimeMs) * 100).toFixed(1)));
+      const esValida = percentOnTrack >= minPrecisionValida;
 
+      document.getElementById('m-timer').textContent = '0.0 s (FINALIZADO)';
+
+      const validityElem = document.getElementById('m-validity');
       const reportElem = document.getElementById('report-status');
-      reportElem.style.background = percentOnTrack >= 80 ? '#0284c7' : '#dc2626';
-      reportElem.textContent = `✓ EVALUACIÓN COMPLETA - Precisión: ${percentOnTrack}% | Salidas de pista: ${offTrackCount}`;
-      reportElem.style.display = 'block';
 
-      if (supabaseClient) {
-        await supabaseClient.from('evaluaciones_pro_b2b').insert([{
-          company_id: "SOCADEP_DEMO",
-          evaluator_id: "EVALUADOR_01",
-          evaluated_rut: "12345678-9",
-          evaluated_name: "Operador Demostración",
-          module_code: "MOD_03_VISOMOTRIZ",
-          modality_code: selectedMode,
-          metrics: { 
-            percent_on_track: Number(percentOnTrack),
-            time_off_track_sec: Number((timeOffTrackMs / 1000).toFixed(1)),
-            off_track_events: offTrackCount
-          },
-          hardware_telemetry: tuner.getTelemetryData(),
-          integrity_hash: "SHA256_VISOMOTRIZ_OK",
-          is_valid_test: percentOnTrack >= 50
-        }]);
+      if (esValida) {
+        // EVALUACIÓN VÁLIDA
+        validityElem.textContent = '✓ VÁLIDA';
+        validityElem.style.color = '#4ade80';
+
+        reportElem.style.background = '#0284c7';
+        reportElem.textContent = `✓ EVALUACIÓN COMPLETA - Precisión: ${percentOnTrack}% | Salidas de pista: ${offTrackCount}`;
+        reportElem.style.display = 'block';
+
+        // Persistencia inmutable en LocalStorage
+        localStorage.setItem(`sensometrika_visomotriz_${selectedMode}_${cleanRut}_${sessionId}`, 'true');
+        localStorage.setItem(`sensometrika_palancas_${selectedMode}_${cleanRut}_${sessionId}`, 'true');
+        actualizarEstadoBotonesNavegacion();
+
+        // Envío a Supabase
+        if (supabaseClient) {
+          await supabaseClient.from('evaluaciones_pro_b2b').insert([{
+            company_id: "SOCADEP_DEMO",
+            evaluator_id: "EVALUADOR_01",
+            evaluated_rut: rawRut,
+            evaluated_name: "Operador Demostración",
+            module_code: "MOD_03_VISOMOTRIZ",
+            modality_code: selectedMode,
+            metrics: { 
+              percent_on_track: percentOnTrack,
+              time_off_track_sec: Number((timeOffTrackMs / 1000).toFixed(1)),
+              off_track_events: offTrackCount
+            },
+            hardware_telemetry: tuner.getTelemetryData(),
+            integrity_hash: "SHA256_VISOMOTRIZ_OK",
+            is_valid_test: true
+          }]);
+        }
+
+        const startBtn = document.getElementById('btn-start');
+        document.getElementById('overlay-title').textContent = 'Prueba Concluida';
+        document.getElementById('overlay-msg').textContent = `Precisión: ${percentOnTrack}%. Métricas registradas en Supabase.`;
+        startBtn.textContent = '✓ EVALUACIÓN REGISTRADA (BLOQUEADO)';
+        startBtn.disabled = true;
+        startBtn.style.display = 'block';
+        document.getElementById('overlay').style.display = 'flex';
+
+      } else {
+        // EVALUACIÓN INVALIDADA
+        validityElem.textContent = `✗ INVALIDADA (Mínimo: ${minPrecisionValida}%)`;
+        validityElem.style.color = '#f87171';
+
+        reportElem.style.background = '#dc2626';
+        reportElem.textContent = `⚠ PRUEBA INVALIDADA: Precisión (${percentOnTrack}%) inferior al mínimo exigido (${minPrecisionValida}%). Debe reintentar.`;
+        reportElem.style.display = 'block';
+
+        const startBtn = document.getElementById('btn-start');
+        document.getElementById('overlay-title').textContent = 'Prueba Invalidada';
+        document.getElementById('overlay-msg').textContent = `Precisión insuficiente (${percentOnTrack}% / min ${minPrecisionValida}%). Reintente la prueba.`;
+        startBtn.textContent = 'REINTENTAR PRUEBA (20s)';
+        startBtn.disabled = false;
+        startBtn.style.display = 'block';
+        document.getElementById('overlay').style.display = 'flex';
       }
-
-      document.getElementById('overlay-title').textContent = 'Prueba Concluida';
-      document.getElementById('overlay-msg').textContent = `Precisión: ${percentOnTrack}%. Datos registrados en Supabase.`;
-      document.getElementById('btn-start').textContent = 'REPETIR PRUEBA';
-      document.getElementById('overlay').style.display = 'flex';
     }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      actualizarEstadoBotonesNavegacion();
+    });
   </script>
 </body>
 </html>
