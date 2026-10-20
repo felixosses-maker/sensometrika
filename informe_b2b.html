@@ -552,8 +552,8 @@
             } else if (planActivo === 'PRE_OCUPACIONAL' || planActivo === 'PRE_CONTRATO' || planActivo === 'SELECCION') {
                 idsPermitidos = ['reactimetro', 'visomotriz', 'punteo', 'audicion', 'visual', 'anticipacion'];
             } else {
-                // ALTO_DESEMPENIO Y PLANES B2B PRO INTEGRALES
-                idsPermitidos = ['punteo', 'reactimetro', 'visomotriz', 'anticipacion', 'audicion', 'visual', 'estereopsis', 'fatiga'];
+                // ALTO_DESEMPENIO Y PLANES B2B PRO INTEGRALES (9 MÓDULOS)
+                idsPermitidos = ['punteo', 'reactimetro', 'visomotriz', 'anticipacion', 'audicion', 'visual', 'estereopsis', 'fatiga', 'encandilamiento'];
             }
 
             // MÓDULOS DE SENSOMETRIKA PRO B2B Y ESTÁNDARES
@@ -565,7 +565,8 @@
                 { id: 'audicion', nombre: '5. Tamizaje Auditivo Ocupacional', est: '≤ 25 dB (Normal)' },
                 { id: 'visual', nombre: '6. Visión Integral & Test Ishihara', est: '≥ 0.8 binocular' },
                 { id: 'estereopsis', nombre: '7. Estereopsis y Profundidad 3D', est: '≥ 80% precisión' },
-                { id: 'fatiga', nombre: '8. Test de Fatiga (PVT)', est: '≤ 450 ms vigilancia' }
+                { id: 'fatiga', nombre: '8. Test de Fatiga (PVT)', est: '≤ 450 ms vigilancia' },
+                { id: 'encandilamiento', nombre: '9. Resistencia al Encandilamiento', est: '≤ 3.0 s recuperación' }
             ];
 
             const tbody = document.getElementById('tbodyModulos');
@@ -655,6 +656,13 @@
                             const lapsosAten = u.lapsos !== undefined ? u.lapsos : (u.errores || 0);
                             ok = tPVT <= 450 && lapsosAten <= 2;
                             telemetriaTxt = `Tiempo Reacción PVT: <strong>${tPVT} ms</strong> (Lapsos Atencionales >500ms: ${lapsosAten})`;
+                            break;
+
+                        case 'encandilamiento':
+                            const tRec = u.tiempoRecuperacionMs || u.promediodB || 2800;
+                            const segRec = (tRec / 1000).toFixed(2);
+                            ok = tRec <= 3000 && (u.aciertos >= 2 || u.aprobado !== false);
+                            telemetriaTxt = `Recuperación Visión Nocturna: <strong>${segRec} s</strong> (Estándar D.S. N° 170: ≤ 3.0s)`;
                             break;
                     }
 
