@@ -415,6 +415,13 @@
         function obtenerHistorialModulo(modulo) {
             const claveSesion = `sensometrika_historial_${modulo}_${cleanRut}_${sessionId}`;
             let historial = JSON.parse(localStorage.getItem(claveSesion)) || [];
+            
+            // Mapeo alternativo si el módulo guardó bajo el id de visomotriz o palancas
+            if ((!Array.isArray(historial) || historial.length === 0) && (modulo === 'visomotriz' || modulo === 'palancas')) {
+                const altKey = modulo === 'visomotriz' ? 'palancas' : 'visomotriz';
+                historial = JSON.parse(localStorage.getItem(`sensometrika_historial_${altKey}_${cleanRut}_${sessionId}`)) || [];
+            }
+
             if (!Array.isArray(historial)) return [];
             return historial;
         }
@@ -534,28 +541,29 @@
 
             const planActivo = (urlParams.get('plan') || localStorage.getItem('sensometrika_plan_contratado') || 'PLUS').toUpperCase();
             
-            // CONFIGURACIÓN Y MAPEO DE MÓDULOS INCLUIDOS SEGÚN PLAN (INCLUYE B2B PRO)
+            // MAPEO DE MÓDULOS POR PLAN B2B / B2B PRO
             let idsPermitidos = [];
             if (planActivo === 'BASICO' || planActivo === 'BASIC') {
-                idsPermitidos = ['reactimetro', 'palancas', 'punteo'];
+                idsPermitidos = ['reactimetro', 'visomotriz', 'punteo'];
             } else if (planActivo === 'PLUS') {
-                idsPermitidos = ['reactimetro', 'palancas', 'punteo', 'audicion'];
+                idsPermitidos = ['reactimetro', 'visomotriz', 'punteo', 'audicion'];
             } else if (planActivo === 'FULL' || planActivo === 'MEDIUM') {
-                idsPermitidos = ['reactimetro', 'palancas', 'punteo', 'audicion', 'visual'];
-            } else if (planActivo === 'PRE_OCUPACIONAL') {
-                idsPermitidos = ['reactimetro', 'palancas', 'punteo', 'audicion', 'visual', 'anticipacion'];
+                idsPermitidos = ['reactimetro', 'visomotriz', 'punteo', 'audicion', 'visual'];
+            } else if (planActivo === 'PRE_OCUPACIONAL' || planActivo === 'PRE_CONTRATO' || planActivo === 'SELECCION') {
+                idsPermitidos = ['reactimetro', 'visomotriz', 'punteo', 'audicion', 'visual', 'anticipacion'];
             } else {
-                // ALTO_DESEMPENIO Y PLANES INTEGRALES
-                idsPermitidos = ['reactimetro', 'palancas', 'punteo', 'audicion', 'visual', 'anticipacion', 'estereopsis', 'fatiga'];
+                // ALTO_DESEMPENIO Y PLANES B2B PRO INTEGRALES
+                idsPermitidos = ['punteo', 'reactimetro', 'visomotriz', 'anticipacion', 'audicion', 'visual', 'estereopsis', 'fatiga'];
             }
 
+            // MÓDULOS DE SENSOMETRIKA PRO B2B Y ESTÁNDARES
             const modulosConfig = [
-                { id: 'reactimetro', nombre: '1. Reactímetro Simple', est: '≤ 390 ms' },
-                { id: 'palancas', nombre: '2. Test de Palancas', est: '≥ 85% / ≤ 1 contacto' },
-                { id: 'punteo', nombre: '3. Punteo y Ritmo (Lahahy)', est: '≥ 78% efectividad' },
-                { id: 'audicion', nombre: '4. Tamizaje Auditivo Ocupacional', est: '≤ 25 dB (Normal)' },
-                { id: 'visual', nombre: '5. Tamizaje Visual Integral', est: '≥ 0.8 binocular' },
-                { id: 'anticipacion', nombre: '6. Velocidad de Anticipación', est: '≤ 220 ms margen' },
+                { id: 'punteo', nombre: '1. Punteo & Coordinación Visomotora', est: '≥ 78% efectividad' },
+                { id: 'reactimetro', nombre: '2. Reactímetro B2B Antimemorización', est: '≤ 390 ms' },
+                { id: 'visomotriz', nombre: '3. Tracking Visomotriz de Pista', est: '≥ 85% / ≤ 1 contacto' },
+                { id: 'anticipacion', nombre: '4. Anticipación Espaciotemporal (Túnel)', est: '≤ 220 ms margen' },
+                { id: 'audicion', nombre: '5. Tamizaje Auditivo Ocupacional', est: '≤ 25 dB (Normal)' },
+                { id: 'visual', nombre: '6. Visión Integral & Test Ishihara', est: '≥ 0.8 binocular' },
                 { id: 'estereopsis', nombre: '7. Estereopsis y Profundidad 3D', est: '≥ 80% precisión' },
                 { id: 'fatiga', nombre: '8. Test de Fatiga (PVT)', est: '≤ 450 ms vigilancia' }
             ];
@@ -589,6 +597,13 @@
                     let telemetriaTxt = '';
 
                     switch(m.id) {
+                        case 'punteo':
+                            const precPunt = u.precision !== undefined ? u.precision : (u.efectividad !== undefined ? u.efectividad : 0);
+                            const errPunt = u.errores !== undefined ? u.errores : 0;
+                            ok = precPunt >= 78;
+                            telemetriaTxt = `Efectividad Ritmo: <strong>${precPunt}%</strong> (Trepidez / Fuera: ${errPunt})`;
+                            break;
+
                         case 'reactimetro':
                             const tBruto = u.promedioBruto || u.promedioTiempo || u.tiempoFrenado || u.tiempo || 0;
                             const tNeto = Math.max(120, tBruto - latenciaSaved);
@@ -596,6 +611,7 @@
                             telemetriaTxt = `Reacción Neto: <strong>${tNeto} ms</strong> (Bruto: ${tBruto} ms | Desv. Hardware: -${latenciaSaved} ms | Errores: ${u.errores || 0})`;
                             break;
 
+                        case 'visomotriz':
                         case 'palancas':
                             const precP = u.precision !== undefined ? u.precision : 0;
                             const errP = u.contactos !== undefined ? u.contactos : (u.errores !== undefined ? u.errores : 0);
@@ -603,14 +619,14 @@
                             const tTotalRec = u.tiempo !== undefined ? u.tiempo : (u.tiempoTotal ? Math.round(u.tiempoTotal/1000) : 0);
                             
                             ok = precP >= 85 && errP <= 1 && !u.timeout;
-                            telemetriaTxt = `Precisión Bimanual: <strong>${precP}%</strong> (Tiempo: ${tTotalRec}s | Contactos Borde: ${errP} | T. Error: ${tErrorSeg}s)`;
+                            telemetriaTxt = `Tracking Pista: <strong>${precP}%</strong> (Tiempo: ${tTotalRec}s | Contactos Borde: ${errP} | T. Error: ${tErrorSeg}s)`;
                             break;
 
-                        case 'punteo':
-                            const precPunt = u.precision !== undefined ? u.precision : (u.efectividad !== undefined ? u.efectividad : 0);
-                            const errPunt = u.errores !== undefined ? u.errores : 0;
-                            ok = precPunt >= 78;
-                            telemetriaTxt = `Efectividad Ritmo: <strong>${precPunt}%</strong> (Errores / Toques Fuera: ${errPunt})`;
+                        case 'anticipacion':
+                            const tMargen = u.desviacionMs !== undefined ? Math.abs(u.desviacionMs) : (u.margenMs !== undefined ? Math.abs(u.margenMs) : 180);
+                            const segMargen = (tMargen / 1000).toFixed(2);
+                            ok = tMargen <= 220;
+                            telemetriaTxt = `Margen Error Estimado: <strong>±${tMargen} ms</strong> (${segMargen}s | Desviación: ${u.desviacionStd || 12} ms)`;
                             break;
 
                         case 'audicion':
@@ -625,13 +641,6 @@
                             const ishiharaErr = u.erroresCromaticos !== undefined ? u.erroresCromaticos : (u.errores || 0);
                             ok = agudezaVal >= 0.8 && ishiharaErr === 0;
                             telemetriaTxt = `Agudeza Visual: <strong>${agudezaVal} Binocular</strong> (Errores Test Ishihara: ${ishiharaErr})`;
-                            break;
-
-                        case 'anticipacion':
-                            const tMargen = u.desviacionMs !== undefined ? Math.abs(u.desviacionMs) : (u.margenMs !== undefined ? Math.abs(u.margenMs) : 180);
-                            const segMargen = (tMargen / 1000).toFixed(2);
-                            ok = tMargen <= 220;
-                            telemetriaTxt = `Margen Error Estimado: <strong>±${tMargen} ms</strong> (${segMargen}s | Desviación Estándar: ${u.desviacionStd || 12} ms)`;
                             break;
 
                         case 'estereopsis':

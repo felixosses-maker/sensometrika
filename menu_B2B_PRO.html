@@ -2,102 +2,402 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Sensometrika Pro B2B - Consola de Evaluación</title>
+  <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg-color: #0f172a;
+      --card-bg: #1e293b;
+      --card-border: #334155;
+      --accent-cyan: #38bdf8;
+      --accent-gold: #eab308;
+      --accent-green: #10b981;
+      --accent-red: #ef4444;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+
     body { 
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
-      background: #0f172a; 
-      color: #f8fafc; 
-      padding: 20px; 
+      background: var(--bg-color); 
+      color: var(--text-main); 
+      padding: 20px 12px; 
       display: flex;
       flex-direction: column;
       align-items: center;
+      min-height: 100vh;
     }
-    .header-b2b { text-align: center; margin-bottom: 24px; }
-    .header-b2b h1 { color: #38bdf8; font-size: 1.5rem; }
+
+    .header-b2b { text-align: center; margin-bottom: 24px; max-width: 900px; width: 100%; }
+    .header-b2b h1 { color: var(--accent-cyan); font-size: 1.6rem; font-weight: 800; margin-top: 8px; }
+
     .badge-pro { 
       background: linear-gradient(135deg, #eab308 0%, #ca8a04 100%); 
       color: #0f172a; 
-      padding: 4px 12px; 
+      padding: 4px 14px; 
       border-radius: 20px; 
-      font-weight: bold; 
-      font-size: 0.8rem;
+      font-weight: 900; 
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      display: inline-block;
     }
+
+    .info-worker-bar {
+      background: #1e293b;
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      padding: 12px 18px;
+      width: 100%;
+      max-width: 900px;
+      margin-bottom: 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      font-size: 0.82rem;
+    }
+
     .modules-grid { 
       display: grid; 
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); 
+      grid-template-columns: repeat(auto-fit, minmax(270px, 1fr)); 
       gap: 16px; 
       width: 100%; 
       max-width: 900px; 
     }
+
     .card-module { 
-      background: #1e293b; 
-      border: 1px solid #334155; 
+      background: var(--card-bg); 
+      border: 1px solid var(--card-border); 
       border-radius: 12px; 
-      padding: 20px; 
+      padding: 18px; 
       display: flex; 
       flex-direction: column; 
       justify-content: space-between; 
+      gap: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      transition: transform 0.2s ease, border-color 0.2s ease;
     }
-    .card-module h3 { color: #38bdf8; font-size: 1.1rem; margin-bottom: 8px; }
-    .card-module p { color: #94a3b8; font-size: 0.85rem; margin-bottom: 16px; line-height: 1.4; }
+
+    .card-module:hover {
+      border-color: var(--accent-cyan);
+    }
+
+    .card-module-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 8px;
+    }
+
+    .card-module h3 { color: var(--accent-cyan); font-size: 1.05rem; font-weight: 800; }
+    .card-module p { color: var(--text-muted); font-size: 0.80rem; line-height: 1.4; }
+
+    .badge-status {
+      font-size: 0.62rem;
+      font-weight: 900;
+      padding: 3px 8px;
+      border-radius: 4px;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    .badge-pending { background: rgba(245, 158, 11, 0.15); color: #f59e0b; border: 1px solid #f59e0b; }
+    .badge-ok { background: rgba(16, 185, 129, 0.15); color: var(--accent-green); border: 1px solid var(--accent-green); }
+    .badge-disabled { background: rgba(148, 163, 184, 0.1); color: var(--text-muted); border: 1px solid #475569; }
+
     .btn-exec { 
       background: #0284c7; 
       color: white; 
       border: none; 
-      padding: 10px; 
-      border-radius: 6px; 
-      font-weight: bold; 
+      padding: 11px; 
+      border-radius: 8px; 
+      font-weight: 800; 
+      font-size: 0.82rem;
       cursor: pointer; 
       text-align: center;
       text-decoration: none;
+      text-transform: uppercase;
+      transition: background 0.2s ease;
+      display: block;
+      width: 100%;
     }
+
     .btn-exec:hover { background: #0369a1; }
+
+    .btn-disabled {
+      background: #334155 !important;
+      color: #64748b !important;
+      cursor: not-allowed !important;
+      pointer-events: none;
+    }
+
+    .footer-report-box {
+      width: 100%;
+      max-width: 900px;
+      margin-top: 24px;
+      background: #0b1320;
+      border: 1px solid #1e3a5f;
+      border-radius: 12px;
+      padding: 16px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .btn-report {
+      background: var(--accent-green);
+      color: #000;
+      font-weight: 900;
+      padding: 12px 20px;
+      border-radius: 8px;
+      text-decoration: none;
+      text-transform: uppercase;
+      font-size: 0.85rem;
+      box-shadow: 0 4px 14px rgba(16, 185, 129, 0.3);
+    }
   </style>
 </head>
 <body>
 
   <div class="header-b2b">
-    <span class="badge-pro">ALTA EXIGENCIA & FAENAS MINERAS</span>
-    <h1 style="margin-top: 8px;">Consola de Evaluación B2B PRO</h1>
-    <p style="color: #94a3b8; font-size: 0.9rem;">Batería Integral con Telemetría de Hardware y Firma SHA-256</p>
+    <span class="badge-pro">🏆 ALTA EXIGENCIA & FAENAS MINERAS / FORESTALES</span>
+    <h1>Consola de Evaluación B2B PRO</h1>
+    <p style="color: #94a3b8; font-size: 0.88rem; margin-top: 4px;">
+      Batería Psicosensométrica Pericial con Telemetría de Hardware y Firma SHA-256
+    </p>
   </div>
 
-  <div class="modules-grid">
-    <div class="card-module">
+  <div class="info-worker-bar">
+    <div>
+      <span style="color: var(--text-muted); font-size: 0.68rem; text-transform: uppercase; display: block;">Evaluado</span>
+      <strong id="lblTrabajador" style="color: #fff; font-size: 0.92rem;">Cargando...</strong>
+    </div>
+    <div>
+      <span style="color: var(--text-muted); font-size: 0.68rem; text-transform: uppercase; display: block;">Cargo / Función</span>
+      <strong id="lblCargo" style="color: var(--accent-cyan); font-size: 0.92rem;">Cargando...</strong>
+    </div>
+    <div>
+      <span style="color: var(--text-muted); font-size: 0.68rem; text-transform: uppercase; display: block;">Plan B2B Pro</span>
+      <strong id="lblPlan" style="color: var(--accent-gold); font-size: 0.92rem;">ALTO DESEMPEÑO (8 MÓDULOS)</strong>
+    </div>
+  </div>
+
+  <div class="modules-grid" id="containerModulos">
+    <!-- MÓDULO 1 -->
+    <div class="card-module" id="card_punteo">
       <div>
-        <h3>Módulo 1: Punteo & Trepidez</h3>
-        <p>Tapping libre, ritmo fijo, trepidador estático fino y coordinación bimanual.</p>
+        <div class="card-module-header">
+          <h3>Módulo 1: Punteo & Trepidez</h3>
+          <span class="badge-status badge-pending" id="badge_punteo">PENDIENTE</span>
+        </div>
+        <p>Tapping libre, ritmo fijo, trepidador estático fino y coordinación bimanual en 4 modalidades.</p>
       </div>
-      <a href="demo_punteo_pro.html" class="btn-exec">EJECUTAR MÓDULO 1 →</a>
+      <a href="#" id="btn_punteo" class="btn-exec">EJECUTAR MÓDULO 1 →</a>
     </div>
 
-    <div class="card-module">
+    <!-- MÓDULO 2 -->
+    <div class="card-module" id="card_reactimetro">
       <div>
-        <h3>Módulo 2: Reactímetro B2B</h3>
+        <div class="card-module-header">
+          <h3>Módulo 2: Reactímetro B2B</h3>
+          <span class="badge-status badge-pending" id="badge_reactimetro">PENDIENTE</span>
+        </div>
         <p>Tiempos de reacción simple, discriminativa con distractores y freno de emergencia.</p>
       </div>
-      <a href="demo_reactimetro_pro.html" class="btn-exec">EJECUTAR MÓDULO 2 →</a>
+      <a href="#" id="btn_reactimetro" class="btn-exec">EJECUTAR MÓDULO 2 →</a>
     </div>
 
-    <div class="card-module">
+    <!-- MÓDULO 3 -->
+    <div class="card-module" id="card_visomotriz">
       <div>
-        <h3>Módulo 3: Tracking Visomotriz</h3>
-        <p>Seguimiento de trayectoria continua y adaptativa de velocidad variable.</p>
+        <div class="card-module-header">
+          <h3>Módulo 3: Tracking Visomotriz</h3>
+          <span class="badge-status badge-pending" id="badge_visomotriz">PENDIENTE</span>
+        </div>
+        <p>Seguimiento de trayectoria continua y adaptativa sobre pista de velocidad variable.</p>
       </div>
-      <a href="demo_visomotriz_pro.html" class="btn-exec">EJECUTAR MÓDULO 3 →</a>
+      <a href="#" id="btn_visomotriz" class="btn-exec">EJECUTAR MÓDULO 3 →</a>
     </div>
 
-    <div class="card-module">
+    <!-- MÓDULO 4 -->
+    <div class="card-module" id="card_anticipacion">
       <div>
-        <h3>Módulo 4: Anticipación Espaciotemporal</h3>
-        <p>Estimación de velocidad y tiempo de cruce en puntos ciegos / túnel.</p>
+        <div class="card-module-header">
+          <h3>Módulo 4: Anticipación Espaciotemporal</h3>
+          <span class="badge-status badge-pending" id="badge_anticipacion">PENDIENTE</span>
+        </div>
+        <p>Estimación de velocidad, desaceleración y punto de salida tras zona ciega / túnel.</p>
       </div>
-      <a href="demo_anticipacion_pro.html" class="btn-exec">EJECUTAR MÓDULO 4 →</a>
+      <a href="#" id="btn_anticipacion" class="btn-exec">EJECUTAR MÓDULO 4 →</a>
+    </div>
+
+    <!-- MÓDULO 5 -->
+    <div class="card-module" id="card_audicion">
+      <div>
+        <div class="card-module-header">
+          <h3>Módulo 5: Audición Ocupacional</h3>
+          <span class="badge-status badge-pending" id="badge_audicion">PENDIENTE</span>
+        </div>
+        <p>Tamizaje audiométrico tonal telemétrico en frecuencias críticas para ruido industrial.</p>
+      </div>
+      <a href="#" id="btn_audicion" class="btn-exec">EJECUTAR MÓDULO 5 →</a>
+    </div>
+
+    <!-- MÓDULO 6 -->
+    <div class="card-module" id="card_visual">
+      <div>
+        <div class="card-module-header">
+          <h3>Módulo 6: Visión Integral & Ishihara</h3>
+          <span class="badge-status badge-pending" id="badge_visual">PENDIENTE</span>
+        </div>
+        <p>Agudeza visual binocular telemétrica y test de láminas para discromatopsia.</p>
+      </div>
+      <a href="#" id="btn_visual" class="btn-exec">EJECUTAR MÓDULO 6 →</a>
+    </div>
+
+    <!-- MÓDULO 7 -->
+    <div class="card-module" id="card_estereopsis">
+      <div>
+        <div class="card-module-header">
+          <h3>Módulo 7: Estereopsis y Profundidad 3D</h3>
+          <span class="badge-status badge-pending" id="badge_estereopsis">PENDIENTE</span>
+        </div>
+        <p>Evaluación de percepción espacial tridimensional para operadores de maquinaria pesada.</p>
+      </div>
+      <a href="#" id="btn_estereopsis" class="btn-exec">EJECUTAR MÓDULO 7 →</a>
+    </div>
+
+    <!-- MÓDULO 8 -->
+    <div class="card-module" id="card_fatiga">
+      <div>
+        <div class="card-module-header">
+          <h3>Módulo 8: Test de Fatiga (PVT)</h3>
+          <span class="badge-status badge-pending" id="badge_fatiga">PENDIENTE</span>
+        </div>
+        <p>Psychomotor Vigilance Task para detección de latencia de somnolencia y micro-sueños.</p>
+      </div>
+      <a href="#" id="btn_fatiga" class="btn-exec">EJECUTAR MÓDULO 8 →</a>
     </div>
   </div>
 
+  <div class="footer-report-box">
+    <div>
+      <strong style="color: #fff; font-size: 0.90rem; display: block;">Resumen Pericial & Certificación B2B</strong>
+      <span style="color: var(--text-muted); font-size: 0.75rem;">Consulte o descargue el Informe Pericial con firma digital y validador QR.</span>
+    </div>
+    <a href="#" id="btnVerInforme" class="btn-report">📄 VER INFORME PERICIAL PERFIL B2B →</a>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      let datosUsuario = {};
+      try {
+        datosUsuario = JSON.parse(localStorage.getItem('sensometrika_datos_usuario')) || {};
+      } catch(e){}
+
+      const rut = urlParams.get('rut') || datosUsuario.rut || '12.345.678-K';
+      const nombre = decodeURIComponent(urlParams.get('nombre') || datosUsuario.nombre || 'TRABAJADOR EVALUADO');
+      const cargo = decodeURIComponent(urlParams.get('cargo') || datosUsuario.cargo || 'OPERADOR FAENA MINERA');
+      const empresa = decodeURIComponent(urlParams.get('empresa') || datosUsuario.empresa || 'SOCADEP LTDA.');
+      const planParam = (urlParams.get('plan') || localStorage.getItem('sensometrika_plan_contratado') || 'ALTO_DESEMPENIO').toUpperCase();
+      const token = urlParams.get('token') || '';
+      
+      const cleanRut = rut.replace(/[^0-9Kk]/g, '');
+      const sessionId = urlParams.get('session') || localStorage.getItem('sensometrika_session_activa') || `SESION_${cleanRut}_${Date.now()}`;
+      localStorage.setItem('sensometrika_session_activa', sessionId);
+      localStorage.setItem('sensometrika_plan_contratado', planParam);
+
+      document.getElementById('lblTrabajador').textContent = `${nombre} (${rut})`;
+      document.getElementById('lblCargo').textContent = cargo;
+      document.getElementById('lblPlan').textContent = planParam === 'PRE_OCUPACIONAL' ? 'FILTRO PRE-OCUPACIONAL (6 MÓDULOS)' : 'ALTO DESEMPEÑO (8 MÓDULOS)';
+
+      // Definir módulos permitidos según plan
+      let idsPermitidos = [];
+      if (planParam === 'BASICO' || planParam === 'BASIC') {
+        idsPermitidos = ['reactimetro', 'visomotriz', 'punteo'];
+      } else if (planParam === 'PLUS') {
+        idsPermitidos = ['reactimetro', 'visomotriz', 'punteo', 'audicion'];
+      } else if (planParam === 'FULL' || planParam === 'MEDIUM') {
+        idsPermitidos = ['reactimetro', 'visomotriz', 'punteo', 'audicion', 'visual'];
+      } else if (planParam === 'PRE_OCUPACIONAL' || planParam === 'PRE_CONTRATO') {
+        idsPermitidos = ['reactimetro', 'visomotriz', 'punteo', 'audicion', 'visual', 'anticipacion'];
+      } else {
+        idsPermitidos = ['punteo', 'reactimetro', 'visomotriz', 'anticipacion', 'audicion', 'visual', 'estereopsis', 'fatiga'];
+      }
+
+      // Mapeo de rutas para cada módulo
+      const rutasModulos = {
+        punteo: 'demo_punteo_pro.html',
+        reactimetro: 'demo_reactimetro_pro.html',
+        visomotriz: 'demo_visomotriz_pro.html',
+        anticipacion: 'demo_anticipacion_pro.html',
+        audicion: 'demo_audicion_pro.html',
+        visual: 'demo_visual_pro.html',
+        estereopsis: 'demo_estereopsis_pro.html',
+        fatiga: 'demo_fatiga_pro.html'
+      };
+
+      const paramsBase = new URLSearchParams({
+        rut: rut,
+        nombre: nombre,
+        cargo: cargo,
+        empresa: empresa,
+        plan: planParam,
+        session: sessionId,
+        mode: 'b2b-pro'
+      });
+      if (token) paramsBase.set('token', token);
+
+      Object.keys(rutasModulos).forEach(modKey => {
+        const btnEl = document.getElementById(`btn_${modKey}`);
+        const badgeEl = document.getElementById(`badge_${modKey}`);
+        const cardEl = document.getElementById(`card_${modKey}`);
+
+        if (!idsPermitidos.includes(modKey)) {
+          // Módulo no contratado en este plan
+          if (badgeEl) {
+            badgeEl.textContent = 'NO SOLICITADO';
+            badgeEl.className = 'badge-status badge-disabled';
+          }
+          if (btnEl) {
+            btnEl.textContent = 'MÓDULO NO INCLUIDO';
+            btnEl.classList.add('btn-disabled');
+            btnEl.removeAttribute('href');
+          }
+        } else {
+          // Verificar si ya fue rendido en la sesión activa
+          const histSesion = JSON.parse(localStorage.getItem(`sensometrika_historial_${modKey}_${cleanRut}_${sessionId}`)) || [];
+          const isCompDemo = localStorage.getItem(`${modKey}_demo_completada_${cleanRut}_${sessionId}`) === 'true';
+
+          if (histSesion.length > 0 || isCompDemo) {
+            if (badgeEl) {
+              badgeEl.textContent = '✓ COMPLETADO';
+              badgeEl.className = 'badge-status badge-ok';
+            }
+            if (btnEl) {
+              btnEl.textContent = 'REPETIR MÓDULO →';
+            }
+          }
+
+          if (btnEl) {
+            const urlMod = `${rutasModulos[modKey]}?${paramsBase.toString()}&returnUrl=${encodeURIComponent(window.location.href)}`;
+            btnEl.href = urlMod;
+          }
+        }
+      });
+
+      // Configurar enlace del Informe Pericial
+      const urlInforme = `informe_b2b.html?${paramsBase.toString()}`;
+      document.getElementById('btnVerInforme').href = urlInforme;
+    });
+  </script>
 </body>
 </html>
