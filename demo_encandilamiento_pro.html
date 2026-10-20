@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>SENSOMETRIKA | Test de Encandilamiento & Recuperación Pro</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="modules/v5_encandilamiento_core.js"></script>
+  <style>
+    :root {
+      --bg-color: #040810;
+      --card-bg: #091120;
+      --card-border: #132238;
+      --inner-price-bg: #050a14;
+      --accent-cyan: #00bfff;
+      --accent-cyan-glow: rgba(0, 191, 255, 0.55);
+      --accent-green: #10b981;
+      --accent-gold: #e5b324;
+      --accent-gold-glow: rgba(229, 179, 36, 0.4);
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+    }
+
+    * { 
+      box-sizing: border-box; 
+      margin: 0; 
+      padding: 0; 
+      user-select: none; 
+      -webkit-tap-highlight-color: transparent; 
+    }
+
+    body {
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      min-height: 100vh;
+      padding: 20px 12px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .main-container {
+      width: 100%;
+      max-width: 480px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .card-box {
+      background-color: var(--card-bg);
+      border: 1.5px solid var(--accent-gold);
+      border-radius: 14px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      box-shadow: 0 8px 30px rgba(229, 179, 36, 0.25);
+    }
+
+    .card-header {
+      border-bottom: 1px solid var(--card-border);
+      padding-bottom: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .module-title {
+      font-size: 1.02rem;
+      font-weight: 900;
+      color: var(--accent-gold);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .module-subtitle {
+      font-size: 0.68rem;
+      color: var(--text-muted);
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    .badge-norma {
+      background: rgba(229, 179, 36, 0.15);
+      color: var(--accent-gold);
+      border: 1px solid var(--accent-gold);
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-size: 0.60rem;
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+
+    .btn-gold {
+      background: var(--accent-gold);
+      color: #000;
+      font-weight: 900;
+      font-size: 0.85rem;
+      padding: 14px;
+      border-radius: 9px;
+      border: none;
+      width: 100%;
+      cursor: pointer;
+      text-transform: uppercase;
+      text-align: center;
+      box-shadow: 0 4px 16px var(--accent-gold-glow);
+      transition: transform 0.15s ease, background 0.2s ease;
+      display: block;
+    }
+
+    .btn-gold:active {
+      transform: scale(0.98);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="main-container">
+    <div class="card-box">
+      
+      <!-- Encabezado con Arquitectura Sensometrika Pro -->
+      <div class="card-header">
+        <div>
+          <h1 class="module-title">MÓDULO 9: ENCANDILAMIENTO & RECUPERACIÓN</h1>
+          <p class="module-subtitle">EVALUACIÓN VISUAL NOCTURNA • D.S. N° 170 MTT</p>
+        </div>
+        <span class="badge-norma">D.S. 170</span>
+      </div>
+
+      <!-- Contenedor del Ejecutable del Módulo Core -->
+      <div id="containerEncandilamiento"></div>
+
+      <!-- Botón de Acción Prominente Sensometrika -->
+      <button id="btnIniciar" class="btn-gold" onclick="iniciarPrueba()">
+        INICIAR EVALUACIÓN DE ENCANDILAMIENTO →
+      </button>
+
+    </div>
+  </div>
+
+  <script>
+    let testEnc = null;
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const latencia = parseInt(urlParams.get('latencia') || localStorage.getItem('sensometrika_latencia_ms') || '16');
+
+      testEnc = new ModuloEncandilamiento({
+        containerId: 'containerEncandilamiento',
+        latenciaHardwareMs: latencia,
+        onFinish: (res) => {
+          const returnUrl = urlParams.get('returnUrl');
+          if (returnUrl) {
+            setTimeout(() => {
+              window.location.href = decodeURIComponent(returnUrl);
+            }, 1500);
+          } else {
+            setTimeout(() => {
+              window.location.href = `informe_b2b.html?${urlParams.toString()}`;
+            }, 1500);
+          }
+        }
+      });
+    });
+
+    function iniciarPrueba() {
+      if (testEnc) {
+        document.getElementById('btnIniciar').style.display = 'none';
+        testEnc.iniciarEvaluacion();
+      }
+    }
+  </script>
+
+</body>
+</html>
