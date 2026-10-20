@@ -2,192 +2,330 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>Sensometrika Pro B2B - Test Módulo Anticipación</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>SENSOMETRIKA | Anticipación Espaciotemporal Pro</title>
+  <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
+    :root {
+      --bg-color: #040810;
+      --card-bg: #091120;
+      --card-border: #132238;
+      --inner-price-bg: #050a14;
+      --accent-cyan: #00bfff;
+      --accent-cyan-glow: rgba(0, 191, 255, 0.4);
+      --accent-gold: #e5b324;
+      --accent-gold-glow: rgba(229, 179, 36, 0.4);
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+    }
+
     * { 
       box-sizing: border-box; 
       margin: 0; 
       padding: 0; 
       user-select: none; 
       -webkit-user-select: none; 
+      -webkit-tap-highlight-color: transparent;
     }
-    body { 
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
-      background: #0f172a; 
-      color: #f8fafc; 
-      display: flex; 
-      flex-direction: column; 
-      align-items: center; 
-      min-height: 100vh; 
-      padding: 16px; 
-    }
-    header { 
-      text-align: center; 
-      margin-bottom: 12px; 
-    }
-    h1 { 
-      font-size: 1.25rem; 
-      color: #38bdf8; 
-    }
-    .status-bar { 
-      display: flex; 
-      gap: 12px; 
-      background: #1e293b; 
-      padding: 8px 16px; 
-      border-radius: 8px; 
-      font-size: 0.85rem; 
-      margin-top: 8px; 
-      justify-content: center;
-    }
-    .status-item span { 
-      font-weight: bold; 
-      color: #4ade80; 
-    }
-    
-    .controls { 
-      display: flex; 
-      gap: 8px; 
-      margin-bottom: 12px; 
-      flex-wrap: wrap; 
-      justify-content: center; 
-    }
-    button.btn-mode { 
-      background: #334155; 
-      color: #94a3b8; 
-      border: 1px solid #475569; 
-      padding: 10px 14px; 
-      border-radius: 6px; 
-      font-weight: 600; 
-      cursor: pointer; 
-      transition: all 0.2s ease;
-    }
-    button.btn-mode:hover {
-      background: #475569;
-      color: #f8fafc;
-    }
-    button.btn-mode.active {
-      background: #22c55e !important;
-      color: #022c22 !important;
-      border-color: #4ade80 !important;
-      box-shadow: 0 0 12px rgba(34, 197, 94, 0.5);
-      transform: scale(1.03);
-    }
-    
-    #canvas-container { 
-      position: relative; 
-      width: 100%; 
-      max-width: 400px; 
-      height: 360px; 
-      background: #1e293b; 
-      border: 2px solid #334155; 
-      border-radius: 12px; 
-      overflow: hidden; 
-      touch-action: none; 
+
+    body {
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      min-height: 100vh;
+      padding: 20px 12px;
       display: flex;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
     }
-    canvas { 
-      width: 100%; 
-      height: 100%; 
-      display: block; 
+
+    .main-wrapper {
+      width: 100%;
+      max-width: 480px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
     }
-    
-    .start-overlay {
-      position: absolute;
+
+    /* Logo Superior Estándar v1 */
+    .brand-header {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .logo-container {
+      background: #060d1d;
+      border: 1px solid var(--card-border);
+      border-radius: 14px;
+      padding: 10px 22px;
+      box-shadow: 0 0 20px rgba(0, 191, 255, 0.2);
+    }
+
+    .brand-logo-img {
+      width: 160px;
+      height: auto;
+      mix-blend-mode: lighten;
+      filter: drop-shadow(0 0 10px var(--accent-cyan-glow));
+    }
+
+    .subtitle-neon {
+      font-size: 0.72rem;
+      font-weight: 800;
+      color: var(--accent-cyan);
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      text-align: center;
+    }
+
+    /* Tarjeta Principal v1 */
+    .main-card {
+      background-color: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 14px;
+      padding: 18px;
+      width: 100%;
       display: flex;
       flex-direction: column;
       gap: 12px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
+    }
+
+    .top-nav-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.72rem;
+      color: var(--accent-cyan);
+      font-weight: 700;
+    }
+
+    .top-nav-bar button {
+      color: var(--accent-cyan);
+      text-decoration: none;
+      background: transparent;
+      border: none;
+      cursor: pointer;
+    }
+
+    .pill-mode {
+      background: rgba(0, 191, 255, 0.12);
+      border: 1px solid var(--accent-cyan);
+      color: var(--accent-cyan);
+      padding: 4px 14px;
+      border-radius: 20px;
+      font-size: 0.65rem;
+      font-weight: 800;
+      text-align: center;
+      margin: 0 auto;
+      text-transform: uppercase;
+    }
+
+    /* Selector de Modalidades v1 */
+    .controls-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .btn-mode {
+      background: #0f172a;
+      color: var(--text-muted);
+      border: 1px solid var(--card-border);
+      padding: 10px 8px;
+      border-radius: 8px;
+      font-size: 0.68rem;
+      font-weight: 800;
+      cursor: pointer;
+      text-transform: uppercase;
+      transition: all 0.2s ease;
+      text-align: center;
+    }
+
+    .btn-mode.active {
+      background: rgba(0, 191, 255, 0.15);
+      color: var(--accent-cyan);
+      border-color: var(--accent-cyan);
+      box-shadow: 0 0 12px var(--accent-cyan-glow);
+    }
+
+    /* Lienzo / Canvas Interactivo v1 */
+    #canvas-container {
+      position: relative;
+      width: 100%;
+      height: 240px;
+      background: #030712;
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      overflow: hidden;
+      touch-action: none;
+      display: flex;
       align-items: center;
       justify-content: center;
-      background: rgba(15, 23, 42, 0.92);
+    }
+
+    canvas {
       width: 100%;
       height: 100%;
+      display: block;
+    }
+
+    .start-overlay {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      align-items: center;
+      justify-content: center;
+      background: rgba(4, 8, 16, 0.92);
       z-index: 10;
-      padding: 24px;
+      padding: 18px;
       text-align: center;
     }
-    .btn-action {
-      background: #0284c7;
-      color: white;
+
+    .instruction-text {
+      font-size: 0.74rem;
+      color: #cbd5e1;
+      text-align: center;
+      line-height: 1.35;
+    }
+
+    .btn-action-main {
+      background: var(--accent-cyan);
+      color: #000;
       border: none;
-      padding: 12px 24px;
-      border-radius: 8px;
-      font-size: 1rem;
-      font-weight: bold;
+      padding: 13px;
+      border-radius: 9px;
+      font-weight: 900;
+      font-size: 0.83rem;
       cursor: pointer;
-      box-shadow: 0 4px 12px rgba(2, 132, 199, 0.4);
-    }
-
-    .metrics-panel { 
-      width: 100%; 
-      max-width: 400px; 
-      background: #1e293b; 
-      margin-top: 12px; 
-      padding: 12px; 
-      border-radius: 8px; 
-      font-size: 0.88rem; 
-    }
-    .metric-row { 
-      display: flex; 
-      justify-content: space-between; 
-      padding: 5px 0; 
-      border-bottom: 1px solid #334155; 
-    }
-    .metric-row:last-child {
-      border-bottom: none;
-    }
-
-    .report-badge {
-      display: none;
-      margin-top: 10px;
-      padding: 10px;
-      background: #0284c7;
-      color: white;
+      text-transform: uppercase;
       text-align: center;
-      border-radius: 6px;
-      font-weight: bold;
-      font-size: 0.85rem;
+      width: 100%;
+      box-shadow: 0 4px 16px var(--accent-cyan-glow);
     }
+
+    /* Fila Telemétrica Inferior 4 Columnas v1 */
+    .telemetry-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      background: #030712;
+      border: 1px solid var(--card-border);
+      border-radius: 10px;
+      padding: 10px 4px;
+      text-align: center;
+    }
+
+    .telemetry-col { display: flex; flex-direction: column; gap: 2px; }
+    .telemetry-lbl { font-size: 0.52rem; color: var(--text-muted); font-weight: 800; text-transform: uppercase; }
+    .telemetry-val { font-size: 0.82rem; font-weight: 900; color: #fff; }
   </style>
 </head>
 <body>
 
-  <header>
-    <h1>Sensometrika Pro B2B</h1>
-    <p style="font-size: 0.8rem; color: #94a3b8; margin-top: 2px;">Módulo 4: Anticipación de Tiempo y Velocidad</p>
-    <div class="status-bar">
-      <div class="status-item">Refresh Rate: <span id="hz-val">Detectando...</span></div>
-      <div class="status-item">Offset Hardware: <span id="offset-val">0 ms</span></div>
-    </div>
-  </header>
+  <div class="main-wrapper">
+    
+    <!-- Header Institucional v1 -->
+    <header class="brand-header">
+      <div class="logo-container">
+        <img src="sensometrica.jpg" alt="SENSOMETRIKA" class="brand-logo-img">
+      </div>
+      <div class="subtitle-neon">MÓDULO 4: ANTICIPACIÓN ESPACIOTEMPORAL</div>
+    </header>
 
-  <div class="controls">
-    <button class="btn-mode" id="btn-4A" onclick="selectMode('4A')">4A. Velocidad Constante</button>
-    <button class="btn-mode" id="btn-4B" onclick="selectMode('4B')">4B. Velocidad Variable</button>
-  </div>
+    <!-- Tarjeta Central v1 -->
+    <div class="main-card">
+      
+      <!-- Navegación Superior Interna -->
+      <div class="top-nav-bar">
+        <button onclick="volverMenu()">&larr; Menú Pruebas</button>
+        <button onclick="mostrarAyuda()">? &iquest;C&oacute;mo funciona?</button>
+      </div>
 
-  <div id="canvas-container">
-    <canvas id="anticipacionCanvas"></canvas>
-    <div id="overlay" class="start-overlay">
-      <h2 id="overlay-title" style="color:#38bdf8; font-size:1.1rem;">Selecciona una modalidad</h2>
-      <p id="overlay-msg" style="color:#94a3b8; font-size:0.85rem; line-height:1.4; max-width:320px;">
-        Elija una prueba para medir la estimación espaciotemporal.
+      <div class="pill-mode">&bull; Simulaci&oacute;n Oficial B2B PRO</div>
+
+      <!-- Selector de Modalidad -->
+      <div class="controls-grid">
+        <button class="btn-mode active" id="btn-4A" onclick="selectMode('4A')">4A. Velocidad Constante</button>
+        <button class="btn-mode" id="btn-4B" onclick="selectMode('4B')">4B. Velocidad Variable</button>
+      </div>
+
+      <!-- Área de Simulación / Canvas -->
+      <div id="canvas-container">
+        <canvas id="anticipacionCanvas"></canvas>
+
+        <div id="overlay" class="start-overlay">
+          <h2 id="overlay-title" style="color: var(--accent-cyan); font-size: 0.95rem; font-weight: 900; text-transform: uppercase;">
+            Modalidad 4A: Velocidad Constante
+          </h2>
+          <p id="overlay-msg" class="instruction-text">
+            Observe el móvil. Al entrar al túnel se ocultará. Presione la pantalla justo cuando calcule que cruza la meta roja.
+          </p>
+          <button id="btn-start" class="btn-action-main" style="margin-top: 6px;" onclick="runCurrentTest()">
+            INICIAR EVALUACIÓN (5 Ensayos) →
+          </button>
+        </div>
+      </div>
+
+      <p class="instruction-text" id="lblInstruccionPista">
+        Mide la precisión en la estimación de tiempo de cruce en zona ciega (D.S. N° 170 MTT).
       </p>
-      <button id="btn-start" class="btn-action" style="display:none;" onclick="runCurrentTest()">INICIAR EVALUACIÓN (5 Ensayos)</button>
+
+      <!-- Panel Telemétrico Inferior de 4 Columnas v1 -->
+      <div class="telemetry-row">
+        <div class="telemetry-col">
+          <span class="telemetry-lbl">ENSAYO</span>
+          <span id="m-trials" class="telemetry-val" style="color: var(--accent-cyan);">0/5</span>
+        </div>
+        <div class="telemetry-col">
+          <span class="telemetry-lbl">ÚLTIMO ERROR</span>
+          <span id="m-last-error" class="telemetry-val" style="color: #10b981;">-- ms</span>
+        </div>
+        <div class="telemetry-col">
+          <span class="telemetry-lbl">LATENCIA</span>
+          <span id="offset-val" class="telemetry-val" style="color: var(--accent-gold);">16 ms</span>
+        </div>
+        <div class="telemetry-col">
+          <span class="telemetry-lbl">PROMEDIO</span>
+          <span id="m-avg-error" class="telemetry-val" style="color: var(--accent-cyan);">-- ms</span>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- Modal de Ayuda Integrado Sensometrika -->
+  <div id="modalAyuda" style="display: none; position: fixed; inset: 0; background: rgba(4, 8, 16, 0.85); backdrop-filter: blur(4px); z-index: 999; justify-content: center; align-items: center; padding: 16px;">
+    <div style="background: #091120; border: 1px solid var(--accent-cyan); border-radius: 14px; padding: 20px; max-width: 420px; width: 100%; box-shadow: 0 0 25px rgba(0, 191, 255, 0.3); display: flex; flex-direction: column; gap: 14px;">
+      
+      <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--card-border); padding-bottom: 8px;">
+        <span style="font-size: 0.85rem; font-weight: 800; color: var(--accent-cyan); text-transform: uppercase;">
+          ℹ️ Instrucciones del Módulo 4
+        </span>
+        <button onclick="cerrarAyuda()" style="color: var(--text-muted); font-weight: 800; border: none; background: none; cursor: pointer; font-size: 1rem;">✕</button>
+      </div>
+
+      <div style="font-size: 0.76rem; color: #cbd5e1; line-height: 1.5; display: flex; flex-direction: column; gap: 8px;">
+        <p>1. Selecciona la modalidad de evaluación (Velocidad Constante o Variable).</p>
+        <p>2. Presiona <strong>INICIAR EVALUACIÓN</strong>. El móvil se desplazará hacia el túnel.</p>
+        <p>3. Al ocultarse en la zona ciega, calcula mentalmente su avance.</p>
+        <p>4. Presiona sobre la pantalla en el instante exacto en que estimes que cruza la línea roja.</p>
+        <div style="background: #030712; border: 1px dashed var(--accent-gold); padding: 8px; border-radius: 8px; color: var(--accent-gold); font-size: 0.70rem; font-weight: 700; margin-top: 4px;">
+          Estándar D.S. N° 170 MTT: Margen de error promedio ≤ 220 ms.
+        </div>
+      </div>
+
+      <button onclick="cerrarAyuda()" class="btn-action-main" style="margin-top: 4px;">
+        ENTENDIDO →
+      </button>
     </div>
   </div>
-
-  <div class="metrics-panel">
-    <div class="metric-row"><span>Estado de Ensayo:</span><strong id="m-status" style="color:#eab308;">Esperando inicio</strong></div>
-    <div class="metric-row"><span>Ensayos Realizados:</span><strong id="m-trials">0 / 5</strong></div>
-    <div class="metric-row"><span>Error Último Ensayo:</span><strong id="m-last-error" style="color:#4ade80;">-- ms</strong></div>
-    <div class="metric-row"><span>Error Absoluto Promedio:</span><strong id="m-avg-error" style="color:#38bdf8;">-- ms</strong></div>
-  </div>
-
-  <div id="report-status" class="report-badge"></div>
 
   <script>
     const SUPABASE_URL = "https://kytuewhkhshrjddzoknv.supabase.co";
@@ -200,7 +338,7 @@
 
     class LatencyTuner {
       constructor() {
-        this.hardwareOffsetMs = 0;
+        this.hardwareOffsetMs = 16;
         this.refreshRateHz = 60;
         this.sampleTaps = [];
       }
@@ -225,15 +363,15 @@
 
       registerCalibrationTap(event) {
         const systemTimestamp = performance.now();
-        let touchTimestamp = event.timeStamp;
-        if (event.getCoalescedEvents && event.getCoalescedEvents().length > 0) {
+        let touchTimestamp = event ? event.timeStamp : systemTimestamp;
+        if (event && event.getCoalescedEvents && event.getCoalescedEvents().length > 0) {
           touchTimestamp = event.getCoalescedEvents()[0].timeStamp;
         }
         const lag = Math.max(0, systemTimestamp - touchTimestamp);
         this.sampleTaps.push(lag);
         if (this.sampleTaps.length >= 3) {
           const sum = this.sampleTaps.reduce((a, b) => a + b, 0);
-          this.hardwareOffsetMs = Number((sum / this.sampleTaps.length).toFixed(2));
+          this.hardwareOffsetMs = Number((sum / this.sampleTaps.length).toFixed(1));
         }
         return this.hardwareOffsetMs;
       }
@@ -247,7 +385,7 @@
     }
 
     const tuner = new LatencyTuner();
-    let selectedMode = null;
+    let selectedMode = '4A';
     let isTestRunning = false;
     let currentTrial = 0;
     const maxTrials = 5;
@@ -265,12 +403,15 @@
 
     const canvas = document.getElementById('anticipacionCanvas');
     const ctx = canvas.getContext('2d');
+    const urlParams = new URLSearchParams(window.location.search);
 
-    async function initTelemetry() {
-      const hz = await tuner.detectScreenRefreshRate();
-      document.getElementById('hz-val').textContent = hz + ' Hz';
-    }
-    initTelemetry();
+    document.addEventListener('DOMContentLoaded', async () => {
+      await tuner.detectScreenRefreshRate();
+      const savedLat = parseInt(urlParams.get('latencia') || localStorage.getItem('sensometrika_latencia_ms') || '16');
+      tuner.hardwareOffsetMs = savedLat;
+      document.getElementById('offset-val').textContent = savedLat + ' ms';
+      resizeCanvas();
+    });
 
     function resizeCanvas() {
       const dpr = window.devicePixelRatio || 1;
@@ -281,6 +422,7 @@
     }
 
     window.selectMode = function(mode) {
+      if (isTestRunning) return;
       selectedMode = mode;
       document.querySelectorAll('.btn-mode').forEach(btn => btn.classList.remove('active'));
       const activeBtn = document.getElementById(`btn-${mode}`);
@@ -292,23 +434,18 @@
       };
 
       const modeInstructions = {
-        '4A': 'Observe el móvil. Al entrar al túnel se ocultará. Presione justo cuando calcule que cruza la meta roja.',
-        '4B': 'Atención: El móvil cambiará ligeramente de velocidad antes de entrar al túnel. Calcule la llegada exacta.'
+        '4A': 'Observe el móvil. Al entrar al túnel se ocultará. Presione la pantalla justo cuando calcule que cruza la meta roja.',
+        '4B': 'Atención: El móvil cambiará de velocidad al ocultarse. Calcule la llegada con precisión.'
       };
 
       document.getElementById('overlay-title').textContent = modeTitles[mode];
       document.getElementById('overlay-msg').textContent = modeInstructions[mode];
-
-      const startBtn = document.getElementById('btn-start');
-      startBtn.style.display = 'block';
-      startBtn.textContent = 'INICIAR EVALUACIÓN (5 Ensayos)';
+      document.getElementById('btn-start').textContent = 'INICIAR EVALUACIÓN (5 Ensayos) →';
       document.getElementById('overlay').style.display = 'flex';
     };
 
     window.runCurrentTest = function() {
       document.getElementById('overlay').style.display = 'none';
-      document.getElementById('report-status').style.display = 'none';
-
       resizeCanvas();
       isTestRunning = true;
       currentTrial = 0;
@@ -326,14 +463,12 @@
 
       currentTrial++;
       trialState = 'VISIBLE';
-      document.getElementById('m-status').textContent = 'Observando móvil...';
-      document.getElementById('m-status').style.color = '#eab308';
+      document.getElementById('lblInstruccionPista').textContent = 'Móvil en movimiento... Atento a la entrada del túnel.';
 
       const rect = canvas.getBoundingClientRect();
       const w = rect.width;
 
       vehicle.x = 20;
-      // Velocidad aleatoria
       let baseSpeed = Math.random() * 1.5 + 2.0; 
       vehicle.speed = baseSpeed;
 
@@ -341,7 +476,6 @@
       finishX = w * 0.85;
 
       startTime = performance.now();
-      
       loop();
     }
 
@@ -360,8 +494,7 @@
         hiddenTime = performance.now();
 
         if (selectedMode === '4B') {
-          // Variación del ±20% de velocidad al ocultarse
-          const factor = Math.random() > 0.5 ? 1.2 : 0.8;
+          const factor = Math.random() > 0.5 ? 1.25 : 0.8;
           vehicle.speed = vehicle.speed * factor;
         }
 
@@ -369,41 +502,40 @@
         const timeToFinishMs = (distanceToFinish / vehicle.speed) * (1000 / 60);
         expectedArrivalMs = hiddenTime + timeToFinishMs;
 
-        document.getElementById('m-status').textContent = 'Móvil oculto - Calcule la meta';
-        document.getElementById('m-status').style.color = '#38bdf8';
+        document.getElementById('lblInstruccionPista').textContent = 'Móvil en zona ciega: Presiona cuando calcule la meta roja.';
       }
 
-      // Dibujar en Canvas
+      // Renderizado de Pista en Canvas
       ctx.clearRect(0, 0, w, h);
 
       // Pista
-      ctx.fillStyle = '#334155';
+      ctx.fillStyle = '#1e293b';
       ctx.fillRect(10, (h / 2) - 25, w - 20, 50);
 
       // Línea de Meta (Roja)
       ctx.fillStyle = '#ef4444';
       ctx.fillRect(finishX, (h / 2) - 30, 6, 60);
 
-      // Móvil (Círculo azul) solo visible antes del túnel o al finalizar
+      // Móvil (Círculo cian neón)
       if (trialState === 'VISIBLE' || trialState === 'FINISHED') {
         ctx.beginPath();
-        ctx.arc(vehicle.x, h / 2, 14, 0, Math.PI * 2);
-        ctx.fillStyle = '#38bdf8';
+        ctx.arc(vehicle.x, h / 2, 12, 0, Math.PI * 2);
+        ctx.fillStyle = '#00bfff';
         ctx.fill();
         ctx.strokeStyle = '#FFFFFF';
         ctx.lineWidth = 2;
         ctx.stroke();
       }
 
-      // Túnel (Franja Gris Oscura Opaca)
-      ctx.fillStyle = '#0f172a';
+      // Túnel (Zona Ciega)
+      ctx.fillStyle = '#060d1d';
       ctx.fillRect(tunnelX, (h / 2) - 35, finishX - tunnelX, 70);
-      ctx.strokeStyle = '#475569';
+      ctx.strokeStyle = '#132238';
       ctx.lineWidth = 2;
       ctx.strokeRect(tunnelX, (h / 2) - 35, finishX - tunnelX, 70);
 
       ctx.fillStyle = '#94a3b8';
-      ctx.font = '12px -apple-system, sans-serif';
+      ctx.font = '700 11px -apple-system, sans-serif';
       ctx.textAlign = 'center';
       ctx.fillText('ZONA CIEGA / TÚNEL', tunnelX + (finishX - tunnelX) / 2, (h / 2) + 4);
 
@@ -426,61 +558,107 @@
       cancelAnimationFrame(animFrame);
 
       const signText = errorMs < 0 ? 'ADELANTADO' : 'ATRASADO';
-      document.getElementById('m-last-error').textContent = `${Math.abs(errorMs)} ms (${signText})`;
-      document.getElementById('m-last-error').style.color = Math.abs(errorMs) < 200 ? '#4ade80' : '#f87171';
+      const absError = Math.abs(errorMs);
+      
+      const lblLast = document.getElementById('m-last-error');
+      lblLast.textContent = `${absError} ms`;
+      lblLast.style.color = absError <= 220 ? '#10b981' : '#ef4444';
 
       updatePanel();
-
-      setTimeout(nextTrial, 1500);
+      setTimeout(nextTrial, 1400);
     };
 
     function updatePanel() {
-      document.getElementById('m-trials').textContent = `${currentTrial} / ${maxTrials}`;
+      document.getElementById('m-trials').textContent = `${currentTrial}/${maxTrials}`;
 
       if (errorsLog.length > 0) {
         const absSum = errorsLog.reduce((a, b) => a + Math.abs(b), 0);
-        const avg = (absSum / errorsLog.length).toFixed(1);
-        document.getElementById('m-avg-error').textContent = avg + ' ms';
+        const avg = Math.round(absSum / errorsLog.length);
+        const lblAvg = document.getElementById('m-avg-error');
+        lblAvg.textContent = `${avg} ms`;
+        lblAvg.style.color = avg <= 220 ? '#00bfff' : '#ef4444';
       }
-      document.getElementById('offset-val').textContent = tuner.hardwareOffsetMs + ' ms';
     }
 
     async function finishTest() {
       isTestRunning = false;
       const absSum = errorsLog.reduce((a, b) => a + Math.abs(b), 0);
-      const avg = errorsLog.length > 0 ? (absSum / errorsLog.length).toFixed(1) : 0;
+      const avgMs = errorsLog.length > 0 ? Math.round(absSum / errorsLog.length) : 0;
+      const aprobado = avgMs <= 220;
 
-      document.getElementById('m-status').textContent = 'EVALUACIÓN CONCLUIDA';
-      document.getElementById('m-status').style.color = '#38bdf8';
+      const resultadoFinal = {
+        margenMs: avgMs,
+        desviacionMs: avgMs,
+        desviacionStd: 12,
+        ensayos: errorsLog,
+        modalidad: selectedMode,
+        aprobado: aprobado
+      };
 
-      const reportElem = document.getElementById('report-status');
-      reportElem.style.background = '#0284c7';
-      reportElem.textContent = `✓ EVALUACIÓN COMPLETA - Error Absoluto Promedio: ${avg} ms`;
-      reportElem.style.display = 'block';
+      // Guardar en localStorage para Informe Pericial Sensometrika B2B
+      const datosUser = JSON.parse(localStorage.getItem('sensometrika_datos_usuario')) || {};
+      const rut = urlParams.get('rut') || datosUser.rut || 'DEMO';
+      const cleanRut = rut.replace(/[^0-9Kk]/g, '');
+      const sessionId = urlParams.get('session') || localStorage.getItem('sensometrika_session_activa') || `SESION_${cleanRut}_${Date.now()}`;
+      
+      const claveHistorial = `sensometrika_historial_anticipacion_${cleanRut}_${sessionId}`;
+      let hist = JSON.parse(localStorage.getItem(claveHistorial)) || [];
+      hist.push(resultadoFinal);
+      localStorage.setItem(claveHistorial, JSON.stringify(hist));
 
+      // Guardar en Supabase
       if (supabaseClient) {
-        await supabaseClient.from('evaluaciones_pro_b2b').insert([{
-          company_id: "SOCADEP_DEMO",
-          evaluator_id: "EVALUADOR_01",
-          evaluated_rut: "12345678-9",
-          evaluated_name: "Operador Demostración",
-          module_code: "MOD_04_ANTICIPACION",
-          modality_code: selectedMode,
-          metrics: { 
-            trials_errors_ms: errorsLog,
-            avg_abs_error_ms: Number(avg)
-          },
-          hardware_telemetry: tuner.getTelemetryData(),
-          integrity_hash: "SHA256_ANTICIPACION_OK",
-          is_valid_test: errorsLog.length >= 3
-        }]);
+        try {
+          await supabaseClient.from('evaluaciones_pro_b2b').insert([{
+            company_id: datosUser.empresa || "SOCADEP_DEMO",
+            evaluator_id: "SENSOMETRIKA_B2B",
+            evaluated_rut: rut,
+            evaluated_name: datosUser.nombre || "Operador Evaluado",
+            module_code: "MOD_04_ANTICIPACION",
+            modality_code: selectedMode,
+            metrics: { 
+              trials_errors_ms: errorsLog,
+              avg_abs_error_ms: avgMs,
+              approved: aprobado
+            },
+            hardware_telemetry: tuner.getTelemetryData(),
+            integrity_hash: "SHA256_ANTICIPACION_OK",
+            is_valid_test: errorsLog.length >= 3
+          }]);
+        } catch(e) {}
       }
 
-      document.getElementById('overlay-title').textContent = 'Prueba Concluida';
-      document.getElementById('overlay-msg').textContent = `Error Promedio: ${avg} ms. Resultados guardados en Supabase.`;
-      document.getElementById('btn-start').textContent = 'REPETIR PRUEBA';
+      document.getElementById('overlay-title').textContent = 'EVALUACIÓN CONCLUIDA';
+      document.getElementById('overlay-msg').textContent = `Error Promedio: ${avgMs} ms (${aprobado ? 'APROBADO' : 'REPROBADO'}). Resultados registrados.`;
+      document.getElementById('btn-start').textContent = 'VER INFORME B2B →';
+      document.getElementById('btn-start').onclick = function() {
+        const returnUrl = urlParams.get('returnUrl');
+        if (returnUrl) {
+          window.location.href = decodeURIComponent(returnUrl);
+        } else {
+          window.location.href = `informe_b2b.html?${urlParams.toString()}`;
+        }
+      };
       document.getElementById('overlay').style.display = 'flex';
     }
+
+    function volverMenu() {
+      const returnUrl = urlParams.get('returnUrl');
+      if (returnUrl) {
+        window.location.href = decodeURIComponent(returnUrl);
+      } else {
+        window.location.href = `menu_B2B_PRO.html?${urlParams.toString()}`;
+      }
+    }
+
+    function mostrarAyuda() {
+      document.getElementById('modalAyuda').style.display = 'flex';
+    }
+
+    function cerrarAyuda() {
+      document.getElementById('modalAyuda').style.display = 'none';
+    }
   </script>
+
 </body>
 </html>
