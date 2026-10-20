@@ -27,13 +27,11 @@
     .brand-logo-img { width: 170px; height: auto; display: block; border-radius: 4px; filter: drop-shadow(0 0 10px rgba(56, 189, 248, 0.6)); }
     .brand-subtitle { color: #64748b; font-size: 0.72rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1.2px; margin-top: 4px; }
 
-    /* ESTADO DE VALIDACIÓN DIVERSOS */
     .resultado-estado-box { padding: 16px; border-radius: 10px; font-weight: 800; font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.5px; }
     .estado-valido { background: #ecfdf5; border: 2px solid #10b981; color: #047857; }
     .estado-invalido { background: #fef2f2; border: 2px solid #ef4444; color: #b91c1c; }
     .estado-pendiente { background: #fffbe3; border: 2px solid #f59e0b; color: #b45309; }
 
-    /* DETALLES PÚBLICOS DEL TRABAJADOR */
     .detalles-card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px; text-align: left; display: flex; flex-direction: column; gap: 8px; font-size: 0.85rem; }
     .detalle-item { display: flex; justify-content: space-between; border-bottom: 1px dashed #e2e8f0; padding-bottom: 6px; }
     .detalle-item span { color: var(--text-muted); font-size: 0.72rem; text-transform: uppercase; font-weight: 700; }
@@ -46,7 +44,6 @@
 
   <main class="val-container">
     
-    <!-- ENCABEZADO CON BRANDING -->
     <header class="brand-header">
       <div class="brand-logo-container">
         <img src="sensometrica.jpg" alt="SENSOMETRIKA Calibration Technology" class="brand-logo-img">
@@ -54,12 +51,10 @@
       <span class="brand-subtitle">VERIFICACIÓN OFICIAL DE ACREDITACIÓN</span>
     </header>
 
-    <!-- ESTADO DINÁMICO -->
     <div id="resultadoBox" class="resultado-estado-box estado-pendiente">
       ⏳ Verificando Autenticidad...
     </div>
 
-    <!-- DATOS DEL TRABAJADOR Y CERTIFICADO -->
     <div class="detalles-card" id="cardDetalles" style="display: none;">
       <div class="detalle-item"><span>Trabajador:</span> <strong id="valTrabajador">--</strong></div>
       <div class="detalle-item"><span>RUT:</span> <strong id="valRut">--</strong></div>
@@ -91,7 +86,6 @@
       const resultadoBox = document.getElementById('resultadoBox');
       const cardDetalles = document.getElementById('cardDetalles');
 
-      // 1. Intentar validar mediante parámetros directos de URL (Escaner QR Terreno / Garita)
       if (rutUrl && (estadoUrl === 'APROBADO' || estadoUrl === 'OK' || estadoUrl === 'VIGENTE')) {
         resultadoBox.className = "resultado-estado-box estado-valido";
         resultadoBox.innerHTML = "✓ ACCESO AUTORIZADO - ACREDITACIÓN VIGENTE";
@@ -107,7 +101,6 @@
         return;
       }
 
-      // 2. Intentar validar desde respaldo en almacenamiento local si existe
       const claveAlmacenada = folioUrl ? `sensometrika_certificado_${folioUrl}` : 'sensometrika_ultimo_certificado';
       const certificadoGuardado = JSON.parse(localStorage.getItem(claveAlmacenada));
 
@@ -126,7 +119,6 @@
         return;
       }
 
-      // 3. Si la evaluación está incompleta o reprobada
       if (estadoUrl === 'INCOMPLETO' || estadoUrl === 'PENDIENTE') {
         resultadoBox.className = "resultado-estado-box estado-pendiente";
         resultadoBox.innerText = "⏳ EVALUACIÓN EN PROCESO - MÓDULOS PENDIENTES";
@@ -142,7 +134,6 @@
         return;
       }
 
-      // 4. Fallback si no hay parámetros ni certificado
       resultadoBox.className = "resultado-estado-box estado-invalido";
       resultadoBox.innerText = "✖ CERTIFICADO NO VÁLIDO O EXPIRADO";
     });
