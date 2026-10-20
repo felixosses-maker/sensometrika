@@ -346,22 +346,55 @@
         document.getElementById('lblPlanHeader').textContent = `EVALUACIÓN B2B • PLAN ${planContratado.replace('_', ' ')}`;
 
         /**
-         * Verifica si el módulo fue rendido DENTRO DE LA SESIÓN ACTUAL
+         * Búsqueda exhaustiva unificada para verificar si un módulo fue completado
          */
         function verifRendidoRut(moduloKey) {
             if (!cleanRut) return false;
 
-            // Clave de sesión específica
+            // 1. Verificación por Clave de Sesión Activa
             const claveSesion = `sensometrika_historial_${moduloKey}_${cleanRut}_${sessionId}`;
             const datosSesion = localStorage.getItem(claveSesion);
-            if (datosSesion) return true;
+            if (datosSesion) {
+                try {
+                    const parsed = JSON.parse(datosSesion);
+                    if (Array.isArray(parsed) && parsed.length > 0) return true;
+                    if (parsed && typeof parsed === 'object') return true;
+                } catch(e){}
+            }
 
-            // Mappings alternativos por compatibilidad
-            if (moduloKey === 'auditivo') {
-                if (localStorage.getItem(`sensometrika_historial_audicion_${cleanRut}_${sessionId}`)) return true;
+            // 2. Compatibilidad multi-clave para Reactímetro
+            if (moduloKey === 'reactimetro') {
+                const llavesReactimetro = [
+                    `sensometrika_historial_reactimetro_${cleanRut}_${sessionId}`,
+                    `sensometrika_historial_reactimetro_simple_${cleanRut}_${sessionId}`,
+                    `sensometrika_historial_reactimetro_${cleanRut}`,
+                    `sensometrika_historial_reactimetro_simple_${cleanRut}`,
+                    `reactimetro_resultado_${cleanRut}`
+                ];
+                for (let key of llavesReactimetro) {
+                    const item = localStorage.getItem(key);
+                    if (item && item.length > 5) return true;
+                }
+            }
+
+            // 3. Mappings alternativos
+            if (moduloKey === 'auditivo' || moduloKey === 'audicion') {
+                if (localStorage.getItem(`sensometrika_historial_audicion_${cleanRut}_${sessionId}`) ||
+                    localStorage.getItem(`sensometrika_historial_audicion_${cleanRut}`)) return true;
             }
             if (moduloKey === 'visual') {
-                if (localStorage.getItem(`sensometrika_historial_tamizaje_visual_${cleanRut}_${sessionId}`)) return true;
+                if (localStorage.getItem(`sensometrika_historial_tamizaje_visual_${cleanRut}_${sessionId}`) ||
+                    localStorage.getItem(`sensometrika_historial_tamizaje_visual_${cleanRut}`)) return true;
+            }
+
+            // 4. Verificación en Historial Global del RUT
+            const claveGlobal = `sensometrika_historial_${moduloKey}_${cleanRut}`;
+            const datosGlobales = localStorage.getItem(claveGlobal);
+            if (datosGlobales) {
+                try {
+                    const parsedGlobal = JSON.parse(datosGlobales);
+                    if (Array.isArray(parsedGlobal) && parsedGlobal.length > 0) return true;
+                } catch(e){}
             }
 
             return false;
@@ -374,15 +407,16 @@
             const tieneVisual = (planContratado.includes('FULL') || planContratado.includes('ALTO') || planContratado.includes('MEDIUM'));
             const tieneAltoDesempenio = (planContratado.includes('FULL') || planContratado.includes('ALTO'));
 
-            const queryParamsString = new URLSearchParams({
+            const paramsObj = {
                 rut: rawRut,
                 nombre: nombreUsuario,
                 plan: planContratado,
                 session: sessionId,
                 mode: 'b2b'
-            }).toString();
+            };
+            if (tokenEntrante) paramsObj.token = tokenEntrante;
 
-            if (tokenEntrante) queryParamsString.concat(`&token=${tokenEntrante}`);
+            const queryParamsString = new URLSearchParams(paramsObj).toString();
 
             // Helper para renderizar cada celda de acción
             function setModuloAction(elementId, moduloKey, habilitado) {
