@@ -244,8 +244,8 @@
       const modeParam = urlParams.get('mode') || 'b2b';
       const b2cModeStorage = localStorage.getItem('sensometrika_b2c_mode');
 
-      // PRESERVAR Y PROPAGAR PLAN Y SESIÓN
-      const planParam = (urlParams.get('plan') || localStorage.getItem('sensometrika_plan_contratado') || 'BASICO').toUpperCase();
+      // PRESERVAR Y PROPAGAR PLAN Y SESIÓN DE FORMA ESTRICTA
+      const planParam = (urlParams.get('plan') || localStorage.getItem('sensometrika_plan_contratado') || 'PLUS').toUpperCase();
       localStorage.setItem('sensometrika_plan_contratado', planParam);
 
       let datosUsuario = {};
@@ -255,38 +255,52 @@
 
       const rut = urlParams.get('rut') || datosUsuario.rut || '';
       const nombre = urlParams.get('nombre') || datosUsuario.nombre || '';
+      const cargo = urlParams.get('cargo') || datosUsuario.cargo || '';
+      const empresa = urlParams.get('empresa') || datosUsuario.empresa || '';
+      const token = urlParams.get('token') || '';
       const cleanRut = rut.replace(/[^0-9Kk]/g, '');
-      const sessionId = urlParams.get('session') || localStorage.getItem('sensometrika_session_activa') || `SESION_${cleanRut}_${Date.now()}`;
+      
+      // Forzar una nueva ID de sesión si viene un token de evaluación
+      const sessionId = urlParams.get('session') || (token ? `SESION_${cleanRut}_${Date.now()}` : localStorage.getItem('sensometrika_session_activa') || `SESION_${cleanRut}_${Date.now()}`);
+      localStorage.setItem('sensometrika_session_activa', sessionId);
 
       document.getElementById('lblRut').textContent = rut || 'SIN RUT';
       document.getElementById('lblNombre').textContent = decodeURIComponent(nombre) || 'SIN NOMBRE';
 
+      // Guardar datos actualizados en localStorage
+      if (rut && nombre) {
+        localStorage.setItem('sensometrika_datos_usuario', JSON.stringify({
+          nombre: decodeURIComponent(nombre),
+          rut: rut,
+          cargo: decodeURIComponent(cargo),
+          empresa: decodeURIComponent(empresa)
+        }));
+      }
+
       // --- ENRUTAMIENTO INTELIGENTE POR ESTADO DE AVANCE ---
-      if (cleanRut) {
-        const fotoExiste = localStorage.getItem(`sensometrika_foto_${cleanRut}`) || localStorage.getItem('sensometrika_foto_trabajador');
-        const firmaExiste = localStorage.getItem(`sensometrika_firma_${cleanRut}`) || localStorage.getItem('sensometrika_firma_trabajador');
+      // Si el enlace incluye token B2B o viene desde correo, NO saltar la acreditación a menos que ya exista foto/firma para esta sesión específica
+      if (cleanRut && !token) {
+        const fotoExiste = localStorage.getItem(`sensometrika_foto_${cleanRut}_${sessionId}`);
+        const firmaExiste = localStorage.getItem(`sensometrika_firma_${cleanRut}_${sessionId}`);
         const latenciaExiste = localStorage.getItem('sensometrika_latencia_ms');
 
-        // Determinar módulos requeridos según el plan
         let idsRequeridos = ['reactimetro', 'palancas', 'punteo'];
         if (planParam === 'PLUS') idsRequeridos.push('audicion');
         if (planParam === 'FULL' || planParam === 'MEDIUM') idsRequeridos.push('audicion', 'visual');
 
-        // Contar módulos rendidos en la sesión activa
         let completados = 0;
         idsRequeridos.forEach(m => {
-          const histSesion = JSON.parse(localStorage.getItem(`sensometrika_historial_${m}_${cleanRut}_${sessionId}`)) || 
-                             JSON.parse(localStorage.getItem(`sensometrika_historial_${m}_${cleanRut}`)) || [];
+          const histSesion = JSON.parse(localStorage.getItem(`sensometrika_historial_${m}_${cleanRut}_${sessionId}`)) || [];
           if (histSesion.length > 0) completados++;
         });
 
-        // 1. SI YA COMPLETÓ TODOS LOS MÓDULOS DE SU PLAN -> IR DIRECTO AL INFORME
+        // 1. Si completó todos los exámenes de esta sesión -> Ir al Informe
         if (completados >= idsRequeridos.length && idsRequeridos.length > 0) {
           window.location.href = `informe_b2b.html?rut=${encodeURIComponent(rut)}&nombre=${encodeURIComponent(nombre)}&plan=${planParam}&mode=${modeParam}&session=${sessionId}`;
           return;
         }
 
-        // 2. SI YA SE ACREDITÓ (FOTO, FIRMA Y LATENCIA) PERO ESTÁ EN CURSO -> IR DIRECTO AL MENÚ DE MÓDULOS
+        // 2. Si ya capturó foto y firma en esta sesión -> Ir al Menú
         if (fotoExiste && firmaExiste && latenciaExiste) {
           const menuDestino = (modeParam === 'b2c' || b2cModeStorage === 'true') ? 'menu_B2C.html' : 'menu_B2B.html';
           window.location.href = `${menuDestino}?rut=${encodeURIComponent(rut)}&nombre=${encodeURIComponent(nombre)}&plan=${planParam}&mode=${modeParam}&session=${sessionId}&fase=demo&demo=true`;
@@ -335,12 +349,14 @@
       const urlParams = new URLSearchParams(window.location.search);
       const rawRut = urlParams.get('rut') || localStorage.getItem('sensometrika_evaluado_rut') || '';
       const cleanRut = rawRut.replace(/[^0-9Kk]/g, '');
+      const sessionId = localStorage.getItem('sensometrika_session_activa') || 'SESION_GLOBAL';
 
       localStorage.setItem('sensometrika_foto_trabajador', fotoCapturadaB64);
       localStorage.setItem('sensometrika_foto_evaluado', fotoCapturadaB64);
       localStorage.setItem('evaluado_foto', fotoCapturadaB64);
       if (cleanRut) {
         localStorage.setItem(`sensometrika_foto_${cleanRut}`, fotoCapturadaB64);
+        localStorage.setItem(`sensometrika_foto_${cleanRut}_${sessionId}`, fotoCapturadaB64);
       }
 
       imgEl.src = fotoCapturadaB64;
@@ -453,10 +469,10 @@
       const urlParams = new URLSearchParams(window.location.search);
       const rut = urlParams.get('rut') || localStorage.getItem('sensometrika_evaluado_rut') || '';
       const nombre = urlParams.get('nombre') || '';
-      const plan = (urlParams.get('plan') || localStorage.getItem('sensometrika_plan_contratado') || 'BASICO').toUpperCase();
+      const plan = (urlParams.get('plan') || localStorage.getItem('sensometrika_plan_contratado') || 'PLUS').toUpperCase();
       const token = urlParams.get('token') || '';
       const cleanRut = rut.replace(/[^0-9Kk]/g, '');
-      const sessionId = urlParams.get('session') || localStorage.getItem('sensometrika_session_activa') || `SESION_${cleanRut}_${Date.now()}`;
+      const sessionId = localStorage.getItem('sensometrika_session_activa') || `SESION_${cleanRut}_${Date.now()}`;
 
       if (!isB2C && canvas) {
         const firmaB64 = canvas.toDataURL('image/png');
@@ -465,6 +481,7 @@
         localStorage.setItem('evaluado_firma', firmaB64);
         if (cleanRut) {
           localStorage.setItem(`sensometrika_firma_${cleanRut}`, firmaB64);
+          localStorage.setItem(`sensometrika_firma_${cleanRut}_${sessionId}`, firmaB64);
         }
       }
       

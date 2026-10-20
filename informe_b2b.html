@@ -411,18 +411,11 @@
             }
         }
 
+        // AISLAMIENTO DE HISTORIAL POR SESIÓN ACTIVA (Evita arrastrar datos antiguos del mismo RUT)
         function obtenerHistorialModulo(modulo) {
             const claveSesion = `sensometrika_historial_${modulo}_${cleanRut}_${sessionId}`;
-            const claveRut = `sensometrika_historial_${modulo}_${cleanRut}`;
-            const claveGlobal = `sensometrika_historial_${modulo}`;
-            
             let historial = JSON.parse(localStorage.getItem(claveSesion)) || [];
-            if (!Array.isArray(historial) || historial.length === 0) {
-                historial = JSON.parse(localStorage.getItem(claveRut)) || [];
-            }
-            if (!Array.isArray(historial) || historial.length === 0) {
-                historial = JSON.parse(localStorage.getItem(claveGlobal)) || [];
-            }
+            if (!Array.isArray(historial)) return [];
             return historial;
         }
 
@@ -514,7 +507,8 @@
             }
 
             const imgBiometrica = document.getElementById('imgBiometrica');
-            const fotoGuardada = localStorage.getItem(`sensometrika_foto_${cleanRut}`) || 
+            const fotoGuardada = localStorage.getItem(`sensometrika_foto_${cleanRut}_${sessionId}`) ||
+                                 localStorage.getItem(`sensometrika_foto_${cleanRut}`) || 
                                  localStorage.getItem('sensometrika_foto_trabajador') ||
                                  localStorage.getItem('sensometrika_foto_evaluado') || 
                                  localStorage.getItem('evaluado_foto') || 
@@ -524,7 +518,8 @@
             }
 
             const imgFirma = document.getElementById('imgFirmaTrabajador');
-            const firmaGuardada = localStorage.getItem(`sensometrika_firma_${cleanRut}`) || 
+            const firmaGuardada = localStorage.getItem(`sensometrika_firma_${cleanRut}_${sessionId}`) ||
+                                  localStorage.getItem(`sensometrika_firma_${cleanRut}`) || 
                                   localStorage.getItem('sensometrika_firma_trabajador') ||
                                   localStorage.getItem('sensometrika_firma_evaluado') || 
                                   localStorage.getItem('evaluado_firma') || 
@@ -537,7 +532,7 @@
                 imgFirma.src = svgFirmaRespaldo;
             }
 
-            const planActivo = (urlParams.get('plan') || localStorage.getItem('sensometrika_plan_contratado') || 'BASICO').toUpperCase();
+            const planActivo = (urlParams.get('plan') || localStorage.getItem('sensometrika_plan_contratado') || 'PLUS').toUpperCase();
             
             // CONFIGURACIÓN Y MAPEO DE MÓDULOS INCLUIDOS SEGÚN PLAN (INCLUYE B2B PRO)
             let idsPermitidos = [];
@@ -575,8 +570,7 @@
             modulosConfig.forEach(m => {
                 const esRequeridoPorPlan = idsPermitidos.includes(m.id);
                 const historial = obtenerHistorialModulo(m.id);
-                const isCompletadoDemo = localStorage.getItem(`${m.id}_demo_completada_${cleanRut}`) === 'true' ||
-                                         localStorage.getItem(`${m.id}_demo_completada`) === 'true';
+                const isCompletadoDemo = localStorage.getItem(`${m.id}_demo_completada_${cleanRut}_${sessionId}`) === 'true';
 
                 const tr = document.createElement('tr');
 

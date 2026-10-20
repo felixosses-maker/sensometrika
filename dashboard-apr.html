@@ -383,10 +383,10 @@
       };
     }
 
-    function calcularEstadoTrabajador(rutRaw, planTrabajador) {
+    function calcularEstadoTrabajador(rutRaw, planTrabajador, sessionId) {
       if (!rutRaw) return { texto: 'PENDIENTE DE INICIO', clase: 'badge-pending', estadoCod: 'INCOMPLETO' };
       const cleanRut = rutRaw.replace(/[^0-9Kk]/g, '');
-      const planActivo = (planTrabajador || localStorage.getItem('sensometrika_plan_contratado') || 'BASICO').toUpperCase();
+      const planActivo = (planTrabajador || localStorage.getItem('sensometrika_plan_contratado') || 'PLUS').toUpperCase();
 
       let modulosExigidos = [];
       if (planActivo === 'BASICO' || planActivo === 'BASIC') {
@@ -403,15 +403,14 @@
       let reprobados = 0;
 
       modulosExigidos.forEach(m => {
-        const histRut = JSON.parse(localStorage.getItem(`sensometrika_historial_${m}_${cleanRut}`)) || [];
-        const isDemoComp = localStorage.getItem(`${m}_demo_completada_${cleanRut}`) === 'true';
+        // Filtrar estrictamente por la sesión activa si se provee
+        const claveSesion = sessionId ? `sensometrika_historial_${m}_${cleanRut}_${sessionId}` : `sensometrika_historial_${m}_${cleanRut}`;
+        const histRut = JSON.parse(localStorage.getItem(claveSesion)) || [];
         
         if (histRut.length > 0) {
           completados++;
           const ultimo = histRut[histRut.length - 1];
           if (ultimo.aprobado === false) reprobados++;
-        } else if (isDemoComp) {
-          completados++;
         }
       });
 
@@ -437,15 +436,29 @@
 
       const btnSubmit = document.getElementById('btnEnviarAcreditacion');
       btnSubmit.disabled = true;
-      btnSubmit.textContent = "PROCESANDO Y DESPACHANDO CORREO... ⏳";
+      btnSubmit.textContent = "PROCESANDO Y DESPACHAR CORREO... ⏳";
 
+      const cleanRut = rut.replace(/[^0-9Kk]/g, '');
       const tokenB2B = 'B2B-SMK-' + Math.floor(1000 + Math.random() * 9000);
+      const sessionId = `SESION_${cleanRut}_${Date.now()}`;
       
       const urlParams = new URLSearchParams(window.location.search);
       const planActivo = (urlParams.get('plan') || localStorage.getItem('sensometrika_plan_contratado') || 'PLUS').toUpperCase();
 
       const originUrl = window.location.origin;
-      const urlCompleta = `${originUrl}/verificacion_trabajador.html?token=${tokenB2B}&rut=${encodeURIComponent(rut)}&nombre=${encodeURIComponent(nombre)}&cargo=${encodeURIComponent(cargo)}&empresa=${encodeURIComponent(empresa)}&plan=${planActivo}&mode=b2b`;
+      const paramsEvaluacion = new URLSearchParams({
+        token: tokenB2B,
+        rut: rut,
+        nombre: nombre,
+        cargo: cargo,
+        empresa: empresa,
+        plan: planActivo,
+        session: sessionId,
+        mode: 'b2b',
+        step: 'acreditacion'
+      });
+
+      const urlCompleta = `${originUrl}/verificacion_trabajador.html?${paramsEvaluacion.toString()}`;
 
       localStorage.setItem('sensometrika_datos_usuario', JSON.stringify({
         nombre: nombre,
@@ -468,6 +481,7 @@
         empresa: empresa,
         token: tokenB2B,
         plan: planActivo,
+        session: sessionId,
         url: urlCompleta,
         fecha: new Date().toLocaleDateString('es-CL')
       };
@@ -486,12 +500,10 @@
             nombreTrabajador: nombre,
             rutTrabajador: rut,
             planNombre: `Acreditación B2B - Cargo ${cargo}`,
-            monto: 'Bolsa Corporativa',
+            monto: `Bolsa Corporativa (Plan ${planActivo})`,
             linkAcceso: urlCompleta
           })
         });
-
-        const resData = await respuesta.json();
 
         mostrarModalIntegrado(
           "ACREDITACIÓN GENERADA Y ENVIADA ✉️",
@@ -542,7 +554,8 @@
 
       trabajadores.forEach((t) => {
         const planTrabajador = t.plan || planActivoGlobal;
-        const estadoReal = calcularEstadoTrabajador(t.rut, planTrabajador);
+        const sessionId = t.session || '';
+        const estadoReal = calcularEstadoTrabajador(t.rut, planTrabajador, sessionId);
         const cleanRut = t.rut.replace(/[^0-9Kk]/g, '');
 
         // Construir URL pública para validar.html (Credencial Garita Ley 19.628)
@@ -556,6 +569,19 @@
           vence: estadoReal.estadoCod === 'APROBADO' ? 'VIGENTE' : 'PENDIENTE'
         });
         const urlCredencialQR = `${originUrl}/validar.html?${paramsQR.toString()}`;
+
+        // Construir URL pública del informe pericial incluyendo sesión
+        const paramsInforme = new URLSearchParams({
+          token: t.token,
+          rut: t.rut,
+          nombre: t.nombre,
+          cargo: t.cargo,
+          empresa: t.empresa,
+          plan: planTrabajador,
+          session: sessionId,
+          mode: 'b2b'
+        });
+        const urlInformeB2B = `informe_b2b.html?${paramsInforme.toString()}`;
 
         const tr = document.createElement('tr');
         tr.innerHTML = `
@@ -581,7 +607,7 @@
             </a>
           </td>
           <td>
-            <a href="informe_b2b.html?token=${t.token}&rut=${encodeURIComponent(t.rut)}&plan=${planTrabajador}&mode=b2b" target="_blank" style="color:var(--accent-cyan); font-weight:800; text-decoration:underline;">
+            <a href="${urlInformeB2B}" target="_blank" style="color:var(--accent-cyan); font-weight:800; text-decoration:underline;">
               📄 Ver Informe
             </a>
           </td>
