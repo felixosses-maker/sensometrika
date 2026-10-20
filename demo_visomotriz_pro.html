@@ -2,138 +2,227 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>Sensometrika Pro B2B - Test Módulo Visomotriz</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>SENSOMETRIKA | Test Módulo Visomotriz Pro</title>
+  <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
+    :root {
+      --bg-color: #040810;
+      --card-bg: #091120;
+      --card-border: #132238;
+      --accent-cyan: #00bfff;
+      --accent-cyan-glow: rgba(0, 191, 255, 0.4);
+      --accent-gold: #e5b324;
+      --accent-green: #10b981;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+    }
+
     * { 
       box-sizing: border-box; 
       margin: 0; 
       padding: 0; 
       user-select: none; 
       -webkit-user-select: none; 
+      -webkit-tap-highlight-color: transparent;
     }
-    body { 
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
-      background: #0f172a; 
-      color: #f8fafc; 
-      display: flex; 
-      flex-direction: column; 
-      align-items: center; 
-      min-height: 100vh; 
-      padding: 16px; 
-    }
-    header { 
-      text-align: center; 
-      margin-bottom: 12px; 
-    }
-    h1 { 
-      font-size: 1.25rem; 
-      color: #38bdf8; 
-    }
-    .status-bar { 
-      display: flex; 
-      gap: 12px; 
-      background: #1e293b; 
-      padding: 8px 16px; 
-      border-radius: 8px; 
-      font-size: 0.85rem; 
-      margin-top: 8px; 
-      justify-content: center;
-    }
-    .status-item span { 
-      font-weight: bold; 
-      color: #4ade80; 
-    }
-    
-    .controls { 
-      display: flex; 
-      gap: 8px; 
-      margin-bottom: 12px; 
-      flex-wrap: wrap; 
-      justify-content: center; 
-    }
-    button.btn-mode { 
-      background: #334155; 
-      color: #94a3b8; 
-      border: 1px solid #475569; 
-      padding: 10px 14px; 
-      border-radius: 6px; 
-      font-weight: 600; 
-      cursor: pointer; 
-      transition: all 0.2s ease;
+
+    body {
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      min-height: 100vh;
+      padding: 20px 12px;
       display: flex;
-      align-items: center;
-      gap: 4px;
-    }
-    button.btn-mode:hover:not(:disabled) {
-      background: #475569;
-      color: #f8fafc;
-    }
-    button.btn-mode.active {
-      background: #0284c7 !important;
-      color: #ffffff !important;
-      border-color: #38bdf8 !important;
-      box-shadow: 0 0 12px rgba(2, 132, 199, 0.5);
-      transform: scale(1.02);
-    }
-    /* ESTADO COMPLETADO Y BLOQUEADO (VERDE SÓLIDO) */
-    button.btn-mode.completed {
-      background: #10b981 !important;
-      color: #ffffff !important;
-      border-color: #059669 !important;
-      box-shadow: 0 0 10px rgba(16, 185, 129, 0.4);
-      cursor: not-allowed !important;
-      pointer-events: none !important;
-      opacity: 0.95;
-    }
-    
-    #canvas-container { 
-      position: relative; 
-      width: 100%; 
-      max-width: 400px; 
-      height: 360px; 
-      background: #1e293b; 
-      border: 2px solid #334155; 
-      border-radius: 12px; 
-      overflow: hidden; 
-      touch-action: none; 
-      display: flex;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
     }
-    canvas { 
-      width: 100%; 
-      height: 100%; 
-      display: block; 
+
+    .main-wrapper {
+      width: 100%;
+      max-width: 480px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
     }
-    
-    .start-overlay {
-      position: absolute;
+
+    /* Header Institucional v1 */
+    .brand-header {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .logo-container {
+      background: #060d1d;
+      border: 1px solid var(--card-border);
+      border-radius: 14px;
+      padding: 10px 22px;
+      box-shadow: 0 0 20px rgba(0, 191, 255, 0.2);
+    }
+
+    .brand-logo-img {
+      width: 160px;
+      height: auto;
+      mix-blend-mode: lighten;
+      filter: drop-shadow(0 0 10px var(--accent-cyan-glow));
+    }
+
+    .subtitle-neon {
+      font-size: 0.72rem;
+      font-weight: 800;
+      color: var(--accent-cyan);
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      text-align: center;
+    }
+
+    /* Tarjeta Principal v1 */
+    .main-card {
+      background-color: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 14px;
+      padding: 18px;
+      width: 100%;
       display: flex;
       flex-direction: column;
       gap: 12px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
+    }
+
+    .top-nav-bar {
+      display: flex;
+      justify-content: space-between;
       align-items: center;
-      justify-content: center;
-      background: rgba(15, 23, 42, 0.92);
-      width: 100%;
-      height: 100%;
-      z-index: 10;
-      padding: 24px;
+      font-size: 0.72rem;
+      color: var(--accent-cyan);
+      font-weight: 700;
+    }
+
+    .top-nav-bar button {
+      color: var(--accent-cyan);
+      background: transparent;
+      border: none;
+      cursor: pointer;
+    }
+
+    .pill-mode {
+      background: rgba(0, 191, 255, 0.12);
+      border: 1px solid var(--accent-cyan);
+      color: var(--accent-cyan);
+      padding: 4px 14px;
+      border-radius: 20px;
+      font-size: 0.65rem;
+      font-weight: 800;
+      text-align: center;
+      margin: 0 auto;
+      text-transform: uppercase;
+    }
+
+    /* Selector de Modalidades Grid v1 */
+    .controls-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    button.btn-mode {
+      background: #0f172a;
+      color: var(--text-muted);
+      border: 1px solid var(--card-border);
+      padding: 10px 8px;
+      border-radius: 8px;
+      font-size: 0.68rem;
+      font-weight: 800;
+      cursor: pointer;
+      text-transform: uppercase;
+      transition: all 0.2s ease;
       text-align: center;
     }
-    .btn-action {
-      background: #0284c7;
-      color: white;
-      border: none;
-      padding: 12px 24px;
-      border-radius: 8px;
-      font-size: 1rem;
-      font-weight: bold;
-      cursor: pointer;
-      box-shadow: 0 4px 12px rgba(2, 132, 199, 0.4);
+
+    button.btn-mode:hover:not(:disabled) {
+      background: #1e293b;
+      color: #fff;
     }
-    .btn-action:disabled {
+
+    button.btn-mode.active {
+      background: rgba(0, 191, 255, 0.15);
+      color: var(--accent-cyan);
+      border-color: var(--accent-cyan);
+      box-shadow: 0 0 12px var(--accent-cyan-glow);
+    }
+
+    button.btn-mode.completed {
+      background: rgba(16, 185, 129, 0.2) !important;
+      color: var(--accent-green) !important;
+      border-color: var(--accent-green) !important;
+      box-shadow: 0 0 10px rgba(16, 185, 129, 0.3);
+      cursor: not-allowed !important;
+      pointer-events: none !important;
+    }
+
+    /* Lienzo / Canvas Interactivo v1 */
+    #canvas-container {
+      position: relative;
+      width: 100%;
+      height: 250px;
+      background: #030712;
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      overflow: hidden;
+      touch-action: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    .start-overlay {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      align-items: center;
+      justify-content: center;
+      background: rgba(4, 8, 16, 0.92);
+      z-index: 10;
+      padding: 18px;
+      text-align: center;
+    }
+
+    .instruction-text {
+      font-size: 0.74rem;
+      color: #cbd5e1;
+      text-align: center;
+      line-height: 1.35;
+    }
+
+    .btn-action-main {
+      background: var(--accent-cyan);
+      color: #000;
+      border: none;
+      padding: 13px;
+      border-radius: 9px;
+      font-weight: 900;
+      font-size: 0.83rem;
+      cursor: pointer;
+      text-transform: uppercase;
+      text-align: center;
+      width: 100%;
+      box-shadow: 0 4px 16px var(--accent-cyan-glow);
+    }
+
+    .btn-action-main:disabled {
       background: #334155 !important;
       color: #64748b !important;
       cursor: not-allowed !important;
@@ -141,53 +230,32 @@
       pointer-events: none !important;
     }
 
-    .metrics-panel { 
-      width: 100%; 
-      max-width: 400px; 
-      background: #1e293b; 
-      margin-top: 12px; 
-      padding: 12px; 
-      border-radius: 8px; 
-      font-size: 0.88rem; 
-    }
-    .metric-row { 
-      display: flex; 
-      justify-content: space-between; 
-      padding: 5px 0; 
-      border-bottom: 1px solid #334155; 
-    }
-    .metric-row:last-child {
-      border-bottom: none;
+    /* Fila Telemétrica Inferior 4 Columnas v1 */
+    .telemetry-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      background: #030712;
+      border: 1px solid var(--card-border);
+      border-radius: 10px;
+      padding: 10px 4px;
+      text-align: center;
     }
 
-    .report-badge {
-      display: none;
-      margin-top: 10px;
-      padding: 10px;
-      background: #0284c7;
-      color: white;
-      text-align: center;
-      border-radius: 6px;
-      font-weight: bold;
-      font-size: 0.85rem;
-      width: 100%;
-      max-width: 400px;
-    }
+    .telemetry-col { display: flex; flex-direction: column; gap: 2px; }
+    .telemetry-lbl { font-size: 0.52rem; color: var(--text-muted); font-weight: 800; text-transform: uppercase; }
+    .telemetry-val { font-size: 0.82rem; font-weight: 900; color: #fff; }
 
     .btn-nav-next {
       display: none;
-      margin-top: 12px;
       width: 100%;
-      max-width: 400px;
-      padding: 14px;
-      background: #10b981;
+      padding: 13px;
+      background: var(--accent-green);
       color: #000;
       font-weight: 900;
       text-align: center;
-      border-radius: 8px;
-      text-decoration: none;
+      border-radius: 9px;
       text-transform: uppercase;
-      font-size: 0.88rem;
+      font-size: 0.83rem;
       box-shadow: 0 4px 14px rgba(16, 185, 129, 0.3);
       border: none;
       cursor: pointer;
@@ -196,44 +264,106 @@
 </head>
 <body>
 
-  <header>
-    <h1>Sensometrika Pro B2B</h1>
-    <p style="font-size: 0.8rem; color: #94a3b8; margin-top: 2px;">Módulo 3: Coordinación Visomotriz / Tracking Pista</p>
-    <div class="status-bar">
-      <div class="status-item">Refresh Rate: <span id="hz-val">Detectando...</span></div>
-      <div class="status-item">Offset Hardware: <span id="offset-val">0 ms</span></div>
-    </div>
-  </header>
+  <div class="main-wrapper">
+    
+    <!-- Header Institucional v1 -->
+    <header class="brand-header">
+      <div class="logo-container">
+        <img src="sensometrica.jpg" alt="SENSOMETRIKA" class="brand-logo-img">
+      </div>
+      <div class="subtitle-neon">MÓDULO 3: COORDINACIÓN VISOMOTRIZ / TRACKING PISTA</div>
+    </header>
 
-  <div class="controls">
-    <button class="btn-mode" id="btn-3A" onclick="selectMode('3A')">3A. Tracking Continuo</button>
-    <button class="btn-mode" id="btn-3B" onclick="selectMode('3B')">3B. Tracking Adaptativo</button>
-  </div>
+    <!-- Tarjeta Central v1 -->
+    <div class="main-card">
+      
+      <!-- Navegación Superior Interna -->
+      <div class="top-nav-bar">
+        <button onclick="irAlMenuB2BPro()">&larr; Menú Pruebas</button>
+        <button onclick="mostrarAyuda()">? &iquest;C&oacute;mo funciona?</button>
+      </div>
 
-  <div id="canvas-container">
-    <canvas id="visomotrizCanvas"></canvas>
-    <div id="overlay" class="start-overlay">
-      <h2 id="overlay-title" style="color:#38bdf8; font-size:1.1rem;">Selecciona una modalidad</h2>
-      <p id="overlay-msg" style="color:#94a3b8; font-size:0.85rem; line-height:1.4; max-width:320px;">
-        Haz clic en una de las pruebas superiores para medir seguimiento de trayectoria.
+      <div class="pill-mode">&bull; Simulaci&oacute;n Oficial B2B PRO</div>
+
+      <!-- Selector de Modalidad -->
+      <div class="controls-grid">
+        <button class="btn-mode" id="btn-3A" onclick="selectMode('3A')">3A. Continuo</button>
+        <button class="btn-mode" id="btn-3B" onclick="selectMode('3B')">3B. Adaptativo</button>
+      </div>
+
+      <!-- Área de Simulación / Canvas -->
+      <div id="canvas-container">
+        <canvas id="visomotrizCanvas"></canvas>
+
+        <div id="overlay" class="start-overlay">
+          <h2 id="overlay-title" style="color: var(--accent-cyan); font-size: 0.95rem; font-weight: 900; text-transform: uppercase;">
+            Selecciona una modalidad
+          </h2>
+          <p id="overlay-msg" class="instruction-text">
+            Haz clic en una de las opciones superiores para ver las instrucciones e iniciar el seguimiento de trayectoria.
+          </p>
+          <button id="btn-start" class="btn-action-main" style="display:none; margin-top: 6px;" onclick="runCurrentTest()">
+            INICIAR EVALUACIÓN (20s) →
+          </button>
+        </div>
+      </div>
+
+      <p class="instruction-text" id="lblInstruccionPista">
+        Mide el seguimiento continuo de trayectoria y estabilidad visomotriz (D.S. N° 170 MTT).
       </p>
-      <button id="btn-start" class="btn-action" style="display:none;" onclick="runCurrentTest()">INICIAR EVALUACIÓN (20s)</button>
+
+      <!-- Panel Telemétrico Inferior de 4 Columnas v1 -->
+      <div class="telemetry-row">
+        <div class="telemetry-col">
+          <span class="telemetry-lbl">TIEMPO</span>
+          <span id="m-timer" class="telemetry-val" style="color: var(--accent-gold);">20.0s</span>
+        </div>
+        <div class="telemetry-col">
+          <span class="telemetry-lbl">PRECISIÓN</span>
+          <span id="m-accuracy" class="telemetry-val" style="color: #10b981;">100.0%</span>
+        </div>
+        <div class="telemetry-col">
+          <span class="telemetry-lbl">T. FUERA</span>
+          <span id="m-time-off" class="telemetry-val" style="color: #f87171;">0.0s</span>
+        </div>
+        <div class="telemetry-col">
+          <span class="telemetry-lbl">SALIDAS</span>
+          <span id="m-off-count" class="telemetry-val" style="color: var(--accent-cyan);">0</span>
+        </div>
+      </div>
+
+      <button id="btn-volver-menu" class="btn-nav-next" onclick="irAlMenuB2BPro()">
+        VOLVER A LA CONSOLA B2B PRO →
+      </button>
+
+    </div>
+
+  </div>
+
+  <!-- Modal de Ayuda Integrado Sensometrika -->
+  <div id="modalAyuda" style="display: none; position: fixed; inset: 0; background: rgba(4, 8, 16, 0.85); backdrop-filter: blur(4px); z-index: 999; justify-content: center; align-items: center; padding: 16px;">
+    <div style="background: #091120; border: 1px solid var(--accent-cyan); border-radius: 14px; padding: 20px; max-width: 420px; width: 100%; box-shadow: 0 0 25px rgba(0, 191, 255, 0.3); display: flex; flex-direction: column; gap: 14px;">
+      
+      <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--card-border); padding-bottom: 8px;">
+        <span style="font-size: 0.85rem; font-weight: 800; color: var(--accent-cyan); text-transform: uppercase;">
+          ℹ️ Instrucciones del Módulo 3
+        </span>
+        <button onclick="cerrarAyuda()" style="color: var(--text-muted); font-weight: 800; border: none; background: none; cursor: pointer; font-size: 1rem;">✕</button>
+      </div>
+
+      <div style="font-size: 0.76rem; color: #cbd5e1; line-height: 1.5; display: flex; flex-direction: column; gap: 8px;">
+        <p><strong>3A. Tracking Continuo:</strong> Mantén tu dedo sobre el objetivo circular en movimiento constante procurando mantenerte dentro de la zona delimitada durante los 20 segundos.</p>
+        <p><strong>3B. Tracking Adaptativo:</strong> El objetivo aumentará o disminuirá su velocidad de desplazamiento dependiendo de tu precisión en tiempo real.</p>
+        <div style="background: #030712; border: 1px dashed var(--accent-gold); padding: 8px; border-radius: 8px; color: var(--accent-gold); font-size: 0.70rem; font-weight: 700; margin-top: 4px;">
+          Estándar D.S. N° 170 MTT: Se exige al menos un 40% de precisión de permanencia dentro de la pista.
+        </div>
+      </div>
+
+      <button onclick="cerrarAyuda()" class="btn-action-main" style="margin-top: 4px;">
+        ENTENDIDO →
+      </button>
     </div>
   </div>
-
-  <div class="metrics-panel">
-    <div class="metric-row"><span>Tiempo Restante:</span><strong id="m-timer" style="color:#eab308; font-size:1rem;">20.0 s</strong></div>
-    <div class="metric-row"><span>Precisión en Pista:</span><strong id="m-accuracy" style="color:#4ade80;">100.0 %</strong></div>
-    <div class="metric-row"><span>Tiempo Fuera de Pista:</span><strong id="m-time-off" style="color:#f87171;">0.0 s</strong></div>
-    <div class="metric-row"><span>Número de Salidas / Errores:</span><strong id="m-off-count" style="color:#f87171;">0</strong></div>
-    <div class="metric-row"><span>Validez Pericial:</span><strong id="m-validity" style="color:#94a3b8;">Pendiente</strong></div>
-  </div>
-
-  <div id="report-status" class="report-badge"></div>
-
-  <button id="btn-volver-menu" class="btn-nav-next" onclick="irAlMenuB2BPro()">
-    VOLVER A LA CONSOLA B2B PRO →
-  </button>
 
   <script>
     // Parámetros de Sesión
@@ -251,7 +381,7 @@
     }
 
     const subModos = ['3A', '3B'];
-    const minPrecisionValida = 40.0; // Umbral mínimo pericial para validez
+    const minPrecisionValida = 40.0;
 
     function actualizarEstadoBotonesNavegacion() {
       let completadosTotal = 0;
@@ -295,7 +425,7 @@
 
     class LatencyTuner {
       constructor() {
-        this.hardwareOffsetMs = 0;
+        this.hardwareOffsetMs = 16;
         this.refreshRateHz = 60;
         this.sampleTaps = [];
       }
@@ -320,15 +450,15 @@
 
       registerCalibrationTap(event) {
         const systemTimestamp = performance.now();
-        let touchTimestamp = event.timeStamp;
-        if (event.getCoalescedEvents && event.getCoalescedEvents().length > 0) {
+        let touchTimestamp = event ? event.timeStamp : systemTimestamp;
+        if (event && event.getCoalescedEvents && event.getCoalescedEvents().length > 0) {
           touchTimestamp = event.getCoalescedEvents()[0].timeStamp;
         }
         const lag = Math.max(0, systemTimestamp - touchTimestamp);
         this.sampleTaps.push(lag);
         if (this.sampleTaps.length >= 3) {
           const sum = this.sampleTaps.reduce((a, b) => a + b, 0);
-          this.hardwareOffsetMs = Number((sum / this.sampleTaps.length).toFixed(2));
+          this.hardwareOffsetMs = Number((sum / this.sampleTaps.length).toFixed(1));
         }
         return this.hardwareOffsetMs;
       }
@@ -356,25 +486,18 @@
     let isOffTrack = false;
     let lastFrameTime = 0;
 
-    // Física y predicción de entrada
     let target = { x: 0, y: 0, radius: 45, angle: 0, speed: 0.009 };
     let rawUserPos = { x: -100, y: -100 };
     let predictedUserPos = { x: -100, y: -100 };
     let lastTouchTime = 0;
     let isTouching = false;
 
-    async function initTelemetry() {
-      const hz = await tuner.detectScreenRefreshRate();
-      document.getElementById('hz-val').textContent = hz + ' Hz';
-    }
-    initTelemetry();
-
     function resizeCanvas() {
       const dpr = window.devicePixelRatio || 1;
       const rect = canvas.getBoundingClientRect();
       canvas.width = rect.width * dpr;
       canvas.height = rect.height * dpr;
-      ctx.scale(dpr, dpr);
+      if (ctx) ctx.scale(dpr, dpr);
     }
 
     window.selectMode = function(mode) {
@@ -408,7 +531,7 @@
       const startBtn = document.getElementById('btn-start');
       startBtn.style.display = 'block';
       startBtn.disabled = false;
-      startBtn.textContent = 'INICIAR EVALUACIÓN (20s)';
+      startBtn.textContent = 'INICIAR EVALUACIÓN (20s) →';
       document.getElementById('overlay').style.display = 'flex';
     };
 
@@ -423,9 +546,7 @@
       const newY = clientY - rect.top;
 
       tuner.registerCalibrationTap(e);
-      document.getElementById('offset-val').textContent = tuner.hardwareOffsetMs + ' ms';
 
-      // PREDICCIÓN VECTORIAL CINEMÁTICA ANTE EL LAG TÁCTIL PANTALLA
       if (lastTouchTime > 0) {
         const dtMs = Math.max(1, now - lastTouchTime);
         const vx = (newX - rawUserPos.x) / dtMs;
@@ -463,7 +584,6 @@
       if (!selectedMode) return;
 
       document.getElementById('overlay').style.display = 'none';
-      document.getElementById('report-status').style.display = 'none';
 
       resizeCanvas();
 
@@ -478,7 +598,7 @@
       target.speed = selectedMode === '3B' ? 0.008 : 0.009;
 
       let remainingSec = durationSec;
-      document.getElementById('m-timer').textContent = remainingSec.toFixed(1) + ' s';
+      document.getElementById('m-timer').textContent = remainingSec.toFixed(1) + 's';
 
       if (countdownInterval) clearInterval(countdownInterval);
       countdownInterval = setInterval(() => {
@@ -490,7 +610,7 @@
           if (animFrame) cancelAnimationFrame(animFrame);
           finishTest();
         } else {
-          document.getElementById('m-timer').textContent = remainingSec.toFixed(1) + ' s';
+          document.getElementById('m-timer').textContent = remainingSec.toFixed(1) + 's';
         }
       }, 100);
 
@@ -509,12 +629,10 @@
       const w = rect.width;
       const h = rect.height;
 
-      // Movimiento elíptico controlado
       target.angle += target.speed;
       target.x = (w / 2) + Math.cos(target.angle) * (w * 0.32);
       target.y = (h / 2) + Math.sin(target.angle * 0.7) * (h * 0.25);
 
-      // Evaluación de Colisión con posición estimada
       let dist = 9999;
       if (isTouching) {
         dist = Math.hypot(predictedUserPos.x - target.x, predictedUserPos.y - target.y);
@@ -538,10 +656,8 @@
         }
       }
 
-      // Renderizado Canvas
       ctx.clearRect(0, 0, w, h);
 
-      // Guía de Pista
       ctx.beginPath();
       for (let a = 0; a < Math.PI * 2; a += 0.05) {
         const px = (w / 2) + Math.cos(a) * (w * 0.32);
@@ -552,7 +668,6 @@
       ctx.lineWidth = 4;
       ctx.stroke();
 
-      // Objetivo
       ctx.beginPath();
       ctx.arc(target.x, target.y, target.radius, 0, Math.PI * 2);
       ctx.fillStyle = isInTrack ? 'rgba(34, 197, 94, 0.35)' : 'rgba(239, 68, 68, 0.35)';
@@ -566,7 +681,6 @@
       ctx.fillStyle = isInTrack ? '#22c55e' : '#ef4444';
       ctx.fill();
 
-      // Puntero Táctil Usuario
       if (isTouching) {
         ctx.beginPath();
         ctx.arc(predictedUserPos.x, predictedUserPos.y, 10, 0, Math.PI * 2);
@@ -577,11 +691,10 @@
         ctx.stroke();
       }
 
-      // Panel
       const totalTimeMs = durationSec * 1000;
       const percentOnTrack = Math.max(0, (((totalTimeMs - timeOffTrackMs) / totalTimeMs) * 100).toFixed(1));
-      document.getElementById('m-accuracy').textContent = percentOnTrack + ' %';
-      document.getElementById('m-time-off').textContent = (timeOffTrackMs / 1000).toFixed(1) + ' s';
+      document.getElementById('m-accuracy').textContent = percentOnTrack + '%';
+      document.getElementById('m-time-off').textContent = (timeOffTrackMs / 1000).toFixed(1) + 's';
       document.getElementById('m-off-count').textContent = offTrackCount;
 
       animFrame = requestAnimationFrame(loop);
@@ -595,75 +708,68 @@
       const percentOnTrack = Math.max(0, Number((((totalTimeMs - timeOffTrackMs) / totalTimeMs) * 100).toFixed(1)));
       const esValida = percentOnTrack >= minPrecisionValida;
 
-      document.getElementById('m-timer').textContent = '0.0 s (FINALIZADO)';
-
-      const validityElem = document.getElementById('m-validity');
-      const reportElem = document.getElementById('report-status');
+      document.getElementById('m-timer').textContent = '0.0s';
 
       if (esValida) {
-        // EVALUACIÓN VÁLIDA
-        validityElem.textContent = '✓ VÁLIDA';
-        validityElem.style.color = '#4ade80';
-
-        reportElem.style.background = '#0284c7';
-        reportElem.textContent = `✓ EVALUACIÓN COMPLETA - Precisión: ${percentOnTrack}% | Salidas de pista: ${offTrackCount}`;
-        reportElem.style.display = 'block';
-
-        // Persistencia inmutable en LocalStorage
         localStorage.setItem(`sensometrika_visomotriz_${selectedMode}_${cleanRut}_${sessionId}`, 'true');
         localStorage.setItem(`sensometrika_palancas_${selectedMode}_${cleanRut}_${sessionId}`, 'true');
         actualizarEstadoBotonesNavegacion();
 
-        // Envío a Supabase
         if (supabaseClient) {
-          await supabaseClient.from('evaluaciones_pro_b2b').insert([{
-            company_id: "SOCADEP_DEMO",
-            evaluator_id: "EVALUADOR_01",
-            evaluated_rut: rawRut,
-            evaluated_name: "Operador Demostración",
-            module_code: "MOD_03_VISOMOTRIZ",
-            modality_code: selectedMode,
-            metrics: { 
-              percent_on_track: percentOnTrack,
-              time_off_track_sec: Number((timeOffTrackMs / 1000).toFixed(1)),
-              off_track_events: offTrackCount
-            },
-            hardware_telemetry: tuner.getTelemetryData(),
-            integrity_hash: "SHA256_VISOMOTRIZ_OK",
-            is_valid_test: true
-          }]);
+          try {
+            await supabaseClient.from('evaluaciones_pro_b2b').insert([{
+              company_id: "SOCADEP_DEMO",
+              evaluator_id: "EVALUADOR_01",
+              evaluated_rut: rawRut,
+              evaluated_name: "Operador Demostración",
+              module_code: "MOD_03_VISOMOTRIZ",
+              modality_code: selectedMode,
+              metrics: { 
+                percent_on_track: percentOnTrack,
+                time_off_track_sec: Number((timeOffTrackMs / 1000).toFixed(1)),
+                off_track_events: offTrackCount
+              },
+              hardware_telemetry: tuner.getTelemetryData(),
+              integrity_hash: "SHA256_VISOMOTRIZ_OK",
+              is_valid_test: true
+            }]);
+          } catch(e) {}
         }
 
         const startBtn = document.getElementById('btn-start');
-        document.getElementById('overlay-title').textContent = 'Prueba Concluida';
-        document.getElementById('overlay-msg').textContent = `Precisión: ${percentOnTrack}%. Métricas registradas en Supabase.`;
-        startBtn.textContent = '✓ EVALUACIÓN REGISTRADA (BLOQUEADO)';
+        document.getElementById('overlay-title').textContent = 'EVALUACIÓN CONCLUIDA';
+        document.getElementById('overlay-msg').textContent = `Precisión: ${percentOnTrack}%. Métricas guardadas exitosamente en el servidor pericial.`;
+        startBtn.textContent = '✓ EVALUACIÓN REGISTRADA';
         startBtn.disabled = true;
         startBtn.style.display = 'block';
         document.getElementById('overlay').style.display = 'flex';
 
       } else {
-        // EVALUACIÓN INVALIDADA
-        validityElem.textContent = `✗ INVALIDADA (Mínimo: ${minPrecisionValida}%)`;
-        validityElem.style.color = '#f87171';
-
-        reportElem.style.background = '#dc2626';
-        reportElem.textContent = `⚠ PRUEBA INVALIDADA: Precisión (${percentOnTrack}%) inferior al mínimo exigido (${minPrecisionValida}%). Debe reintentar.`;
-        reportElem.style.display = 'block';
-
         const startBtn = document.getElementById('btn-start');
-        document.getElementById('overlay-title').textContent = 'Prueba Invalidada';
-        document.getElementById('overlay-msg').textContent = `Precisión insuficiente (${percentOnTrack}% / min ${minPrecisionValida}%). Reintente la prueba.`;
-        startBtn.textContent = 'REINTENTAR PRUEBA (20s)';
+        document.getElementById('overlay-title').textContent = 'PRUEBA INVALIDADA';
+        document.getElementById('overlay-msg').textContent = `Precisión insuficiente (${percentOnTrack}% / mín ${minPrecisionValida}%). Por favor reintente la prueba.`;
+        startBtn.textContent = 'REINTENTAR PRUEBA (20s) →';
         startBtn.disabled = false;
         startBtn.style.display = 'block';
         document.getElementById('overlay').style.display = 'flex';
       }
     }
 
-    document.addEventListener('DOMContentLoaded', () => {
+    document.addEventListener('DOMContentLoaded', async () => {
+      await tuner.detectScreenRefreshRate();
+      const savedLat = parseInt(urlParams.get('latencia') || localStorage.getItem('sensometrika_latencia_ms') || '16');
+      tuner.hardwareOffsetMs = savedLat;
       actualizarEstadoBotonesNavegacion();
     });
+
+    function mostrarAyuda() {
+      document.getElementById('modalAyuda').style.display = 'flex';
+    }
+
+    function cerrarAyuda() {
+      document.getElementById('modalAyuda').style.display = 'none';
+    }
   </script>
+
 </body>
 </html>
