@@ -37,7 +37,7 @@
 
     .main-container {
       width: 100%;
-      max-width: 850px;
+      max-width: 920px;
       display: flex;
       flex-direction: column;
       gap: 18px;
@@ -172,16 +172,35 @@
 
     table { width: 100%; border-collapse: collapse; font-size: 0.78rem; }
 
-    th, td { border: 1px solid var(--card-border); padding: 10px 12px; text-align: left; }
+    th, td { border: 1px solid var(--card-border); padding: 10px 12px; text-align: left; vertical-align: middle; }
 
     th { background: #070d17; color: var(--accent-cyan); font-weight: 800; text-transform: uppercase; font-size: 0.65rem; }
 
-    /* ESTILOS DE ESTADOS DINÁMICOS EN NÓMINA */
     .badge-status { padding: 3px 8px; border-radius: 4px; font-weight: 800; font-size: 0.62rem; text-transform: uppercase; display: inline-block; }
     .badge-ok { background: rgba(16, 185, 129, 0.15); color: var(--accent-green); border: 1px solid var(--accent-green); }
     .badge-pending { background: rgba(245, 158, 11, 0.15); color: #f59e0b; border: 1px solid #f59e0b; }
     .badge-progress { background: rgba(56, 189, 248, 0.15); color: var(--accent-cyan); border: 1px solid var(--accent-cyan); }
     .badge-bad { background: rgba(239, 68, 68, 0.15); color: #ef4444; border: 1px solid #ef4444; }
+
+    .btn-qr-garita {
+      background: #0f172a;
+      color: #38bdf8;
+      border: 1px solid #0284c7;
+      padding: 5px 8px;
+      border-radius: 6px;
+      font-weight: 800;
+      font-size: 0.68rem;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      white-space: nowrap;
+    }
+
+    .btn-qr-garita:hover {
+      background: #0284c7;
+      color: #ffffff;
+    }
 
     .modal-overlay {
       position: fixed;
@@ -296,7 +315,8 @@
               <th>Cargo & Empresa</th>
               <th>Estado Acreditación</th>
               <th>Acción Link</th>
-              <th>Certificado APR</th>
+              <th>Credencial QR (Garita)</th>
+              <th>Informe Pericial</th>
             </tr>
           </thead>
           <tbody id="tablaNominaAPR">
@@ -363,13 +383,11 @@
       };
     }
 
-    // --- CÁLCULO DINÁMICO DE ESTADO SEGÚN PLAN Y TELEMETRÍA EN LOCALSTORAGE ---
     function calcularEstadoTrabajador(rutRaw, planTrabajador) {
-      if (!rutRaw) return { texto: 'PENDIENTE DE INICIO', clase: 'badge-pending' };
+      if (!rutRaw) return { texto: 'PENDIENTE DE INICIO', clase: 'badge-pending', estadoCod: 'INCOMPLETO' };
       const cleanRut = rutRaw.replace(/[^0-9Kk]/g, '');
       const planActivo = (planTrabajador || localStorage.getItem('sensometrika_plan_contratado') || 'BASICO').toUpperCase();
 
-      // Definir módulos exigidos según el Plan
       let modulosExigidos = [];
       if (planActivo === 'BASICO' || planActivo === 'BASIC') {
         modulosExigidos = ['reactimetro', 'palancas', 'punteo'];
@@ -398,13 +416,13 @@
       });
 
       if (reprobados > 0) {
-        return { texto: 'REPROBADO D.S. N° 170', clase: 'badge-bad' };
+        return { texto: 'REPROBADO D.S. N° 170', clase: 'badge-bad', estadoCod: 'REPROBADO' };
       } else if (completados === modulosExigidos.length && completados > 0) {
-        return { texto: 'APROBADO D.S. N° 170', clase: 'badge-ok' };
+        return { texto: 'APROBADO D.S. N° 170', clase: 'badge-ok', estadoCod: 'APROBADO' };
       } else if (completados > 0) {
-        return { texto: 'EN EJECUCIÓN', clase: 'badge-progress' };
+        return { texto: 'EN EJECUCIÓN', clase: 'badge-progress', estadoCod: 'INCOMPLETO' };
       } else {
-        return { texto: 'PENDIENTE DE INICIO', clase: 'badge-pending' };
+        return { texto: 'PENDIENTE DE INICIO', clase: 'badge-pending', estadoCod: 'INCOMPLETO' };
       }
     }
 
@@ -429,7 +447,6 @@
       const originUrl = window.location.origin;
       const urlCompleta = `${originUrl}/verificacion_trabajador.html?token=${tokenB2B}&rut=${encodeURIComponent(rut)}&nombre=${encodeURIComponent(nombre)}&cargo=${encodeURIComponent(cargo)}&empresa=${encodeURIComponent(empresa)}&plan=${planActivo}&mode=b2b`;
 
-      // Guardar datos en localStorage
       localStorage.setItem('sensometrika_datos_usuario', JSON.stringify({
         nombre: nombre,
         rut: rut,
@@ -459,7 +476,6 @@
       localStorage.setItem('sensometrika_apr_nomina', JSON.stringify(trabajadores));
       renderizarNomina();
 
-      // INVOCAR SERVERLESS API PARA EL DESPACHO REAL DE CORREO
       try {
         const respuesta = await fetch('/api/enviar-correo', {
           method: 'POST',
@@ -476,14 +492,12 @@
         });
 
         const resData = await respuesta.json();
-        console.log("🟢 Correo de Acreditación B2B despachado:", resData);
 
         mostrarModalIntegrado(
           "ACREDITACIÓN GENERADA Y ENVIADA ✉️",
           `El enlace de evaluación ha sido remitido exitosamente a <strong>${email}</strong>.<br><br>También puedes copiar el link directo abajo.`
         );
       } catch (err) {
-        console.error("🔴 Error al conectar con /api/enviar-correo:", err);
         mostrarModalIntegrado(
           "ENLACE GENERADO (CORREO EN SIMULACIÓN) 🔗",
           `El enlace fue creado correctamente. Si no recibes el correo en tu bandeja de entrada, asegúrate de tener la variable <code>RESEND_API_KEY</code> configurada en Vercel.`
@@ -519,15 +533,29 @@
       tbody.innerHTML = '';
 
       if (trabajadores.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:var(--text-muted);">Sin trabajadores registrados aún.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:var(--text-muted);">Sin trabajadores registrados aún.</td></tr>`;
         return;
       }
 
       const planActivoGlobal = (localStorage.getItem('sensometrika_plan_contratado') || 'PLUS').toUpperCase();
+      const originUrl = window.location.origin;
 
       trabajadores.forEach((t) => {
         const planTrabajador = t.plan || planActivoGlobal;
         const estadoReal = calcularEstadoTrabajador(t.rut, planTrabajador);
+        const cleanRut = t.rut.replace(/[^0-9Kk]/g, '');
+
+        // Construir URL pública para validar.html (Credencial Garita Ley 19.628)
+        const paramsQR = new URLSearchParams({
+          rut: t.rut,
+          nombre: t.nombre,
+          cargo: t.cargo,
+          empresa: t.empresa || 'CONSTRUCTORA',
+          folio: `SMK-${cleanRut.substring(0, 6)}`,
+          estado: estadoReal.estadoCod,
+          vence: estadoReal.estadoCod === 'APROBADO' ? 'VIGENTE' : 'PENDIENTE'
+        });
+        const urlCredencialQR = `${originUrl}/validar.html?${paramsQR.toString()}`;
 
         const tr = document.createElement('tr');
         tr.innerHTML = `
@@ -546,6 +574,11 @@
             <button onclick="copiarLinkFila('${t.url}')" style="background:#0284c7; color:#fff; border:none; padding:6px 10px; border-radius:4px; font-weight:700; cursor:pointer;">
               🔗 Copiar Link
             </button>
+          </td>
+          <td>
+            <a href="${urlCredencialQR}" target="_blank" class="btn-qr-garita">
+              📱 Credencial QR
+            </a>
           </td>
           <td>
             <a href="informe_b2b.html?token=${t.token}&rut=${encodeURIComponent(t.rut)}&plan=${planTrabajador}&mode=b2b" target="_blank" style="color:var(--accent-cyan); font-weight:800; text-decoration:underline;">
