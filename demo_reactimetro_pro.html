@@ -3,7 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>Sensometrika Pro B2B - Test Módulo Reactímetro</title>
+  <title>Sensometrika Pro B2B - Test Módulo Visomotriz</title>
+  <!-- Librería Supabase JS CDN -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     * { 
@@ -198,7 +199,7 @@
 
   <header>
     <h1>Sensometrika Pro B2B</h1>
-    <p style="font-size: 0.8rem; color: #94a3b8; margin-top: 2px;">Módulo 2: Reactímetro / Tiempos de Reacción y Freno</p>
+    <p style="font-size: 0.8rem; color: #94a3b8; margin-top: 2px;">Módulo 3: Coordinación Visomotriz / Tracking Pista</p>
     <div class="status-bar">
       <div class="status-item">Refresh Rate: <span id="hz-val">Detectando...</span></div>
       <div class="status-item">Offset Hardware: <span id="offset-val">0 ms</span></div>
@@ -206,28 +207,27 @@
   </header>
 
   <div class="controls">
-    <button class="btn-mode" id="btn-2A" onclick="selectMode('2A')">2A. Reacción Simple</button>
-    <button class="btn-mode" id="btn-2B" onclick="selectMode('2B')">2B. Discriminativa</button>
-    <button class="btn-mode" id="btn-2C" onclick="selectMode('2C')">2C. Freno Emergencia</button>
+    <button class="btn-mode" id="btn-3A" onclick="selectMode('3A')">3A. Tracking Continuo</button>
+    <button class="btn-mode" id="btn-3B" onclick="selectMode('3B')">3B. Tracking Adaptativo</button>
   </div>
 
   <div id="canvas-container">
-    <canvas id="reactimetroCanvas"></canvas>
+    <canvas id="visomotrizCanvas"></canvas>
     <div id="overlay" class="start-overlay">
-      <h2 id="overlay-title" style="color:#38bdf8; font-size:1.1rem;">Selecciona una prueba</h2>
+      <h2 id="overlay-title" style="color:#38bdf8; font-size:1.1rem;">Selecciona una modalidad</h2>
       <p id="overlay-msg" style="color:#94a3b8; font-size:0.85rem; line-height:1.4; max-width:320px;">
-        Elija una modalidad para medir tiempos de reacción.
+        Haz clic en una de las pruebas superiores para medir seguimiento de trayectoria.
       </p>
-      <button id="btn-start" class="btn-action" style="display:none;" onclick="runCurrentTest()">INICIAR EVALUACIÓN</button>
+      <button id="btn-start" class="btn-action" style="display:none;" onclick="runCurrentTest()">INICIAR EVALUACIÓN (20s)</button>
     </div>
   </div>
 
   <div class="metrics-panel">
-    <div class="metric-row"><span>Estado de Ensayo:</span><strong id="m-trial-status" style="color:#eab308;">Esperando inicio</strong></div>
-    <div class="metric-row"><span>Ensayos Realizados:</span><strong id="m-trials">0 / 5</strong></div>
-    <div class="metric-row"><span>Anticipaciones / Fallos:</span><strong id="m-false-starts" style="color:#f87171;">0</strong></div>
-    <div class="metric-row"><span>Tiempo Reacción Último:</span><strong id="m-last-rt" style="color:#4ade80;">-- ms</strong></div>
-    <div class="metric-row"><span>Promedio Reacción:</span><strong id="m-avg-rt" style="color:#38bdf8;">-- ms</strong></div>
+    <div class="metric-row"><span>Tiempo Restante:</span><strong id="m-timer" style="color:#eab308; font-size:1rem;">20.0 s</strong></div>
+    <div class="metric-row"><span>Precisión en Pista:</span><strong id="m-precision" style="color:#4ade80;">100.0 %</strong></div>
+    <div class="metric-row"><span>Tiempo Fuera de Pista:</span><strong id="m-time-out" style="color:#f87171;">0.0 s</strong></div>
+    <div class="metric-row"><span>Número de Salidas / Errores:</span><strong id="m-exits-count" style="color:#f87171;">0</strong></div>
+    <div class="metric-row"><span>Validez Pericial:</span><strong id="m-validity" style="color:#94a3b8;">Pendiente</strong></div>
   </div>
 
   <div id="report-status" class="report-badge"></div>
@@ -251,15 +251,16 @@
       supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     }
 
-    const subModos = ['2A', '2B', '2C'];
-    const minEnsayosValidos = 3;
+    const subModos = ['3A', '3B'];
+    const minPrecisionValida = 40.0; // Se requiere al menos 40% de precisión en pista
 
     function actualizarEstadoBotonesNavegacion() {
       let completadosTotal = 0;
 
       subModos.forEach(m => {
         const btn = document.getElementById(`btn-${m}`);
-        const isCompletado = localStorage.getItem(`sensometrika_reactimetro_${m}_${cleanRut}_${sessionId}`) === 'true';
+        const isCompletado = localStorage.getItem(`sensometrika_visomotriz_${m}_${cleanRut}_${sessionId}`) === 'true' ||
+                             localStorage.getItem(`sensometrika_palancas_${m}_${cleanRut}_${sessionId}`) === 'true';
 
         if (isCompletado) {
           completadosTotal++;
@@ -271,16 +272,16 @@
 
       if (completadosTotal >= subModos.length) {
         document.getElementById('btn-volver-menu').style.display = 'block';
-        localStorage.setItem(`sensometrika_historial_reactimetro_${cleanRut}_${sessionId}`, JSON.stringify([{ completado: true }]));
-        localStorage.setItem(`reactimetro_demo_completada_${cleanRut}_${sessionId}`, 'true');
+        localStorage.setItem(`sensometrika_historial_visomotriz_${cleanRut}_${sessionId}`, JSON.stringify([{ completado: true }]));
+        localStorage.setItem(`sensometrika_historial_palancas_${cleanRut}_${sessionId}`, JSON.stringify([{ completado: true }]));
+        localStorage.setItem(`visomotriz_demo_completada_${cleanRut}_${sessionId}`, 'true');
       }
     }
 
     function obtenerLabelSubModo(m) {
       switch(m) {
-        case '2A': return '2A. Reacción Simple';
-        case '2B': return '2B. Discriminativa';
-        case '2C': return '2C. Freno Emergencia';
+        case '3A': return '3A. Continuo';
+        case '3B': return '3B. Adaptativo';
       }
     }
 
@@ -342,25 +343,31 @@
     }
 
     const tuner = new LatencyTuner();
-    let selectedMode = null;
-    let isTestRunning = false;
-    let currentTrial = 0;
-    const maxTrials = 5;
-    let reactionTimes = [];
-    let falseStarts = 0;
-    let correctInhibitions = 0;
-
-    let stimulusTimer = null;
-    let autoNextTimer = null;
-    let stimulusTime = 0;
-    let isStimulusActive = false;
-    let isTargetStimulus = true;
-
-    // Estados específicos para 2C Freno
-    let brakeState = 'IDLE'; // IDLE, ACCELERATING, EMERGENCY_RED, BRAKED
-
-    const canvas = document.getElementById('reactimetroCanvas');
+    const canvas = document.getElementById('visomotrizCanvas');
     const ctx = canvas.getContext('2d');
+
+    let selectedMode = null;
+    let isRunning = false;
+    let durationSec = 20;
+    let remainingTime = 20;
+    let timerInterval = null;
+    let animFrame = null;
+
+    // Variables de Tracking y Física Adaptada
+    let targetX = 0, targetY = 0;
+    let userX = -100, userY = -100;
+    let isTouching = false;
+    let angle = 0;
+    let baseSpeed = 0.018; // Reducido para permitir seguimiento cómodo con el dedo
+    let currentSpeed = 0.018;
+    let pathRadius = 110;
+    let targetRadius = 38; // Incrementado para compensar el área del dedo y latencia táctil
+
+    let timeInTrack = 0;
+    let timeOutTrack = 0;
+    let exitCount = 0;
+    let wasInTrack = false;
+    let lastFrameTime = 0;
 
     async function initTelemetry() {
       const hz = await tuner.detectScreenRefreshRate();
@@ -368,37 +375,17 @@
     }
     initTelemetry();
 
-    function drawScreen(color, text, subtext) {
+    function resizeCanvas() {
       const dpr = window.devicePixelRatio || 1;
       const rect = canvas.getBoundingClientRect();
       canvas.width = rect.width * dpr;
       canvas.height = rect.height * dpr;
       ctx.scale(dpr, dpr);
-
-      const w = rect.width;
-      const h = rect.height;
-
-      ctx.fillStyle = color;
-      ctx.fillRect(0, 0, w, h);
-
-      if (text) {
-        ctx.fillStyle = '#FFFFFF';
-        ctx.font = 'bold 20px -apple-system, sans-serif';
-        ctx.textAlign = 'center';
-        ctx.fillText(text, w / 2, h / 2 - (subtext ? 12 : 0));
-      }
-
-      if (subtext) {
-        ctx.fillStyle = '#f8fafc';
-        ctx.font = '14px -apple-system, sans-serif';
-        ctx.textAlign = 'center';
-        ctx.fillText(subtext, w / 2, h / 2 + 20);
-      }
     }
 
     window.selectMode = function(mode) {
-      const isCompletado = localStorage.getItem(`sensometrika_reactimetro_${mode}_${cleanRut}_${sessionId}`) === 'true';
-      if (isCompletado) return; // Si ya fue rendido válidamente, se inhabilita
+      const isCompletado = localStorage.getItem(`sensometrika_visomotriz_${mode}_${cleanRut}_${sessionId}`) === 'true';
+      if (isCompletado) return;
 
       selectedMode = mode;
       document.querySelectorAll('.btn-mode').forEach(btn => {
@@ -412,15 +399,13 @@
       }
 
       const modeTitles = {
-        '2A': 'Modalidad 2A: Reacción Simple (Min: 3 aciertos)',
-        '2B': 'Modalidad 2B: Discriminativa (Min: 3 aciertos)',
-        '2C': 'Modalidad 2C: Freno Emergencia (Min: 3 aciertos)'
+        '3A': 'Modalidad 3A: Tracking Continuo',
+        '3B': 'Modalidad 3B: Tracking Adaptativo'
       };
 
       const modeInstructions = {
-        '2A': 'Mantenga la atención. Cuando la pantalla cambie a VERDE, toque lo más rápido posible.',
-        '2B': 'Toque la pantalla ÚNICAMENTE cuando la luz sea VERDE. Si aparece AZUL, no toque nada y espere.',
-        '2C': 'MANTENGA MANTENIDO el toque en el ACELERADOR (VERDE). Al cambiar a ROJO, suelte y presione de inmediato (FRENO).'
+        '3A': 'Siga con su dedo el objetivo circular en movimiento. Procure mantenerse dentro de la zona delimitada.',
+        '3B': 'El objetivo cambiará su velocidad de acuerdo a su precisión. Mantenga el toque sobre el círculo en todo momento.'
       };
 
       document.getElementById('overlay-title').textContent = modeTitles[mode];
@@ -429,239 +414,236 @@
       const startBtn = document.getElementById('btn-start');
       startBtn.style.display = 'block';
       startBtn.disabled = false;
-      startBtn.textContent = 'INICIAR PRUEBA (5 Ensayos)';
+      startBtn.textContent = 'INICIAR EVALUACIÓN (20s)';
       document.getElementById('overlay').style.display = 'flex';
     };
 
-    window.runCurrentTest = function() {
-      document.getElementById('overlay').style.display = 'none';
-      document.getElementById('report-status').style.display = 'none';
-
-      isTestRunning = true;
-      currentTrial = 0;
-      reactionTimes = [];
-      falseStarts = 0;
-      correctInhibitions = 0;
-
-      updatePanel();
-      nextTrial();
-    };
-
-    function nextTrial() {
-      if (currentTrial >= maxTrials) {
-        finishTest();
-        return;
-      }
-
-      currentTrial++;
-      isStimulusActive = false;
-      brakeState = 'IDLE';
-
-      if (autoNextTimer) clearTimeout(autoNextTimer);
-      if (stimulusTimer) clearTimeout(stimulusTimer);
-
-      const delay = Math.floor(Math.random() * 2000) + 1500; // Algoritmo estocástico 1.5s - 3.5s
-
-      if (selectedMode === '2C') {
-        document.getElementById('m-trial-status').textContent = 'MANTENGA PRESIONADO EL ACELERADOR';
-        document.getElementById('m-trial-status').style.color = '#22c55e';
-        drawScreen('#15803d', 'ACELERANDO...', 'Mantenga el toque presionado');
-        brakeState = 'ACCELERATING';
-
-        stimulusTimer = setTimeout(() => {
-          isStimulusActive = true;
-          brakeState = 'EMERGENCY_RED';
-          stimulusTime = performance.now();
-          drawScreen('#dc2626', '¡FRENO DE EMERGENCIA!', '¡SUELTE Y VUELVA A PRESIONAR!');
-        }, delay);
-
-      } else {
-        document.getElementById('m-trial-status').textContent = 'Atento al estímulo...';
-        document.getElementById('m-trial-status').style.color = '#eab308';
-        drawScreen('#1e293b', '¡ATENTO!');
-
-        stimulusTimer = setTimeout(() => {
-          isStimulusActive = true;
-          stimulusTime = performance.now();
-
-          if (selectedMode === '2A') {
-            isTargetStimulus = true;
-            drawScreen('#22c55e', '¡PRESIONE AHORA!');
-          } else if (selectedMode === '2B') {
-            isTargetStimulus = Math.random() > 0.3; // 70% verde, 30% azul
-            if (isTargetStimulus) {
-              drawScreen('#22c55e', '¡PRESIONE!');
-            } else {
-              drawScreen('#0284c7', '¡NO PRESIONE!');
-              
-              // Exposición del distractor (1.5s sin respuesta)
-              autoNextTimer = setTimeout(() => {
-                if (isStimulusActive && !isTargetStimulus) {
-                  correctInhibitions++;
-                  isStimulusActive = false;
-                  document.getElementById('m-trial-status').textContent = '✓ Correcto (Inhibición Exitosa)';
-                  document.getElementById('m-trial-status').style.color = '#4ade80';
-                  updatePanel();
-                  setTimeout(nextTrial, 800);
-                }
-              }, 1500);
-            }
-          }
-        }, delay);
-      }
-    }
-
-    canvas.onpointerdown = function(e) {
-      if (!isTestRunning) return;
-
-      const rawTime = performance.now();
-      const offset = tuner.registerCalibrationTap(e);
-      const netTime = Math.max(0, rawTime - offset);
-
-      if (selectedMode === '2C') {
-        if (brakeState === 'EMERGENCY_RED') {
-          // Re-presión para accionar el freno
-          const rt = Number((netTime - stimulusTime).toFixed(1));
-          reactionTimes.push(rt);
-          brakeState = 'BRAKED';
-          isStimulusActive = false;
-
-          document.getElementById('m-last-rt').textContent = rt + ' ms';
-          document.getElementById('m-trial-status').textContent = `Frenado Correcto (${rt} ms)`;
-          document.getElementById('m-trial-status').style.color = '#4ade80';
-          drawScreen('#16a34a', '¡FRENO ACCIONADO!', `${rt} ms`);
-
-          updatePanel();
-          setTimeout(nextTrial, 1200);
-        }
-        return;
-      }
-
-      if (!isStimulusActive) {
-        // Anticipación
-        clearTimeout(stimulusTimer);
-        if (autoNextTimer) clearTimeout(autoNextTimer);
-        falseStarts++;
-        document.getElementById('m-trial-status').textContent = '⚠ ANTICIPACIÓN (Toque antes del estímulo)';
-        document.getElementById('m-trial-status').style.color = '#f87171';
-        drawScreen('#ef4444', 'ANTICIPACIÓN');
-        setTimeout(nextTrial, 1500);
-      } else {
-        if (selectedMode === '2B' && !isTargetStimulus) {
-          // Falsa Alarma en Distractor
-          if (autoNextTimer) clearTimeout(autoNextTimer);
-          isStimulusActive = false;
-          falseStarts++;
-          document.getElementById('m-trial-status').textContent = '❌ ERROR: Presionó con distractor';
-          document.getElementById('m-trial-status').style.color = '#f87171';
-          drawScreen('#ef4444', 'ERROR DE DISCRIMINACIÓN');
-          updatePanel();
-          setTimeout(nextTrial, 1500);
-        } else {
-          // Toque Válido
-          if (autoNextTimer) clearTimeout(autoNextTimer);
-          isStimulusActive = false;
-          const rt = Number((netTime - stimulusTime).toFixed(1));
-          reactionTimes.push(rt);
-
-          document.getElementById('m-last-rt').textContent = rt + ' ms';
-          document.getElementById('m-trial-status').textContent = `Correcto (${rt} ms)`;
-          document.getElementById('m-trial-status').style.color = '#4ade80';
-
-          updatePanel();
-          setTimeout(nextTrial, 1000);
-        }
-      }
-    };
-
-    canvas.onpointerup = function(e) {
-      if (!isTestRunning || selectedMode !== '2C') return;
-
-      if (brakeState === 'ACCELERATING') {
-        // Soltó el acelerador antes de tiempo (Anticipación)
-        clearTimeout(stimulusTimer);
-        falseStarts++;
-        brakeState = 'IDLE';
-        document.getElementById('m-trial-status').textContent = '⚠ Soltó el acelerador antes de tiempo';
-        document.getElementById('m-trial-status').style.color = '#f87171';
-        drawScreen('#ef4444', 'ANTICIPACIÓN DE FRENO');
-        setTimeout(nextTrial, 1500);
-      }
-    };
-
-    function updatePanel() {
-      document.getElementById('m-trials').textContent = `${currentTrial} / ${maxTrials}`;
-      document.getElementById('m-false-starts').textContent = falseStarts;
-
-      if (reactionTimes.length > 0) {
-        const avg = (reactionTimes.reduce((a, b) => a + b, 0) / reactionTimes.length).toFixed(1);
-        document.getElementById('m-avg-rt').textContent = avg + ' ms';
-      }
+    function updateTouchPosition(e) {
+      const rect = canvas.getBoundingClientRect();
+      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+      userX = clientX - rect.left;
+      userY = clientY - rect.top;
+      tuner.registerCalibrationTap(e);
       document.getElementById('offset-val').textContent = tuner.hardwareOffsetMs + ' ms';
     }
 
+    canvas.addEventListener('pointerdown', (e) => {
+      if (!isRunning) return;
+      isTouching = true;
+      updateTouchPosition(e);
+    });
+
+    canvas.addEventListener('pointermove', (e) => {
+      if (!isRunning || !isTouching) return;
+      updateTouchPosition(e);
+    });
+
+    window.addEventListener('pointerup', () => { isTouching = false; });
+    window.addEventListener('pointercancel', () => { isTouching = false; });
+
+    function gameLoop(timestamp) {
+      if (!isRunning) return;
+
+      if (!lastFrameTime) lastFrameTime = timestamp;
+      const dt = (timestamp - lastFrameTime) / 1000;
+      lastFrameTime = timestamp;
+
+      const w = canvas.width / (window.devicePixelRatio || 1);
+      const h = canvas.height / (window.devicePixelRatio || 1);
+      const centerX = w / 2;
+      const centerY = h / 2;
+
+      // Actualizar posición del objetivo en trayectoria elíptica suave
+      angle += currentSpeed;
+      targetX = centerX + Math.cos(angle) * pathRadius;
+      targetY = centerY + Math.sin(angle * 0.7) * (pathRadius * 0.75);
+
+      // Distancia entre puntero táctil y objetivo
+      let dist = 9999;
+      if (isTouching) {
+        dist = Math.hypot(userX - targetX, userY - targetY);
+      }
+
+      // Umbral ajustado por compensación de lag táctil
+      const isInTrack = isTouching && (dist <= targetRadius + 6);
+
+      if (isInTrack) {
+        timeInTrack += dt;
+        if (!wasInTrack) {
+          wasInTrack = true;
+        }
+        if (selectedMode === '3B') {
+          // Adaptativo: incrementa suavemente si el usuario responde bien
+          currentSpeed = Math.min(0.032, currentSpeed + 0.0001);
+        }
+      } else {
+        timeOutTrack += dt;
+        if (wasInTrack) {
+          wasInTrack = false;
+          exitCount++;
+        }
+        if (selectedMode === '3B') {
+          // Adaptativo: desacelera para permitir reconexión
+          currentSpeed = Math.max(0.012, currentSpeed - 0.0003);
+        }
+      }
+
+      // Renderizado
+      ctx.clearRect(0, 0, w, h);
+
+      // Dibujar trayectoria guía tenue
+      ctx.beginPath();
+      for (let a = 0; a < Math.PI * 2; a += 0.05) {
+        const px = centerX + Math.cos(a) * pathRadius;
+        const py = centerY + Math.sin(a * 0.7) * (pathRadius * 0.75);
+        if (a === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+      }
+      ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+      ctx.lineWidth = 4;
+      ctx.stroke();
+
+      // Dibujar objetivo
+      ctx.beginPath();
+      ctx.arc(targetX, targetY, targetRadius, 0, Math.PI * 2);
+      ctx.fillStyle = isInTrack ? 'rgba(34, 197, 94, 0.35)' : 'rgba(239, 68, 68, 0.35)';
+      ctx.fill();
+      ctx.strokeStyle = isInTrack ? '#22c55e' : '#ef4444';
+      ctx.lineWidth = 3;
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.arc(targetX, targetY, 8, 0, Math.PI * 2);
+      ctx.fillStyle = isInTrack ? '#22c55e' : '#ef4444';
+      ctx.fill();
+
+      // Dibujar puntero del usuario
+      if (isTouching) {
+        ctx.beginPath();
+        ctx.arc(userX, userY, 12, 0, Math.PI * 2);
+        ctx.fillStyle = '#38bdf8';
+        ctx.fill();
+        ctx.strokeStyle = '#FFFFFF';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+      }
+
+      // Actualizar Panel de Métricas
+      const totalTime = timeInTrack + timeOutTrack;
+      const precision = totalTime > 0 ? ((timeInTrack / totalTime) * 100).toFixed(1) : 100.0;
+      
+      document.getElementById('m-precision').textContent = precision + ' %';
+      document.getElementById('m-time-out').textContent = timeOutTrack.toFixed(1) + ' s';
+      document.getElementById('m-exits-count').textContent = exitCount;
+
+      animFrame = requestAnimationFrame(gameLoop);
+    }
+
+    window.runCurrentTest = function() {
+      if (!selectedMode) return;
+
+      document.getElementById('overlay').style.display = 'none';
+      document.getElementById('report-status').style.display = 'none';
+
+      resizeCanvas();
+
+      isRunning = true;
+      remainingTime = durationSec;
+      timeInTrack = 0;
+      timeOutTrack = 0;
+      exitCount = 0;
+      wasInTrack = false;
+      lastFrameTime = 0;
+      angle = 0;
+      currentSpeed = baseSpeed;
+
+      document.getElementById('m-timer').textContent = remainingTime.toFixed(1) + ' s';
+
+      if (timerInterval) clearInterval(timerInterval);
+      timerInterval = setInterval(() => {
+        remainingTime -= 0.1;
+        if (remainingTime <= 0) {
+          remainingTime = 0;
+          clearInterval(timerInterval);
+          finishTest();
+        } else {
+          document.getElementById('m-timer').textContent = remainingTime.toFixed(1) + ' s';
+        }
+      }, 100);
+
+      if (animFrame) cancelAnimationFrame(animFrame);
+      animFrame = requestAnimationFrame(gameLoop);
+    };
+
     async function finishTest() {
-      isTestRunning = false;
-      const totalExitos = reactionTimes.length + correctInhibitions;
-      const esValida = totalExitos >= minEnsayosValidos;
-      const avg = reactionTimes.length > 0 
-        ? (reactionTimes.reduce((a, b) => a + b, 0) / reactionTimes.length).toFixed(1)
-        : 0;
+      isRunning = false;
+      if (animFrame) cancelAnimationFrame(animFrame);
 
-      document.getElementById('m-trial-status').textContent = 'EVALUACIÓN CONCLUIDA';
-      document.getElementById('m-trial-status').style.color = esValida ? '#38bdf8' : '#f87171';
+      const totalTime = timeInTrack + timeOutTrack;
+      const precisionVal = totalTime > 0 ? Number(((timeInTrack / totalTime) * 100).toFixed(1)) : 0;
+      const esValida = precisionVal >= minPrecisionValida;
 
+      document.getElementById('m-timer').textContent = '0.0 s (FINALIZADO)';
+
+      const validityElem = document.getElementById('m-validity');
       const reportElem = document.getElementById('report-status');
 
       if (esValida) {
-        // 1. EVALUACIÓN VÁLIDA
+        // EVALUACIÓN VÁLIDA
+        validityElem.textContent = '✓ VÁLIDA';
+        validityElem.style.color = '#4ade80';
+
         reportElem.style.background = '#0284c7';
-        reportElem.textContent = `✓ EVALUACIÓN COMPLETA - Promedio: ${avg} ms | Fallos/Errores: ${falseStarts}`;
+        reportElem.textContent = `✓ EVALUACIÓN COMPLETA - Precisión: ${precisionVal}% | Salidas de pista: ${exitCount}`;
         reportElem.style.display = 'block';
 
-        // Registrar inmutabilidad local y actualizar interfaz a VERDE
-        localStorage.setItem(`sensometrika_reactimetro_${selectedMode}_${cleanRut}_${sessionId}`, 'true');
+        // Guardar inmutabilidad local para Visomotriz y Palancas
+        localStorage.setItem(`sensometrika_visomotriz_${selectedMode}_${cleanRut}_${sessionId}`, 'true');
+        localStorage.setItem(`sensometrika_palancas_${selectedMode}_${cleanRut}_${sessionId}`, 'true');
         actualizarEstadoBotonesNavegacion();
 
-        // Guardar telemetría en Supabase
+        // Guardar en Supabase
         if (supabaseClient) {
           await supabaseClient.from('evaluaciones_pro_b2b').insert([{
             company_id: "SOCADEP_DEMO",
             evaluator_id: "EVALUADOR_01",
             evaluated_rut: rawRut,
             evaluated_name: "Operador Demostración",
-            module_code: "MOD_02_REACTIMETRO",
+            module_code: "MOD_03_VISOMOTRIZ",
             modality_code: selectedMode,
-            metrics: { 
-              trials: reactionTimes, 
-              avg_reaction_time_ms: avg, 
-              false_starts: falseStarts,
-              correct_inhibitions: correctInhibitions
+            metrics: {
+              precision_percentage: precisionVal,
+              time_in_track_sec: Number(timeInTrack.toFixed(1)),
+              time_out_track_sec: Number(timeOutTrack.toFixed(1)),
+              exits_count: exitCount
             },
             hardware_telemetry: tuner.getTelemetryData(),
-            integrity_hash: "SHA256_REACTIMETRO_OK",
+            integrity_hash: "SHA256_VISOMOTRIZ_OK",
             is_valid_test: true
           }]);
         }
 
         const startBtn = document.getElementById('btn-start');
         document.getElementById('overlay-title').textContent = 'Prueba Concluida';
-        document.getElementById('overlay-msg').textContent = `Promedio: ${avg} ms. Métricas guardadas exitosamente en el servidor pericial.`;
+        document.getElementById('overlay-msg').textContent = `Precisión: ${precisionVal}%. Métricas guardadas exitosamente en Supabase.`;
         startBtn.textContent = '✓ EVALUACIÓN REGISTRADA (BLOQUEADO)';
         startBtn.disabled = true;
         startBtn.style.display = 'block';
         document.getElementById('overlay').style.display = 'flex';
 
       } else {
-        // 2. INVALIDACIÓN POR EXCESO DE ERRORES/ANTICIPACIONES
+        // INVALIDACIÓN POR BAJA PRECISIÓN
+        validityElem.textContent = `✗ INVALIDADA (Mínimo: ${minPrecisionValida}%)`;
+        validityElem.style.color = '#f87171';
+
         reportElem.style.background = '#dc2626';
-        reportElem.textContent = `⚠ PRUEBA INVALIDADA: Solamente ${totalExitos} de ${minEnsayosValidos} ensayos válidos requeridos. Debe repetir la prueba.`;
+        reportElem.textContent = `⚠ PRUEBA INVALIDADA: Precisión obtenida (${precisionVal}%) inferior al mínimo exigido (${minPrecisionValida}%). Debe reintentar.`;
         reportElem.style.display = 'block';
 
         const startBtn = document.getElementById('btn-start');
         document.getElementById('overlay-title').textContent = 'Prueba Invalidada';
-        document.getElementById('overlay-msg').textContent = `Insuficientes ensayos válidos (${totalExitos}/${minEnsayosValidos}). Por favor reintente la prueba.`;
-        startBtn.textContent = 'REINTENTAR PRUEBA (5 Ensayos)';
+        document.getElementById('overlay-msg').textContent = `Precisión insuficiente (${precisionVal}% / min ${minPrecisionValida}%). Por favor reintente la prueba.`;
+        startBtn.textContent = 'REINTENTAR PRUEBA (20s)';
         startBtn.disabled = false;
         startBtn.style.display = 'block';
         document.getElementById('overlay').style.display = 'flex';
