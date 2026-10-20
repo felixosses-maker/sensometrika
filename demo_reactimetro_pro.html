@@ -62,17 +62,30 @@
       font-weight: 600; 
       cursor: pointer; 
       transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: 4px;
     }
-    button.btn-mode:hover {
+    button.btn-mode:hover:not(:disabled) {
       background: #475569;
       color: #f8fafc;
     }
     button.btn-mode.active {
-      background: #22c55e !important;
-      color: #022c22 !important;
-      border-color: #4ade80 !important;
-      box-shadow: 0 0 12px rgba(34, 197, 94, 0.5);
-      transform: scale(1.03);
+      background: #0284c7 !important;
+      color: #ffffff !important;
+      border-color: #38bdf8 !important;
+      box-shadow: 0 0 12px rgba(2, 132, 199, 0.5);
+      transform: scale(1.02);
+    }
+    /* ESTADO COMPLETADO Y BLOQUEADO (VERDE SÓLIDO) */
+    button.btn-mode.completed {
+      background: #10b981 !important;
+      color: #ffffff !important;
+      border-color: #059669 !important;
+      box-shadow: 0 0 10px rgba(16, 185, 129, 0.4);
+      cursor: not-allowed !important;
+      pointer-events: none !important;
+      opacity: 0.95;
     }
     
     #canvas-container { 
@@ -120,6 +133,13 @@
       cursor: pointer;
       box-shadow: 0 4px 12px rgba(2, 132, 199, 0.4);
     }
+    .btn-action:disabled {
+      background: #334155 !important;
+      color: #64748b !important;
+      cursor: not-allowed !important;
+      box-shadow: none !important;
+      pointer-events: none !important;
+    }
 
     .metrics-panel { 
       width: 100%; 
@@ -150,6 +170,27 @@
       border-radius: 6px;
       font-weight: bold;
       font-size: 0.85rem;
+      width: 100%;
+      max-width: 400px;
+    }
+
+    .btn-nav-next {
+      display: none;
+      margin-top: 12px;
+      width: 100%;
+      max-width: 400px;
+      padding: 14px;
+      background: #10b981;
+      color: #000;
+      font-weight: 900;
+      text-align: center;
+      border-radius: 8px;
+      text-decoration: none;
+      text-transform: uppercase;
+      font-size: 0.88rem;
+      box-shadow: 0 4px 14px rgba(16, 185, 129, 0.3);
+      border: none;
+      cursor: pointer;
     }
   </style>
 </head>
@@ -191,13 +232,65 @@
 
   <div id="report-status" class="report-badge"></div>
 
+  <button id="btn-volver-menu" class="btn-nav-next" onclick="irAlMenuB2BPro()">
+    VOLVER A LA CONSOLA B2B PRO →
+  </button>
+
   <script>
+    // Parámetros de Sesión
+    const urlParams = new URLSearchParams(window.location.search);
+    const rawRut = urlParams.get('rut') || '12345678K';
+    const cleanRut = rawRut.replace(/[^0-9Kk]/g, '');
+    const sessionId = urlParams.get('session') || `SESION_${cleanRut}_ACTIVA`;
+
     const SUPABASE_URL = "https://kytuewhkhshrjddzoknv.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt5dHVld2hraHNocmpkZHpva252Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkxMzc4MzcsImV4cCI6MjEwNDcxMzgzN30.gNWbr8E7oF-56yKnNIDVvGIaGXfHkCCcKonWVDthp2k";
 
     let supabaseClient = null;
     if (window.supabase) {
       supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    }
+
+    const subModos = ['2A', '2B', '2C'];
+    const minEnsayosValidos = 3;
+
+    function actualizarEstadoBotonesNavegacion() {
+      let completadosTotal = 0;
+
+      subModos.forEach(m => {
+        const btn = document.getElementById(`btn-${m}`);
+        const isCompletado = localStorage.getItem(`sensometrika_reactimetro_${m}_${cleanRut}_${sessionId}`) === 'true';
+
+        if (isCompletado) {
+          completadosTotal++;
+          btn.className = 'btn-mode completed';
+          btn.disabled = true;
+          btn.innerHTML = `✓ ${obtenerLabelSubModo(m)}`;
+        }
+      });
+
+      if (completadosTotal >= subModos.length) {
+        document.getElementById('btn-volver-menu').style.display = 'block';
+        localStorage.setItem(`sensometrika_historial_reactimetro_${cleanRut}_${sessionId}`, JSON.stringify([{ completado: true }]));
+        localStorage.setItem(`reactimetro_demo_completada_${cleanRut}_${sessionId}`, 'true');
+      }
+    }
+
+    function obtenerLabelSubModo(m) {
+      switch(m) {
+        case '2A': return '2A. Reacción Simple';
+        case '2B': return '2B. Discriminativa';
+        case '2C': return '2C. Freno Emergencia';
+      }
+    }
+
+    function irAlMenuB2BPro() {
+      const returnUrl = urlParams.get('returnUrl');
+      if (returnUrl) {
+        window.location.href = decodeURIComponent(returnUrl);
+      } else {
+        window.location.href = `menu_B2B_PRO.html?${urlParams.toString()}`;
+      }
     }
 
     class LatencyTuner {
@@ -304,15 +397,24 @@
     }
 
     window.selectMode = function(mode) {
+      const isCompletado = localStorage.getItem(`sensometrika_reactimetro_${mode}_${cleanRut}_${sessionId}`) === 'true';
+      if (isCompletado) return; // Si ya fue rendido válidamente, se inhabilita
+
       selectedMode = mode;
-      document.querySelectorAll('.btn-mode').forEach(btn => btn.classList.remove('active'));
+      document.querySelectorAll('.btn-mode').forEach(btn => {
+        if (!btn.classList.contains('completed')) {
+          btn.classList.remove('active');
+        }
+      });
       const activeBtn = document.getElementById(`btn-${mode}`);
-      if (activeBtn) activeBtn.classList.add('active');
+      if (activeBtn && !activeBtn.classList.contains('completed')) {
+        activeBtn.classList.add('active');
+      }
 
       const modeTitles = {
-        '2A': 'Modalidad 2A: Reacción Simple',
-        '2B': 'Modalidad 2B: Reacción Discriminativa',
-        '2C': 'Modalidad 2C: Freno de Emergencia'
+        '2A': 'Modalidad 2A: Reacción Simple (Min: 3 aciertos)',
+        '2B': 'Modalidad 2B: Discriminativa (Min: 3 aciertos)',
+        '2C': 'Modalidad 2C: Freno Emergencia (Min: 3 aciertos)'
       };
 
       const modeInstructions = {
@@ -326,6 +428,7 @@
 
       const startBtn = document.getElementById('btn-start');
       startBtn.style.display = 'block';
+      startBtn.disabled = false;
       startBtn.textContent = 'INICIAR PRUEBA (5 Ensayos)';
       document.getElementById('overlay').style.display = 'flex';
     };
@@ -499,43 +602,75 @@
 
     async function finishTest() {
       isTestRunning = false;
+      const totalExitos = reactionTimes.length + correctInhibitions;
+      const esValida = totalExitos >= minEnsayosValidos;
       const avg = reactionTimes.length > 0 
         ? (reactionTimes.reduce((a, b) => a + b, 0) / reactionTimes.length).toFixed(1)
         : 0;
 
       document.getElementById('m-trial-status').textContent = 'EVALUACIÓN CONCLUIDA';
-      document.getElementById('m-trial-status').style.color = '#38bdf8';
+      document.getElementById('m-trial-status').style.color = esValida ? '#38bdf8' : '#f87171';
 
       const reportElem = document.getElementById('report-status');
-      reportElem.style.background = '#0284c7';
-      reportElem.textContent = `✓ EVALUACIÓN COMPLETA - Promedio: ${avg} ms | Fallos/Errores: ${falseStarts}`;
-      reportElem.style.display = 'block';
 
-      if (supabaseClient) {
-        await supabaseClient.from('evaluaciones_pro_b2b').insert([{
-          company_id: "SOCADEP_DEMO",
-          evaluator_id: "EVALUADOR_01",
-          evaluated_rut: "12345678-9",
-          evaluated_name: "Operador Demostración",
-          module_code: "MOD_02_REACTIMETRO",
-          modality_code: selectedMode,
-          metrics: { 
-            trials: reactionTimes, 
-            avg_reaction_time_ms: avg, 
-            false_starts: falseStarts,
-            correct_inhibitions: correctInhibitions
-          },
-          hardware_telemetry: tuner.getTelemetryData(),
-          integrity_hash: "SHA256_REACTIMETRO_OK",
-          is_valid_test: (reactionTimes.length + correctInhibitions) >= 3
-        }]);
+      if (esValida) {
+        // 1. EVALUACIÓN VÁLIDA
+        reportElem.style.background = '#0284c7';
+        reportElem.textContent = `✓ EVALUACIÓN COMPLETA - Promedio: ${avg} ms | Fallos/Errores: ${falseStarts}`;
+        reportElem.style.display = 'block';
+
+        // Registrar inmutabilidad local y actualizar interfaz a VERDE
+        localStorage.setItem(`sensometrika_reactimetro_${selectedMode}_${cleanRut}_${sessionId}`, 'true');
+        actualizarEstadoBotonesNavegacion();
+
+        // Guardar telemetría en Supabase
+        if (supabaseClient) {
+          await supabaseClient.from('evaluaciones_pro_b2b').insert([{
+            company_id: "SOCADEP_DEMO",
+            evaluator_id: "EVALUADOR_01",
+            evaluated_rut: rawRut,
+            evaluated_name: "Operador Demostración",
+            module_code: "MOD_02_REACTIMETRO",
+            modality_code: selectedMode,
+            metrics: { 
+              trials: reactionTimes, 
+              avg_reaction_time_ms: avg, 
+              false_starts: falseStarts,
+              correct_inhibitions: correctInhibitions
+            },
+            hardware_telemetry: tuner.getTelemetryData(),
+            integrity_hash: "SHA256_REACTIMETRO_OK",
+            is_valid_test: true
+          }]);
+        }
+
+        const startBtn = document.getElementById('btn-start');
+        document.getElementById('overlay-title').textContent = 'Prueba Concluida';
+        document.getElementById('overlay-msg').textContent = `Promedio: ${avg} ms. Métricas guardadas exitosamente en el servidor pericial.`;
+        startBtn.textContent = '✓ EVALUACIÓN REGISTRADA (BLOQUEADO)';
+        startBtn.disabled = true;
+        startBtn.style.display = 'block';
+        document.getElementById('overlay').style.display = 'flex';
+
+      } else {
+        // 2. INVALIDACIÓN POR EXCESO DE ERRORES/ANTICIPACIONES
+        reportElem.style.background = '#dc2626';
+        reportElem.textContent = `⚠ PRUEBA INVALIDADA: Solamente ${totalExitos} de ${minEnsayosValidos} ensayos válidos requeridos. Debe repetir la prueba.`;
+        reportElem.style.display = 'block';
+
+        const startBtn = document.getElementById('btn-start');
+        document.getElementById('overlay-title').textContent = 'Prueba Invalidada';
+        document.getElementById('overlay-msg').textContent = `Insuficientes ensayos válidos (${totalExitos}/${minEnsayosValidos}). Por favor reintente la prueba.`;
+        startBtn.textContent = 'REINTENTAR PRUEBA (5 Ensayos)';
+        startBtn.disabled = false;
+        startBtn.style.display = 'block';
+        document.getElementById('overlay').style.display = 'flex';
       }
-
-      document.getElementById('overlay-title').textContent = 'Prueba Concluida';
-      document.getElementById('overlay-msg').textContent = `Promedio: ${avg} ms. Resultados guardados en Supabase.`;
-      document.getElementById('btn-start').textContent = 'REPETIR PRUEBA';
-      document.getElementById('overlay').style.display = 'flex';
     }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      actualizarEstadoBotonesNavegacion();
+    });
   </script>
 </body>
 </html>
