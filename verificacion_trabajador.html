@@ -231,7 +231,9 @@
   </div>
 
   <script>
-    let isB2C = true;
+    let modeParam = 'b2b';
+    let isB2C = false;
+    let isB2BPro = false;
     let canvas, ctx, dibujando = false;
     let videoStream = null;
 
@@ -241,12 +243,18 @@
 
     document.addEventListener('DOMContentLoaded', () => {
       const urlParams = new URLSearchParams(window.location.search);
-      const modeParam = urlParams.get('mode') || 'b2b';
+      modeParam = urlParams.get('mode') || 'b2b';
       const b2cModeStorage = localStorage.getItem('sensometrika_b2c_mode');
 
-      // PRESERVAR Y PROPAGAR PLAN Y SESIÓN DE FORMA ESTRICTA
+      // PRESERVAR Y PROPAGAR PLAN Y SESIÓN
       const planParam = (urlParams.get('plan') || localStorage.getItem('sensometrika_plan_contratado') || 'PLUS').toUpperCase();
       localStorage.setItem('sensometrika_plan_contratado', planParam);
+
+      if (modeParam === 'b2b-pro' || planParam === 'ALTO_DESEMPENIO' || planParam === 'PRE_OCUPACIONAL') {
+        isB2BPro = true;
+      } else if (modeParam === 'b2c' || b2cModeStorage === 'true') {
+        isB2C = true;
+      }
 
       let datosUsuario = {};
       try {
@@ -260,14 +268,12 @@
       const token = urlParams.get('token') || '';
       const cleanRut = rut.replace(/[^0-9Kk]/g, '');
       
-      // Forzar una nueva ID de sesión si viene un token de evaluación
       const sessionId = urlParams.get('session') || (token ? `SESION_${cleanRut}_${Date.now()}` : localStorage.getItem('sensometrika_session_activa') || `SESION_${cleanRut}_${Date.now()}`);
       localStorage.setItem('sensometrika_session_activa', sessionId);
 
       document.getElementById('lblRut').textContent = rut || 'SIN RUT';
       document.getElementById('lblNombre').textContent = decodeURIComponent(nombre) || 'SIN NOMBRE';
 
-      // Guardar datos actualizados en localStorage
       if (rut && nombre) {
         localStorage.setItem('sensometrika_datos_usuario', JSON.stringify({
           nombre: decodeURIComponent(nombre),
@@ -278,7 +284,6 @@
       }
 
       // --- ENRUTAMIENTO INTELIGENTE POR ESTADO DE AVANCE ---
-      // Si el enlace incluye token B2B o viene desde correo, NO saltar la acreditación a menos que ya exista foto/firma para esta sesión específica
       if (cleanRut && !token) {
         const fotoExiste = localStorage.getItem(`sensometrika_foto_${cleanRut}_${sessionId}`);
         const firmaExiste = localStorage.getItem(`sensometrika_firma_${cleanRut}_${sessionId}`);
@@ -287,6 +292,8 @@
         let idsRequeridos = ['reactimetro', 'palancas', 'punteo'];
         if (planParam === 'PLUS') idsRequeridos.push('audicion');
         if (planParam === 'FULL' || planParam === 'MEDIUM') idsRequeridos.push('audicion', 'visual');
+        if (planParam === 'PRE_OCUPACIONAL') idsRequeridos = ['reactimetro', 'palancas', 'punteo', 'audicion', 'visual', 'anticipacion'];
+        if (planParam === 'ALTO_DESEMPENIO' || isB2BPro) idsRequeridos = ['reactimetro', 'palancas', 'punteo', 'audicion', 'visual', 'anticipacion', 'estereopsis', 'fatiga'];
 
         let completados = 0;
         idsRequeridos.forEach(m => {
@@ -300,9 +307,12 @@
           return;
         }
 
-        // 2. Si ya capturó foto y firma en esta sesión -> Ir al Menú
+        // 2. Si ya capturó foto y firma en esta sesión -> Ir al Menú correspondiente
         if (fotoExiste && firmaExiste && latenciaExiste) {
-          const menuDestino = (modeParam === 'b2c' || b2cModeStorage === 'true') ? 'menu_B2C.html' : 'menu_B2B.html';
+          let menuDestino = 'menu_B2B.html';
+          if (isB2C) menuDestino = 'menu_B2C.html';
+          if (isB2BPro) menuDestino = 'menu_B2B_PRO.html';
+
           window.location.href = `${menuDestino}?rut=${encodeURIComponent(rut)}&nombre=${encodeURIComponent(nombre)}&plan=${planParam}&mode=${modeParam}&session=${sessionId}&fase=demo&demo=true`;
           return;
         }
@@ -310,13 +320,11 @@
 
       localStorage.setItem('sensometrika_evaluado_rut', rut);
 
-      if (modeParam === 'b2c' || b2cModeStorage === 'true') {
-        isB2C = true;
+      if (isB2C) {
         document.getElementById('lblHeaderCard').textContent = '👤 DATOS PERSONALES';
         document.getElementById('boxFotoBiometrica').style.display = 'none';
         document.getElementById('boxFirmaDigital').style.display = 'none';
       } else {
-        isB2C = false;
         document.getElementById('lblHeaderCard').textContent = '👤 DATOS DEL POSTULANTE / TRABAJADOR';
         document.getElementById('boxFotoBiometrica').style.display = 'flex';
         document.getElementById('boxFirmaDigital').style.display = 'flex';
@@ -469,6 +477,8 @@
       const urlParams = new URLSearchParams(window.location.search);
       const rut = urlParams.get('rut') || localStorage.getItem('sensometrika_evaluado_rut') || '';
       const nombre = urlParams.get('nombre') || '';
+      const cargo = urlParams.get('cargo') || '';
+      const empresa = urlParams.get('empresa') || '';
       const plan = (urlParams.get('plan') || localStorage.getItem('sensometrika_plan_contratado') || 'PLUS').toUpperCase();
       const token = urlParams.get('token') || '';
       const cleanRut = rut.replace(/[^0-9Kk]/g, '');
@@ -489,12 +499,17 @@
       localStorage.setItem('sensometrika_modo_demo', 'true');
       localStorage.setItem('sensometrika_fase_evaluacion', 'demo');
 
-      const menuDestino = isB2C ? 'menu_B2C.html' : 'menu_B2B.html';
+      let menuDestino = 'menu_B2B.html';
+      if (isB2C) menuDestino = 'menu_B2C.html';
+      if (isB2BPro) menuDestino = 'menu_B2B_PRO.html';
+
       const paramsRedir = new URLSearchParams({
         rut: rut,
         nombre: nombre,
+        cargo: cargo,
+        empresa: empresa,
         plan: plan,
-        mode: isB2C ? 'b2c' : 'b2b',
+        mode: modeParam,
         session: sessionId,
         fase: 'demo',
         demo: 'true'
