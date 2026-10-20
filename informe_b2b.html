@@ -439,7 +439,7 @@
             }
         }
 
-        async function despacharInformeCorreoAutomatico(planActivo, folioCert, dictamenTexto) {
+        async function despacharInformeCorreoAutomatico(planActivo, folioCert, dictamenTexto, fechaExpTxt) {
             const claveCorreoEnviado = `sensometrika_correo_despachado_${cleanRut}_${sessionId}`;
             const yaEnviado = localStorage.getItem(claveCorreoEnviado);
 
@@ -448,25 +448,40 @@
             const emailDestino = datosUsuario.email || urlParams.get('email') || 'contacto@sensometrica.cl';
             const linkInformeActual = window.location.href;
 
+            // Construir URL pública para la Credencial QR de Garita (validar.html)
+            const originUrl = window.location.origin;
+            const paramsPublicos = new URLSearchParams({
+                rut: rawRut,
+                nombre: rawNombre,
+                cargo: rawCargo,
+                empresa: rawEmpresa,
+                folio: folioCert,
+                estado: dictamenTexto,
+                vence: dictamenTexto === 'APROBADO' ? fechaExpTxt : 'N/A'
+            });
+            const linkCredencialQR = `${originUrl}/validar.html?${paramsPublicos.toString()}`;
+
             try {
                 const res = await fetch('/api/enviar-correo', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        tipo: 'informe',
+                        tipo: 'informe_completo',
                         emailDestino: emailDestino,
                         nombreTrabajador: rawNombre,
                         rutTrabajador: rawRut,
+                        cargoTrabajador: rawCargo,
                         planNombre: `Informe Pericial B2B Final (${dictamenTexto}) - Folio: ${folioCert}`,
                         monto: `Acreditación ${planActivo}`,
-                        linkAcceso: linkInformeActual
+                        linkAcceso: linkInformeActual,      // Enlace al Informe Telemétrico B2B
+                        linkCredencial: linkCredencialQR   // Enlace a la Credencial QR (Garita)
                     })
                 });
 
                 if (res.ok) {
                     localStorage.setItem(claveCorreoEnviado, 'true');
                     const banner = document.getElementById('lblNoticeBanner');
-                    if (banner) banner.textContent = `✉ Informe Pericial B2B despachado exitosamente a ${emailDestino}`;
+                    if (banner) banner.textContent = `✉ Informe Pericial B2B y Credencial QR despachados exitosamente a ${emailDestino}`;
                 }
             } catch(e) {}
         }
@@ -698,7 +713,7 @@
                 lblEstadoVigencia.textContent = `VENCE: ${fechaExpTxt} (D.S. N° 170)`;
                 lblEstadoVigencia.className = "vigencia-orange bg-emerald-600";
 
-                despacharInformeCorreoAutomatico(planActivo, folioCert, "APROBADO");
+                despacharInformeCorreoAutomatico(planActivo, folioCert, "APROBADO", fechaExpTxt);
             }
 
             // REDIRECCIÓN HACIA VALIDAR.HTML EN EL QR
