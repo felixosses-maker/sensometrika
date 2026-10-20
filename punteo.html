@@ -256,7 +256,7 @@
             </div>
 
             <div>
-                <button id="btnStart" class="btn-start">INICIAR CALIBRACIÓN DEMO</button>
+                <button id="btnStart" class="btn-start">INICIAR EVALUACIÓN</button>
                 <button id="btnNext" class="btn-next" onclick="ejecutarRetornoMenu()">VOLVER AL MENÚ DE PRUEBAS →</button>
             </div>
 
@@ -311,7 +311,7 @@
 
         const urlParams = new URLSearchParams(window.location.search);
         const modeParam = urlParams.get('mode') || (localStorage.getItem('sensometrika_b2c_mode') === 'true' ? 'b2c' : 'b2b');
-        const esB2B = (modeParam === 'b2b');
+        const esB2B = (modeParam === 'b2b') || urlParams.has('token') || urlParams.has('session');
 
         let datosUsuario = {};
         try {
@@ -320,9 +320,11 @@
 
         const rutEvaluado = urlParams.get('rut') || datosUsuario.rut || 'GENERICO';
         const cleanRut = rutEvaluado.replace(/[^0-9Kk]/g, '');
+        const sessionId = urlParams.get('session') || urlParams.get('token') || localStorage.getItem('sensometrika_session_activa') || `SESION_${cleanRut}_${Date.now()}`;
 
-        let isDemoURL = urlParams.get('demo') === 'true' || urlParams.get('fase') === 'demo';
-        let modoActual = 'DEMO';
+        // En B2B nunca forzamos demo salvo que la URL lo pida explícitamente sin token/sesión B2B
+        let isDemoURL = (urlParams.get('demo') === 'true' || urlParams.get('fase') === 'demo') && !esB2B;
+        let modoActual = isDemoURL ? 'DEMO' : 'OFICIAL';
 
         let evaluacionActiva = false;
         let aciertos = 0;
@@ -344,13 +346,27 @@
             if (returnUrlParam) {
                 window.location.href = decodeURIComponent(returnUrlParam);
             } else {
+                const paramsRegreso = new URLSearchParams({
+                    rut: rutEvaluado,
+                    nombre: urlParams.get('nombre') || datosUsuario.nombre || '',
+                    plan: urlParams.get('plan') || localStorage.getItem('sensometrika_plan_contratado') || 'PLUS',
+                    session: sessionId,
+                    mode: esB2B ? 'b2b' : 'b2c'
+                });
+                if (urlParams.get('token')) paramsRegreso.set('token', urlParams.get('token'));
+
                 const menuDestino = esB2B ? 'menu_B2B.html' : 'menu_B2C.html';
-                window.location.href = `${menuDestino}?${urlParams.toString()}`;
+                window.location.href = `${menuDestino}?${paramsRegreso.toString()}`;
             }
         }
 
         function obtenerHistorialPunteoRut() {
             if (!cleanRut) return [];
+            // Priorizamos la consulta por sesión para no arrastrar bloqueos
+            const claveSesion = `sensometrika_historial_punteo_${cleanRut}_${sessionId}`;
+            let rawSesion = JSON.parse(localStorage.getItem(claveSesion)) || [];
+            if (Array.isArray(rawSesion) && rawSesion.length > 0) return rawSesion;
+
             let raw = JSON.parse(localStorage.getItem(`sensometrika_historial_punteo_${cleanRut}`)) || [];
             return raw.filter(item => item && (item.precision !== undefined || item.aciertos !== undefined || item.efectividad !== undefined));
         }
@@ -359,22 +375,21 @@
             const historial = obtenerHistorialPunteoRut();
             const numEnsayosRealizados = historial.length;
 
-            const planStorage = (localStorage.getItem('sensometrika_plan_contratado') || urlParams.get('plan') || 'BASICO').toUpperCase();
+            const planStorage = (localStorage.getItem('sensometrika_plan_contratado') || urlParams.get('plan') || 'PLUS').toUpperCase();
             
-            let maxIntentosPlan = 3;
+            let maxIntentosPlan = 1; // Para B2B por defecto es 1 por sesión
             if (esB2B) {
                 maxIntentosPlan = planStorage.includes('ALTO') ? 3 : 1;
             } else {
+                maxIntentosPlan = 3;
                 if (planStorage.includes('PLUS')) maxIntentosPlan = 5;
                 if (planStorage.includes('FULL') || planStorage.includes('ALTO')) maxIntentosPlan = 8;
             }
 
-            // Verificación estricta de Demo completada
-            const demoRealizada = (localStorage.getItem(`punteo_demo_completada_${cleanRut}`) === 'true') ||
-                                  (localStorage.getItem(`btnMod3_demo_completada_${cleanRut}`) === 'true');
+            const demoRealizada = !esB2B && ((localStorage.getItem(`punteo_demo_completada_${cleanRut}`) === 'true') ||
+                                             (localStorage.getItem(`btnMod3_demo_completada_${cleanRut}`) === 'true'));
 
-            // BLOQUEO INMEDIATO SI ES URL DEMO Y YA SE RINDIÓ
-            if (isDemoURL && (demoRealizada || numEnsayosRealizados > 0)) {
+            if (isDemoURL && demoRealizada) {
                 mostrarModal("MÓDULO DEMO YA COMPLETADO", "Ya has ejecutado la calibración demo para este ensayo. Retornando al menú de pruebas...", () => {
                     ejecutarRetornoMenu();
                 });
@@ -383,20 +398,20 @@
 
             if (numEnsayosRealizados >= maxIntentosPlan) {
                 modoActual = 'BLOQUEADO';
-            } else if (isDemoURL || !demoRealizada) {
+            } else if (isDemoURL) {
                 modoActual = 'DEMO';
             } else {
                 modoActual = 'OFICIAL';
             }
 
             if (modoActual === 'BLOQUEADO') {
-                badgeText.textContent = esB2B ? `EVALUACIÓN REGISTRADA (${numEnsayosRealizados}/${maxIntentosPlan})` : `PLAN ${planStorage} COMPLETADO (${numEnsayosRealizados}/${maxIntentosPlan})`;
+                badgeText.textContent = esB2B ? `EVALUACIÓN REGISTRADA (1/1)` : `PLAN ${planStorage} COMPLETADO (${numEnsayosRealizados}/${maxIntentosPlan})`;
                 badgeDot.style.backgroundColor = "#10b981"; 
                 btnStart.style.display = 'none';
                 btnNext.style.display = 'block';
                 instructionText.textContent = esB2B ? 'Evaluación B2B finalizada con éxito. Retorna al menú.' : `Has alcanzado el límite de ${maxIntentosPlan} simulaciones de tu Plan ${planStorage}. Retorna al menú.`;
             } else if (modoActual === 'DEMO') {
-                badgeText.textContent = esB2B ? "Calibración Demo B2B (1/1)" : "Paso 1: Calibración Demo (1/1)";
+                badgeText.textContent = "Paso 1: Calibración Demo (1/1)";
                 badgeDot.style.backgroundColor = "#e5b324"; 
                 btnStart.textContent = "INICIAR CALIBRACIÓN DEMO";
                 btnStart.style.backgroundColor = "#e5b324";
@@ -411,7 +426,7 @@
                 btnStart.style.backgroundColor = "#0284c7";
                 btnStart.style.display = 'block';
                 btnNext.style.display = 'none';
-                instructionText.textContent = `Simulación S${siguienteSimu}: Mantén el ritmo constante presionando sobre el área indicada.`;
+                instructionText.textContent = `Mantén el ritmo constante presionando sobre el área indicada al cruzar el objetivo.`;
             }
         }
 
@@ -557,15 +572,17 @@
                 fecha: new Date().toISOString() 
             };
 
-            // QUEMADO DE REGISTRO
+            // 1. Guardar en la sesión específica para B2B
+            const claveSesion = `sensometrika_historial_punteo_${cleanRut}_${sessionId}`;
+            localStorage.setItem(claveSesion, JSON.stringify([registroData]));
+
+            // 2. Guardar en el historial general del RUT
             let hRut = JSON.parse(localStorage.getItem(`sensometrika_historial_punteo_${cleanRut}`)) || [];
             hRut.push(registroData);
             localStorage.setItem(`sensometrika_historial_punteo_${cleanRut}`, JSON.stringify(hRut));
 
             if (modoActual === 'DEMO') {
-                // Quemar flags de demo
                 localStorage.setItem(`punteo_demo_completada_${cleanRut}`, 'true');
-                localStorage.setItem(`btnMod3_demo_completada_${cleanRut}`, 'true');
 
                 mostrarModal(
                     "CALIBRACIÓN DEMO COMPLETADA",
@@ -574,13 +591,12 @@
                         ejecutarRetornoMenu();
                     }
                 );
-            } else if (modoActual === 'OFICIAL') {
+            } else {
                 let hGen = JSON.parse(localStorage.getItem('sensometrika_historial_punteo')) || [];
                 hGen.push(registroData);
                 localStorage.setItem('sensometrika_historial_punteo', JSON.stringify(hGen));
 
-                const numSimu = hRut.length;
-                const tituloModal = esB2B ? "SIMULACIÓN OFICIAL B2B REGISTRADA" : `SIMULACIÓN S${numSimu} REGISTRADA`;
+                const tituloModal = esB2B ? "SIMULACIÓN OFICIAL B2B REGISTRADA" : `SIMULACIÓN OFICIAL REGISTRADA`;
 
                 mostrarModal(
                     tituloModal,
