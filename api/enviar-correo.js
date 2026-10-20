@@ -54,7 +54,7 @@ module.exports = async (req, res) => {
     } = req.body || {};
 
     // Correo del destinatario principal (Empresa Cliente o Evaluado)
-    const correoFinal = email || emailDestino || 'contacto@sensometrica.cl';
+    const correoFinal = emailDestino || email || 'contacto@sensometrica.cl';
 
     const enlaceEntrante = enlace || linkAcceso;
     const destinatarioNombre = nombreTrabajador || nombre || (tipo === 'b2b' ? 'Supervisión Técnica' : 'Postulante');
@@ -226,9 +226,10 @@ module.exports = async (req, res) => {
       `;
     }
 
-    const remitente = process.env.EMAIL_FROM || 'Sensometrika <onboarding@resend.dev>';
+    // Remitente garantizado sobre el dominio verificado
+    const remitente = process.env.EMAIL_FROM || 'Sensometrika <contacto@sensometrica.cl>';
 
-    // Payload de envío: Destinatario principal + Copia Oculta de Respaldo Interno a contacto@sensometrica.cl
+    // Payload de envío
     const emailPayload = {
       from: remitente,
       to: [correoFinal],
