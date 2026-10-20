@@ -402,6 +402,8 @@
 
             if (returnUrl) {
                 window.location.href = returnUrl;
+            } else if (mode === 'b2b-pro' || localStorage.getItem('sensometrika_plan_contratado') === 'ALTO_DESEMPENIO') {
+                window.location.href = `menu_B2B_PRO.html?${urlParams.toString()}`;
             } else if (mode === 'b2b') {
                 window.location.href = `menu_B2B.html?${urlParams.toString()}`;
             } else {
@@ -448,7 +450,6 @@
             const emailDestino = datosUsuario.email || urlParams.get('email') || 'contacto@sensometrica.cl';
             const linkInformeActual = window.location.href;
 
-            // Construir URL pública para la Credencial QR de Garita (validar.html)
             const originUrl = window.location.origin;
             const paramsPublicos = new URLSearchParams({
                 rut: rawRut,
@@ -473,8 +474,8 @@
                         cargoTrabajador: rawCargo,
                         planNombre: `Informe Pericial B2B Final (${dictamenTexto}) - Folio: ${folioCert}`,
                         monto: `Acreditación ${planActivo}`,
-                        linkAcceso: linkInformeActual,      // Enlace al Informe Telemétrico B2B
-                        linkCredencial: linkCredencialQR   // Enlace a la Credencial QR (Garita)
+                        linkAcceso: linkInformeActual,
+                        linkCredencial: linkCredencialQR
                     })
                 });
 
@@ -538,6 +539,7 @@
 
             const planActivo = (urlParams.get('plan') || localStorage.getItem('sensometrika_plan_contratado') || 'BASICO').toUpperCase();
             
+            // CONFIGURACIÓN Y MAPEO DE MÓDULOS INCLUIDOS SEGÚN PLAN (INCLUYE B2B PRO)
             let idsPermitidos = [];
             if (planActivo === 'BASICO' || planActivo === 'BASIC') {
                 idsPermitidos = ['reactimetro', 'palancas', 'punteo'];
@@ -545,7 +547,10 @@
                 idsPermitidos = ['reactimetro', 'palancas', 'punteo', 'audicion'];
             } else if (planActivo === 'FULL' || planActivo === 'MEDIUM') {
                 idsPermitidos = ['reactimetro', 'palancas', 'punteo', 'audicion', 'visual'];
+            } else if (planActivo === 'PRE_OCUPACIONAL') {
+                idsPermitidos = ['reactimetro', 'palancas', 'punteo', 'audicion', 'visual', 'anticipacion'];
             } else {
+                // ALTO_DESEMPENIO Y PLANES INTEGRALES
                 idsPermitidos = ['reactimetro', 'palancas', 'punteo', 'audicion', 'visual', 'anticipacion', 'estereopsis', 'fatiga'];
             }
 
@@ -716,7 +721,6 @@
                 despacharInformeCorreoAutomatico(planActivo, folioCert, "APROBADO", fechaExpTxt);
             }
 
-            // REDIRECCIÓN HACIA VALIDAR.HTML EN EL QR
             const imgQr = document.getElementById('imgQrVerificacion');
             if (imgQr) {
                 const paramsPublicos = new URLSearchParams({
