@@ -388,7 +388,7 @@
 
         const rawNombre = urlParams.get('nombre') || datosUsuario.nombre || urlParams.get('prospecto') || 'TRABAJADOR EVALUADO';
         const rawRut = urlParams.get('rut') || datosUsuario.rut || '12.345.678-K';
-        const rawCargo = urlParams.get('cargo') || datosUsuario.cargo || 'OPERADOR DE FAENA';
+        const rawCargo = urlParams.get('cargo') || datosUsuario.cargo || 'OPERADOR HARVESTER';
         const rawEmpresa = urlParams.get('empresa') || datosUsuario.empresa || 'SOCADEP LTDA.';
         const tokenActual = urlParams.get('token') || urlParams.get('session') || '';
         const sessionId = urlParams.get('session') || localStorage.getItem('sensometrika_session_activa') || (tokenActual || `SESION_${rawRut}_${Date.now()}`);
@@ -431,11 +431,11 @@
             const esConductor = ['CONDUCTOR', 'CHOFER', 'CAMIÓN', 'CAMION', 'CAMIONETA', 'CHOFERA', 'CONDUCTORA', 'TRANSPORTE'].some(k => cargoUpper.includes(k));
 
             if (esOperador) {
-                return "FUNDAMENTACIÓN TÉCNICA: El trabajador cumple satisfactorily con la aptitud psicosensométrica para la OPERACIÓN SEGURA DE MAQUINARIA PESADA Y EQUIPOS DE FAENA, conforme a los parámetros exigidos por el D.S. N° 170-MTT y normativas de Seguridad Ocupacional.";
+                return `FUNDAMENTACIÓN TÉCNICA: El trabajador cumple satisfactoriamente con la aptitud psicosensométrica para la OPERACIÓN SEGURA DE MAQUINARIA PESADA Y EQUIPOS DE FAENA (${cargoUpper}), conforme a los parámetros exigidos por el D.S. N° 170-MTT y normativas de Seguridad Ocupacional.`;
             } else if (esConductor) {
-                return "FUNDAMENTACIÓN TÉCNICA: El trabajador cumple satisfactoriamente con la aptitud psicosensométrica para la CONDUCCIÓN DE VEHÍCULOS MOTORIZADOS, conforme a los estándares telemétricos de la Ley de Tránsito y D.S. N° 170-MTT.";
+                return `FUNDAMENTACIÓN TÉCNICA: El trabajador cumple satisfactoriamente con la aptitud psicosensométrica para la CONDUCCIÓN DE VEHÍCULOS MOTORIZADOS (${cargoUpper}), conforme a los estándares telemétricos de la Ley de Tránsito y D.S. N° 170-MTT.`;
             } else {
-                return "FUNDAMENTACIÓN TÉCNICA: El trabajador cumple satisfactoriamente con la aptitud psicosensométrica requerida para la OPERACIÓN DE EQUIPOS Y CONDUCCIÓN EN FAENA, conforme al D.S. N° 170-MTT.";
+                return `FUNDAMENTACIÓN TÉCNICA: El trabajador cumple satisfactoriamente con la aptitud psicosensométrica requerida para el cargo ${cargoUpper}, conforme al D.S. N° 170-MTT.`;
             }
         }
 
@@ -495,12 +495,6 @@
                 folioCert = `SMK-${cleanRut.substring(0, 6)}-${Math.floor(Math.random()*899+100)}`;
                 document.getElementById('lblFolio').textContent = folioCert;
                 document.getElementById('lblTagBiometrico').textContent = 'EVALUADO VERIFICADO';
-            }
-
-            const imgQr = document.getElementById('imgQrVerificacion');
-            if (imgQr) {
-                const urlCertificadoActual = window.location.href;
-                imgQr.src = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(urlCertificadoActual)}`;
             }
 
             const imgBiometrica = document.getElementById('imgBiometrica');
@@ -679,27 +673,49 @@
             const lblDictamenSub = document.getElementById('lblDictamenSub');
             const lblEstadoVigencia = document.getElementById('lblEstadoVigencia');
 
+            let estadoDictamenLimpio = 'PENDIENTE';
+
             if (totalReprobados > 0) {
+                estadoDictamenLimpio = 'REPROBADO';
                 boxDictamen.className = "banner-dictamen dictamen-reprobado";
-                boxDictamen.innerHTML = "✖ DICTAMEN: EVALUACIÓN REPROBADA";
+                boxDictamen.innerHTML = `✖ DICTAMEN: EVALUACIÓN REPROBADA PARA EL CARGO ${rawCargo.toUpperCase()} (${planActivo})`;
                 lblDictamenSub.textContent = "FUNDAMENTACIÓN TÉCNICA: EL TRABAJADOR PRESENTA PARÁMETROS CRÍTICOS FUERA DE LA NORMA D.S. N° 170 / CORMA.";
                 lblEstadoVigencia.textContent = "EVALUACIÓN REPROBADA";
                 lblEstadoVigencia.className = "vigencia-orange bg-red-600";
             } else if (totalPendientes > 0) {
+                estadoDictamenLimpio = 'INCOMPLETO';
                 boxDictamen.className = "banner-dictamen dictamen-pendiente";
                 boxDictamen.innerHTML = "⏳ DICTAMEN: EVALUACIÓN EN PROCESO – MÓDULOS PENDIENTES DE RENDICIÓN";
                 lblDictamenSub.textContent = `FUNDAMENTACIÓN TÉCNICA DEL PLAZO RECOMENDADO: EVALUACIÓN EN PROCESO. El trabajador aún tiene módulos pendientes por rendir en su plan corporativo (${planActivo}). El dictamen final se emitirá al completar la totalidad de la batería.`;
                 lblEstadoVigencia.textContent = "EVALUACIÓN INCOMPLETA";
                 lblEstadoVigencia.className = "vigencia-orange";
             } else {
+                estadoDictamenLimpio = 'APROBADO';
                 boxDictamen.className = "banner-dictamen dictamen-aprobado";
-                boxDictamen.innerHTML = `✔ DICTAMEN PERICIAL B2B: APROBADO (PLAN ${planActivo})`;
+                boxDictamen.innerHTML = `✔ DICTAMEN PERICIAL B2B: APROBADO PARA EL CARGO ${rawCargo.toUpperCase()} (PLAN ${planActivo})`;
                 lblDictamenSub.textContent = obtenerLeyendaAptitud(rawCargo);
 
                 lblEstadoVigencia.textContent = `VENCE: ${fechaExpTxt} (D.S. N° 170)`;
                 lblEstadoVigencia.className = "vigencia-orange bg-emerald-600";
 
                 despacharInformeCorreoAutomatico(planActivo, folioCert, "APROBADO");
+            }
+
+            // --- GENERACIÓN DEL CÓDIGO QR PÚBLICO SEGURO (LEY N° 19.628 / 21.716) ---
+            // Apunta a verificacion_trabajador.html sin exponer datos telemétricos de salud/rendimiento
+            const imgQr = document.getElementById('imgQrVerificacion');
+            if (imgQr) {
+                const paramsPublicos = new URLSearchParams({
+                    rut: rawRut,
+                    nombre: rawNombre,
+                    cargo: rawCargo,
+                    empresa: rawEmpresa,
+                    folio: folioCert,
+                    estado: estadoDictamenLimpio,
+                    vence: estadoDictamenLimpio === 'APROBADO' ? fechaExpTxt : 'N/A'
+                });
+                const urlValidacionSegura = `${window.location.origin}/verificacion_trabajador.html?${paramsPublicos.toString()}`;
+                imgQr.src = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(urlValidacionSegura)}`;
             }
         });
     </script>
