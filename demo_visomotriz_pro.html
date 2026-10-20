@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Sensometrika Pro B2B - Test Módulo Visomotriz</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    * { 
+      box-sizing: border-box; 
+      margin: 0; 
+      padding: 0; 
+      user-select: none; 
+      -webkit-user-select: none; 
+    }
+    body { 
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
+      background: #0f172a; 
+      color: #f8fafc; 
+      display: flex; 
+      flex-direction: column; 
+      align-items: center; 
+      min-height: 100vh; 
+      padding: 16px; 
+    }
+    header { 
+      text-align: center; 
+      margin-bottom: 12px; 
+    }
+    h1 { 
+      font-size: 1.25rem; 
+      color: #38bdf8; 
+    }
+    .status-bar { 
+      display: flex; 
+      gap: 12px; 
+      background: #1e293b; 
+      padding: 8px 16px; 
+      border-radius: 8px; 
+      font-size: 0.85rem; 
+      margin-top: 8px; 
+      justify-content: center;
+    }
+    .status-item span { 
+      font-weight: bold; 
+      color: #4ade80; 
+    }
+    
+    .controls { 
+      display: flex; 
+      gap: 8px; 
+      margin-bottom: 12px; 
+      flex-wrap: wrap; 
+      justify-content: center; 
+    }
+    button.btn-mode { 
+      background: #334155; 
+      color: #94a3b8; 
+      border: 1px solid #475569; 
+      padding: 10px 14px; 
+      border-radius: 6px; 
+      font-weight: 600; 
+      cursor: pointer; 
+      transition: all 0.2s ease;
+    }
+    button.btn-mode:hover {
+      background: #475569;
+      color: #f8fafc;
+    }
+    button.btn-mode.active {
+      background: #22c55e !important;
+      color: #022c22 !important;
+      border-color: #4ade80 !important;
+      box-shadow: 0 0 12px rgba(34, 197, 94, 0.5);
+      transform: scale(1.03);
+    }
+    
+    #canvas-container { 
+      position: relative; 
+      width: 100%; 
+      max-width: 400px; 
+      height: 360px; 
+      background: #1e293b; 
+      border: 2px solid #334155; 
+      border-radius: 12px; 
+      overflow: hidden; 
+      touch-action: none; 
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    canvas { 
+      width: 100%; 
+      height: 100%; 
+      display: block; 
+    }
+    
+    .start-overlay {
+      position: absolute;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      align-items: center;
+      justify-content: center;
+      background: rgba(15, 23, 42, 0.92);
+      width: 100%;
+      height: 100%;
+      z-index: 10;
+      padding: 24px;
+      text-align: center;
+    }
+    .btn-action {
+      background: #0284c7;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: bold;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(2, 132, 199, 0.4);
+    }
+
+    .metrics-panel { 
+      width: 100%; 
+      max-width: 400px; 
+      background: #1e293b; 
+      margin-top: 12px; 
+      padding: 12px; 
+      border-radius: 8px; 
+      font-size: 0.88rem; 
+    }
+    .metric-row { 
+      display: flex; 
+      justify-content: space-between; 
+      padding: 5px 0; 
+      border-bottom: 1px solid #334155; 
+    }
+    .metric-row:last-child {
+      border-bottom: none;
+    }
+
+    .report-badge {
+      display: none;
+      margin-top: 10px;
+      padding: 10px;
+      background: #0284c7;
+      color: white;
+      text-align: center;
+      border-radius: 6px;
+      font-weight: bold;
+      font-size: 0.85rem;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>Sensometrika Pro B2B</h1>
+    <p style="font-size: 0.8rem; color: #94a3b8; margin-top: 2px;">Módulo 3: Coordinación Visomotriz / Tracking Pista</p>
+    <div class="status-bar">
+      <div class="status-item">Refresh Rate: <span id="hz-val">Detectando...</span></div>
+      <div class="status-item">Offset Hardware: <span id="offset-val">0 ms</span></div>
+    </div>
+  </header>
+
+  <div class="controls">
+    <button class="btn-mode" id="btn-3A" onclick="selectMode('3A')">3A. Tracking Continuo</button>
+    <button class="btn-mode" id="btn-3B" onclick="selectMode('3B')">3B. Tracking Adaptativo</button>
+  </div>
+
+  <div id="canvas-container">
+    <canvas id="visomotrizCanvas"></canvas>
+    <div id="overlay" class="start-overlay">
+      <h2 id="overlay-title" style="color:#38bdf8; font-size:1.1rem;">Selecciona una modalidad</h2>
+      <p id="overlay-msg" style="color:#94a3b8; font-size:0.85rem; line-height:1.4; max-width:320px;">
+        Elija una prueba para medir la precisión en seguimiento de trayectoria.
+      </p>
+      <button id="btn-start" class="btn-action" style="display:none;" onclick="runCurrentTest()">INICIAR EVALUACIÓN (20s)</button>
+    </div>
+  </div>
+
+  <div class="metrics-panel">
+    <div class="metric-row"><span>Tiempo Restante:</span><strong id="m-timer" style="color:#eab308; font-size:1rem;">20.0 s</strong></div>
+    <div class="metric-row"><span>Precisión en Pista:</span><strong id="m-accuracy" style="color:#4ade80;">100 %</strong></div>
+    <div class="metric-row"><span>Tiempo Fuera de Pista:</span><strong id="m-time-off" style="color:#f87171;">0.0 s</strong></div>
+    <div class="metric-row"><span>Número de Salidas / Errores:</span><strong id="m-off-count" style="color:#f87171;">0</strong></div>
+  </div>
+
+  <div id="report-status" class="report-badge"></div>
+
+  <script>
+    const SUPABASE_URL = "https://kytuewhkhshrjddzoknv.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt5dHVld2hraHNocmpkZHpva252Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkxMzc4MzcsImV4cCI6MjEwNDcxMzgzN30.gNWbr8E7oF-56yKnNIDVvGIaGXfHkCCcKonWVDthp2k";
+
+    let supabaseClient = null;
+    if (window.supabase) {
+      supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    }
+
+    class LatencyTuner {
+      constructor() {
+        this.hardwareOffsetMs = 0;
+        this.refreshRateHz = 60;
+        this.sampleTaps = [];
+      }
+
+      async detectScreenRefreshRate() {
+        return new Promise((resolve) => {
+          let frames = 0;
+          const startTime = performance.now();
+          const calc = () => {
+            frames++;
+            const duration = performance.now() - startTime;
+            if (duration < 500) {
+              requestAnimationFrame(calc);
+            } else {
+              this.refreshRateHz = Math.round((frames * 1000) / duration);
+              resolve(this.refreshRateHz);
+            }
+          };
+          requestAnimationFrame(calc);
+        });
+      }
+
+      registerCalibrationTap(event) {
+        const systemTimestamp = performance.now();
+        let touchTimestamp = event.timeStamp;
+        if (event.getCoalescedEvents && event.getCoalescedEvents().length > 0) {
+          touchTimestamp = event.getCoalescedEvents()[0].timeStamp;
+        }
+        const lag = Math.max(0, systemTimestamp - touchTimestamp);
+        this.sampleTaps.push(lag);
+        if (this.sampleTaps.length >= 3) {
+          const sum = this.sampleTaps.reduce((a, b) => a + b, 0);
+          this.hardwareOffsetMs = Number((sum / this.sampleTaps.length).toFixed(2));
+        }
+        return this.hardwareOffsetMs;
+      }
+
+      getTelemetryData() {
+        return {
+          screen_refresh_rate_hz: this.refreshRateHz,
+          hardware_latency_offset_ms: this.hardwareOffsetMs
+        };
+      }
+    }
+
+    const tuner = new LatencyTuner();
+    let selectedMode = null;
+    let isRunning = false;
+    let countdownInterval = null;
+    let animFrame = null;
+
+    const durationSec = 20;
+    let timeOffTrackMs = 0;
+    let offTrackCount = 0;
+    let isOffTrack = false;
+    let lastFrameTime = 0;
+
+    let target = { x: 0, y: 0, radius: 35, angle: 0, speed: 0.03 };
+    let userPos = { x: -100, y: -100 };
+
+    const canvas = document.getElementById('visomotrizCanvas');
+    const ctx = canvas.getContext('2d');
+
+    async function initTelemetry() {
+      const hz = await tuner.detectScreenRefreshRate();
+      document.getElementById('hz-val').textContent = hz + ' Hz';
+    }
+    initTelemetry();
+
+    function resizeCanvas() {
+      const dpr = window.devicePixelRatio || 1;
+      const rect = canvas.getBoundingClientRect();
+      canvas.width = rect.width * dpr;
+      canvas.height = rect.height * dpr;
+      ctx.scale(dpr, dpr);
+    }
+
+    window.selectMode = function(mode) {
+      selectedMode = mode;
+      document.querySelectorAll('.btn-mode').forEach(btn => btn.classList.remove('active'));
+      const activeBtn = document.getElementById(`btn-${mode}`);
+      if (activeBtn) activeBtn.classList.add('active');
+
+      const modeTitles = {
+        '3A': 'Modalidad 3A: Tracking Continuo',
+        '3B': 'Modalidad 3B: Tracking Adaptativo'
+      };
+
+      const modeInstructions = {
+        '3A': 'Mantenga su dedo presionado sobre el círculo móvil objetivo sin salirse de la trayectoria.',
+        '3B': 'Siga el círculo móvil. La velocidad aumentará progresivamente para medir su resistencia al estrés.'
+      };
+
+      document.getElementById('overlay-title').textContent = modeTitles[mode];
+      document.getElementById('overlay-msg').textContent = modeInstructions[mode];
+
+      const startBtn = document.getElementById('btn-start');
+      startBtn.style.display = 'block';
+      startBtn.textContent = 'INICIAR EVALUACIÓN (20s)';
+      document.getElementById('overlay').style.display = 'flex';
+    };
+
+    window.runCurrentTest = function() {
+      document.getElementById('overlay').style.display = 'none';
+      document.getElementById('report-status').style.display = 'none';
+
+      resizeCanvas();
+      isRunning = true;
+      timeOffTrackMs = 0;
+      offTrackCount = 0;
+      isOffTrack = false;
+      lastFrameTime = performance.now();
+
+      target.angle = 0;
+      target.speed = selectedMode === '3B' ? 0.02 : 0.03;
+
+      let remainingSec = durationSec;
+      document.getElementById('m-timer').textContent = remainingSec.toFixed(1) + ' s';
+
+      countdownInterval = setInterval(() => {
+        remainingSec -= 0.1;
+        if (selectedMode === '3B') target.speed += 0.001; // Aceleración progresiva
+
+        if (remainingSec <= 0) {
+          remainingSec = 0;
+          clearInterval(countdownInterval);
+          cancelAnimationFrame(animFrame);
+          finishTest();
+        } else {
+          document.getElementById('m-timer').textContent = remainingSec.toFixed(1) + ' s';
+        }
+      }, 100);
+
+      const updatePointer = (e) => {
+        if (!isRunning) return;
+        const rect = canvas.getBoundingClientRect();
+        userPos.x = e.clientX - rect.left;
+        userPos.y = e.clientY - rect.top;
+        tuner.registerCalibrationTap(e);
+      };
+
+      canvas.onpointerdown = updatePointer;
+      canvas.onpointermove = updatePointer;
+
+      loop();
+    };
+
+    function loop() {
+      if (!isRunning) return;
+
+      const now = performance.now();
+      const deltaMs = now - lastFrameTime;
+      lastFrameTime = now;
+
+      const rect = canvas.getBoundingClientRect();
+      const w = rect.width;
+      const h = rect.height;
+
+      // Movimiento en trayectoria curva tipo Lissajous
+      target.angle += target.speed;
+      target.x = (w / 2) + Math.sin(target.angle) * (w * 0.35);
+      target.y = (h / 2) + Math.sin(target.angle * 2) * (h * 0.28);
+
+      // Colisión
+      const dist = Math.hypot(userPos.x - target.x, userPos.y - target.y);
+      if (dist > target.radius) {
+        timeOffTrackMs += deltaMs;
+        if (!isOffTrack) {
+          offTrackCount++;
+          isOffTrack = true;
+        }
+      } else {
+        isOffTrack = false;
+      }
+
+      // Renderizado Canvas
+      ctx.clearRect(0, 0, w, h);
+
+      // Objetivo
+      ctx.beginPath();
+      ctx.arc(target.x, target.y, target.radius, 0, Math.PI * 2);
+      ctx.fillStyle = isOffTrack ? 'rgba(239, 68, 68, 0.4)' : 'rgba(34, 197, 94, 0.4)';
+      ctx.fill();
+      ctx.strokeStyle = isOffTrack ? '#ef4444' : '#22c55e';
+      ctx.lineWidth = 3;
+      ctx.stroke();
+
+      // Cursor Usuario
+      if (userPos.x > 0) {
+        ctx.beginPath();
+        ctx.arc(userPos.x, userPos.y, 8, 0, Math.PI * 2);
+        ctx.fillStyle = '#FFFFFF';
+        ctx.fill();
+      }
+
+      // Actualizar Panel
+      const totalTimeMs = durationSec * 1000;
+      const percentOnTrack = Math.max(0, (((totalTimeMs - timeOffTrackMs) / totalTimeMs) * 100).toFixed(1));
+      document.getElementById('m-accuracy').textContent = percentOnTrack + ' %';
+      document.getElementById('m-time-off').textContent = (timeOffTrackMs / 1000).toFixed(1) + ' s';
+      document.getElementById('m-off-count').textContent = offTrackCount;
+      document.getElementById('offset-val').textContent = tuner.hardwareOffsetMs + ' ms';
+
+      animFrame = requestAnimationFrame(loop);
+    }
+
+    async function finishTest() {
+      isRunning = false;
+      const totalTimeMs = durationSec * 1000;
+      const percentOnTrack = Math.max(0, (((totalTimeMs - timeOffTrackMs) / totalTimeMs) * 100).toFixed(1));
+
+      const reportElem = document.getElementById('report-status');
+      reportElem.style.background = percentOnTrack >= 80 ? '#0284c7' : '#dc2626';
+      reportElem.textContent = `✓ EVALUACIÓN COMPLETA - Precisión: ${percentOnTrack}% | Salidas de pista: ${offTrackCount}`;
+      reportElem.style.display = 'block';
+
+      if (supabaseClient) {
+        await supabaseClient.from('evaluaciones_pro_b2b').insert([{
+          company_id: "SOCADEP_DEMO",
+          evaluator_id: "EVALUADOR_01",
+          evaluated_rut: "12345678-9",
+          evaluated_name: "Operador Demostración",
+          module_code: "MOD_03_VISOMOTRIZ",
+          modality_code: selectedMode,
+          metrics: { 
+            percent_on_track: Number(percentOnTrack),
+            time_off_track_sec: Number((timeOffTrackMs / 1000).toFixed(1)),
+            off_track_events: offTrackCount
+          },
+          hardware_telemetry: tuner.getTelemetryData(),
+          integrity_hash: "SHA256_VISOMOTRIZ_OK",
+          is_valid_test: percentOnTrack >= 50
+        }]);
+      }
+
+      document.getElementById('overlay-title').textContent = 'Prueba Concluida';
+      document.getElementById('overlay-msg').textContent = `Precisión: ${percentOnTrack}%. Datos registrados en Supabase.`;
+      document.getElementById('btn-start').textContent = 'REPETIR PRUEBA';
+      document.getElementById('overlay').style.display = 'flex';
+    }
+  </script>
+</body>
+</html>

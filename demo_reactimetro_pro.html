@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Sensometrika Pro B2B - Test Módulo Reactímetro</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    * { 
+      box-sizing: border-box; 
+      margin: 0; 
+      padding: 0; 
+      user-select: none; 
+      -webkit-user-select: none; 
+    }
+    body { 
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
+      background: #0f172a; 
+      color: #f8fafc; 
+      display: flex; 
+      flex-direction: column; 
+      align-items: center; 
+      min-height: 100vh; 
+      padding: 16px; 
+    }
+    header { 
+      text-align: center; 
+      margin-bottom: 12px; 
+    }
+    h1 { 
+      font-size: 1.25rem; 
+      color: #38bdf8; 
+    }
+    .status-bar { 
+      display: flex; 
+      gap: 12px; 
+      background: #1e293b; 
+      padding: 8px 16px; 
+      border-radius: 8px; 
+      font-size: 0.85rem; 
+      margin-top: 8px; 
+      justify-content: center;
+    }
+    .status-item span { 
+      font-weight: bold; 
+      color: #4ade80; 
+    }
+    
+    .controls { 
+      display: flex; 
+      gap: 8px; 
+      margin-bottom: 12px; 
+      flex-wrap: wrap; 
+      justify-content: center; 
+    }
+    button.btn-mode { 
+      background: #334155; 
+      color: #94a3b8; 
+      border: 1px solid #475569; 
+      padding: 10px 14px; 
+      border-radius: 6px; 
+      font-weight: 600; 
+      cursor: pointer; 
+      transition: all 0.2s ease;
+    }
+    button.btn-mode:hover {
+      background: #475569;
+      color: #f8fafc;
+    }
+    button.btn-mode.active {
+      background: #22c55e !important;
+      color: #022c22 !important;
+      border-color: #4ade80 !important;
+      box-shadow: 0 0 12px rgba(34, 197, 94, 0.5);
+      transform: scale(1.03);
+    }
+    
+    #canvas-container { 
+      position: relative; 
+      width: 100%; 
+      max-width: 400px; 
+      height: 360px; 
+      background: #1e293b; 
+      border: 2px solid #334155; 
+      border-radius: 12px; 
+      overflow: hidden; 
+      touch-action: none; 
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    canvas { 
+      width: 100%; 
+      height: 100%; 
+      display: block; 
+    }
+    
+    .start-overlay {
+      position: absolute;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      align-items: center;
+      justify-content: center;
+      background: rgba(15, 23, 42, 0.92);
+      width: 100%;
+      height: 100%;
+      z-index: 10;
+      padding: 24px;
+      text-align: center;
+    }
+    .btn-action {
+      background: #0284c7;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: bold;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(2, 132, 199, 0.4);
+    }
+
+    .metrics-panel { 
+      width: 100%; 
+      max-width: 400px; 
+      background: #1e293b; 
+      margin-top: 12px; 
+      padding: 12px; 
+      border-radius: 8px; 
+      font-size: 0.88rem; 
+    }
+    .metric-row { 
+      display: flex; 
+      justify-content: space-between; 
+      padding: 5px 0; 
+      border-bottom: 1px solid #334155; 
+    }
+    .metric-row:last-child {
+      border-bottom: none;
+    }
+
+    .report-badge {
+      display: none;
+      margin-top: 10px;
+      padding: 10px;
+      background: #0284c7;
+      color: white;
+      text-align: center;
+      border-radius: 6px;
+      font-weight: bold;
+      font-size: 0.85rem;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>Sensometrika Pro B2B</h1>
+    <p style="font-size: 0.8rem; color: #94a3b8; margin-top: 2px;">Módulo 2: Reactímetro / Tiempos de Reacción y Freno</p>
+    <div class="status-bar">
+      <div class="status-item">Refresh Rate: <span id="hz-val">Detectando...</span></div>
+      <div class="status-item">Offset Hardware: <span id="offset-val">0 ms</span></div>
+    </div>
+  </header>
+
+  <div class="controls">
+    <button class="btn-mode" id="btn-2A" onclick="selectMode('2A')">2A. Reacción Simple</button>
+    <button class="btn-mode" id="btn-2B" onclick="selectMode('2B')">2B. Discriminativa</button>
+    <button class="btn-mode" id="btn-2C" onclick="selectMode('2C')">2C. Freno Emergencia</button>
+  </div>
+
+  <div id="canvas-container">
+    <canvas id="reactimetroCanvas"></canvas>
+    <div id="overlay" class="start-overlay">
+      <h2 id="overlay-title" style="color:#38bdf8; font-size:1.1rem;">Selecciona una prueba</h2>
+      <p id="overlay-msg" style="color:#94a3b8; font-size:0.85rem; line-height:1.4; max-width:320px;">
+        Elija una modalidad para medir tiempos de reacción.
+      </p>
+      <button id="btn-start" class="btn-action" style="display:none;" onclick="runCurrentTest()">INICIAR EVALUACIÓN</button>
+    </div>
+  </div>
+
+  <div class="metrics-panel">
+    <div class="metric-row"><span>Estado de Ensayo:</span><strong id="m-trial-status" style="color:#eab308;">Esperando inicio</strong></div>
+    <div class="metric-row"><span>Ensayos Realizados:</span><strong id="m-trials">0 / 5</strong></div>
+    <div class="metric-row"><span>Anticipaciones / Fallos:</span><strong id="m-false-starts" style="color:#f87171;">0</strong></div>
+    <div class="metric-row"><span>Tiempo Reacción Último:</span><strong id="m-last-rt" style="color:#4ade80;">-- ms</strong></div>
+    <div class="metric-row"><span>Promedio Reacción:</span><strong id="m-avg-rt" style="color:#38bdf8;">-- ms</strong></div>
+  </div>
+
+  <div id="report-status" class="report-badge"></div>
+
+  <script>
+    const SUPABASE_URL = "https://kytuewhkhshrjddzoknv.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt5dHVld2hraHNocmpkZHpva252Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkxMzc4MzcsImV4cCI6MjEwNDcxMzgzN30.gNWbr8E7oF-56yKnNIDVvGIaGXfHkCCcKonWVDthp2k";
+
+    let supabaseClient = null;
+    if (window.supabase) {
+      supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    }
+
+    class LatencyTuner {
+      constructor() {
+        this.hardwareOffsetMs = 0;
+        this.refreshRateHz = 60;
+        this.sampleTaps = [];
+      }
+
+      async detectScreenRefreshRate() {
+        return new Promise((resolve) => {
+          let frames = 0;
+          const startTime = performance.now();
+          const calc = () => {
+            frames++;
+            const duration = performance.now() - startTime;
+            if (duration < 500) {
+              requestAnimationFrame(calc);
+            } else {
+              this.refreshRateHz = Math.round((frames * 1000) / duration);
+              resolve(this.refreshRateHz);
+            }
+          };
+          requestAnimationFrame(calc);
+        });
+      }
+
+      registerCalibrationTap(event) {
+        const systemTimestamp = performance.now();
+        let touchTimestamp = event.timeStamp;
+        if (event.getCoalescedEvents && event.getCoalescedEvents().length > 0) {
+          touchTimestamp = event.getCoalescedEvents()[0].timeStamp;
+        }
+        const lag = Math.max(0, systemTimestamp - touchTimestamp);
+        this.sampleTaps.push(lag);
+        if (this.sampleTaps.length >= 3) {
+          const sum = this.sampleTaps.reduce((a, b) => a + b, 0);
+          this.hardwareOffsetMs = Number((sum / this.sampleTaps.length).toFixed(2));
+        }
+        return this.hardwareOffsetMs;
+      }
+
+      getTelemetryData() {
+        return {
+          screen_refresh_rate_hz: this.refreshRateHz,
+          hardware_latency_offset_ms: this.hardwareOffsetMs
+        };
+      }
+    }
+
+    const tuner = new LatencyTuner();
+    let selectedMode = null;
+    let isTestRunning = false;
+    let currentTrial = 0;
+    const maxTrials = 5;
+    let reactionTimes = [];
+    let falseStarts = 0;
+    let correctInhibitions = 0;
+
+    let stimulusTimer = null;
+    let autoNextTimer = null;
+    let stimulusTime = 0;
+    let isStimulusActive = false;
+    let isTargetStimulus = true;
+
+    // Estados específicos para 2C Freno
+    let brakeState = 'IDLE'; // IDLE, ACCELERATING, EMERGENCY_RED, BRAKED
+
+    const canvas = document.getElementById('reactimetroCanvas');
+    const ctx = canvas.getContext('2d');
+
+    async function initTelemetry() {
+      const hz = await tuner.detectScreenRefreshRate();
+      document.getElementById('hz-val').textContent = hz + ' Hz';
+    }
+    initTelemetry();
+
+    function drawScreen(color, text, subtext) {
+      const dpr = window.devicePixelRatio || 1;
+      const rect = canvas.getBoundingClientRect();
+      canvas.width = rect.width * dpr;
+      canvas.height = rect.height * dpr;
+      ctx.scale(dpr, dpr);
+
+      const w = rect.width;
+      const h = rect.height;
+
+      ctx.fillStyle = color;
+      ctx.fillRect(0, 0, w, h);
+
+      if (text) {
+        ctx.fillStyle = '#FFFFFF';
+        ctx.font = 'bold 20px -apple-system, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(text, w / 2, h / 2 - (subtext ? 12 : 0));
+      }
+
+      if (subtext) {
+        ctx.fillStyle = '#f8fafc';
+        ctx.font = '14px -apple-system, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(subtext, w / 2, h / 2 + 20);
+      }
+    }
+
+    window.selectMode = function(mode) {
+      selectedMode = mode;
+      document.querySelectorAll('.btn-mode').forEach(btn => btn.classList.remove('active'));
+      const activeBtn = document.getElementById(`btn-${mode}`);
+      if (activeBtn) activeBtn.classList.add('active');
+
+      const modeTitles = {
+        '2A': 'Modalidad 2A: Reacción Simple',
+        '2B': 'Modalidad 2B: Reacción Discriminativa',
+        '2C': 'Modalidad 2C: Freno de Emergencia'
+      };
+
+      const modeInstructions = {
+        '2A': 'Mantenga la atención. Cuando la pantalla cambie a VERDE, toque lo más rápido posible.',
+        '2B': 'Toque la pantalla ÚNICAMENTE cuando la luz sea VERDE. Si aparece AZUL, no toque nada y espere.',
+        '2C': 'MANTENGA MANTENIDO el toque en el ACELERADOR (VERDE). Al cambiar a ROJO, suelte y presione de inmediato (FRENO).'
+      };
+
+      document.getElementById('overlay-title').textContent = modeTitles[mode];
+      document.getElementById('overlay-msg').textContent = modeInstructions[mode];
+
+      const startBtn = document.getElementById('btn-start');
+      startBtn.style.display = 'block';
+      startBtn.textContent = 'INICIAR PRUEBA (5 Ensayos)';
+      document.getElementById('overlay').style.display = 'flex';
+    };
+
+    window.runCurrentTest = function() {
+      document.getElementById('overlay').style.display = 'none';
+      document.getElementById('report-status').style.display = 'none';
+
+      isTestRunning = true;
+      currentTrial = 0;
+      reactionTimes = [];
+      falseStarts = 0;
+      correctInhibitions = 0;
+
+      updatePanel();
+      nextTrial();
+    };
+
+    function nextTrial() {
+      if (currentTrial >= maxTrials) {
+        finishTest();
+        return;
+      }
+
+      currentTrial++;
+      isStimulusActive = false;
+      brakeState = 'IDLE';
+
+      if (autoNextTimer) clearTimeout(autoNextTimer);
+      if (stimulusTimer) clearTimeout(stimulusTimer);
+
+      const delay = Math.floor(Math.random() * 2000) + 1500; // Algoritmo estocástico 1.5s - 3.5s
+
+      if (selectedMode === '2C') {
+        document.getElementById('m-trial-status').textContent = 'MANTENGA PRESIONADO EL ACELERADOR';
+        document.getElementById('m-trial-status').style.color = '#22c55e';
+        drawScreen('#15803d', 'ACELERANDO...', 'Mantenga el toque presionado');
+        brakeState = 'ACCELERATING';
+
+        stimulusTimer = setTimeout(() => {
+          isStimulusActive = true;
+          brakeState = 'EMERGENCY_RED';
+          stimulusTime = performance.now();
+          drawScreen('#dc2626', '¡FRENO DE EMERGENCIA!', '¡SUELTE Y VUELVA A PRESIONAR!');
+        }, delay);
+
+      } else {
+        document.getElementById('m-trial-status').textContent = 'Atento al estímulo...';
+        document.getElementById('m-trial-status').style.color = '#eab308';
+        drawScreen('#1e293b', '¡ATENTO!');
+
+        stimulusTimer = setTimeout(() => {
+          isStimulusActive = true;
+          stimulusTime = performance.now();
+
+          if (selectedMode === '2A') {
+            isTargetStimulus = true;
+            drawScreen('#22c55e', '¡PRESIONE AHORA!');
+          } else if (selectedMode === '2B') {
+            isTargetStimulus = Math.random() > 0.3; // 70% verde, 30% azul
+            if (isTargetStimulus) {
+              drawScreen('#22c55e', '¡PRESIONE!');
+            } else {
+              drawScreen('#0284c7', '¡NO PRESIONE!');
+              
+              // Exposición del distractor (1.5s sin respuesta)
+              autoNextTimer = setTimeout(() => {
+                if (isStimulusActive && !isTargetStimulus) {
+                  correctInhibitions++;
+                  isStimulusActive = false;
+                  document.getElementById('m-trial-status').textContent = '✓ Correcto (Inhibición Exitosa)';
+                  document.getElementById('m-trial-status').style.color = '#4ade80';
+                  updatePanel();
+                  setTimeout(nextTrial, 800);
+                }
+              }, 1500);
+            }
+          }
+        }, delay);
+      }
+    }
+
+    canvas.onpointerdown = function(e) {
+      if (!isTestRunning) return;
+
+      const rawTime = performance.now();
+      const offset = tuner.registerCalibrationTap(e);
+      const netTime = Math.max(0, rawTime - offset);
+
+      if (selectedMode === '2C') {
+        if (brakeState === 'EMERGENCY_RED') {
+          // Re-presión para accionar el freno
+          const rt = Number((netTime - stimulusTime).toFixed(1));
+          reactionTimes.push(rt);
+          brakeState = 'BRAKED';
+          isStimulusActive = false;
+
+          document.getElementById('m-last-rt').textContent = rt + ' ms';
+          document.getElementById('m-trial-status').textContent = `Frenado Correcto (${rt} ms)`;
+          document.getElementById('m-trial-status').style.color = '#4ade80';
+          drawScreen('#16a34a', '¡FRENO ACCIONADO!', `${rt} ms`);
+
+          updatePanel();
+          setTimeout(nextTrial, 1200);
+        }
+        return;
+      }
+
+      if (!isStimulusActive) {
+        // Anticipación
+        clearTimeout(stimulusTimer);
+        if (autoNextTimer) clearTimeout(autoNextTimer);
+        falseStarts++;
+        document.getElementById('m-trial-status').textContent = '⚠ ANTICIPACIÓN (Toque antes del estímulo)';
+        document.getElementById('m-trial-status').style.color = '#f87171';
+        drawScreen('#ef4444', 'ANTICIPACIÓN');
+        setTimeout(nextTrial, 1500);
+      } else {
+        if (selectedMode === '2B' && !isTargetStimulus) {
+          // Falsa Alarma en Distractor
+          if (autoNextTimer) clearTimeout(autoNextTimer);
+          isStimulusActive = false;
+          falseStarts++;
+          document.getElementById('m-trial-status').textContent = '❌ ERROR: Presionó con distractor';
+          document.getElementById('m-trial-status').style.color = '#f87171';
+          drawScreen('#ef4444', 'ERROR DE DISCRIMINACIÓN');
+          updatePanel();
+          setTimeout(nextTrial, 1500);
+        } else {
+          // Toque Válido
+          if (autoNextTimer) clearTimeout(autoNextTimer);
+          isStimulusActive = false;
+          const rt = Number((netTime - stimulusTime).toFixed(1));
+          reactionTimes.push(rt);
+
+          document.getElementById('m-last-rt').textContent = rt + ' ms';
+          document.getElementById('m-trial-status').textContent = `Correcto (${rt} ms)`;
+          document.getElementById('m-trial-status').style.color = '#4ade80';
+
+          updatePanel();
+          setTimeout(nextTrial, 1000);
+        }
+      }
+    };
+
+    canvas.onpointerup = function(e) {
+      if (!isTestRunning || selectedMode !== '2C') return;
+
+      if (brakeState === 'ACCELERATING') {
+        // Soltó el acelerador antes de tiempo (Anticipación)
+        clearTimeout(stimulusTimer);
+        falseStarts++;
+        brakeState = 'IDLE';
+        document.getElementById('m-trial-status').textContent = '⚠ Soltó el acelerador antes de tiempo';
+        document.getElementById('m-trial-status').style.color = '#f87171';
+        drawScreen('#ef4444', 'ANTICIPACIÓN DE FRENO');
+        setTimeout(nextTrial, 1500);
+      }
+    };
+
+    function updatePanel() {
+      document.getElementById('m-trials').textContent = `${currentTrial} / ${maxTrials}`;
+      document.getElementById('m-false-starts').textContent = falseStarts;
+
+      if (reactionTimes.length > 0) {
+        const avg = (reactionTimes.reduce((a, b) => a + b, 0) / reactionTimes.length).toFixed(1);
+        document.getElementById('m-avg-rt').textContent = avg + ' ms';
+      }
+      document.getElementById('offset-val').textContent = tuner.hardwareOffsetMs + ' ms';
+    }
+
+    async function finishTest() {
+      isTestRunning = false;
+      const avg = reactionTimes.length > 0 
+        ? (reactionTimes.reduce((a, b) => a + b, 0) / reactionTimes.length).toFixed(1)
+        : 0;
+
+      document.getElementById('m-trial-status').textContent = 'EVALUACIÓN CONCLUIDA';
+      document.getElementById('m-trial-status').style.color = '#38bdf8';
+
+      const reportElem = document.getElementById('report-status');
+      reportElem.style.background = '#0284c7';
+      reportElem.textContent = `✓ EVALUACIÓN COMPLETA - Promedio: ${avg} ms | Fallos/Errores: ${falseStarts}`;
+      reportElem.style.display = 'block';
+
+      if (supabaseClient) {
+        await supabaseClient.from('evaluaciones_pro_b2b').insert([{
+          company_id: "SOCADEP_DEMO",
+          evaluator_id: "EVALUADOR_01",
+          evaluated_rut: "12345678-9",
+          evaluated_name: "Operador Demostración",
+          module_code: "MOD_02_REACTIMETRO",
+          modality_code: selectedMode,
+          metrics: { 
+            trials: reactionTimes, 
+            avg_reaction_time_ms: avg, 
+            false_starts: falseStarts,
+            correct_inhibitions: correctInhibitions
+          },
+          hardware_telemetry: tuner.getTelemetryData(),
+          integrity_hash: "SHA256_REACTIMETRO_OK",
+          is_valid_test: (reactionTimes.length + correctInhibitions) >= 3
+        }]);
+      }
+
+      document.getElementById('overlay-title').textContent = 'Prueba Concluida';
+      document.getElementById('overlay-msg').textContent = `Promedio: ${avg} ms. Resultados guardados en Supabase.`;
+      document.getElementById('btn-start').textContent = 'REPETIR PRUEBA';
+      document.getElementById('overlay').style.display = 'flex';
+    }
+  </script>
+</body>
+</html>

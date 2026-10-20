@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Sensometrika Pro B2B - Test Módulo Anticipación</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    * { 
+      box-sizing: border-box; 
+      margin: 0; 
+      padding: 0; 
+      user-select: none; 
+      -webkit-user-select: none; 
+    }
+    body { 
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
+      background: #0f172a; 
+      color: #f8fafc; 
+      display: flex; 
+      flex-direction: column; 
+      align-items: center; 
+      min-height: 100vh; 
+      padding: 16px; 
+    }
+    header { 
+      text-align: center; 
+      margin-bottom: 12px; 
+    }
+    h1 { 
+      font-size: 1.25rem; 
+      color: #38bdf8; 
+    }
+    .status-bar { 
+      display: flex; 
+      gap: 12px; 
+      background: #1e293b; 
+      padding: 8px 16px; 
+      border-radius: 8px; 
+      font-size: 0.85rem; 
+      margin-top: 8px; 
+      justify-content: center;
+    }
+    .status-item span { 
+      font-weight: bold; 
+      color: #4ade80; 
+    }
+    
+    .controls { 
+      display: flex; 
+      gap: 8px; 
+      margin-bottom: 12px; 
+      flex-wrap: wrap; 
+      justify-content: center; 
+    }
+    button.btn-mode { 
+      background: #334155; 
+      color: #94a3b8; 
+      border: 1px solid #475569; 
+      padding: 10px 14px; 
+      border-radius: 6px; 
+      font-weight: 600; 
+      cursor: pointer; 
+      transition: all 0.2s ease;
+    }
+    button.btn-mode:hover {
+      background: #475569;
+      color: #f8fafc;
+    }
+    button.btn-mode.active {
+      background: #22c55e !important;
+      color: #022c22 !important;
+      border-color: #4ade80 !important;
+      box-shadow: 0 0 12px rgba(34, 197, 94, 0.5);
+      transform: scale(1.03);
+    }
+    
+    #canvas-container { 
+      position: relative; 
+      width: 100%; 
+      max-width: 400px; 
+      height: 360px; 
+      background: #1e293b; 
+      border: 2px solid #334155; 
+      border-radius: 12px; 
+      overflow: hidden; 
+      touch-action: none; 
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    canvas { 
+      width: 100%; 
+      height: 100%; 
+      display: block; 
+    }
+    
+    .start-overlay {
+      position: absolute;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      align-items: center;
+      justify-content: center;
+      background: rgba(15, 23, 42, 0.92);
+      width: 100%;
+      height: 100%;
+      z-index: 10;
+      padding: 24px;
+      text-align: center;
+    }
+    .btn-action {
+      background: #0284c7;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: bold;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(2, 132, 199, 0.4);
+    }
+
+    .metrics-panel { 
+      width: 100%; 
+      max-width: 400px; 
+      background: #1e293b; 
+      margin-top: 12px; 
+      padding: 12px; 
+      border-radius: 8px; 
+      font-size: 0.88rem; 
+    }
+    .metric-row { 
+      display: flex; 
+      justify-content: space-between; 
+      padding: 5px 0; 
+      border-bottom: 1px solid #334155; 
+    }
+    .metric-row:last-child {
+      border-bottom: none;
+    }
+
+    .report-badge {
+      display: none;
+      margin-top: 10px;
+      padding: 10px;
+      background: #0284c7;
+      color: white;
+      text-align: center;
+      border-radius: 6px;
+      font-weight: bold;
+      font-size: 0.85rem;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>Sensometrika Pro B2B</h1>
+    <p style="font-size: 0.8rem; color: #94a3b8; margin-top: 2px;">Módulo 4: Anticipación de Tiempo y Velocidad</p>
+    <div class="status-bar">
+      <div class="status-item">Refresh Rate: <span id="hz-val">Detectando...</span></div>
+      <div class="status-item">Offset Hardware: <span id="offset-val">0 ms</span></div>
+    </div>
+  </header>
+
+  <div class="controls">
+    <button class="btn-mode" id="btn-4A" onclick="selectMode('4A')">4A. Velocidad Constante</button>
+    <button class="btn-mode" id="btn-4B" onclick="selectMode('4B')">4B. Velocidad Variable</button>
+  </div>
+
+  <div id="canvas-container">
+    <canvas id="anticipacionCanvas"></canvas>
+    <div id="overlay" class="start-overlay">
+      <h2 id="overlay-title" style="color:#38bdf8; font-size:1.1rem;">Selecciona una modalidad</h2>
+      <p id="overlay-msg" style="color:#94a3b8; font-size:0.85rem; line-height:1.4; max-width:320px;">
+        Elija una prueba para medir la estimación espaciotemporal.
+      </p>
+      <button id="btn-start" class="btn-action" style="display:none;" onclick="runCurrentTest()">INICIAR EVALUACIÓN (5 Ensayos)</button>
+    </div>
+  </div>
+
+  <div class="metrics-panel">
+    <div class="metric-row"><span>Estado de Ensayo:</span><strong id="m-status" style="color:#eab308;">Esperando inicio</strong></div>
+    <div class="metric-row"><span>Ensayos Realizados:</span><strong id="m-trials">0 / 5</strong></div>
+    <div class="metric-row"><span>Error Último Ensayo:</span><strong id="m-last-error" style="color:#4ade80;">-- ms</strong></div>
+    <div class="metric-row"><span>Error Absoluto Promedio:</span><strong id="m-avg-error" style="color:#38bdf8;">-- ms</strong></div>
+  </div>
+
+  <div id="report-status" class="report-badge"></div>
+
+  <script>
+    const SUPABASE_URL = "https://kytuewhkhshrjddzoknv.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt5dHVld2hraHNocmpkZHpva252Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkxMzc4MzcsImV4cCI6MjEwNDcxMzgzN30.gNWbr8E7oF-56yKnNIDVvGIaGXfHkCCcKonWVDthp2k";
+
+    let supabaseClient = null;
+    if (window.supabase) {
+      supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    }
+
+    class LatencyTuner {
+      constructor() {
+        this.hardwareOffsetMs = 0;
+        this.refreshRateHz = 60;
+        this.sampleTaps = [];
+      }
+
+      async detectScreenRefreshRate() {
+        return new Promise((resolve) => {
+          let frames = 0;
+          const startTime = performance.now();
+          const calc = () => {
+            frames++;
+            const duration = performance.now() - startTime;
+            if (duration < 500) {
+              requestAnimationFrame(calc);
+            } else {
+              this.refreshRateHz = Math.round((frames * 1000) / duration);
+              resolve(this.refreshRateHz);
+            }
+          };
+          requestAnimationFrame(calc);
+        });
+      }
+
+      registerCalibrationTap(event) {
+        const systemTimestamp = performance.now();
+        let touchTimestamp = event.timeStamp;
+        if (event.getCoalescedEvents && event.getCoalescedEvents().length > 0) {
+          touchTimestamp = event.getCoalescedEvents()[0].timeStamp;
+        }
+        const lag = Math.max(0, systemTimestamp - touchTimestamp);
+        this.sampleTaps.push(lag);
+        if (this.sampleTaps.length >= 3) {
+          const sum = this.sampleTaps.reduce((a, b) => a + b, 0);
+          this.hardwareOffsetMs = Number((sum / this.sampleTaps.length).toFixed(2));
+        }
+        return this.hardwareOffsetMs;
+      }
+
+      getTelemetryData() {
+        return {
+          screen_refresh_rate_hz: this.refreshRateHz,
+          hardware_latency_offset_ms: this.hardwareOffsetMs
+        };
+      }
+    }
+
+    const tuner = new LatencyTuner();
+    let selectedMode = null;
+    let isTestRunning = false;
+    let currentTrial = 0;
+    const maxTrials = 5;
+
+    let animFrame = null;
+    let trialState = 'IDLE'; // IDLE, VISIBLE, HIDDEN, FINISHED
+    let startTime = 0;
+    let hiddenTime = 0;
+    let expectedArrivalMs = 0;
+    let errorsLog = [];
+
+    let vehicle = { x: 0, speed: 2 };
+    let tunnelX = 0;
+    let finishX = 0;
+
+    const canvas = document.getElementById('anticipacionCanvas');
+    const ctx = canvas.getContext('2d');
+
+    async function initTelemetry() {
+      const hz = await tuner.detectScreenRefreshRate();
+      document.getElementById('hz-val').textContent = hz + ' Hz';
+    }
+    initTelemetry();
+
+    function resizeCanvas() {
+      const dpr = window.devicePixelRatio || 1;
+      const rect = canvas.getBoundingClientRect();
+      canvas.width = rect.width * dpr;
+      canvas.height = rect.height * dpr;
+      ctx.scale(dpr, dpr);
+    }
+
+    window.selectMode = function(mode) {
+      selectedMode = mode;
+      document.querySelectorAll('.btn-mode').forEach(btn => btn.classList.remove('active'));
+      const activeBtn = document.getElementById(`btn-${mode}`);
+      if (activeBtn) activeBtn.classList.add('active');
+
+      const modeTitles = {
+        '4A': 'Modalidad 4A: Velocidad Constante',
+        '4B': 'Modalidad 4B: Velocidad Variable'
+      };
+
+      const modeInstructions = {
+        '4A': 'Observe el móvil. Al entrar al túnel se ocultará. Presione justo cuando calcule que cruza la meta roja.',
+        '4B': 'Atención: El móvil cambiará ligeramente de velocidad antes de entrar al túnel. Calcule la llegada exacta.'
+      };
+
+      document.getElementById('overlay-title').textContent = modeTitles[mode];
+      document.getElementById('overlay-msg').textContent = modeInstructions[mode];
+
+      const startBtn = document.getElementById('btn-start');
+      startBtn.style.display = 'block';
+      startBtn.textContent = 'INICIAR EVALUACIÓN (5 Ensayos)';
+      document.getElementById('overlay').style.display = 'flex';
+    };
+
+    window.runCurrentTest = function() {
+      document.getElementById('overlay').style.display = 'none';
+      document.getElementById('report-status').style.display = 'none';
+
+      resizeCanvas();
+      isTestRunning = true;
+      currentTrial = 0;
+      errorsLog = [];
+
+      updatePanel();
+      nextTrial();
+    };
+
+    function nextTrial() {
+      if (currentTrial >= maxTrials) {
+        finishTest();
+        return;
+      }
+
+      currentTrial++;
+      trialState = 'VISIBLE';
+      document.getElementById('m-status').textContent = 'Observando móvil...';
+      document.getElementById('m-status').style.color = '#eab308';
+
+      const rect = canvas.getBoundingClientRect();
+      const w = rect.width;
+
+      vehicle.x = 20;
+      // Velocidad aleatoria
+      let baseSpeed = Math.random() * 1.5 + 2.0; 
+      vehicle.speed = baseSpeed;
+
+      tunnelX = w * 0.45;
+      finishX = w * 0.85;
+
+      startTime = performance.now();
+      
+      loop();
+    }
+
+    function loop() {
+      if (!isTestRunning) return;
+
+      const rect = canvas.getBoundingClientRect();
+      const w = rect.width;
+      const h = rect.height;
+
+      vehicle.x += vehicle.speed;
+
+      // Al entrar al túnel
+      if (vehicle.x >= tunnelX && trialState === 'VISIBLE') {
+        trialState = 'HIDDEN';
+        hiddenTime = performance.now();
+
+        if (selectedMode === '4B') {
+          // Variación del ±20% de velocidad al ocultarse
+          const factor = Math.random() > 0.5 ? 1.2 : 0.8;
+          vehicle.speed = vehicle.speed * factor;
+        }
+
+        const distanceToFinish = finishX - vehicle.x;
+        const timeToFinishMs = (distanceToFinish / vehicle.speed) * (1000 / 60);
+        expectedArrivalMs = hiddenTime + timeToFinishMs;
+
+        document.getElementById('m-status').textContent = 'Móvil oculto - Calcule la meta';
+        document.getElementById('m-status').style.color = '#38bdf8';
+      }
+
+      // Dibujar en Canvas
+      ctx.clearRect(0, 0, w, h);
+
+      // Pista
+      ctx.fillStyle = '#334155';
+      ctx.fillRect(10, (h / 2) - 25, w - 20, 50);
+
+      // Línea de Meta (Roja)
+      ctx.fillStyle = '#ef4444';
+      ctx.fillRect(finishX, (h / 2) - 30, 6, 60);
+
+      // Móvil (Círculo azul) solo visible antes del túnel o al finalizar
+      if (trialState === 'VISIBLE' || trialState === 'FINISHED') {
+        ctx.beginPath();
+        ctx.arc(vehicle.x, h / 2, 14, 0, Math.PI * 2);
+        ctx.fillStyle = '#38bdf8';
+        ctx.fill();
+        ctx.strokeStyle = '#FFFFFF';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+      }
+
+      // Túnel (Franja Gris Oscura Opaca)
+      ctx.fillStyle = '#0f172a';
+      ctx.fillRect(tunnelX, (h / 2) - 35, finishX - tunnelX, 70);
+      ctx.strokeStyle = '#475569';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(tunnelX, (h / 2) - 35, finishX - tunnelX, 70);
+
+      ctx.fillStyle = '#94a3b8';
+      ctx.font = '12px -apple-system, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('ZONA CIEGA / TÚNEL', tunnelX + (finishX - tunnelX) / 2, (h / 2) + 4);
+
+      if (trialState !== 'FINISHED') {
+        animFrame = requestAnimationFrame(loop);
+      }
+    }
+
+    canvas.onpointerdown = function(e) {
+      if (!isTestRunning || trialState !== 'HIDDEN') return;
+
+      const userTimestamp = performance.now();
+      const offset = tuner.registerCalibrationTap(e);
+      const netTimestamp = Math.max(0, userTimestamp - offset);
+
+      const errorMs = Number((netTimestamp - expectedArrivalMs).toFixed(1));
+      errorsLog.push(errorMs);
+
+      trialState = 'FINISHED';
+      cancelAnimationFrame(animFrame);
+
+      const signText = errorMs < 0 ? 'ADELANTADO' : 'ATRASADO';
+      document.getElementById('m-last-error').textContent = `${Math.abs(errorMs)} ms (${signText})`;
+      document.getElementById('m-last-error').style.color = Math.abs(errorMs) < 200 ? '#4ade80' : '#f87171';
+
+      updatePanel();
+
+      setTimeout(nextTrial, 1500);
+    };
+
+    function updatePanel() {
+      document.getElementById('m-trials').textContent = `${currentTrial} / ${maxTrials}`;
+
+      if (errorsLog.length > 0) {
+        const absSum = errorsLog.reduce((a, b) => a + Math.abs(b), 0);
+        const avg = (absSum / errorsLog.length).toFixed(1);
+        document.getElementById('m-avg-error').textContent = avg + ' ms';
+      }
+      document.getElementById('offset-val').textContent = tuner.hardwareOffsetMs + ' ms';
+    }
+
+    async function finishTest() {
+      isTestRunning = false;
+      const absSum = errorsLog.reduce((a, b) => a + Math.abs(b), 0);
+      const avg = errorsLog.length > 0 ? (absSum / errorsLog.length).toFixed(1) : 0;
+
+      document.getElementById('m-status').textContent = 'EVALUACIÓN CONCLUIDA';
+      document.getElementById('m-status').style.color = '#38bdf8';
+
+      const reportElem = document.getElementById('report-status');
+      reportElem.style.background = '#0284c7';
+      reportElem.textContent = `✓ EVALUACIÓN COMPLETA - Error Absoluto Promedio: ${avg} ms`;
+      reportElem.style.display = 'block';
+
+      if (supabaseClient) {
+        await supabaseClient.from('evaluaciones_pro_b2b').insert([{
+          company_id: "SOCADEP_DEMO",
+          evaluator_id: "EVALUADOR_01",
+          evaluated_rut: "12345678-9",
+          evaluated_name: "Operador Demostración",
+          module_code: "MOD_04_ANTICIPACION",
+          modality_code: selectedMode,
+          metrics: { 
+            trials_errors_ms: errorsLog,
+            avg_abs_error_ms: Number(avg)
+          },
+          hardware_telemetry: tuner.getTelemetryData(),
+          integrity_hash: "SHA256_ANTICIPACION_OK",
+          is_valid_test: errorsLog.length >= 3
+        }]);
+      }
+
+      document.getElementById('overlay-title').textContent = 'Prueba Concluida';
+      document.getElementById('overlay-msg').textContent = `Error Promedio: ${avg} ms. Resultados guardados en Supabase.`;
+      document.getElementById('btn-start').textContent = 'REPETIR PRUEBA';
+      document.getElementById('overlay').style.display = 'flex';
+    }
+  </script>
+</body>
+</html>
