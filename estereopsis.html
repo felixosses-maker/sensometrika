@@ -3,7 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>SENSOMETRIKA | Módulo: Estereopsis 3D (Profundidad y Latencia)</title>
+  <title>SENSOMETRIKA | Módulo: Estereopsis 3D (Profundidad y Latencia Pro)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <!-- LIBRERÍAS GOOGLE MEDIAPIPE PARA TELEMETRÍA Y CONTROL FACIAL B2B -->
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
+
   <style>
     :root {
       --bg-principal: #050b14;
@@ -13,6 +19,8 @@
       --azul-destacado: #38bdf8;
       --azul-btn: #0284c7;
       --azul-btn-hover: #0369a1;
+      --accent-cyan: #00bfff;
+      --accent-red: #ef4444;
       --texto-blanco: #ffffff;
       --texto-gris: #94a3b8;
     }
@@ -26,13 +34,108 @@
     .brand-subtitle { margin-top: 4px; color: var(--texto-gris); font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
 
     /* TARJETA PRINCIPAL */
-    .modulo-card-container { background-color: var(--bg-card); border: 1px solid var(--border-color); border-radius: 16px; padding: 16px; display: flex; flex-direction: column; gap: 12px; box-shadow: 0 16px 35px rgba(0, 0, 0, 0.7); }
-    .nav-top-row { display: flex; justify-content: space-between; align-items: center; }
-    .link-volver { color: var(--texto-gris); text-decoration: none; font-size: 0.82rem; font-weight: 500; display: flex; align-items: center; gap: 4px; cursor: pointer; }
-    .link-volver:hover { color: var(--azul-destacado); }
+    .modulo-card-container { 
+      background-color: var(--bg-card); 
+      border: 1px solid var(--border-color); 
+      border-radius: 16px; 
+      padding: 16px; 
+      display: flex; 
+      flex-direction: column; 
+      gap: 12px; 
+      box-shadow: 0 16px 35px rgba(0, 0, 0, 0.7); 
+      position: relative;
+    }
 
-    .btn-como-funciona { background: #0c182e; border: 1px solid #1e3a6d; color: var(--azul-destacado); font-size: 0.75rem; font-weight: 700; padding: 5px 11px; border-radius: 6px; cursor: pointer; }
-    .btn-como-funciona:hover { background: #132342; }
+    /* BARRA SUPERIOR UNIFICADA CON BIOMETRÍA PIP EN HEADER (ALTERNATIVA 1) */
+    .nav-top-row { 
+      display: flex !important; 
+      justify-content: space-between !important; 
+      align-items: center !important; 
+      width: 100% !important;
+      gap: 8px !important;
+    }
+
+    .nav-top-row button, .nav-top-row a {
+      background: #0c182e !important;
+      border: 1px solid #1e3a6d !important;
+      color: var(--azul-destacado) !important;
+      font-size: 0.72rem !important;
+      font-weight: 700 !important;
+      padding: 6px 10px !important;
+      border-radius: 8px !important;
+      cursor: pointer !important;
+      white-space: nowrap !important;
+      display: inline-flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      text-decoration: none !important;
+    }
+
+    .nav-top-row button:hover, .nav-top-row a:hover {
+      background: #132342 !important;
+      color: #ffffff !important;
+    }
+
+    /* PIP BIOMÉTRICO RESTRINGIDO A 56px X 56px */
+    .cam-preview-pip-header {
+      position: relative !important;
+      width: 56px !important;
+      height: 56px !important;
+      min-width: 56px !important;
+      min-height: 56px !important;
+      max-width: 56px !important;
+      max-height: 56px !important;
+      border: 1.5px solid var(--accent-cyan) !important;
+      border-radius: 8px !important;
+      overflow: hidden !important;
+      background: #030712 !important;
+      box-shadow: 0 0 10px rgba(0, 191, 255, 0.3) !important;
+      flex-shrink: 0 !important;
+    }
+
+    .cam-preview-pip-header video {
+      width: 100% !important;
+      height: 100% !important;
+      object-fit: cover !important;
+      transform: scaleX(-1) !important;
+      display: block !important;
+    }
+
+    .cam-tag-header {
+      position: absolute !important;
+      bottom: 0 !important;
+      left: 0 !important;
+      right: 0 !important;
+      background: rgba(0, 191, 255, 0.9) !important;
+      color: #000000 !important;
+      font-size: 0.42rem !important;
+      font-weight: 900 !important;
+      text-align: center !important;
+      padding: 1px 0 !important;
+      text-transform: uppercase !important;
+      letter-spacing: 0.3px !important;
+      z-index: 5 !important;
+    }
+
+    /* OVERLAY DE BLOQUEO POR DISTANCIA NORMATIVA */
+    .distance-block-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(4, 8, 16, 0.95);
+      backdrop-filter: blur(6px);
+      z-index: 30;
+      display: none;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 16px;
+      text-align: center;
+      gap: 8px;
+      border-radius: 16px;
+    }
+
+    .distance-block-title { color: var(--accent-red); font-weight: 900; font-size: 0.92rem; text-transform: uppercase; }
+    .distance-block-desc { color: var(--texto-blanco); font-size: 0.74rem; line-height: 1.35; }
 
     .badge-fase { display: inline-block; background: rgba(56, 189, 248, 0.12); border: 1px solid rgba(56, 189, 248, 0.35); color: var(--azul-destacado); font-size: 0.75rem; font-weight: 700; padding: 5px 14px; border-radius: 20px; margin: 0 auto; text-align: center; }
 
@@ -41,7 +144,7 @@
     .barra-tiempo-fill { height: 100%; width: 100%; background: var(--verde-destacado); transition: width 0.1s linear, background-color 0.3s; }
 
     /* MATRIZ DINÁMICA 4x4 */
-    .estereo-matriz { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 2px 0; background: #030712; border: 2px solid #1e293b; border-radius: 14px; padding: 12px; box-shadow: inset 0 0 15px rgba(0,0,0,0.8); }
+    .estereo-matriz { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 2px 0; background: #030712; border: 2px solid #1e293b; border-radius: 14px; padding: 12px; box-shadow: inset 0 0 15px rgba(0,0,0,0.8); position: relative; }
     
     .nodo-estereo { 
       background: linear-gradient(145deg, #111a2e, #090e1a); 
@@ -86,28 +189,41 @@
     .btn-calibrar { width: 100%; background-color: var(--azul-btn); color: var(--texto-blanco); border: none; border-radius: 10px; padding: 13px; font-size: 0.92rem; font-weight: 800; cursor: pointer; box-shadow: 0 4px 16px rgba(2, 132, 199, 0.4); text-transform: uppercase; }
     .btn-calibrar:hover { background-color: var(--azul-btn-hover); }
 
-    /* TABLERO DE MÉTRICAS */
-    .metricas-inferiores-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; background-color: #050b14; border: 1px solid var(--border-color); border-radius: 10px; padding: 10px 8px; text-align: center; }
-    .col-metrica span { display: block; font-size: 0.60rem; color: var(--texto-gris); text-transform: uppercase; margin-bottom: 4px; font-weight: 700; }
-    .col-metrica strong { display: block; font-size: 0.95rem; color: var(--texto-blanco); font-weight: 800; }
-    .col-metrica .badge-verde { display: inline-block; background-color: var(--verde-destacado); color: #000000 !important; padding: 3px 10px; border-radius: 6px; font-size: 0.85rem; font-weight: 900; }
+    /* TABLERO DE MÉTRICAS 4 COLUMNAS CON DISTANCIA */
+    .metricas-inferiores-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; background-color: #050b14; border: 1px solid var(--border-color); border-radius: 10px; padding: 10px 4px; text-align: center; }
+    .col-metrica span { display: block; font-size: 0.52rem; color: var(--texto-gris); text-transform: uppercase; margin-bottom: 2px; font-weight: 700; }
+    .col-metrica strong { display: block; font-size: 0.82rem; color: var(--texto-blanco); font-weight: 800; }
+    .col-metrica .badge-verde { display: inline-block; background-color: var(--verde-destacado); color: #000000 !important; padding: 2px 8px; border-radius: 6px; font-size: 0.82rem; font-weight: 900; }
   </style>
 </head>
 <body>
+
+  <!-- ELEMENTO OCULTO PARA RECEPCIÓN DE VIDEO DE CÁMARA -->
+  <video id="webcamInput" style="display:none;" playsinline></video>
+
   <main class="app-container">
     
     <!-- ENCABEZADO DE MARCA -->
-    <header class="brand-header" style="text-align: center; padding: 12px 0; display: flex; flex-direction: column; align-items: center; gap: 4px;">
+    <header class="brand-header" style="text-align: center; padding: 4px 0; display: flex; flex-direction: column; align-items: center; gap: 4px;">
       <div style="background: rgba(11, 19, 36, 0.9); border: 1px solid #1e293b; padding: 8px 16px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.6);">
-        <img src="sensometrica.jpg" alt="SENSOMETRIKA Calibration Technology" style="width: 170px; height: auto; display: block; border-radius: 4px; filter: drop-shadow(0 0 10px rgba(56, 189, 248, 0.6));">
+        <img src="sensometrica.jpg" alt="SENSOMETRIKA Calibration Technology" style="width: 160px; height: auto; display: block; border-radius: 4px; filter: drop-shadow(0 0 10px rgba(56, 189, 248, 0.6));">
       </div>
-      <span class="brand-subtitle">MÓDULO ESTEREOPSIS 3D</span>
+      <span class="brand-subtitle">MÓDULO 6: ESTEREOPSIS 3D Y PERCEPCIÓN DE PROFUNDIDAD</span>
     </header>
 
     <section class="modulo-card-container">
+      
+      <!-- NAV TOP ROW CON PIP BIOMÉTRICO HEADER -->
       <div class="nav-top-row">
-        <a onclick="volverAlMenu()" class="link-volver">← Volver al Menú</a>
-        <button type="button" class="btn-como-funciona" onclick="mostrarModalAyudaEstereo()">? ¿Cómo funciona?</button>
+        <a onclick="volverAlMenu()" class="link-volver">&larr; Menú Pruebas</a>
+
+        <!-- PIP BIOMÉTRICO RESTRINGIDO A 56px X 56px -->
+        <div class="cam-preview-pip-header">
+          <video id="webcamVideo" autoplay playsinline muted></video>
+          <div class="cam-tag-header">Biometría</div>
+        </div>
+
+        <button type="button" onclick="mostrarModalAyudaEstereo()">? &iquest;C&oacute;mo funciona?</button>
       </div>
 
       <div style="text-align: center;">
@@ -121,7 +237,17 @@
 
       <p class="instruccion-sub" id="statusText">Identifique y pulse rápidamente el nodo con relieve óptico 3D flotante.</p>
 
+      <!-- MATRIZ CON OVERLAY DE BLOQUEO POR DISTANCIA -->
       <div class="estereo-matriz" id="matrizGrid">
+        <!-- OVERLAY DE BLOQUEO POR DISTANCIA NORMATIVA -->
+        <div id="boxBlockDistancia" class="distance-block-overlay">
+          <span class="distance-block-title">⚠️ DISTANCIA / POSTURA FUERA DE RANGO</span>
+          <span id="txtDistanciaDetalle" class="distance-block-desc">
+            Ajuste su posición frente a la pantalla.<br>
+            Distancia telemétrica actual: <b id="lblDistDetalleVal" style="color:var(--accent-red);">-- cm</b><br>
+            (Rango normativo: 45 a 65 cm).
+          </span>
+        </div>
         <!-- Generado dinámicamente -->
       </div>
 
@@ -129,10 +255,12 @@
         ▶ Iniciar Simulación Oficial (5 Rondas)
       </button>
 
+      <!-- METRICAS DE 4 COLUMNAS INCLUYENDO DISTANCIA -->
       <div class="metricas-inferiores-grid">
         <div class="col-metrica"><span>Ronda</span><strong id="lblRonda">0 / 5</strong></div>
         <div class="col-metrica"><span>Aciertos</span><strong id="lblAciertos" class="badge-verde">0</strong></div>
         <div class="col-metrica"><span>Latencia Prom.</span><strong id="lblLatencia" style="color: var(--azul-destacado);">0 ms</strong></div>
+        <div class="col-metrica"><span>Distancia</span><strong id="m-distancia" style="color: var(--verde-destacado);">-- cm</strong></div>
       </div>
     </section>
   </main>
@@ -149,6 +277,77 @@
 
     const rut = urlParams.get('rut') || datosUsuario.rut || 'GENERICO';
     const cleanRut = rut.replace(/[^0-9Kk]/g, '');
+
+    // TELEMETRÍA Y CONTROL DE CÁMARA BIOMÉTRICA
+    let distanciaMedidaCm = 55;
+    let estaBloqueadoPorDistancia = false;
+
+    function iniciarMediaPipeFaceMesh() {
+      const videoElement = document.getElementById('webcamVideo');
+
+      const faceMesh = new FaceMesh({
+        locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`
+      });
+
+      faceMesh.setOptions({
+        maxNumFaces: 1,
+        refineLandmarks: true,
+        minDetectionConfidence: 0.5,
+        minTrackingConfidence: 0.5
+      });
+
+      faceMesh.onResults(onResultsFaceMesh);
+
+      const camera = new Camera(videoElement, {
+        onFrame: async () => {
+          await faceMesh.send({ image: videoElement });
+        },
+        width: 320,
+        height: 240
+      });
+
+      camera.start().catch(() => {
+        distanciaMedidaCm = 55;
+        evaluarRangoDistancia();
+      });
+    }
+
+    function onResultsFaceMesh(results) {
+      if (!results.multiFaceLandmarks || results.multiFaceLandmarks.length === 0) {
+        return;
+      }
+
+      const landmarks = results.multiFaceLandmarks[0];
+      const leftEye = landmarks[33];
+      const rightEye = landmarks[263];
+
+      const dx = leftEye.x - rightEye.x;
+      const dy = leftEye.y - rightEye.y;
+      const eyeDistanceNormalized = Math.sqrt(dx * dx + dy * dy);
+
+      let distCalculada = Math.round(9.5 / eyeDistanceNormalized);
+      distanciaMedidaCm = Math.round(distanciaMedidaCm * 0.5 + distCalculada * 0.5);
+      evaluarRangoDistancia();
+    }
+
+    function evaluarRangoDistancia() {
+      const overlayBlock = document.getElementById('boxBlockDistancia');
+      const lblDetalle = document.getElementById('lblDistDetalleVal');
+      const mDistancia = document.getElementById('m-distancia');
+
+      mDistancia.textContent = `${distanciaMedidaCm} cm`;
+
+      if (distanciaMedidaCm >= 45 && distanciaMedidaCm <= 65) {
+        estaBloqueadoPorDistancia = false;
+        mDistancia.style.color = 'var(--verde-destacado)';
+        if (overlayBlock) overlayBlock.style.display = 'none';
+      } else {
+        estaBloqueadoPorDistancia = true;
+        mDistancia.style.color = 'var(--accent-red)';
+        if (lblDetalle) lblDetalle.textContent = `${distanciaMedidaCm} cm`;
+        if (overlayBlock) overlayBlock.style.display = 'flex';
+      }
+    }
 
     const btnIniciar = document.getElementById('btnIniciarEstereo');
     const statusText = document.getElementById('statusText');
@@ -172,11 +371,11 @@
     let timerBarra = null;
 
     document.addEventListener('DOMContentLoaded', () => {
+      iniciarMediaPipeFaceMesh();
       actualizarEstadoUI();
       construirMatrizVisual();
     });
 
-    // --- FUNCIÓN CORREGIDA PARA PRESERVAR Y LEER EL PARÁMETRO returnUrl ---
     function volverAlMenu() {
       const returnUrlParam = urlParams.get('returnUrl');
       if (returnUrlParam) {
@@ -209,7 +408,16 @@
     }
 
     function construirMatrizVisual() {
-      matrizGrid.innerHTML = '';
+      matrizGrid.innerHTML = `
+        <div id="boxBlockDistancia" class="distance-block-overlay">
+          <span class="distance-block-title">⚠️ DISTANCIA / POSTURA FUERA DE RANGO</span>
+          <span id="txtDistanciaDetalle" class="distance-block-desc">
+            Ajuste su posición frente a la pantalla.<br>
+            Distancia telemétrica actual: <b id="lblDistDetalleVal" style="color:var(--accent-red);">-- cm</b><br>
+            (Rango normativo: 45 a 65 cm).
+          </span>
+        </div>
+      `;
       for (let i = 0; i < 16; i++) {
         const nodo = document.createElement('div');
         nodo.className = 'nodo-estereo';
@@ -218,6 +426,7 @@
         nodo.addEventListener('click', () => seleccionarNodo(i));
         matrizGrid.appendChild(nodo);
       }
+      evaluarRangoDistancia();
     }
 
     function mostrarModalAyudaEstereo() {
@@ -232,6 +441,7 @@
             <div style="font-size: 0.82rem; color: #94a3b8; line-height: 1.5; display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px;">
               <p>1. <strong>Rangos Industriales:</strong> Óptimo (&le; 2.0s), Normal (2.0s - 3.5s) y Lento/Observado (3.5s - 5.0s).</p>
               <p>2. <strong>Tolerancia:</strong> Superar los 7 segundos genera un <em>fallo por lentitud en procesamiento espacial</em>.</p>
+              <p style="color: var(--verde-destacado);">3. <strong>Biometría:</strong> Mantenga su postura entre 45 y 65 cm durante el test.</p>
             </div>
             <button onclick="document.getElementById('modalAyudaEstereo').remove()" style="width: 100%; background: #0284c7; color: #ffffff; border: none; border-radius: 10px; padding: 12px; font-weight: 700; cursor: pointer;">
               Entendido · Volver al Test
@@ -243,6 +453,8 @@
     }
 
     function iniciarPruebaEstereo() {
+      if (estaBloqueadoPorDistancia) return;
+
       const historial = JSON.parse(localStorage.getItem(`sensometrika_historial_estereopsis_${cleanRut}`)) || [];
       const planStorage = (localStorage.getItem('sensometrika_plan_contratado') || urlParams.get('plan') || 'FULL').toUpperCase();
       let maxIntentosPlan = esB2B ? (planStorage.includes('ALTO') ? 3 : 1) : 5;
@@ -269,7 +481,7 @@
       lblRonda.innerText = `${rondaActual} / ${totalRondas}`;
       indiceCorrecto = Math.floor(Math.random() * 16);
 
-      const nodos = matrizGrid.children;
+      const nodos = Array.from(matrizGrid.children).filter(el => el.classList.contains('nodo-estereo'));
       for (let i = 0; i < nodos.length; i++) {
         nodos[i].className = 'nodo-estereo';
         nodos[i].innerHTML = `<span style="font-size: 0.7rem; color: #475569; font-weight:700;">${i+1}</span>`;
@@ -286,10 +498,12 @@
       let inicioAnim = Date.now();
       clearInterval(timerBarra);
       timerBarra = setInterval(() => {
-        let transcurrido = Date.now() - inicioAnim;
-        let porcentaje = Math.max(0, 100 - (transcurrido / tiempoLimiteRonda) * 100);
-        barraFill.style.width = `${porcentaje}%`;
-        if (porcentaje < 30) barraFill.style.backgroundColor = '#ef4444';
+        if (!estaBloqueadoPorDistancia) {
+          let transcurrido = Date.now() - inicioAnim;
+          let porcentaje = Math.max(0, 100 - (transcurrido / tiempoLimiteRonda) * 100);
+          barraFill.style.width = `${porcentaje}%`;
+          if (porcentaje < 30) barraFill.style.backgroundColor = '#ef4444';
+        }
       }, 50);
 
       clearTimeout(timerRonda);
@@ -304,7 +518,7 @@
     }
 
     function seleccionarNodo(index) {
-      if (!juegoActivo) return;
+      if (!juegoActivo || estaBloqueadoPorDistancia) return;
       clearTimeout(timerRonda);
       clearInterval(timerBarra);
 
@@ -360,6 +574,7 @@
         total: totalRondas,
         latenciaPromedio: latenciaFinal,
         categoriaLatencia: categoriaLatencia,
+        distanciaPromedioCm: distanciaMedidaCm,
         aprobado: aprobado,
         dictamen: aprobado ? 'APROBADO' : 'OBSERVADO',
         fecha: new Date().toISOString()
