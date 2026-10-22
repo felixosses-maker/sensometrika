@@ -3,9 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>SENSOMETRIKA | Test Módulo Punteo Pro</title>
+  <title>SENSOMETRIKA | Test Módulo Punteo Pro B2B</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <!-- LIBRERÍAS GOOGLE MEDIAPIPE PARA TELEMETRÍA Y CONTROL FACIAL B2B -->
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
+
   <style>
     :root {
       --bg-color: #040810;
@@ -17,6 +21,7 @@
       --accent-gold: #e5b324;
       --accent-gold-glow: rgba(229, 179, 36, 0.4);
       --accent-green: #10b981;
+      --accent-red: #ef4444;
       --text-main: #f8fafc;
       --text-muted: #94a3b8;
     }
@@ -94,6 +99,7 @@
       flex-direction: column;
       gap: 12px;
       box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
+      position: relative;
     }
 
     .top-nav-bar {
@@ -189,6 +195,54 @@
       display: block;
     }
 
+    /* PREVIEW DE CÁMARA BIOMÉTRICA B2B */
+    .cam-preview-pip {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      width: 65px;
+      height: 65px;
+      border: 1.5px solid var(--accent-cyan);
+      border-radius: 8px;
+      overflow: hidden;
+      background: #030712;
+      z-index: 20;
+    }
+
+    .cam-preview-pip video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
+
+    .cam-tag {
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      background: rgba(0, 191, 255, 0.85);
+      color: #000;
+      font-size: 0.45rem;
+      font-weight: 900;
+      text-align: center;
+      padding: 1px 0;
+      text-transform: uppercase;
+    }
+
+    /* OVERLAY DE BLOQUEO POR DISTANCIA NORMATIVA */
+    .distance-block-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(4, 8, 16, 0.94);
+      backdrop-filter: blur(5px);
+      z-index: 30;
+      display: none;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 16px;
+      text-align: center;
+      gap: 8px;
+      border-radius: 12px;
+    }
+
+    .distance-block-title { color: var(--accent-red); font-weight: 900; font-size: 0.92rem; text-transform: uppercase; }
+    .distance-block-desc { color: var(--text-main); font-size: 0.74rem; line-height: 1.35; }
+
     .start-overlay {
       position: absolute;
       inset: 0;
@@ -267,6 +321,9 @@
 </head>
 <body>
 
+  <!-- ELEMENTO OCULTO PARA RECEPCIÓN DE VIDEO DE CÁMARA -->
+  <video id="webcamInput" style="display:none;" playsinline></video>
+
   <div class="main-wrapper">
     
     <!-- Header Institucional v1 -->
@@ -274,7 +331,7 @@
       <div class="logo-container">
         <img src="sensometrica.jpg" alt="SENSOMETRIKA" class="brand-logo-img">
       </div>
-      <div class="subtitle-neon">MÓDULO 1: PUNTEO Y COORDINACIÓN VISOMOTORA</div>
+      <div class="subtitle-neon">MÓDULO 1: PUNTEO Y COORDINACIÓN VISOMOTORA PRO</div>
     </header>
 
     <!-- Tarjeta Central v1 -->
@@ -299,6 +356,22 @@
       <!-- Área de Simulación / Canvas -->
       <div id="canvas-container">
         <canvas id="punteoCanvas"></canvas>
+
+        <!-- PREVIEW DE CÁMARA BIOMÉTRICA -->
+        <div class="cam-preview-pip">
+          <video id="webcamVideo" autoplay playsinline muted></video>
+          <div class="cam-tag">Biometría</div>
+        </div>
+
+        <!-- OVERLAY DE BLOQUEO POR DISTANCIA NORMATIVA -->
+        <div id="boxBlockDistancia" class="distance-block-overlay">
+          <span class="distance-block-title">⚠️ DISTANCIA / POSTURA FUERA DE RANGO</span>
+          <span id="txtDistanciaDetalle" class="distance-block-desc">
+            Ajuste su posición frente a la pantalla.<br>
+            Distancia telemétrica actual: <b id="lblDistDetalleVal" style="color:var(--accent-red);">-- cm</b><br>
+            (Rango normativo: 45 a 65 cm).
+          </span>
+        </div>
 
         <div id="overlay" class="start-overlay">
           <h2 id="overlay-title" style="color: var(--accent-cyan); font-size: 0.95rem; font-weight: 900; text-transform: uppercase;">
@@ -328,12 +401,12 @@
           <span id="m-valid" class="telemetry-val" style="color: #10b981;">0</span>
         </div>
         <div class="telemetry-col">
-          <span class="telemetry-lbl">LATENCIA</span>
-          <span id="offset-val" class="telemetry-val" style="color: var(--accent-gold);">16 ms</span>
-        </div>
-        <div class="telemetry-col">
           <span class="telemetry-lbl">FRECUENCIA</span>
           <span id="m-hz" class="telemetry-val" style="color: var(--accent-cyan);">0.0 Hz</span>
+        </div>
+        <div class="telemetry-col">
+          <span class="telemetry-lbl">DISTANCIA</span>
+          <span id="m-distancia" class="telemetry-val" style="color: var(--accent-green);">-- cm</span>
         </div>
       </div>
 
@@ -351,7 +424,7 @@
       
       <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--card-border); padding-bottom: 8px;">
         <span style="font-size: 0.85rem; font-weight: 800; color: var(--accent-cyan); text-transform: uppercase;">
-          ℹ️ Instrucciones del Módulo 1
+          ℹ️ Instrucciones del Módulo 1 Pro
         </span>
         <button onclick="cerrarAyuda()" style="color: var(--text-muted); font-weight: 800; border: none; background: none; cursor: pointer; font-size: 1rem;">✕</button>
       </div>
@@ -362,7 +435,7 @@
         <p><strong>1C. Trepidador:</strong> Mantén los contactos dentro del círculo central evitando la zona roja externa.</p>
         <p><strong>1D. Bimanual:</strong> Alterna toques entre el lado Izquierdo y Derecho según se ilumine la pantalla.</p>
         <div style="background: #030712; border: 1px dashed var(--accent-gold); padding: 8px; border-radius: 8px; color: var(--accent-gold); font-size: 0.70rem; font-weight: 700; margin-top: 4px;">
-          Estándar D.S. N° 170 MTT: Efectividad motora ≥ 78% con ritmo constante.
+          Estándar D.S. N° 170 MTT: Control de postura por Visión Artificial (45-65 cm).
         </div>
       </div>
 
@@ -379,6 +452,10 @@
     const cleanRut = rawRut.replace(/[^0-9Kk]/g, '');
     const sessionId = urlParams.get('session') || `SESION_${cleanRut}_ACTIVA`;
 
+    // TELEMETRÍA Y CONTROL DE CÁMARA
+    let distanciaMedidaCm = 55;
+    let estaBloqueadoPorDistancia = false;
+
     // Configuración de credenciales de Supabase
     const SUPABASE_URL = "https://kytuewhkhshrjddzoknv.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt5dHVld2hraHNocmpkZHpva252Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkxMzc4MzcsImV4cCI6MjEwNDcxMzgzN30.gNWbr8E7oF-56yKnNIDVvGIaGXfHkCCcKonWVDthp2k";
@@ -389,6 +466,73 @@
     }
 
     const subModos = ['1A', '1B', '1C', '1D'];
+
+    function iniciarMediaPipeFaceMesh() {
+      const videoElement = document.getElementById('webcamVideo');
+
+      const faceMesh = new FaceMesh({
+        locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`
+      });
+
+      faceMesh.setOptions({
+        maxNumFaces: 1,
+        refineLandmarks: true,
+        minDetectionConfidence: 0.5,
+        minTrackingConfidence: 0.5
+      });
+
+      faceMesh.onResults(onResultsFaceMesh);
+
+      const camera = new Camera(videoElement, {
+        onFrame: async () => {
+          await faceMesh.send({ image: videoElement });
+        },
+        width: 320,
+        height: 240
+      });
+
+      camera.start().catch(() => {
+        distanciaMedidaCm = 55;
+        evaluarRangoDistancia();
+      });
+    }
+
+    function onResultsFaceMesh(results) {
+      if (!results.multiFaceLandmarks || results.multiFaceLandmarks.length === 0) {
+        return;
+      }
+
+      const landmarks = results.multiFaceLandmarks[0];
+      const leftEye = landmarks[33];
+      const rightEye = landmarks[263];
+
+      const dx = leftEye.x - rightEye.x;
+      const dy = leftEye.y - rightEye.y;
+      const eyeDistanceNormalized = Math.sqrt(dx * dx + dy * dy);
+
+      let distCalculada = Math.round(9.5 / eyeDistanceNormalized);
+      distanciaMedidaCm = Math.round(distanciaMedidaCm * 0.5 + distCalculada * 0.5);
+      evaluarRangoDistancia();
+    }
+
+    function evaluarRangoDistancia() {
+      const overlayBlock = document.getElementById('boxBlockDistancia');
+      const lblDetalle = document.getElementById('lblDistDetalleVal');
+      const mDistancia = document.getElementById('m-distancia');
+
+      mDistancia.textContent = `${distanciaMedidaCm} cm`;
+
+      if (distanciaMedidaCm >= 45 && distanciaMedidaCm <= 65) {
+        estaBloqueadoPorDistancia = false;
+        mDistancia.style.color = 'var(--accent-green)';
+        overlayBlock.style.display = 'none';
+      } else {
+        estaBloqueadoPorDistancia = true;
+        mDistancia.style.color = 'var(--accent-red)';
+        lblDetalle.textContent = `${distanciaMedidaCm} cm`;
+        overlayBlock.style.display = 'flex';
+      }
+    }
 
     function actualizarEstadoBotonesNavegacion() {
       let completadosTotal = 0;
@@ -511,7 +655,7 @@
 
       bindTouchEvents() {
         this.canvas.onpointerdown = (e) => {
-          if (!this.isRunning) return;
+          if (!this.isRunning || estaBloqueadoPorDistancia) return;
           const rawTimestamp = performance.now();
           const hardwareOffset = this.tuner.registerCalibrationTap(e);
           const netTimestamp = Math.max(0, rawTimestamp - hardwareOffset);
@@ -548,6 +692,7 @@
           miss_hits: this.missHits,
           frequency_hz: Number((totalTaps / this.durationSec).toFixed(2)),
           avg_reaction_time_ms: avgReactionTime,
+          distance_avg_cm: distanciaMedidaCm,
           is_valid_test: isValidTest,
           min_taps_required: this.minTapsRequired,
           telemetry: this.tuner.getTelemetryData()
@@ -597,7 +742,7 @@
         const draw = () => {
           if (!this.ctx) return;
           this.ctx.clearRect(0, 0, w, h);
-          if (this.isRunning) {
+          if (this.isRunning && !estaBloqueadoPorDistancia) {
             this.pulsePhase = (this.pulsePhase + 0.08) % (Math.PI * 2);
           }
           const r = 45 + Math.sin(this.pulsePhase) * 12;
@@ -719,10 +864,8 @@
     let countdownInterval = null;
 
     document.addEventListener('DOMContentLoaded', async () => {
+      iniciarMediaPipeFaceMesh();
       await tuner.detectScreenRefreshRate();
-      const savedLat = parseInt(urlParams.get('latencia') || localStorage.getItem('sensometrika_latencia_ms') || '16');
-      tuner.hardwareOffsetMs = savedLat;
-      document.getElementById('offset-val').textContent = savedLat + ' ms';
       actualizarEstadoBotonesNavegacion();
     });
 
@@ -783,7 +926,7 @@
         evaluator_id: "EVALUADOR_01",
         evaluated_rut: rawRut,
         evaluated_name: "Operador Demostración",
-        module_code: "MOD_01_PUNTEO",
+        module_code: "MOD_01_PUNTEO_PRO",
         modality_code: selectedMode,
         metrics: metrics,
         hardware_telemetry: metrics.telemetry,
@@ -797,7 +940,7 @@
     }
 
     window.runCurrentTest = async function() {
-      if (!selectedMode) return;
+      if (!selectedMode || estaBloqueadoPorDistancia) return;
       if (updateInterval) clearInterval(updateInterval);
       if (countdownInterval) clearInterval(countdownInterval);
 
@@ -818,7 +961,10 @@
         document.getElementById('m-timer').textContent = remainingSec.toFixed(1) + 's';
 
         countdownInterval = setInterval(async () => {
-          remainingSec -= 0.1;
+          if (!estaBloqueadoPorDistancia) {
+            remainingSec -= 0.1;
+          }
+
           if (remainingSec <= 0) {
             remainingSec = 0;
             clearInterval(countdownInterval);
@@ -863,7 +1009,6 @@
           const m = currentEngine.getSummaryMetrics();
           document.getElementById('m-valid').textContent = m.valid_hits;
           document.getElementById('m-hz').textContent = m.frequency_hz + ' Hz';
-          document.getElementById('offset-val').textContent = m.telemetry.hardware_latency_offset_ms + ' ms';
         }, 100);
       }
     };

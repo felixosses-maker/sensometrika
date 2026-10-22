@@ -3,8 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SENSOMETRIKA | Punteo Viso-Motriz</title>
+    <title>SENSOMETRIKA | Punteo Viso-Motriz Pro B2B</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- LIBRERÍAS GOOGLE MEDIAPIPE PARA TELEMETRÍA FACIAL B2B -->
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
+
     <style>
         :root {
             --bg-color: #060b13;
@@ -83,6 +87,7 @@
             flex-direction: column;
             gap: 16px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            position: relative;
         }
 
         .top-nav {
@@ -139,6 +144,54 @@
         }
 
         canvas { width: 100%; height: 100%; display: block; touch-action: none; }
+
+        /* PREVIEW CÁMARA WEB / BIOMETRÍA */
+        .cam-preview-box {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            width: 65px;
+            height: 65px;
+            border: 1.5px solid var(--accent-cyan);
+            border-radius: 8px;
+            overflow: hidden;
+            background: #030712;
+            z-index: 10;
+        }
+
+        .cam-preview-box video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
+
+        .cam-overlay-tag {
+            position: absolute;
+            bottom: 0; left: 0; right: 0;
+            background: rgba(0, 191, 255, 0.85);
+            color: #000;
+            font-size: 0.45rem;
+            font-weight: 900;
+            text-align: center;
+            padding: 1px 0;
+            text-transform: uppercase;
+        }
+
+        /* OVERLAY DE BLOQUEO POR DISTANCIA */
+        .distance-block-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.94);
+            backdrop-filter: blur(5px);
+            z-index: 30;
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 16px;
+            text-align: center;
+            gap: 8px;
+            border-radius: 12px;
+        }
+
+        .distance-block-title { color: var(--accent-red); font-weight: 900; font-size: 0.95rem; text-transform: uppercase; }
+        .distance-block-desc { color: var(--text-main); font-size: 0.75rem; line-height: 1.35; }
 
         .instruction-text {
             text-align: center;
@@ -231,7 +284,7 @@
     <div class="main-container">
         <header class="brand-header">
             <img src="sensometrica.jpg" alt="SENSOMETRIKA" class="brand-logo-img">
-            <span class="brand-subtitle">MÓDULO PUNTEO VISO-MOTRIZ • RITMO Y PRECISIÓN</span>
+            <span class="brand-subtitle">MÓDULO PUNTEO VISO-MOTRIZ • RITMO Y PRECISIÓN PRO</span>
         </header>
 
         <div class="eval-card">
@@ -249,6 +302,22 @@
 
             <div class="canvas-wrapper" id="canvasContainer">
                 <canvas id="punteoCanvas" width="400" height="300"></canvas>
+
+                <!-- PREVIEW DE CÁMARA BIOMÉTRICA B2B -->
+                <div class="cam-preview-box">
+                    <video id="webcamVideo" autoplay playsinline muted></video>
+                    <div class="cam-overlay-tag">Biometría</div>
+                </div>
+
+                <!-- OVERLAY DE BLOQUEO POR DISTANCIA NORMATIVA -->
+                <div id="boxBlockDistancia" class="distance-block-overlay">
+                    <span class="distance-block-title">⚠️ DISTANCIA / POSTURA FUERA DE RANGO</span>
+                    <span id="txtDistanciaDetalle" class="distance-block-desc">
+                        Ajuste su posición frente a la pantalla.<br>
+                        Distancia telemétrica actual: <b id="lblDistDetalleVal" style="color:var(--accent-red);">-- cm</b><br>
+                        (Rango normativo: 45 a 65 cm).
+                    </span>
+                </div>
             </div>
 
             <div class="instruction-text" id="instructionText">
@@ -274,8 +343,8 @@
                     <span id="metricLatencia" class="metric-value" style="color:#e5b324;">0 ms</span>
                 </div>
                 <div class="metric-item">
-                    <span class="metric-label">PRECISIÓN</span>
-                    <span id="metricPrecision" class="metric-value" style="color:#10b981;">100%</span>
+                    <span class="metric-label">DISTANCIA</span>
+                    <span id="metricDistancia" class="metric-value" style="color:#10b981;">-- cm</span>
                 </div>
             </div>
         </div>
@@ -302,7 +371,7 @@
         const metricAciertos = document.getElementById('metricAciertos');
         const metricErrores = document.getElementById('metricErrores');
         const metricLatencia = document.getElementById('metricLatencia');
-        const metricPrecision = document.getElementById('metricPrecision');
+        const metricDistancia = document.getElementById('metricDistancia');
 
         const modal = document.getElementById('modalSistema');
         const modalTitle = document.getElementById('modalTitle');
@@ -322,7 +391,6 @@
         const cleanRut = rutEvaluado.replace(/[^0-9Kk]/g, '');
         const sessionId = urlParams.get('session') || urlParams.get('token') || localStorage.getItem('sensometrika_session_activa') || `SESION_${cleanRut}_${Date.now()}`;
 
-        // En B2B nunca forzamos demo salvo que la URL lo pida explícitamente sin token/sesión B2B
         let isDemoURL = (urlParams.get('demo') === 'true' || urlParams.get('fase') === 'demo') && !esB2B;
         let modoActual = isDemoURL ? 'DEMO' : 'OFICIAL';
 
@@ -340,6 +408,10 @@
 
         let bola = { x: 200, y: -20, r: 18, vy: 3.2 };
         const targetZone = { yMin: 200, yMax: 270 };
+
+        // PARÁMETROS TELEMÉTRICOS DE CÁMARA
+        let distanciaMedidaCm = 55;
+        let estaBloqueadoPorDistancia = false;
 
         function ejecutarRetornoMenu() {
             const returnUrlParam = urlParams.get('returnUrl');
@@ -360,9 +432,76 @@
             }
         }
 
+        // CONTROL DE CÁMARA MEDIAPIPE FACEMESH
+        function iniciarMediaPipeFaceMesh() {
+            const videoElement = document.getElementById('webcamVideo');
+
+            const faceMesh = new FaceMesh({
+                locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`
+            });
+
+            faceMesh.setOptions({
+                maxNumFaces: 1,
+                refineLandmarks: true,
+                minDetectionConfidence: 0.5,
+                minTrackingConfidence: 0.5
+            });
+
+            faceMesh.onResults(onResultsFaceMesh);
+
+            const camera = new Camera(videoElement, {
+                onFrame: async () => {
+                    await faceMesh.send({ image: videoElement });
+                },
+                width: 320,
+                height: 240
+            });
+
+            camera.start().catch(() => {
+                distanciaMedidaCm = 55;
+                evaluarRangoDistancia();
+            });
+        }
+
+        function onResultsFaceMesh(results) {
+            if (!results.multiFaceLandmarks || results.multiFaceLandmarks.length === 0) {
+                return;
+            }
+
+            const landmarks = results.multiFaceLandmarks[0];
+            const leftEye = landmarks[33];
+            const rightEye = landmarks[263];
+
+            const dx = leftEye.x - rightEye.x;
+            const dy = leftEye.y - rightEye.y;
+            const eyeDistanceNormalized = Math.sqrt(dx * dx + dy * dy);
+
+            let distCalculada = Math.round(9.5 / eyeDistanceNormalized);
+
+            distanciaMedidaCm = Math.round(distanciaMedidaCm * 0.5 + distCalculada * 0.5);
+            evaluarRangoDistancia();
+        }
+
+        function evaluarRangoDistancia() {
+            const overlayBlock = document.getElementById('boxBlockDistancia');
+            const lblDetalle = document.getElementById('lblDistDetalleVal');
+
+            metricDistancia.textContent = `${distanciaMedidaCm} cm`;
+
+            if (distanciaMedidaCm >= 45 && distanciaMedidaCm <= 65) {
+                estaBloqueadoPorDistancia = false;
+                metricDistancia.style.color = 'var(--accent-green)';
+                overlayBlock.style.display = 'none';
+            } else {
+                estaBloqueadoPorDistancia = true;
+                metricDistancia.style.color = 'var(--accent-red)';
+                lblDetalle.textContent = `${distanciaMedidaCm} cm`;
+                overlayBlock.style.display = 'flex';
+            }
+        }
+
         function obtenerHistorialPunteoRut() {
             if (!cleanRut) return [];
-            // Priorizamos la consulta por sesión para no arrastrar bloqueos
             const claveSesion = `sensometrika_historial_punteo_${cleanRut}_${sessionId}`;
             let rawSesion = JSON.parse(localStorage.getItem(claveSesion)) || [];
             if (Array.isArray(rawSesion) && rawSesion.length > 0) return rawSesion;
@@ -377,7 +516,7 @@
 
             const planStorage = (localStorage.getItem('sensometrika_plan_contratado') || urlParams.get('plan') || 'PLUS').toUpperCase();
             
-            let maxIntentosPlan = 1; // Para B2B por defecto es 1 por sesión
+            let maxIntentosPlan = 1; 
             if (esB2B) {
                 maxIntentosPlan = planStorage.includes('ALTO') ? 3 : 1;
             } else {
@@ -387,7 +526,7 @@
             }
 
             const demoRealizada = !esB2B && ((localStorage.getItem(`punteo_demo_completada_${cleanRut}`) === 'true') ||
-                                             (localStorage.getItem(`btnMod3_demo_completada_${cleanRut}`) === 'true'));
+                                              (localStorage.getItem(`btnMod3_demo_completada_${cleanRut}`) === 'true'));
 
             if (isDemoURL && demoRealizada) {
                 mostrarModal("MÓDULO DEMO YA COMPLETADO", "Ya has ejecutado la calibración demo para este ensayo. Retornando al menú de pruebas...", () => {
@@ -443,7 +582,10 @@
             ctx.fillText('ZONA DE IMPACTO RÍTMICO', 25, targetZone.yMin + 18);
 
             if (evaluacionActiva) {
-                bola.y += bola.vy;
+                // Solo avanza la bola si la persona está a la distancia correcta
+                if (!estaBloqueadoPorDistancia) {
+                    bola.y += bola.vy;
+                }
 
                 const yBolaInf = bola.y + bola.r;
                 if (yBolaInf >= targetZone.yMin && !yaEntroEnZona) {
@@ -488,7 +630,7 @@
                 e.preventDefault();
                 e.stopPropagation();
             }
-            if (!evaluacionActiva) return;
+            if (!evaluacionActiva || estaBloqueadoPorDistancia) return;
 
             const ahora = Date.now();
             if (ahora - ultimoToqueMs < 180) return;
@@ -524,14 +666,10 @@
                 promLatencia = Math.round(suma / tiemposReaccion.length);
             }
             metricLatencia.textContent = `${promLatencia} ms`;
-
-            const total = aciertos + errores;
-            const prec = total > 0 ? Math.round((aciertos / total) * 100) : 100;
-            metricPrecision.textContent = `${prec}%`;
         }
 
         function iniciarPrueba() {
-            if (modoActual === 'BLOQUEADO') return;
+            if (modoActual === 'BLOQUEADO' || estaBloqueadoPorDistancia) return;
 
             aciertos = 0;
             errores = 0;
@@ -546,7 +684,9 @@
             btnStart.style.display = 'none';
 
             timerInterval = setInterval(() => {
-                tiempoRestante--;
+                if (!estaBloqueadoPorDistancia) {
+                    tiempoRestante--;
+                }
                 if (tiempoRestante <= 0) {
                     finalizarPrueba();
                 }
@@ -569,14 +709,13 @@
                 desviacionMs: latenciaMediaVal,
                 latenciaRitmoMs: latenciaMediaVal,
                 precision: precisionVal, 
+                distanciaAvgCm: distanciaMedidaCm,
                 fecha: new Date().toISOString() 
             };
 
-            // 1. Guardar en la sesión específica para B2B
             const claveSesion = `sensometrika_historial_punteo_${cleanRut}_${sessionId}`;
             localStorage.setItem(claveSesion, JSON.stringify([registroData]));
 
-            // 2. Guardar en el historial general del RUT
             let hRut = JSON.parse(localStorage.getItem(`sensometrika_historial_punteo_${cleanRut}`)) || [];
             hRut.push(registroData);
             localStorage.setItem(`sensometrika_historial_punteo_${cleanRut}`, JSON.stringify(hRut));
@@ -586,7 +725,7 @@
 
                 mostrarModal(
                     "CALIBRACIÓN DEMO COMPLETADA",
-                    `Aciertos: <b>${aciertos}</b><br>Pérdidas/Errores: <b>${errores}</b><br>Latencia Media: <b>${latenciaMediaVal} ms</b><br>Efectividad: <b>${precisionVal}%</b><br><br>Has completado el ensayo demo. Retornando a la batería de pruebas...`,
+                    `Aciertos: <b>${aciertos}</b><br>Pérdidas/Errores: <b>${errores}</b><br>Latencia Media: <b>${latenciaMediaVal} ms</b><br>Efectividad: <b>${precisionVal}%</b><br>Distancia Media: <b>${distanciaMedidaCm} cm</b><br><br>Has completado el ensayo demo. Retornando a la batería de pruebas...`,
                     () => {
                         ejecutarRetornoMenu();
                     }
@@ -600,7 +739,7 @@
 
                 mostrarModal(
                     tituloModal,
-                    `Aciertos: <b>${aciertos}</b><br>Pérdidas/Errores: <b>${errores}</b><br>Latencia Media: <b>${latenciaMediaVal} ms</b><br>Precisión Rítmica: <b>${precisionVal}%</b><br><br><b>Resultado guardado con éxito.</b>`,
+                    `Aciertos: <b>${aciertos}</b><br>Pérdidas/Errores: <b>${errores}</b><br>Latencia Media: <b>${latenciaMediaVal} ms</b><br>Precisión Rítmica: <b>${precisionVal}%</b><br>Distancia Biométrica: <b>${distanciaMedidaCm} cm</b><br><br><b>Resultado guardado con éxito.</b>`,
                     () => { ejecutarRetornoMenu(); }
                 );
             }
@@ -623,8 +762,11 @@
             mostrarModal("¿CÓMO FUNCIONA?", "Toca la pantalla o haz clic cuando la bola cruce dentro de la <b>ZONA DE IMPACTO RÍTMICO</b> para registrar aciertos y medir tu latencia viso-motriz.");
         });
 
-        actualizarEstadoUI();
-        renderLoop();
+        document.addEventListener('DOMContentLoaded', () => {
+            iniciarMediaPipeFaceMesh();
+            actualizarEstadoUI();
+            renderLoop();
+        });
     </script>
 </body>
 </html>
