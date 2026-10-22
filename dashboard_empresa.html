@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>SENSOMETRIKA | Catálogo Corporativo B2B - Suite Pericial & Cotizador</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        :root {
+            --bg-color: #060b13;
+            --card-bg: #0b1320;
+            --card-border: #1a2638;
+            --accent-cyan: #38bdf8;
+            --accent-green: #10b981;
+            --accent-gold: #e5b324;
+            --text-main: #f1f5f9;
+            --text-muted: #94a3b8;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            min-height: 100vh;
+            padding: 24px 12px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .main-container {
+            width: 100%;
+            max-width: 1100px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .brand-header {
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .brand-logo-img {
+            width: 210px;
+            height: auto;
+            mix-blend-mode: lighten;
+            filter: drop-shadow(0 0 12px rgba(56, 189, 248, 0.45));
+        }
+
+        .panel-card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .card-title {
+            font-size: 0.90rem;
+            font-weight: 800;
+            color: var(--accent-cyan);
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            border-bottom: 1px solid var(--card-border);
+            padding-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .section-subtitle {
+            font-size: 0.78rem;
+            color: var(--accent-gold);
+            font-weight: 700;
+            text-transform: uppercase;
+            margin-top: 6px;
+            margin-bottom: -4px;
+        }
+
+        /* AVISO COMERCIAL DESTACADO AL INICIO */
+        .notice-box {
+            background: rgba(229, 179, 36, 0.08);
+            border: 1px solid var(--accent-gold);
+            border-radius: 10px;
+            padding: 12px 16px;
+            font-size: 0.78rem;
+            color: #fde047;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* PACKS RÁPIDOS */
+        .packs-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 12px;
+        }
+
+        .pack-card {
+            background-color: #080d17;
+            border: 1.5px solid var(--card-border);
+            border-radius: 12px;
+            padding: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .pack-card:hover { border-color: var(--accent-cyan); }
+        .pack-card.active { border-color: var(--accent-green); background-color: rgba(16, 185, 129, 0.05); }
+
+        .pack-title { font-size: 0.82rem; font-weight: 800; color: #fff; display: flex; justify-content: space-between; }
+        .pack-desc { font-size: 0.72rem; color: var(--text-muted); line-height: 1.35; }
+        .pack-price { font-size: 0.75rem; color: var(--accent-green); font-weight: 800; margin-top: 4px; }
+
+        /* GRILLA DE MÓDULOS */
+        .modules-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(310px, 1fr));
+            gap: 14px;
+        }
+
+        .module-item {
+            background-color: #070d17;
+            border: 1.5px solid var(--card-border);
+            border-radius: 12px;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+
+        .module-item.selected {
+            border-color: var(--accent-cyan);
+            background-color: rgba(56, 189, 248, 0.05);
+        }
+
+        .module-item.fixed-item {
+            border-color: rgba(16, 185, 129, 0.4);
+            background-color: rgba(16, 185, 129, 0.03);
+            cursor: default;
+        }
+
+        .module-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .module-title { font-size: 0.85rem; font-weight: 800; color: #fff; }
+        .module-checkbox { width: 18px; height: 18px; accent-color: var(--accent-cyan); cursor: pointer; }
+        .module-checkbox:disabled { cursor: not-allowed; opacity: 0.9; accent-color: var(--accent-green); }
+
+        .module-desc { font-size: 0.73rem; color: var(--text-muted); line-height: 1.4; }
+        .module-footer-info { display: flex; justify-content: space-between; align-items: center; margin-top: auto; }
+        .module-norma { font-size: 0.65rem; color: var(--accent-gold); font-weight: 700; text-transform: uppercase; }
+        .module-precio { font-size: 0.70rem; color: var(--accent-green); font-weight: 800; }
+
+        /* CHECKOUT */
+        .checkout-box {
+            background-color: #050a12;
+            border: 1px solid var(--accent-cyan);
+            border-radius: 12px;
+            padding: 18px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 12px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .form-group label {
+            font-size: 0.70rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            font-weight: 700;
+        }
+
+        .form-group input {
+            background: #080d17;
+            border: 1px solid var(--card-border);
+            color: #fff;
+            padding: 10px 12px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            outline: none;
+        }
+
+        .btn-pay {
+            background-color: var(--accent-green);
+            color: #000;
+            border: none;
+            padding: 14px;
+            border-radius: 10px;
+            font-weight: 900;
+            font-size: 0.92rem;
+            cursor: pointer;
+            text-transform: uppercase;
+            transition: opacity 0.2s;
+            margin-top: 8px;
+        }
+
+        .btn-pay:hover { opacity: 0.9; }
+    </style>
+</head>
+<body>
+
+    <div class="main-container">
+        <header class="brand-header">
+            <img src="sensometrica.jpg" alt="SENSOMETRIKA" class="brand-logo-img">
+            <span style="color: var(--accent-cyan); font-size: 0.75rem; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase;">
+                PORTAL CORPORATIVO B2B • COTIZADOR Y SUITE PERICIAL SENSOMETRIKA
+            </span>
+        </header>
+
+        <!-- SECCIÓN 1: CONDICIÓN COMERCIAL Y SELECCIÓN RÁPIDA -->
+        <div class="panel-card">
+            <div class="card-title">
+                <span>1. Selección Rápida & Condiciones Comerciales</span>
+                <span style="font-size: 0.68rem; color: var(--accent-green);">Recomendado para APR</span>
+            </div>
+
+            <div class="notice-box">
+                <span style="font-size: 1.1rem;">💡</span>
+                <div><strong>Regla Comercial B2B:</strong> Adquisición mínima de bolsa de <strong>10 simulaciones (para 10 trabajadores)</strong>. Las bolsas de folios adquiridas <strong>no tienen fecha de caducidad</strong> y se acumulan para uso futuro en faena.</div>
+            </div>
+
+            <div class="packs-grid" style="margin-top: 6px;">
+                <div class="pack-card active" id="packBasico" onclick="aplicarPack('basico')">
+                    <div class="pack-title"><span>📦 Pack Básico Transporte</span><span style="color:var(--accent-green);">3 Módulos</span></div>
+                    <span class="pack-desc">Reactímetro, Palancas y Punteo. Esencial para control psicomotriz rápido.</span>
+                    <div class="pack-price">Valor Ref: $12.000 / trabajador</div>
+                </div>
+                <div class="pack-card" id="packPlus" onclick="aplicarPack('plus')">
+                    <div class="pack-title"><span>⭐ Pack Plus Profesional</span><span style="color:var(--accent-green);">4 Módulos</span></div>
+                    <span class="pack-desc">Reactímetro, Palancas, Punteo y Tamizaje Auditivo. Estándar de faena equilibrado.</span>
+                    <div class="pack-price">Valor Ref: $16.000 / trabajador</div>
+                </div>
+                <div class="pack-card" id="packFull" onclick="aplicarPack('full')">
+                    <div class="pack-title"><span>🚀 Pack Full / Medium Completo</span><span style="color:var(--accent-green);">5 Módulos</span></div>
+                    <span class="pack-desc">Incluye Reactímetro, Palancas, Punteo, Tamizaje Auditivo y Tamizaje Visual.</span>
+                    <div class="pack-price">Valor Ref: $20.000 / trabajador</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECCIÓN 2: CONSTRUCTOR MODULAR CON VALORIZACIÓN Y 18 MÓDULOS -->
+        <div class="panel-card">
+            <div class="card-title">
+                <span>2. Constructor Modular a Medida (Catálogo de los 18 Módulos)</span>
+                <span style="font-size: 0.68rem; color: var(--text-muted);">Personalice su combinación</span>
+            </div>
+            <p style="font-size: 0.78rem; color: var(--text-muted); line-height: 1.35;">
+                Seleccione o desmarque individualmente los módulos requeridos. El informe pericial consolidado final (Módulo 18) viene incluido de forma obligatoria en todas las evaluaciones.
+            </p>
+
+            <!-- GRUPO A: PSICOMOTRICIDAD Y REFLEJOS -->
+            <div class="section-subtitle">1. Área Psicomotriz y Tiempos de Reacción</div>
+            <div class="modules-grid">
+                <div class="module-item selected" onclick="toggleModule('mod1', this)">
+                    <div class="module-header"><span class="module-title">1. Reactímetro Simple ⚡</span><input type="checkbox" id="mod1" class="module-checkbox" checked onclick="event.stopPropagation()"></div>
+                    <span class="module-desc">Mide tiempo de latencia neuromotriz y reflejo de frenado de emergencia.</span>
+                    <div class="module-footer-info"><span class="module-norma">≤ 350 ms</span><span class="module-precio">$4.000 clp</span></div>
+                </div>
+                <div class="module-item selected" onclick="toggleModule('mod2', this)">
+                    <div class="module-header"><span class="module-title">2. Reactímetro Complejo 🚦</span><input type="checkbox" id="mod2" class="module-checkbox" checked onclick="event.stopPropagation()"></div>
+                    <span class="module-desc">Discriminación de estímulos múltiples con respuesta selectiva.</span>
+                    <div class="module-footer-info"><span class="module-norma">Discriminación</span><span class="module-precio">$4.500 clp</span></div>
+                </div>
+                <div class="module-item selected" onclick="toggleModule('mod3', this)">
+                    <div class="module-header"><span class="module-title">3. Palancas Bimanual 🎮</span><input type="checkbox" id="mod3" class="module-checkbox" checked onclick="event.stopPropagation()"></div>
+                    <span class="module-desc">Coordinación motriz fina bilateral y estabilidad de trayectoria.</span>
+                    <div class="module-footer-info"><span class="module-norma">≥ 80% Precisión</span><span class="module-precio">$4.000 clp</span></div>
+                </div>
+                <div class="module-item" onclick="toggleModule('mod4', this)">
+                    <div class="module-header"><span class="module-title">4. Punteo Visomotriz (Lahy) 🎯</span><input type="checkbox" id="mod4" class="module-checkbox" onclick="event.stopPropagation()"></div>
+                    <span class="module-desc">Ritmo atencional sostenido y resistencia a fatiga operativa.</span>
+                    <div class="module-footer-info"><span class="module-norma">≥ 75% Efectivo</span><span class="module-precio">$4.000 clp</span></div>
+                </div>
+                <div class="module-item" onclick="toggleModule('mod5', this)">
+                    <div class="module-header"><span class="module-title">5. Frenado Selectivo Dinámico 🛑</span><input type="checkbox" id="mod5" class="module-checkbox" onclick="event.stopPropagation()"></div>
+                    <span class="module-desc">Precisión de frenado bajo presión de tiempo con cargas cognitivas.</span>
+                    <div class="module-footer-info"><span class="module-norma">Control Impulsos</span><span class="module-precio">$4.500 clp</span></div>
+                </div>
+            </div>
+
+            <!-- GRUPO B: SENSORIAL Y VISUAL-AUDITIVO -->
+            <div class="section-subtitle">2. Área Sensorial (Visión y Audición)</div>
+            <div class="modules-grid">
+                <div class="module-item selected" onclick="toggleModule('mod6', this)">
+                    <div class="module-header"><span class="module-title">6. Tamizaje Visual (Snellen) 👁️</span><input type="checkbox" id="mod6" class="module-checkbox" checked onclick="event.stopPropagation()"></div>
+                    <span class="module-desc">Optotipos de agudeza visual con auditoría telemétrica facial (45-65cm).</span>
+                    <div class="module-footer-info"><span class="module-norma">D.S. N° 170</span><span class="module-precio">$4.000 clp</span></div>
+                </div>
+                <div class="module-item" onclick="toggleModule('mod7', this)">
+                    <div class="module-header"><span class="module-title">7. Test de Ishihara (Daltonismo) 🎨</span><input type="checkbox" id="mod7" class="module-checkbox" onclick="event.stopPropagation()"></div>
+                    <span class="module-desc">Láminas para detección de discromatopsias (rojo/verde).</span>
+                    <div class="module-footer-info"><span class="module-norma">Semáforos</span><span class="module-precio">$3.500 clp</span></div>
+                </div>
+                <div class="module-item" onclick="toggleModule('mod8', this)">
+                    <div class="module-header"><span class="module-title">8. Visión de Profundidad (Estereopsis) 📐</span><input type="checkbox" id="mod8" class="module-checkbox" onclick="event.stopPropagation()"></div>
+                    <span class="module-desc">Percepción tridimensional y cálculo de distancias relativas.</span>
+                    <div class="module-footer-info"><span class="module-norma">Adelantamientos</span><span class="module-precio">$4.000 clp</span></div>
+                </div>
+                <div class="module-item" onclick="toggleModule('mod9', this)">
+                    <div class="module-header"><span class="module-title">9. Campo Visual Periférico 👁️‍🗨️</span><input type="checkbox" id="mod9" class="module-checkbox" onclick="event.stopPropagation()"></div>
+                    <span class="module-desc">Amplitud del cono visual lateral para detección de obstáculos.</span>
+                    <div class="module-footer-info"><span class="module-norma">≥ 120° Visión</span><span class="module-precio">$4.000 clp</span></div>
+                </div>
+                <div class="module-item selected" onclick="toggleModule('mod10', this)">
+                    <div class="module-header"><span class="module-title">10. Tamizaje Auditivo Binaural 🎧</span><input type="checkbox" id="mod10" class="module-checkbox" checked onclick="event.stopPropagation()"></div>
+                    <span class="module-desc">Audiometría tonal en frecuencias críticas (500 a 4000 Hz).</span>
+                    <div class="module-footer-info"><span class="module-norma">Alertas Ruido</span><span class="module-precio">$4.000 clp</span></div>
+                </div>
+            </div>
+
+            <!-- GRUPO C: COGNITIVO, VELOCIDAD Y FATIGA -->
+            <div class="section-subtitle">3. Área Cognitiva, Anticipación y Fatiga</div>
+            <div class="modules-grid">
+                <div class="module-item" onclick="toggleModule('mod11', this)">
+                    <div class="module-header"><span class="module-title">11. Velocidad de Anticipación ⏱️</span><input type="checkbox" id="mod11" class="module-checkbox" onclick="event.stopPropagation()"></div>
+                    <span class="module-desc">Cálculo espacio-temporal ante objetos móviles y cruces.</span>
+                    <div class="module-footer-info"><span class="module-norma">Alta Velocidad</span><span class="module-precio">$4.500 clp</span></div>
+                </div>
+                <div class="module-item" onclick="toggleModule('mod12', this)">
+                    <div class="module-header"><span class="module-title">12. Atención Sostenida (CPT) 🧠</span><input type="checkbox" id="mod12" class="module-checkbox" onclick="event.stopPropagation()"></div>
+                    <span class="module-desc">Estabilidad atencional y detección de eventos en turnos largos.</span>
+                    <div class="module-footer-info"><span class="module-norma">Anti Micro-sueño</span><span class="module-precio">$4.500 clp</span></div>
+                </div>
+                <div class="module-item" onclick="toggleModule('mod13', this)">
+                    <div class="module-header"><span class="module-title">13. Test de Fatiga (Karolinska) 😴</span><input type="checkbox" id="mod13" class="module-checkbox" onclick="event.stopPropagation()"></div>
+                    <span class="module-desc">Escala psicométrica de nivel de alerta antes de conducir de noche.</span>
+                    <div class="module-footer-info"><span class="module-norma">SG-SST</span><span class="module-precio">$3.500 clp</span></div>
+                </div>
+                <div class="module-item" onclick="toggleModule('mod14', this)">
+                    <div class="module-header"><span class="module-title">14. Memoria de Trabajo Operativa 🧩</span><input type="checkbox" id="mod14" class="module-checkbox" onclick="event.stopPropagation()"></div>
+                    <span class="module-desc">Retención de secuencias e instrucciones de ruta bajo presión.</span>
+                    <div class="module-footer-info"><span class="module-norma">Logística</span><span class="module-precio">$4.000 clp</span></div>
+                </div>
+            </div>
+
+            <!-- GRUPO D: TOXICOLOGÍA, ESTABILIDAD Y CLÍNICO -->
+            <div class="section-subtitle">4. Área Toxicológica, Estabilidad Emocional y Pericial</div>
+            <div class="modules-grid">
+                <div class="module-item" onclick="toggleModule('mod15', this)">
+                    <div class="module-header"><span class="module-title">15. Certificación Cero Alcohol/Drogas 🧪</span><input type="checkbox" id="mod15" class="module-checkbox" onclick="event.stopPropagation()"></div>
+                    <span class="module-desc">Protocolo de autocertificación y validación toxicológica en faena.</span>
+                    <div class="module-footer-info"><span class="module-norma">Ley N° 20.000</span><span class="module-precio">$3.500 clp</span></div>
+                </div>
+                <div class="module-item" onclick="toggleModule('mod16', this)">
+                    <div class="module-header"><span class="module-title">16. Control de Impulsos Viales ⚖️</span><input type="checkbox" id="mod16" class="module-checkbox" onclick="event.stopPropagation()"></div>
+                    <span class="module-desc">Inventario para detección de perfiles de riesgo vial agresivo.</span>
+                    <div class="module-footer-info"><span class="module-norma">Conducción Defensiva</span><span class="module-precio">$4.000 clp</span></div>
+                </div>
+                <div class="module-item" onclick="toggleModule('mod17', this)">
+                    <div class="module-header"><span class="module-title">17. Declaración Médica y Kinesiológica 📋</span><input type="checkbox" id="mod17" class="module-checkbox" onclick="event.stopPropagation()"></div>
+                    <span class="module-desc">Declaración jurada digital de patologías, vértigo o epilepsia.</span>
+                    <div class="module-footer-info"><span class="module-norma">Art. 36 D.S. 170</span><span class="module-precio">$3.000 clp</span></div>
+                </div>
+                <!-- MÓDULO 18 FIJO E INALTERABLE -->
+                <div class="module-item fixed-item selected">
+                    <div class="module-header">
+                        <span class="module-title">18. Consolidado & Credencial QR 🛡️</span>
+                        <input type="checkbox" id="mod18" class="module-checkbox" checked disabled>
+                    </div>
+                    <span class="module-desc">Informe Pericial con firma digital y código QR de control en garita.</span>
+                    <div class="module-footer-info">
+                        <span class="module-norma" style="color:var(--accent-cyan);">LEY 19.628</span>
+                        <span class="module-precio" style="color:var(--accent-green);">Incluido</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECCIÓN 3: ACTIVACIÓN Y PAGO DE BOLSA -->
+        <div class="panel-card checkout-box">
+            <div class="card-title" style="border-color: rgba(56, 189, 248, 0.4);">
+                <span>3. Activación de Consola de Empresa & Bolsa Corporativa</span>
+            </div>
+
+            <form id="formEmpresa" onsubmit="procesarContratacion(event)">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Razón Social de la Empresa *</label>
+                        <input type="text" id="empRazon" placeholder="Ej: Transportes del Sur SpA" required>
+                    </div>
+                    <div class="form-group">
+                        <label>RUT Empresa *</label>
+                        <input type="text" id="empRut" placeholder="Ej: 76.543.210-K" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Nombre Encargado / APR *</label>
+                        <input type="text" id="empEncargado" placeholder="Ej: Carlos Mendoza" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Correo Electrónico (Informes) *</label>
+                        <input type="email" id="empCorreo" placeholder="Ej: apr@transportesur.cl" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Cantidad de Simulaciones / Folios * (Mín. 10)</label>
+                        <input type="number" id="empFolios" value="10" min="10" max="1000" required>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-pay">
+                    💳 PAGAR BOLSA (MÍN. 10 SIN CADUCIDAD) Y ACCEDER A CONSOLA →
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function aplicarPack(tipo) {
+            document.querySelectorAll('.pack-card').forEach(c => c.classList.remove('active'));
+            
+            const checkboxes = [];
+            for(let i=1; i<=18; i++) checkboxes.push(document.getElementById(`mod${i}`));
+
+            if (tipo === 'basico') {
+                document.getElementById('packBasico').classList.add('active');
+                checkboxes.forEach((m, idx) => {
+                    // Módulos 1, 3 (y el 18 siempre fijo)
+                    if ([0, 2].includes(idx)) {
+                        m.checked = true; m.closest('.module-item').classList.add('selected');
+                    } else if (idx !== 17) {
+                        m.checked = false; m.closest('.module-item').classList.remove('selected');
+                    }
+                });
+            } else if (tipo === 'plus') {
+                document.getElementById('packPlus').classList.add('active');
+                checkboxes.forEach((m, idx) => {
+                    // Módulos 1, 3, 10 (y el 18 siempre fijo)
+                    if ([0, 2, 9].includes(idx)) {
+                        m.checked = true; m.closest('.module-item').classList.add('selected');
+                    } else if (idx !== 17) {
+                        m.checked = false; m.closest('.module-item').classList.remove('selected');
+                    }
+                });
+            } else if (tipo === 'full') {
+                document.getElementById('packFull').classList.add('active');
+                checkboxes.forEach((m, idx) => {
+                    // Módulos 1, 3, 6, 10 (y el 18 siempre fijo)
+                    if ([0, 2, 5, 9].includes(idx)) {
+                        m.checked = true; m.closest('.module-item').classList.add('selected');
+                    } else if (idx !== 17) {
+                        m.checked = false; m.closest('.module-item').classList.remove('selected');
+                    }
+                });
+            }
+            // Asegurar que mod18 nunca se desmarque
+            document.getElementById('mod18').checked = true;
+        }
+
+        function toggleModule(id, cardElement) {
+            if (id === 'mod18') return; // El módulo 18 no se puede alternar
+            const chk = document.getElementById(id);
+            chk.checked = !chk.checked;
+            if (chk.checked) {
+                cardElement.classList.add('selected');
+            } else {
+                cardElement.classList.remove('selected');
+            }
+        }
+
+        function procesarContratacion(e) {
+            e.preventDefault();
+
+            const folios = parseInt(document.getElementById('empFolios').value) || 10;
+            if (folios < 10) {
+                alert("⚠️ La cantidad mínima para bolsas corporativas es de 10 simulaciones (para 10 trabajadores).");
+                return;
+            }
+
+            const razon = document.getElementById('empRazon').value.trim();
+            const rut = document.getElementById('empRut').value.trim();
+            const encargado = document.getElementById('empEncargado').value.trim();
+            const correo = document.getElementById('empCorreo').value.trim();
+
+            localStorage.setItem('sensometrika_b2b_empresa', razon);
+            localStorage.setItem('sensometrika_b2b_rut', rut);
+            localStorage.setItem('sensometrika_b2b_encargado', encargado);
+            localStorage.setItem('sensometrika_b2b_correo', correo);
+            localStorage.setItem('sensometrika_b2b_folios', folios);
+
+            let modulosActivos = {};
+            for(let i=1; i<=18; i++) {
+                modulosActivos[`mod${i}`] = document.getElementById(`mod${i}`).checked;
+            }
+            localStorage.setItem('sensometrika_b2b_modulos', JSON.stringify(modulosActivos));
+
+            alert(`✅ ¡Bolsa de ${folios} simulaciones sin caducidad activada para ${razon}!\nRedirigiendo a su Consola Privada...`);
+            window.location.href = 'dashboard_consola.html';
+        }
+    </script>
+</body>
+</html>

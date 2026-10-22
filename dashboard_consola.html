@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>SENSOMETRIKA | Consola Privada de Empresa - Gestión de Flota y Enlaces</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <style>
+        :root {
+            --bg-color: #060b13;
+            --card-bg: #0b1320;
+            --card-border: #1a2638;
+            --accent-green: #10b981;
+            --accent-cyan: #38bdf8;
+            --accent-gold: #e5b324;
+            --text-main: #f1f5f9;
+            --text-muted: #94a3b8;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            min-height: 100vh;
+            padding: 24px 12px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .main-container {
+            width: 100%;
+            max-width: 1050px;
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+        }
+
+        .brand-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid var(--card-border);
+            padding-bottom: 16px;
+        }
+
+        .brand-logo-img {
+            width: 200px;
+            height: auto;
+            mix-blend-mode: lighten;
+            filter: drop-shadow(0 0 12px rgba(56, 189, 248, 0.45));
+        }
+
+        .btn-vitrina {
+            background: transparent;
+            border: 1px solid var(--accent-cyan);
+            color: var(--accent-cyan);
+            padding: 8px 14px;
+            border-radius: 8px;
+            font-size: 0.75rem;
+            font-weight: 800;
+            cursor: pointer;
+            text-transform: uppercase;
+            text-decoration: none;
+            transition: background 0.2s;
+        }
+        .btn-vitrina:hover { background: rgba(56, 189, 248, 0.1); }
+
+        .panel-card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 14px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        .card-title {
+            font-size: 0.85rem;
+            font-weight: 800;
+            color: var(--accent-cyan);
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            border-bottom: 1px solid var(--card-border);
+            padding-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .info-empresa-bar {
+            background: #080d17;
+            border: 1px solid var(--card-border);
+            border-radius: 10px;
+            padding: 14px 16px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+            font-size: 0.80rem;
+        }
+
+        /* DESCRIPCIÓN DE MÓDULOS CONTRATADOS */
+        .modulos-badge-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: 4px;
+        }
+        .mod-pill {
+            background: rgba(56, 189, 248, 0.1);
+            border: 1px solid rgba(56, 189, 248, 0.3);
+            color: var(--accent-cyan);
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 0.68rem;
+            font-weight: 700;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 12px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .form-group label {
+            font-size: 0.68rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            font-weight: 700;
+        }
+
+        .form-group input {
+            background: #080d17;
+            border: 1px solid var(--card-border);
+            color: #fff;
+            padding: 10px 12px;
+            border-radius: 8px;
+            font-size: 0.82rem;
+            outline: none;
+        }
+
+        .btn-generate {
+            background: var(--accent-cyan);
+            color: #000;
+            border: none;
+            padding: 12px;
+            border-radius: 8px;
+            font-weight: 800;
+            font-size: 0.85rem;
+            cursor: pointer;
+            text-transform: uppercase;
+            margin-top: 6px;
+            transition: opacity 0.2s;
+        }
+        .btn-generate:hover { opacity: 0.9; }
+
+        .link-out-box {
+            display: none;
+            background: rgba(56, 189, 248, 0.08);
+            border: 1px solid var(--accent-cyan);
+            border-radius: 10px;
+            padding: 14px;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .link-out-input {
+            background: #050a12;
+            border: 1px solid var(--card-border);
+            color: var(--accent-cyan);
+            padding: 10px;
+            border-radius: 6px;
+            font-size: 0.78rem;
+            font-family: monospace;
+            width: 100%;
+        }
+
+        .btn-actions-row { display: flex; gap: 8px; }
+
+        .btn-copy {
+            background: var(--accent-green);
+            color: #000;
+            border: none;
+            padding: 10px;
+            border-radius: 6px;
+            font-weight: 800;
+            font-size: 0.80rem;
+            cursor: pointer;
+            text-transform: uppercase;
+            flex: 1;
+        }
+
+        .btn-wp {
+            background: #16a34a;
+            color: #ffffff;
+            border: none;
+            padding: 10px;
+            border-radius: 6px;
+            font-weight: 800;
+            font-size: 0.80rem;
+            text-decoration: none;
+            text-align: center;
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+            gap: 6px;
+            flex: 1;
+        }
+
+        .table-container { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.78rem; }
+        th, td { border: 1px solid var(--card-border); padding: 10px 12px; text-align: left; vertical-align: middle; }
+        th { background: #070d17; color: var(--accent-cyan); font-weight: 800; text-transform: uppercase; font-size: 0.65rem; }
+
+        .badge-status { padding: 3px 8px; border-radius: 4px; font-weight: 800; font-size: 0.62rem; text-transform: uppercase; display: inline-block; }
+        .badge-ok { background: rgba(16, 185, 129, 0.15); color: var(--accent-green); border: 1px solid var(--accent-green); }
+        .badge-pending { background: rgba(245, 158, 11, 0.15); color: #f59e0b; border: 1px solid #f59e0b; }
+        .badge-bad { background: rgba(239, 68, 68, 0.15); color: #ef4444; border: 1px solid #ef4444; }
+
+        .qr-cell-box {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .mini-qr {
+            width: 44px;
+            height: 44px;
+            background: #fff;
+            padding: 3px;
+            border-radius: 4px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="main-container">
+        <header class="brand-header">
+            <img src="sensometrica.jpg" alt="SENSOMETRIKA" class="brand-logo-img">
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <a href="dashboard_empresa.html" class="btn-vitrina">← Volver a Vitrina / Catálogo</a>
+            </div>
+        </header>
+
+        <!-- BARRA DE INFORMACIÓN DE EMPRESA Y FOLIOS -->
+        <div class="info-empresa-bar">
+            <div>
+                <span style="color: var(--text-muted); text-transform: uppercase; font-size: 0.65rem; display: block;">Empresa Contratante</span>
+                <strong id="lblEmpresa" style="color: #fff; font-size: 0.88rem;">Cargando...</strong>
+            </div>
+            <div>
+                <span style="color: var(--text-muted); text-transform: uppercase; font-size: 0.65rem; display: block;">Simulaciones Disponibles (Sin Caducidad)</span>
+                <strong id="lblFoliosRestantes" style="color: var(--accent-green); font-size: 0.88rem;">10 Disponibles</strong>
+            </div>
+            <div>
+                <span style="color: var(--text-muted); text-transform: uppercase; font-size: 0.65rem; display: block;">Encargado / APR</span>
+                <strong id="lblEncargado" style="color: var(--accent-cyan); font-size: 0.88rem;">Cargando...</strong>
+            </div>
+        </div>
+
+        <!-- PANEL DE DESCRIPCIÓN DE MÓDULOS ACTIVOS EN LA BATERÍA -->
+        <div class="panel-card">
+            <div class="card-title">
+                <span>🛡️ Batería Pericial Activa para esta Empresa</span>
+                <span style="font-size: 0.68rem; color: var(--accent-gold);">Estándar Corporativo Configurado</span>
+            </div>
+            <p style="font-size: 0.75rem; color: var(--text-muted);">
+                Los enlaces generados evaluarán los siguientes módulos técnicos y normativos seleccionados:
+            </p>
+            <div id="listaModulosActivos" class="modulos-badge-container">
+                <!-- Se inyecta dinámicamente -->
+            </div>
+        </div>
+
+        <!-- FORMULARIO DE GENERACIÓN DE ENLACE -->
+        <div class="panel-card">
+            <div class="card-title">🎟️ Generar y Enviar Link de Evaluación a Conductor</div>
+            <form id="formRegistrar" onsubmit="generarLinkTrabajador(event)">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>RUT del Conductor *</label>
+                        <input type="text" id="inputRut" placeholder="Ej: 12.345.678-9" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Nombre Completo *</label>
+                        <input type="text" id="inputNombre" placeholder="Ej: Juan Pérez Silva" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Correo Electrónico *</label>
+                        <input type="email" id="inputEmail" placeholder="Ej: conductor@empresa.cl" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Teléfono WhatsApp *</label>
+                        <input type="text" id="inputTelefono" placeholder="Ej: +56912345678" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Cargo / Función en Flota</label>
+                        <input type="text" id="inputCargo" placeholder="Ej: Conductor Carga Pesada" required>
+                    </div>
+                </div>
+                <button type="submit" class="btn-generate">⚡ GENERAR ENLACE ÚNICO Y DESPACHAR 💬</button>
+            </form>
+
+            <div id="boxLinkResultado" class="link-out-box">
+                <span style="font-size: 0.70rem; color: var(--text-muted); font-weight: 800; text-transform: uppercase;">
+                    Enlace Individual Generado (Vigencia 48 hrs):
+                </span>
+                <input type="text" id="txtLinkGenerado" class="link-out-input" readonly>
+                <div class="btn-actions-row">
+                    <button type="button" class="btn-copy" onclick="copiarLinkGenerado()">📋 Copiar Link</button>
+                    <a id="btnWhatsappDirecto" href="#" target="_blank" class="btn-wp">💬 Abrir WhatsApp</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- NÓMINA Y TRAZABILIDAD DE CONDUCTORES CON QR -->
+        <div class="panel-card">
+            <div class="card-title">📋 Nómina de Conductores Evaluados, Informes & Código QR de Garita</div>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Conductor / RUT</th>
+                            <th>Cargo</th>
+                            <th>Estado Acreditación</th>
+                            <th>Link Enlace</th>
+                            <th>Informe Pericial & QR Garita</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tablaNominaConsola">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const nombresModulos = {
+            mod1: "1. Reactímetro Simple ⚡",
+            mod2: "2. Reactímetro Complejo 🚦",
+            mod3: "3. Palancas Bimanual 🎮",
+            mod4: "4. Punteo Visomotriz (Lahy) 🎯",
+            mod5: "5. Frenado Selectivo Dinámico 🛑",
+            mod6: "6. Tamizaje Visual (Snellen) 👁️",
+            mod7: "7. Test de Ishihara (Daltonismo) 🎨",
+            mod8: "8. Visión de Profundidad 📐",
+            mod9: "9. Campo Visual Periférico 👁️‍🗨️",
+            mod10: "10. Tamizaje Auditivo Binaural 🎧",
+            mod11: "11. Velocidad de Anticipación ⏱️",
+            mod12: "12. Atención Sostenida (CPT) 🧠",
+            mod13: "13. Test de Fatiga (Karolinska) 😴",
+            mod14: "14. Memoria de Trabajo Operativa 🧩",
+            mod15: "15. Cero Alcohol/Drogas 🧪",
+            mod16: "16. Control de Impulsos Viales ⚖️",
+            mod17: "17. Declaración Médica 📋",
+            mod18: "18. Consolidado & Credencial QR 🛡️"
+        };
+
+        let trabajadores = JSON.parse(localStorage.getItem('sensometrika_consola_nomina')) || [];
+        let foliosRestantes = parseInt(localStorage.getItem('sensometrika_b2b_folios') || '10', 10);
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const empresa = localStorage.getItem('sensometrika_b2b_empresa') || 'EMPRESA DE TRANSPORTE S.A.';
+            const encargado = localStorage.getItem('sensometrika_b2b_encargado') || 'DPTO PREVENCIÓN';
+
+            document.getElementById('lblEmpresa').innerText = empresa.toUpperCase();
+            document.getElementById('lblEncargado').innerText = encargado.toUpperCase();
+            document.getElementById('lblFoliosRestantes').innerText = `${foliosRestantes} Simulaciones`;
+
+            renderizarModulosActivos();
+            renderizarNomina();
+        });
+
+        function renderizarModulosActivos() {
+            const container = document.getElementById('listaModulosActivos');
+            container.innerHTML = '';
+            
+            const modulosConfig = JSON.parse(localStorage.getItem('sensometrika_b2b_modulos')) || {
+                mod1: true, mod3: true, mod10: true, mod18: true
+            };
+
+            let count = 0;
+            for (const [key, activo] of Object.entries(modulosConfig)) {
+                if (activo && nombresModulos[key]) {
+                    count++;
+                    container.innerHTML += `<span class="mod-pill">${nombresModulos[key]}</span>`;
+                }
+            }
+            if (count === 0) {
+                container.innerHTML = `<span style="color:var(--text-muted); font-size:0.75rem;">Ningún módulo adicional seleccionado (Solo Credencial QR base).</span>`;
+            }
+        }
+
+        function generarLinkTrabajador(e) {
+            e.preventDefault();
+
+            if (foliosRestantes <= 0) {
+                alert("⚠️ Bolsa de simulaciones agotada. Recargue folios desde el catálogo corporativo.");
+                return;
+            }
+
+            const rut = document.getElementById('inputRut').value.trim();
+            const nombre = document.getElementById('inputNombre').value.trim();
+            const email = document.getElementById('inputEmail').value.trim();
+            const telefono = document.getElementById('inputTelefono').value.trim();
+            const cargo = document.getElementById('inputCargo').value.trim();
+            const empresa = document.getElementById('lblEmpresa').innerText;
+
+            foliosRestantes--;
+            localStorage.setItem('sensometrika_b2b_folios', foliosRestantes);
+            document.getElementById('lblFoliosRestantes').innerText = `${foliosRestantes} Simulaciones`;
+
+            const cleanRut = rut.replace(/[^0-9Kk]/g, '');
+            const baseUrl = window.location.origin;
+            const urlCompleta = `${baseUrl}/menu_B2B.html?mode=b2b&rut=${cleanRut}&nombre=${encodeURIComponent(nombre)}`;
+
+            document.getElementById('txtLinkGenerado').value = urlCompleta;
+            
+            const msg = encodeURIComponent(`Hola *${nombre}* (RUT: ${rut}), desde Prevención de Riesgos de *${empresa}* te enviamos tu acceso para rendir la evaluación psicosensométrica en Sensometrika. Vigencia 48 hrs:\n\n${urlCompleta}`);
+            document.getElementById('btnWhatsappDirecto').href = `https://wa.me/${telefono.replace(/[^0-9+]/g, '')}?text=${msg}`;
+            document.getElementById('boxLinkResultado').style.display = 'flex';
+
+            trabajadores.unshift({ rut, nombre, email, telefono, cargo, empresa, url: urlCompleta });
+            localStorage.setItem('sensometrika_consola_nomina', JSON.stringify(trabajadores));
+            renderizarNomina();
+
+            document.getElementById('inputRut').value = '';
+            document.getElementById('inputNombre').value = '';
+            document.getElementById('inputEmail').value = '';
+            document.getElementById('inputTelefono').value = '';
+            document.getElementById('inputCargo').value = '';
+        }
+
+        function copiarLinkGenerado() {
+            const input = document.getElementById('txtLinkGenerado');
+            input.select();
+            navigator.clipboard.writeText(input.value);
+            alert("¡Enlace copiado al portapapeles!");
+        }
+
+        function renderizarNomina() {
+            const tbody = document.getElementById('tablaNominaConsola');
+            tbody.innerHTML = '';
+
+            if (trabajadores.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:var(--text-muted);">Sin conductores registrados en la consola.</td></tr>`;
+                return;
+            }
+
+            trabajadores.forEach((t, index) => {
+                const cleanRut = t.rut.replace(/[^0-9Kk]/g, '');
+                const res = JSON.parse(localStorage.getItem(`sensometrika_last_reactimetro_${cleanRut}`)) || null;
+                const estado = res ? (res.go_no_go_flag ? 'APROBADO D.S. 170' : 'OBSERVADO') : 'PENDIENTE';
+                const clase = res ? (res.go_no_go_flag ? 'badge-ok' : 'badge-bad') : 'badge-pending';
+
+                const urlInforme = `informe_transporte.html?rut=${t.rut}&nombre=${encodeURIComponent(t.nombre)}&cargo=${encodeURIComponent(t.cargo)}`;
+                const qrContainerId = `qrcode_table_${index}`;
+
+                tbody.innerHTML += `
+                    <tr>
+                        <td><b>${t.nombre}</b><br><span style="color:var(--text-muted);">RUT: ${t.rut}</span></td>
+                        <td>${t.cargo}</td>
+                        <td><span class="badge-status ${clase}">${estado}</span></td>
+                        <td><button onclick="navigator.clipboard.writeText('${t.url}');alert('¡Enlace copiado!');" style="background:#0284c7; color:#fff; border:none; padding:6px 10px; border-radius:4px; cursor:pointer; font-weight:700;">🔗 Copiar</button></td>
+                        <td>
+                            <div class="qr-cell-box">
+                                <div id="${qrContainerId}" class="mini-qr" title="QR Validez Garita"></div>
+                                <div style="display:flex; flex-direction:column; gap:4px;">
+                                    <a href="${urlInforme}" target="_blank" style="color:var(--accent-cyan); font-weight:800; text-decoration:underline; font-size:0.75rem;">📄 Ver Informe Pericial</a>
+                                    <span style="color:var(--text-muted); font-size:0.62rem;">Código QR Garita Faena</span>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            // Generar los códigos QR en cada fila
+            trabajadores.forEach((t, index) => {
+                const qrContainerId = `qrcode_table_${index}`;
+                const el = document.getElementById(qrContainerId);
+                if (el && el.innerHTML === "") {
+                    const urlInforme = `${window.location.origin}/informe_transporte.html?rut=${t.rut}&nombre=${encodeURIComponent(t.nombre)}`;
+                    new QRCode(el, {
+                        text: urlInforme,
+                        width: 38,
+                        height: 38,
+                        colorDark: "#000000",
+                        colorLight: "#ffffff",
+                        correctLevel: QRCode.CorrectLevel.M
+                    });
+                }
+            });
+        }
+    </script>
+</body>
+</html>
