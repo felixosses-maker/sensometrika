@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>SENSOMETRIKA | Tamizaje Visual Transporte (Ishihara y Snellen)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- LIBRERÍAS MEDIAPIPE PARA TELEMETRÍA BIOMÉTRICA -->
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
+
+    <style>
+        :root {
+            --bg-color: #060b13;
+            --card-bg: #0b1320;
+            --card-border: #1a2638;
+            --accent-cyan: #38bdf8;
+            --accent-green: #10b981;
+            --accent-red: #ef4444;
+            --accent-gold: #e5b324;
+            --text-main: #f1f5f9;
+            --text-muted: #94a3b8;
+            --blue-btn: #0284c7;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; touch-action: manipulation; }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 12px 8px;
+        }
+
+        video#webcamInput {
+            display: none !important;
+            position: absolute !important;
+            top: -9999px !important;
+            left: -9999px !important;
+            width: 0 !important;
+            height: 0 !important;
+        }
+
+        .main-container {
+            width: 100%;
+            max-width: 460px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .brand-header {
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            width: 100%;
+        }
+
+        .brand-logo-img {
+            width: 175px;
+            height: auto;
+            display: block;
+            mix-blend-mode: lighten;
+            filter: drop-shadow(0 0 12px rgba(56, 189, 248, 0.45));
+        }
+
+        .brand-subtitle {
+            color: var(--accent-cyan);
+            font-size: 0.70rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            text-shadow: 0 0 8px rgba(56, 189, 248, 0.3);
+        }
+
+        .eval-card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            padding: 16px;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            position: relative;
+        }
+
+        .top-nav {
+            display: flex !important;
+            justify-content: space-between !important;
+            align-items: center !important;
+            width: 100% !important;
+            gap: 6px !important;
+        }
+
+        .top-nav button, .top-nav a {
+            background: #0c182e !important;
+            border: 1px solid #1e3a6d !important;
+            color: var(--accent-cyan) !important;
+            font-size: 0.70rem !important;
+            font-weight: 700 !important;
+            padding: 6px 10px !important;
+            border-radius: 8px !important;
+            cursor: pointer !important;
+            white-space: nowrap !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            text-decoration: none !important;
+        }
+
+        /* PIP BIOMÉTRICO EN HEADER */
+        .cam-preview-pip-header {
+            position: relative !important;
+            width: 56px !important;
+            height: 56px !important;
+            min-width: 56px !important;
+            min-height: 56px !important;
+            max-width: 56px !important;
+            max-height: 56px !important;
+            border: 1.5px solid var(--accent-cyan) !important;
+            border-radius: 8px !important;
+            overflow: hidden !important;
+            background: #030712 !important;
+            box-shadow: 0 0 10px rgba(0, 191, 255, 0.3) !important;
+            flex-shrink: 0 !important;
+        }
+
+        .cam-preview-pip-header video {
+            width: 100% !important;
+            height: 100% !important;
+            object-fit: cover !important;
+            transform: scaleX(-1) !important;
+            display: block !important;
+        }
+
+        .cam-tag-header {
+            position: absolute !important;
+            bottom: 0 !important;
+            left: 0 !important;
+            right: 0 !important;
+            background: rgba(0, 191, 255, 0.9) !important;
+            color: #000000 !important;
+            font-size: 0.42rem !important;
+            font-weight: 900 !important;
+            text-align: center !important;
+            padding: 1px 0 !important;
+            text-transform: uppercase !important;
+            letter-spacing: 0.3px !important;
+            z-index: 5 !important;
+        }
+
+        .status-badge-container { display: flex; justify-content: center; }
+
+        .status-badge {
+            background-color: #0f233d;
+            border: 1px solid #1d4ed8;
+            color: #38bdf8;
+            padding: 5px 14px;
+            border-radius: 20px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .dot-status {
+            width: 8px; height: 8px;
+            background-color: #38bdf8;
+            border-radius: 50%;
+        }
+
+        /* VIEWPORT CANVAS VISUAL */
+        .canvas-wrapper {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 4/3;
+            background-color: #020617;
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        canvas#lienzo-visual {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        .distance-block-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(6px);
+            z-index: 40;
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 16px;
+            text-align: center;
+            gap: 8px;
+            border-radius: 12px;
+            pointer-events: none;
+        }
+
+        .distance-block-title { color: var(--accent-red); font-weight: 900; font-size: 0.92rem; text-transform: uppercase; }
+        .distance-block-desc { color: var(--text-main); font-size: 0.74rem; line-height: 1.35; }
+
+        /* GRILLA DE BOTONES DE OPCIONES */
+        .options-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            width: 100%;
+        }
+
+        .btn-opt {
+            background-color: #0f1c2e;
+            border: 1px solid #1e3a6d;
+            color: var(--text-main);
+            font-size: 0.90rem;
+            font-weight: 700;
+            padding: 12px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        }
+
+        .btn-opt:active {
+            background-color: #0284c7;
+            border-color: #38bdf8;
+            transform: scale(0.97);
+        }
+
+        .instruction-text {
+            text-align: center;
+            font-size: 0.78rem;
+            color: var(--text-main);
+            line-height: 1.35;
+        }
+
+        .btn-start {
+            background-color: var(--blue-btn);
+            color: #ffffff;
+            border: none;
+            border-radius: 10px;
+            padding: 14px;
+            font-weight: 800;
+            font-size: 0.95rem;
+            cursor: pointer;
+            width: 100%;
+            transition: background 0.2s;
+        }
+
+        /* METRICAS TELEMÉTRICAS 4 COLUMNAS */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr 1fr;
+            text-align: center;
+            background-color: #070d17;
+            border: 1px solid var(--card-border);
+            border-radius: 10px;
+            padding: 10px 4px;
+        }
+
+        .metric-item { display: flex; flex-direction: column; gap: 3px; }
+        .metric-label { font-size: 0.52rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase; }
+        .metric-value { font-size: 0.88rem; font-weight: 800; color: #ffffff; }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(6, 11, 19, 0.88);
+            backdrop-filter: blur(5px);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background-color: var(--card-bg);
+            border: 1px solid #1e3a5f;
+            border-radius: 14px;
+            padding: 20px;
+            width: 90%;
+            max-width: 420px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .modal-title { color: #38bdf8; font-size: 1.05rem; font-weight: 800; }
+        .modal-body { font-size: 0.82rem; color: var(--text-main); line-height: 1.5; text-align: left; }
+        .modal-btn { background-color: var(--accent-green); color: #fff; border: none; padding: 12px; border-radius: 8px; font-weight: 700; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+    <video id="webcamInput" playsinline muted></video>
+
+    <div class="main-container">
+        <header class="brand-header">
+            <img src="sensometrica.jpg" alt="SENSOMETRIKA" class="brand-logo-img">
+            <span class="brand-subtitle">TAMIZAJE VISUAL TRANSPORTE • ISHIHARA & SNELLEN</span>
+        </header>
+
+        <div class="eval-card">
+            <div class="top-nav">
+                <button id="btnVolverNav" onclick="ejecutarRetornoMenu()">&larr; Menú Pruebas</button>
+
+                <div class="cam-preview-pip-header">
+                    <video id="webcamVideo" autoplay playsinline muted></video>
+                    <div class="cam-tag-header">Biometría</div>
+                </div>
+
+                <button id="btnInfo">ℹ ¿Cómo funciona?</button>
+            </div>
+
+            <div class="status-badge-container">
+                <div class="status-badge">
+                    <span id="badgeDot" class="dot-status"></span>
+                    <span id="badgeText">Fase 1: Discriminación Cromática (Ishihara)</span>
+                </div>
+            </div>
+
+            <div class="canvas-wrapper">
+                <canvas id="lienzo-visual" width="360" height="270"></canvas>
+
+                <!-- OVERLAY DE BLOQUEO POR DISTANCIA NORMATIVA -->
+                <div id="boxBlockDistancia" class="distance-block-overlay">
+                    <span class="distance-block-title">⚠️ DISTANCIA / POSTURA FUERA DE RANGO</span>
+                    <span id="txtDistanciaDetalle" class="distance-block-desc">
+                        Ajuste su posición frente a la pantalla.<br>
+                        Distancia telemétrica actual: <b id="lblDistDetalleVal" style="color:var(--accent-red);">-- cm</b><br>
+                        (Rango normativo: 45 a 65 cm).
+                    </span>
+                </div>
+            </div>
+
+            <div class="instruction-text" id="instructionText">
+                Seleccione la alternativa correcta que observa en el visor central.
+            </div>
+
+            <!-- GRILLA DINÁMICA DE BOTONES PARA RESPUESTAS -->
+            <div id="gridOpciones" class="options-grid"></div>
+
+            <button id="btnStartVisual" class="btn-start" onclick="iniciarTamizajeVisual()">INICIAR EVALUACIÓN VISUAL (6 LÁMINAS)</button>
+
+            <!-- PANEL TELEMÉTRICO 4 COLUMNAS -->
+            <div class="metrics-grid">
+                <div class="metric-item">
+                    <span class="metric-label">FASE</span>
+                    <span id="metricaFase" class="metric-value" style="color:#e5b324;">Cromática</span>
+                </div>
+                <div class="metric-item">
+                    <span class="metric-label">LÁMINA</span>
+                    <span id="metricaLamina" class="metric-value" style="color:#38bdf8;">0 / 6</span>
+                </div>
+                <div class="metric-item">
+                    <span class="metric-label">ACIENTOS</span>
+                    <span id="metricaAciertos" class="metric-value" style="color:#10b981;">0</span>
+                </div>
+                <div class="metric-item">
+                    <span class="metric-label">DISTANCIA</span>
+                    <span id="metricaDistancia" class="metric-value" style="color:#10b981;">-- cm</span>
+                </div>
+            </div>
+        </div>
+
+        <div id="modalSistema" class="modal-overlay">
+            <div class="modal-content">
+                <div id="modalTitle" class="modal-title">EVALUACIÓN FINALIZADA</div>
+                <div id="modalBody" class="modal-body">Resultados registrados con éxito.</div>
+                <button id="modalBtnClose" class="modal-btn">Continuar</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('lienzo-visual');
+        const ctx = canvas.getContext('2d');
+        const videoElement = document.getElementById('webcamVideo');
+        const instructionText = document.getElementById('instructionText');
+        const btnStartVisual = document.getElementById('btnStartVisual');
+        const gridOpciones = document.getElementById('gridOpciones');
+        const badgeText = document.getElementById('badgeText');
+
+        const metricaFase = document.getElementById('metricaFase');
+        const metricaLamina = document.getElementById('metricaLamina');
+        const metricaAciertos = document.getElementById('metricaAciertos');
+        const metricaDistancia = document.getElementById('metricaDistancia');
+
+        const modal = document.getElementById('modalSistema');
+        const modalTitle = document.getElementById('modalTitle');
+        const modalBody = document.getElementById('modalBody');
+        const modalBtnClose = document.getElementById('modalBtnClose');
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const modeParam = urlParams.get('mode') || (localStorage.getItem('sensometrika_b2c_mode') === 'true' ? 'b2c' : 'b2b');
+        const esB2B = (modeParam === 'b2b');
+
+        let datosUsuario = {};
+        try { datosUsuario = JSON.parse(localStorage.getItem('sensometrika_datos_usuario')) || {}; } catch(e){}
+        const rutEvaluado = urlParams.get('rut') || datosUsuario.rut || 'GENERICO';
+        const cleanRut = rutEvaluado.replace(/[^0-9Kk]/g, '');
+
+        let distanciaMedidaCm = 55;
+        let estaBloqueadoPorDistancia = false;
+
+        let pasoActual = 0;
+        let aciertosCromatica = 0;
+        let aciertosAgudeza = 0;
+        let simulacionActiva = false;
+
+        let bancoPruebas = [];
+
+        function generarBancoPruebasAleatorio() {
+            const laminasIshihara = [
+                { tipo: 'ishihara', valor: '12', opciones: ['12', '74', '8', 'Ninguno'] },
+                { tipo: 'ishihara', valor: '8', opciones: ['3', '8', '6', 'Ninguno'] },
+                { tipo: 'ishihara', valor: '74', opciones: ['21', '74', '71', 'Ninguno'] }
+            ];
+
+            const laminasSnellen = [
+                { tipo: 'snellen', rotacion: 0, valor: 'Derecha', opciones: ['Derecha', 'Izquierda', 'Arriba', 'Abajo'] },
+                { tipo: 'snellen', rotacion: Math.PI, valor: 'Izquierda', opciones: ['Derecha', 'Izquierda', 'Arriba', 'Abajo'] },
+                { tipo: 'snellen', rotacion: -Math.PI / 2, valor: 'Arriba', opciones: ['Derecha', 'Izquierda', 'Arriba', 'Abajo'] }
+            ];
+
+            const mezclar = arr => arr.sort(() => Math.random() - 0.5);
+
+            laminasIshihara.forEach(l => l.opciones = mezclar([...l.opciones]));
+            laminasSnellen.forEach(l => l.opciones = mezclar([...l.opciones]));
+
+            bancoPruebas = [...mezclar(laminasIshihara), ...mezclar(laminasSnellen)];
+        }
+
+        function ejecutarRetornoMenu() {
+            const returnUrlParam = urlParams.get('returnUrl');
+            if (returnUrlParam) {
+                window.location.href = decodeURIComponent(returnUrlParam);
+            } else {
+                const menuDestino = esB2B ? 'menu_B2B.html' : 'menu_B2C.html';
+                window.location.href = `${menuDestino}?${urlParams.toString()}`;
+            }
+        }
+
+        function iniciarMediaPipeFaceMesh() {
+            const faceMesh = new FaceMesh({
+                locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`
+            });
+
+            faceMesh.setOptions({
+                maxNumFaces: 1,
+                refineLandmarks: true,
+                minDetectionConfidence: 0.5,
+                minTrackingConfidence: 0.5
+            });
+
+            faceMesh.onResults(onResultsFaceMesh);
+
+            const camera = new Camera(videoElement, {
+                onFrame: async () => { await faceMesh.send({ image: videoElement }); },
+                width: 320, height: 240
+            });
+
+            camera.start().catch(() => {
+                distanciaMedidaCm = 55;
+                evaluarRangoDistancia();
+            });
+        }
+
+        function onResultsFaceMesh(results) {
+            if (!results.multiFaceLandmarks || results.multiFaceLandmarks.length === 0) return;
+
+            const landmarks = results.multiFaceLandmarks[0];
+            const leftEye = landmarks[33];
+            const rightEye = landmarks[263];
+            const dx = leftEye.x - rightEye.x;
+            const dy = leftEye.y - rightEye.y;
+            const eyeDistanceNormalized = Math.sqrt(dx * dx + dy * dy);
+            let distCalculada = Math.round(9.5 / eyeDistanceNormalized);
+            distanciaMedidaCm = Math.round(distanciaMedidaCm * 0.5 + distCalculada * 0.5);
+
+            evaluarRangoDistancia();
+        }
+
+        function evaluarRangoDistancia() {
+            const overlayBlock = document.getElementById('boxBlockDistancia');
+            const lblDetalle = document.getElementById('lblDistDetalleVal');
+
+            metricaDistancia.textContent = `${distanciaMedidaCm} cm`;
+
+            if (distanciaMedidaCm >= 45 && distanciaMedidaCm <= 65) {
+                estaBloqueadoPorDistancia = false;
+                metricaDistancia.style.color = 'var(--accent-green)';
+                if (overlayBlock) overlayBlock.style.display = 'none';
+            } else {
+                estaBloqueadoPorDistancia = true;
+                metricaDistancia.style.color = 'var(--accent-red)';
+                if (lblDetalle) lblDetalle.textContent = `${distanciaMedidaCm} cm`;
+                if (overlayBlock) {
+                    overlayBlock.style.display = 'flex';
+                    overlayBlock.style.pointerEvents = 'auto';
+                }
+            }
+        }
+
+        function iniciarTamizajeVisual() {
+            if (estaBloqueadoPorDistancia) return;
+
+            simulacionActiva = true;
+            pasoActual = 0;
+            aciertosCromatica = 0;
+            aciertosAgudeza = 0;
+
+            generarBancoPruebasAleatorio();
+            btnStartVisual.style.display = 'none';
+
+            cargarLaminaEstimulo();
+        }
+
+        function cargarLaminaEstimulo() {
+            if (pasoActual >= bancoPruebas.length) {
+                finalizarPruebaVisual();
+                return;
+            }
+
+            const p = bancoPruebas[pasoActual];
+            metricaLamina.textContent = `${pasoActual + 1} / ${bancoPruebas.length}`;
+            metricaAciertos.textContent = aciertosCromatica + aciertosAgudeza;
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            if (p.tipo === 'ishihara') {
+                metricaFase.textContent = 'Cromática';
+                metricaFase.style.color = '#e5b324';
+                badgeText.textContent = `Fase Cromática (Lámina ${pasoActual + 1})`;
+                instructionText.innerHTML = "<b>Test Cromático:</b> ¿Qué número identifica dentro de la tarjeta de color?";
+                dibujarPlacaIshiharaCanvas(p.valor);
+            } else {
+                metricaFase.textContent = 'Agudeza (E)';
+                metricaFase.style.color = '#38bdf8';
+                badgeText.textContent = `Agudeza Visual (Lámina ${pasoActual + 1})`;
+                instructionText.innerHTML = "<b>Optotipo Snellen:</b> ¿Hacia dónde apuntan las barras abiertas de la letra <b>E</b>?";
+                dibujarOptotipoSnellenCanvas(p.rotacion);
+            }
+
+            gridOpciones.innerHTML = '';
+            p.opciones.forEach((opc) => {
+                const btn = document.createElement('button');
+                btn.className = 'btn-opt';
+                btn.textContent = opc;
+                btn.onclick = () => procesarRespuestaOpcion(opc === p.valor, p.tipo);
+                gridOpciones.appendChild(btn);
+            });
+        }
+
+        function dibujarPlacaIshiharaCanvas(numeroStr) {
+            const centroX = canvas.width / 2;
+            const centroY = canvas.height / 2;
+            const radioPlaca = 95;
+
+            ctx.fillStyle = '#0a1322';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            ctx.beginPath();
+            ctx.arc(centroX, centroY, radioPlaca, 0, Math.PI * 2);
+            ctx.fillStyle = '#080d19';
+            ctx.fill();
+
+            const coloresFondo = ['#15803d', '#16a34a', '#22c55e', '#4ade80', '#14532d', '#65a30d'];
+
+            for (let a = 0; a < Math.PI * 2; a += 0.20) {
+                for (let r = 16; r < radioPlaca - 6; r += 13) {
+                    const x = centroX + Math.cos(a) * r + (Math.sin(r) * 3);
+                    const y = centroY + Math.sin(a) * r + (Math.cos(r) * 3);
+                    ctx.beginPath();
+                    ctx.arc(x, y, 4.2 + (r % 3.5), 0, Math.PI * 2);
+                    ctx.fillStyle = coloresFondo[(Math.floor(x + y)) % coloresFondo.length];
+                    ctx.fill();
+                }
+            }
+
+            ctx.save();
+            ctx.font = '900 62px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillStyle = '#ea580c';
+            ctx.shadowColor = 'rgba(234, 88, 12, 0.4)';
+            ctx.shadowBlur = 6;
+            ctx.fillText(numeroStr, centroX, centroY + 2);
+            ctx.restore();
+        }
+
+        function dibujarOptotipoSnellenCanvas(rotacionRad) {
+            const centroX = canvas.width / 2;
+            const centroY = canvas.height / 2;
+
+            ctx.fillStyle = '#050a12';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            ctx.save();
+            ctx.translate(centroX, centroY);
+            ctx.rotate(rotacionRad);
+
+            ctx.fillStyle = '#ffffff';
+            ctx.shadowColor = 'rgba(56, 189, 248, 0.7)';
+            ctx.shadowBlur = 12;
+
+            ctx.fillRect(-32, -32, 13, 64);
+            ctx.fillRect(-32, -32, 64, 13);
+            ctx.fillRect(-32, -6, 44, 13);
+            ctx.fillRect(-32, 19, 64, 13);
+
+            ctx.restore();
+        }
+
+        function procesarRespuestaOpcion(esCorrecta, tipoPaso) {
+            if (!simulacionActiva || estaBloqueadoPorDistancia) return;
+
+            if (esCorrecta) {
+                if (tipoPaso === 'ishihara') aciertosCromatica++;
+                else aciertosAgudeza++;
+            }
+
+            pasoActual++;
+            cargarLaminaEstimulo();
+        }
+
+        function finalizarPruebaVisual() {
+            simulacionActiva = false;
+            gridOpciones.innerHTML = '';
+
+            const totalAciertos = aciertosCromatica + aciertosAgudeza;
+            const pctAcierto = Math.round((totalAciertos / bancoPruebas.length) * 100);
+
+            const aprobado = pctAcierto >= 80 && aciertosCromatica >= 2;
+
+            const registroData = {
+                timestamp: new Date().toISOString(),
+                aciertos_cromatica: aciertosCromatica,
+                aciertos_agudeza: aciertosAgudeza,
+                aciertos_totales: totalAciertos,
+                efectividad_pct: pctAcierto,
+                distanciaAvgCm: distanciaMedidaCm,
+                go_no_go_flag: aprobado,
+                fecha: new Date().toISOString()
+            };
+
+            localStorage.setItem(`sensometrika_last_visual_${cleanRut}`, JSON.stringify(registroData));
+
+            mostrarModal(
+                aprobado ? "✓ TAMIZAJE VISUAL APROBADO" : "⚠️ EVALUACIÓN VISUAL OBSERVADA",
+                `Aciertos Cromáticos (Ishihara): <b>${aciertosCromatica} de 3</b><br>` +
+                `Aciertos Agudeza (Snellen): <b>${aciertosAgudeza} de 3</b><br>` +
+                `Efectividad Global: <b>${pctAcierto}%</b> (Exigencia ≥ 80%)<br>` +
+                `Distancia Telemétrica: <b>${distanciaMedidaCm} cm</b><br><br>` +
+                `<b>Dictamen:</b> ${aprobado ? '<b style="color:#10b981">Visión Compatible con Conducción/Operación</b>' : '<b style="color:#ef4444">Requiere Evaluación Oftalmológica de Gabinete</b>'}`,
+                () => { ejecutarRetornoMenu(); }
+            );
+        }
+
+        function mostrarModal(titulo, cuerpo, callback) {
+            modalTitle.textContent = titulo;
+            modalBody.innerHTML = cuerpo;
+            modal.style.display = 'flex';
+            modalBtnClose.onclick = () => {
+                modal.style.display = 'none';
+                if (callback) callback();
+            };
+        }
+
+        document.getElementById('btnInfo').addEventListener('click', () => {
+            mostrarModal("¿CÓMO FUNCIONA EL TAMIZAJE VISUAL?", 
+                "Evalúa la capacidad visual mínima requerida para el trabajo en ruta/faena:<br>1. <b>Fase Cromática (Ishihara):</b> Identifica el número inmerso en las tarjetas de puntos de color.<br>2. <b>Fase Agudeza (Snellen):</b> Indica la dirección hacia la que abren los brazos de la letra <b>E</b>.<br>3. Mantenga el rostro entre 45 cm y 65 cm del lente.");
+        });
+
+        document.addEventListener('DOMContentLoaded', () => {
+            iniciarMediaPipeFaceMesh();
+            ctx.fillStyle = '#050a12';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#38bdf8';
+            ctx.font = 'bold 14px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText("SENSOMETRIKA • VISOR DE SCREENING VISUAL", canvas.width / 2, canvas.height / 2);
+        });
+    </script>
+</body>
+</html>

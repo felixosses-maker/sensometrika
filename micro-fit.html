@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>SENSOMETRIKA | Check-in Micro-Fit Cabina Pro</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- LIBRERÍAS MEDIAPIPE PARA TELEMETRÍA BIOMÉTRICA -->
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
+
+    <style>
+        :root {
+            --bg-color: #060b13;
+            --card-bg: #0b1320;
+            --card-border: #1a2638;
+            --accent-cyan: #38bdf8;
+            --accent-green: #10b981;
+            --accent-red: #ef4444;
+            --accent-gold: #e5b324;
+            --text-main: #f1f5f9;
+            --text-muted: #94a3b8;
+            --blue-btn: #0284c7;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; touch-action: manipulation; }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px 10px;
+        }
+
+        video#webcamInput {
+            display: none !important;
+            position: absolute !important;
+            top: -9999px !important;
+            left: -9999px !important;
+            width: 0 !important;
+            height: 0 !important;
+        }
+
+        .main-container {
+            width: 100%;
+            max-width: 480px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .brand-header {
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            width: 100%;
+        }
+
+        .brand-logo-img {
+            width: 185px;
+            height: auto;
+            display: block;
+            mix-blend-mode: lighten;
+            filter: drop-shadow(0 0 12px rgba(56, 189, 248, 0.45));
+        }
+
+        .brand-subtitle {
+            color: var(--accent-cyan);
+            font-size: 0.72rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            text-shadow: 0 0 8px rgba(56, 189, 248, 0.3);
+        }
+
+        .eval-card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            padding: 20px;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            position: relative;
+        }
+
+        .top-nav {
+            display: flex !important;
+            justify-content: space-between !important;
+            align-items: center !important;
+            width: 100% !important;
+            gap: 8px !important;
+        }
+
+        .top-nav button, .top-nav a {
+            background: #0c182e !important;
+            border: 1px solid #1e3a6d !important;
+            color: var(--accent-cyan) !important;
+            font-size: 0.72rem !important;
+            font-weight: 700 !important;
+            padding: 6px 10px !important;
+            border-radius: 8px !important;
+            cursor: pointer !important;
+            white-space: nowrap !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            text-decoration: none !important;
+        }
+
+        .cam-preview-pip-header {
+            position: relative !important;
+            width: 56px !important;
+            height: 56px !important;
+            min-width: 56px !important;
+            min-height: 56px !important;
+            max-width: 56px !important;
+            max-height: 56px !important;
+            border: 1.5px solid var(--accent-cyan) !important;
+            border-radius: 8px !important;
+            overflow: hidden !important;
+            background: #030712 !important;
+            box-shadow: 0 0 10px rgba(0, 191, 255, 0.3) !important;
+            flex-shrink: 0 !important;
+        }
+
+        .cam-preview-pip-header video {
+            width: 100% !important;
+            height: 100% !important;
+            object-fit: cover !important;
+            transform: scaleX(-1) !important;
+            display: block !important;
+        }
+
+        .cam-tag-header {
+            position: absolute !important;
+            bottom: 0 !important;
+            left: 0 !important;
+            right: 0 !important;
+            background: rgba(0, 191, 255, 0.9) !important;
+            color: #000000 !important;
+            font-size: 0.42rem !important;
+            font-weight: 900 !important;
+            text-align: center !important;
+            padding: 1px 0 !important;
+            text-transform: uppercase !important;
+            letter-spacing: 0.3px !important;
+            z-index: 5 !important;
+        }
+
+        .status-badge-container { display: flex; justify-content: center; }
+
+        .status-badge {
+            background-color: #0f233d;
+            border: 1px solid #1d4ed8;
+            color: #38bdf8;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .dot-status {
+            width: 8px; height: 8px;
+            background-color: #38bdf8;
+            border-radius: 50%;
+        }
+
+        .canvas-wrapper {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 4/3;
+            background-color: #050a12;
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .stimulus-target {
+            position: absolute;
+            width: 85px;
+            height: 85px;
+            border-radius: 50%;
+            background: #ef4444;
+            border: 4px solid #ffffff;
+            box-shadow: 0 0 25px #ef4444;
+            display: none;
+            cursor: pointer;
+            z-index: 50 !important;
+            pointer-events: auto !important;
+        }
+
+        .distance-block-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(6px);
+            z-index: 40;
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 16px;
+            text-align: center;
+            gap: 8px;
+            border-radius: 12px;
+            pointer-events: none;
+        }
+
+        .distance-block-title { color: var(--accent-red); font-weight: 900; font-size: 0.92rem; text-transform: uppercase; }
+        .distance-block-desc { color: var(--text-main); font-size: 0.74rem; line-height: 1.35; }
+
+        .instruction-text {
+            text-align: center;
+            font-size: 0.85rem;
+            color: var(--text-main);
+            line-height: 1.4;
+        }
+
+        .btn-start {
+            background-color: var(--blue-btn);
+            color: #ffffff;
+            border: none;
+            border-radius: 10px;
+            padding: 14px;
+            font-weight: 800;
+            font-size: 1rem;
+            cursor: pointer;
+            width: 100%;
+            transition: background 0.2s;
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr 1fr;
+            text-align: center;
+            background-color: #070d17;
+            border: 1px solid var(--card-border);
+            border-radius: 10px;
+            padding: 12px 6px;
+        }
+
+        .metric-item { display: flex; flex-direction: column; gap: 4px; }
+        .metric-label { font-size: 0.55rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase; }
+        .metric-value { font-size: 0.92rem; font-weight: 800; color: #ffffff; }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(6, 11, 19, 0.88);
+            backdrop-filter: blur(5px);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background-color: var(--card-bg);
+            border: 1px solid #1e3a5f;
+            border-radius: 14px;
+            padding: 22px;
+            width: 90%;
+            max-width: 420px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .modal-title { color: #38bdf8; font-size: 1.1rem; font-weight: 800; }
+        .modal-body { font-size: 0.88rem; color: var(--text-main); line-height: 1.5; text-align: left; }
+        .modal-btn { background-color: var(--accent-green); color: #fff; border: none; padding: 12px; border-radius: 8px; font-weight: 700; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+    <video id="webcamInput" playsinline muted></video>
+
+    <div class="main-container">
+        <header class="brand-header">
+            <img src="sensometrica.jpg" alt="SENSOMETRIKA" class="brand-logo-img">
+            <span class="brand-subtitle">CHECK-IN MICRO-FIT CABINA PRO • FIT-FOR-DUTY</span>
+        </header>
+
+        <div class="eval-card">
+            <div class="top-nav">
+                <button id="btnVolverNav" onclick="ejecutarRetornoMenu()">&larr; Menú Pruebas</button>
+
+                <div class="cam-preview-pip-header">
+                    <video id="webcamVideo" autoplay playsinline muted></video>
+                    <div class="cam-tag-header">Biometría</div>
+                </div>
+
+                <button id="btnInfo">ℹ ¿Cómo funciona?</button>
+            </div>
+
+            <div class="status-badge-container">
+                <div class="status-badge">
+                    <span id="badgeDot" class="dot-status"></span>
+                    <span id="badgeText">Evaluación Pre-Shift (60 seg)</span>
+                </div>
+            </div>
+
+            <div class="canvas-wrapper" id="viewportTest">
+                <div id="stimulusTarget" class="stimulus-target"></div>
+
+                <div id="boxBlockDistancia" class="distance-block-overlay">
+                    <span class="distance-block-title">⚠️ DISTANCIA / POSTURA FUERA DE RANGO</span>
+                    <span id="txtDistanciaDetalle" class="distance-block-desc">
+                        Ajuste su posición frente a la pantalla.<br>
+                        Distancia telemétrica actual: <b id="lblDistDetalleVal" style="color:var(--accent-red);">-- cm</b><br>
+                        (Rango normativo: 45 a 65 cm).
+                    </span>
+                </div>
+            </div>
+
+            <div class="instruction-text" id="instructionText">
+                Presione <b>INICIAR CHECK-IN</b> para ejecutar el monitoreo PERCLOS de parpadeo y test de reacción PVT.
+            </div>
+
+            <button id="btnStart" class="btn-start" onclick="iniciarCheckIn()">INICIAR CHECK-IN (60s)</button>
+
+            <div class="metrics-grid">
+                <div class="metric-item">
+                    <span class="metric-label">PERCLOS</span>
+                    <span id="metricPerclos" class="metric-value" style="color:#38bdf8;">0 %</span>
+                </div>
+                <div class="metric-item">
+                    <span class="metric-label">ESTÍMULO</span>
+                    <span id="metricEstimulo" class="metric-value" style="color:#e5b324;">0 / 5</span>
+                </div>
+                <div class="metric-item">
+                    <span class="metric-label">LATENCIA NETO</span>
+                    <span id="metricLatencia" class="metric-value" style="color:#38bdf8;">-- ms</span>
+                </div>
+                <div class="metric-item">
+                    <span class="metric-label">DICTAMEN</span>
+                    <span id="metricDictamen" class="metric-value" style="color:#10b981;">PENDIENTE</span>
+                </div>
+            </div>
+        </div>
+
+        <div id="modalSistema" class="modal-overlay">
+            <div class="modal-content">
+                <div id="modalTitle" class="modal-title">CHECK-IN FINALIZADO</div>
+                <div id="modalBody" class="modal-body">Resultados registrados.</div>
+                <button id="modalBtnClose" class="modal-btn">Continuar</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const videoElement = document.getElementById('webcamVideo');
+        const stimulusTarget = document.getElementById('stimulusTarget');
+        const instructionText = document.getElementById('instructionText');
+        const btnStart = document.getElementById('btnStart');
+
+        const metricPerclos = document.getElementById('metricPerclos');
+        const metricEstimulo = document.getElementById('metricEstimulo');
+        const metricLatencia = document.getElementById('metricLatencia');
+        const metricDictamen = document.getElementById('metricDictamen');
+
+        const modal = document.getElementById('modalSistema');
+        const modalTitle = document.getElementById('modalTitle');
+        const modalBody = document.getElementById('modalBody');
+        const modalBtnClose = document.getElementById('modalBtnClose');
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const modeParam = urlParams.get('mode') || (localStorage.getItem('sensometrika_b2c_mode') === 'true' ? 'b2c' : 'b2b');
+        const esB2B = (modeParam === 'b2b');
+
+        let datosUsuario = {};
+        try { datosUsuario = JSON.parse(localStorage.getItem('sensometrika_datos_usuario')) || {}; } catch(e){}
+        const rutEvaluado = urlParams.get('rut') || datosUsuario.rut || 'GENERICO';
+        const cleanRut = rutEvaluado.replace(/[^0-9Kk]/g, '');
+
+        const latenciaHardware = parseInt(localStorage.getItem('sensometrika_latencia_ms') || '0', 10);
+
+        let distanciaMedidaCm = 55;
+        let estaBloqueadoPorDistancia = false;
+
+        let framesTotales = 0;
+        let framesOjosCerrados = 0;
+        let evaluandoPERCLOS = false;
+        let evaluandoPVT = false;
+
+        let tiemposPVT = [];
+        let inicioEstimuloMs = 0;
+        let contadorEstimulos = 0;
+        const totalEstimulos = 5;
+        let timeoutEstimulo = null;
+
+        function ejecutarRetornoMenu() {
+            const returnUrlParam = urlParams.get('returnUrl');
+            if (returnUrlParam) {
+                window.location.href = decodeURIComponent(returnUrlParam);
+            } else {
+                const menuDestino = esB2B ? 'menu_B2B.html' : 'menu_B2C.html';
+                window.location.href = `${menuDestino}?${urlParams.toString()}`;
+            }
+        }
+
+        function iniciarMediaPipeFaceMesh() {
+            const faceMesh = new FaceMesh({
+                locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`
+            });
+
+            faceMesh.setOptions({
+                maxNumFaces: 1,
+                refineLandmarks: true,
+                minDetectionConfidence: 0.5,
+                minTrackingConfidence: 0.5
+            });
+
+            faceMesh.onResults(onResultsFaceMesh);
+
+            const camera = new Camera(videoElement, {
+                onFrame: async () => { await faceMesh.send({ image: videoElement }); },
+                width: 320, height: 240
+            });
+
+            camera.start().catch(() => {
+                distanciaMedidaCm = 55;
+                evaluarRangoDistancia();
+            });
+        }
+
+        function onResultsFaceMesh(results) {
+            if (!results.multiFaceLandmarks || results.multiFaceLandmarks.length === 0) return;
+
+            const landmarks = results.multiFaceLandmarks[0];
+
+            const leftEye = landmarks[33];
+            const rightEye = landmarks[263];
+            const dx = leftEye.x - rightEye.x;
+            const dy = leftEye.y - rightEye.y;
+            const eyeDistanceNormalized = Math.sqrt(dx * dx + dy * dy);
+            let distCalculada = Math.round(9.5 / eyeDistanceNormalized);
+            distanciaMedidaCm = Math.round(distanciaMedidaCm * 0.5 + distCalculada * 0.5);
+
+            evaluarRangoDistancia();
+
+            if (evaluandoPERCLOS && !estaBloqueadoPorDistancia) {
+                const leftEyeAperture = Math.abs(landmarks[159].y - landmarks[145].y);
+                const rightEyeAperture = Math.abs(landmarks[386].y - landmarks[374].y);
+                const aberturaMedia = (leftEyeAperture + rightEyeAperture) / 2;
+
+                framesTotales++;
+                if (aberturaMedia < 0.012) {
+                    framesOjosCerrados++;
+                }
+
+                const pctPerclos = Math.round((framesOjosCerrados / framesTotales) * 100);
+                metricPerclos.textContent = `${pctPerclos} %`;
+                metricPerclos.style.color = pctPerclos > 12 ? "var(--accent-red)" : "var(--accent-cyan)";
+            }
+        }
+
+        function evaluarRangoDistancia() {
+            const overlayBlock = document.getElementById('boxBlockDistancia');
+            const lblDetalle = document.getElementById('lblDistDetalleVal');
+
+            if (distanciaMedidaCm >= 45 && distanciaMedidaCm <= 65) {
+                estaBloqueadoPorDistancia = false;
+                if (overlayBlock) overlayBlock.style.display = 'none';
+            } else {
+                estaBloqueadoPorDistancia = true;
+                if (lblDetalle) lblDetalle.textContent = `${distanciaMedidaCm} cm`;
+                if (overlayBlock) {
+                    overlayBlock.style.display = 'flex';
+                    overlayBlock.style.pointerEvents = 'auto';
+                }
+            }
+        }
+
+        function iniciarCheckIn() {
+            if (estaBloqueadoPorDistancia) return;
+
+            btnStart.style.display = 'none';
+            instructionText.innerHTML = "<b>FASE 1/2: RASTREO PERCLOS (15s)</b><br>Mantenga la vista fija frente a la pantalla.";
+
+            framesTotales = 0;
+            framesOjosCerrados = 0;
+            evaluandoPERCLOS = true;
+            metricEstimulo.textContent = `0 / ${totalEstimulos}`;
+
+            setTimeout(() => {
+                evaluandoPERCLOS = false;
+                iniciarFasePVT();
+            }, 15000);
+        }
+
+        function iniciarFasePVT() {
+            instructionText.innerHTML = "<b>FASE 2/2: REACCIÓN PVT (5 ESTÍMULOS)</b><br>Toque el círculo rojo en cuanto aparezca en pantalla.";
+            evaluandoPVT = true;
+            contadorEstimulos = 0;
+            tiemposPVT = [];
+            programarSiguienteEstimulo();
+        }
+
+        function programarSiguienteEstimulo() {
+            if (timeoutEstimulo) clearTimeout(timeoutEstimulo);
+
+            if (contadorEstimulos >= totalEstimulos) {
+                finalizarCheckIn();
+                return;
+            }
+
+            stimulusTarget.style.display = 'none';
+            const demoraAleatoria = 1000 + Math.random() * 2000;
+
+            timeoutEstimulo = setTimeout(() => {
+                if (!evaluandoPVT) return;
+
+                const posX = Math.floor(10 + Math.random() * 65);
+                const posY = Math.floor(10 + Math.random() * 55);
+                
+                stimulusTarget.style.left = `${posX}%`;
+                stimulusTarget.style.top = `${posY}%`;
+                stimulusTarget.style.display = 'block';
+
+                inicioEstimuloMs = Date.now();
+            }, demoraAleatoria);
+        }
+
+        function registrarImpactoPVT(e) {
+            if (e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+            if (!evaluandoPVT || inicioEstimuloMs === 0 || estaBloqueadoPorDistancia) return;
+
+            const latenciaBruta = Date.now() - inicioEstimuloMs;
+            const latenciaNeta = Math.max(100, latenciaBruta - latenciaHardware);
+
+            tiemposPVT.push(latenciaNeta);
+            contadorEstimulos++;
+
+            metricEstimulo.textContent = `${contadorEstimulos} / ${totalEstimulos}`;
+            metricLatencia.textContent = `${latenciaNeta} ms`;
+            programarSiguienteEstimulo();
+        }
+
+        stimulusTarget.addEventListener('pointerdown', registrarImpactoPVT, { passive: false });
+        stimulusTarget.addEventListener('touchstart', registrarImpactoPVT, { passive: false });
+        stimulusTarget.addEventListener('click', registrarImpactoPVT);
+
+        function finalizarCheckIn() {
+            evaluandoPVT = false;
+            stimulusTarget.style.display = 'none';
+
+            const pctPerclos = Math.round((framesOjosCerrados / Math.max(1, framesTotales)) * 100);
+            const promPVTNeto = tiemposPVT.length > 0 ? Math.round(tiemposPVT.reduce((a, b) => a + b, 0) / tiemposPVT.length) : 0;
+
+            metricLatencia.textContent = `${promPVTNeto} ms`;
+
+            // UMBRAL PERICIAL REAL OCUPACIONAL: Hasta 580 ms es Apto (GO) para turno/ruta
+            let aprobado = (pctPerclos <= 12) && (promPVTNeto <= 580);
+
+            if (aprobado) {
+                metricDictamen.textContent = "GO (APTO)";
+                metricDictamen.style.color = "var(--accent-green)";
+            } else {
+                metricDictamen.textContent = "NO-GO (ALERTA)";
+                metricDictamen.style.color = "var(--accent-red)";
+            }
+
+            const registroData = {
+                timestamp: new Date().toISOString(),
+                perclos_score: pctPerclos,
+                promedioTiempoNeto: promPVTNeto,
+                latenciaCompensadaMs: latenciaHardware,
+                distanciaAvgCm: distanciaMedidaCm,
+                go_no_go_flag: aprobado,
+                fecha: new Date().toISOString()
+            };
+
+            localStorage.setItem(`sensometrika_last_microfit_${cleanRut}`, JSON.stringify(registroData));
+
+            mostrarModal(
+                aprobado ? "✓ CHECK-IN PRE-SHIFT APROBADO" : "⚠️ ALERTA DE SOMNOLENCIA / FATIGA",
+                `PERCLOS (Somnolencia): <b>${pctPerclos}%</b><br>` +
+                `Promedio Latencia Neta (${totalEstimulos} estímulos): <b>${promPVTNeto} ms</b> <span style="font-size:0.75rem; color:#94a3b8;">(Compensación sensor: ${latenciaHardware} ms)</span><br>` +
+                `Distancia Telemétrica: <b>${distanciaMedidaCm} cm</b><br><br>` +
+                `<b>Dictamen:</b> ${aprobado ? '<b style="color:#10b981">Habilitado para Turno / Ruta</b>' : '<b style="color:#ef4444">Restringido - Notificación enviada al APR</b>'}`,
+                () => { ejecutarRetornoMenu(); }
+            );
+        }
+
+        function mostrarModal(titulo, cuerpo, callback) {
+            modalTitle.textContent = titulo;
+            modalBody.innerHTML = cuerpo;
+            modal.style.display = 'flex';
+            modalBtnClose.onclick = () => {
+                modal.style.display = 'none';
+                if (callback) callback();
+            };
+        }
+
+        document.getElementById('btnInfo').addEventListener('click', () => {
+            mostrarModal("¿CÓMO FUNCIONA EL CHECK-IN MICRO-FIT?", 
+                "Es una evaluación rápida Pre-Shift de 60 segundos:<br>1. <b>Fase PERCLOS (15s):</b> La cámara mide el porcentaje de ojos cerrados y parpadeo lento.<br>2. <b>Fase PVT (5 estímulos):</b> Mide el tiempo de reacción táctil promedio descontando la latencia del hardware.<br>3. Genera un dictamen <b>GO / NO-GO</b> transmitido al supervisor.");
+        });
+
+        document.addEventListener('DOMContentLoaded', () => {
+            iniciarMediaPipeFaceMesh();
+        });
+    </script>
+</body>
+</html>

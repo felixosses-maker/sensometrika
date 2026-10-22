@@ -1,0 +1,858 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>SENSOMETRIKA | Carga Cognitiva Dual B2B Pro</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- LIBRERÍAS MEDIAPIPE PARA TELEMETRÍA BIOMÉTRICA -->
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
+
+    <style>
+        :root {
+            --bg-color: #060b13;
+            --card-bg: #0b1320;
+            --card-border: #1a2638;
+            --accent-cyan: #38bdf8;
+            --accent-green: #10b981;
+            --accent-red: #ef4444;
+            --accent-gold: #e5b324;
+            --text-main: #f1f5f9;
+            --text-muted: #94a3b8;
+            --blue-btn: #0284c7;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; touch-action: manipulation; }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 12px 8px;
+        }
+
+        video#webcamInput {
+            display: none !important;
+            position: absolute !important;
+            top: -9999px !important;
+            left: -9999px !important;
+            width: 0 !important;
+            height: 0 !important;
+        }
+
+        .main-container {
+            width: 100%;
+            max-width: 480px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .brand-header {
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            width: 100%;
+        }
+
+        .brand-logo-img {
+            width: 175px;
+            height: auto;
+            display: block;
+            mix-blend-mode: lighten;
+            filter: drop-shadow(0 0 12px rgba(56, 189, 248, 0.45));
+        }
+
+        .brand-subtitle {
+            color: var(--accent-cyan);
+            font-size: 0.70rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            text-shadow: 0 0 8px rgba(56, 189, 248, 0.3);
+        }
+
+        .eval-card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            padding: 16px;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            position: relative;
+        }
+
+        .top-nav {
+            display: flex !important;
+            justify-content: space-between !important;
+            align-items: center !important;
+            width: 100% !important;
+            gap: 6px !important;
+        }
+
+        .top-nav button, .top-nav a {
+            background: #0c182e !important;
+            border: 1px solid #1e3a6d !important;
+            color: var(--accent-cyan) !important;
+            font-size: 0.70rem !important;
+            font-weight: 700 !important;
+            padding: 6px 10px !important;
+            border-radius: 8px !important;
+            cursor: pointer !important;
+            white-space: nowrap !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            text-decoration: none !important;
+        }
+
+        /* PIP BIOMÉTRICO 56px X 56px EN HEADER */
+        .cam-preview-pip-header {
+            position: relative !important;
+            width: 56px !important;
+            height: 56px !important;
+            min-width: 56px !important;
+            min-height: 56px !important;
+            max-width: 56px !important;
+            max-height: 56px !important;
+            border: 1.5px solid var(--accent-cyan) !important;
+            border-radius: 8px !important;
+            overflow: hidden !important;
+            background: #030712 !important;
+            box-shadow: 0 0 10px rgba(0, 191, 255, 0.3) !important;
+            flex-shrink: 0 !important;
+        }
+
+        .cam-preview-pip-header video {
+            width: 100% !important;
+            height: 100% !important;
+            object-fit: cover !important;
+            transform: scaleX(-1) !important;
+            display: block !important;
+        }
+
+        .cam-tag-header {
+            position: absolute !important;
+            bottom: 0 !important;
+            left: 0 !important;
+            right: 0 !important;
+            background: rgba(0, 191, 255, 0.9) !important;
+            color: #000000 !important;
+            font-size: 0.42rem !important;
+            font-weight: 900 !important;
+            text-align: center !important;
+            padding: 1px 0 !important;
+            text-transform: uppercase !important;
+            letter-spacing: 0.3px !important;
+            z-index: 5 !important;
+        }
+
+        .status-badge-container { display: flex; justify-content: center; }
+
+        .status-badge {
+            background-color: #0f233d;
+            border: 1px solid #1d4ed8;
+            color: #38bdf8;
+            padding: 5px 14px;
+            border-radius: 20px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .dot-status {
+            width: 8px; height: 8px;
+            background-color: #38bdf8;
+            border-radius: 50%;
+        }
+
+        /* VIEWPORT CANVAS DE SIMULACIÓN DUAL */
+        .canvas-wrapper {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 4/3;
+            background-color: #050a12;
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        canvas#simCanvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        /* OVERLAY CONTROLES TÁCTILES PARA SMARTPHONE */
+        .touch-controls-panel {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1.2fr;
+            gap: 8px;
+            width: 100%;
+            margin-top: 4px;
+        }
+
+        .btn-touch-dir {
+            background: #0f1c2e;
+            border: 1px solid var(--accent-cyan);
+            color: var(--accent-cyan);
+            font-size: 1.2rem;
+            font-weight: 900;
+            padding: 12px;
+            border-radius: 10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+        }
+
+        .btn-touch-dir:active {
+            background: rgba(56, 189, 248, 0.25);
+            transform: scale(0.96);
+        }
+
+        .btn-touch-audio {
+            background: #dc2626;
+            border: 1px solid #ef4444;
+            color: #ffffff;
+            font-size: 0.75rem;
+            font-weight: 900;
+            padding: 12px;
+            border-radius: 10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+        }
+
+        .btn-touch-audio:active {
+            background: #b91c1c;
+            transform: scale(0.96);
+        }
+
+        .distance-block-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(6px);
+            z-index: 40;
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 16px;
+            text-align: center;
+            gap: 8px;
+            border-radius: 12px;
+            pointer-events: none;
+        }
+
+        .distance-block-title { color: var(--accent-red); font-weight: 900; font-size: 0.92rem; text-transform: uppercase; }
+        .distance-block-desc { color: var(--text-main); font-size: 0.74rem; line-height: 1.35; }
+
+        .instruction-text {
+            text-align: center;
+            font-size: 0.78rem;
+            color: var(--text-main);
+            line-height: 1.35;
+        }
+
+        .btn-start {
+            background-color: var(--blue-btn);
+            color: #ffffff;
+            border: none;
+            border-radius: 10px;
+            padding: 14px;
+            font-weight: 800;
+            font-size: 0.95rem;
+            cursor: pointer;
+            width: 100%;
+            transition: background 0.2s;
+        }
+
+        /* METRICAS TELEMÉTRICAS 4 COLUMNAS */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr 1fr;
+            text-align: center;
+            background-color: #070d17;
+            border: 1px solid var(--card-border);
+            border-radius: 10px;
+            padding: 10px 4px;
+        }
+
+        .metric-item { display: flex; flex-direction: column; gap: 3px; }
+        .metric-label { font-size: 0.52rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase; }
+        .metric-value { font-size: 0.88rem; font-weight: 800; color: #ffffff; }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(6, 11, 19, 0.88);
+            backdrop-filter: blur(5px);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background-color: var(--card-bg);
+            border: 1px solid #1e3a5f;
+            border-radius: 14px;
+            padding: 20px;
+            width: 90%;
+            max-width: 420px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .modal-title { color: #38bdf8; font-size: 1.05rem; font-weight: 800; }
+        .modal-body { font-size: 0.82rem; color: var(--text-main); line-height: 1.5; text-align: left; }
+        .modal-btn { background-color: var(--accent-green); color: #fff; border: none; padding: 12px; border-radius: 8px; font-weight: 700; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+    <video id="webcamInput" playsinline muted></video>
+
+    <div class="main-container">
+        <header class="brand-header">
+            <img src="sensometrica.jpg" alt="SENSOMETRIKA" class="brand-logo-img">
+            <span class="brand-subtitle">CARGA COGNITIVA DUAL • PERICIAL B2B</span>
+        </header>
+
+        <div class="eval-card">
+            <div class="top-nav">
+                <button id="btnVolverNav" onclick="ejecutarRetornoMenu()">&larr; Menú Pruebas</button>
+
+                <div class="cam-preview-pip-header">
+                    <video id="webcamVideo" autoplay playsinline muted></video>
+                    <div class="cam-tag-header">Biometría</div>
+                </div>
+
+                <button id="btnInfo">ℹ ¿Cómo funciona?</button>
+            </div>
+
+            <div class="status-badge-container">
+                <div class="status-badge">
+                    <span id="badgeDot" class="dot-status"></span>
+                    <span id="badgeText">Evaluación Carga Dual (60 seg)</span>
+                </div>
+            </div>
+
+            <div class="canvas-wrapper">
+                <canvas id="simCanvas" width="400" height="300"></canvas>
+
+                <!-- OVERLAY DE BLOQUEO POR DISTANCIA NORMATIVA -->
+                <div id="boxBlockDistancia" class="distance-block-overlay">
+                    <span class="distance-block-title">⚠️ DISTANCIA / POSTURA FUERA DE RANGO</span>
+                    <span id="txtDistanciaDetalle" class="distance-block-desc">
+                        Ajuste su posición frente a la pantalla.<br>
+                        Distancia telemétrica actual: <b id="lblDistDetalleVal" style="color:var(--accent-red);">-- cm</b><br>
+                        (Rango normativo: 45 a 65 cm).
+                    </span>
+                </div>
+            </div>
+
+            <!-- CONTROLES TÁCTILES PARA SMARTPHONE -->
+            <div class="touch-controls-panel">
+                <button id="btnTouchLeft" class="btn-touch-dir">◄</button>
+                <button id="btnTouchRight" class="btn-touch-dir">►</button>
+                <button id="btnTouchAudio" class="btn-touch-audio">🔔 ALERTA</button>
+            </div>
+
+            <div class="instruction-text" id="instructionText">
+                <b>Móvil:</b> Usa ◄ / ► para centrar cabina, toca blancos rojos y pulsa 🔔 en tono Agudo.<br>
+                <b>PC:</b> Teclas A-D / Flechas, clic de mouse y Barra Espaciadora.
+            </div>
+
+            <button id="btnStart" class="btn-start" onclick="iniciarEvaluacionDual()">INICIAR EVALUACIÓN COGNITIVA (60s)</button>
+
+            <!-- PANEL TELEMÉTRICO 4 COLUMNAS -->
+            <div class="metrics-grid">
+                <div class="metric-item">
+                    <span class="metric-label">PRECISIÓN RUTA</span>
+                    <span id="metricPrecision" class="metric-value" style="color:#38bdf8;">0 %</span>
+                </div>
+                <div class="metric-item">
+                    <span class="metric-label">BLANCOS</span>
+                    <span id="metricBlancos" class="metric-value" style="color:#e5b324;">0 / 0</span>
+                </div>
+                <div class="metric-item">
+                    <span class="metric-label">REACCIÓN AUDIO</span>
+                    <span id="metricAudio" class="metric-value" style="color:#38bdf8;">-- ms</span>
+                </div>
+                <div class="metric-item">
+                    <span class="metric-label">DISTANCIA</span>
+                    <span id="metricDistancia" class="metric-value" style="color:#10b981;">-- cm</span>
+                </div>
+            </div>
+        </div>
+
+        <div id="modalSistema" class="modal-overlay">
+            <div class="modal-content">
+                <div id="modalTitle" class="modal-title">EVALUACIÓN FINALIZADA</div>
+                <div id="modalBody" class="modal-body">Resultados registrados.</div>
+                <button id="modalBtnClose" class="modal-btn">Continuar</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('simCanvas');
+        const ctx = canvas.getContext('2d');
+        const videoElement = document.getElementById('webcamVideo');
+        const instructionText = document.getElementById('instructionText');
+        const btnStart = document.getElementById('btnStart');
+
+        const metricPrecision = document.getElementById('metricPrecision');
+        const metricBlancos = document.getElementById('metricBlancos');
+        const metricAudio = document.getElementById('metricAudio');
+        const metricDistancia = document.getElementById('metricDistancia');
+
+        const btnTouchLeft = document.getElementById('btnTouchLeft');
+        const btnTouchRight = document.getElementById('btnTouchRight');
+        const btnTouchAudio = document.getElementById('btnTouchAudio');
+
+        const modal = document.getElementById('modalSistema');
+        const modalTitle = document.getElementById('modalTitle');
+        const modalBody = document.getElementById('modalBody');
+        const modalBtnClose = document.getElementById('modalBtnClose');
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const modeParam = urlParams.get('mode') || (localStorage.getItem('sensometrika_b2c_mode') === 'true' ? 'b2c' : 'b2b');
+        const esB2B = (modeParam === 'b2b');
+
+        let datosUsuario = {};
+        try { datosUsuario = JSON.parse(localStorage.getItem('sensometrika_datos_usuario')) || {}; } catch(e){}
+        const rutEvaluado = urlParams.get('rut') || datosUsuario.rut || 'GENERICO';
+        const cleanRut = rutEvaluado.replace(/[^0-9Kk]/g, '');
+
+        const latenciaHardware = parseInt(localStorage.getItem('sensometrika_latencia_ms') || '0', 10);
+
+        let distanciaMedidaCm = 55;
+        let estaBloqueadoPorDistancia = false;
+
+        let simulacionActiva = false;
+        let tiempoRestanteSec = 60;
+        let timerInterval = null;
+
+        // TAREA 1: RUTA Y CABINA
+        let jugador = { x: 200, y: 250, radio: 11, velocidad: 4.5 };
+        let teclas = { left: false, right: false };
+        let framesEnRuta = 0;
+        let framesTotales = 0;
+        let centroRutaX = 200;
+        let anchoRuta = 95;
+        let desvioCurva = 0;
+
+        // TAREA 2: TARGETS MOUSE / TOUCH
+        let objetivos = [];
+        let blancosAparecidos = 0;
+        let blancosImpactados = 0;
+        let timerObjetivos = null;
+
+        // TAREA 3: AUDITIVA
+        let audioCtx = null;
+        let tonoActivoTipo = null;
+        let tonoInicioMs = 0;
+        let tiemposAudioNetos = [];
+        let aciertosAudio = 0;
+        let falsasAlarmasAudio = 0;
+        let timerAudio = null;
+
+        function ejecutarRetornoMenu() {
+            const returnUrlParam = urlParams.get('returnUrl');
+            if (returnUrlParam) {
+                window.location.href = decodeURIComponent(returnUrlParam);
+            } else {
+                const menuDestino = esB2B ? 'menu_B2B.html' : 'menu_B2C.html';
+                window.location.href = `${menuDestino}?${urlParams.toString()}`;
+            }
+        }
+
+        function iniciarMediaPipeFaceMesh() {
+            const faceMesh = new FaceMesh({
+                locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`
+            });
+
+            faceMesh.setOptions({
+                maxNumFaces: 1,
+                refineLandmarks: true,
+                minDetectionConfidence: 0.5,
+                minTrackingConfidence: 0.5
+            });
+
+            faceMesh.onResults(onResultsFaceMesh);
+
+            const camera = new Camera(videoElement, {
+                onFrame: async () => { await faceMesh.send({ image: videoElement }); },
+                width: 320, height: 240
+            });
+
+            camera.start().catch(() => {
+                distanciaMedidaCm = 55;
+                evaluarRangoDistancia();
+            });
+        }
+
+        function onResultsFaceMesh(results) {
+            if (!results.multiFaceLandmarks || results.multiFaceLandmarks.length === 0) return;
+
+            const landmarks = results.multiFaceLandmarks[0];
+            const leftEye = landmarks[33];
+            const rightEye = landmarks[263];
+            const dx = leftEye.x - rightEye.x;
+            const dy = leftEye.y - rightEye.y;
+            const eyeDistanceNormalized = Math.sqrt(dx * dx + dy * dy);
+            let distCalculada = Math.round(9.5 / eyeDistanceNormalized);
+            distanciaMedidaCm = Math.round(distanciaMedidaCm * 0.5 + distCalculada * 0.5);
+
+            evaluarRangoDistancia();
+        }
+
+        function evaluarRangoDistancia() {
+            const overlayBlock = document.getElementById('boxBlockDistancia');
+            const lblDetalle = document.getElementById('lblDistDetalleVal');
+
+            metricDistancia.textContent = `${distanciaMedidaCm} cm`;
+
+            if (distanciaMedidaCm >= 45 && distanciaMedidaCm <= 65) {
+                estaBloqueadoPorDistancia = false;
+                metricDistancia.style.color = 'var(--accent-green)';
+                if (overlayBlock) overlayBlock.style.display = 'none';
+            } else {
+                estaBloqueadoPorDistancia = true;
+                metricDistancia.style.color = 'var(--accent-red)';
+                if (lblDetalle) lblDetalle.textContent = `${distanciaMedidaCm} cm`;
+                if (overlayBlock) {
+                    overlayBlock.style.display = 'flex';
+                    overlayBlock.style.pointerEvents = 'auto';
+                }
+            }
+        }
+
+        // BINDINGS DE EVENTOS PC Y MÓVIL
+        window.addEventListener('keydown', (e) => {
+            if (e.code === 'KeyA' || e.code === 'ArrowLeft') teclas.left = true;
+            if (e.code === 'KeyD' || e.code === 'ArrowRight') teclas.right = true;
+
+            if (e.code === 'Space' && simulacionActiva && !estaBloqueadoPorDistancia) {
+                e.preventDefault();
+                responderAudio();
+            }
+        });
+
+        window.addEventListener('keyup', (e) => {
+            if (e.code === 'KeyA' || e.code === 'ArrowLeft') teclas.left = false;
+            if (e.code === 'KeyD' || e.code === 'ArrowRight') teclas.right = false;
+        });
+
+        // EVENTOS TÁCTILES D-PAD Y BOTÓN AUDIO
+        btnTouchLeft.addEventListener('pointerdown', (e) => { e.preventDefault(); teclas.left = true; });
+        btnTouchLeft.addEventListener('pointerup', (e) => { e.preventDefault(); teclas.left = false; });
+        btnTouchLeft.addEventListener('mouseleave', () => { teclas.left = false; });
+
+        btnTouchRight.addEventListener('pointerdown', (e) => { e.preventDefault(); teclas.right = true; });
+        btnTouchRight.addEventListener('pointerup', (e) => { e.preventDefault(); teclas.right = false; });
+        btnTouchRight.addEventListener('mouseleave', () => { teclas.right = false; });
+
+        btnTouchAudio.addEventListener('pointerdown', (e) => {
+            e.preventDefault();
+            if (simulacionActiva && !estaBloqueadoPorDistancia) responderAudio();
+        });
+
+        // IMPACTO EN BLANCOS ROJOS VÍA MOUSE / TOUCH EN CANVAS
+        function manejarImpactoCanvas(clientX, clientY) {
+            if (!simulacionActiva || estaBloqueadoPorDistancia) return;
+
+            const rect = canvas.getBoundingClientRect();
+            const clickX = (clientX - rect.left) * (canvas.width / rect.width);
+            const clickY = (clientY - rect.top) * (canvas.height / rect.height);
+
+            objetivos.forEach((obj) => {
+                if (obj.activo) {
+                    const dist = Math.hypot(clickX - obj.x, clickY - obj.y);
+                    if (dist <= obj.radio) {
+                        obj.activo = false;
+                        blancosImpactados++;
+                        actualizarMetricasUI();
+                    }
+                }
+            });
+        }
+
+        canvas.addEventListener('mousedown', (e) => manejarImpactoCanvas(e.clientX, e.clientY));
+        canvas.addEventListener('touchstart', (e) => {
+            if (e.touches && e.touches.length > 0) {
+                manejarImpactoCanvas(e.touches[0].clientX, e.touches[0].clientY);
+            }
+        }, { passive: true });
+
+        function iniciarEvaluacionDual() {
+            if (estaBloqueadoPorDistancia) return;
+
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+
+            simulacionActiva = true;
+            btnStart.style.display = 'none';
+            tiempoRestanteSec = 60;
+            framesEnRuta = 0;
+            framesTotales = 0;
+            blancosAparecidos = 0;
+            blancosImpactados = 0;
+            tiemposAudioNetos = [];
+            aciertosAudio = 0;
+            falsasAlarmasAudio = 0;
+            objetivos = [];
+
+            jugador.x = canvas.width / 2;
+            jugador.y = canvas.height - 40;
+
+            timerInterval = setInterval(() => {
+                tiempoRestanteSec--;
+                document.getElementById('badgeText').textContent = `Carga Dual: ${tiempoRestanteSec}s`;
+                if (tiempoRestanteSec <= 0) {
+                    finalizarEvaluacion();
+                }
+            }, 1000);
+
+            programarObjetivoMouse();
+            programarEstimuloAudio();
+            requestAnimationFrame(loopSimulacion);
+        }
+
+        function programarObjetivoMouse() {
+            if (!simulacionActiva) return;
+
+            const delay = 1800 + Math.random() * 2200;
+            timerObjetivos = setTimeout(() => {
+                if (!simulacionActiva) return;
+
+                const xPos = Math.random() < 0.5 ? 40 + Math.random() * 60 : 300 + Math.random() * 60;
+                const yPos = 50 + Math.random() * 180;
+
+                objetivos.push({ x: xPos, y: yPos, radio: 22, activo: true });
+                blancosAparecidos++;
+                actualizarMetricasUI();
+
+                programarObjetivoMouse();
+            }, delay);
+        }
+
+        function programarEstimuloAudio() {
+            if (!simulacionActiva) return;
+
+            const delay = 3500 + Math.random() * 4500;
+            timerAudio = setTimeout(() => {
+                if (!simulacionActiva) return;
+
+                tonoActivoTipo = Math.random() < 0.6 ? 'AGUDO' : 'GRAVE';
+                emitirTonoAudio(tonoActivoTipo === 'AGUDO' ? 2500 : 800);
+
+                tonoInicioMs = Date.now();
+                programarEstimuloAudio();
+            }, delay);
+        }
+
+        function emitirTonoAudio(frecuencia) {
+            if (!audioCtx) return;
+
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(frecuencia, audioCtx.currentTime);
+
+            gain.gain.setValueAtTime(0.18, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.35);
+
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.35);
+        }
+
+        function responderAudio() {
+            if (tonoInicioMs === 0) return;
+
+            const latenciaBruta = Date.now() - tonoInicioMs;
+            const latenciaNeta = Math.max(100, latenciaBruta - latenciaHardware);
+
+            if (tonoActivoTipo === 'AGUDO') {
+                tiemposAudioNetos.push(latenciaNeta);
+                aciertosAudio++;
+                metricAudio.textContent = `${latenciaNeta} ms`;
+            } else {
+                falsasAlarmasAudio++;
+            }
+
+            tonoInicioMs = 0;
+            tonoActivoTipo = null;
+        }
+
+        function loopSimulacion() {
+            if (!simulacionActiva) return;
+
+            actualizarLogica();
+            dibujarEscena();
+
+            requestAnimationFrame(loopSimulacion);
+        }
+
+        function actualizarLogica() {
+            if (estaBloqueadoPorDistancia) return;
+
+            if (teclas.left && jugador.x > 30) jugador.x -= jugador.velocidad;
+            if (teclas.right && jugador.x < canvas.width - 30) jugador.x += jugador.velocidad;
+
+            desvioCurva += 0.03;
+            centroRutaX = (canvas.width / 2) + Math.sin(desvioCurva) * 65;
+
+            framesTotales++;
+            const limiteIzq = centroRutaX - (anchoRuta / 2);
+            const limiteDer = centroRutaX + (anchoRuta / 2);
+
+            if (jugador.x >= limiteIzq && jugador.x <= limiteDer) {
+                framesEnRuta++;
+            }
+
+            actualizarMetricasUI();
+        }
+
+        function dibujarEscena() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            const limiteIzq = centroRutaX - (anchoRuta / 2);
+
+            // Carril de Conducción
+            ctx.fillStyle = '#0b1626';
+            ctx.fillRect(limiteIzq, 0, anchoRuta, canvas.height);
+
+            ctx.strokeStyle = '#1d4ed8';
+            ctx.setLineDash([8, 8]);
+            ctx.beginPath();
+            ctx.moveTo(centroRutaX, 0);
+            ctx.lineTo(centroRutaX, canvas.height);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            ctx.strokeStyle = '#38bdf8';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(limiteIzq, 0, anchoRuta, canvas.height);
+
+            // Cabina Jugador
+            ctx.fillStyle = '#10b981';
+            ctx.shadowColor = '#10b981';
+            ctx.shadowBlur = 10;
+            ctx.beginPath();
+            ctx.arc(jugador.x, jugador.y, jugador.radio, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.shadowBlur = 0;
+
+            // Blancos Emergentes Tarea 2
+            objetivos.forEach((obj) => {
+                if (obj.activo) {
+                    ctx.fillStyle = '#ef4444';
+                    ctx.shadowColor = '#ef4444';
+                    ctx.shadowBlur = 10;
+                    ctx.beginPath();
+                    ctx.arc(obj.x, obj.y, obj.radio, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.shadowBlur = 0;
+
+                    ctx.strokeStyle = '#ffffff';
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+                }
+            });
+        }
+
+        function actualizarMetricasUI() {
+            const pctPrecision = framesTotales > 0 ? Math.round((framesEnRuta / framesTotales) * 100) : 0;
+            metricPrecision.textContent = `${pctPrecision} %`;
+            metricBlancos.textContent = `${blancosImpactados} / ${blancosAparecidos}`;
+        }
+
+        function finalizarEvaluacion() {
+            simulacionActiva = false;
+            clearInterval(timerInterval);
+            clearTimeout(timerObjetivos);
+            clearTimeout(timerAudio);
+
+            const pctPrecision = Math.round((framesEnRuta / Math.max(1, framesTotales)) * 100);
+            const promAudioNeto = tiemposAudioNetos.length > 0 ? Math.round(tiemposAudioNetos.reduce((a, b) => a + b, 0) / tiemposAudioNetos.length) : 0;
+            const pctBlancos = blancosAparecidos > 0 ? Math.round((blancosImpactados / blancosAparecidos) * 100) : 0;
+
+            let aprobado = (pctPrecision >= 70) && (pctBlancos >= 55) && (promAudioNeto <= 580 || tiemposAudioNetos.length === 0);
+
+            const registroData = {
+                timestamp: new Date().toISOString(),
+                bimanual_tracking_pct: pctPrecision,
+                target_click_pct: pctBlancos,
+                audio_rt_neto_ms: promAudioNeto,
+                falsas_alarmas_audio: falsasAlarmasAudio,
+                latenciaCompensadaMs: latenciaHardware,
+                distanciaAvgCm: distanciaMedidaCm,
+                go_no_go_flag: aprobado,
+                fecha: new Date().toISOString()
+            };
+
+            localStorage.setItem(`sensometrika_last_cargadual_${cleanRut}`, JSON.stringify(registroData));
+
+            mostrarModal(
+                aprobado ? "✓ ACREDITACIÓN CARGA DUAL APROBADA" : "⚠️ EVALUACIÓN CON OBSERVACIONES",
+                `Precisión en Ruta: <b>${pctPrecision}%</b><br>` +
+                `Aciertos Blancos: <b>${blancosImpactados} de ${blancosAparecidos} (${pctBlancos}%)</b><br>` +
+                `Reacción Audio Agudo: <b>${promAudioNeto > 0 ? promAudioNeto + ' ms' : 'Sin datos'}</b> <span style="font-size:0.75rem; color:#94a3b8;">(Compensación sensor: ${latenciaHardware} ms)</span><br>` +
+                `Distancia Telemétrica: <b>${distanciaMedidaCm} cm</b><br><br>` +
+                `<b>Dictamen Pericial:</b> ${aprobado ? '<b style="color:#10b981">Apto Alta Exigencia Operativa</b>' : '<b style="color:#ef4444">Requiere Reevaluación en Gabinete</b>'}`,
+                () => { ejecutarRetornoMenu(); }
+            );
+        }
+
+        function mostrarModal(titulo, cuerpo, callback) {
+            modalTitle.textContent = titulo;
+            modalBody.innerHTML = cuerpo;
+            modal.style.display = 'flex';
+            modalBtnClose.onclick = () => {
+                modal.style.display = 'none';
+                if (callback) callback();
+            };
+        }
+
+        document.getElementById('btnInfo').addEventListener('click', () => {
+            mostrarModal("¿CÓMO FUNCIONA LA CARGA COGNITIVA DUAL?", 
+                "Evalúa atención dividida y coordinación bajo sobrecarga:<br>1. <b>Mover Cabina:</b> Pulsa ◄ / ► en smartphone o teclas A/D en PC.<br>2. <b>Impactar Blancos:</b> Toca o haz clic sobre los círculos rojos.<br>3. <b>Audio:</b> Pulsa 🔔 ALERTA sólo al escuchar el tono AGUDO.");
+        });
+
+        document.addEventListener('DOMContentLoaded', () => {
+            iniciarMediaPipeFaceMesh();
+            dibujarEscena();
+        });
+    </script>
+</body>
+</html>
