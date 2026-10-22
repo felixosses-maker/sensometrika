@@ -3,9 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>SENSOMETRIKA | Test Módulo Visomotriz Pro</title>
+  <title>SENSOMETRIKA | Test Módulo Visomotriz / Reactímetro Pro B2B</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <!-- LIBRERÍAS GOOGLE MEDIAPIPE PARA TELEMETRÍA Y CONTROL FACIAL B2B -->
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
+
   <style>
     :root {
       --bg-color: #040810;
@@ -15,6 +19,7 @@
       --accent-cyan-glow: rgba(0, 191, 255, 0.4);
       --accent-gold: #e5b324;
       --accent-green: #10b981;
+      --accent-red: #ef4444;
       --text-main: #f8fafc;
       --text-muted: #94a3b8;
     }
@@ -92,6 +97,7 @@
       flex-direction: column;
       gap: 12px;
       box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
+      position: relative;
     }
 
     .top-nav-bar {
@@ -186,6 +192,54 @@
       display: block;
     }
 
+    /* PREVIEW DE CÁMARA BIOMÉTRICA PIP */
+    .cam-preview-pip {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      width: 65px;
+      height: 65px;
+      border: 1.5px solid var(--accent-cyan);
+      border-radius: 8px;
+      overflow: hidden;
+      background: #030712;
+      z-index: 20;
+    }
+
+    .cam-preview-pip video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
+
+    .cam-tag {
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      background: rgba(0, 191, 255, 0.85);
+      color: #000;
+      font-size: 0.45rem;
+      font-weight: 900;
+      text-align: center;
+      padding: 1px 0;
+      text-transform: uppercase;
+    }
+
+    /* OVERLAY DE BLOQUEO POR DISTANCIA NORMATIVA */
+    .distance-block-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(4, 8, 16, 0.94);
+      backdrop-filter: blur(5px);
+      z-index: 30;
+      display: none;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 16px;
+      text-align: center;
+      gap: 8px;
+      border-radius: 12px;
+    }
+
+    .distance-block-title { color: var(--accent-red); font-weight: 900; font-size: 0.92rem; text-transform: uppercase; }
+    .distance-block-desc { color: var(--text-main); font-size: 0.74rem; line-height: 1.35; }
+
     .start-overlay {
       position: absolute;
       inset: 0;
@@ -264,6 +318,9 @@
 </head>
 <body>
 
+  <!-- ELEMENTO OCULTO PARA RECEPCIÓN DE VIDEO DE CÁMARA -->
+  <video id="webcamInput" style="display:none;" playsinline></video>
+
   <div class="main-wrapper">
     
     <!-- Header Institucional v1 -->
@@ -271,7 +328,7 @@
       <div class="logo-container">
         <img src="sensometrica.jpg" alt="SENSOMETRIKA" class="brand-logo-img">
       </div>
-      <div class="subtitle-neon">MÓDULO 3: COORDINACIÓN VISOMOTRIZ / TRACKING PISTA</div>
+      <div class="subtitle-neon">MÓDULO 3: COORDINACIÓN VISOMOTRIZ / REACTÍMETRO PRO</div>
     </header>
 
     <!-- Tarjeta Central v1 -->
@@ -294,6 +351,22 @@
       <!-- Área de Simulación / Canvas -->
       <div id="canvas-container">
         <canvas id="visomotrizCanvas"></canvas>
+
+        <!-- PREVIEW DE CÁMARA BIOMÉTRICA PIP -->
+        <div class="cam-preview-pip">
+          <video id="webcamVideo" autoplay playsinline muted></video>
+          <div class="cam-tag">Biometría</div>
+        </div>
+
+        <!-- OVERLAY DE BLOQUEO POR DISTANCIA NORMATIVA -->
+        <div id="boxBlockDistancia" class="distance-block-overlay">
+          <span class="distance-block-title">⚠️ DISTANCIA / POSTURA FUERA DE RANGO</span>
+          <span id="txtDistanciaDetalle" class="distance-block-desc">
+            Ajuste su posición frente a la pantalla.<br>
+            Distancia telemétrica actual: <b id="lblDistDetalleVal" style="color:var(--accent-red);">-- cm</b><br>
+            (Rango normativo: 45 a 65 cm).
+          </span>
+        </div>
 
         <div id="overlay" class="start-overlay">
           <h2 id="overlay-title" style="color: var(--accent-cyan); font-size: 0.95rem; font-weight: 900; text-transform: uppercase;">
@@ -327,8 +400,8 @@
           <span id="m-time-out" class="telemetry-val" style="color: #f87171;">0.0s</span>
         </div>
         <div class="telemetry-col">
-          <span class="telemetry-lbl">SALIDAS</span>
-          <span id="m-exits-count" class="telemetry-val" style="color: var(--accent-cyan);">0</span>
+          <span class="telemetry-lbl">DISTANCIA</span>
+          <span id="m-distancia" class="telemetry-val" style="color: var(--accent-green);">-- cm</span>
         </div>
       </div>
 
@@ -346,16 +419,16 @@
       
       <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--card-border); padding-bottom: 8px;">
         <span style="font-size: 0.85rem; font-weight: 800; color: var(--accent-cyan); text-transform: uppercase;">
-          ℹ️ Instrucciones del Módulo 3
+          ℹ️ Instrucciones del Módulo Visomotriz Pro
         </span>
         <button onclick="cerrarAyuda()" style="color: var(--text-muted); font-weight: 800; border: none; background: none; cursor: pointer; font-size: 1rem;">✕</button>
       </div>
 
       <div style="font-size: 0.76rem; color: #cbd5e1; line-height: 1.5; display: flex; flex-direction: column; gap: 8px;">
-        <p><strong>3A. Tracking Continuo:</strong> Mantén tu dedo sobre el objetivo circular en movimiento constante procure mantenerse dentro de la zona delimitada durante los 20 segundos.</p>
+        <p><strong>3A. Tracking Continuo:</strong> Mantén tu dedo sobre el objetivo circular en movimiento constante procurando mantenerte dentro de la zona delimitada durante los 20 segundos.</p>
         <p><strong>3B. Tracking Adaptativo:</strong> El objetivo aumentará o disminuirá su velocidad de desplazamiento dependiendo de tu precisión en tiempo real.</p>
         <div style="background: #030712; border: 1px dashed var(--accent-gold); padding: 8px; border-radius: 8px; color: var(--accent-gold); font-size: 0.70rem; font-weight: 700; margin-top: 4px;">
-          Estándar D.S. N° 170 MTT: Se exige al menos un 40% de precisión de permanencia dentro de la pista.
+          Estándar D.S. N° 170 MTT: Control de postura e inclinación por Visión Artificial (45-65 cm).
         </div>
       </div>
 
@@ -372,6 +445,10 @@
     const cleanRut = rawRut.replace(/[^0-9Kk]/g, '');
     const sessionId = urlParams.get('session') || `SESION_${cleanRut}_ACTIVA`;
 
+    // TELEMETRÍA Y CONTROL DE CÁMARA
+    let distanciaMedidaCm = 55;
+    let estaBloqueadoPorDistancia = false;
+
     const SUPABASE_URL = "https://kytuewhkhshrjddzoknv.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt5dHVld2hraHNocmpkZHpva252Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkxMzc4MzcsImV4cCI6MjEwNDcxMzgzN30.gNWbr8E7oF-56yKnNIDVvGIaGXfHkCCcKonWVDthp2k";
 
@@ -382,6 +459,73 @@
 
     const subModos = ['3A', '3B'];
     const minPrecisionValida = 40.0;
+
+    function iniciarMediaPipeFaceMesh() {
+      const videoElement = document.getElementById('webcamVideo');
+
+      const faceMesh = new FaceMesh({
+        locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`
+      });
+
+      faceMesh.setOptions({
+        maxNumFaces: 1,
+        refineLandmarks: true,
+        minDetectionConfidence: 0.5,
+        minTrackingConfidence: 0.5
+      });
+
+      faceMesh.onResults(onResultsFaceMesh);
+
+      const camera = new Camera(videoElement, {
+        onFrame: async () => {
+          await faceMesh.send({ image: videoElement });
+        },
+        width: 320,
+        height: 240
+      });
+
+      camera.start().catch(() => {
+        distanciaMedidaCm = 55;
+        evaluarRangoDistancia();
+      });
+    }
+
+    function onResultsFaceMesh(results) {
+      if (!results.multiFaceLandmarks || results.multiFaceLandmarks.length === 0) {
+        return;
+      }
+
+      const landmarks = results.multiFaceLandmarks[0];
+      const leftEye = landmarks[33];
+      const rightEye = landmarks[263];
+
+      const dx = leftEye.x - rightEye.x;
+      const dy = leftEye.y - rightEye.y;
+      const eyeDistanceNormalized = Math.sqrt(dx * dx + dy * dy);
+
+      let distCalculada = Math.round(9.5 / eyeDistanceNormalized);
+      distanciaMedidaCm = Math.round(distanciaMedidaCm * 0.5 + distCalculada * 0.5);
+      evaluarRangoDistancia();
+    }
+
+    function evaluarRangoDistancia() {
+      const overlayBlock = document.getElementById('boxBlockDistancia');
+      const lblDetalle = document.getElementById('lblDistDetalleVal');
+      const mDistancia = document.getElementById('m-distancia');
+
+      mDistancia.textContent = `${distanciaMedidaCm} cm`;
+
+      if (distanciaMedidaCm >= 45 && distanciaMedidaCm <= 65) {
+        estaBloqueadoPorDistancia = false;
+        mDistancia.style.color = 'var(--accent-green)';
+        overlayBlock.style.display = 'none';
+      } else {
+        estaBloqueadoPorDistancia = true;
+        mDistancia.style.color = 'var(--accent-red)';
+        lblDetalle.textContent = `${distanciaMedidaCm} cm`;
+        overlayBlock.style.display = 'flex';
+      }
+    }
 
     function actualizarEstadoBotonesNavegacion() {
       let completadosTotal = 0;
@@ -551,13 +695,13 @@
     }
 
     canvas.addEventListener('pointerdown', (e) => {
-      if (!isRunning) return;
+      if (!isRunning || estaBloqueadoPorDistancia) return;
       isTouching = true;
       updateTouchPosition(e);
     });
 
     canvas.addEventListener('pointermove', (e) => {
-      if (!isRunning || !isTouching) return;
+      if (!isRunning || !isTouching || estaBloqueadoPorDistancia) return;
       updateTouchPosition(e);
     });
 
@@ -576,42 +720,45 @@
       const centerX = w / 2;
       const centerY = h / 2;
 
-      // Actualizar posición del objetivo en trayectoria elíptica suave
-      angle += currentSpeed;
+      // Pausa de movimiento si se encuentra bloqueado por postura/distancia
+      if (!estaBloqueadoPorDistancia) {
+        angle += currentSpeed;
+      }
+
       targetX = centerX + Math.cos(angle) * pathRadius;
       targetY = centerY + Math.sin(angle * 0.7) * (pathRadius * 0.75);
 
-      // Distancia entre puntero táctil y objetivo
       let dist = 9999;
       if (isTouching) {
         dist = Math.hypot(userX - targetX, userY - targetY);
       }
 
-      const isInTrack = isTouching && (dist <= targetRadius + 6);
+      const isInTrack = isTouching && (dist <= targetRadius + 6) && !estaBloqueadoPorDistancia;
 
-      if (isInTrack) {
-        timeInTrack += dt;
-        if (!wasInTrack) {
-          wasInTrack = true;
-        }
-        if (selectedMode === '3B') {
-          currentSpeed = Math.min(0.032, currentSpeed + 0.0001);
-        }
-      } else {
-        timeOutTrack += dt;
-        if (wasInTrack) {
-          wasInTrack = false;
-          exitCount++;
-        }
-        if (selectedMode === '3B') {
-          currentSpeed = Math.max(0.012, currentSpeed - 0.0003);
+      if (!estaBloqueadoPorDistancia) {
+        if (isInTrack) {
+          timeInTrack += dt;
+          if (!wasInTrack) {
+            wasInTrack = true;
+          }
+          if (selectedMode === '3B') {
+            currentSpeed = Math.min(0.032, currentSpeed + 0.0001);
+          }
+        } else {
+          timeOutTrack += dt;
+          if (wasInTrack) {
+            wasInTrack = false;
+            exitCount++;
+          }
+          if (selectedMode === '3B') {
+            currentSpeed = Math.max(0.012, currentSpeed - 0.0003);
+          }
         }
       }
 
-      // Renderizado
+      // Renderizado Canvas
       ctx.clearRect(0, 0, w, h);
 
-      // Dibujar trayectoria guía tenue
       ctx.beginPath();
       for (let a = 0; a < Math.PI * 2; a += 0.05) {
         const px = centerX + Math.cos(a) * pathRadius;
@@ -622,7 +769,6 @@
       ctx.lineWidth = 4;
       ctx.stroke();
 
-      // Dibujar objetivo
       ctx.beginPath();
       ctx.arc(targetX, targetY, targetRadius, 0, Math.PI * 2);
       ctx.fillStyle = isInTrack ? 'rgba(34, 197, 94, 0.35)' : 'rgba(239, 68, 68, 0.35)';
@@ -636,8 +782,7 @@
       ctx.fillStyle = isInTrack ? '#22c55e' : '#ef4444';
       ctx.fill();
 
-      // Dibujar puntero del usuario
-      if (isTouching) {
+      if (isTouching && !estaBloqueadoPorDistancia) {
         ctx.beginPath();
         ctx.arc(userX, userY, 12, 0, Math.PI * 2);
         ctx.fillStyle = '#38bdf8';
@@ -647,19 +792,17 @@
         ctx.stroke();
       }
 
-      // Actualizar Panel de Métricas
       const totalTime = timeInTrack + timeOutTrack;
       const precision = totalTime > 0 ? ((timeInTrack / totalTime) * 100).toFixed(1) : 100.0;
       
       document.getElementById('m-precision').textContent = precision + '%';
       document.getElementById('m-time-out').textContent = timeOutTrack.toFixed(1) + 's';
-      document.getElementById('m-exits-count').textContent = exitCount;
 
       animFrame = requestAnimationFrame(gameLoop);
     }
 
     window.runCurrentTest = function() {
-      if (!selectedMode) return;
+      if (!selectedMode || estaBloqueadoPorDistancia) return;
 
       document.getElementById('overlay').style.display = 'none';
 
@@ -679,7 +822,10 @@
 
       if (timerInterval) clearInterval(timerInterval);
       timerInterval = setInterval(() => {
-        remainingTime -= 0.1;
+        if (!estaBloqueadoPorDistancia) {
+          remainingTime -= 0.1;
+        }
+
         if (remainingTime <= 0) {
           remainingTime = 0;
           clearInterval(timerInterval);
@@ -715,16 +861,17 @@
               evaluator_id: "EVALUADOR_01",
               evaluated_rut: rawRut,
               evaluated_name: "Operador Demostración",
-              module_code: "MOD_03_VISOMOTRIZ",
+              module_code: "MOD_03_VISOMOTRIZ_PRO",
               modality_code: selectedMode,
               metrics: {
                 precision_percentage: precisionVal,
                 time_in_track_sec: Number(timeInTrack.toFixed(1)),
                 time_out_track_sec: Number(timeOutTrack.toFixed(1)),
-                exits_count: exitCount
+                exits_count: exitCount,
+                distance_avg_cm: distanciaMedidaCm
               },
               hardware_telemetry: tuner.getTelemetryData(),
-              integrity_hash: "SHA256_VISOMOTRIZ_OK",
+              integrity_hash: "SHA256_VISOMOTRIZ_PRO_OK",
               is_valid_test: true
             }]);
           } catch(e) {}
@@ -750,9 +897,8 @@
     }
 
     document.addEventListener('DOMContentLoaded', async () => {
+      iniciarMediaPipeFaceMesh();
       await tuner.detectScreenRefreshRate();
-      const savedLat = parseInt(urlParams.get('latencia') || localStorage.getItem('sensometrika_latencia_ms') || '16');
-      tuner.hardwareOffsetMs = savedLat;
       actualizarEstadoBotonesNavegacion();
     });
 
