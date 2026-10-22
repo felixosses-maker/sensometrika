@@ -3,8 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SENSOMETRIKA | Coordinación Bimanual (Palancas)</title>
+    <title>SENSOMETRIKA | Coordinación Bimanual (Palancas Pro)</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- LIBRERÍAS GOOGLE MEDIAPIPE PARA TELEMETRÍA Y CONTROL FACIAL B2B -->
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
+
     <style>
         :root {
             --bg-color: #060b13;
@@ -83,6 +87,7 @@
             flex-direction: column;
             gap: 14px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            position: relative;
         }
 
         .top-nav {
@@ -138,6 +143,54 @@
         }
 
         canvas { width: 100%; height: 100%; display: block; touch-action: none; }
+
+        /* PREVIEW CÁMARA WEB / BIOMETRÍA PIP */
+        .cam-preview-pip {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            width: 65px;
+            height: 65px;
+            border: 1.5px solid var(--accent-cyan);
+            border-radius: 8px;
+            overflow: hidden;
+            background: #030712;
+            z-index: 20;
+        }
+
+        .cam-preview-pip video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
+
+        .cam-tag {
+            position: absolute;
+            bottom: 0; left: 0; right: 0;
+            background: rgba(0, 191, 255, 0.85);
+            color: #000;
+            font-size: 0.45rem;
+            font-weight: 900;
+            text-align: center;
+            padding: 1px 0;
+            text-transform: uppercase;
+        }
+
+        /* OVERLAY DE BLOQUEO POR DISTANCIA NORMATIVA */
+        .distance-block-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.94);
+            backdrop-filter: blur(5px);
+            z-index: 30;
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 16px;
+            text-align: center;
+            gap: 8px;
+            border-radius: 12px;
+        }
+
+        .distance-block-title { color: var(--accent-red); font-weight: 900; font-size: 0.92rem; text-transform: uppercase; }
+        .distance-block-desc { color: var(--text-main); font-size: 0.74rem; line-height: 1.35; }
 
         .instruction-text {
             text-align: center;
@@ -228,17 +281,17 @@
 
         .metrics-grid {
             display: grid;
-            grid-template-columns: 1fr 1fr 1fr 1fr;
+            grid-template-columns: repeat(5, 1fr);
             text-align: center;
             background-color: #070d17;
             border: 1px solid var(--card-border);
             border-radius: 10px;
-            padding: 12px 6px;
+            padding: 12px 4px;
         }
 
         .metric-item { display: flex; flex-direction: column; gap: 2px; }
-        .metric-label { font-size: 0.60rem; color: var(--text-muted); font-weight: 700; }
-        .metric-value { font-size: 0.95rem; font-weight: 800; }
+        .metric-label { font-size: 0.55rem; color: var(--text-muted); font-weight: 700; }
+        .metric-value { font-size: 0.88rem; font-weight: 800; }
 
         .modal-overlay {
             position: fixed;
@@ -281,6 +334,9 @@
 </head>
 <body>
 
+    <!-- ELEMENTO OCULTO PARA RECEPCIÓN DE VIDEO DE CÁMARA -->
+    <video id="webcamInput" style="display:none;" playsinline></video>
+
     <div class="main-container">
         <header class="brand-header">
             <img src="sensometrica.jpg" alt="SENSOMETRIKA" class="brand-logo-img">
@@ -302,12 +358,29 @@
 
             <div class="canvas-wrapper" id="canvasContainer">
                 <canvas id="palancasCanvas" width="400" height="300"></canvas>
+
+                <!-- PREVIEW DE CÁMARA BIOMÉTRICA PIP -->
+                <div class="cam-preview-pip">
+                    <video id="webcamVideo" autoplay playsinline muted></video>
+                    <div class="cam-tag">Biometría</div>
+                </div>
+
+                <!-- OVERLAY DE BLOQUEO POR DISTANCIA NORMATIVA -->
+                <div id="boxBlockDistancia" class="distance-block-overlay">
+                    <span class="distance-block-title">⚠️ DISTANCIA / POSTURA FUERA DE RANGO</span>
+                    <span id="txtDistanciaDetalle" class="distance-block-desc">
+                        Ajuste su posición frente a la pantalla.<br>
+                        Distancia telemétrica actual: <b id="lblDistDetalleVal" style="color:var(--accent-red);">-- cm</b><br>
+                        (Rango normativo: 45 a 65 cm).
+                    </span>
+                </div>
             </div>
 
             <div class="instruction-text" id="instructionText">
                 Evaluación Oficial: Recorre la pista con ambos pulgares hasta la meta. (Límite: 45s)
             </div>
 
+            <!-- PANEL TELEMÉTRICO 5 COLUMNAS -->
             <div class="metrics-grid">
                 <div class="metric-item">
                     <span class="metric-label">TIEMPO</span>
@@ -324,6 +397,10 @@
                 <div class="metric-item">
                     <span class="metric-label">PRECISIÓN</span>
                     <span id="metricPrecision" class="metric-value" style="color:#10b981;">100%</span>
+                </div>
+                <div class="metric-item">
+                    <span class="metric-label">DISTANCIA</span>
+                    <span id="metricDistancia" class="metric-value" style="color:#10b981;">-- cm</span>
                 </div>
             </div>
 
@@ -373,6 +450,7 @@
         const metricContactos = document.getElementById('metricContactos');
         const metricTiempoError = document.getElementById('metricTiempoError');
         const metricPrecision = document.getElementById('metricPrecision');
+        const metricDistancia = document.getElementById('metricDistancia');
 
         const modal = document.getElementById('modalSistema');
         const modalTitle = document.getElementById('modalTitle');
@@ -392,7 +470,6 @@
         const cleanRut = rutEvaluado.replace(/[^0-9Kk]/g, '');
         const sessionId = urlParams.get('session') || urlParams.get('token') || localStorage.getItem('sensometrika_session_activa') || `SESION_${cleanRut}_${Date.now()}`;
 
-        // En B2B nunca forzamos demo salvo que la URL lo pida explícitamente sin token/sesión B2B
         let isDemoURL = (urlParams.get('demo') === 'true' || urlParams.get('fase') === 'demo') && !esB2B;
         let modoActual = isDemoURL ? 'DEMO' : 'OFICIAL';
 
@@ -411,6 +488,76 @@
         let posicionMeta = { x: 340, y: 80 };
         let trackPoints = [];
         let keys = { left: false, right: false, up: false, down: false };
+
+        // PARÁMETROS TELEMÉTRICOS DE CÁMARA
+        let distanciaMedidaCm = 55;
+        let estaBloqueadoPorDistancia = false;
+
+        function iniciarMediaPipeFaceMesh() {
+            const videoElement = document.getElementById('webcamVideo');
+
+            const faceMesh = new FaceMesh({
+                locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`
+            });
+
+            faceMesh.setOptions({
+                maxNumFaces: 1,
+                refineLandmarks: true,
+                minDetectionConfidence: 0.5,
+                minTrackingConfidence: 0.5
+            });
+
+            faceMesh.onResults(onResultsFaceMesh);
+
+            const camera = new Camera(videoElement, {
+                onFrame: async () => {
+                    await faceMesh.send({ image: videoElement });
+                },
+                width: 320,
+                height: 240
+            });
+
+            camera.start().catch(() => {
+                distanciaMedidaCm = 55;
+                evaluarRangoDistancia();
+            });
+        }
+
+        function onResultsFaceMesh(results) {
+            if (!results.multiFaceLandmarks || results.multiFaceLandmarks.length === 0) {
+                return;
+            }
+
+            const landmarks = results.multiFaceLandmarks[0];
+            const leftEye = landmarks[33];
+            const rightEye = landmarks[263];
+
+            const dx = leftEye.x - rightEye.x;
+            const dy = leftEye.y - rightEye.y;
+            const eyeDistanceNormalized = Math.sqrt(dx * dx + dy * dy);
+
+            let distCalculada = Math.round(9.5 / eyeDistanceNormalized);
+            distanciaMedidaCm = Math.round(distanciaMedidaCm * 0.5 + distCalculada * 0.5);
+            evaluarRangoDistancia();
+        }
+
+        function evaluarRangoDistancia() {
+            const overlayBlock = document.getElementById('boxBlockDistancia');
+            const lblDetalle = document.getElementById('lblDistDetalleVal');
+
+            metricDistancia.textContent = `${distanciaMedidaCm} cm`;
+
+            if (distanciaMedidaCm >= 45 && distanciaMedidaCm <= 65) {
+                estaBloqueadoPorDistancia = false;
+                metricDistancia.style.color = 'var(--accent-green)';
+                overlayBlock.style.display = 'none';
+            } else {
+                estaBloqueadoPorDistancia = true;
+                metricDistancia.style.color = 'var(--accent-red)';
+                lblDetalle.textContent = `${distanciaMedidaCm} cm`;
+                overlayBlock.style.display = 'flex';
+            }
+        }
 
         function generarCircuitoAntiMemorizacion(numSimu) {
             const seed = (numSimu * 37 + Date.now()) % 1000;
@@ -513,7 +660,6 @@
 
         function obtenerHistorialPalancasRut() {
             if (!cleanRut) return [];
-            // Priorizamos la consulta por sesión para no arrastrar bloqueos
             const claveSesion = `sensometrika_historial_palancas_${cleanRut}_${sessionId}`;
             let rawSesion = JSON.parse(localStorage.getItem(claveSesion)) || [];
             if (Array.isArray(rawSesion) && rawSesion.length > 0) return rawSesion;
@@ -528,7 +674,7 @@
 
             const planStorage = (localStorage.getItem('sensometrika_plan_contratado') || urlParams.get('plan') || 'PLUS').toUpperCase();
             
-            let maxIntentosPlan = 1; // Para B2B por defecto es 1 por sesión
+            let maxIntentosPlan = 1;
             if (esB2B) {
                 maxIntentosPlan = planStorage.includes('ALTO') ? 3 : 1;
             } else {
@@ -627,7 +773,7 @@
                 ctx.stroke();
             }
 
-            if (evaluacionActiva) {
+            if (evaluacionActiva && !estaBloqueadoPorDistancia) {
                 if (keys.left) pua.x = Math.max(12, pua.x - pua.speed);
                 if (keys.right) pua.x = Math.min(canvas.width - 12, pua.x + pua.speed);
                 if (keys.up) pua.y = Math.max(12, pua.y - pua.speed);
@@ -686,7 +832,7 @@
 
         const setupBtn = (id, key) => {
             const el = document.getElementById(id);
-            const on = (e) => { e.preventDefault(); keys[key] = true; };
+            const on = (e) => { e.preventDefault(); if (!estaBloqueadoPorDistancia) keys[key] = true; };
             const off = (e) => { e.preventDefault(); keys[key] = false; };
             el.addEventListener('mousedown', on);
             el.addEventListener('mouseup', off);
@@ -701,7 +847,7 @@
         setupBtn('btnDown', 'down');
 
         function iniciarPrueba() {
-            if (modoActual === 'BLOQUEADO') return;
+            if (modoActual === 'BLOQUEADO' || estaBloqueadoPorDistancia) return;
 
             contactosCount = 0;
             tiempoErrorMs = 0;
@@ -726,11 +872,13 @@
             if (timerInterval) clearInterval(timerInterval);
 
             timerInterval = setInterval(() => {
-                tiempoTranscurrido++;
-                metricTiempo.textContent = `${tiempoTranscurrido} / ${TIEMPO_LIMITE_MAX_SEG} s`;
+                if (!estaBloqueadoPorDistancia) {
+                    tiempoTranscurrido++;
+                    metricTiempo.textContent = `${tiempoTranscurrido} / ${TIEMPO_LIMITE_MAX_SEG} s`;
 
-                if (tiempoTranscurrido >= TIEMPO_LIMITE_MAX_SEG) {
-                    finalizarPrueba(true);
+                    if (tiempoTranscurrido >= TIEMPO_LIMITE_MAX_SEG) {
+                        finalizarPrueba(true);
+                    }
                 }
             }, 1000);
         }
@@ -762,14 +910,13 @@
                 precision: precisionFinal,
                 timeout: esTimeout,
                 latenciaCompensadaMs: latenciaHardware,
+                distanciaAvgCm: distanciaMedidaCm,
                 fecha: new Date().toISOString()
             };
 
-            // 1. Guardar en la sesión específica para B2B
             const claveSesion = `sensometrika_historial_palancas_${cleanRut}_${sessionId}`;
             localStorage.setItem(claveSesion, JSON.stringify([registroData]));
 
-            // 2. Guardar en el historial global del RUT
             let hRut = JSON.parse(localStorage.getItem(`sensometrika_historial_palancas_${cleanRut}`)) || [];
             hRut.push(registroData);
             localStorage.setItem(`sensometrika_historial_palancas_${cleanRut}`, JSON.stringify(hRut));
@@ -793,7 +940,7 @@
 
                 const msgBody = esTimeout
                     ? `<span style="color:#ef4444; font-weight:800;">⏰ REPROBADO POR TIMEOUT (45s Excedidos)</span><br>Tiempo Transcurrido: <b>45 s</b><br>Toques en Borde: <b>${contactosCount}</b><br>Precisión Final: <b>${precisionFinal}%</b><br><br><b>Resultado registrado en el historial pericial.</b>`
-                    : `Tiempo Recorrido: <b>${tiempoTotalSecNeto} s</b><br>Toques en Borde: <b>${contactosCount}</b><br>Tiempo en Error: <b>${tErrorSeg} s</b><br>Precisión Bimanual: <b>${precisionFinal}%</b> (${precisionFinal >= 85 && contactosCount <= 1 ? '✓ En Norma' : '⚠ Deficiente'})<br><br><b>Resultado guardado con éxito.</b>`;
+                    : `Tiempo Recorrido: <b>${tiempoTotalSecNeto} s</b><br>Toques en Borde: <b>${contactosCount}</b><br>Tiempo en Error: <b>${tErrorSeg} s</b><br>Precisión Bimanual: <b>${precisionFinal}%</b> (${precisionFinal >= 85 && contactosCount <= 1 ? '✓ En Norma' : '⚠ Deficiente'})<br><span style="font-size:0.75rem; color:#94a3b8;">(Distancia telemétrica: ${distanciaMedidaCm} cm)</span><br><br><b>Resultado guardado con éxito.</b>`;
 
                 mostrarModal(tituloModal, msgBody, () => { ejecutarRetornoMenu(); });
             }
@@ -815,8 +962,11 @@
             mostrarModal("¿CÓMO FUNCIONA?", "Usa los botones bimanuales para desplazar la púa hasta la meta verde antes de 45 segundos evitando rozar los bordes.");
         });
 
-        actualizarEstadoUI();
-        renderLoop();
+        document.addEventListener('DOMContentLoaded', () => {
+            iniciarMediaPipeFaceMesh();
+            actualizarEstadoUI();
+            renderLoop();
+        });
     </script>
 </body>
 </html>

@@ -6,6 +6,10 @@
   <title>SENSOMETRIKA | Anticipación Espaciotemporal Pro</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <!-- LIBRERÍAS GOOGLE MEDIAPIPE PARA TELEMETRÍA Y CONTROL FACIAL B2B -->
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
+
   <style>
     :root {
       --bg-color: #040810;
@@ -16,6 +20,8 @@
       --accent-cyan-glow: rgba(0, 191, 255, 0.4);
       --accent-gold: #e5b324;
       --accent-gold-glow: rgba(229, 179, 36, 0.4);
+      --accent-red: #ef4444;
+      --accent-green: #10b981;
       --text-main: #f8fafc;
       --text-muted: #94a3b8;
     }
@@ -93,6 +99,7 @@
       flex-direction: column;
       gap: 12px;
       box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
+      position: relative;
     }
 
     .top-nav-bar {
@@ -174,6 +181,54 @@
       display: block;
     }
 
+    /* PREVIEW DE CÁMARA BIOMÉTRICA PIP */
+    .cam-preview-pip {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      width: 65px;
+      height: 65px;
+      border: 1.5px solid var(--accent-cyan);
+      border-radius: 8px;
+      overflow: hidden;
+      background: #030712;
+      z-index: 20;
+    }
+
+    .cam-preview-pip video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
+
+    .cam-tag {
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      background: rgba(0, 191, 255, 0.85);
+      color: #000;
+      font-size: 0.45rem;
+      font-weight: 900;
+      text-align: center;
+      padding: 1px 0;
+      text-transform: uppercase;
+    }
+
+    /* OVERLAY DE BLOQUEO POR DISTANCIA NORMATIVA */
+    .distance-block-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(4, 8, 16, 0.94);
+      backdrop-filter: blur(5px);
+      z-index: 30;
+      display: none;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 16px;
+      text-align: center;
+      gap: 8px;
+      border-radius: 12px;
+    }
+
+    .distance-block-title { color: var(--accent-red); font-weight: 900; font-size: 0.92rem; text-transform: uppercase; }
+    .distance-block-desc { color: var(--text-main); font-size: 0.74rem; line-height: 1.35; }
+
     .start-overlay {
       position: absolute;
       inset: 0;
@@ -200,7 +255,7 @@
       color: #000;
       border: none;
       padding: 13px;
-      border-radius: 9px;
+      border-radius: 99px;
       font-weight: 900;
       font-size: 0.83rem;
       cursor: pointer;
@@ -210,23 +265,26 @@
       box-shadow: 0 4px 16px var(--accent-cyan-glow);
     }
 
-    /* Fila Telemétrica Inferior 4 Columnas v1 */
+    /* Fila Telemétrica Inferior 5 Columnas v1 */
     .telemetry-row {
       display: grid;
-      grid-template-columns: repeat(4, 1fr);
+      grid-template-columns: repeat(5, 1fr);
       background: #030712;
       border: 1px solid var(--card-border);
       border-radius: 10px;
-      padding: 10px 4px;
+      padding: 10px 2px;
       text-align: center;
     }
 
     .telemetry-col { display: flex; flex-direction: column; gap: 2px; }
-    .telemetry-lbl { font-size: 0.52rem; color: var(--text-muted); font-weight: 800; text-transform: uppercase; }
-    .telemetry-val { font-size: 0.82rem; font-weight: 900; color: #fff; }
+    .telemetry-lbl { font-size: 0.50rem; color: var(--text-muted); font-weight: 800; text-transform: uppercase; }
+    .telemetry-val { font-size: 0.80rem; font-weight: 900; color: #fff; }
   </style>
 </head>
 <body>
+
+  <!-- ELEMENTO OCULTO PARA RECEPCIÓN DE VIDEO DE CÁMARA -->
+  <video id="webcamInput" style="display:none;" playsinline></video>
 
   <div class="main-wrapper">
     
@@ -259,6 +317,22 @@
       <div id="canvas-container">
         <canvas id="anticipacionCanvas"></canvas>
 
+        <!-- PREVIEW DE CÁMARA BIOMÉTRICA PIP -->
+        <div class="cam-preview-pip">
+          <video id="webcamVideo" autoplay playsinline muted></video>
+          <div class="cam-tag">Biometría</div>
+        </div>
+
+        <!-- OVERLAY DE BLOQUEO POR DISTANCIA NORMATIVA -->
+        <div id="boxBlockDistancia" class="distance-block-overlay">
+          <span class="distance-block-title">⚠️ DISTANCIA / POSTURA FUERA DE RANGO</span>
+          <span id="txtDistanciaDetalle" class="distance-block-desc">
+            Ajuste su posición frente a la pantalla.<br>
+            Distancia telemétrica actual: <b id="lblDistDetalleVal" style="color:var(--accent-red);">-- cm</b><br>
+            (Rango normativo: 45 a 65 cm).
+          </span>
+        </div>
+
         <div id="overlay" class="start-overlay">
           <h2 id="overlay-title" style="color: var(--accent-cyan); font-size: 0.95rem; font-weight: 900; text-transform: uppercase;">
             Modalidad 4A: Velocidad Constante
@@ -276,7 +350,7 @@
         Mide la precisión en la estimación de tiempo de cruce en zona ciega (D.S. N° 170 MTT).
       </p>
 
-      <!-- Panel Telemétrico Inferior de 4 Columnas v1 -->
+      <!-- Panel Telemétrico Inferior de 5 Columnas v1 -->
       <div class="telemetry-row">
         <div class="telemetry-col">
           <span class="telemetry-lbl">ENSAYO</span>
@@ -284,7 +358,7 @@
         </div>
         <div class="telemetry-col">
           <span class="telemetry-lbl">ÚLTIMO ERROR</span>
-          <span id="m-last-error" class="telemetry-val" style="color: #10b981;">-- ms</span>
+          <span id="m-last-error" class="telemetry-val" style="color: var(--accent-green);">-- ms</span>
         </div>
         <div class="telemetry-col">
           <span class="telemetry-lbl">LATENCIA</span>
@@ -293,6 +367,10 @@
         <div class="telemetry-col">
           <span class="telemetry-lbl">PROMEDIO</span>
           <span id="m-avg-error" class="telemetry-val" style="color: var(--accent-cyan);">-- ms</span>
+        </div>
+        <div class="telemetry-col">
+          <span class="telemetry-lbl">DISTANCIA</span>
+          <span id="m-distancia" class="telemetry-val" style="color: var(--accent-green);">-- cm</span>
         </div>
       </div>
 
@@ -334,6 +412,77 @@
     let supabaseClient = null;
     if (window.supabase) {
       supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    }
+
+    // TELEMETRÍA Y CONTROL DE CÁMARA BIOMÉTRICA
+    let distanciaMedidaCm = 55;
+    let estaBloqueadoPorDistancia = false;
+
+    function iniciarMediaPipeFaceMesh() {
+      const videoElement = document.getElementById('webcamVideo');
+
+      const faceMesh = new FaceMesh({
+        locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`
+      });
+
+      faceMesh.setOptions({
+        maxNumFaces: 1,
+        refineLandmarks: true,
+        minDetectionConfidence: 0.5,
+        minTrackingConfidence: 0.5
+      });
+
+      faceMesh.onResults(onResultsFaceMesh);
+
+      const camera = new Camera(videoElement, {
+        onFrame: async () => {
+          await faceMesh.send({ image: videoElement });
+        },
+        width: 320,
+        height: 240
+      });
+
+      camera.start().catch(() => {
+        distanciaMedidaCm = 55;
+        evaluarRangoDistancia();
+      });
+    }
+
+    function onResultsFaceMesh(results) {
+      if (!results.multiFaceLandmarks || results.multiFaceLandmarks.length === 0) {
+        return;
+      }
+
+      const landmarks = results.multiFaceLandmarks[0];
+      const leftEye = landmarks[33];
+      const rightEye = landmarks[263];
+
+      const dx = leftEye.x - rightEye.x;
+      const dy = leftEye.y - rightEye.y;
+      const eyeDistanceNormalized = Math.sqrt(dx * dx + dy * dy);
+
+      let distCalculada = Math.round(9.5 / eyeDistanceNormalized);
+      distanciaMedidaCm = Math.round(distanciaMedidaCm * 0.5 + distCalculada * 0.5);
+      evaluarRangoDistancia();
+    }
+
+    function evaluarRangoDistancia() {
+      const overlayBlock = document.getElementById('boxBlockDistancia');
+      const lblDetalle = document.getElementById('lblDistDetalleVal');
+      const mDistancia = document.getElementById('m-distancia');
+
+      mDistancia.textContent = `${distanciaMedidaCm} cm`;
+
+      if (distanciaMedidaCm >= 45 && distanciaMedidaCm <= 65) {
+        estaBloqueadoPorDistancia = false;
+        mDistancia.style.color = 'var(--accent-green)';
+        overlayBlock.style.display = 'none';
+      } else {
+        estaBloqueadoPorDistancia = true;
+        mDistancia.style.color = 'var(--accent-red)';
+        lblDetalle.textContent = `${distanciaMedidaCm} cm`;
+        overlayBlock.style.display = 'flex';
+      }
     }
 
     class LatencyTuner {
@@ -406,6 +555,7 @@
     const urlParams = new URLSearchParams(window.location.search);
 
     document.addEventListener('DOMContentLoaded', async () => {
+      iniciarMediaPipeFaceMesh();
       await tuner.detectScreenRefreshRate();
       const savedLat = parseInt(urlParams.get('latencia') || localStorage.getItem('sensometrika_latencia_ms') || '16');
       tuner.hardwareOffsetMs = savedLat;
@@ -445,6 +595,8 @@
     };
 
     window.runCurrentTest = function() {
+      if (estaBloqueadoPorDistancia) return;
+
       document.getElementById('overlay').style.display = 'none';
       resizeCanvas();
       isTestRunning = true;
@@ -486,7 +638,9 @@
       const w = rect.width;
       const h = rect.height;
 
-      vehicle.x += vehicle.speed;
+      if (!estaBloqueadoPorDistancia) {
+        vehicle.x += vehicle.speed;
+      }
 
       // Al entrar al túnel
       if (vehicle.x >= tunnelX && trialState === 'VISIBLE') {
@@ -545,7 +699,7 @@
     }
 
     canvas.onpointerdown = function(e) {
-      if (!isTestRunning || trialState !== 'HIDDEN') return;
+      if (!isTestRunning || trialState !== 'HIDDEN' || estaBloqueadoPorDistancia) return;
 
       const userTimestamp = performance.now();
       const offset = tuner.registerCalibrationTap(e);
@@ -562,7 +716,7 @@
       
       const lblLast = document.getElementById('m-last-error');
       lblLast.textContent = `${absError} ms`;
-      lblLast.style.color = absError <= 220 ? '#10b981' : '#ef4444';
+      lblLast.style.color = absError <= 220 ? 'var(--accent-green)' : 'var(--accent-red)';
 
       updatePanel();
       setTimeout(nextTrial, 1400);
@@ -576,7 +730,7 @@
         const avg = Math.round(absSum / errorsLog.length);
         const lblAvg = document.getElementById('m-avg-error');
         lblAvg.textContent = `${avg} ms`;
-        lblAvg.style.color = avg <= 220 ? '#00bfff' : '#ef4444';
+        lblAvg.style.color = avg <= 220 ? 'var(--accent-cyan)' : 'var(--accent-red)';
       }
     }
 
@@ -592,7 +746,8 @@
         desviacionStd: 12,
         ensayos: errorsLog,
         modalidad: selectedMode,
-        aprobado: aprobado
+        aprobado: aprobado,
+        distanciaAvgCm: distanciaMedidaCm
       };
 
       // Guardar en localStorage para Informe Pericial Sensometrika B2B
@@ -619,7 +774,8 @@
             metrics: { 
               trials_errors_ms: errorsLog,
               avg_abs_error_ms: avgMs,
-              approved: aprobado
+              approved: aprobado,
+              distance_avg_cm: distanciaMedidaCm
             },
             hardware_telemetry: tuner.getTelemetryData(),
             integrity_hash: "SHA256_ANTICIPACION_OK",

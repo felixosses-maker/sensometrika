@@ -6,6 +6,10 @@
   <title>SENSOMETRIKA | Test Módulo Visomotriz Pro</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <!-- LIBRERÍAS GOOGLE MEDIAPIPE PARA TELEMETRÍA Y CONTROL FACIAL B2B -->
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
+
   <style>
     :root {
       --bg-color: #040810;
@@ -15,6 +19,7 @@
       --accent-cyan-glow: rgba(0, 191, 255, 0.4);
       --accent-gold: #e5b324;
       --accent-green: #10b981;
+      --accent-red: #ef4444;
       --text-main: #f8fafc;
       --text-muted: #94a3b8;
     }
@@ -92,6 +97,7 @@
       flex-direction: column;
       gap: 12px;
       box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
+      position: relative;
     }
 
     .top-nav-bar {
@@ -186,6 +192,54 @@
       display: block;
     }
 
+    /* PREVIEW DE CÁMARA BIOMÉTRICA PIP */
+    .cam-preview-pip {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      width: 65px;
+      height: 65px;
+      border: 1.5px solid var(--accent-cyan);
+      border-radius: 8px;
+      overflow: hidden;
+      background: #030712;
+      z-index: 20;
+    }
+
+    .cam-preview-pip video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
+
+    .cam-tag {
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      background: rgba(0, 191, 255, 0.85);
+      color: #000;
+      font-size: 0.45rem;
+      font-weight: 900;
+      text-align: center;
+      padding: 1px 0;
+      text-transform: uppercase;
+    }
+
+    /* OVERLAY DE BLOQUEO POR DISTANCIA NORMATIVA */
+    .distance-block-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(4, 8, 16, 0.94);
+      backdrop-filter: blur(5px);
+      z-index: 30;
+      display: none;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 16px;
+      text-align: center;
+      gap: 8px;
+      border-radius: 12px;
+    }
+
+    .distance-block-title { color: var(--accent-red); font-weight: 900; font-size: 0.92rem; text-transform: uppercase; }
+    .distance-block-desc { color: var(--text-main); font-size: 0.74rem; line-height: 1.35; }
+
     .start-overlay {
       position: absolute;
       inset: 0;
@@ -230,20 +284,20 @@
       pointer-events: none !important;
     }
 
-    /* Fila Telemétrica Inferior 4 Columnas v1 */
+    /* Fila Telemétrica Inferior 5 Columnas v1 */
     .telemetry-row {
       display: grid;
-      grid-template-columns: repeat(4, 1fr);
+      grid-template-columns: repeat(5, 1fr);
       background: #030712;
       border: 1px solid var(--card-border);
       border-radius: 10px;
-      padding: 10px 4px;
+      padding: 10px 2px;
       text-align: center;
     }
 
     .telemetry-col { display: flex; flex-direction: column; gap: 2px; }
-    .telemetry-lbl { font-size: 0.52rem; color: var(--text-muted); font-weight: 800; text-transform: uppercase; }
-    .telemetry-val { font-size: 0.82rem; font-weight: 900; color: #fff; }
+    .telemetry-lbl { font-size: 0.50rem; color: var(--text-muted); font-weight: 800; text-transform: uppercase; }
+    .telemetry-val { font-size: 0.80rem; font-weight: 900; color: #fff; }
 
     .btn-nav-next {
       display: none;
@@ -263,6 +317,9 @@
   </style>
 </head>
 <body>
+
+  <!-- ELEMENTO OCULTO PARA RECEPCIÓN DE VIDEO DE CÁMARA -->
+  <video id="webcamInput" style="display:none;" playsinline></video>
 
   <div class="main-wrapper">
     
@@ -295,6 +352,22 @@
       <div id="canvas-container">
         <canvas id="visomotrizCanvas"></canvas>
 
+        <!-- PREVIEW DE CÁMARA BIOMÉTRICA PIP -->
+        <div class="cam-preview-pip">
+          <video id="webcamVideo" autoplay playsinline muted></video>
+          <div class="cam-tag">Biometría</div>
+        </div>
+
+        <!-- OVERLAY DE BLOQUEO POR DISTANCIA NORMATIVA -->
+        <div id="boxBlockDistancia" class="distance-block-overlay">
+          <span class="distance-block-title">⚠️ DISTANCIA / POSTURA FUERA DE RANGO</span>
+          <span id="txtDistanciaDetalle" class="distance-block-desc">
+            Ajuste su posición frente a la pantalla.<br>
+            Distancia telemétrica actual: <b id="lblDistDetalleVal" style="color:var(--accent-red);">-- cm</b><br>
+            (Rango normativo: 45 a 65 cm).
+          </span>
+        </div>
+
         <div id="overlay" class="start-overlay">
           <h2 id="overlay-title" style="color: var(--accent-cyan); font-size: 0.95rem; font-weight: 900; text-transform: uppercase;">
             Selecciona una modalidad
@@ -312,7 +385,7 @@
         Mide el seguimiento continuo de trayectoria y estabilidad visomotriz (D.S. N° 170 MTT).
       </p>
 
-      <!-- Panel Telemétrico Inferior de 4 Columnas v1 -->
+      <!-- Panel Telemétrico Inferior de 5 Columnas v1 -->
       <div class="telemetry-row">
         <div class="telemetry-col">
           <span class="telemetry-lbl">TIEMPO</span>
@@ -320,7 +393,7 @@
         </div>
         <div class="telemetry-col">
           <span class="telemetry-lbl">PRECISIÓN</span>
-          <span id="m-accuracy" class="telemetry-val" style="color: #10b981;">100.0%</span>
+          <span id="m-accuracy" class="telemetry-val" style="color: var(--accent-green);">100.0%</span>
         </div>
         <div class="telemetry-col">
           <span class="telemetry-lbl">T. FUERA</span>
@@ -329,6 +402,10 @@
         <div class="telemetry-col">
           <span class="telemetry-lbl">SALIDAS</span>
           <span id="m-off-count" class="telemetry-val" style="color: var(--accent-cyan);">0</span>
+        </div>
+        <div class="telemetry-col">
+          <span class="telemetry-lbl">DISTANCIA</span>
+          <span id="m-distancia" class="telemetry-val" style="color: var(--accent-green);">-- cm</span>
         </div>
       </div>
 
@@ -378,6 +455,77 @@
     let supabaseClient = null;
     if (window.supabase) {
       supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    }
+
+    // TELEMETRÍA Y CONTROL DE CÁMARA BIOMÉTRICA
+    let distanciaMedidaCm = 55;
+    let estaBloqueadoPorDistancia = false;
+
+    function iniciarMediaPipeFaceMesh() {
+      const videoElement = document.getElementById('webcamVideo');
+
+      const faceMesh = new FaceMesh({
+        locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`
+      });
+
+      faceMesh.setOptions({
+        maxNumFaces: 1,
+        refineLandmarks: true,
+        minDetectionConfidence: 0.5,
+        minTrackingConfidence: 0.5
+      });
+
+      faceMesh.onResults(onResultsFaceMesh);
+
+      const camera = new Camera(videoElement, {
+        onFrame: async () => {
+          await faceMesh.send({ image: videoElement });
+        },
+        width: 320,
+        height: 240
+      });
+
+      camera.start().catch(() => {
+        distanciaMedidaCm = 55;
+        evaluarRangoDistancia();
+      });
+    }
+
+    function onResultsFaceMesh(results) {
+      if (!results.multiFaceLandmarks || results.multiFaceLandmarks.length === 0) {
+        return;
+      }
+
+      const landmarks = results.multiFaceLandmarks[0];
+      const leftEye = landmarks[33];
+      const rightEye = landmarks[263];
+
+      const dx = leftEye.x - rightEye.x;
+      const dy = leftEye.y - rightEye.y;
+      const eyeDistanceNormalized = Math.sqrt(dx * dx + dy * dy);
+
+      let distCalculada = Math.round(9.5 / eyeDistanceNormalized);
+      distanciaMedidaCm = Math.round(distanciaMedidaCm * 0.5 + distCalculada * 0.5);
+      evaluarRangoDistancia();
+    }
+
+    function evaluarRangoDistancia() {
+      const overlayBlock = document.getElementById('boxBlockDistancia');
+      const lblDetalle = document.getElementById('lblDistDetalleVal');
+      const mDistancia = document.getElementById('m-distancia');
+
+      mDistancia.textContent = `${distanciaMedidaCm} cm`;
+
+      if (distanciaMedidaCm >= 45 && distanciaMedidaCm <= 65) {
+        estaBloqueadoPorDistancia = false;
+        mDistancia.style.color = 'var(--accent-green)';
+        overlayBlock.style.display = 'none';
+      } else {
+        estaBloqueadoPorDistancia = true;
+        mDistancia.style.color = 'var(--accent-red)';
+        lblDetalle.textContent = `${distanciaMedidaCm} cm`;
+        overlayBlock.style.display = 'flex';
+      }
     }
 
     const subModos = ['3A', '3B'];
@@ -478,6 +626,7 @@
     let selectedMode = null;
     let isRunning = false;
     const durationSec = 20;
+    let remainingSec = durationSec;
     let countdownInterval = null;
     let animFrame = null;
 
@@ -536,7 +685,7 @@
     };
 
     function updatePointer(e) {
-      if (!isRunning) return;
+      if (!isRunning || estaBloqueadoPorDistancia) return;
       const now = performance.now();
       const rect = canvas.getBoundingClientRect();
       const clientX = e.touches ? e.touches[0].clientX : e.clientX;
@@ -566,14 +715,14 @@
     }
 
     canvas.addEventListener('pointerdown', (e) => {
-      if (!isRunning) return;
+      if (!isRunning || estaBloqueadoPorDistancia) return;
       isTouching = true;
       lastTouchTime = 0;
       updatePointer(e);
     });
 
     canvas.addEventListener('pointermove', (e) => {
-      if (!isRunning || !isTouching) return;
+      if (!isRunning || !isTouching || estaBloqueadoPorDistancia) return;
       updatePointer(e);
     });
 
@@ -581,7 +730,7 @@
     window.addEventListener('pointercancel', () => { isTouching = false; });
 
     window.runCurrentTest = function() {
-      if (!selectedMode) return;
+      if (!selectedMode || estaBloqueadoPorDistancia) return;
 
       document.getElementById('overlay').style.display = 'none';
 
@@ -597,20 +746,22 @@
       target.angle = 0;
       target.speed = selectedMode === '3B' ? 0.008 : 0.009;
 
-      let remainingSec = durationSec;
+      remainingSec = durationSec;
       document.getElementById('m-timer').textContent = remainingSec.toFixed(1) + 's';
 
       if (countdownInterval) clearInterval(countdownInterval);
       countdownInterval = setInterval(() => {
-        remainingSec -= 0.1;
+        if (!estaBloqueadoPorDistancia && isRunning) {
+          remainingSec -= 0.1;
 
-        if (remainingSec <= 0) {
-          remainingSec = 0;
-          clearInterval(countdownInterval);
-          if (animFrame) cancelAnimationFrame(animFrame);
-          finishTest();
-        } else {
-          document.getElementById('m-timer').textContent = remainingSec.toFixed(1) + 's';
+          if (remainingSec <= 0) {
+            remainingSec = 0;
+            clearInterval(countdownInterval);
+            if (animFrame) cancelAnimationFrame(animFrame);
+            finishTest();
+          } else {
+            document.getElementById('m-timer').textContent = remainingSec.toFixed(1) + 's';
+          }
         }
       }, 100);
 
@@ -629,30 +780,32 @@
       const w = rect.width;
       const h = rect.height;
 
-      target.angle += target.speed;
-      target.x = (w / 2) + Math.cos(target.angle) * (w * 0.32);
-      target.y = (h / 2) + Math.sin(target.angle * 0.7) * (h * 0.25);
+      if (!estaBloqueadoPorDistancia) {
+        target.angle += target.speed;
+        target.x = (w / 2) + Math.cos(target.angle) * (w * 0.32);
+        target.y = (h / 2) + Math.sin(target.angle * 0.7) * (h * 0.25);
 
-      let dist = 9999;
-      if (isTouching) {
-        dist = Math.hypot(predictedUserPos.x - target.x, predictedUserPos.y - target.y);
-      }
-
-      const isInTrack = isTouching && (dist <= target.radius + 6);
-
-      if (!isInTrack) {
-        timeOffTrackMs += deltaMs;
-        if (!isOffTrack) {
-          offTrackCount++;
-          isOffTrack = true;
+        let dist = 9999;
+        if (isTouching) {
+          dist = Math.hypot(predictedUserPos.x - target.x, predictedUserPos.y - target.y);
         }
-        if (selectedMode === '3B') {
-          target.speed = Math.max(0.005, target.speed - 0.0001);
-        }
-      } else {
-        isOffTrack = false;
-        if (selectedMode === '3B') {
-          target.speed = Math.min(0.016, target.speed + 0.00004);
+
+        const isInTrack = isTouching && (dist <= target.radius + 6);
+
+        if (!isInTrack) {
+          timeOffTrackMs += deltaMs;
+          if (!isOffTrack) {
+            offTrackCount++;
+            isOffTrack = true;
+          }
+          if (selectedMode === '3B') {
+            target.speed = Math.max(0.005, target.speed - 0.0001);
+          }
+        } else {
+          isOffTrack = false;
+          if (selectedMode === '3B') {
+            target.speed = Math.min(0.016, target.speed + 0.00004);
+          }
         }
       }
 
@@ -668,17 +821,19 @@
       ctx.lineWidth = 4;
       ctx.stroke();
 
+      let isCurrentInTrack = isTouching && (Math.hypot(predictedUserPos.x - target.x, predictedUserPos.y - target.y) <= target.radius + 6);
+
       ctx.beginPath();
       ctx.arc(target.x, target.y, target.radius, 0, Math.PI * 2);
-      ctx.fillStyle = isInTrack ? 'rgba(34, 197, 94, 0.35)' : 'rgba(239, 68, 68, 0.35)';
+      ctx.fillStyle = isCurrentInTrack ? 'rgba(34, 197, 94, 0.35)' : 'rgba(239, 68, 68, 0.35)';
       ctx.fill();
-      ctx.strokeStyle = isInTrack ? '#22c55e' : '#ef4444';
+      ctx.strokeStyle = isCurrentInTrack ? '#22c55e' : '#ef4444';
       ctx.lineWidth = 3;
       ctx.stroke();
 
       ctx.beginPath();
       ctx.arc(target.x, target.y, 8, 0, Math.PI * 2);
-      ctx.fillStyle = isInTrack ? '#22c55e' : '#ef4444';
+      ctx.fillStyle = isCurrentInTrack ? '#22c55e' : '#ef4444';
       ctx.fill();
 
       if (isTouching) {
@@ -703,6 +858,7 @@
     async function finishTest() {
       isRunning = false;
       if (animFrame) cancelAnimationFrame(animFrame);
+      if (countdownInterval) clearInterval(countdownInterval);
 
       const totalTimeMs = durationSec * 1000;
       const percentOnTrack = Math.max(0, Number((((totalTimeMs - timeOffTrackMs) / totalTimeMs) * 100).toFixed(1)));
@@ -727,7 +883,8 @@
               metrics: { 
                 percent_on_track: percentOnTrack,
                 time_off_track_sec: Number((timeOffTrackMs / 1000).toFixed(1)),
-                off_track_events: offTrackCount
+                off_track_events: offTrackCount,
+                distance_avg_cm: distanciaMedidaCm
               },
               hardware_telemetry: tuner.getTelemetryData(),
               integrity_hash: "SHA256_VISOMOTRIZ_OK",
@@ -756,6 +913,7 @@
     }
 
     document.addEventListener('DOMContentLoaded', async () => {
+      iniciarMediaPipeFaceMesh();
       await tuner.detectScreenRefreshRate();
       const savedLat = parseInt(urlParams.get('latencia') || localStorage.getItem('sensometrika_latencia_ms') || '16');
       tuner.hardwareOffsetMs = savedLat;

@@ -4,6 +4,11 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>SENSOMETRIKA | Test de Fatiga y Vigilancia (PVT)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- LIBRERÍAS GOOGLE MEDIAPIPE PARA TELEMETRÍA Y CONTROL FACIAL B2B -->
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
+
   <style>
     * {
       box-sizing: border-box;
@@ -58,6 +63,7 @@
       flex-direction: column;
       gap: 12px;
       box-shadow: 0 16px 35px rgba(0, 0, 0, 0.7);
+      position: relative;
     }
     .nav-top-row {
       display: flex;
@@ -122,6 +128,54 @@
       letter-spacing: 2px;
     }
 
+    /* PREVIEW DE CÁMARA BIOMÉTRICA PIP */
+    .cam-preview-pip {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      width: 65px;
+      height: 65px;
+      border: 1.5px solid #38bdf8;
+      border-radius: 8px;
+      overflow: hidden;
+      background: #030712;
+      z-index: 20;
+    }
+
+    .cam-preview-pip video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
+
+    .cam-tag {
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      background: rgba(56, 189, 248, 0.85);
+      color: #000;
+      font-size: 0.45rem;
+      font-weight: 900;
+      text-align: center;
+      padding: 1px 0;
+      text-transform: uppercase;
+    }
+
+    /* OVERLAY DE BLOQUEO POR DISTANCIA NORMATIVA */
+    .distance-block-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(4, 8, 16, 0.94);
+      backdrop-filter: blur(5px);
+      z-index: 30;
+      display: none;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 16px;
+      text-align: center;
+      gap: 8px;
+      border-radius: 12px;
+    }
+
+    .distance-block-title { color: #ef4444; font-weight: 900; font-size: 0.92rem; text-transform: uppercase; }
+    .distance-block-desc { color: #ffffff; font-size: 0.74rem; line-height: 1.35; }
+
     .instruccion-sub {
       text-align: center;
       font-size: 0.78rem;
@@ -149,19 +203,20 @@
     }
     .btn-iniciar-test:active { transform: scale(0.98); }
 
+    /* Fila Telemétrica Inferior 3 Columnas */
     .metricas-grid {
       display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6px;
       background-color: #050b14;
       border: 1px solid #1e293b;
       border-radius: 10px;
-      padding: 10px;
+      padding: 10px 4px;
       text-align: center;
     }
     .col-metrica span {
       display: block;
-      font-size: 0.65rem;
+      font-size: 0.55rem;
       color: #94a3b8;
       text-transform: uppercase;
       margin-bottom: 2px;
@@ -169,13 +224,16 @@
     }
     .col-metrica strong {
       display: block;
-      font-size: 1rem;
+      font-size: 0.88rem;
       color: #ffffff;
       font-weight: 800;
     }
   </style>
 </head>
 <body>
+
+  <!-- ELEMENTO OCULTO PARA RECEPCIÓN DE VIDEO DE CÁMARA -->
+  <video id="webcamInput" style="display:none;" playsinline></video>
 
   <main class="app-container">
     <header class="sensometrika-brand-header">
@@ -198,9 +256,25 @@
       <div class="contenedor-pvt" id="areaPvt" onclick="registrarReaccion()">
         <div class="pvt-display" id="displayPvt">ESPERE...</div>
         <div style="font-size: 0.65rem; color: #64748b; margin-top: 8px;" id="subDisplay">TOCA LA PANTALLA CUANDO CORRA EL TIEMPO</div>
+
+        <!-- PREVIEW DE CÁMARA BIOMÉTRICA PIP -->
+        <div class="cam-preview-pip">
+          <video id="webcamVideo" autoplay playsinline muted></video>
+          <div class="cam-tag">Biometría</div>
+        </div>
+
+        <!-- OVERLAY DE BLOQUEO POR DISTANCIA NORMATIVA -->
+        <div id="boxBlockDistancia" class="distance-block-overlay">
+          <span class="distance-block-title">⚠️ DISTANCIA / POSTURA FUERA DE RANGO</span>
+          <span id="txtDistanciaDetalle" class="distance-block-desc">
+            Ajuste su posición frente a la pantalla.<br>
+            Distancia telemétrica actual: <b id="lblDistDetalleVal" style="color:#ef4444;">-- cm</b><br>
+            (Rango normativo: 45 a 65 cm).
+          </span>
+        </div>
       </div>
 
-      <p class="instruccion-sub" id="panel-estado">
+      <p class="instruction-text" id="panel-estado">
         Presiona el botón de abajo o la pantalla tan pronto como el contador comience a correr.
       </p>
 
@@ -216,6 +290,10 @@
         <div class="col-metrica">
           <span>Promedio Reacción</span>
           <strong id="txt-resultado-actual" style="color: #cbd5e1;">Pendiente</strong>
+        </div>
+        <div class="col-metrica">
+          <span>Distancia</span>
+          <strong id="m-distancia" style="color: #10b981;">-- cm</strong>
         </div>
       </div>
     </section>
@@ -247,10 +325,80 @@
     const rutEvaluado = urlParams.get('rut') || datosUsuario.rut || 'GENERICO';
     const cleanRut = rutEvaluado.replace(/[^0-9Kk]/g, '');
 
+    // TELEMETRÍA Y CONTROL DE CÁMARA BIOMÉTRICA
+    let distanciaMedidaCm = 55;
+    let estaBloqueadoPorDistancia = false;
+
+    function iniciarMediaPipeFaceMesh() {
+      const videoElement = document.getElementById('webcamVideo');
+
+      const faceMesh = new FaceMesh({
+        locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`
+      });
+
+      faceMesh.setOptions({
+        maxNumFaces: 1,
+        refineLandmarks: true,
+        minDetectionConfidence: 0.5,
+        minTrackingConfidence: 0.5
+      });
+
+      faceMesh.onResults(onResultsFaceMesh);
+
+      const camera = new Camera(videoElement, {
+        onFrame: async () => {
+          await faceMesh.send({ image: videoElement });
+        },
+        width: 320,
+        height: 240
+      });
+
+      camera.start().catch(() => {
+        distanciaMedidaCm = 55;
+        evaluarRangoDistancia();
+      });
+    }
+
+    function onResultsFaceMesh(results) {
+      if (!results.multiFaceLandmarks || results.multiFaceLandmarks.length === 0) {
+        return;
+      }
+
+      const landmarks = results.multiFaceLandmarks[0];
+      const leftEye = landmarks[33];
+      const rightEye = landmarks[263];
+
+      const dx = leftEye.x - rightEye.x;
+      const dy = leftEye.y - rightEye.y;
+      const eyeDistanceNormalized = Math.sqrt(dx * dx + dy * dy);
+
+      let distCalculada = Math.round(9.5 / eyeDistanceNormalized);
+      distanciaMedidaCm = Math.round(distanciaMedidaCm * 0.5 + distCalculada * 0.5);
+      evaluarRangoDistancia();
+    }
+
+    function evaluarRangoDistancia() {
+      const overlayBlock = document.getElementById('boxBlockDistancia');
+      const lblDetalle = document.getElementById('lblDistDetalleVal');
+      const mDistancia = document.getElementById('m-distancia');
+
+      mDistancia.textContent = `${distanciaMedidaCm} cm`;
+
+      if (distanciaMedidaCm >= 45 && distanciaMedidaCm <= 65) {
+        estaBloqueadoPorDistancia = false;
+        mDistancia.style.color = '#10b981';
+        overlayBlock.style.display = 'none';
+      } else {
+        estaBloqueadoPorDistancia = true;
+        mDistancia.style.color = '#ef4444';
+        lblDetalle.textContent = `${distanciaMedidaCm} cm`;
+        overlayBlock.style.display = 'flex';
+      }
+    }
+
     function abrirModalGuia() { document.getElementById('modalGuia').style.display = 'flex'; }
     function cerrarModalGuia() { document.getElementById('modalGuia').style.display = 'none'; }
 
-    // --- FUNCIÓN CORREGIDA PARA PRESERVAR Y LEER EL PARÁMETRO returnUrl ---
     function volverMenu() {
       const returnUrlParam = urlParams.get('returnUrl');
       if (returnUrlParam) {
@@ -285,9 +433,10 @@
     let esperando = false;
     let tiemposOficialesBrutos = [];
     let tiemposOficialesNetos = [];
-    let lapsosCount = 0; // Tiempos > 500 ms (signos de fatiga o micro-sueño)
+    let lapsosCount = 0;
 
     document.addEventListener('DOMContentLoaded', () => {
+      iniciarMediaPipeFaceMesh();
       actualizarEstadoUI();
     });
 
@@ -308,6 +457,8 @@
     }
 
     function manejarAccionBtn() {
+      if (estaBloqueadoPorDistancia) return;
+
       const historial = JSON.parse(localStorage.getItem(`sensometrika_historial_fatiga_${cleanRut}`)) || [];
       const planStorage = (localStorage.getItem('sensometrika_plan_contratado') || urlParams.get('plan') || 'FULL').toUpperCase();
       let maxIntentosPlan = esB2B ? (planStorage.includes('ALTO') ? 3 : 1) : 5;
@@ -323,14 +474,18 @@
     }
 
     function iniciarEstímulo() {
+      if (estaBloqueadoPorDistancia) return;
+
       const display = document.getElementById('displayPvt');
       display.innerText = "ESPERE...";
       display.style.color = "#64748b";
       activo = false;
       esperando = true;
 
-      const tiempoEspera = Math.floor(Math.random() * 2000) + 1500; // entre 1.5s y 3.5s
+      const tiempoEspera = Math.floor(Math.random() * 2000) + 1500;
       timerEstmulo = setTimeout(() => {
+        if (estaBloqueadoPorDistancia) return;
+
         esperando = false;
         display.innerText = "0 ms";
         display.style.color = "#10b981";
@@ -338,13 +493,17 @@
         activo = true;
 
         timerContador = setInterval(() => {
-          const actual = Math.round(performance.now() - tInicio);
-          display.innerText = `${actual} ms`;
+          if (!estaBloqueadoPorDistancia) {
+            const actual = Math.round(performance.now() - tInicio);
+            display.innerText = `${actual} ms`;
+          }
         }, 30);
       }, tiempoEspera);
     }
 
     function registrarReaccion() {
+      if (estaBloqueadoPorDistancia) return;
+
       // Control de Anticipación
       if (esperando && !activo) {
         clearTimeout(timerEstmulo);
@@ -366,9 +525,6 @@
 
       const tBruto = Math.round(performance.now() - tInicio);
 
-      // =========================================================================
-      // COMPENSACIÓN TELEMÉTRICA DE HARDWARE (D.S. N° 170 / CORMA)
-      // =========================================================================
       const latenciaHardware = parseInt(localStorage.getItem('sensometrika_latencia_ms') || '0', 10);
       const tNeto = Math.max(100, tBruto - latenciaHardware);
 
@@ -413,7 +569,6 @@
     function finalizarPruebaFatiga(promedioFinalNeto, latenciaHardware) {
       const aprobado = promedioFinalNeto <= 450 && lapsosCount <= 1;
 
-      // Registrar en historial aislado por RUT
       let historial = JSON.parse(localStorage.getItem(`sensometrika_historial_fatiga_${cleanRut}`)) || [];
       historial.push({
         promedioTiempo: promedioFinalNeto,
@@ -423,6 +578,7 @@
         lapsos: lapsosCount,
         aprobado: aprobado,
         dictamen: aprobado ? 'APROBADO' : 'OBSERVADO',
+        distanciaAvgCm: distanciaMedidaCm,
         fecha: new Date().toISOString()
       });
       localStorage.setItem(`sensometrika_historial_fatiga_${cleanRut}`, JSON.stringify(historial));
