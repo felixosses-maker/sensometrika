@@ -443,18 +443,18 @@
             const cleanRut = rut.replace(/[^0-9Kk]/g, '');
             const baseUrl = window.location.origin.replace(/\/$/, '');
             
-            // CORRECCIÓN CLAVE: El enlace apunta OBLIGATORIAMENTE a registro_B2B.html para la aceptación legal y demo previa
-            const urlCompleta = `${baseUrl}/registro_B2B.html?mode=b2b&rut=${cleanRut}&nombre=${encodeURIComponent(nombre)}&cargo=${encodeURIComponent(cargo)}`;
+            // OBLIGATORIO: El enlace apunta a registro_B2B.html para la validación de identidad y términos
+            const urlCompleta = `${baseUrl}/registro_B2B.html?rut=${encodeURIComponent(rut)}&nombre=${encodeURIComponent(nombre)}&cargo=${encodeURIComponent(cargo)}`;
 
             document.getElementById('txtLinkGenerado').value = urlCompleta;
             
-            // Configurar botón de WhatsApp
+            // Botón WhatsApp
             const msgWp = encodeURIComponent(`Hola *${nombre}* (RUT: ${rut}), desde Prevención de Riesgos de *${empresa}* te enviamos tu acceso para rendir la evaluación psicosensométrica en Sensometrika (Vigencia 48 hrs):\n\n${urlCompleta}`);
             document.getElementById('btnWhatsappDirecto').href = `https://wa.me/${telefono.replace(/[^0-9+]/g, '')}?text=${msgWp}`;
 
-            // Configurar botón de Correo Electrónico (mailto directo con asunto y cuerpo)
+            // Botón Enviar Correo (mailto configurado)
             const subjectMail = encodeURIComponent(`Evaluación Psicosensométrica B2B - ${empresa}`);
-            const bodyMail = encodeURIComponent(`Estimado/a ${nombre},\n\nDesde el Departamento de Prevención de Riesgos de ${empresa} se le ha asignado su batería de evaluación ocupacional.\n\nPor favor, ingrese al siguiente enlace para realizar su registro, aceptación de términos y calibración previa:\n\n${urlCompleta}\n\nAtentamente,\nDepartamento de Prevención`);
+            const bodyMail = encodeURIComponent(`Estimado/a ${nombre},\n\nDesde el Departamento de Prevención de Riesgos de ${empresa} se le ha asignado su batería de evaluación ocupacional.\n\nPor favor, ingrese al siguiente enlace para realizar su registro, aceptación de términos y calibración previa:\n\n${urlCompleta}\n\nAtentamente,\nDepartamento de Prevención de Riesgos`);
             document.getElementById('btnCorreoDirecto').href = `mailto:${email}?subject=${subjectMail}&body=${bodyMail}`;
 
             document.getElementById('boxLinkResultado').style.display = 'flex';
@@ -517,7 +517,6 @@
                 `;
             });
 
-            // Generar los códigos QR en cada fila
             trabajadores.forEach((t, index) => {
                 const qrContainerId = `qrcode_table_${index}`;
                 const el = document.getElementById(qrContainerId);
