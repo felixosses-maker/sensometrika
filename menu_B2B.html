@@ -208,6 +208,7 @@
             box-shadow: 0 4px 14px rgba(16, 185, 129, 0.3);
             text-transform: uppercase;
             letter-spacing: 0.5px;
+            cursor: pointer;
         }
 
         .btn-informe:hover {
@@ -234,7 +235,7 @@
         <div class="eval-card">
             
             <div class="user-header-box">
-                <div class="user-plan-title" id="lblPlanHeader">EVALUACIÓN B2B • PLAN BASICO</div>
+                <div class="user-plan-title" id="lblPlanHeader">EVALUACIÓN B2B • PLAN PERSONALIZADO</div>
                 <div class="user-info-text" id="lblUserData">EVALUADO: CARGANDO... | RUT: --</div>
             </div>
 
@@ -329,12 +330,12 @@
             datosUsuario = JSON.parse(localStorage.getItem('sensometrika_datos_usuario')) || {};
         } catch(e){}
 
-        const modeParam = urlParams.get('mode') || 'b2b';
-        const planContratado = (urlParams.get('plan') || datosUsuario.plan || localStorage.getItem('sensometrika_plan_contratado') || 'BASICO').toUpperCase().trim();
+        // Capturar parámetros corporativos prioritarios desde la URL generada por la consola
+        const planContratado = (urlParams.get('plan') || datosUsuario.plan || localStorage.getItem('sensometrika_plan_contratado') || 'B2B_PERSONALIZADO').toUpperCase().trim();
+        const modulosUrl = urlParams.get('modulos');
         
-        // REDIRECCIÓN AUTOMÁTICA A CONSOLA B2B PRO SI EL PLAN LO REQUIERE
-        if (modeParam === 'b2b-pro' || planContratado === 'ALTO_DESEMPENIO' || planContratado === 'PRE_OCUPACIONAL' || planContratado === 'PRO_FULL' || planContratado === 'PRE_CONTRATO') {
-            window.location.href = `menu_B2B_PRO.html?${urlParams.toString()}`;
+        if (modulosUrl) {
+            localStorage.setItem('sensometrika_modulos_b2b_activos', modulosUrl);
         }
 
         const tokenEntrante = urlParams.get('token') || urlParams.get('session') || '';
@@ -342,21 +343,16 @@
         const cleanRut = rawRut.replace(/[^0-9Kk]/g, '');
         const nombreUsuario = urlParams.get('nombre') || datosUsuario.nombre || 'TRABAJADOR EVALUADO';
         
-        // Identificador de sesión activo para aislar cada rendición
         const sessionId = urlParams.get('session') || localStorage.getItem('sensometrika_session_activa') || (tokenEntrante || `SESION_${cleanRut}_${Date.now()}`);
         localStorage.setItem('sensometrika_session_activa', sessionId);
         localStorage.setItem('sensometrika_plan_contratado', planContratado);
 
         document.getElementById('lblUserData').textContent = `EVALUADO: ${decodeURIComponent(nombreUsuario).toUpperCase()} | RUT: ${rawRut}`;
-        document.getElementById('lblPlanHeader').textContent = `EVALUACIÓN B2B • PLAN ${planContratado.replace('_', ' ')}`;
+        document.getElementById('lblPlanHeader').textContent = `EVALUACIÓN B2B • PLAN ${planContratado.replace(/_/g, ' ')}`;
 
-        /**
-         * Búsqueda exhaustiva unificada para verificar si un módulo fue completado
-         */
         function verifRendidoRut(moduloKey) {
             if (!cleanRut) return false;
 
-            // 1. Verificación por Clave de Sesión Activa
             const claveSesion = `sensometrika_historial_${moduloKey}_${cleanRut}_${sessionId}`;
             const datosSesion = localStorage.getItem(claveSesion);
             if (datosSesion) {
@@ -367,7 +363,6 @@
                 } catch(e){}
             }
 
-            // 2. Fallback de clave alternada para visomotriz / palancas
             if (moduloKey === 'visomotriz' || moduloKey === 'palancas') {
                 const altKey = moduloKey === 'visomotriz' ? 'palancas' : 'visomotriz';
                 const altSesion = localStorage.getItem(`sensometrika_historial_${altKey}_${cleanRut}_${sessionId}`);
@@ -379,7 +374,6 @@
                 }
             }
 
-            // 3. Verificación de ensayo o demo completada
             if (localStorage.getItem(`${moduloKey}_demo_completada_${cleanRut}_${sessionId}`) === 'true') {
                 return true;
             }
@@ -388,9 +382,9 @@
         }
 
         function renderizarMenuB2B() {
-            const tieneAuditivo = (planContratado.includes('PLUS') || planContratado.includes('FULL') || planContratado.includes('ALTO') || planContratado.includes('MEDIUM'));
-            const tieneVisual = (planContratado.includes('FULL') || planContratado.includes('ALTO') || planContratado.includes('MEDIUM'));
-            const tieneAltoDesempenio = (planContratado.includes('ALTO') || planContratado.includes('PRE_OCUPACIONAL') || planContratado.includes('PRO_FULL'));
+            // Leer la bolsa de módulos activos guardados por la consola empresa
+            const bolsaActivaStr = localStorage.getItem('sensometrika_modulos_b2b_activos') || 'reactimetro,palancas,punteo,auditivo,visual,anticipacion';
+            const bolsaActivaArray = bolsaActivaStr.split(',').map(m => m.trim().toLowerCase());
 
             const paramsObj = {
                 rut: rawRut,
@@ -400,14 +394,18 @@
                 mode: 'b2b'
             };
             if (tokenEntrante) paramsObj.token = tokenEntrante;
+            if (modulosUrl) paramsObj.modulos = modulosUrl;
 
             const queryParamsString = new URLSearchParams(paramsObj).toString();
 
-            function setModuloAction(elementId, moduloKey, habilitado, urlArchivo) {
+            function setModuloAction(elementId, moduloKey, urlArchivo) {
                 const container = document.getElementById(elementId);
                 if (!container) return;
 
-                if (!habilitado) {
+                // Verificar si el módulo está incluido en la bolsa de la empresa
+                const estaSolicitado = bolsaActivaArray.includes(moduloKey.toLowerCase()) || bolsaActivaArray.includes('todos');
+
+                if (!estaSolicitado) {
                     container.innerHTML = `<span class="badge-mod-nosol">NO SOLICITADO</span>`;
                     return;
                 }
@@ -420,15 +418,15 @@
                 }
             }
 
-            // Mapeo directo a los archivos HTML correspondientes
-            setModuloAction('actionReactimetro', 'reactimetro', true, 'reactimetro.html');
-            setModuloAction('actionPalancas', 'palancas', true, 'palancas.html');
-            setModuloAction('actionPunteo', 'punteo', true, 'punteo.html');
-            setModuloAction('actionAuditivo', 'audicion', tieneAuditivo, 'audicion.html');
-            setModuloAction('actionVisual', 'visual', tieneVisual, 'visual.html');
-            setModuloAction('actionAnticipacion', 'anticipacion', tieneAltoDesempenio, 'anticipacion.html');
-            setModuloAction('actionEstereopsis', 'estereopsis', tieneAltoDesempenio, 'demo_estereopsis_pro.html');
-            setModuloAction('actionFatiga', 'fatiga', tieneAltoDesempenio, 'demo_fatiga_pro.html');
+            // Mapeo exacto de los 8 módulos del menú
+            setModuloAction('actionReactimetro', 'reactimetro', 'reactimetro.html');
+            setModuloAction('actionPalancas', 'palancas', 'palancas.html');
+            setModuloAction('actionPunteo', 'punteo', 'punteo.html');
+            setModuloAction('actionAuditivo', 'auditivo', 'audicion.html');
+            setModuloAction('actionVisual', 'visual', 'visual.html');
+            setModuloAction('actionAnticipacion', 'anticipacion', 'anticipacion.html');
+            setModuloAction('actionEstereopsis', 'estereopsis', 'demo_estereopsis_pro.html');
+            setModuloAction('actionFatiga', 'fatiga', 'demo_fatiga_pro.html');
         }
 
         function abrirInformePericial() {
@@ -440,6 +438,7 @@
                 mode: 'b2b'
             });
             if (tokenEntrante) params.set('token', tokenEntrante);
+            if (modulosUrl) params.set('modulos', modulosUrl);
 
             window.location.href = `informe_b2b.html?${params.toString()}`;
         }
