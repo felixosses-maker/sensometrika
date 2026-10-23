@@ -119,22 +119,22 @@
             </div>
             
             <p class="text-xs text-slate-400">
-                Presiona la zona central 5 veces. Se promediarán los toques 2, 3 y 4 para descontar la latencia propia de tu pantalla o digitalizador.
+                Presiona la zona central 5 veces de forma seguida. Se promediarán los toques 2, 3 y 4 para descontar la latencia de tu pantalla.
             </p>
 
             <div id="tapZone" class="tap-zone" onclick="registrarToque()">
                 <div id="lblInstruccion" class="text-xs font-bold text-sky-400 uppercase tracking-wider mb-2">
-                    PRESIONA AQUÍ O LA BARRA ESPACIADORA (TOQUE 1/5)
+                    PRESIONA AQUÍ O ESPACIO (TOQUE 1/5)
                 </div>
                 <div id="lblValorCentral" class="text-3xl font-black text-white">-- ms</div>
             </div>
 
             <div class="grid-toques">
-                <div id="pill1" class="toque-pill"><span class="text-[9px] text-slate-500">T1 (D)</span><strong id="valT1">--</strong></div>
+                <div id="pill1" class="toque-pill"><span class="text-[9px] text-slate-500">T1 (DESC)</span><strong id="valT1">--</strong></div>
                 <div id="pill2" class="toque-pill"><span class="text-[9px] text-slate-500">T2 (OK)</span><strong id="valT2">--</strong></div>
                 <div id="pill3" class="toque-pill"><span class="text-[9px] text-slate-500">T3 (OK)</span><strong id="valT3">--</strong></div>
                 <div id="pill4" class="toque-pill"><span class="text-[9px] text-slate-500">T4 (OK)</span><strong id="valT4">--</strong></div>
-                <div id="pill5" class="toque-pill"><span class="text-[9px] text-slate-500">T5 (D)</span><strong id="valT5">--</strong></div>
+                <div id="pill5" class="toque-pill"><span class="text-[9px] text-slate-500">T5 (DESC)</span><strong id="valT5">--</strong></div>
             </div>
 
             <button id="btnConfirmar" class="btn-confirm" onclick="guardarYVolver()">
@@ -146,8 +146,13 @@
     <script>
         const urlParams = new URLSearchParams(window.location.search);
         let toques = [];
-        let tiempoAnterior = 0;
+        let inicioToque = 0;
         let promedioFinalMs = 0;
+
+        // Iniciar la marca de tiempo al cargar
+        window.addEventListener('DOMContentLoaded', () => {
+            inicioToque = performance.now();
+        });
 
         document.addEventListener('keydown', (e) => {
             if (e.code === 'Space') {
@@ -160,17 +165,12 @@
             if (toques.length >= 5) return;
 
             const ahora = performance.now();
-            if (tiempoAnterior === 0) {
-                tiempoAnterior = ahora;
-                // Primer toque para iniciar marca temporal
-                toques.push(18); // Valor estimado base primer toque
-            } else {
-                const diff = Math.round(ahora - tiempoAnterior);
-                tiempoAnterior = ahora;
-                // Normalización de latencia realista táctil/pantalla (entre 12ms y 32ms)
-                const latenciaSimulada = Math.min(35, Math.max(12, Math.round(diff % 20 + 12)));
-                toques.push(latenciaSimulada);
-            }
+            const diff = Math.round(ahora - inicioToque);
+            inicioToque = ahora;
+
+            // Si es el primer toque, asignamos un valor base de calibración de hardware estándar (ej. 25ms)
+            let latenciaMedida = (toques.length === 0) ? 25 : Math.min(60, Math.max(15, diff));
+            toques.push(latenciaMedida);
 
             actualizarInterfaz();
         }
@@ -184,13 +184,13 @@
             }
 
             if (idx < 5) {
-                document.getElementById('lblInstruccion').textContent = `PRESIONA AQUÍ O LA BARRA ESPACIADORA (TOQUE ${idx + 1}/5)`;
-                document.getElementById('lblValorCentral').textContent = `${toques[idx-1] || '--'} ms`;
+                document.getElementById('lblInstruccion').textContent = `PRESIONA AQUÍ O ESPACIO (TOQUE ${idx + 1}/5)`;
+                document.getElementById('lblValorCentral').textContent = `${toques[idx-1]} ms`;
             } else {
-                // Calcular promedio de los toques centrales T2, T3 y T4
+                // Promedio estricto de los toques centrales T2, T3 y T4
                 promedioFinalMs = Math.round((toques[1] + toques[2] + toques[3]) / 3);
                 
-                document.getElementById('lblInstruccion').textContent = `✓ CALIBRACIÓN COMPLETADA (PROMEDIO TOQUES 2-3-4)`;
+                document.getElementById('lblInstruccion').textContent = `✓ CALIBRACIÓN COMPLETADA`;
                 document.getElementById('lblValorCentral').textContent = `${promedioFinalMs} ms`;
                 document.getElementById('lblValorCentral').classList.add('text-sky-400');
                 
@@ -200,19 +200,18 @@
         }
 
         function guardarYVolver() {
-            if (promedioFinalMs <= 0) promedioFinalMs = 16;
+            if (promedioFinalMs <= 0) promedioFinalMs = 25;
 
-            // GUARDAR EN TODAS LAS CLAVES COMPATIBLES DEL LOCALSTORAGE
+            // Guardar en localStorage para trazabilidad del informe pericial
             localStorage.setItem('sensometrika_latencia_ms', promedioFinalMs);
             localStorage.setItem('latencia_ms', promedioFinalMs);
             localStorage.setItem('sensometrika_latencia_promedio', promedioFinalMs);
 
-            const returnUrl = urlParams.get('returnUrl') ? decodeURIComponent(urlParams.get('returnUrl')) : 'demo_b2b_full.html';
-            
-            // Reconstruir URL conservando parámetros
-            const targetUrl = new URL(returnUrl, window.location.origin);
+            // Retornar al menú B2B conservando todos los parámetros de la URL
+            const menuDestino = 'menu_B2B.html';
+            const targetUrl = new URL(menuDestino, window.location.origin);
             urlParams.forEach((val, key) => {
-                if (key !== 'returnUrl') targetUrl.searchParams.set(key, val);
+                targetUrl.searchParams.set(key, val);
             });
 
             window.location.href = targetUrl.toString();

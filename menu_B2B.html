@@ -193,7 +193,7 @@
             </div>
 
             <div class="modules-list" id="contenedorModulosB2B">
-                <!-- Se inyectan los 18 módulos dinámicamente según la consola -->
+                <!-- Se inyectan los módulos del 1 al 17 dinámicamente -->
             </div>
 
             <button type="button" id="btnVerInforme" class="btn-informe" onclick="abrirInformePericial()">VER INFORME PERICIAL B2B →</button>
@@ -219,12 +219,24 @@
 
         function verifRendidoRut(modKey) {
             if (!cleanRut) return false;
-            return localStorage.getItem(`sensometrika_historial_${modKey}_${cleanRut}_${sessionId}`) || 
-                   localStorage.getItem(`${modKey}_demo_completada_${cleanRut}_${sessionId}`) === 'true';
+
+            const resGenerico = localStorage.getItem(`sensometrika_last_reactimetro_${cleanRut}`) ||
+                                localStorage.getItem(`sensometrika_historial_${modKey}_${cleanRut}_${sessionId}`) ||
+                                localStorage.getItem(`${modKey}_demo_completada_${cleanRut}_${sessionId}`) === 'true';
+
+            if (resGenerico) return true;
+
+            if (modKey === 'mod1' && (localStorage.getItem('sensometrika_reactimetro') || localStorage.getItem(`sensometrika_last_reactimetro_${cleanRut}._reactimetro`))) return true;
+            if (modKey === 'mod3' && localStorage.getItem('sensometrika_palancas')) return true;
+            if (modKey === 'mod4' && localStorage.getItem('sensometrika_punteo')) return true;
+            if (modKey === 'mod6' && localStorage.getItem('sensometrika_visual')) return true;
+            if (modKey === 'mod10' && localStorage.getItem('sensometrika_auditivo')) return true;
+
+            return false;
         }
 
-        // Catálogo exacto de los 18 módulos
-        const catModulos18 = [
+        // Catálogo operativo del 1 al 17 (El módulo 18 es el informe consolidado automático)
+        const catModulos17 = [
             { id: 'mod1', nombre: '1. Reactímetro Simple ⚡', desc: 'Latencia neuromotriz y reflejo de frenado.', archivo: 'reactimetro.html' },
             { id: 'mod2', nombre: '2. Reactímetro Complejo 🚦', desc: 'Discriminación de estímulos múltiples.', archivo: 'reactimetro.html' },
             { id: 'mod3', nombre: '3. Palancas Bimanual 🎮', desc: 'Coordinación motriz fina bilateral.', archivo: 'palancas.html' },
@@ -241,12 +253,11 @@
             { id: 'mod14', nombre: '14. Memoria de Trabajo 🧩', desc: 'Retención de secuencias e instrucciones.', archivo: 'punteo.html' },
             { id: 'mod15', nombre: '15. Cero Alcohol / Drogas 🧪', desc: 'Protocolo de autocertificación toxicológica.', archivo: 'reactimetro.html' },
             { id: 'mod16', nombre: '16. Control de Impulsos Viales ⚖️', desc: 'Detección de perfiles de riesgo vial.', archivo: 'palancas.html' },
-            { id: 'mod17', nombre: '17. Declaración Médica 📋', desc: 'Declaración jurada digital de patologías.', archivo: 'audicion.html' },
+            { id: 'mod17', nombre: '17. Declaración Médica 📋', desc: 'Declaración jurada digital de patologías.', archivo: 'audicion.html' }
         ];
 
         function renderizarMenuB2B() {
-            // Lee los módulos guardados desde la consola
-            const bolsaActivaStr = localStorage.getItem('sensometrika_modulos_b2b_activos') || 'mod1,mod3,mod6,mod10,mod18';
+            const bolsaActivaStr = localStorage.getItem('sensometrika_modulos_b2b_activos') || 'mod1,mod3,mod6,mod10';
             const bolsaActivaArray = bolsaActivaStr.split(',').map(m => m.trim().toLowerCase());
 
             const paramsObj = { rut: rawRut, nombre: nombreUsuario, plan: planContratado, session: sessionId, mode: 'b2b' };
@@ -256,15 +267,15 @@
             const contenedor = document.getElementById('contenedorModulosB2B');
             contenedor.innerHTML = '';
 
-            catModulos18.forEach(mod => {
+            catModulos17.forEach(mod => {
                 const estaSolicitado = bolsaActivaArray.includes(mod.id.toLowerCase());
                 const rendido = verifRendidoRut(mod.id);
 
                 let accionHtml = '';
                 if (!estaSolicitado) {
                     accionHtml = `<span class="badge-mod-nosol">NO SOLICITADO</span>`;
-                } else if (rendido && mod.id !== 'mod18') {
-                    accionHtml = `<span class="badge-mod-ok">✓ REGISTRADO</span>`;
+                } else if (rendido) {
+                    accionHtml = `<span class="badge-mod-ok">✓ SIMULACIÓN COMPLETADA</span>`;
                 } else {
                     accionHtml = `<a href="${mod.archivo}?${queryParamsString}" class="btn-mod-start">INICIAR →</a>`;
                 }
