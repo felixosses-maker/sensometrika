@@ -119,7 +119,9 @@
             letter-spacing: 0.5px;
             margin-top: 6px;
             box-shadow: 0 4px 15px rgba(56, 189, 248, 0.25);
+            transition: opacity 0.2s;
         }
+        .btn-submit:hover { opacity: 0.9; }
     </style>
 </head>
 <body>
@@ -135,8 +137,8 @@
         <div class="card-box">
             <div class="card-title">📊 Plan Corporativo Seleccionado</div>
             <div style="font-size: 0.85rem; line-height: 1.4;">
-                <strong style="color: #fff; display: block;">Plan Básico Laboral</strong>
-                <span style="color: var(--text-muted); font-size: 0.75rem;">Bolsa de 10 Evaluaciones Unidades • D.S. N° 170</span>
+                <strong style="color: #fff; display: block;" id="lblPlanNombre">Plan Básico Laboral</strong>
+                <span style="color: var(--text-muted); font-size: 0.75rem;" id="lblPlanDetalle">Bolsa de Evaluaciones Unidades • D.S. N° 170</span>
             </div>
         </div>
 
@@ -179,7 +181,6 @@
 
     <script>
         function limpiarCacheTrabajadoresAnteriores() {
-            // Eliminar claves globales de trabajadores
             localStorage.removeItem('sensometrika_datos_usuario');
             localStorage.removeItem('sensometrika_modulos_rendidos');
             localStorage.removeItem('sensometrika_session_burned');
@@ -187,19 +188,24 @@
             localStorage.removeItem('sensometrika_firma_trabajador');
             localStorage.removeItem('sensometrika_foto_evaluado');
             localStorage.removeItem('sensometrika_foto_trabajador');
-
-            // Limpiar claves antiguas de demos
-            localStorage.removeItem('reactimetro_demo_completada');
-            localStorage.removeItem('palancas_demo_completada');
-            localStorage.removeItem('punteo_demo_completada');
-            localStorage.removeItem('visual_demo_completada');
-            localStorage.removeItem('audicion_demo_completada');
         }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            // Cargar datos previos si existen almacenados en sesión
+            const razonGuardada = localStorage.getItem('sensometrika_b2b_empresa');
+            const rutGuardado = localStorage.getItem('sensometrika_b2b_rut');
+            const encargadoGuardado = localStorage.getItem('sensometrika_b2b_encargado');
+            const correoGuardado = localStorage.getItem('sensometrika_b2b_correo');
+
+            if (razonGuardada) document.getElementById('inputRazonSocial').value = razonGuardada;
+            if (rutGuardado) document.getElementById('inputRutEmpresa').value = rutGuardado;
+            if (encargadoGuardado) document.getElementById('inputEncargado').value = encargadoGuardado;
+            if (correoGuardado) document.getElementById('inputCorreo').value = correoGuardado;
+        });
 
         function confirmarYIrADashboard(e) {
             e.preventDefault();
 
-            // Ejecutar purga de datos antiguos
             limpiarCacheTrabajadoresAnteriores();
 
             const rutEmpresa = document.getElementById('inputRutEmpresa').value.trim();
@@ -219,13 +225,16 @@
                 token: tokenB2B
             };
 
+            // Guardar sincronizado en todas las llaves que usa la consola y el menú
             localStorage.setItem('sensometrika_b2b_contratacion', JSON.stringify(contratacion));
             localStorage.setItem('sensometrika_b2b_token', tokenB2B);
             localStorage.setItem('sensometrika_b2b_empresa', razonSocial);
+            localStorage.setItem('sensometrika_b2b_rut', rutEmpresa);
+            localStorage.setItem('sensometrika_b2b_encargado', encargado);
             localStorage.setItem('sensometrika_b2b_correo', correo);
 
-            // Redirección al Dashboard
-            window.location.href = `dashboard-apr.html?token=${tokenB2B}`;
+            // Redirección directa y unificada al Dashboard de la Consola
+            window.location.href = `dashboard_consola.html?token=${tokenB2B}`;
         }
     </script>
 </body>

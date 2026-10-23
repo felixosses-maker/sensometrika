@@ -104,7 +104,6 @@
             font-size: 0.80rem;
         }
 
-        /* DESCRIPCIÓN DE MÓDULOS CONTRATADOS */
         .modulos-badge-container {
             display: flex;
             flex-wrap: wrap;
@@ -251,7 +250,7 @@
         <header class="brand-header">
             <img src="sensometrica.jpg" alt="SENSOMETRIKA" class="brand-logo-img">
             <div style="display: flex; align-items: center; gap: 12px;">
-                <a href="dashboard_empresa.html" class="btn-vitrina">← Volver a Vitrina / Catálogo</a>
+                <a href="consola_empresa.html" class="btn-vitrina">← Volver a Catálogo / Comprar Folios</a>
             </div>
         </header>
 
@@ -424,14 +423,19 @@
             document.getElementById('lblFoliosRestantes').innerText = `${foliosRestantes} Simulaciones`;
 
             const cleanRut = rut.replace(/[^0-9Kk]/g, '');
-            const baseUrl = window.location.origin;
-            const urlCompleta = `${baseUrl}/menu_B2B.html?mode=b2b&rut=${cleanRut}&nombre=${encodeURIComponent(nombre)}`;
+            const baseUrl = window.location.origin.replace(/\/$/, '');
+            
+            // CORRECCIÓN CLAVE: El enlace generado apunta a registro_B2B.html (Cumplimiento Legal y Demo Previa)
+            const urlCompleta = `${baseUrl}/registro_B2B.html?mode=b2b&rut=${cleanRut}&nombre=${encodeURIComponent(nombre)}&cargo=${encodeURIComponent(cargo)}`;
 
             document.getElementById('txtLinkGenerado').value = urlCompleta;
             
-            const msg = encodeURIComponent(`Hola *${nombre}* (RUT: ${rut}), desde Prevención de Riesgos de *${empresa}* te enviamos tu acceso para rendir la evaluación psicosensométrica en Sensometrika. Vigencia 48 hrs:\n\n${urlCompleta}`);
+            const msg = encodeURIComponent(`Hola *${nombre}* (RUT: ${rut}), desde Prevención de Riesgos de *${empresa}* te enviamos tu acceso para rendir la evaluación psicosensométrica en Sensometrika (Vigencia 48 hrs):\n\n${urlCompleta}`);
             document.getElementById('btnWhatsappDirecto').href = `https://wa.me/${telefono.replace(/[^0-9+]/g, '')}?text=${msg}`;
             document.getElementById('boxLinkResultado').style.display = 'flex';
+
+            // Guardar datos temporales del usuario asignado
+            localStorage.setItem('sensometrika_datos_usuario', JSON.stringify({ nombre, rut, email, telefono, cargo }));
 
             trabajadores.unshift({ rut, nombre, email, telefono, cargo, empresa, url: urlCompleta });
             localStorage.setItem('sensometrika_consola_nomina', JSON.stringify(trabajadores));
