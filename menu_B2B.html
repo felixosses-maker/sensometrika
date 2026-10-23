@@ -11,7 +11,6 @@
             --card-bg: #0b1320;
             --card-border: #1a2638;
             --accent-green: #10b981;
-            --accent-green-hover: #059669;
             --text-main: #f1f5f9;
             --text-muted: #94a3b8;
             --blue-btn: #0284c7;
@@ -34,7 +33,7 @@
 
         .main-container {
             width: 100%;
-            max-width: 480px;
+            max-width: 520px;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -108,33 +107,35 @@
             flex-direction: column;
             gap: 10px;
             width: 100%;
+            max-height: 60vh;
+            overflow-y: auto;
+            padding-right: 4px;
         }
 
         .mod-item {
             background-color: #070d17;
             border: 1px solid var(--card-border);
             border-radius: 12px;
-            padding: 14px;
+            padding: 12px 14px;
             display: flex;
             justify-content: space-between;
             align-items: center;
             gap: 10px;
         }
 
-        .mod-info { display: flex; flex-direction: column; gap: 3px; flex: 1; }
-        .mod-title { font-size: 0.85rem; font-weight: 800; color: #f8fafc; }
-        .mod-desc { font-size: 0.68rem; color: #64748b; line-height: 1.3; }
+        .mod-info { display: flex; flex-direction: column; gap: 2px; flex: 1; }
+        .mod-title { font-size: 0.82rem; font-weight: 800; color: #f8fafc; }
+        .mod-desc { font-size: 0.65rem; color: #64748b; line-height: 1.2; }
 
         .btn-mod-start {
             background-color: var(--blue-btn);
             border: 1px solid var(--blue-btn-border);
             color: #ffffff;
-            padding: 10px 14px;
+            padding: 8px 12px;
             border-radius: 8px;
-            font-size: 0.75rem;
+            font-size: 0.72rem;
             font-weight: 800;
             text-decoration: none;
-            display: inline-block;
             white-space: nowrap;
         }
 
@@ -142,9 +143,9 @@
             background: rgba(16, 185, 129, 0.12);
             border: 1px solid rgba(16, 185, 129, 0.4);
             color: #10b981;
-            padding: 8px 12px;
+            padding: 6px 10px;
             border-radius: 8px;
-            font-size: 0.72rem;
+            font-size: 0.68rem;
             font-weight: 800;
             white-space: nowrap;
         }
@@ -153,9 +154,9 @@
             background: rgba(100, 116, 139, 0.12);
             border: 1px solid rgba(100, 116, 139, 0.3);
             color: #94a3b8;
-            padding: 8px 12px;
+            padding: 6px 10px;
             border-radius: 8px;
-            font-size: 0.70rem;
+            font-size: 0.68rem;
             font-weight: 700;
             white-space: nowrap;
         }
@@ -192,7 +193,7 @@
             </div>
 
             <div class="modules-list" id="contenedorModulosB2B">
-                <!-- Se inyecta dinámicamente según la selección de la consola -->
+                <!-- Se inyectan los 18 módulos dinámicamente según la consola -->
             </div>
 
             <button type="button" id="btnVerInforme" class="btn-informe" onclick="abrirInformePericial()">VER INFORME PERICIAL B2B →</button>
@@ -215,29 +216,38 @@
         
         localStorage.setItem('sensometrika_session_activa', sessionId);
         document.getElementById('lblUserData').textContent = `EVALUADO: ${decodeURIComponent(nombreUsuario).toUpperCase()} | RUT: ${rawRut}`;
-        document.getElementById('lblPlanHeader').textContent = `EVALUACIÓN B2B • PLAN ${planContratado.replace(/_/g, ' ')}`;
 
-        function verifRendidoRut(moduloKey) {
+        function verifRendidoRut(modKey) {
             if (!cleanRut) return false;
-            const claveSesion = `sensometrika_historial_${moduloKey}_${cleanRut}_${sessionId}`;
-            if (localStorage.getItem(claveSesion)) return true;
-            if (localStorage.getItem(`${moduloKey}_demo_completada_${cleanRut}_${sessionId}`) === 'true') return true;
-            return false;
+            return localStorage.getItem(`sensometrika_historial_${modKey}_${cleanRut}_${sessionId}`) || 
+                   localStorage.getItem(`${modKey}_demo_completada_${cleanRut}_${sessionId}`) === 'true';
         }
 
-        const catModulos = [
-            { id: 'reactimetro', nombre: '1. Reactímetro (Tiempo Frenado) ⚡', desc: 'Medición de velocidad de respuesta en frenado.', archivo: 'reactimetro.html' },
-            { id: 'palancas', nombre: '2. Palancas (Coordinación Bimanual) 🎮', desc: 'Coordinación motriz fina con ambas manos en ruta.', archivo: 'palancas.html' },
-            { id: 'punteo', nombre: '3. Punteo (Ritmo Viso-Motriz) 🎯', desc: 'Estabilidad de ritmo y precisión de impacto.', archivo: 'punteo.html' },
-            { id: 'auditivo', nombre: '4. Tamizaje Auditivo Ocupacional 🎧', desc: 'Audiometría tonal en frecuencias críticas para faena.', archivo: 'audicion.html' },
-            { id: 'visual', nombre: '5. Tamizaje Visual Integral 👁️', desc: 'Agudeza visual y discriminación de color.', archivo: 'visual.html' },
-            { id: 'anticipacion', nombre: '6. Velocidad de Anticipación 🚗', desc: 'Estimación de velocidad y trayectoria ciega.', archivo: 'anticipacion.html' },
-            { id: 'estereopsis', nombre: '7. Estereopsis y Profundidad 3D 📐', desc: 'Percepción espacial binocular.', archivo: 'demo_estereopsis_pro.html' },
-            { id: 'fatiga', nombre: '8. Test de Fatiga (PVT) ⏱️', desc: 'Medición de somnolencia y micro-sueños.', archivo: 'demo_fatiga_pro.html' }
+        // Catálogo exacto de los 18 módulos idénticos a consola_empresa.html
+        const catModulos18 = [
+            { id: 'mod1', nombre: '1. Reactímetro Simple ⚡', desc: 'Latencia neuromotriz y reflejo de frenado.', archivo: 'reactimetro.html' },
+            { id: 'mod2', nombre: '2. Reactímetro Complejo 🚦', desc: 'Discriminación de estímulos múltiples.', archivo: 'reactimetro.html' },
+            { id: 'mod3', nombre: '3. Palancas Bimanual 🎮', desc: 'Coordinación motriz fina bilateral.', archivo: 'palancas.html' },
+            { id: 'mod4', nombre: '4. Punteo Visomotriz (Lahy) 🎯', desc: 'Ritmo atencional y resistencia a fatiga.', archivo: 'punteo.html' },
+            { id: 'mod5', nombre: '5. Frenado Selectivo 🛑', desc: 'Precisión de frenado bajo presión de tiempo.', archivo: 'reactimetro.html' },
+            { id: 'mod6', nombre: '6. Tamizaje Visual (Snellen) 👁️', desc: 'Agudeza visual con auditoría telemétrica.', archivo: 'visual.html' },
+            { id: 'mod7', nombre: '7. Test de Ishihara (Daltonismo) 🎨', desc: 'Detección de discromatopsias rojo/verde.', archivo: 'visual.html' },
+            { id: 'mod8', nombre: '8. Visión de Profundidad 📐', desc: 'Percepción tridimensional y distancias.', archivo: 'demo_estereopsis_pro.html' },
+            { id: 'mod9', nombre: '9. Campo Visual Periférico 👁️‍🗨️', desc: 'Amplitud de cono visual lateral.', archivo: 'visual.html' },
+            { id: 'mod10', nombre: '10. Tamizaje Auditivo Binaural 🎧', desc: 'Audiometría tonal en frecuencias críticas.', archivo: 'audicion.html' },
+            { id: 'mod11', nombre: '11. Velocidad de Anticipación ⏱️', desc: 'Cálculo espacio-temporal ante objetos móviles.', archivo: 'anticipacion.html' },
+            { id: 'mod12', nombre: '12. Atención Sostenida (CPT) 🧠', desc: 'Estabilidad atencional en turnos largos.', archivo: 'demo_fatiga_pro.html' },
+            { id: 'mod13', nombre: '13. Test de Fatiga (Karolinska) 😴', desc: 'Nivel de alerta y somnolencia en ruta.', archivo: 'demo_fatiga_pro.html' },
+            { id: 'mod14', nombre: '14. Memoria de Trabajo 🧩', desc: 'Retención de secuencias e instrucciones.', archivo: 'punteo.html' },
+            { id: 'mod15', nombre: '15. Cero Alcohol / Drogas 🧪', desc: 'Protocolo de autocertificación toxicológica.', archivo: 'reactimetro.html' },
+            { id: 'mod16', nombre: '16. Control de Impulsos Viales ⚖️', desc: 'Detección de perfiles de riesgo vial.', archivo: 'palancas.html' },
+            { id: 'mod17', nombre: '17. Declaración Médica 📋', desc: 'Declaración jurada digital de patologías.', archivo: 'audicion.html' },
+            { id: 'mod18', nombre: '18. Consolidado & Credencial QR 🛡️', desc: 'Informe Pericial con firma y QR de control.', archivo: 'informe_b2b.html' }
         ];
 
         function renderizarMenuB2B() {
-            const bolsaActivaStr = localStorage.getItem('sensometrika_modulos_b2b_activos') || 'reactimetro,palancas,punteo,auditivo,visual,anticipacion';
+            // Lee los módulos guardados desde la consola (ej: mod1,mod2,mod3...mod18)
+            const bolsaActivaStr = localStorage.getItem('sensometrika_modulos_b2b_activos') || 'mod1,mod3,mod6,mod10,mod18';
             const bolsaActivaArray = bolsaActivaStr.split(',').map(m => m.trim().toLowerCase());
 
             const paramsObj = { rut: rawRut, nombre: nombreUsuario, plan: planContratado, session: sessionId, mode: 'b2b' };
@@ -247,14 +257,14 @@
             const contenedor = document.getElementById('contenedorModulosB2B');
             contenedor.innerHTML = '';
 
-            catModulos.forEach(mod => {
-                const estaSolicitado = bolsaActivaArray.includes(mod.id) || bolsaActivaArray.includes('todos');
+            catModulos18.forEach(mod => {
+                const estaSolicitado = bolsaActivaArray.includes(mod.id.toLowerCase());
                 const rendido = verifRendidoRut(mod.id);
 
                 let accionHtml = '';
                 if (!estaSolicitado) {
                     accionHtml = `<span class="badge-mod-nosol">NO SOLICITADO</span>`;
-                } else if (rendido) {
+                } else if (rendido && mod.id !== 'mod18') {
                     accionHtml = `<span class="badge-mod-ok">✓ REGISTRADO</span>`;
                 } else {
                     accionHtml = `<a href="${mod.archivo}?${queryParamsString}" class="btn-mod-start">INICIAR →</a>`;
