@@ -180,15 +180,14 @@
       margin-top: 8px;
     }
 
-    .constructor-banner-card {
+    .constructor-form-card {
       background: linear-gradient(135deg, #091120 0%, #0d1b32 100%);
       border: 1.5px dashed var(--accent-cyan);
       border-radius: 14px;
       padding: 16px;
       display: flex;
       flex-direction: column;
-      gap: 10px;
-      text-align: center;
+      gap: 12px;
       box-shadow: 0 8px 24px rgba(0,0,0,0.7);
     }
 
@@ -204,6 +203,7 @@
     .form-group { display: flex; flex-direction: column; gap: 3px; }
     .form-group label { font-size: 0.64rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700; }
     .form-group input { background: #030712; border: 1px solid var(--card-border); color: #fff; padding: 8px 10px; border-radius: 8px; font-size: 0.78rem; }
+    .form-group input:focus { outline: none; border-color: var(--accent-cyan); }
   </style>
 </head>
 <body>
@@ -257,7 +257,7 @@
       </div>
     </div>
 
-    <!-- VISTA EMPRESAS (B2B) - PLANES + ACCESO AL CONSTRUCTOR + PAGO -->
+    <!-- VISTA EMPRESAS (B2B) -->
     <div id="vistaB2B" style="display: none; flex-direction: column; gap: 12px;">
       
       <!-- 1. SELECCIÓN RÁPIDA & PACKS CORPORATIVOS -->
@@ -310,37 +310,29 @@
         <button class="btn-action-cyan btn-action-gold" onclick="seleccionarPlanB2B('Plan Alto Desempeño Faenas (B2B PRO)')">🏆 Seleccionar Plan Alto Desempeño →</button>
       </div>
 
-      <!-- 2. CONSTRUCTOR MODULAR A MEDIDA (TÍTULO + ACCESO A CONSOLA) -->
-      <div class="section-header-box">2. Constructor Modular a Medida (Catálogo de los 18 Módulos)</div>
+      <!-- 2 & 3. CONSTRUCTOR MODULAR UNIFICADO CON ACTIVACIÓN DE DATOS -->
+      <div class="section-header-box">2. Constructor a Medida & Activación de Consola Corporativa</div>
       
-      <div class="constructor-banner-card">
-        <span style="font-size: 0.85rem; font-weight: 900; color: var(--accent-cyan); text-transform: uppercase;">
-          ✨ Personalice su Combinación Exacta
+      <div class="constructor-form-card">
+        <span style="font-size: 0.82rem; font-weight: 900; color: var(--accent-cyan); text-transform: uppercase;">
+          🛠️ Personalice su Combinación o Active su Plan
         </span>
-        <p style="font-size: 0.72rem; color: var(--text-muted); line-height: 1.35;">
-          Acceda a la consola avanzada para cotizar, seleccionar y configurar de forma interactiva entre los 18 módulos telemétricos disponibles según la necesidad de su faena.
+        <p style="font-size: 0.70rem; color: var(--text-muted); line-height: 1.35;">
+          Ingrese los datos de su empresa para ajustar un plan a su medida y acceder de inmediato a la consola avanzada entre los 18 módulos telemétricos.
         </p>
-        <a href="dashboard_empresa.html" class="btn-action-cyan" style="margin-top: 4px;">
-          🛠️ ABRIR CONSTRUCTOR DE MÓDULOS & CONSOLA →
-        </a>
-      </div>
 
-      <!-- 3. ACTIVACIÓN DE CONSOLA & BOLSA CORPORATIVA -->
-      <div class="section-header-box">3. Activación de Consola & Bolsa Corporativa</div>
-      
-      <div class="plan-card">
-        <form onsubmit="procesarConsolaB2B(event)" style="display:flex; flex-direction:column; gap:8px;">
+        <form onsubmit="procesarConsolaB2B(event)" style="display:flex; flex-direction:column; gap:8px; margin-top:4px;">
           <div class="form-group"><label>Razón Social Empresa *</label><input type="text" id="b2bEmpresa" placeholder="Ej: Transportes del Sur SpA" required></div>
           <div class="form-group"><label>RUT Empresa *</label><input type="text" id="b2bRut" placeholder="Ej: 76.543.234-4" required></div>
           <div class="form-group"><label>Nombre Encargado / APR *</label><input type="text" id="b2bEncargado" placeholder="Ej: Carlos Mendoza" required></div>
           <div class="form-group"><label>Correo Electrónico *</label><input type="email" id="b2bCorreo" placeholder="Ej: apr@transportes.cl" required></div>
           
-          <div style="background:#030712; padding:8px; border-radius:6px; text-align:center; font-size:0.75rem;">
+          <div style="background:#030712; padding:8px; border-radius:6px; text-align:center; font-size:0.72rem; border: 1px solid var(--card-border);">
             Plan Seleccionado: <strong id="lblPlanB2BElegido" style="color:var(--accent-cyan);">Plan Básico Laboral (B2B)</strong>
           </div>
 
           <button type="submit" class="btn-action-cyan" style="background:var(--accent-green); color:#000; margin-top:4px;">
-            💳 PAGAR BOLSA Y ACCEDER A CONSOLA B2B →
+            🚀 ABRIR CONSTRUCTOR & ACCEDER A CONSOLA →
           </button>
         </form>
       </div>
@@ -410,9 +402,15 @@
     function procesarConsolaB2B(e) {
       e.preventDefault();
       const empresa = document.getElementById('b2bEmpresa').value.trim();
+      const rut = document.getElementById('b2bRut').value.trim();
+      const encargado = document.getElementById('b2bEncargado').value.trim();
+      
       localStorage.setItem('sensometrika_b2b_empresa', empresa);
+      localStorage.setItem('sensometrika_b2b_rut', rut);
+      localStorage.setItem('sensometrika_b2b_encargado', encargado);
       localStorage.setItem('sensometrika_plan_contratado', planB2BElegido);
-      window.location.href = `dashboard_empresa.html?empresa=${encodeURIComponent(empresa)}&folios=10`;
+
+      window.location.href = `dashboard_empresa.html?empresa=${encodeURIComponent(empresa)}&plan=${encodeURIComponent(planB2BElegido)}`;
     }
   </script>
 </body>
