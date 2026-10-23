@@ -18,7 +18,7 @@
             --bg-color: #0f172a;        
             --card-bg: #1e293b;        
             --text-main: #f8fafc;      
-            --text-muted: #94a3b8;     
+            --text-muted: #94a3b8;    
             --border-color: #334155;    
             --input-bg: #0f172a;        
         }
@@ -345,7 +345,7 @@
                     <h2>Métricas B2C Reales</h2>
                     <div class="metrics-container">
                         <div class="metric-box"><div class="metric-value" id="metricaAccesosB2C" style="color: var(--b2c-color);">0</div><div class="metric-label">Accesos B2C Emitidos</div></div>
-                        <div class="metric-box"><div class="metric-value" id="metricaCompletitudB2C" style="color: var(--b2c-color);">100%</div><div class="metric-label">Completitud Télemetrica</div></div>
+                        <div class="metric-box"><div class="metric-value" style="color: var(--b2c-color);">100%</div><div class="metric-label">Completitud Télemetrica</div></div>
                     </div>
                 </div>
             </div>
@@ -371,9 +371,9 @@
                     <div class="form-group">
                         <label for="demoTipo">Seleccionar Tipo de Demo Comercial</label>
                         <select id="demoTipo">
-                            <option value="b2c_demo">1. Demo B2C Particular (3 Módulos Básicos sin Informe)</option>
-                            <option value="b2b_link1">2. Demo B2B APR - Link 1 (Latencia + 5 Módulos + Informe Demo)</option>
-                            <option value="b2b_link2" selected>3. Demo B2B Alto Desempeño - Link 2 (Latencia + 8 Módulos + Informe Demo)</option>
+                            <option value="b2c_demo">Demo B2C Particular (3 Módulos Básicos sin Informe)</option>
+                            <option value="b2b_link1">Demo B2B APR - Link 1 (Latencia + 5 Módulos + Informe Demo)</option>
+                            <option value="b2b_link2" selected>Demo B2B Alto Desempeño - Link 2 (Latencia + 8 Módulos + Informe Demo)</option>
                         </select>
                     </div>
                     <div class="form-group">
@@ -410,14 +410,14 @@
 
         <!-- Historial Unificado Integrado -->
         <div class="card" style="margin-top: 25px;">
-            <h2>Historial General Unificado (Evaluaciones B2B, B2C y Demos con Reporte)</h2>
+            <h2>Historial General Unificado & Registros B2B con Código Único</h2>
             <div class="table-container">
                 <table>
                     <thead>
                         <tr>
                             <th>Fecha / Hora</th>
                             <th>Segmento / Plan</th>
-                            <th>Entidad / Evaluado</th>
+                            <th>Entidad / Código B2B</th>
                             <th>Detalle / Función</th>
                             <th>Estado Telemetría (D.S. N° 170)</th>
                             <th>Acción / Informe</th>
@@ -433,9 +433,45 @@
     <!-- Scripts de Control -->
     <script>
         document.addEventListener('DOMContentLoaded', () => {
+            // Capturar datos automáticos enviados desde el index.html principal (Registro B2B)
+            capturarRegistroEmpresaB2B();
+
             actualizarMetricasYRendimiento();
             cargarHistorialGuardado();
         });
+
+        function capturarRegistroEmpresaB2B() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const empresaUrl = urlParams.get('empresa');
+            const planUrl = urlParams.get('plan');
+            const codigoUrl = urlParams.get('codigo');
+
+            // Si vienen parámetros en la URL o en localStorage generados por el portal principal
+            const empresaStorage = localStorage.getItem('sensometrika_b2b_empresa');
+            const codigoStorage = localStorage.getItem('sensometrika_b2b_codigo');
+            const planStorage = localStorage.getItem('sensometrika_plan_contratado') || 'PLUS';
+
+            if (empresaUrl || empresaStorage) {
+                const entidad = empresaUrl || empresaStorage;
+                const codigo = codigoUrl || codigoStorage || ('SENSE-B2B-' + Math.floor(1000 + Math.random() * 9000));
+                const plan = planUrl || planStorage;
+
+                // Verificar si ya existe en el historial del admin para no duplicar en cada recarga
+                let historial = JSON.parse(localStorage.getItem('sensometrika_historial_admin')) || [];
+                const yaExiste = historial.some(item => item.entidad.includes(entidad) && item.detalle.includes(codigo));
+
+                if (!yaExiste) {
+                    agregarFilaHistorial(
+                        'B2B', 
+                        entidad, 
+                        `Código: ${codigo} | Plan: ${plan}`, 
+                        window.location.href, 
+                        'B2B-RUT', 
+                        plan
+                    );
+                }
+            }
+        }
 
         function switchTab(type) {
             ['B2B', 'B2C', 'Demo'].forEach(t => {
@@ -459,6 +495,8 @@
             localStorage.removeItem('sensometrika_apr_nomina');
             localStorage.removeItem('sensometrika_datos_usuario');
             localStorage.removeItem('sensometrika_latencia_ms');
+            localStorage.removeItem('sensometrika_b2b_empresa');
+            localStorage.removeItem('sensometrika_b2b_codigo');
 
             const keysToRemove = [];
             for (let i = 0; i < localStorage.length; i++) {
@@ -475,20 +513,13 @@
         }
 
         function calcularEstadoEvaluado(rutRaw, planTrabajador) {
-            if (!rutRaw) return { texto: 'PENDIENTE DE INICIO', clase: 'badge-pending' };
+            if (!rutRaw || rutRaw === 'B2B-RUT') return { texto: 'REGISTRO CORPORATIVO', clase: 'badge-progress' };
             const cleanRut = rutRaw.replace(/[^0-9Kk]/g, '');
             const planActivo = (planTrabajador || 'BASICO').toUpperCase();
 
-            let modulosExigidos = [];
-            if (planActivo === 'BASICO' || planActivo === 'BASIC') {
-                modulosExigidos = ['reactimetro', 'palancas', 'punteo'];
-            } else if (planActivo === 'PLUS') {
-                modulosExigidos = ['reactimetro', 'palancas', 'punteo', 'audicion'];
-            } else if (planActivo === 'FULL' || planActivo === 'MEDIUM') {
-                modulosExigidos = ['reactimetro', 'palancas', 'punteo', 'audicion', 'visual'];
-            } else {
-                modulosExigidos = ['reactimetro', 'palancas', 'punteo', 'audicion', 'visual', 'anticipacion', 'estereopsis', 'fatiga'];
-            }
+            let modulosExigidos = ['reactimetro', 'palancas', 'punteo'];
+            if (planActivo === 'PLUS') modulosExigidos = ['reactimetro', 'palancas', 'punteo', 'audicion'];
+            if (planActivo === 'FULL') modulosExigidos = ['reactimetro', 'palancas', 'punteo', 'audicion', 'visual'];
 
             let completados = 0;
             let reprobados = 0;
@@ -506,22 +537,16 @@
                 }
             });
 
-            if (reprobados > 0) {
-                return { texto: 'REPROBADO D.S. N° 170', clase: 'badge-bad' };
-            } else if (completados === modulosExigidos.length && completados > 0) {
-                return { texto: 'APROBADO D.S. N° 170', clase: 'badge-ok' };
-            } else if (completados > 0) {
-                return { texto: 'EN EJECUCIÓN', clase: 'badge-progress' };
-            } else {
-                return { texto: 'PENDIENTE DE INICIO', clase: 'badge-pending' };
-            }
+            if (reprobados > 0) return { texto: 'REPROBADO D.S. N° 170', clase: 'badge-bad' };
+            if (completados === modulosExigidos.length && completados > 0) return { texto: 'APROBADO D.S. N° 170', clase: 'badge-ok' };
+            if (completados > 0) return { texto: 'EN EJECUCIÓN', clase: 'badge-progress' };
+            return { texto: 'PENDIENTE DE INICIO', clase: 'badge-pending' };
         }
 
         function actualizarMetricasYRendimiento() {
             const nominaAPR = JSON.parse(localStorage.getItem('sensometrika_apr_nomina')) || [];
             const historialAdmin = JSON.parse(localStorage.getItem('sensometrika_historial_admin')) || [];
 
-            // Empresas Unicas
             const empresasSet = new Set();
             nominaAPR.forEach(t => { if(t.empresa) empresasSet.add(t.empresa.toUpperCase()); });
             historialAdmin.forEach(h => { if(h.segmento === 'B2B' && h.entidad) empresasSet.add(h.entidad.toUpperCase()); });
@@ -590,7 +615,6 @@
             let url = '';
             let detalleHistorial = '';
             let planAsociado = 'FULL';
-
             const originUrl = window.location.origin;
 
             if (tipoDemo === 'b2c_demo') {
@@ -616,30 +640,7 @@
 
             agregarFilaHistorial('DEMO', prospecto, detalleHistorial, url, 'DEMO-RUT', planAsociado);
             actualizarMetricasYRendimiento();
-
-            if (canal === 'correo') {
-                if(!correo) { alert('⚠️ Ingrese un correo electrónico.'); return; }
-                try {
-                    const res = await fetch('/api/enviar-correo', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            tipo: 'b2c_pago',
-                            emailDestino: correo,
-                            nombreTrabajador: prospecto,
-                            rutTrabajador: 'PROSPECTO-DEMO',
-                            planNombre: `Demostración Comercial (${horas} hrs)`,
-                            monto: 'Cortesía Comercial',
-                            linkAcceso: url
-                        })
-                    });
-                    if (res.ok) alert(`✅ Enlace despachado exitosamente a ${correo}.`);
-                } catch(e) {
-                    alert(`✅ Enlace con token generado localmente para ${prospecto}.`);
-                }
-            } else {
-                alert(`✅ Enlace generado para ${prospecto}. Listo para compartir.`);
-            }
+            alert(`✅ Enlace generado para ${prospecto}. Listo para compartir.`);
         }
 
         function copiarLink(elementId, mensaje) {
@@ -672,7 +673,6 @@
             const historialAdmin = JSON.parse(localStorage.getItem('sensometrika_historial_admin')) || [];
             const nominaAPR = JSON.parse(localStorage.getItem('sensometrika_apr_nomina')) || [];
 
-            // Consolidar nómina APR en la vista unificada si no existen
             const listaConsolidada = [...historialAdmin];
 
             nominaAPR.forEach(t => {

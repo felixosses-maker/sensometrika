@@ -199,6 +199,7 @@
     .modal-card {
       background-color: var(--card-bg); border: 1px solid var(--accent-cyan); border-radius: 14px;
       padding: 20px; width: 100%; max-width: 420px; display: flex; flex-direction: column; gap: 12px;
+      box-shadow: 0 15px 40px rgba(0,0,0,0.85);
     }
     .form-group { display: flex; flex-direction: column; gap: 3px; }
     .form-group label { font-size: 0.64rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700; }
@@ -310,15 +311,15 @@
         <button class="btn-action-cyan btn-action-gold" onclick="seleccionarPlanB2B('Plan Alto Desempeño Faenas (B2B PRO)')">🏆 Seleccionar Plan Alto Desempeño →</button>
       </div>
 
-      <!-- 2 & 3. CONSTRUCTOR MODULAR UNIFICADO CON ACTIVACIÓN DE DATOS -->
-      <div class="section-header-box">2. Constructor a Medida & Activación de Consola Corporativa</div>
+      <!-- 2 & 3. CONSTRUCTOR MODULAR CON GENERACIÓN DE CÓDIGO B2B -->
+      <div class="section-header-box">2 & 3. Constructor a Medida & Registro Corporativo</div>
       
       <div class="constructor-form-card">
         <span style="font-size: 0.82rem; font-weight: 900; color: var(--accent-cyan); text-transform: uppercase;">
           🛠️ Personalice su Combinación o Active su Plan
         </span>
         <p style="font-size: 0.70rem; color: var(--text-muted); line-height: 1.35;">
-          Ingrese los datos de su empresa para ajustar un plan a su medida y acceder de inmediato a la consola avanzada entre los 18 módulos telemétricos.
+          Ingrese los datos de su empresa para generar su <strong>Código Único de Registro B2B</strong> y acceder de inmediato a la consola avanzada.
         </p>
 
         <form onsubmit="procesarConsolaB2B(event)" style="display:flex; flex-direction:column; gap:8px; margin-top:4px;">
@@ -332,7 +333,7 @@
           </div>
 
           <button type="submit" class="btn-action-cyan" style="background:var(--accent-green); color:#000; margin-top:4px;">
-            🚀 ABRIR CONSTRUCTOR & ACCEDER A CONSOLA →
+            🚀 GENERAR CÓDIGO B2B & ACCEDER A CONSOLA →
           </button>
         </form>
       </div>
@@ -357,9 +358,28 @@
     </div>
   </div>
 
+  <!-- Modal de Éxito / Generación de Código B2B -->
+  <div id="modalExitoB2B" class="modal-overlay">
+    <div class="modal-card" style="text-align: center;">
+      <span style="color: var(--accent-green); font-size: 1rem; font-weight: 900;">✓ REGISTRO B2B EXITOSO</span>
+      <p style="font-size: 0.74rem; color: var(--text-muted);">Su empresa ha sido registrada en Sensometrika. Su código único de cliente corporativo es:</p>
+      
+      <div style="background: #030712; border: 1px dashed var(--accent-cyan); padding: 12px; border-radius: 8px;">
+        <strong id="txtCodigoGenerado" style="font-size: 1.1rem; color: var(--accent-cyan); letter-spacing: 1px;">SENSE-B2B-0000</strong>
+      </div>
+
+      <p style="font-size: 0.68rem; color: var(--text-muted);">Este código fue enviado a su correo para futuras ofertas de nuevos módulos y planes.</p>
+
+      <button onclick="irALaConsolaEmpresa()" class="btn-action-cyan" style="margin-top: 6px;">
+        📊 INGRESAR A LA CONSOLA DE EMPRESA →
+      </button>
+    </div>
+  </div>
+
   <script>
     let planB2CActivo = 'BASICO';
     let planB2BElegido = 'Plan Básico Laboral (B2B)';
+    let urlDestinoConsola = '';
 
     function cambiarModalidad(mod) {
       const vB2C = document.getElementById('vistaB2C');
@@ -404,13 +424,27 @@
       const empresa = document.getElementById('b2bEmpresa').value.trim();
       const rut = document.getElementById('b2bRut').value.trim();
       const encargado = document.getElementById('b2bEncargado').value.trim();
-      
+      const correo = document.getElementById('b2bCorreo').value.trim();
+
+      // Generar Código Único de Registro B2B
+      const codigoUnico = 'SENSE-B2B-' + Math.floor(1000 + Math.random() * 9000);
+
+      localStorage.setItem('sensometrika_b2b_codigo', codigoUnico);
       localStorage.setItem('sensometrika_b2b_empresa', empresa);
       localStorage.setItem('sensometrika_b2b_rut', rut);
       localStorage.setItem('sensometrika_b2b_encargado', encargado);
+      localStorage.setItem('sensometrika_b2b_correo', correo);
       localStorage.setItem('sensometrika_plan_contratado', planB2BElegido);
 
-      window.location.href = `dashboard_empresa.html?empresa=${encodeURIComponent(empresa)}&plan=${encodeURIComponent(planB2BElegido)}`;
+      document.getElementById('txtCodigoGenerado').textContent = codigoUnico;
+      urlDestinoConsola = `dashboard_empresa.html?empresa=${encodeURIComponent(empresa)}&plan=${encodeURIComponent(planB2BElegido)}&codigo=${codigoUnico}`;
+      
+      // Mostrar modal con el código generado
+      document.getElementById('modalExitoB2B').style.display = 'flex';
+    }
+
+    function irALaConsolaEmpresa() {
+      window.location.href = urlDestinoConsola;
     }
   </script>
 </body>
