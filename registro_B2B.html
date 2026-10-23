@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SENSOMETRIKA | Registro y Aceptación Legal del Trabajador</title>
+    <title>SENSOMETRIKA | Registro Biométrico, Firma y Calibración B2B</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         :root {
@@ -31,7 +31,7 @@
 
         .main-container {
             width: 100%;
-            max-width: 500px;
+            max-width: 520px;
             display: flex;
             flex-direction: column;
             gap: 16px;
@@ -58,7 +58,7 @@
         }
 
         .card-title {
-            font-size: 0.88rem;
+            font-size: 0.85rem;
             font-weight: 800;
             color: var(--accent-cyan);
             text-transform: uppercase;
@@ -71,10 +71,10 @@
             border: 1px dashed var(--card-border);
             border-radius: 10px;
             padding: 12px;
-            font-size: 0.70rem;
+            font-size: 0.68rem;
             color: var(--text-muted);
             line-height: 1.4;
-            max-height: 130px;
+            max-height: 110px;
             overflow-y: auto;
         }
 
@@ -85,7 +85,7 @@
         }
 
         .form-group label {
-            font-size: 0.70rem;
+            font-size: 0.68rem;
             color: var(--text-muted);
             text-transform: uppercase;
             font-weight: 700;
@@ -95,15 +95,56 @@
             background: #080d17;
             border: 1px solid var(--card-border);
             color: #fff;
-            padding: 11px 12px;
+            padding: 10px 12px;
             border-radius: 8px;
-            font-size: 0.85rem;
+            font-size: 0.82rem;
             outline: none;
         }
 
         .form-group input:read-only {
             color: var(--accent-cyan);
             background: #050a12;
+        }
+
+        /* SECCIÓN CÁMARA BIOMÉTRICA */
+        .bio-cam-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            background: #050a12;
+            border: 1px solid var(--card-border);
+            border-radius: 10px;
+            padding: 12px;
+        }
+        #videoCamara {
+            width: 100%;
+            max-width: 220px;
+            height: 140px;
+            background: #000;
+            border-radius: 8px;
+            object-fit: cover;
+            border: 1px solid var(--accent-cyan);
+        }
+        #canvasFoto { display: none; }
+
+        /* SECCIÓN FIRMA DIGITAL */
+        .firma-container {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            background: #050a12;
+            border: 1px solid var(--card-border);
+            border-radius: 10px;
+            padding: 12px;
+        }
+        #canvasFirma {
+            width: 100%;
+            height: 110px;
+            background: #ffffff;
+            border-radius: 6px;
+            cursor: crosshair;
+            touch-action: none;
         }
 
         .btn-submit {
@@ -113,12 +154,11 @@
             padding: 14px;
             border-radius: 10px;
             font-weight: 900;
-            font-size: 0.90rem;
+            font-size: 0.88rem;
             cursor: pointer;
             text-transform: uppercase;
             text-align: center;
             width: 100%;
-            margin-top: 6px;
             transition: opacity 0.2s;
         }
         .btn-submit:hover { opacity: 0.9; }
@@ -130,10 +170,9 @@
         <img src="sensometrica.jpg" alt="SENSOMETRIKA" class="brand-logo-img">
 
         <div class="panel-card">
-            <div class="card-title">⚖️ Validación de Identidad & Marco Normativo</div>
+            <div class="card-title">⚖️ Registro, Validación Biométrica & Firma Digital</div>
             <div class="legal-box">
-                <p><strong>1. Marco Regulatorio (D.S. N° 170 / Ley N° 18.290):</strong> La presente evaluación psicotécnica y sensométrica se realiza bajo los estándares de control preventivo ocupacional para faenas y transporte.</p>
-                <p style="margin-top: 6px;"><strong>2. Protección de Datos (Ley N° 19.628):</strong> Al registrarse, el trabajador autoriza la captura de telemetría, tiempos de reacción y emisión de credencial QR para el control de acceso en garita.</p>
+                <p><strong>Marco Normativo (D.S. N° 170 / Ley N° 18.290):</strong> Control preventivo ocupacional. La captura biométrica de rostro y la rúbrica digital forman parte del expediente pericial auditable en garita.</p>
             </div>
 
             <form id="formRegistroTrabajador" onsubmit="procesarRegistroTrabajador(event)">
@@ -153,15 +192,34 @@
                         <input type="text" id="regCargo" required>
                     </div>
 
+                    <!-- FOTO BIOMÉTRICA -->
+                    <div class="bio-cam-container">
+                        <label style="font-size:0.68rem; color:var(--accent-cyan); font-weight:800; text-transform:uppercase;">📸 Validación Fotográfica / Biometría</label>
+                        <video id="videoCamara" autoplay playsinline></video>
+                        <canvas id="canvasFoto"></canvas>
+                        <button type="button" onclick="capturarFotoBiometrica()" style="background:#0284c7; color:#fff; border:none; padding:6px 12px; border-radius:6px; font-size:0.72rem; font-weight:800; cursor:pointer;">Tomar Fotografía ID</button>
+                        <span id="lblEstadoFoto" style="font-size:0.65rem; color:#f59e0b; font-weight:700;">⚠️ Fotografía pendiente de captura</span>
+                    </div>
+
+                    <!-- FIRMA DIGITAL -->
+                    <div class="firma-container">
+                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                            <label style="font-size:0.68rem; color:var(--accent-cyan); font-weight:800; text-transform:uppercase;">✍️ Rúbrica / Firma Digital del Trabajador</label>
+                            <button type="button" onclick="limpiarFirma()" style="background:transparent; border:1px solid #ef4444; color:#ef4444; padding:2px 8px; border-radius:4px; font-size:0.62rem; cursor:pointer;">Limpiar</button>
+                        </div>
+                        <canvas id="canvasFirma"></canvas>
+                        <span style="font-size:0.62rem; color:var(--text-muted);">Firme utilizando su dedo o el cursor del mouse dentro del recuadro blanco.</span>
+                    </div>
+
                     <div style="display: flex; align-items: flex-start; gap: 8px; margin-top: 4px;">
                         <input type="checkbox" id="chkLegal" required style="width: 18px; height: 18px; margin-top: 2px; accent-color: var(--accent-green);">
                         <label for="chkLegal" style="font-size: 0.72rem; color: #fff; cursor: pointer; line-height: 1.3;">
-                            Confirmo mi identidad, declaro estar en condiciones físicas aptas y acepto los términos normativos de la evaluación.
+                            Confirmo mi identidad biométrica, firmo digitalmente y acepto los términos de la evaluación.
                         </label>
                     </div>
 
                     <button type="submit" class="btn-submit">
-                        ✓ ACCEDER A LA BATERÍA DE EVALUACIÓN →
+                        ✓ GUARDAR REGISTRO Y PASAR A MENÚ B2B →
                     </button>
                 </div>
             </form>
@@ -170,6 +228,8 @@
 
     <script>
         const urlParams = new URLSearchParams(window.location.search);
+        let fotoCapturadaData = null;
+        let canvasFirma, ctxFirma, dibujando = false;
 
         document.addEventListener('DOMContentLoaded', () => {
             let datos = {};
@@ -182,18 +242,109 @@
             if (rutUrl) document.getElementById('regRut').value = rutUrl;
             if (nombreUrl) document.getElementById('regNombre').value = nombreUrl;
             if (cargoUrl) document.getElementById('regCargo').value = cargoUrl;
+
+            iniciarCamara();
+            inicializarFirma();
         });
+
+        // Configuración de la Cámara Web
+        async function iniciarCamara() {
+            try {
+                const video = document.getElementById('videoCamara');
+                const stream = await navigator.mediaDevices.getUserMedia({ video: { width: 300, height: 200 } });
+                video.srcObject = stream;
+            } catch (err) {
+                console.warn("Cámara no disponible o permisos denegados:", err);
+            }
+        }
+
+        function capturarFotoBiometrica() {
+            const video = document.getElementById('videoCamara');
+            const canvas = document.getElementById('canvasFoto');
+            canvas.width = video.videoWidth || 300;
+            canvas.height = video.videoHeight || 200;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            fotoCapturadaData = canvas.toDataURL('image/jpeg', 0.85);
+
+            document.getElementById('lblEstadoFoto').textContent = '✓ Fotografía biométrica capturada con éxito';
+            document.getElementById('lblEstadoFoto').style.color = '#10b981';
+            alert("✓ Fotografía de identidad registrada correctamente.");
+        }
+
+        // Configuración del Pad de Firma
+        function inicializarFirma() {
+            canvasFirma = document.getElementById('canvasFirma');
+            ctxFirma = canvasFirma.getContext('2d');
+            
+            canvasFirma.width = canvasFirma.offsetWidth;
+            canvasFirma.height = canvasFirma.offsetHeight;
+
+            ctxFirma.strokeStyle = '#000000';
+            ctxFirma.lineWidth = 2.5;
+            ctxFirma.lineCap = 'round';
+
+            // Eventos Mouse
+            canvasFirma.addEventListener('mousedown', empezarDibujo);
+            canvasFirma.addEventListener('mousemove', dibujar);
+            canvasFirma.addEventListener('mouseup', pararDibujo);
+            canvasFirma.addEventListener('mouseleave', pararDibujo);
+
+            // Eventos Touch (Móviles / Tablets)
+            canvasFirma.addEventListener('touchstart', (e) => { empezarDibujo(e.touches[0]); e.preventDefault(); });
+            canvasFirma.addEventListener('touchmove', (e) => { dibujar(e.touches[0]); e.preventDefault(); });
+            canvasFirma.addEventListener('touchend', pararDibujo);
+        }
+
+        function obtenerPosicion(e) {
+            const rect = canvasFirma.getBoundingClientRect();
+            return {
+                x: (e.clientX || e.pageX) - rect.left,
+                y: (e.clientY || e.pageY) - rect.top
+            };
+        }
+
+        function empezarDibujo(e) {
+            dibujando = true;
+            const pos = obtenerPosicion(e);
+            ctxFirma.beginPath();
+            ctxFirma.moveTo(pos.x, pos.y);
+        }
+
+        function dibujar(e) {
+            if (!dibujando) return;
+            const pos = obtenerPosicion(e);
+            ctxFirma.lineTo(pos.x, pos.y);
+            ctxFirma.stroke();
+        }
+
+        function pararDibujo() {
+            dibujando = false;
+        }
+
+        function limpiarFirma() {
+            ctxFirma.clearRect(0, 0, canvasFirma.width, canvasFirma.height);
+        }
 
         function procesarRegistroTrabajador(e) {
             e.preventDefault();
+
+            if (!fotoCapturadaData) {
+                alert("⚠️ Debe capturar su fotografía biométrica antes de continuar.");
+                return;
+            }
 
             const nombre = document.getElementById('regNombre').value.trim();
             const rut = document.getElementById('regRut').value.trim();
             const cargo = document.getElementById('regCargo').value.trim();
             const cleanRut = rut.replace(/[^0-9Kk]/g, '');
 
-            // Guardar datos validados del trabajador
+            const firmaDataUrl = canvasFirma.toDataURL('image/png');
+
+            // Guardar en localStorage para que el menú y el informe lo rendericen al instante
             localStorage.setItem('sensometrika_datos_usuario', JSON.stringify({ nombre, rut, cargo }));
+            localStorage.setItem('sensometrika_foto_trabajador', fotoCapturadaData);
+            localStorage.setItem('sensometrika_firma_trabajador', firmaDataUrl);
             localStorage.setItem('sensometrika_terminos_aceptados', 'true');
             localStorage.setItem('sensometrika_session_activa', `SESION_${cleanRut}_${Date.now()}`);
 
