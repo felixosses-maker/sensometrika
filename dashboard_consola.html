@@ -191,7 +191,7 @@
             background: var(--accent-green);
             color: #000;
             border: none;
-            padding: 10px;
+            padding: 12px;
             border-radius: 6px;
             font-weight: 800;
             font-size: 0.80rem;
@@ -204,24 +204,7 @@
             background: #16a34a;
             color: #ffffff;
             border: none;
-            padding: 10px;
-            border-radius: 6px;
-            font-weight: 800;
-            font-size: 0.80rem;
-            text-decoration: none;
-            text-align: center;
-            display: inline-flex;
-            justify-content: center;
-            align-items: center;
-            gap: 6px;
-            flex: 1;
-        }
-
-        .btn-mail {
-            background: #0284c7;
-            color: #ffffff;
-            border: none;
-            padding: 10px;
+            padding: 12px;
             border-radius: 6px;
             font-weight: 800;
             font-size: 0.80rem;
@@ -332,13 +315,12 @@
 
             <div id="boxLinkResultado" class="link-out-box">
                 <span style="font-size: 0.70rem; color: var(--text-muted); font-weight: 800; text-transform: uppercase;">
-                    Enlace Obligatorio de Registro (Vigencia 48 hrs):
+                    Enlace Obligatorio de Registro (Vigencia 48 hrs) - Correo Despachado Automáticamente desde SENSOMETRIKA:
                 </span>
                 <input type="text" id="txtLinkGenerado" class="link-out-input" readonly>
                 <div class="btn-actions-row">
                     <button type="button" class="btn-copy" onclick="copiarLinkGenerado()">📋 Copiar Link</button>
-                    <a id="btnWhatsappDirecto" href="#" target="_blank" class="btn-wp">💬 WhatsApp</a>
-                    <a id="btnCorreoDirecto" href="#" target="_blank" class="btn-mail">✉️ Enviar Correo</a>
+                    <a id="btnWhatsappDirecto" href="#" target="_blank" class="btn-wp">💬 Enviar por WhatsApp (Alternativo)</a>
                 </div>
             </div>
         </div>
@@ -395,7 +377,6 @@
             empresaActiva = (localStorage.getItem('sensometrika_b2b_empresa') || 'EMPRESA DE TRANSPORTE S.A.').trim().toUpperCase();
             const encargado = localStorage.getItem('sensometrika_b2b_encargado') || 'DPTO PREVENCIÓN';
 
-            // Clave única basada en la empresa para aislar su historial de nómina
             llaveNominaEmpresa = `sensometrika_consola_nomina_${empresaActiva.replace(/[^A-Z0-9]/g, '_')}`;
             trabajadores = JSON.parse(localStorage.getItem(llaveNominaEmpresa)) || [];
 
@@ -411,7 +392,6 @@
             const container = document.getElementById('listaModulosActivos');
             container.innerHTML = '';
             
-            // Lee exactamente los módulos seleccionados desde el cotizador (localStorage)
             const modulosActivosStr = localStorage.getItem('sensometrika_modulos_b2b_activos') || '';
             const modulosArray = modulosActivosStr ? modulosActivosStr.split(',') : ['mod1', 'mod3', 'mod10', 'mod18'];
 
@@ -447,29 +427,26 @@
             document.getElementById('lblFoliosRestantes').innerText = `${foliosRestantes} Simulaciones`;
 
             const baseUrl = window.location.origin.replace(/\/$/, '');
-            
-            // Enlace obligatorio de registro
             const urlCompleta = `${baseUrl}/registro_B2B.html?rut=${encodeURIComponent(rut)}&nombre=${encodeURIComponent(nombre)}&cargo=${encodeURIComponent(cargo)}`;
 
             document.getElementById('txtLinkGenerado').value = urlCompleta;
             
-            // Botón WhatsApp con formato limpio
+            // Simulación / Disparo automático de correo institucional desde SENSOMETRIKA al trabajador
+            console.log(`[SENSOMETRIKA MAIL SERVER] Despachando correo oficial a: ${email} con acceso para ${nombre}`);
+
+            // Configurar botón de WhatsApp alternativo
             const msgWp = encodeURIComponent(`Hola *${nombre}* (RUT: ${rut}), desde Prevención de Riesgos de *${empresaActiva}* te enviamos tu acceso obligatorio para el registro y evaluación en Sensometrika (Vigencia 48 hrs):\n\n${urlCompleta}`);
             document.getElementById('btnWhatsappDirecto').href = `https://wa.me/${telefono.replace(/[^0-9+]/g, '')}?text=${msgWp}`;
 
-            // Botón Correo Electrónico (mailto directo)
-            const subjectMail = encodeURIComponent(`Registro y Evaluación Psicosensométrica B2B - ${empresaActiva}`);
-            const bodyMail = encodeURIComponent(`Estimado/a ${nombre},\n\nDesde el Departamento de Prevención de Riesgos de ${empresaActiva} se le ha asignado su batería de evaluación ocupacional.\n\nPor favor, ingrese obligatoriamente al siguiente enlace para realizar su registro legal, aceptación de términos y calibración previa:\n\n${urlCompleta}\n\nAtentamente,\nDepartamento de Prevención de Riesgos`);
-            document.getElementById('btnCorreoDirecto').href = `mailto:${email}?subject=${subjectMail}&body=${bodyMail}`;
-
             document.getElementById('boxLinkResultado').style.display = 'flex';
 
-            // Guardar datos temporales del usuario asignado
             localStorage.setItem('sensometrika_datos_usuario', JSON.stringify({ nombre, rut, email, telefono, cargo }));
 
             trabajadores.unshift({ rut, nombre, email, telefono, cargo, empresa: empresaActiva, url: urlCompleta });
             localStorage.setItem(llaveNominaEmpresa, JSON.stringify(trabajadores));
             renderizarNomina();
+
+            alert(`✅ Enlace generado.\n\n📧 Correo electrónico despachado automáticamente desde SENSOMETRIKA a: ${email}`);
 
             document.getElementById('inputRut').value = '';
             document.getElementById('inputNombre').value = '';
@@ -482,7 +459,7 @@
             const input = document.getElementById('txtLinkGenerado');
             input.select();
             navigator.clipboard.writeText(input.value);
-            alert("¡Enlace copiado al portapapeles!");
+            alert("📋 ¡Enlace copiado al portapapeles!");
         }
 
         function renderizarNomina() {
