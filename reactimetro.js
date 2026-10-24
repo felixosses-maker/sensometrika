@@ -16,12 +16,12 @@ const sessionParamReactimetro = urlParamsReactimetro.get('session') || '';
 
 // LLAVES DE ALMACENAMIENTO AISLADAS POR SESIÓN Y RUT
 const claveHistorialReactimetro = sessionParamReactimetro 
-    ? `sensometrika_historial_reactimetro_${cleanRutReactimetro}_${sessionParamReactimetro}` 
-    : `sensometrika_historial_reactimetro_${cleanRutReactimetro}`;
+    ? `sensometrika_historial_reactimetro_simple_${cleanRutReactimetro}_${sessionParamReactimetro}` 
+    : `sensometrika_historial_reactimetro_simple_${cleanRutReactimetro}`;
 
 const claveUltimoReactimetro = sessionParamReactimetro 
-    ? `sensometrika_last_reactimetro_${cleanRutReactimetro}_${sessionParamReactimetro}` 
-    : `sensometrika_last_reactimetro_${cleanRutReactimetro}`;
+    ? `sensometrika_last_reactimetro_simple_${cleanRutReactimetro}_${sessionParamReactimetro}` 
+    : `sensometrika_last_reactimetro_simple_${cleanRutReactimetro}`;
 
 // LIMPIEZA EXCLUSIVA EN MODO DEMOSTRACIÓN (Sin afectar cuotas pagadas)
 if (esModoDemoReactimetro) {
@@ -154,7 +154,7 @@ class ModuloReactimetro {
 
                 localStorage.setItem(claveHistorialReactimetro, JSON.stringify(historialActual));
 
-                // Guardado del último resultado individual para trazabilidad de la consola
+                // Guardado del último resultado individual para trazabilidad del menú B2B y consola
                 localStorage.setItem(claveUltimoReactimetro, JSON.stringify({
                     promedioTiempo: promedio,
                     anticipaciones: this.anticipaciones,

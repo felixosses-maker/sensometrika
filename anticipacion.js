@@ -1,8 +1,7 @@
 /* ==========================================================================
    SENSOMETRIKA - MÓDULO: VELOCIDAD DE ANTICIPACIÓN (anticipacion.js)
    • Faenas Mineras y Forestales - Cálculo de trayectoria y tiempo
-   • DEMO / B2B APR / ALTO DESEMPEÑO: Ejecución fluida sin bloqueo
-   • B2C / B2B PAGADO: Control inmutable de cuotas
+   • DEMO / B2B / B2C: Sesión única, aislamiento por RUT y retorno dinámico
    ========================================================================== */
 
 const objetoMovil = document.getElementById('objetoMovil');
@@ -17,6 +16,20 @@ const badgeFase = document.getElementById('simulacionActualBadge');
 const urlParams = new URLSearchParams(window.location.search);
 const esModoDemo = urlParams.get('demo') === 'true' || urlParams.get('single') === 'true';
 const returnUrl = urlParams.get('returnUrl') ? decodeURIComponent(urlParams.get('returnUrl')) : null;
+
+// CAPTURA DE RUT Y SESIÓN ÚNICA PARA AISLAMIENTO B2B
+const rutEvalAnticipacion = urlParams.get('rut') || 'GENERICO';
+const cleanRutAnticipacion = rutEvalAnticipacion.replace(/[^0-9Kk]/g, '');
+const sessionParamAnticipacion = urlParams.get('session') || '';
+
+// LLAVES DE ALMACENAMIENTO AISLADAS POR SESIÓN Y RUT
+const claveHistorialAnticipacion = sessionParamAnticipacion 
+    ? `sensometrika_historial_anticipacion_${cleanRutAnticipacion}_${sessionParamAnticipacion}` 
+    : `sensometrika_historial_anticipacion_${cleanRutAnticipacion}`;
+
+const claveLastAnticipacion = sessionParamAnticipacion 
+    ? `sensometrika_last_anticipacion_${cleanRutAnticipacion}_${sessionParamAnticipacion}` 
+    : `sensometrika_last_anticipacion_${cleanRutAnticipacion}`;
 
 // LIMPIEZA EXCLUSIVA DE CUOTAS CUANDO ES DEMOSTRACIÓN (No afecta a pagos B2C/B2B)
 if (esModoDemo) {
@@ -237,6 +250,24 @@ function procesarCierreOficialAnticipacion(promedioError) {
 
   const aprobado = promedioError <= 220;
 
+  // Guardado riguroso en el historial aislado por sesión y RUT
+  let historialActual = JSON.parse(localStorage.getItem(claveHistorialAnticipacion)) || [];
+  historialActual.push({
+    promedioError,
+    aprobado,
+    fecha: new Date().toISOString()
+  });
+  localStorage.setItem(claveHistorialAnticipacion, JSON.stringify(historialActual));
+
+  // Guardado del último resultado individual para trazabilidad del menú B2B y consola
+  localStorage.setItem(claveLastAnticipacion, JSON.stringify({
+    promedioError,
+    aprobado,
+    go_no_go_flag: aprobado,
+    fecha: new Date().toISOString()
+  }));
+
+  // Respaldo legado
   localStorage.setItem('sensometrika_anticipacion', JSON.stringify({
     promedioError,
     aprobado,
@@ -259,7 +290,7 @@ function mostrarModalResultadoAnticipacion(consumidas, max, promedioError, aprob
         
         <h3 style="color: #ffffff; margin: 0 0 4px 0; font-size: 1.25rem; font-weight: 800;">Simulación Finalizada</h3>
         <p style="color: #38bdf8; margin: 0 0 16px 0; font-size: 0.85rem; font-weight: 600;">
-          ${esModoDemo ? 'Evaluación de Muestra Técnica' : `Simulación Oficial ${consumidas} de${max}`}
+          ${esModoDemo ? 'Evaluación de Muestra Técnica' : `Simulación Oficial ${consumidas} de ${max}`}
         </p>
 
         <div style="margin-bottom: 18px;">

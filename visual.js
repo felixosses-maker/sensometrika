@@ -4,8 +4,7 @@
    • Generador Estocástico Anti-Memorización (Ishihara + Optotipo E)
    • 1 Demo de 2 Láminas + Examen Oficial de 6 Láminas
    • Auditoría facial continua y bloqueo reactivo ante proximidad (<45 cm)
-   • MODO DEMO / SINGLE: Bypass de cuotas y retorno dinámico vía returnUrl
-   • Persistencia compatible con menu.html e informe.html
+   • MODO DEMO / SINGLE / B2B: Sesión única, aislamiento por RUT y retorno dinámico
    ========================================================================== */
 
 const canvas = document.getElementById('lienzo-visual');
@@ -44,11 +43,23 @@ const urlParamsVisual = new URLSearchParams(window.location.search);
 const esModoDemoVisual = urlParamsVisual.get('demo') === 'true' || urlParamsVisual.get('single') === 'true';
 const returnUrlVisual = urlParamsVisual.get('returnUrl') ? decodeURIComponent(urlParamsVisual.get('returnUrl')) : null;
 
+// CAPTURA DE RUT Y SESIÓN ÚNICA PARA AISLAMIENTO B2B
+const rutEvalVisual = urlParamsVisual.get('rut') || 'GENERICO';
+const cleanRutVisual = rutEvalVisual.replace(/[^0-9Kk]/g, '');
+const sessionParamVisual = urlParamsVisual.get('session') || '';
+
+// LLAVES DE ALMACENAMIENTO AISLADAS POR SESIÓN Y RUT
+const claveHistorialVisual = sessionParamVisual 
+    ? `sensometrika_historial_visual_snellen_${cleanRutVisual}_${sessionParamVisual}` 
+    : `sensometrika_historial_visual_${cleanRutVisual}`;
+
+const claveLastVisual = sessionParamVisual 
+    ? `sensometrika_last_visual_snellen_${cleanRutVisual}_${sessionParamVisual}` 
+    : `sensometrika_last_visual_${cleanRutVisual}`;
+
 // LIMPIEZA EXCLUSIVA DE CUOTAS EN DEMOSTRACIONES (Sin afectar pagos B2C/B2B)
 if (esModoDemoVisual) {
   localStorage.removeItem('sensometrika_visual_completado');
-  localStorage.removeItem('sensometrika_historial_visual');
-  localStorage.removeItem('simulaciones_visual');
 }
 
 // BANCO DE DATOS CROMÁTICOS (ISHIHARA)
@@ -64,7 +75,7 @@ const BANCO_ISHIHARA = [
 // ÁNGULOS POSIBLES PARA EL OPTOTIPO 'E'
 const ORIENTACIONES_E = [
   { rot: 0,            dir: 'Derecha' },
-  { rot: Math.PI,       dir: 'Izquierda' },
+  { rot: Math.PI,      dir: 'Izquierda' },
   { rot: -Math.PI / 2,   dir: 'Arriba' },
   { rot: Math.PI / 2,    dir: 'Abajo' }
 ];
@@ -143,7 +154,7 @@ function bloquearModuloPorCupo() {
   txtPregunta.style.color = '#f87171';
   zonaBotones.style.display = 'none';
 
-  zonaCoordinacion.innerHTML = `
+   zonaCoordinacion.innerHTML = `
     <div style="background:#090e1c; border:1px solid #ef4444; border-radius:10px; padding:14px; text-align:center;">
       <a href="menu.html" style="display:flex; justify-content:center; align-items:center; height:42px; background:#0284c7; color:#fff; text-decoration:none; border-radius:6px; font-weight:bold; margin-bottom:8px;">
         Volver al Menú Principal
@@ -182,7 +193,7 @@ function prepararFaseOficial() {
   pasoActual = 0;
   aciertos = 0;
 
-  const hist = JSON.parse(localStorage.getItem('sensometrika_historial_visual')) || [];
+  const hist = JSON.parse(localStorage.getItem(claveHistorialVisual)) || [];
   const num = hist.length + 1;
   const max = 2;
 
@@ -340,7 +351,6 @@ function dibujarPlacaIshihara(numero) {
   const centroY = canvas.height / 2;
   const radioPlaca = 88;
 
-  // 1. DIAL OFTALMOLÓGICO EXTERIOR
   ctx.save();
   ctx.beginPath();
   ctx.arc(centroX, centroY, radioPlaca + 14, 0, Math.PI * 2);
@@ -348,7 +358,6 @@ function dibujarPlacaIshihara(numero) {
   ctx.lineWidth = 1.5;
   ctx.stroke();
 
-  // Marcas perimetrales
   for (let i = 0; i < 36; i++) {
     const angle = (i * Math.PI * 2) / 36;
     const x1 = centroX + Math.cos(angle) * (radioPlaca + 10);
@@ -364,7 +373,6 @@ function dibujarPlacaIshihara(numero) {
   }
   ctx.restore();
 
-  // 2. DISCO BASE CON HALO
   ctx.save();
   ctx.beginPath();
   ctx.arc(centroX, centroY, radioPlaca, 0, Math.PI * 2);
@@ -374,7 +382,6 @@ function dibujarPlacaIshihara(numero) {
   ctx.fill();
   ctx.restore();
 
-  // 3. MICROCÍRCULOS POLICROMÁTICOS (FONDO ORGÁNICO)
   const paletaVerdes = [
     '#15803d', '#16a34a', '#22c55e', '#4ade80', '#14532d', 
     '#65a30d', '#84cc16', '#166534', '#155e75', '#0e7490'
@@ -399,7 +406,6 @@ function dibujarPlacaIshihara(numero) {
     }
   }
 
-  // 4. DÍGITO CROMÁTICO DE CONTRASTE
   ctx.save();
   ctx.font = '800 58px system-ui, -apple-system, sans-serif';
   ctx.textAlign = 'center';
@@ -417,7 +423,6 @@ function dibujarOptotipoSnellen(rotacion) {
   const centroY = canvas.height / 2;
   const radioVisor = 88;
 
-  // Dial exterior
   ctx.save();
   ctx.beginPath();
   ctx.arc(centroX, centroY, radioVisor + 12, 0, Math.PI * 2);
@@ -425,7 +430,6 @@ function dibujarOptotipoSnellen(rotacion) {
   ctx.lineWidth = 1.5;
   ctx.stroke();
 
-  // Halo central
   ctx.beginPath();
   ctx.arc(centroX, centroY, radioVisor, 0, Math.PI * 2);
   ctx.fillStyle = '#060b18';
@@ -434,7 +438,6 @@ function dibujarOptotipoSnellen(rotacion) {
   ctx.fill();
   ctx.restore();
 
-  // 'E' de Snellen
   ctx.save();
   ctx.translate(centroX, centroY);
   ctx.rotate(rotacion);
@@ -443,10 +446,10 @@ function dibujarOptotipoSnellen(rotacion) {
   ctx.shadowColor = 'rgba(56, 189, 248, 0.85)';
   ctx.shadowBlur = 14;
 
-  ctx.fillRect(-35, -35, 14, 70); // Barra vertical
-  ctx.fillRect(-35, -35, 70, 14); // Barra superior
-  ctx.fillRect(-35, -7, 48, 14);  // Barra media
-  ctx.fillRect(-35, 21, 70, 14);  // Barra inferior
+  ctx.fillRect(-35, -35, 14, 70);
+  ctx.fillRect(-35, -35, 70, 14);
+  ctx.fillRect(-35, -7, 48, 14);
+  ctx.fillRect(-35, 21, 70, 14);
 
   ctx.restore();
 }
@@ -469,7 +472,7 @@ function concluirDemo() {
   txtPregunta.innerText = '¡Calibración completada! Pulsa para iniciar la evaluación.';
   txtPregunta.style.color = '#4ade80';
 
-  const hist = JSON.parse(localStorage.getItem('sensometrika_historial_visual')) || [];
+  const hist = JSON.parse(localStorage.getItem(claveHistorialVisual)) || [];
   const num = hist.length + 1;
   const max = 2;
 
@@ -484,7 +487,7 @@ function finalizarPruebaVisual() {
     streamCamara.getTracks().forEach(t => t.stop());
   }
 
-  let historial = JSON.parse(localStorage.getItem('sensometrika_historial_visual')) || [];
+  let historial = JSON.parse(localStorage.getItem(claveHistorialVisual)) || [];
   const simActual = historial.length + 1;
   const max = 2;
   const pct = Math.round((aciertos / pruebasActivas.length) * 100);
@@ -502,20 +505,16 @@ function finalizarPruebaVisual() {
 
   if (!esModoDemoVisual) {
     historial.push(attemptData);
-    localStorage.setItem('sensometrika_historial_visual', JSON.stringify(historial));
-    localStorage.setItem('simulaciones_visual', Math.min(max, historial.length).toString());
+    localStorage.setItem(claveHistorialVisual, JSON.stringify(historial));
 
-    // Consolidado para informe.html
-    localStorage.setItem('sensometrika_visual', JSON.stringify({
-      estado: (historial.length >= max) ? 'COMPLETADO' : 'EN_CURSO',
+    // Guardado del último resultado individual para trazabilidad del menú B2B y consola
+    localStorage.setItem(claveLastVisual, JSON.stringify({
       efectividad: pct,
       porcentaje: pct,
       aciertos: aciertos,
       total: pruebasActivas.length,
       aprobado: aprobado,
-      resultado: aprobado ? 'APROBADO' : 'OBSERVADO',
-      simulaciones: Math.min(max, historial.length),
-      historial: historial,
+      go_no_go_flag: aprobado,
       fecha: new Date().toISOString()
     }));
   }
@@ -526,13 +525,12 @@ function finalizarPruebaVisual() {
   txtPregunta.innerText = `Evaluación Finalizada: ${pct}% (${aprobado ? 'Aprobado' : 'Observado'})`;
   txtPregunta.style.color = aprobado ? '#4ade80' : '#f87171';
 
-  // DESTINO DE RETORNO INTELIGENTE
-  const urlDestino = returnUrlVisual || (esModoDemoVisual ? 'demo_b2b_apr.html' : 'informe.html');
+  const urlDestino = returnUrlVisual || (esModoDemoVisual ? 'demo_b2b_apr.html' : 'menu.html');
 
   zonaCoordinacion.innerHTML = `
     <div style="background:#090e1c; border:1.5px solid ${aprobado ? '#22c55e' : '#ef4444'}; border-radius:14px; padding:18px; text-align:center; margin-top:8px; box-shadow: 0 10px 30px rgba(0,0,0,0.6);">
       <h3 style="color:${aprobado ? '#4ade80' : '#f87171'}; margin:0 0 6px 0; font-size:1.15rem;">
-        ¡${esModoDemoVisual ? 'Muestra Técnica Finalizada' : `Simulación ${simActual} de${max} Finalizada`}!
+        ¡${esModoDemoVisual ? 'Muestra Técnica Finalizada' : `Simulación ${simActual} de ${max} Finalizada`}!
       </h3>
       <p style="color:#94a3b8; font-size:0.88rem; margin:0 0 14px 0;">
         Efectividad Visual: <strong style="color:#38bdf8;">${pct}%</strong> &nbsp;|&nbsp; 

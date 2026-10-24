@@ -1,7 +1,7 @@
 /**
  * Sensometrika - Módulo de Punteo e Impacto Rítmico
  * Arquitectura de Evaluación Psicotécnica (D.S. N° 170)
- * Integrado con bypass de demostración y retorno dinámico vía returnUrl
+ * Integrado con bypass de demostración, sesión única y retorno dinámico vía returnUrl
  */
 
 // DETECCIÓN DINÁMICA DE PARÁMETROS URL Y MODO DEMO
@@ -9,10 +9,23 @@ const urlParamsPunteo = new URLSearchParams(window.location.search);
 const esModoDemoPunteo = urlParamsPunteo.get('demo') === 'true' || urlParamsPunteo.get('single') === 'true';
 const returnUrlPunteo = urlParamsPunteo.get('returnUrl') ? decodeURIComponent(urlParamsPunteo.get('returnUrl')) : null;
 
+// CAPTURA DE RUT Y SESIÓN ÚNICA PARA AISLAMIENTO B2B
+const rutEvalPunteo = urlParamsPunteo.get('rut') || 'GENERICO';
+const cleanRutPunteo = rutEvalPunteo.replace(/[^0-9Kk]/g, '');
+const sessionParamPunteo = urlParamsPunteo.get('session') || '';
+
+// LLAVES DE ALMACENAMIENTO AISLADAS POR SESIÓN Y RUT
+const claveHistorialPunteo = sessionParamPunteo 
+    ? `sensometrika_historial_punteo_${cleanRutPunteo}_${sessionParamPunteo}` 
+    : `sensometrika_historial_punteo_${cleanRutPunteo}`;
+
+const claveLastPunteo = sessionParamPunteo 
+    ? `sensometrika_last_punteo_${cleanRutPunteo}_${sessionParamPunteo}` 
+    : `sensometrika_last_punteo_${cleanRutPunteo}`;
+
 // LIMPIEZA EXCLUSIVA EN MODO DEMOSTRACIÓN (Sin afectar cuotas pagadas)
 if (esModoDemoPunteo) {
     localStorage.removeItem('sensometrika_punteo_completado');
-    localStorage.removeItem('sensometrika_historial_punteo');
 }
 
 class ModuloPunteo {
@@ -208,6 +221,7 @@ class ModuloPunteo {
         if (this.timerReset) clearTimeout(this.timerReset);
 
         const efectividad = this.obtenerEfectividad();
+        const aprobado = efectividad >= 78;
 
         const resultados = {
             modulo: 'Punteo e Impacto Rítmico',
@@ -215,15 +229,29 @@ class ModuloPunteo {
             aciertos: this.aciertos,
             totalImpactos: this.totalImpactos,
             efectividad: efectividad,
+            aprobado: aprobado,
             eventos: this.logEventos,
             returnUrl: returnUrlPunteo || (esModoDemoPunteo ? 'demo_b2b_apr.html' : 'menu.html')
         };
 
-        localStorage.setItem('sensometrika_punteo', JSON.stringify({
+        // Guardado riguroso en el historial aislado por sesión
+        let historialActual = JSON.parse(localStorage.getItem(claveHistorialPunteo)) || [];
+        historialActual.push({
             aciertos: this.aciertos,
             totalImpactos: this.totalImpactos,
             efectividad: efectividad,
-            aprobado: efectividad >= 78,
+            aprobado: aprobado,
+            fecha: new Date().toISOString()
+        });
+        localStorage.setItem(claveHistorialPunteo, JSON.stringify(historialActual));
+
+        // Guardado del último resultado individual para trazabilidad del menú B2B y consola
+        localStorage.setItem(claveLastPunteo, JSON.stringify({
+            aciertos: this.aciertos,
+            totalImpactos: this.totalImpactos,
+            efectividad: efectividad,
+            aprobado: aprobado,
+            go_no_go_flag: aprobado,
             fecha: new Date().toISOString()
         }));
 

@@ -1,6 +1,7 @@
 /**
  * SENSOMETRIKA - Core Módulo de Encandilamiento y Recuperación Visual
  * Cumplimiento D.S. N° 170 MTT / Estándar Ocupacional Faenas Nocturnas
+ * Integrado con modo B2B, sesión única y aislamiento estricto por RUT
  */
 
 class ModuloEncandilamiento {
@@ -152,7 +153,7 @@ class ModuloEncandilamiento {
       aprobado: aprobado
     };
 
-    // Guardar en Historial Local por trabajador y sesión
+    // Guardar en Historial Local por trabajador y sesión con claves aisladas B2B
     const datosUser = JSON.parse(localStorage.getItem('sensometrika_datos_usuario')) || {};
     const urlParams = new URLSearchParams(window.location.search);
     const rut = urlParams.get('rut') || datosUser.rut || 'DEMO';
@@ -160,10 +161,18 @@ class ModuloEncandilamiento {
     const sessionId = urlParams.get('session') || localStorage.getItem('sensometrika_session_activa') || `SESION_${cleanRut}_${Date.now()}`;
     
     const claveHistorial = `sensometrika_historial_encandilamiento_${cleanRut}_${sessionId}`;
+    const claveLast = `sensometrika_last_encandilamiento_${cleanRut}_${sessionId}`;
     
     let hist = JSON.parse(localStorage.getItem(claveHistorial)) || [];
     hist.push(resultadoFinal);
     localStorage.setItem(claveHistorial, JSON.stringify(hist));
+
+    // Guardado del último resultado individual para trazabilidad del menú B2B
+    localStorage.setItem(claveLast, JSON.stringify({
+      ...resultadoFinal,
+      go_no_go_flag: aprobado,
+      fecha: new Date().toISOString()
+    }));
 
     document.getElementById('lblEstadoEncandila').textContent = `PRUEBA FINALIZADA - TIEMPO PROM: ${(promMs/1000).toFixed(2)}s`;
     

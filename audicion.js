@@ -4,8 +4,7 @@
    • Desbloqueo activo del motor Web Audio API (AudioContext)
    • Batería aleatoria anti-memorización (500 a 4000 Hz)
    • Fase Demo (2 tonos) -> Fase Oficial (6 tonos)
-   • MODO DEMO / SINGLE: Bypass de cuota y retorno dinámico
-   • B2C / B2B PAGADO: Control inmutable en CreditManager y salida a informe
+   • MODO DEMO / SINGLE / B2B: Sesión única, aislamiento por RUT y retorno dinámico
    ========================================================================== */
 
 const chkAudifonos = document.getElementById('chk-audifonos');
@@ -39,10 +38,23 @@ const urlParams = new URLSearchParams(window.location.search);
 const esModoDemo = urlParams.get('demo') === 'true' || urlParams.get('single') === 'true';
 const returnUrl = urlParams.get('returnUrl') ? decodeURIComponent(urlParams.get('returnUrl')) : null;
 
+// CAPTURA DE RUT Y SESIÓN ÚNICA PARA AISLAMIENTO B2B
+const rutEvalAudio = urlParams.get('rut') || 'GENERICO';
+const cleanRutAudio = rutEvalAudio.replace(/[^0-9Kk]/g, '');
+const sessionParamAudio = urlParams.get('session') || '';
+
+// LLAVES DE ALMACENAMIENTO AISLADAS POR SESIÓN Y RUT
+const claveHistorialAudio = sessionParamAudio 
+    ? `sensometrika_historial_auditivo_${cleanRutAudio}_${sessionParamAudio}` 
+    : `sensometrika_historial_audicion_${cleanRutAudio}`;
+
+const claveLastAudio = sessionParamAudio 
+    ? `sensometrika_last_auditivo_${cleanRutAudio}_${sessionParamAudio}` 
+    : `sensometrika_last_auditivo_${cleanRutAudio}`;
+
 // LIMPIEZA EXCLUSIVA DE CUOTAS CUANDO ES DEMOSTRACIÓN (Sin afectar pagos B2C/B2B)
 if (esModoDemo) {
   localStorage.removeItem('sensometrika_auditivo_completado');
-  localStorage.removeItem('sensometrika_historial_audicion');
 }
 
 let audioCtx = null;
@@ -297,7 +309,7 @@ function concluirDemo() {
   panelInstruccion.style.color = '#94a3b8';
 }
 
-// 7. FINALIZACIÓN Y REGISTRO EN CREDITMANAGER
+// 7. FINALIZACIÓN Y REGISTRO
 function finalizarPruebaAuditiva() {
   fase = 'FINALIZADO';
   grillaDiscriminacion.style.display = 'none';
@@ -311,23 +323,37 @@ function finalizarPruebaAuditiva() {
   const pct = Math.round((aciertos / bateriaActiva.length) * 100);
   const aprobado = pct >= 80;
 
-  localStorage.setItem('sensometrika_auditivo', JSON.stringify({
+  // Guardado riguroso en el historial aislado por sesión
+  let historialActual = JSON.parse(localStorage.getItem(claveHistorialAudio)) || [];
+  historialActual.push({
     efectividad: pct,
     porcentaje: pct,
     aciertos: aciertos,
     total: bateriaActiva.length,
     aprobado: aprobado,
     fecha: new Date().toISOString()
+  });
+  localStorage.setItem(claveHistorialAudio, JSON.stringify(historialActual));
+
+  // Guardado del último resultado individual para trazabilidad del menú B2B y consola
+  localStorage.setItem(claveLastAudio, JSON.stringify({
+    efectividad: pct,
+    porcentaje: pct,
+    aciertos: aciertos,
+    total: bateriaActiva.length,
+    aprobado: aprobado,
+    go_no_go_flag: aprobado,
+    fecha: new Date().toISOString()
   }));
 
   if (!esModoDemo) {
-    let historial = JSON.parse(localStorage.getItem('sensometrika_historial_audicion')) || [];
-    historial.push({
+    let historialLegacy = JSON.parse(localStorage.getItem('sensometrika_historial_audicion')) || [];
+    historialLegacy.push({
       simulacion: consumidas,
       efectividad: pct,
       aprobado: aprobado
     });
-    localStorage.setItem('sensometrika_historial_audicion', JSON.stringify(historial));
+    localStorage.setItem('sensometrika_historial_audicion', JSON.stringify(historialLegacy));
   }
 
   txtEstadoAudio.innerText = `Evaluación Finalizada: ${pct}% de discriminación`;
@@ -341,7 +367,7 @@ function finalizarPruebaAuditiva() {
   zonaCoordinacion.innerHTML = `
     <div style="background:#090e1c; border:1.5px solid ${aprobado ? '#22c55e' : '#ef4444'}; border-radius:12px; padding:16px; text-align:center; margin-top:8px;">
       <h3 style="color:${aprobado ? '#4ade80' : '#f87171'}; margin:0 0 6px 0; font-size:1.05rem;">
-        ¡${esModoDemo ? 'Muestra Técnica Finalizada' : `Simulación ${consumidas} de${max} Finalizada`}!
+        ¡${esModoDemo ? 'Muestra Técnica Finalizada' : `Simulación ${consumidas} de ${max} Finalizada`}!
       </h3>
       <p style="color:#94a3b8; font-size:0.85rem; margin:0 0 12px 0;">
         Efectividad Global: <strong style="color:#38bdf8;">${pct}%</strong> &nbsp;|&nbsp; 

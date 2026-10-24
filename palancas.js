@@ -1,7 +1,7 @@
 /**
  * Sensometrika - Módulo de Coordinación Bimanual (Palancas)
  * Motor Anti-Memorización Dinámico & Alerta Rojo Neón (D.S. N° 170)
- * Integrado con bypass de demostración y retorno dinámico vía returnUrl
+ * Integrado con bypass de demostración, sesión única y retorno dinámico vía returnUrl
  */
 
 // DETECCIÓN DINÁMICA DE PARÁMETROS URL Y MODO DEMO
@@ -9,10 +9,23 @@ const urlParamsPalancas = new URLSearchParams(window.location.search);
 const esModoDemoPalancas = urlParamsPalancas.get('demo') === 'true' || urlParamsPalancas.get('single') === 'true';
 const returnUrlPalancas = urlParamsPalancas.get('returnUrl') ? decodeURIComponent(urlParamsPalancas.get('returnUrl')) : null;
 
+// CAPTURA DE RUT Y SESIÓN ÚNICA PARA AISLAMIENTO B2B
+const rutEvalPalancas = urlParamsPalancas.get('rut') || 'GENERICO';
+const cleanRutPalancas = rutEvalPalancas.replace(/[^0-9Kk]/g, '');
+const sessionParamPalancas = urlParamsPalancas.get('session') || '';
+
+// LLAVES DE ALMACENAMIENTO AISLADAS POR SESIÓN Y RUT
+const claveHistorialPalancas = sessionParamPalancas 
+    ? `sensometrika_historial_palancas_${cleanRutPalancas}_${sessionParamPalancas}` 
+    : `sensometrika_historial_palancas_${cleanRutPalancas}`;
+
+const claveLastPalancas = sessionParamPalancas 
+    ? `sensometrika_last_palancas_${cleanRutPalancas}_${sessionParamPalancas}` 
+    : `sensometrika_last_palancas_${cleanRutPalancas}`;
+
 // LIMPIEZA EXCLUSIVA EN MODO DEMOSTRACIÓN (Sin afectar ejecuciones reales pagadas)
 if (esModoDemoPalancas) {
     localStorage.removeItem('sensometrika_palancas_completado');
-    localStorage.removeItem('sensometrika_historial_palancas');
 }
 
 class ModuloPalancas {
@@ -253,20 +266,37 @@ class ModuloPalancas {
         this.activo = false;
         if (this.timerInterval) clearInterval(this.timerInterval);
 
+        const porcentaje = Math.max(10, Math.min(100, 100 - (this.contactos * 8)));
+        const aprobado = porcentaje >= 80;
+
         const resultados = {
             modulo: 'Coordinación Bimanual (Palancas)',
             tiempoTotal: this.tiempoAcumulado,
             contactos: this.contactos,
-            porcentaje: Math.max(10, Math.min(100, 100 - (this.contactos * 8))),
+            porcentaje: porcentaje,
+            aprobado: aprobado,
             circuito: 'Trazado Dinámico (Anti-Memorización)',
             returnUrl: returnUrlPalancas || (esModoDemoPalancas ? 'demo_b2b_apr.html' : 'menu.html')
         };
 
-        localStorage.setItem('sensometrika_palancas', JSON.stringify({
+        // Guardado riguroso en el historial aislado por sesión
+        let historialActual = JSON.parse(localStorage.getItem(claveHistorialPalancas)) || [];
+        historialActual.push({
             tiempoTotal: this.tiempoAcumulado,
             contactos: this.contactos,
-            porcentaje: resultados.porcentaje,
-            aprobado: resultados.porcentaje >= 80,
+            porcentaje: porcentaje,
+            aprobado: aprobado,
+            fecha: new Date().toISOString()
+        });
+        localStorage.setItem(claveHistorialPalancas, JSON.stringify(historialActual));
+
+        // Guardado del último resultado individual para trazabilidad del menú B2B y consola
+        localStorage.setItem(claveLastPalancas, JSON.stringify({
+            tiempoTotal: this.tiempoAcumulado,
+            contactos: this.contactos,
+            porcentaje: porcentaje,
+            aprobado: aprobado,
+            go_no_go_flag: aprobado,
             fecha: new Date().toISOString()
         }));
 

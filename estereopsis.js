@@ -1,7 +1,7 @@
 /* ==========================================================================
    SENSOMETRIKA - MÓDULO: PERCEPCIÓN DE PROFUNDIDAD / ESTEREOPSIS (estereopsis.js)
    • Evaluación de agudeza estereoscópica para maquinaria pesada y grúas
-   • MODO DEMO / SINGLE: Bypass de cuotas y retorno dinámico vía returnUrl
+   • MODO DEMO / SINGLE / B2B: Sesión única, aislamiento por RUT y retorno dinámico
    ========================================================================== */
 
 const btnIniciar = document.getElementById('btnIniciarEstereo');
@@ -16,6 +16,20 @@ const bloquesGrid = document.getElementById('bloquesGrid');
 const urlParams = new URLSearchParams(window.location.search);
 const esModoDemo = urlParams.get('demo') === 'true' || urlParams.get('single') === 'true';
 const returnUrl = urlParams.get('returnUrl') ? decodeURIComponent(urlParams.get('returnUrl')) : null;
+
+// CAPTURA DE RUT Y SESIÓN ÚNICA PARA AISLAMIENTO B2B
+const rutEvalEstereo = urlParams.get('rut') || 'GENERICO';
+const cleanRutEstereo = rutEvalEstereo.replace(/[^0-9Kk]/g, '');
+const sessionParamEstereo = urlParams.get('session') || '';
+
+// LLAVES DE ALMACENAMIENTO AISLADAS POR SESIÓN Y RUT
+const claveHistorialEstereo = sessionParamEstereo 
+    ? `sensometrika_historial_estereopsis_${cleanRutEstereo}_${sessionParamEstereo}` 
+    : `sensometrika_historial_estereopsis_${cleanRutEstereo}`;
+
+const claveLastEstereo = sessionParamEstereo 
+    ? `sensometrika_last_estereopsis_${cleanRutEstereo}_${sessionParamEstereo}` 
+    : `sensometrika_last_estereopsis_${cleanRutEstereo}`;
 
 // LIMPIEZA EXCLUSIVA EN MODO DEMOSTRACIÓN (Sin afectar cuotas pagadas)
 if (esModoDemo) {
@@ -119,10 +133,24 @@ function finalizarPrueba() {
     btnIniciar.disabled = false;
     btnIniciar.innerText = 'Reiniciar Prueba';
 
-    localStorage.setItem('sensometrika_estereopsis', JSON.stringify({
+    const aprobado = precisionFinal >= 80;
+
+    // Guardado riguroso en el historial aislado por sesión
+    let historialActual = JSON.parse(localStorage.getItem(claveHistorialEstereo)) || [];
+    historialActual.push({
       precision: precisionFinal,
       aciertos,
-      aprobado: precisionFinal >= 80,
+      aprobado: aprobado,
+      fecha: new Date().toISOString()
+    });
+    localStorage.setItem(claveHistorialEstereo, JSON.stringify(historialActual));
+
+    // Guardado del último resultado individual para trazabilidad del menú B2B y consola
+    localStorage.setItem(claveLastEstereo, JSON.stringify({
+      precision: precisionFinal,
+      aciertos,
+      aprobado: aprobado,
+      go_no_go_flag: aprobado,
       fecha: new Date().toISOString()
     }));
 
@@ -130,7 +158,7 @@ function finalizarPrueba() {
     const urlDestino = returnUrl || (esModoDemo ? 'demo_b2b_apr.html' : 'menu.html');
 
     setTimeout(() => {
-      alert(`Test de Percepción de Profundidad Finalizado\nPrecisión: ${precisionFinal}%\nEstado: ${precisionFinal >= 80 ? 'APROBADO' : 'OBSERVADO'}`);
+      alert(`Test de Percepción de Profundidad Finalizado\nPrecisión: ${precisionFinal}%\nEstado: ${aprobado ? 'APROBADO' : 'OBSERVADO'}`);
       window.location.href = urlDestino;
     }, 400);
   }
