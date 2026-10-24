@@ -220,21 +220,35 @@
         function verifRendidoRut(modKey) {
             if (!cleanRut) return false;
 
-            // Mapeo preciso del ID de módulo al nombre técnico del historial
+            // LLAVES ESTRICTAS AISLADAS POR SESIÓN Y MÓDULO ESPECÍFICO (Evita falsos positivos cruzados)
             let nombreModuloTest = '';
-            if (modKey === 'mod1' || modKey === 'mod2' || modKey === 'mod5' || modKey === 'mod15') nombreModuloTest = 'reactimetro';
-            else if (modKey === 'mod3' || modKey === 'mod16') nombreModuloTest = 'palancas';
-            else if (modKey === 'mod4' || modKey === 'mod14') nombreModuloTest = 'punteo';
-            else if (modKey === 'mod6' || modKey === 'mod7' || modKey === 'mod9') nombreModuloTest = 'visual';
-            else if (modKey === 'mod10' || modKey === 'mod17') nombreModuloTest = 'auditivo';
-            else if (modKey === 'mod11') nombreModuloTest = 'anticipacion';
-            else if (modKey === 'mod8') nombreModuloTest = 'estereopsis';
-            else if (modKey === 'mod12' || modKey === 'mod13') nombreModuloTest = 'fatiga';
+            
+            switch(modKey) {
+                case 'mod1': nombreModuloTest = 'reactimetro_simple'; break;
+                case 'mod2': nombreModuloTest = 'reactimetro_complejo'; break;
+                case 'mod3': nombreModuloTest = 'palancas'; break;
+                case 'mod4': nombreModuloTest = 'punteo'; break;
+                case 'mod5': nombreModuloTest = 'frenado_selectivo'; break;
+                case 'mod6': nombreModuloTest = 'visual_snellen'; break;
+                case 'mod7': nombreModuloTest = 'ishihara'; break;
+                case 'mod8': nombreModuloTest = 'estereopsis'; break;
+                case 'mod9': nombreModuloTest = 'campo_periferico'; break;
+                case 'mod10': nombreModuloTest = 'auditivo'; break;
+                case 'mod11': nombreModuloTest = 'anticipacion'; break;
+                case 'mod12': nombreModuloTest = 'atencion_cpt'; break;
+                case 'mod13': nombreModuloTest = 'fatiga_karolinska'; break;
+                case 'mod14': nombreModuloTest = 'memoria_trabajo'; break;
+                case 'mod15': nombreModuloTest = 'toxicologico'; break;
+                case 'mod16': nombreModuloTest = 'control_impulsos'; break;
+                case 'mod17': nombreModuloTest = 'declaracion_medica'; break;
+                default: nombreModuloTest = modKey;
+            }
 
-            // Comprobación estricta por sesión y RUT
+            // Comprobación por sesión activa
             const claveHistorialSesion = sessionId ? `sensometrika_historial_${nombreModuloTest}_${cleanRut}_${sessionId}` : null;
             const claveLastSesion = sessionId ? `sensometrika_last_${nombreModuloTest}_${cleanRut}_${sessionId}` : null;
             
+            // Comprobación por historial genérico del RUT
             const claveHistorialRut = `sensometrika_historial_${nombreModuloTest}_${cleanRut}`;
             const claveLastRut = `sensometrika_last_${nombreModuloTest}_${cleanRut}`;
 
@@ -246,13 +260,6 @@
             if ((hSesion && hSesion.length > 0) || lSesion || (hRut && hRut.length > 0) || lRut) {
                 return true;
             }
-
-            // Compatibilidad legacy
-            if (modKey === 'mod1' && (localStorage.getItem('sensometrika_reactimetro') || localStorage.getItem('sensometrika_reactimetro_completado'))) return true;
-            if (modKey === 'mod3' && localStorage.getItem('sensometrika_palancas')) return true;
-            if (modKey === 'mod4' && localStorage.getItem('sensometrika_punteo')) return true;
-            if (modKey === 'mod6' && localStorage.getItem('sensometrika_visual')) return true;
-            if (modKey === 'mod10' && localStorage.getItem('sensometrika_auditivo')) return true;
 
             return false;
         }
