@@ -267,7 +267,7 @@
         <header class="brand-header">
             <img src="sensometrica.jpg" alt="SENSOMETRIKA" class="brand-logo-img">
             <div style="display: flex; align-items: center; gap: 12px;">
-                <a href="consola_empresa.html" class="btn-vitrina">← Volver a Catálogo / Comprar Folios</a>
+                <a href="dashboard_empresa.html" class="btn-vitrina">← Volver a Catálogo / Comprar Folios</a>
             </div>
         </header>
 
@@ -395,7 +395,7 @@
             empresaActiva = (localStorage.getItem('sensometrika_b2b_empresa') || 'EMPRESA DE TRANSPORTE S.A.').trim().toUpperCase();
             const encargado = localStorage.getItem('sensometrika_b2b_encargado') || 'DPTO PREVENCIÓN';
 
-            // Clave única basada en el nombre de la empresa para aislar su historial
+            // Clave única basada en la empresa para aislar su historial de nómina
             llaveNominaEmpresa = `sensometrika_consola_nomina_${empresaActiva.replace(/[^A-Z0-9]/g, '_')}`;
             trabajadores = JSON.parse(localStorage.getItem(llaveNominaEmpresa)) || [];
 
@@ -411,17 +411,18 @@
             const container = document.getElementById('listaModulosActivos');
             container.innerHTML = '';
             
-            const modulosConfig = JSON.parse(localStorage.getItem('sensometrika_b2b_modulos')) || {
-                mod1: true, mod3: true, mod10: true, mod18: true
-            };
+            // Lee exactamente los módulos seleccionados desde el cotizador (localStorage)
+            const modulosActivosStr = localStorage.getItem('sensometrika_modulos_b2b_activos') || '';
+            const modulosArray = modulosActivosStr ? modulosActivosStr.split(',') : ['mod1', 'mod3', 'mod10', 'mod18'];
 
             let count = 0;
-            for (const [key, activo] of Object.entries(modulosConfig)) {
-                if (activo && nombresModulos[key]) {
+            modulosArray.forEach(key => {
+                if (nombresModulos[key]) {
                     count++;
                     container.innerHTML += `<span class="mod-pill">${nombresModulos[key]}</span>`;
                 }
-            }
+            });
+
             if (count === 0) {
                 container.innerHTML = `<span style="color:var(--text-muted); font-size:0.75rem;">Ningún módulo adicional seleccionado (Solo Credencial QR base).</span>`;
             }
@@ -452,7 +453,7 @@
 
             document.getElementById('txtLinkGenerado').value = urlCompleta;
             
-            // Botón WhatsApp corregido (sin saltos de línea inválidos)
+            // Botón WhatsApp con formato limpio
             const msgWp = encodeURIComponent(`Hola *${nombre}* (RUT: ${rut}), desde Prevención de Riesgos de *${empresaActiva}* te enviamos tu acceso obligatorio para el registro y evaluación en Sensometrika (Vigencia 48 hrs):\n\n${urlCompleta}`);
             document.getElementById('btnWhatsappDirecto').href = `https://wa.me/${telefono.replace(/[^0-9+]/g, '')}?text=${msgWp}`;
 
