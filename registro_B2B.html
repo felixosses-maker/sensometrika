@@ -172,7 +172,7 @@
         <div class="panel-card">
             <div class="card-title">⚖️ Registro, Validación Biométrica & Firma Digital</div>
             <div class="legal-box">
-                <p><strong>Marco Normativo (D.S. N° 170 / Ley N° 18.290):</strong> Control preventivo ocupacional. La captura biométrica de rostro y la rúbrica digital forman parte del expediente pericial auditable en garita.</p>
+                <p><strong>Marco Normativo (D.S. N° 170 / Ley N° 18.290):</strong> Control preventivo ocupacional. La captura biométrica de rostro, la rúbrica digital y la aceptación de términos forman parte del expediente pericial auditable en garita.</p>
             </div>
 
             <form id="formRegistroTrabajador" onsubmit="procesarRegistroTrabajador(event)">
@@ -214,12 +214,12 @@
                     <div style="display: flex; align-items: flex-start; gap: 8px; margin-top: 4px;">
                         <input type="checkbox" id="chkLegal" required style="width: 18px; height: 18px; margin-top: 2px; accent-color: var(--accent-green);">
                         <label for="chkLegal" style="font-size: 0.72rem; color: #fff; cursor: pointer; line-height: 1.3;">
-                            Confirmo mi identidad biométrica, firmo digitalmente y acepto los términos de la evaluación.
+                            Confirmo mi identidad biométrica, firmo digitalmente y acepto los términos y condiciones de la evaluación.
                         </label>
                     </div>
 
                     <button type="submit" class="btn-submit">
-                        ✓ GUARDAR REGISTRO Y PASAR A MENÚ B2B →
+                        ✓ GUARDAR E IR A CALIBRACIÓN DE LATENCIA →
                     </button>
                 </div>
             </form>
@@ -340,16 +340,29 @@
             const cleanRut = rut.replace(/[^0-9Kk]/g, '');
 
             const firmaDataUrl = canvasFirma.toDataURL('image/png');
+            const sessionId = urlParams.get('session') || `SESION_${cleanRut}_${Date.now()}`;
 
-            // Guardar en localStorage para que el menú y el informe lo rendericen al instante
-            localStorage.setItem('sensometrika_datos_usuario', JSON.stringify({ nombre, rut, cargo }));
+            // Guardado estricto aislado por RUT y sesión en localStorage
+            localStorage.setItem('sensometrika_datos_usuario', JSON.stringify({ nombre, rut, cargo, session: sessionId }));
+            localStorage.setItem(`sensometrika_foto_${cleanRut}_${sessionId}`, fotoCapturadaData);
             localStorage.setItem('sensometrika_foto_trabajador', fotoCapturadaData);
+            localStorage.setItem(`sensometrika_firma_${cleanRut}_${sessionId}`, firmaDataUrl);
             localStorage.setItem('sensometrika_firma_trabajador', firmaDataUrl);
             localStorage.setItem('sensometrika_terminos_aceptados', 'true');
-            localStorage.setItem('sensometrika_session_activa', `SESION_${cleanRut}_${Date.now()}`);
+            localStorage.setItem('sensometrika_session_activa', sessionId);
 
-            // Redirigir al menú B2B con los parámetros correctos
-            window.location.href = `menu_B2B.html?rut=${encodeURIComponent(rut)}&nombre=${encodeURIComponent(nombre)}&cargo=${encodeURIComponent(cargo)}&mode=b2b`;
+            // Preparar URL de retorno hacia el menú B2B una vez finalizada la calibración de latencia
+            const paramsMenu = new URLSearchParams({
+                rut: rut,
+                nombre: nombre,
+                cargo: cargo,
+                session: sessionId,
+                mode: 'b2b'
+            });
+            const returnUrlDestino = encodeURIComponent(`menu_B2B.html?${paramsMenu.toString()}`);
+
+            // Redirigir PRIMERO al test de latencia (latency_tuner.html) indicando la returnUrl
+            window.location.href = `latency_tuner.html?returnUrl=${returnUrlDestino}&rut=${encodeURIComponent(rut)}&session=${sessionId}`;
         }
     </script>
 </body>

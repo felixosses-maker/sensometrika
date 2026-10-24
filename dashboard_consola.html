@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SENSOMETRIKA | Consola Privada de Empresa - Gestión de Flota y Enlaces</title>
+    <title>SENSOMETRIKA | Consola Privada de Empresa - Gestión de Flota y Enlaces B2B</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
@@ -293,10 +293,10 @@
         <div class="panel-card">
             <div class="card-title">
                 <span>🛡️ Batería Pericial Activa para esta Empresa</span>
-                <span style="font-size: 0.68rem; color: var(--accent-gold);">Estándar Corporativo Configurado</span>
+                <span style="font-size: 0.68rem; color: var(--accent-gold);">Estándar Corporativo B2B</span>
             </div>
             <p style="font-size: 0.75rem; color: var(--text-muted);">
-                Los enlaces generados evaluarán los siguientes módulos técnicos y normativos seleccionados:
+                Los enlaces generados asignarán una sesión única y evaluarán los siguientes módulos normativos seleccionados:
             </p>
             <div id="listaModulosActivos" class="modulos-badge-container">
                 <!-- Se inyecta dinámicamente -->
@@ -329,12 +329,12 @@
                         <input type="text" id="inputCargo" placeholder="Ej: Conductor Carga Pesada" required>
                     </div>
                 </div>
-                <button type="submit" class="btn-generate">⚡ GENERAR ENLACE DE REGISTRO Y DESPACHAR 💬</button>
+                <button type="submit" class="btn-generate">⚡ GENERAR ENLACE DE REGISTRO Y DESPACHAR VÍA CORREO 💬</button>
             </form>
 
             <div id="boxLinkResultado" class="link-out-box">
                 <span style="font-size: 0.70rem; color: var(--text-muted); font-weight: 800; text-transform: uppercase;">
-                    Enlace Obligatorio de Registro (Vigencia 48 hrs):
+                    Enlace Único de Evaluación B2B (Vigencia 48 hrs):
                 </span>
                 <input type="text" id="txtLinkGenerado" class="link-out-input" readonly>
                 <div class="btn-actions-row">
@@ -353,7 +353,7 @@
                         <tr>
                             <th>Conductor / RUT</th>
                             <th>Cargo</th>
-                            <th>Estado Acreditación</th>
+                            <th>Estado Acreditación B2B</th>
                             <th>Link Enlace</th>
                             <th>Informe Pericial & QR Garita</th>
                         </tr>
@@ -450,7 +450,7 @@
             e.preventDefault();
 
             if (foliosRestantes <= 0) {
-                mostrarModalSimulador("ATENCIÓN SIMULADOR", "⚠️ Bolsa de simulaciones agotada. Recargue folios desde el catálogo corporativo.");
+                mostrarModalSimulador("ATENCIÓN SIMULADOR", "⚠️ Bolsa de simulaciones corporativas agotada. Recargue folios desde el catálogo corporativo.");
                 return;
             }
 
@@ -460,32 +460,36 @@
             const telefono = document.getElementById('inputTelefono').value.trim();
             const cargo = document.getElementById('inputCargo').value.trim();
 
+            const cleanRut = rut.replace(/[^0-9Kk]/g, '');
+            const sessionId = `SESION_${cleanRut}_${Date.now()}`;
+
             foliosRestantes--;
             localStorage.setItem('sensometrika_b2b_folios', foliosRestantes);
             document.getElementById('lblFoliosRestantes').innerText = `${foliosRestantes} Simulaciones`;
 
             const baseUrl = window.location.origin.replace(/\/$/, '');
-            const urlCompleta = `${baseUrl}/registro_B2B.html?rut=${encodeURIComponent(rut)}&nombre=${encodeURIComponent(nombre)}&cargo=${encodeURIComponent(cargo)}`;
+            // Enlace directo al menú B2B del trabajador con aislamiento por RUT y sesión
+            const urlCompleta = `${baseUrl}/menu_B2B.html?rut=${encodeURIComponent(rut)}&nombre=${encodeURIComponent(nombre)}&cargo=${encodeURIComponent(cargo)}&session=${sessionId}`;
 
             document.getElementById('txtLinkGenerado').value = urlCompleta;
             
             // Configurar WhatsApp Alternativo
-            const msgWp = encodeURIComponent(`Hola *${nombre}* (RUT: ${rut}), desde Prevención de Riesgos de *${empresaActiva}* te enviamos tu acceso obligatorio para el registro y evaluación en Sensometrika (Vigencia 48 hrs):\n\n${urlCompleta}`);
+            const msgWp = encodeURIComponent(`Hola *${nombre}* (RUT: ${rut}), desde Prevención de Riesgos de *${empresaActiva}* te enviamos tu acceso obligatorio para la evaluación Sensometrika (Vigencia 48 hrs):\n\n${urlCompleta}`);
             document.getElementById('btnWhatsappDirecto').href = `https://wa.me/${telefono.replace(/[^0-9+]/g, '')}?text=${msgWp}`;
 
             document.getElementById('boxLinkResultado').style.display = 'flex';
 
             // Guardar datos temporales del usuario asignado
-            localStorage.setItem('sensometrika_datos_usuario', JSON.stringify({ nombre, rut, email, telefono, cargo }));
+            localStorage.setItem('sensometrika_datos_usuario', JSON.stringify({ nombre, rut, email, telefono, cargo, session: sessionId }));
 
-            trabajadores.unshift({ rut, nombre, email, telefono, cargo, empresa: empresaActiva, url: urlCompleta });
+            trabajadores.unshift({ rut, cleanRut, session: sessionId, nombre, email, telefono, cargo, empresa: empresaActiva, url: urlCompleta });
             localStorage.setItem(llaveNominaEmpresa, JSON.stringify(trabajadores));
             renderizarNomina();
 
             // Despacho Automático de Correo desde Sensometrika (Simulador)
             mostrarModalSimulador(
                 "DESPACHO AUTOMÁTICO SENSOMETRIKA ✉️",
-                `El correo electrónico de evaluación ha sido despachado <strong>automáticamente desde el servidor SENSOMETRIKA</strong> a la casilla del trabajador:<br><br><code>${email}</code><br><br><em>Si el trabajador no cuenta con correo, puede utilizar de manera alternativa el botón de WhatsApp o Copiar Link abajo.</em>`
+                `El correo electrónico de evaluación ha sido despachado <strong>automáticamente desde el servidor de SENSOMETRIKA (no-reply@sensometrika.cl)</strong> a la casilla del trabajador:<br><br><code>${email}</code><br><br><em>Sesión generada: ${sessionId}</em>`
             );
 
             document.getElementById('inputRut').value = '';
@@ -499,7 +503,7 @@
             const input = document.getElementById('txtLinkGenerado');
             input.select();
             navigator.clipboard.writeText(input.value);
-            mostrarModalSimulador("ENLACE COPIADO 📋", "El enlace de registro individual ha sido copiado al portapapeles.");
+            mostrarModalSimulador("ENLACE COPIADO 📋", "El enlace individual con sesión única ha sido copiado al portapapeles.");
         }
 
         function renderizarNomina() {
@@ -512,15 +516,23 @@
             }
 
             trabajadores.forEach((t, index) => {
-                const cleanRut = t.rut.replace(/[^0-9Kk]/g, '');
-                const res = JSON.parse(localStorage.getItem(`sensometrika_last_reactimetro_${cleanRut}`)) || null;
-                const estado = res ? (res.go_no_go_flag ? 'APROBADO D.S. 170' : 'OBSERVADO') : 'PENDIENTE';
-                const clase = res ? (res.go_no_go_flag ? 'badge-ok' : 'badge-bad') : 'badge-pending';
+                const cleanRut = t.cleanRut || t.rut.replace(/[^0-9Kk]/g, '');
+                const sessionParam = t.session || '';
 
-                const urlInforme = `informe_transporte.html?rut=${t.rut}&nombre=${encodeURIComponent(t.nombre)}&cargo=${encodeURIComponent(t.cargo)}`;
+                // Búsqueda del último estado en las claves aisladas por sesión o RUT
+                const claveLastReactimetro = sessionParam 
+                    ? `sensometrika_last_reactimetro_${cleanRut}_${sessionParam}` 
+                    : `sensometrika_last_reactimetro_${cleanRut}`;
+                
+                const res = JSON.parse(localStorage.getItem(claveLastReactimetro)) || JSON.parse(localStorage.getItem(`sensometrika_last_reactimetro_${cleanRut}`)) || null;
+                
+                const aprobadoFlag = res ? (res.go_no_go_flag || res.aprobado) : false;
+                const estado = res ? (aprobadoFlag ? 'APROBADO D.S. 170' : 'OBSERVADO') : 'PENDIENTE';
+                const clase = res ? (aprobadoFlag ? 'badge-ok' : 'badge-bad') : 'badge-pending';
+
+                const urlInforme = `informe_B2B.html?rut=${t.rut}&nombre=${encodeURIComponent(t.nombre)}&cargo=${encodeURIComponent(t.cargo)}&session=${sessionParam}`;
                 const qrContainerId = `qrcode_table_${index}`;
 
-                // Enlace de WhatsApp directo para la fila de la tabla
                 const textoWpFila = encodeURIComponent(`Hola *${t.nombre}*, desde *${t.empresa}* te enviamos tu enlace de evaluación Sensometrika:\n\n${t.url}`);
                 const linkWpFila = t.telefono ? `https://wa.me/${t.telefono.replace(/[^0-9+]/g, '')}?text=${textoWpFila}` : `https://wa.me/?text=${textoWpFila}`;
 
@@ -548,21 +560,24 @@
                 `;
             });
 
-            trabajadores.forEach((t, index) => {
-                const qrContainerId = `qrcode_table_${index}`;
-                const el = document.getElementById(qrContainerId);
-                if (el && el.innerHTML === "") {
-                    const urlInforme = `${window.location.origin}/informe_transporte.html?rut=${t.rut}&nombre=${encodeURIComponent(t.nombre)}`;
-                    new QRCode(el, {
-                        text: urlInforme,
-                        width: 38,
-                        height: 38,
-                        colorDark: "#000000",
-                        colorLight: "#ffffff",
-                        correctLevel: QRCode.CorrectLevel.M
-                    });
-                }
-            });
+            setTimeout(() => {
+                trabajadores.forEach((t, index) => {
+                    const qrContainerId = `qrcode_table_${index}`;
+                    const el = document.getElementById(qrContainerId);
+                    if (el && el.innerHTML === "") {
+                        const sessionParam = t.session || '';
+                        const urlInforme = `${window.location.origin}/informe_B2B.html?rut=${t.rut}&nombre=${encodeURIComponent(t.nombre)}&session=${sessionParam}`;
+                        new QRCode(el, {
+                            text: urlInforme,
+                            width: 38,
+                            height: 38,
+                            colorDark: "#000000",
+                            colorLight: "#ffffff",
+                            correctLevel: QRCode.CorrectLevel.M
+                        });
+                    }
+                });
+            }, 100);
         }
     </script>
 </body>

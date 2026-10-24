@@ -220,9 +220,7 @@
         function verifRendidoRut(modKey) {
             if (!cleanRut) return false;
 
-            // LLAVES ESTRICTAS AISLADAS POR SESIÓN Y MÓDULO ESPECÍFICO (Evita falsos positivos cruzados)
             let nombreModuloTest = '';
-            
             switch(modKey) {
                 case 'mod1': nombreModuloTest = 'reactimetro_simple'; break;
                 case 'mod2': nombreModuloTest = 'reactimetro_complejo'; break;
@@ -244,11 +242,9 @@
                 default: nombreModuloTest = modKey;
             }
 
-            // Comprobación por sesión activa
             const claveHistorialSesion = sessionId ? `sensometrika_historial_${nombreModuloTest}_${cleanRut}_${sessionId}` : null;
             const claveLastSesion = sessionId ? `sensometrika_last_${nombreModuloTest}_${cleanRut}_${sessionId}` : null;
             
-            // Comprobación por historial genérico del RUT
             const claveHistorialRut = `sensometrika_historial_${nombreModuloTest}_${cleanRut}`;
             const claveLastRut = `sensometrika_last_${nombreModuloTest}_${cleanRut}`;
 
@@ -291,6 +287,10 @@
 
             const paramsObj = { rut: rawRut, nombre: nombreUsuario, plan: planContratado, session: sessionId, mode: 'b2b' };
             if (modulosUrl) paramsObj.modulos = modulosUrl;
+            
+            // Añadimos returnUrl para que los módulos sepan hacia dónde retornar al finalizar
+            paramsObj.returnUrl = encodeURIComponent(`menu_B2B.html?${new URLSearchParams(paramsObj).toString()}`);
+            
             const queryParamsString = new URLSearchParams(paramsObj).toString();
 
             const contenedor = document.getElementById('contenedorModulosB2B');
@@ -325,7 +325,7 @@
         function abrirInformePericial() {
             const params = new URLSearchParams({ rut: rawRut, nombre: nombreUsuario, plan: planContratado, session: sessionId, mode: 'b2b' });
             if (modulosUrl) params.set('modulos', modulosUrl);
-            window.location.href = `informe_b2b.html?${params.toString()}`;
+            window.location.href = `informe_B2B.html?${params.toString()}`;
         }
 
         document.addEventListener('DOMContentLoaded', renderizarMenuB2B);
