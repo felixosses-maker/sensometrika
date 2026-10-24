@@ -246,11 +246,10 @@
       modeParam = urlParams.get('mode') || 'b2b';
       const b2cModeStorage = localStorage.getItem('sensometrika_b2c_mode');
 
-      // PRESERVAR Y PROPAGAR PLAN Y SESIÓN
       const planParam = (urlParams.get('plan') || localStorage.getItem('sensometrika_plan_contratado') || 'PLUS').toUpperCase();
       localStorage.setItem('sensometrika_plan_contratado', planParam);
 
-      if (modeParam === 'b2b-pro' || planParam === 'ALTO_DESEMPENIO' || planParam === 'PRE_OCUPACIONAL') {
+      if (modeParam === 'b2b-pro' || planParam.includes('ALTO') || planParam.includes('PRO')) {
         isB2BPro = true;
       } else if (modeParam === 'b2c' || b2cModeStorage === 'true') {
         isB2C = true;
@@ -265,10 +264,19 @@
       const nombre = urlParams.get('nombre') || datosUsuario.nombre || '';
       const cargo = urlParams.get('cargo') || datosUsuario.cargo || '';
       const empresa = urlParams.get('empresa') || datosUsuario.empresa || '';
-      const token = urlParams.get('token') || '';
       const cleanRut = rut.replace(/[^0-9Kk]/g, '');
-      
-      const sessionId = urlParams.get('session') || (token ? `SESION_${cleanRut}_${Date.now()}` : localStorage.getItem('sensometrika_session_activa') || `SESION_${cleanRut}_${Date.now()}`);
+
+      // --- PURGA OBLIGATORIA DE CACHÉ ANTERIOR (EVITA Falsos Completados) ---
+      if (cleanRut) {
+        const mods = ['reactimetro', 'palancas', 'punteo', 'audicion', 'visual', 'anticipacion', 'estereopsis', 'fatiga'];
+        mods.forEach(m => {
+          // Limpiar historiales antiguos para forzar pruebas desde cero
+          localStorage.removeItem(`sensometrika_historial_${m}_${cleanRut}`);
+          localStorage.removeItem(`${m}_demo_completada_${cleanRut}`);
+        });
+      }
+
+      const sessionId = `SESION_${cleanRut}_${Date.now()}`;
       localStorage.setItem('sensometrika_session_activa', sessionId);
 
       document.getElementById('lblRut').textContent = rut || 'SIN RUT';
@@ -279,46 +287,10 @@
           nombre: decodeURIComponent(nombre),
           rut: rut,
           cargo: decodeURIComponent(cargo),
-          empresa: decodeURIComponent(empresa)
+          empresa: decodeURIComponent(empresa),
+          plan: planParam
         }));
       }
-
-      // --- ENRUTAMIENTO INTELIGENTE POR ESTADO DE AVANCE ---
-      if (cleanRut && !token) {
-        const fotoExiste = localStorage.getItem(`sensometrika_foto_${cleanRut}_${sessionId}`);
-        const firmaExiste = localStorage.getItem(`sensometrika_firma_${cleanRut}_${sessionId}`);
-        const latenciaExiste = localStorage.getItem('sensometrika_latencia_ms');
-
-        let idsRequeridos = ['reactimetro', 'palancas', 'punteo'];
-        if (planParam === 'PLUS') idsRequeridos.push('audicion');
-        if (planParam === 'FULL' || planParam === 'MEDIUM') idsRequeridos.push('audicion', 'visual');
-        if (planParam === 'PRE_OCUPACIONAL') idsRequeridos = ['reactimetro', 'palancas', 'punteo', 'audicion', 'visual', 'anticipacion'];
-        if (planParam === 'ALTO_DESEMPENIO' || isB2BPro) idsRequeridos = ['reactimetro', 'palancas', 'punteo', 'audicion', 'visual', 'anticipacion', 'estereopsis', 'fatiga'];
-
-        let completados = 0;
-        idsRequeridos.forEach(m => {
-          const histSesion = JSON.parse(localStorage.getItem(`sensometrika_historial_${m}_${cleanRut}_${sessionId}`)) || [];
-          if (histSesion.length > 0) completados++;
-        });
-
-        // 1. Si completó todos los exámenes de esta sesión -> Ir al Informe
-        if (completados >= idsRequeridos.length && idsRequeridos.length > 0) {
-          window.location.href = `informe_b2b.html?rut=${encodeURIComponent(rut)}&nombre=${encodeURIComponent(nombre)}&plan=${planParam}&mode=${modeParam}&session=${sessionId}`;
-          return;
-        }
-
-        // 2. Si ya capturó foto y firma en esta sesión -> Ir al Menú correspondiente
-        if (fotoExiste && firmaExiste && latenciaExiste) {
-          let menuDestino = 'menu_B2B.html';
-          if (isB2C) menuDestino = 'menu_B2C.html';
-          if (isB2BPro) menuDestino = 'menu_B2B_PRO.html';
-
-          window.location.href = `${menuDestino}?rut=${encodeURIComponent(rut)}&nombre=${encodeURIComponent(nombre)}&plan=${planParam}&mode=${modeParam}&session=${sessionId}&fase=demo&demo=true`;
-          return;
-        }
-      }
-
-      localStorage.setItem('sensometrika_evaluado_rut', rut);
 
       if (isB2C) {
         document.getElementById('lblHeaderCard').textContent = '👤 DATOS PERSONALES';
@@ -357,14 +329,10 @@
       const urlParams = new URLSearchParams(window.location.search);
       const rawRut = urlParams.get('rut') || localStorage.getItem('sensometrika_evaluado_rut') || '';
       const cleanRut = rawRut.replace(/[^0-9Kk]/g, '');
-      const sessionId = localStorage.getItem('sensometrika_session_activa') || 'SESION_GLOBAL';
 
       localStorage.setItem('sensometrika_foto_trabajador', fotoCapturadaB64);
-      localStorage.setItem('sensometrika_foto_evaluado', fotoCapturadaB64);
-      localStorage.setItem('evaluado_foto', fotoCapturadaB64);
       if (cleanRut) {
         localStorage.setItem(`sensometrika_foto_${cleanRut}`, fotoCapturadaB64);
-        localStorage.setItem(`sensometrika_foto_${cleanRut}_${sessionId}`, fotoCapturadaB64);
       }
 
       imgEl.src = fotoCapturadaB64;
@@ -424,7 +392,6 @@
 
     function registrarToqueLatencia() {
       if (latenciaCompletada) return;
-
       const ahora = performance.now();
 
       if (tiempoUltimoToque > 0) {
@@ -487,17 +454,10 @@
       if (!isB2C && canvas) {
         const firmaB64 = canvas.toDataURL('image/png');
         localStorage.setItem('sensometrika_firma_trabajador', firmaB64);
-        localStorage.setItem('sensometrika_firma_evaluado', firmaB64);
-        localStorage.setItem('evaluado_firma', firmaB64);
         if (cleanRut) {
           localStorage.setItem(`sensometrika_firma_${cleanRut}`, firmaB64);
-          localStorage.setItem(`sensometrika_firma_${cleanRut}_${sessionId}`, firmaB64);
         }
       }
-      
-      localStorage.setItem('sensometrika_estado_fase', 'demo');
-      localStorage.setItem('sensometrika_modo_demo', 'true');
-      localStorage.setItem('sensometrika_fase_evaluacion', 'demo');
 
       let menuDestino = 'menu_B2B.html';
       if (isB2C) menuDestino = 'menu_B2C.html';
