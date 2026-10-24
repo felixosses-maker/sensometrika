@@ -386,14 +386,20 @@
             mod18: "18. Consolidado & Credencial QR 🛡️"
         };
 
-        let trabajadores = JSON.parse(localStorage.getItem('sensometrika_consola_nomina')) || [];
+        let empresaActiva = '';
+        let llaveNominaEmpresa = 'sensometrika_consola_nomina_default';
+        let trabajadores = [];
         let foliosRestantes = parseInt(localStorage.getItem('sensometrika_b2b_folios') || '10', 10);
 
         document.addEventListener('DOMContentLoaded', () => {
-            const empresa = localStorage.getItem('sensometrika_b2b_empresa') || 'EMPRESA DE TRANSPORTE S.A.';
+            empresaActiva = (localStorage.getItem('sensometrika_b2b_empresa') || 'EMPRESA DE TRANSPORTE S.A.').trim().toUpperCase();
             const encargado = localStorage.getItem('sensometrika_b2b_encargado') || 'DPTO PREVENCIÓN';
 
-            document.getElementById('lblEmpresa').innerText = empresa.toUpperCase();
+            // Clave única basada en el nombre de la empresa para aislar su historial
+            llaveNominaEmpresa = `sensometrika_consola_nomina_${empresaActiva.replace(/[^A-Z0-9]/g, '_')}`;
+            trabajadores = JSON.parse(localStorage.getItem(llaveNominaEmpresa)) || [];
+
+            document.getElementById('lblEmpresa').innerText = empresaActiva;
             document.getElementById('lblEncargado').innerText = encargado.toUpperCase();
             document.getElementById('lblFoliosRestantes').innerText = `${foliosRestantes} Simulaciones`;
 
@@ -434,27 +440,25 @@
             const email = document.getElementById('inputEmail').value.trim();
             const telefono = document.getElementById('inputTelefono').value.trim();
             const cargo = document.getElementById('inputCargo').value.trim();
-            const empresa = document.getElementById('lblEmpresa').innerText;
 
             foliosRestantes--;
             localStorage.setItem('sensometrika_b2b_folios', foliosRestantes);
             document.getElementById('lblFoliosRestantes').innerText = `${foliosRestantes} Simulaciones`;
 
-            const cleanRut = rut.replace(/[^0-9Kk]/g, '');
             const baseUrl = window.location.origin.replace(/\/$/, '');
             
-            // CORRECCIÓN CLAVE: El enlace generado apunta OBLIGATORIAMENTE a registro_B2B.html
+            // Enlace obligatorio de registro
             const urlCompleta = `${baseUrl}/registro_B2B.html?rut=${encodeURIComponent(rut)}&nombre=${encodeURIComponent(nombre)}&cargo=${encodeURIComponent(cargo)}`;
 
             document.getElementById('txtLinkGenerado').value = urlCompleta;
             
-            // Botón WhatsApp
-            const msgWp = encodeURIComponent(`Hola *${nombre}* (RUT: ${rut}), desde Prevención de Riesgos de *${empresa}* te enviamos tu acceso obligatorio para el registro y evaluación en Sensometrika (Vigencia 48 hrs):\n\n${urlCompleta}`);
+            // Botón WhatsApp corregido (sin saltos de línea inválidos)
+            const msgWp = encodeURIComponent(`Hola *${nombre}* (RUT: ${rut}), desde Prevención de Riesgos de *${empresaActiva}* te enviamos tu acceso obligatorio para el registro y evaluación en Sensometrika (Vigencia 48 hrs):\n\n${urlCompleta}`);
             document.getElementById('btnWhatsappDirecto').href = `https://wa.me/${telefono.replace(/[^0-9+]/g, '')}?text=${msgWp}`;
 
             // Botón Correo Electrónico (mailto directo)
-            const subjectMail = encodeURIComponent(`Registro y Evaluación Psicosensométrica B2B - ${empresa}`);
-            const bodyMail = encodeURIComponent(`Estimado/a ${nombre},\n\nDesde el Departamento de Prevención de Riesgos de ${empresa} se le ha asignado su batería de evaluación ocupacional.\n\nPor favor, ingrese obligatoriamente al siguiente enlace para realizar su registro legal, aceptación de términos y calibración previa:\n\n${urlCompleta}\n\nAtentamente,\nDepartamento de Prevención de Riesgos`);
+            const subjectMail = encodeURIComponent(`Registro y Evaluación Psicosensométrica B2B - ${empresaActiva}`);
+            const bodyMail = encodeURIComponent(`Estimado/a ${nombre},\n\nDesde el Departamento de Prevención de Riesgos de ${empresaActiva} se le ha asignado su batería de evaluación ocupacional.\n\nPor favor, ingrese obligatoriamente al siguiente enlace para realizar su registro legal, aceptación de términos y calibración previa:\n\n${urlCompleta}\n\nAtentamente,\nDepartamento de Prevención de Riesgos`);
             document.getElementById('btnCorreoDirecto').href = `mailto:${email}?subject=${subjectMail}&body=${bodyMail}`;
 
             document.getElementById('boxLinkResultado').style.display = 'flex';
@@ -462,8 +466,8 @@
             // Guardar datos temporales del usuario asignado
             localStorage.setItem('sensometrika_datos_usuario', JSON.stringify({ nombre, rut, email, telefono, cargo }));
 
-            trabajadores.unshift({ rut, nombre, email, telefono, cargo, empresa, url: urlCompleta });
-            localStorage.setItem('sensometrika_consola_nomina', JSON.stringify(trabajadores));
+            trabajadores.unshift({ rut, nombre, email, telefono, cargo, empresa: empresaActiva, url: urlCompleta });
+            localStorage.setItem(llaveNominaEmpresa, JSON.stringify(trabajadores));
             renderizarNomina();
 
             document.getElementById('inputRut').value = '';
@@ -485,7 +489,7 @@
             tbody.innerHTML = '';
 
             if (trabajadores.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:var(--text-muted);">Sin conductores registrados en la consola.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:var(--text-muted);">Sin conductores registrados para ${empresaActiva}.</td></tr>`;
                 return;
             }
 
