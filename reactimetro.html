@@ -87,7 +87,6 @@
             position: relative;
         }
 
-        /* BARRA SUPERIOR UNIFICADA CON BIOMETRÍA PIP EN HEADER (ALTERNATIVA 1) */
         .top-nav {
             display: flex !important;
             justify-content: space-between !important;
@@ -117,7 +116,6 @@
             color: #ffffff !important;
         }
 
-        /* PIP BIOMÉTRICO RESTRINGIDO A 56px X 56px */
         .cam-preview-pip-header {
             position: relative !important;
             width: 56px !important;
@@ -192,7 +190,6 @@
 
         canvas { width: 100%; height: 100%; display: block; }
 
-        /* OVERLAY DE BLOQUEO POR DISTANCIA NORMATIVA */
         .distance-block-overlay {
             position: absolute;
             inset: 0;
@@ -337,11 +334,9 @@
 
         <div class="eval-card">
             
-            <!-- NAV TOP ROW CON PIP BIOMÉTRICO HEADER -->
             <div class="top-nav">
                 <button id="btnVolverNav" class="nav-btn" onclick="ejecutarRetornoMenu()">&larr; Menú Pruebas</button>
 
-                <!-- PIP BIOMÉTRICO RESTRINGIDO A 56px X 56px -->
                 <div class="cam-preview-pip-header">
                     <video id="webcamVideo" autoplay playsinline muted></video>
                     <div class="cam-tag-header">Biometría</div>
@@ -360,7 +355,6 @@
             <div class="canvas-wrapper">
                 <canvas id="reactimetroCanvas" width="400" height="300"></canvas>
 
-                <!-- OVERLAY DE BLOQUEO POR DISTANCIA NORMATIVA -->
                 <div id="boxBlockDistancia" class="distance-block-overlay">
                     <span class="distance-block-title">⚠️ DISTANCIA / POSTURA FUERA DE RANGO</span>
                     <span id="txtDistanciaDetalle" class="distance-block-desc">
@@ -384,7 +378,6 @@
                 </div>
             </div>
 
-            <!-- PANEL TELEMÉTRICO 4 COLUMNAS -->
             <div class="metrics-grid">
                 <div class="metric-item">
                     <span class="metric-label">PROMEDIO</span>
@@ -460,6 +453,7 @@
         const urlParams = new URLSearchParams(window.location.search);
         const modeParam = urlParams.get('mode') || (localStorage.getItem('sensometrika_b2c_mode') === 'true' ? 'b2c' : 'b2b');
         const esB2B = (modeParam === 'b2b');
+        const sessionParam = urlParams.get('session') || '';
 
         let datosUsuario = {};
         try {
@@ -473,7 +467,6 @@
         let modoActual = isDemoURL ? 'DEMO' : 'OFICIAL';
         let moduloReactimetro = null;
 
-        // PARÁMETROS TELEMÉTRICOS DE CÁMARA
         let distanciaMedidaCm = 55;
         let estaBloqueadoPorDistancia = false;
 
@@ -560,7 +553,9 @@
         btnCloseInstrucciones.addEventListener('click', () => { modalInstrucciones.style.display = 'none'; });
 
         function actualizarEstadoPlanUI() {
-            const rawHistorial = JSON.parse(localStorage.getItem(`sensometrika_historial_reactimetro_${cleanRut}`)) || [];
+            // LLAVE AISLADA POR SESIÓN PARA EVITAR FALSOS "EJECUTADO"
+            const claveHistorial = sessionParam ? `sensometrika_historial_reactimetro_${cleanRut}_${sessionParam}` : `sensometrika_historial_reactimetro_${cleanRut}`;
+            const rawHistorial = JSON.parse(localStorage.getItem(claveHistorial)) || [];
             const historial = rawHistorial.filter(item => item && (item.promedioTiempo > 0 || item.tiempoBruto > 0));
             const numEnsayosRealizados = historial.length;
 
@@ -574,7 +569,8 @@
                 if (planStorage.includes('FULL') || planStorage.includes('ALTO')) maxIntentosPlan = 8;
             }
 
-            const demoRealizada = localStorage.getItem(`reactimetro_demo_completada_${cleanRut}`) === 'true';
+            const claveDemo = sessionParam ? `reactimetro_demo_completada_${cleanRut}_${sessionParam}` : `reactimetro_demo_completada_${cleanRut}`;
+            const demoRealizada = localStorage.getItem(claveDemo) === 'true';
 
             if (numEnsayosRealizados >= maxIntentosPlan) {
                 modoActual = 'BLOQUEADO';
@@ -641,7 +637,8 @@
             metricEstimulo.textContent = `${totalEstimosFase} / ${totalEstimosFase}`;
 
             if (modoActual === 'DEMO') {
-                localStorage.setItem(`reactimetro_demo_completada_${cleanRut}`, 'true');
+                const claveDemo = sessionParam ? `reactimetro_demo_completada_${cleanRut}_${sessionParam}` : `reactimetro_demo_completada_${cleanRut}`;
+                localStorage.setItem(claveDemo, 'true');
                 
                 isDemoURL = false;
                 modoActual = 'OFICIAL';
@@ -658,7 +655,8 @@
                     }
                 );
             } else if (modoActual === 'OFICIAL') {
-                let historial = JSON.parse(localStorage.getItem(`sensometrika_historial_reactimetro_${cleanRut}`)) || [];
+                const claveHistorial = sessionParam ? `sensometrika_historial_reactimetro_${cleanRut}_${sessionParam}` : `sensometrika_historial_reactimetro_${cleanRut}`;
+                let historial = JSON.parse(localStorage.getItem(claveHistorial)) || [];
                 
                 historial.push({
                     promedioTiempo: tiempoNetoCompensado,
@@ -671,7 +669,7 @@
                     fecha: new Date().toISOString()
                 });
                 
-                localStorage.setItem(`sensometrika_historial_reactimetro_${cleanRut}`, JSON.stringify(historial));
+                localStorage.setItem(claveHistorial, JSON.stringify(historial));
 
                 const numSimu = historial.length;
                 const tituloModal = esB2B ? "SIMULACIÓN OFICIAL B2B REGISTRADA" : `SIMULACIÓN S${numSimu} REGISTRADA`;

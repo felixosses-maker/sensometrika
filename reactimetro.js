@@ -1,7 +1,7 @@
 /**
  * Sensometrika - Módulo Reactímetro Simple (Tiempo de Frenado)
  * Medición de Latencia y Tiempos de Reacción Multiestímulo (D.S. N° 170)
- * Integrado con bypass de demostración y retorno dinámico vía returnUrl
+ * Integrado con bypass de demostración, sesión única y retorno dinámico vía returnUrl
  */
 
 // DETECCIÓN DINÁMICA DE PARÁMETROS URL Y MODO DEMO
@@ -9,10 +9,23 @@ const urlParamsReactimetro = new URLSearchParams(window.location.search);
 const esModoDemoReactimetro = urlParamsReactimetro.get('demo') === 'true' || urlParamsReactimetro.get('single') === 'true';
 const returnUrlReactimetro = urlParamsReactimetro.get('returnUrl') ? decodeURIComponent(urlParamsReactimetro.get('returnUrl')) : null;
 
+// CAPTURA DE RUT Y SESIÓN ÚNICA PARA AISLAMIENTO B2B
+const rutEvalReactimetro = urlParamsReactimetro.get('rut') || 'GENERICO';
+const cleanRutReactimetro = rutEvalReactimetro.replace(/[^0-9Kk]/g, '');
+const sessionParamReactimetro = urlParamsReactimetro.get('session') || '';
+
+// LLAVES DE ALMACENAMIENTO AISLADAS POR SESIÓN Y RUT
+const claveHistorialReactimetro = sessionParamReactimetro 
+    ? `sensometrika_historial_reactimetro_${cleanRutReactimetro}_${sessionParamReactimetro}` 
+    : `sensometrika_historial_reactimetro_${cleanRutReactimetro}`;
+
+const claveUltimoReactimetro = sessionParamReactimetro 
+    ? `sensometrika_last_reactimetro_${cleanRutReactimetro}_${sessionParamReactimetro}` 
+    : `sensometrika_last_reactimetro_${cleanRutReactimetro}`;
+
 // LIMPIEZA EXCLUSIVA EN MODO DEMOSTRACIÓN (Sin afectar cuotas pagadas)
 if (esModoDemoReactimetro) {
     localStorage.removeItem('sensometrika_reactimetro_completado');
-    localStorage.removeItem('sensometrika_historial_reactimetro');
 }
 
 class ModuloReactimetro {
@@ -129,10 +142,24 @@ class ModuloReactimetro {
                     returnUrl: urlDestino
                 };
 
-                localStorage.setItem('sensometrika_reactimetro', JSON.stringify({
+                // Guardado riguroso en el historial aislado por sesión
+                let historialActual = JSON.parse(localStorage.getItem(claveHistorialReactimetro)) || [];
+                historialActual.push({
+                    promedioTiempo: promedio,
+                    tiempoBruto: promedio,
+                    anticipaciones: this.anticipaciones,
+                    aprobado: promedio <= 450,
+                    fecha: new Date().toISOString()
+                });
+
+                localStorage.setItem(claveHistorialReactimetro, JSON.stringify(historialActual));
+
+                // Guardado del último resultado individual para trazabilidad de la consola
+                localStorage.setItem(claveUltimoReactimetro, JSON.stringify({
                     promedioTiempo: promedio,
                     anticipaciones: this.anticipaciones,
-                    aprobado: promedio <= 390,
+                    aprobado: promedio <= 450,
+                    go_no_go_flag: promedio <= 450,
                     fecha: new Date().toISOString()
                 }));
 
