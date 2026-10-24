@@ -220,13 +220,35 @@
         function verifRendidoRut(modKey) {
             if (!cleanRut) return false;
 
-            const resGenerico = localStorage.getItem(`sensometrika_last_reactimetro_${cleanRut}`) ||
-                                localStorage.getItem(`sensometrika_historial_${modKey}_${cleanRut}_${sessionId}`) ||
-                                localStorage.getItem(`${modKey}_demo_completada_${cleanRut}_${sessionId}`) === 'true';
+            // Mapeo preciso del ID de módulo al nombre técnico del historial
+            let nombreModuloTest = '';
+            if (modKey === 'mod1' || modKey === 'mod2' || modKey === 'mod5' || modKey === 'mod15') nombreModuloTest = 'reactimetro';
+            else if (modKey === 'mod3' || modKey === 'mod16') nombreModuloTest = 'palancas';
+            else if (modKey === 'mod4' || modKey === 'mod14') nombreModuloTest = 'punteo';
+            else if (modKey === 'mod6' || modKey === 'mod7' || modKey === 'mod9') nombreModuloTest = 'visual';
+            else if (modKey === 'mod10' || modKey === 'mod17') nombreModuloTest = 'auditivo';
+            else if (modKey === 'mod11') nombreModuloTest = 'anticipacion';
+            else if (modKey === 'mod8') nombreModuloTest = 'estereopsis';
+            else if (modKey === 'mod12' || modKey === 'mod13') nombreModuloTest = 'fatiga';
 
-            if (resGenerico) return true;
+            // Comprobación estricta por sesión y RUT
+            const claveHistorialSesion = sessionId ? `sensometrika_historial_${nombreModuloTest}_${cleanRut}_${sessionId}` : null;
+            const claveLastSesion = sessionId ? `sensometrika_last_${nombreModuloTest}_${cleanRut}_${sessionId}` : null;
+            
+            const claveHistorialRut = `sensometrika_historial_${nombreModuloTest}_${cleanRut}`;
+            const claveLastRut = `sensometrika_last_${nombreModuloTest}_${cleanRut}`;
 
-            if (modKey === 'mod1' && (localStorage.getItem('sensometrika_reactimetro') || localStorage.getItem(`sensometrika_last_reactimetro_${cleanRut}._reactimetro`))) return true;
+            const hSesion = claveHistorialSesion ? JSON.parse(localStorage.getItem(claveHistorialSesion)) : null;
+            const lSesion = claveLastSesion ? JSON.parse(localStorage.getItem(claveLastSesion)) : null;
+            const hRut = JSON.parse(localStorage.getItem(claveHistorialRut)) || [];
+            const lRut = localStorage.getItem(claveLastRut);
+
+            if ((hSesion && hSesion.length > 0) || lSesion || (hRut && hRut.length > 0) || lRut) {
+                return true;
+            }
+
+            // Compatibilidad legacy
+            if (modKey === 'mod1' && (localStorage.getItem('sensometrika_reactimetro') || localStorage.getItem('sensometrika_reactimetro_completado'))) return true;
             if (modKey === 'mod3' && localStorage.getItem('sensometrika_palancas')) return true;
             if (modKey === 'mod4' && localStorage.getItem('sensometrika_punteo')) return true;
             if (modKey === 'mod6' && localStorage.getItem('sensometrika_visual')) return true;
@@ -235,7 +257,7 @@
             return false;
         }
 
-        // Catálogo operativo del 1 al 17 (El módulo 18 es el informe consolidado automático)
+        // Catálogo operativo del 1 al 17
         const catModulos17 = [
             { id: 'mod1', nombre: '1. Reactímetro Simple ⚡', desc: 'Latencia neuromotriz y reflejo de frenado.', archivo: 'reactimetro.html' },
             { id: 'mod2', nombre: '2. Reactímetro Complejo 🚦', desc: 'Discriminación de estímulos múltiples.', archivo: 'reactimetro.html' },
