@@ -191,7 +191,7 @@
             background: var(--accent-green);
             color: #000;
             border: none;
-            padding: 12px;
+            padding: 10px;
             border-radius: 6px;
             font-weight: 800;
             font-size: 0.80rem;
@@ -204,7 +204,7 @@
             background: #16a34a;
             color: #ffffff;
             border: none;
-            padding: 12px;
+            padding: 10px;
             border-radius: 6px;
             font-weight: 800;
             font-size: 0.80rem;
@@ -241,6 +241,25 @@
             display: flex;
             justify-content: center;
             align-items: center;
+        }
+
+        /* Modal Integrado del Simulador */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(6, 11, 19, 0.85); backdrop-filter: blur(4px);
+            display: none; justify-content: center; align-items: center; z-index: 100;
+        }
+        .modal-content {
+            background-color: var(--card-bg); border: 1px solid #1e3a5f;
+            border-radius: 12px; padding: 24px; width: 90%; max-width: 400px;
+            text-align: center; display: flex; flex-direction: column; gap: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+        }
+        .modal-title { color: var(--accent-cyan); font-size: 1.05rem; font-weight: 800; text-transform: uppercase; }
+        .modal-body { font-size: 0.85rem; color: var(--text-main); line-height: 1.5; }
+        .modal-btn {
+            background-color: var(--accent-green); color: #000; border: none;
+            padding: 10px; border-radius: 8px; font-weight: 800; cursor: pointer; text-transform: uppercase;
         }
     </style>
 </head>
@@ -315,12 +334,12 @@
 
             <div id="boxLinkResultado" class="link-out-box">
                 <span style="font-size: 0.70rem; color: var(--text-muted); font-weight: 800; text-transform: uppercase;">
-                    Enlace Obligatorio de Registro (Vigencia 48 hrs) - Correo Despachado Automáticamente desde SENSOMETRIKA:
+                    Enlace Obligatorio de Registro (Vigencia 48 hrs):
                 </span>
                 <input type="text" id="txtLinkGenerado" class="link-out-input" readonly>
                 <div class="btn-actions-row">
                     <button type="button" class="btn-copy" onclick="copiarLinkGenerado()">📋 Copiar Link</button>
-                    <a id="btnWhatsappDirecto" href="#" target="_blank" class="btn-wp">💬 Enviar por WhatsApp (Alternativo)</a>
+                    <a id="btnWhatsappDirecto" href="#" target="_blank" class="btn-wp">💬 WhatsApp Alternativo</a>
                 </div>
             </div>
         </div>
@@ -343,6 +362,15 @@
                     </tbody>
                 </table>
             </div>
+        </div>
+    </div>
+
+    <!-- Modal Integrado del Simulador -->
+    <div id="modalSimulador" class="modal-overlay">
+        <div class="modal-content">
+            <div id="modalSimuladorTitulo" class="modal-title">NOTIFICACIÓN SENSOMETRIKA</div>
+            <div id="modalSimuladorCuerpo" class="modal-body">Mensaje del sistema.</div>
+            <button onclick="cerrarModalSimulador()" class="modal-btn">Aceptar</button>
         </div>
     </div>
 
@@ -388,6 +416,16 @@
             renderizarNomina();
         });
 
+        function mostrarModalSimulador(titulo, cuerpo) {
+            document.getElementById('modalSimuladorTitulo').textContent = titulo;
+            document.getElementById('modalSimuladorCuerpo').innerHTML = cuerpo;
+            document.getElementById('modalSimulador').style.display = 'flex';
+        }
+
+        function cerrarModalSimulador() {
+            document.getElementById('modalSimulador').style.display = 'none';
+        }
+
         function renderizarModulosActivos() {
             const container = document.getElementById('listaModulosActivos');
             container.innerHTML = '';
@@ -412,7 +450,7 @@
             e.preventDefault();
 
             if (foliosRestantes <= 0) {
-                alert("⚠️ Bolsa de simulaciones agotada. Recargue folios desde el catálogo corporativo.");
+                mostrarModalSimulador("ATENCIÓN SIMULADOR", "⚠️ Bolsa de simulaciones agotada. Recargue folios desde el catálogo corporativo.");
                 return;
             }
 
@@ -431,22 +469,24 @@
 
             document.getElementById('txtLinkGenerado').value = urlCompleta;
             
-            // Simulación / Disparo automático de correo institucional desde SENSOMETRIKA al trabajador
-            console.log(`[SENSOMETRIKA MAIL SERVER] Despachando correo oficial a: ${email} con acceso para ${nombre}`);
-
-            // Configurar botón de WhatsApp alternativo
+            // Configurar WhatsApp Alternativo
             const msgWp = encodeURIComponent(`Hola *${nombre}* (RUT: ${rut}), desde Prevención de Riesgos de *${empresaActiva}* te enviamos tu acceso obligatorio para el registro y evaluación en Sensometrika (Vigencia 48 hrs):\n\n${urlCompleta}`);
             document.getElementById('btnWhatsappDirecto').href = `https://wa.me/${telefono.replace(/[^0-9+]/g, '')}?text=${msgWp}`;
 
             document.getElementById('boxLinkResultado').style.display = 'flex';
 
+            // Guardar datos temporales del usuario asignado
             localStorage.setItem('sensometrika_datos_usuario', JSON.stringify({ nombre, rut, email, telefono, cargo }));
 
             trabajadores.unshift({ rut, nombre, email, telefono, cargo, empresa: empresaActiva, url: urlCompleta });
             localStorage.setItem(llaveNominaEmpresa, JSON.stringify(trabajadores));
             renderizarNomina();
 
-            alert(`✅ Enlace generado.\n\n📧 Correo electrónico despachado automáticamente desde SENSOMETRIKA a: ${email}`);
+            // Despacho Automático de Correo desde Sensometrika (Simulador)
+            mostrarModalSimulador(
+                "DESPACHO AUTOMÁTICO SENSOMETRIKA ✉️",
+                `El correo electrónico de evaluación ha sido despachado <strong>automáticamente desde el servidor SENSOMETRIKA</strong> a la casilla del trabajador:<br><br><code>${email}</code><br><br><em>Si el trabajador no cuenta con correo, puede utilizar de manera alternativa el botón de WhatsApp o Copiar Link abajo.</em>`
+            );
 
             document.getElementById('inputRut').value = '';
             document.getElementById('inputNombre').value = '';
@@ -459,7 +499,7 @@
             const input = document.getElementById('txtLinkGenerado');
             input.select();
             navigator.clipboard.writeText(input.value);
-            alert("📋 ¡Enlace copiado al portapapeles!");
+            mostrarModalSimulador("ENLACE COPIADO 📋", "El enlace de registro individual ha sido copiado al portapapeles.");
         }
 
         function renderizarNomina() {
@@ -480,12 +520,21 @@
                 const urlInforme = `informe_transporte.html?rut=${t.rut}&nombre=${encodeURIComponent(t.nombre)}&cargo=${encodeURIComponent(t.cargo)}`;
                 const qrContainerId = `qrcode_table_${index}`;
 
+                // Enlace de WhatsApp directo para la fila de la tabla
+                const textoWpFila = encodeURIComponent(`Hola *${t.nombre}*, desde *${t.empresa}* te enviamos tu enlace de evaluación Sensometrika:\n\n${t.url}`);
+                const linkWpFila = t.telefono ? `https://wa.me/${t.telefono.replace(/[^0-9+]/g, '')}?text=${textoWpFila}` : `https://wa.me/?text=${textoWpFila}`;
+
                 tbody.innerHTML += `
                     <tr>
                         <td><b>${t.nombre}</b><br><span style="color:var(--text-muted);">RUT: ${t.rut}</span></td>
                         <td>${t.cargo}</td>
                         <td><span class="badge-status ${clase}">${estado}</span></td>
-                        <td><button onclick="navigator.clipboard.writeText('${t.url}');alert('¡Enlace copiado!');" style="background:#0284c7; color:#fff; border:none; padding:6px 10px; border-radius:4px; cursor:pointer; font-weight:700;">🔗 Copiar</button></td>
+                        <td>
+                            <div style="display:flex; gap:6px;">
+                                <button onclick="navigator.clipboard.writeText('${t.url}');mostrarModalSimulador('ENLACE COPIADO 📋', 'El enlace individual fue copiado.');" style="background:#0284c7; color:#fff; border:none; padding:5px 8px; border-radius:4px; cursor:pointer; font-weight:700; font-size:0.7rem;">🔗 Copiar</button>
+                                <a href="${linkWpFila}" target="_blank" style="background:#16a34a; color:#fff; padding:5px 8px; border-radius:4px; font-weight:700; text-decoration:none; font-size:0.7rem; display:inline-flex; align-items:center;">💬 Wp</a>
+                            </div>
+                        </td>
                         <td>
                             <div class="qr-cell-box">
                                 <div id="${qrContainerId}" class="mini-qr" title="QR Validez Garita"></div>
