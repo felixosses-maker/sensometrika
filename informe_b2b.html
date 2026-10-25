@@ -472,8 +472,8 @@
                 imgFirma.src = svgFirmaRespaldo;
             }
 
-            // CATÁLOGO OFICIAL DE LOS 18 MÓDULOS CON SUS CLAVES DE TEST Y NORMAS
-            const catModulos18 = [
+            // CATÁLOGO OFICIAL DE LOS 17 MÓDULOS EVALUABLES (EXCLUIDO EL QR 18)
+            const catModulos17 = [
                 { id: 'mod1', key: 'reactimetro_simple', nombre: '1. Reactímetro Simple ⚡', est: '≤ 390 ms' },
                 { id: 'mod2', key: 'reactimetro_complejo', nombre: '2. Reactímetro Complejo 🚦', est: 'Discriminación' },
                 { id: 'mod3', key: 'palancas', nombre: '3. Palancas Bimanual 🎮', est: '≥ 85% precisión' },
@@ -490,12 +490,11 @@
                 { id: 'mod14', key: 'memoria_trabajo', nombre: '14. Memoria de Trabajo Operativa 🧩', est: 'Logística' },
                 { id: 'mod15', key: 'toxicologico', nombre: '15. Cero Alcohol/Drogas 🧪', est: 'Ley N° 20.000' },
                 { id: 'mod16', key: 'control_impulsos', nombre: '16. Control de Impulsos Viales ⚖️', est: 'Conducción Defensiva' },
-                { id: 'mod17', key: 'declaracion_medica', nombre: '17. Declaración Médica 📋', est: 'Art. 36 D.S. 170' },
-                { id: 'mod18', key: 'credencial_qr', nombre: '18. Consolidado & Credencial QR 🛡️', est: 'Ley 19.628' }
+                { id: 'mod17', key: 'declaracion_medica', nombre: '17. Declaración Médica 📋', est: 'Art. 36 D.S. 170' }
             ];
 
             // LEER EXACTAMENTE LOS MÓDULOS COMPRADOS Y ACTIVADOS EN LA BOLSA DE LA EMPRESA
-            const bolsaActivaStr = localStorage.getItem('sensometrika_modulos_b2b_activos') || urlParams.get('modulos') || 'mod1,mod3,mod6,mod10,mod18';
+            const bolsaActivaStr = localStorage.getItem('sensometrika_modulos_b2b_activos') || urlParams.get('modulos') || 'mod1,mod3,mod6,mod10';
             const bolsaActivaArray = bolsaActivaStr.split(',').map(m => m.trim().toLowerCase());
 
             const tbody = document.getElementById('tbodyModulos');
@@ -505,23 +504,14 @@
             let totalReprobados = 0;
             let totalPendientes = 0;
 
-            catModulos18.forEach(m => {
+            catModulos17.forEach(m => {
                 const estaSolicitado = bolsaActivaArray.includes(m.id.toLowerCase());
                 if (!estaSolicitado) return; // Omitir módulos que la empresa NO compró
 
                 const historial = obtenerHistorialModulo(m.key);
                 const tr = document.createElement('tr');
 
-                if (m.id === 'mod18') {
-                    // Módulo 18 Credencial QR siempre aprobado si los demás están listos
-                    tr.innerHTML = `
-                        <td class="font-bold text-slate-800">${m.nombre}</td>
-                        <td class="text-slate-600">${m.est}</td>
-                        <td class="text-slate-700">Credencial y Hash Generados OK</td>
-                        <td style="text-align: right;"><span class="badge-sem sem-ok">APROBADO</span></td>
-                    `;
-                    totalAprobados++;
-                } else if (historial.length > 0) {
+                if (historial.length > 0) {
                     const u = historial[historial.length - 1];
                     let ok = u.aprobado !== false && u.go_no_go_flag !== false;
                     let telemetriaTxt = `Prueba registrada con éxito`;
