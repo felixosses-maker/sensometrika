@@ -472,7 +472,7 @@
                 imgFirma.src = svgFirmaRespaldo;
             }
 
-            // CATÁLOGO OFICIAL DE LOS 17 MÓDULOS EVALUABLES (EXCLUIDO EL QR 18)
+            // CATÁLOGO OFICIAL DE LOS 17 MÓDULOS EVALUABLES
             const catModulos17 = [
                 { id: 'mod1', key: 'reactimetro_simple', nombre: '1. Reactímetro Simple ⚡', est: '≤ 390 ms' },
                 { id: 'mod2', key: 'reactimetro_complejo', nombre: '2. Reactímetro Complejo 🚦', est: 'Discriminación' },
@@ -493,8 +493,8 @@
                 { id: 'mod17', key: 'declaracion_medica', nombre: '17. Declaración Médica 📋', est: 'Art. 36 D.S. 170' }
             ];
 
-            // LEER EXACTAMENTE LOS MÓDULOS COMPRADOS Y ACTIVADOS EN LA BOLSA DE LA EMPRESA
-            const bolsaActivaStr = localStorage.getItem('sensometrika_modulos_b2b_activos') || urlParams.get('modulos') || 'mod1,mod3,mod6,mod10';
+            // LEER MÓDULOS ACTIVOS DE LA BOLSA O URL
+            const bolsaActivaStr = localStorage.getItem('sensometrika_modulos_b2b_activos') || urlParams.get('modulos') || 'mod1,mod3,mod6,mod9,mod10';
             const bolsaActivaArray = bolsaActivaStr.split(',').map(m => m.trim().toLowerCase());
 
             const tbody = document.getElementById('tbodyModulos');
@@ -506,7 +506,7 @@
 
             catModulos17.forEach(m => {
                 const estaSolicitado = bolsaActivaArray.includes(m.id.toLowerCase());
-                if (!estaSolicitado) return; // Omitir módulos que la empresa NO compró
+                if (!estaSolicitado) return;
 
                 const historial = obtenerHistorialModulo(m.key);
                 const tr = document.createElement('tr');
@@ -529,6 +529,10 @@
                         const prec = u.precision || 85;
                         ok = prec >= 85;
                         telemetriaTxt = `Precisión Bimanual: <strong>${prec}%</strong>`;
+                    } else if (m.key === 'campo_periferico') {
+                        const porc = u.porcentajeAciertos || 100;
+                        ok = porc >= 70;
+                        telemetriaTxt = `Aciertos: <strong>${porc}%</strong> (${u.tiempoReaccionPromedio || 0}ms)`;
                     } else if (m.key === 'auditivo') {
                         const db = u.promediodB || 20;
                         ok = db <= 25;
