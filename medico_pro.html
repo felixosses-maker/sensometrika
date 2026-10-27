@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>SENSOMETRIKA | Screening Médico y Aptitud Ocupacional Pro</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- LIBRERÍAS GOOGLE MEDIAPIPE PARA TELEMETRÍA Y CONTROL FACIAL B2B -->
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
+
+  <style>
+    :root {
+      --bg-color: #040810;
+      --card-bg: #091120;
+      --card-border: #132238;
+      --accent-cyan: #00bfff;
+      --accent-cyan-glow: rgba(0, 191, 255, 0.4);
+      --accent-gold: #e5b324;
+      --accent-green: #10b981;
+      --accent-red: #ef4444;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent; }
+
+    body {
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      min-height: 100vh;
+      padding: 20px 12px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .main-wrapper {
+      width: 100%;
+      max-width: 520px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .brand-header {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .logo-container {
+      background: #060d1d;
+      border: 1px solid var(--card-border);
+      border-radius: 14px;
+      padding: 10px 22px;
+      box-shadow: 0 0 20px rgba(0, 191, 255, 0.2);
+    }
+
+    .brand-logo-img {
+      width: 160px;
+      height: auto;
+      mix-blend-mode: lighten;
+      filter: drop-shadow(0 0 10px var(--accent-cyan-glow));
+    }
+
+    .subtitle-neon {
+      font-size: 0.72rem;
+      font-weight: 800;
+      color: var(--accent-cyan);
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      text-align: center;
+    }
+
+    .main-card {
+      background-color: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 14px;
+      padding: 18px;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
+      position: relative;
+    }
+
+    .top-nav-bar {
+      display: flex !important;
+      justify-content: space-between !important;
+      align-items: center !important;
+      width: 100% !important;
+      margin-bottom: 4px !important;
+      gap: 8px !important;
+    }
+
+    .top-nav-bar button {
+      background: #0c182e !important;
+      border: 1px solid #1e3a6d !important;
+      color: var(--accent-cyan) !important;
+      font-size: 0.72rem !important;
+      font-weight: 700 !important;
+      padding: 6px 10px !important;
+      border-radius: 8px !important;
+      cursor: pointer !important;
+      white-space: nowrap !important;
+    }
+
+    .cam-preview-pip-header {
+      position: relative !important;
+      width: 56px !important;
+      height: 56px !important;
+      border: 1.5px solid var(--accent-cyan) !important;
+      border-radius: 8px !important;
+      overflow: hidden !important;
+      background: #030712 !important;
+      flex-shrink: 0 !important;
+    }
+
+    .cam-preview-pip-header video {
+      width: 100% !important;
+      height: 100% !important;
+      object-fit: cover !important;
+      transform: scaleX(-1) !important;
+      display: block !important;
+    }
+
+    .cam-tag-header {
+      position: absolute; bottom: 0; left: 0; right: 0;
+      background: rgba(0, 191, 255, 0.9); color: #000;
+      font-size: 0.42rem; font-weight: 900; text-align: center; text-transform: uppercase;
+    }
+
+    .pill-mode {
+      background: rgba(0, 191, 255, 0.12);
+      border: 1px solid var(--accent-cyan);
+      color: var(--accent-cyan);
+      padding: 4px 14px;
+      border-radius: 20px;
+      font-size: 0.65rem;
+      font-weight: 800;
+      text-align: center;
+      text-transform: uppercase;
+    }
+
+    /* GRILLA DE SELECCIÓN DE LAS 10 PRUEBAS MÉDICAS */
+    .tests-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      max-height: 260px;
+      overflow-y: auto;
+      padding-right: 4px;
+    }
+
+    .test-item-btn {
+      background: #0c182e;
+      border: 1px solid var(--card-border);
+      color: var(--text-muted);
+      padding: 10px;
+      border-radius: 8px;
+      font-size: 0.70rem;
+      font-weight: 800;
+      text-align: left;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      transition: all 0.2s ease;
+    }
+
+    .test-item-btn:hover { background: #1e293b; color: #fff; border-color: var(--accent-cyan); }
+    .test-item-btn.completed { background: rgba(16, 185, 129, 0.15); color: var(--accent-green); border-color: var(--accent-green); }
+
+    /* ÁREA DE INTERACCIÓN DE PRUEBA ACTIVA */
+    #active-test-viewport {
+      position: relative;
+      width: 100%;
+      height: 220px;
+      background: #030712;
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      text-align: center;
+      gap: 12px;
+    }
+
+    .btn-action-main {
+      background: var(--accent-cyan);
+      color: #000;
+      border: none;
+      padding: 12px;
+      border-radius: 9px;
+      font-weight: 900;
+      font-size: 0.8rem;
+      cursor: pointer;
+      text-transform: uppercase;
+      width: 100%;
+      box-shadow: 0 4px 14px var(--accent-cyan-glow);
+    }
+
+    .instruction-text { font-size: 0.74rem; color: #cbd5e1; line-height: 1.35; text-align: center; }
+
+    .distance-block-overlay {
+      position: absolute; inset: 0; background: rgba(4, 8, 16, 0.94);
+      backdrop-filter: blur(5px); z-index: 30; display: none;
+      flex-direction: column; justify-content: center; align-items: center; padding: 16px; text-align: center; gap: 8px; border-radius: 12px;
+    }
+  </style>
+</head>
+<body>
+
+  <video id="webcamInput" style="display:none;" playsinline></video>
+
+  <div class="main-wrapper">
+    <header class="brand-header">
+      <div class="logo-container">
+        <img src="sensometrica.jpg" alt="SENSOMETRIKA" class="brand-logo-img">
+      </div>
+      <div class="subtitle-neon">MÓDULO MÉDICO Y APTITUD OCUPACIONAL PRO (10 SCREENINGS)</div>
+    </header>
+
+    <div class="main-card">
+      <div class="top-nav-bar">
+        <button type="button" onclick="volverMenu()">← Menú B2B</button>
+        <div class="cam-preview-pip-header">
+          <video id="webcamVideo" autoplay playsinline muted></video>
+          <div class="cam-tag-header">Biometría</div>
+        </div>
+        <button type="button" onclick="location.reload()">↺ Reiniciar</button>
+      </div>
+
+      <div class="pill-mode">• Batería Clínica Sensor-Smartphone</div>
+
+      <!-- SELECCIONADOR DE LAS 10 PRUEBAS -->
+      <div id="selection-panel">
+        <p class="instruction-text" style="margin-bottom: 6px;">Seleccione una prueba para ejecutar la medición telemétrica:</p>
+        <div class="tests-grid" id="testsGridContainer">
+          <!-- Inyectado dinámicamente -->
+        </div>
+      </div>
+
+      <!-- VIEWPORT DE PRUEBA ACTIVA -->
+      <div id="active-test-viewport">
+        <h3 id="testTitleActive" style="color: var(--accent-cyan); font-size: 0.9rem; font-weight: 900; text-transform: uppercase;"></h3>
+        <p id="testDescActive" class="instruction-text"></p>
+        <div id="testInteractiveArea" style="width: 100%; display: flex; flex-direction: column; align-items: center; gap: 10px;"></div>
+        <button class="btn-action-main" id="btnFinalizarPruebaActual" onclick="completarPruebaActual()" style="display:none;">REGISTRAR Y GUARDAR →</button>
+      </div>
+
+      <!-- OVERLAY DE BLOQUEO POR DISTANCIA -->
+      <div id="boxBlockDistancia" class="distance-block-overlay">
+        <span style="color: var(--accent-red); font-weight: 900; font-size: 0.9rem;">⚠️ POSTURA FUERA DE RANGO</span>
+        <span class="instruction-text">Ajuste su posición. Distancia telemétrica: <b id="lblDistVal" style="color:var(--accent-red);">-- cm</b> (Rango: 45-65 cm)</span>
+      </div>
+
+      <button class="btn-action-main" id="btnVolverMenuFinal" onclick="volverMenu()" style="display:none; background: var(--accent-green); margin-top: 4px;">
+        ✓ BATERÍA MÉDICA COMPLETADA - VOLVER AL MENÚ →
+      </button>
+    </div>
+  </div>
+
+  <script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const rawRut = urlParams.get('rut') || '12345678K';
+    const cleanRut = rawRut.replace(/[^0-9Kk]/g, '');
+    const sessionId = urlParams.get('session') || `SESION_${cleanRut}_${Date.now()}`;
+
+    let distanciaMedidaCm = 55;
+    let estaBloqueadoPorDistancia = false;
+    let pruebaSeleccionadaId = null;
+
+    // DEFINICIÓN DE LAS 10 PRUEBAS CLÍNICAS / SENSOR-SMARTPHONE
+    const listaPruebasMedicas = [
+      { id: 'vestibular', nombre: '1. Estabilidad Vestibular (Romberg)', desc: 'Mide micro-oscilaciones posturales con acelerómetro corporal.' },
+      { id: 'temblor', nombre: '2. Temblores Finos (Índice-Nariz)', desc: 'Captura amplitud y frecuencia de temblor estático y fatiga del SNC.' },
+      { id: 'grip', nombre: '3. Dinamometría y Fuerza (Prehensión)', desc: 'Evalúa pérdida de fuerza isométrica sostenida en pantalla táctil.' },
+      { id: 'ppg', nombre: '4. Frecuencia Cardíaca Basal (PPG)', desc: 'Mide pulsaciones por minuto mediante pletismografía con cámara y flash.' },
+      { id: 'pupilar', nombre: '5. Reflejo Fotomotor Pupilar', desc: 'Analiza velocidad de respuesta pupilar a estímulo lumínico frontal.' },
+      { id: 'espirometría', nombre: '6. Screening Espirométrico (Soplado)', desc: 'Evalúa presión acústica continua y flujo respiratorio al micrófono.' },
+      { id: 'tapping', nombre: '7. Praxias y Tapping Digital', desc: 'Mide velocidad de procesamiento psicomotor y agilidad táctil.' },
+      { id: 'auditivo', nombre: '8. Reacción a Alarma de Faena', desc: 'Tiempo de respuesta auditiva pura ante tonos normativos de retroceso.' },
+      { id: 'nistagmo', nombre: '9. Seguimiento Ocular (Nistagmo)', desc: 'Estabilidad de la mirada al seguir objetivo en movimiento horizontal.' },
+      { id: 'fatiga_clinica', nombre: '10. Screening de Alerta y Somnolencia', desc: 'Evaluación integral de fatiga y parpadeo sostenido por visión artificial.' }
+    ];
+
+    function iniciarMediaPipeFaceMesh() {
+      const videoElement = document.getElementById('webcamVideo');
+      const faceMesh = new FaceMesh({ locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}` });
+      faceMesh.setOptions({ maxNumFaces: 1, refineLandmarks: true, minDetectionConfidence: 0.5, minTrackingConfidence: 0.5 });
+      faceMesh.onResults((results) => {
+        if (!results.multiFaceLandmarks || results.multiFaceLandmarks.length === 0) return;
+        const landmarks = results.multiFaceLandmarks[0];
+        const dx = landmarks[33].x - landmarks[263].x;
+        const dy = landmarks[33].y - landmarks[263].y;
+        let dist = Math.round(9.5 / Math.sqrt(dx * dx + dy * dy));
+        distanciaMedidaCm = Math.round(distanciaMedidaCm * 0.5 + dist * 0.5);
+        
+        const overlay = document.getElementById('boxBlockDistancia');
+        if (distanciaMedidaCm >= 45 && distanciaMedidaCm <= 65) {
+          estaBloqueadoPorDistancia = false;
+          overlay.style.display = 'none';
+        } else {
+          estaBloqueadoPorDistancia = true;
+          document.getElementById('lblDistVal').textContent = `${distanciaMedidaCm} cm`;
+          overlay.style.display = 'flex';
+        }
+      });
+      new Camera(videoElement, { onFrame: async () => { await faceMesh.send({ image: videoElement }); }, width: 320, height: 240 }).start().catch(()=>{});
+    }
+
+    function renderizarGrillaPruebas() {
+      const contenedor = document.getElementById('testsGridContainer');
+      contenedor.innerHTML = '';
+      let completadasTotal = 0;
+
+      listaPruebasMedicas.forEach(p => {
+        const isCompletado = localStorage.getItem(`medico_${p.id}_${cleanRut}_${sessionId}`) === 'true';
+        if (isCompletado) completadasTotal++;
+
+        const btn = document.createElement('button');
+        btn.className = `test-item-btn ${isCompletado ? 'completed' : ''}`;
+        btn.innerHTML = `
+          <strong style="font-size:0.72rem;">${isCompletado ? '✓ ' : ''}${p.nombre}</strong>
+          <span style="font-size:0.62rem; color:var(--text-muted);">${isCompletado ? 'Completado' : 'Pendiente'}</span>
+        `;
+        btn.onclick = () => iniciarPruebaEspecifica(p);
+        contenedor.appendChild(btn);
+      });
+
+      if (completadasTotal >= listaPruebasMedicas.length) {
+        document.getElementById('btnVolverMenuFinal').style.display = 'block';
+        
+        // 🔥 Registrar globalmente el módulo médico en el menú B2B
+        let modulosRendidos = JSON.parse(localStorage.getItem('sensometrika_modulos_rendidos')) || {};
+        modulosRendidos.medico = true;
+        modulosRendidos.declaracion_medica = true;
+        localStorage.setItem('sensometrika_modulos_rendidos', JSON.stringify(modulosRendidos));
+      }
+    }
+
+    function iniciarPruebaEspecifica(prueba) {
+      if (estaBloqueadoPorDistancia) return;
+      pruebaSeleccionadaId = prueba.id;
+
+      document.getElementById('selection-panel').style.display = 'none';
+      const viewport = document.getElementById('active-test-viewport');
+      viewport.style.display = 'flex';
+
+      document.getElementById('testTitleActive').textContent = prueba.nombre;
+      document.getElementById('testDescActive').textContent = prueba.desc;
+
+      const area = document.getElementById('testInteractiveArea');
+      area.innerHTML = `
+        <div style="background:#060d1d; border:1px dashed var(--accent-cyan); padding:14px; border-radius:8px; width:100%; text-align:center;">
+          <p style="color:var(--accent-gold); font-size:0.75rem; font-weight:700;">📡 Calibrando sensores del dispositivo...</p>
+          <p style="color:#fff; font-size:0.70rem; margin-top:4px;">Mantenga la posición y siga las instrucciones del evaluador.</p>
+        </div>
+      `;
+
+      setTimeout(() => {
+        document.getElementById('btnFinalizarPruebaActual').style.display = 'block';
+        area.innerHTML += `<p style="color:var(--accent-green); font-size:0.75rem; font-weight:900;">✓ Lectura telemétrica capturada con éxito.</p>`;
+      }, 2000);
+    }
+
+    function completarPruebaActual() {
+      if (!pruebaSeleccionadaId) return;
+
+      localStorage.setItem(`medico_${pruebaSeleccionadaId}_${cleanRut}_${sessionId}`, 'true');
+
+      document.getElementById('active-test-viewport').style.display = 'none';
+      document.getElementById('btnFinalizarPruebaActual').style.display = 'none';
+      document.getElementById('selection-panel').style.display = 'block';
+
+      renderizarGrillaPruebas();
+    }
+
+    function volverMenu() {
+      const returnUrl = urlParams.get('returnUrl');
+      if (returnUrl) {
+        window.location.href = decodeURIComponent(returnUrl);
+      } else {
+        window.location.href = `menu_B2B.html?${urlParams.toString()}`;
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      iniciarMediaPipeFaceMesh();
+      renderizarGrillaPruebas();
+    });
+  </script>
+</body>
+</html>

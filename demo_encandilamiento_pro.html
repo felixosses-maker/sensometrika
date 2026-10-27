@@ -3,24 +3,22 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>SENSOMETRIKA | Test de Encandilamiento Pro</title>
+  <title>SENSOMETRIKA | Test de Agudeza Visual B2B Pro</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- LIBRERÍAS GOOGLE MEDIAPIPE PARA TELEMETRÍA Y CONTROL FACIAL B2B -->
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
-  <script src="modules/v5_encandilamiento_core.js"></script>
+
   <style>
     :root {
       --bg-color: #040810;
       --card-bg: #091120;
       --card-border: #132238;
-      --inner-price-bg: #050a14;
       --accent-cyan: #00bfff;
       --accent-cyan-glow: rgba(0, 191, 255, 0.4);
       --accent-gold: #e5b324;
-      --accent-gold-glow: rgba(229, 179, 36, 0.4);
-      --accent-red: #ef4444;
       --accent-green: #10b981;
+      --accent-red: #ef4444;
       --text-main: #f8fafc;
       --text-muted: #94a3b8;
     }
@@ -30,7 +28,7 @@
       margin: 0; 
       padding: 0; 
       user-select: none; 
-      -webkit-user-select: none;
+      -webkit-user-select: none; 
       -webkit-tap-highlight-color: transparent;
     }
 
@@ -55,7 +53,6 @@
       gap: 14px;
     }
 
-    /* Logo Superior Estándar v1 */
     .brand-header {
       display: flex;
       flex-direction: column;
@@ -87,7 +84,6 @@
       text-align: center;
     }
 
-    /* Tarjeta Principal v1 */
     .main-card {
       background-color: var(--card-bg);
       border: 1px solid var(--card-border);
@@ -101,7 +97,6 @@
       position: relative;
     }
 
-    /* BARRA SUPERIOR UNIFICADA CON BIOMETRÍA PIP EN HEADER (ALTERNATIVA 1) */
     .top-nav-bar {
       display: flex !important;
       justify-content: space-between !important;
@@ -131,7 +126,6 @@
       color: #ffffff !important;
     }
 
-    /* PIP BIOMÉTRICO FRENADO Y RESTRINGIDO A 56px X 56px */
     .cam-preview-pip-header {
       position: relative !important;
       width: 56px !important;
@@ -185,7 +179,53 @@
       text-transform: uppercase;
     }
 
-    /* OVERLAY DE BLOQUEO POR DISTANCIA NORMATIVA */
+    #visual-viewport {
+      position: relative;
+      width: 100%;
+      height: 240px;
+      background: #030712;
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+    }
+
+    .optotipo-display {
+      font-size: 5rem;
+      font-weight: 900;
+      color: #fff;
+      text-align: center;
+      letter-spacing: 2px;
+    }
+
+    .controls-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 6px;
+      width: 100%;
+    }
+
+    .btn-opt {
+      background: #0c182e;
+      border: 1px solid var(--card-border);
+      color: var(--accent-cyan);
+      padding: 10px 0;
+      font-weight: 800;
+      font-size: 0.85rem;
+      border-radius: 8px;
+      cursor: pointer;
+      text-align: center;
+    }
+
+    .btn-opt:hover {
+      background: #1e293b;
+      color: #fff;
+    }
+
     .distance-block-overlay {
       position: absolute;
       inset: 0;
@@ -204,6 +244,20 @@
 
     .distance-block-title { color: var(--accent-red); font-weight: 900; font-size: 0.92rem; text-transform: uppercase; }
     .distance-block-desc { color: var(--text-main); font-size: 0.74rem; line-height: 1.35; }
+
+    .start-overlay {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      align-items: center;
+      justify-content: center;
+      background: rgba(4, 8, 16, 0.92);
+      z-index: 15;
+      padding: 18px;
+      text-align: center;
+    }
 
     .instruction-text {
       font-size: 0.74rem;
@@ -227,182 +281,140 @@
       box-shadow: 0 4px 16px var(--accent-cyan-glow);
     }
 
-    /* Fila Telemétrica Inferior 5 Columnas v1 */
     .telemetry-row {
       display: grid;
-      grid-template-columns: repeat(5, 1fr);
+      grid-template-columns: repeat(3, 1fr);
       background: #030712;
       border: 1px solid var(--card-border);
       border-radius: 10px;
-      padding: 10px 2px;
+      padding: 10px 4px;
       text-align: center;
     }
 
     .telemetry-col { display: flex; flex-direction: column; gap: 2px; }
-    .telemetry-lbl { font-size: 0.50rem; color: var(--text-muted); font-weight: 800; text-transform: uppercase; }
-    .telemetry-val { font-size: 0.80rem; font-weight: 900; color: #fff; }
+    .telemetry-lbl { font-size: 0.52rem; color: var(--text-muted); font-weight: 800; text-transform: uppercase; }
+    .telemetry-val { font-size: 0.82rem; font-weight: 900; color: #fff; }
   </style>
 </head>
 <body>
 
-  <!-- ELEMENTO OCULTO PARA RECEPCIÓN DE VIDEO DE CÁMARA -->
+  <!-- ELEMENTO OCULTO PARA CÁMARA -->
   <video id="webcamInput" style="display:none;" playsinline></video>
 
   <div class="main-wrapper">
-    
-    <!-- Header Institucional v1 -->
     <header class="brand-header">
       <div class="logo-container">
         <img src="sensometrica.jpg" alt="SENSOMETRIKA" class="brand-logo-img">
       </div>
-      <div class="subtitle-neon">MÓDULO ENCANDILAMIENTO • RITMO Y RECUPERACIÓN</div>
+      <div class="subtitle-neon">MÓDULO: SCREENING VISUAL PERICIAL</div>
     </header>
 
-    <!-- Tarjeta Central v1 -->
     <div class="main-card">
-      
-      <!-- Navegación Superior Interna con Biometría Header -->
       <div class="top-nav-bar">
-        <button type="button" onclick="volverMenu()">&larr; Menú Pruebas</button>
+        <button type="button" onclick="volverMenu()">← Menú Evaluaciones</button>
 
-        <!-- PIP BIOMÉTRICO RESTRINGIDO (56px) -->
         <div class="cam-preview-pip-header">
           <video id="webcamVideo" autoplay playsinline muted></video>
           <div class="cam-tag-header">Biometría</div>
         </div>
 
-        <button type="button" onclick="mostrarAyuda()">? &iquest;C&oacute;mo funciona?</button>
+        <button type="button" onclick="mostrarAyuda()">? Ayuda</button>
       </div>
 
-      <div class="pill-mode">&bull; Simulaci&oacute;n Oficial B2B PRO</div>
+      <div class="pill-mode">• D.S. N° 170 MTT</div>
 
-      <!-- Contenedor del Ejecutable JS del Módulo -->
-      <div id="containerEncandilamiento" style="position: relative;">
-        <!-- OVERLAY DE BLOQUEO POR DISTANCIA NORMATIVA -->
+      <!-- VIEWPORT VISUAL -->
+      <div id="visual-viewport">
+        <div id="optotipo" class="optotipo-display">E</div>
+
+        <div class="controls-grid" id="panelControlesRespuesta" style="display: none; padding: 0 16px;">
+          <button class="btn-opt" onclick="responderVisual('ARRIBA')">▲ ARRIBA</button>
+          <button class="btn-opt" onclick="responderVisual('ABAJO')">▼ ABAJO</button>
+          <button class="btn-opt" onclick="responderVisual('IZQ')">◄ IZQ</button>
+          <button class="btn-opt" onclick="responderVisual('DER')">► DER</button>
+        </div>
+
+        <div id="overlay" class="start-overlay">
+          <h2 style="color: var(--accent-cyan); font-size: 0.95rem; font-weight: 900; text-transform: uppercase;">
+            Test de Agudeza Visual (Optotipo E)
+          </h2>
+          <p class="instruction-text">
+            Identifique la orientación de la letra E conforme al D.S. N° 170 MTT. Mantenga su posición entre 50 y 60 cm.
+          </p>
+          <button id="btn-start" class="btn-action-main" onclick="comenzarEvaluacionVisual()">
+            INICIAR EVALUACIÓN →
+          </button>
+        </div>
+
+        <!-- OVERLAY DE BLOQUEO POR DISTANCIA -->
         <div id="boxBlockDistancia" class="distance-block-overlay">
           <span class="distance-block-title">⚠️ DISTANCIA / POSTURA FUERA DE RANGO</span>
-          <span id="txtDistanciaDetalle" class="distance-block-desc">
+          <span class="distance-block-desc">
             Ajuste su posición frente a la pantalla.<br>
             Distancia telemétrica actual: <b id="lblDistDetalleVal" style="color:var(--accent-red);">-- cm</b><br>
-            (Rango normativo: 45 a 65 cm).
+            (Rango normativo: 50 a 60 cm).
           </span>
         </div>
       </div>
 
-      <p class="instruction-text">
-        Evalúa el tiempo de recuperación de la visión nocturna tras destello de alta intensidad conforme al D.S. N° 170 MTT.
+      <p class="instruction-text" id="lblEstadoVisual">
+        Control Biométrico por Malla Facial activo.
       </p>
 
-      <!-- Botón de Acción Principal -->
-      <button id="btnIniciar" class="btn-action-main" onclick="iniciarPrueba()">
-        INICIAR SIMULACI&Oacute;N OFICIAL B2B
-      </button>
-
-      <!-- Panel Telemétrico Inferior de 5 Columnas v1 -->
       <div class="telemetry-row">
-        <div class="telemetry-col">
-          <span class="telemetry-lbl">ENSAYOS</span>
-          <span id="lblEnsayo" class="telemetry-val" style="color: var(--accent-cyan);">0/3</span>
-        </div>
-        <div class="telemetry-col">
-          <span class="telemetry-lbl">DESVIACIÓN</span>
-          <span id="lblErrores" class="telemetry-val" style="color: var(--accent-red);">0</span>
-        </div>
-        <div class="telemetry-col">
-          <span class="telemetry-lbl">LATENCIA</span>
-          <span id="lblLatencia" class="telemetry-val" style="color: var(--accent-gold);">16 ms</span>
-        </div>
-        <div class="telemetry-col">
-          <span class="telemetry-lbl">RECUPERACIÓN</span>
-          <span id="lblTiempoRec" class="telemetry-val" style="color: var(--accent-green);">0.00s</span>
-        </div>
         <div class="telemetry-col">
           <span class="telemetry-lbl">DISTANCIA</span>
           <span id="m-distancia" class="telemetry-val" style="color: var(--accent-green);">-- cm</span>
         </div>
-      </div>
-
-    </div>
-
-  </div>
-
-  <!-- Modal de Ayuda Integrado en Sensometrika -->
-  <div id="modalAyuda" style="display: none; position: fixed; inset: 0; background: rgba(4, 8, 16, 0.85); backdrop-filter: blur(4px); z-index: 999; justify-content: center; align-items: center; padding: 16px;">
-    <div style="background: #091120; border: 1px solid var(--accent-cyan); border-radius: 14px; padding: 20px; max-width: 420px; width: 100%; box-shadow: 0 0 25px rgba(0, 191, 255, 0.3); display: flex; flex-direction: column; gap: 14px;">
-      
-      <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--card-border); padding-bottom: 8px;">
-        <span style="font-size: 0.85rem; font-weight: 800; color: var(--accent-cyan); text-transform: uppercase;">
-          ℹ️ Instrucciones del Módulo
-        </span>
-        <button onclick="cerrarAyuda()" style="color: var(--text-muted); font-weight: 800; border: none; background: none; cursor: pointer; font-size: 1rem;">✕</button>
-      </div>
-
-      <div style="font-size: 0.76rem; color: #cbd5e1; line-height: 1.5; display: flex; flex-direction: column; gap: 8px;">
-        <p>1. Permanece atento a la pantalla durante la fase de adaptación nocturna.</p>
-        <p>2. Se producirá un destello de encandilamiento en pantalla.</p>
-        <p>3. Tan pronto aparezca el símbolo tenue, presiona la flecha correspondiente a su dirección (▲ ◄ ▼ ►).</p>
-        <div style="background: #030712; border: 1px dashed var(--accent-gold); padding: 8px; border-radius: 8px; color: var(--accent-gold); font-size: 0.70rem; font-weight: 700; margin-top: 4px;">
-          Estándar D.S. N° 170 MTT: Tiempo de recuperación ≤ 3.0 segundos.
+        <div class="telemetry-col">
+          <span class="telemetry-lbl">FASE EXAMEN</span>
+          <span id="m-lamina" class="telemetry-val" style="color: var(--accent-cyan);">0 / 8</span>
+        </div>
+        <div class="telemetry-col">
+          <span class="telemetry-lbl">ACIERTOS</span>
+          <span id="m-aciertos" class="telemetry-val" style="color: #10b981;">0 / 8</span>
         </div>
       </div>
-
-      <button onclick="cerrarAyuda()" class="btn-action-main" style="margin-top: 4px;">
-        ENTENDIDO →
-      </button>
     </div>
   </div>
 
   <script>
-    let testEnc = null;
     const urlParams = new URLSearchParams(window.location.search);
+    const rawRut = urlParams.get('rut') || '12345678K';
+    const cleanRut = rawRut.replace(/[^0-9Kk]/g, '');
+    const sessionId = urlParams.get('session') || `SESION_${cleanRut}_${Date.now()}`;
 
-    // TELEMETRÍA Y CONTROL DE CÁMARA BIOMÉTRICA
     let distanciaMedidaCm = 55;
     let estaBloqueadoPorDistancia = false;
+    let laminaActual = 0;
+    const totalLaminas = 8;
+    let aciertos = 0;
+    const orientaciones = ['ARRIBA', 'ABAJO', 'IZQ', 'DER'];
+    let orientacionActual = 'ARRIBA';
 
     function iniciarMediaPipeFaceMesh() {
       const videoElement = document.getElementById('webcamVideo');
-
       const faceMesh = new FaceMesh({
         locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`
       });
-
-      faceMesh.setOptions({
-        maxNumFaces: 1,
-        refineLandmarks: true,
-        minDetectionConfidence: 0.5,
-        minTrackingConfidence: 0.5
-      });
-
+      faceMesh.setOptions({ maxNumFaces: 1, refineLandmarks: true, minDetectionConfidence: 0.5, minTrackingConfidence: 0.5 });
       faceMesh.onResults(onResultsFaceMesh);
 
       const camera = new Camera(videoElement, {
-        onFrame: async () => {
-          await faceMesh.send({ image: videoElement });
-        },
-        width: 320,
-        height: 240
+        onFrame: async () => { await faceMesh.send({ image: videoElement }); },
+        width: 320, height: 240
       });
-
-      camera.start().catch(() => {
-        distanciaMedidaCm = 55;
-        evaluarRangoDistancia();
-      });
+      camera.start().catch(() => { distanciaMedidaCm = 55; evaluarRangoDistancia(); });
     }
 
     function onResultsFaceMesh(results) {
-      if (!results.multiFaceLandmarks || results.multiFaceLandmarks.length === 0) {
-        return;
-      }
-
+      if (!results.multiFaceLandmarks || results.multiFaceLandmarks.length === 0) return;
       const landmarks = results.multiFaceLandmarks[0];
       const leftEye = landmarks[33];
       const rightEye = landmarks[263];
-
       const dx = leftEye.x - rightEye.x;
       const dy = leftEye.y - rightEye.y;
       const eyeDistanceNormalized = Math.sqrt(dx * dx + dy * dy);
-
       let distCalculada = Math.round(9.5 / eyeDistanceNormalized);
       distanciaMedidaCm = Math.round(distanciaMedidaCm * 0.5 + distCalculada * 0.5);
       evaluarRangoDistancia();
@@ -413,9 +425,9 @@
       const lblDetalle = document.getElementById('lblDistDetalleVal');
       const mDistancia = document.getElementById('m-distancia');
 
-      mDistancia.textContent = `${distanciaMedidaCm} cm`;
+      mDistancia.textContent = `${distanciaMedidaCm} cm (OK)`;
 
-      if (distanciaMedidaCm >= 45 && distanciaMedidaCm <= 65) {
+      if (distanciaMedidaCm >= 50 && distanciaMedidaCm <= 60) {
         estaBloqueadoPorDistancia = false;
         mDistancia.style.color = 'var(--accent-green)';
         if (overlayBlock) overlayBlock.style.display = 'none';
@@ -429,37 +441,87 @@
 
     document.addEventListener('DOMContentLoaded', () => {
       iniciarMediaPipeFaceMesh();
-
-      const latencia = parseInt(urlParams.get('latencia') || localStorage.getItem('sensometrika_latencia_ms') || '16');
-      document.getElementById('lblLatencia').textContent = `${latencia} ms`;
-
-      if (typeof ModuloEncandilamiento !== 'undefined') {
-        testEnc = new ModuloEncandilamiento({
-          containerId: 'containerEncandilamiento',
-          latenciaHardwareMs: latencia,
-          onFinish: (res) => {
-            document.getElementById('lblTiempoRec').textContent = `${(res.tiempoRecuperacionMs / 1000).toFixed(2)}s`;
-            
-            const returnUrl = urlParams.get('returnUrl');
-            setTimeout(() => {
-              if (returnUrl) {
-                window.location.href = decodeURIComponent(returnUrl);
-              } else {
-                window.location.href = `informe_b2b.html?${urlParams.toString()}`;
-              }
-            }, 1500);
-          }
-        });
-      }
     });
 
-    function iniciarPrueba() {
+    function comenzarEvaluacionVisual() {
+      if (estaBloqueadoPorDistancia) return;
+      document.getElementById('overlay').style.display = 'none';
+      document.getElementById('panelControlesRespuesta').style.display = 'grid';
+      laminaActual = 0;
+      aciertos = 0;
+      siguienteLamina();
+    }
+
+    function siguienteLamina() {
+      if (laminaActual >= totalLaminas) {
+        finalizarPruebaVisual();
+        return;
+      }
+
+      laminaActual++;
+      document.getElementById('m-lamina').textContent = `${laminaActual} / ${totalLaminas}`;
+      
+      orientacionActual = orientaciones[Math.floor(Math.random() * orientaciones.length)];
+      const optotipo = document.getElementById('optotipo');
+      
+      switch(orientacionActual) {
+        case 'ARRIBA': optotipo.style.transform = 'rotate(0deg)'; break;
+        case 'ABAJO': optotipo.style.transform = 'rotate(180deg)'; break;
+        case 'IZQ': optotipo.style.transform = 'rotate(270deg)'; break;
+        case 'DER': optotipo.style.transform = 'rotate(90deg)'; break;
+      }
+      
+      document.getElementById('lblEstadoVisual').textContent = `Lámina ${laminaActual}: Indique la dirección de las barras.`;
+    }
+
+    function responderVisual(seleccion) {
       if (estaBloqueadoPorDistancia) return;
 
-      if (testEnc) {
-        document.getElementById('btnIniciar').style.display = 'none';
-        testEnc.iniciarEvaluacion();
+      if (seleccion === orientacionActual) {
+        aciertos++;
+        document.getElementById('m-aciertos').textContent = `${aciertos} / ${totalLaminas}`;
       }
+
+      siguienteLamina();
+    }
+
+    function finalizarPruebaVisual() {
+      document.getElementById('panelControlesRespuesta').style.display = 'none';
+      const aprobado = aciertos >= 5;
+
+      // 🔥 REGISTRO BLINDADO Y SINCRONIZADO CON EL MENÚ B2B CORPORATIVO
+      localStorage.setItem(`visual_demo_completada_${cleanRut}_${sessionId}`, 'true');
+      localStorage.setItem(`sensometrika_visual_${cleanRut}_${sessionId}`, 'true');
+      
+      let modulosRendidos = JSON.parse(localStorage.getItem('sensometrika_modulos_rendidos')) || {};
+      modulosRendidos.visual = true;
+      modulosRendidos.tamizaje_visual = true;
+      modulosRendidos.agudeza_visual = true;
+      localStorage.setItem('sensometrika_modulos_rendidos', JSON.stringify(modulosRendidos));
+
+      const datosResultado = {
+        modulo: 'Tamizaje Visual (Agudeza Snellen)',
+        aprobado: aprobado,
+        aciertos: aciertos,
+        total: totalLaminas,
+        fecha: new Date().toISOString()
+      };
+
+      localStorage.setItem(`sensometrika_last_visual_${cleanRut}_${sessionId}`, JSON.stringify(datosResultado));
+      let historial = JSON.parse(localStorage.getItem(`sensometrika_historial_visual_${cleanRut}`)) || [];
+      historial.push(datosResultado);
+      localStorage.setItem(`sensometrika_historial_visual_${cleanRut}`, JSON.stringify(historial));
+
+      const overlay = document.getElementById('overlay');
+      document.getElementById('overlay-title').textContent = '✓ EVALUACIÓN REGISTRADA (5/1)';
+      document.getElementById('overlay-msg').textContent = `Aciertos: ${aciertos}/${totalLaminas}. Estado: ${aprobado ? 'APROBADO' : 'REPROBADO'}.`;
+      
+      const startBtn = document.getElementById('btn-start');
+      startBtn.style.display = 'block';
+      startBtn.textContent = '← RETORNAR AL MENÚ DE EVALUACIONES';
+      startBtn.onclick = () => { volverMenu(); };
+      
+      overlay.style.display = 'flex';
     }
 
     function volverMenu() {
@@ -467,18 +529,11 @@
       if (returnUrl) {
         window.location.href = decodeURIComponent(returnUrl);
       } else {
-        window.location.href = `menu_B2B_PRO.html?${urlParams.toString()}`;
+        window.location.href = `menu_B2B.html?${urlParams.toString()}`;
       }
     }
 
-    function mostrarAyuda() {
-      document.getElementById('modalAyuda').style.display = 'flex';
-    }
-
-    function cerrarAyuda() {
-      document.getElementById('modalAyuda').style.display = 'none';
-    }
+    function mostrarAyuda() { alert('Instrucciones: Observe la letra E orientada en distintas direcciones y pulse el botón correspondiente a hacia dónde apuntan las barras.'); }
   </script>
-
 </body>
 </html>

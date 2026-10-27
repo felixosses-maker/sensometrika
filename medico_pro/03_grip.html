@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>SENSOMETRIKA | Test de Fuerza de Prehensión Pro (Grip)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    :root {
+      --bg-color: #040810; --card-bg: #091120; --card-border: #132238;
+      --accent-cyan: #00bfff; --accent-green: #10b981; --accent-red: #ef4444; --text-main: #f8fafc; --text-muted: #94a3b8;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; -webkit-user-select: none; }
+    body { background-color: var(--bg-color); color: var(--text-main); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; min-height: 100vh; padding: 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+    .card { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 14px; padding: 20px; width: 100%; max-width: 440px; display: flex; flex-direction: column; gap: 14px; text-align: center; }
+    .btn { background: var(--accent-cyan); color: #000; border: none; padding: 12px; border-radius: 8px; font-weight: 900; cursor: pointer; text-transform: uppercase; width: 100%; }
+    .grip-pad { background: #030712; border: 2px dashed var(--accent-cyan); border-radius: 12px; height: 130px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; transition: background 0.1s; }
+    .grip-pad.active { background: rgba(0, 191, 255, 0.15); border-color: var(--accent-green); }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h2 style="color: var(--accent-cyan); font-size: 0.95rem; font-weight: 900;">3. Dinamometría y Fuerza (Grip Pro)</h2>
+    <p style="font-size: 0.74rem; color: var(--text-muted);">Mantenga presionado el panel táctil con fuerza constante y sostenida durante <strong>20 segundos</strong>.</p>
+    
+    <div id="viewportGrip" style="background: #030712; border: 1px solid var(--card-border); border-radius: 10px; padding: 16px; display: flex; flex-direction: column; gap: 10px; align-items: center;">
+      <span id="lblTimer" style="font-size: 2.2rem; font-weight: 900; color: #fff;">20s</span>
+      <div id="touchPad" class="grip-pad" style="width: 100%;">
+        <span id="lblEstadoPad" style="font-size: 0.8rem; font-weight: 800; color: var(--accent-cyan);">PULSE Y MANTENGA AQUÍ</span>
+      </div>
+    </div>
+
+    <button class="btn" id="btnIniciar" onclick="iniciarGripTest()">INICIAR PRUEBA GRIP →</button>
+  </div>
+
+  <script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const cleanRut = (urlParams.get('rut') || '12345678K').replace(/[^0-9Kk]/g, '');
+    const sessionId = urlParams.get('session') || `SESION_${cleanRut}_${Date.now()}`;
+
+    let testEnCurso = false;
+    let isHolding = false;
+    let tiempoRestante = 20;
+    let intervaloTimer = null;
+
+    function emitirPitido(frecuencia, duracion) {
+      try {
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.value = frecuencia;
+        gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + duracion);
+      } catch (e) {
+        console.log("Audio no soportado", e);
+      }
+    }
+
+    function iniciarGripTest() {
+      document.getElementById('btnIniciar').style.display = 'none';
+      testEnCurso = true;
+      tiempoRestante = 20;
+      
+      const pad = document.getElementById('touchPad');
+      const lblTimer = document.getElementById('lblTimer');
+      const lblEstado = document.getElementById('lblEstadoPad');
+
+      emitirPitido(880, 0.3);
+      lblEstado.textContent = "¡MANTENGA PULSADO SIN SOLTAR!";
+
+      // Eventos táctiles y de mouse para el grip pad
+      pad.addEventListener('pointerdown', () => { if(testEnCurso) { isHolding = true; pad.classList.add('active'); } });
+      window.addEventListener('pointerup', () => { if(testEnCurso) { isHolding = false; pad.classList.remove('active'); } });
+
+      intervaloTimer = setInterval(() => {
+        if (isHolding) {
+          tiempoRestante--;
+          lblTimer.textContent = `${tiempoRestante}s`;
+          lblEstado.style.color = "var(--accent-green)";
+        } else {
+          lblEstado.style.color = "var(--accent-red)";
+          lblEstado.textContent = "⚠️ ¡NO SOLTAR EL PANEL!";
+        }
+
+        if (tiempoRestante <= 0) {
+          clearInterval(intervaloTimer);
+          testEnCurso = false;
+          isHolding = false;
+
+          emitirPitido(587, 0.2);
+          setTimeout(() => emitirPitido(880, 0.4), 250);
+
+          lblEstado.textContent = "✓ Fuerza isométrica validada con éxito";
+          lblTimer.style.color = "var(--accent-green)";
+          pad.classList.remove('active');
+
+          localStorage.setItem(`medico_grip_${cleanRut}_${sessionId}`, 'true');
+
+          let modulosRendidos = JSON.parse(localStorage.getItem('sensometrika_modulos_rendidos')) || {};
+          modulosRendidos.medico_grip = true;
+          localStorage.setItem('sensometrika_modulos_rendidos', JSON.stringify(modulosRendidos));
+
+          setTimeout(() => {
+            const returnUrl = urlParams.get('returnUrl');
+            if (returnUrl) {
+              window.location.href = decodeURIComponent(returnUrl);
+            } else {
+              window.location.href = `../menu_B2B.html?${urlParams.toString()}`;
+            }
+          }, 1800);
+        }
+      }, 1000);
+    }
+  </script>
+</body>
+</html>
