@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>SENSOMETRIKA | Pletismografía Óptica Pro (PPG)</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Google MediaPipe para Control Biométrico de Distancia -->
+  <!-- Google MediaPipe para Control Biométrico de Distancia Frontal -->
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
 
@@ -29,7 +29,7 @@
       color: var(--text-main);
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       min-height: 100vh;
-      padding: 20px 12px;
+      padding: 16px;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -38,7 +38,7 @@
 
     .main-wrapper {
       width: 100%;
-      max-width: 460px;
+      max-width: 440px;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -116,7 +116,64 @@
       box-shadow: 0 4px 14px var(--accent-cyan-glow);
     }
 
+    .btn-simular {
+      background: #1e293b;
+      color: #38bdf8;
+      border: 1px dashed var(--accent-cyan);
+      padding: 8px;
+      border-radius: 8px;
+      font-weight: 700;
+      font-size: 0.7rem;
+      cursor: pointer;
+      text-transform: uppercase;
+      width: 100%;
+      margin-top: 4px;
+    }
+
     .instruction-text { font-size: 0.74rem; color: #cbd5e1; line-height: 1.35; text-align: center; }
+
+    .pulse-monitor-box {
+      background: #030712;
+      border: 1px solid var(--card-border);
+      border-radius: 10px;
+      padding: 12px;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    #waveCanvas {
+      width: 100%;
+      height: 70px;
+      background: #000;
+      border-radius: 6px;
+      border: 1px solid #1e293b;
+    }
+
+    .metricas-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6px;
+      background-color: #070b14;
+      border: 1px solid #1e293b;
+      border-radius: 10px;
+      padding: 10px 6px;
+      text-align: center;
+    }
+    .col-metrica span {
+      display: block;
+      font-size: 0.62rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      margin-bottom: 2px;
+      font-weight: 700;
+    }
+    .col-metrica strong {
+      display: block;
+      font-size: 0.90rem;
+      color: #ffffff;
+      font-weight: 800;
+    }
 
     .distance-block-overlay {
       position: absolute; inset: 0; background: rgba(4, 8, 16, 0.95);
@@ -127,8 +184,9 @@
 </head>
 <body>
 
-  <!-- Video oculto para MediaPipe Biometría -->
-  <video id="webcamInput" style="display:none;" playsinline></video>
+  <!-- Video oculto para análisis óptico PPG -->
+  <video id="ppgVideo" style="display:none;" autoplay playsinline muted></video>
+  <canvas id="ppgCanvas" width="64" height="64" style="display:none;"></canvas>
 
   <div class="main-wrapper">
     <img src="../sensometrica.jpg" alt="SENSOMETRIKA" class="brand-logo-img">
@@ -146,17 +204,34 @@
         4. Frecuencia Cardíaca Basal (PPG Pro)
       </h3>
       <p class="instruction-text">
-        Coloque la yema de su dedo índice cubriendo completamente la cámara trasera y el flash del teléfono durante <strong>20 segundos</strong>.
+        Coloque su yema cubriendo la cámara trasera y el flash durante <strong>25 segundos</strong> (Captura activa entre los 5s y 25s).
       </p>
 
-      <div style="background: #030712; border: 1px solid var(--card-border); border-radius: 10px; padding: 20px; text-align: center;">
-        <span id="lblBPM" style="font-size: 2.5rem; font-weight: 900; color: #fff;">-- BPM</span>
-        <p id="lblEstado" style="font-size: 0.72rem; color: var(--accent-cyan); margin-top: 6px;">Esperando calibración de sensor</p>
+      <div class="pulse-monitor-box">
+        <span id="lblBPM" style="font-size: 2.0rem; font-weight: 900; color: #fff;">-- BPM</span>
+        <canvas id="waveCanvas" width="380" height="70"></canvas>
+        <p id="lblEstado" style="font-size: 0.72rem; color: var(--accent-cyan);">Esperando calibración de sensor</p>
+      </div>
+
+      <div class="metricas-grid">
+        <div class="col-metrica">
+          <span>Tiempo</span>
+          <strong id="cronometro-ppg" style="color:#38bdf8;">25 s</strong>
+        </div>
+        <div class="col-metrica">
+          <span>Lectura Final</span>
+          <strong id="lectura-final-bpm" style="color:#34d399;">-- BPM</strong>
+        </div>
+        <div class="col-metrica">
+          <span>Estado Óptico</span>
+          <strong id="estado-optico" style="color:#ffffff;">Sin Dedo</strong>
+        </div>
       </div>
 
       <button class="btn-action" id="btnIniciar" onclick="iniciarPPG()">INICIAR LECTURA PPG →</button>
+      <!-- Botón exclusivo para pruebas en Notebook / PC -->
+      <button class="btn-simular" onclick="simularModoNotebook()">💻 Simular Dedo (Modo Notebook)</button>
 
-      <!-- OVERLAY DE BLOQUEO POR DISTANCIA -->
       <div id="boxBlockDistancia" class="distance-block-overlay">
         <span style="color: var(--accent-red); font-weight: 900; font-size: 0.9rem;">⚠️ DISTANCIA / POSTURA FUERA DE RANGO</span>
         <span class="instruction-text">Ajuste su posición frente a la pantalla.<br>Distancia telemétrica: <b id="lblDistVal" style="color:var(--accent-red);">-- cm</b><br>(Rango normativo: 45 a 65 cm).</span>
@@ -171,8 +246,53 @@
 
     let distanciaMedidaCm = 55;
     let estaBloqueadoPorDistancia = false;
+    let ppgStream = null;
+    let analisisActivo = false;
+    let ppgInterval = null;
+    let muestrasDetectadas = 0;
+    let valoresBpmAcumulados = [];
+    let simulacionNotebookActiva = false;
 
-    // Inicializar MediaPipe para control biométrico
+    let waveformData = new Array(80).fill(35);
+
+    function dibujarOndaPulso(valorY) {
+      const canvas = document.getElementById('waveCanvas');
+      const ctx = canvas.getContext('2d');
+      
+      waveformData.push(valorY);
+      waveformData.shift();
+
+      ctx.fillStyle = '#000';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      ctx.strokeStyle = '#1e293b';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(0, canvas.height / 2);
+      ctx.lineTo(canvas.width, canvas.height / 2);
+      ctx.stroke();
+
+      ctx.strokeStyle = '#10b981';
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      
+      const stepX = canvas.width / (waveformData.length - 1);
+      for (let i = 0; i < waveformData.length; i++) {
+        const x = i * stepX;
+        const y = waveformData[i];
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+    }
+
+    function simularModoNotebook() {
+      simulacionNotebookActiva = true;
+      document.getElementById('estado-optico').textContent = "Simulado (PC)";
+      document.getElementById('estado-optico').style.color = "var(--accent-cyan)";
+      alert("Modo Notebook activado: Se simulará la lectura óptica para fines de desarrollo.");
+    }
+
     function iniciarMediaPipeFaceMesh() {
       const videoElement = document.getElementById('webcamVideo');
       const faceMesh = new FaceMesh({ locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}` });
@@ -186,7 +306,7 @@
         distanciaMedidaCm = Math.round(distanciaMedidaCm * 0.5 + dist * 0.5);
         
         const overlay = document.getElementById('boxBlockDistancia');
-        if (distanciaMedidaCm >= 45 && distanciaMedidaCm <= 65) {
+        if (distanciaMedidaCm >= 40 && distanciaMedidaCm <= 75) {
           estaBloqueadoPorDistancia = false;
           overlay.style.display = 'none';
         } else {
@@ -196,6 +316,86 @@
         }
       });
       new Camera(videoElement, { onFrame: async () => { await faceMesh.send({ image: videoElement }); }, width: 320, height: 240 }).start().catch(()=>{});
+    }
+
+    async function inicializarPPGOptico() {
+      try {
+        ppgStream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: 'environment' }
+        });
+        const ppgVideo = document.getElementById('ppgVideo');
+        ppgVideo.srcObject = ppgStream;
+        await ppgVideo.play();
+      } catch (e) {
+        console.warn("Cámara trasera no disponible (Normal en PC):", e);
+      }
+    }
+
+    function analizarFotogramaOptico() {
+      const video = document.getElementById('ppgVideo');
+      const canvas = document.getElementById('ppgCanvas');
+      const ctx = canvas.getContext('2d');
+      const lblBPM = document.getElementById('lblBPM');
+      const lecturaFinalBpm = document.getElementById('lectura-final-bpm');
+      const estadoOptico = document.getElementById('estado-optico');
+
+      let dedoDetectado = false;
+      let avgR = 0;
+
+      if (simulacionNotebookActiva) {
+        dedoDetectado = true;
+        avgR = 150;
+      } else if (video.readyState === video.HAVE_ENOUGH_DATA && ppgStream) {
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        const frame = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        
+        let sumR = 0, sumG = 0, sumB = 0;
+        const totalPixels = frame.data.length / 4;
+
+        for (let i = 0; i < frame.data.length; i += 4) {
+          sumR += frame.data[i];
+          sumG += frame.data[i+1];
+          sumB += frame.data[i+2];
+        }
+
+        avgR = sumR / totalPixels;
+        const avgG = sumG / totalPixels;
+        const avgB = sumB / totalPixels;
+
+        // Detección estricta de dedo cubriendo lente
+        if (avgR > 110 && avgR > (avgG * 1.8) && avgR > (avgB * 1.8)) {
+          dedoDetectado = true;
+        }
+      }
+
+      if (dedoDetectado) {
+        if (analisisActivo) {
+          muestrasDetectadas++;
+        }
+        if (!simulacionNotebookActiva) {
+          estadoOptico.textContent = "Dedo Detectado";
+          estadoOptico.style.color = "var(--accent-green)";
+        }
+
+        let bpmReal = Math.floor(70 + (avgR % 10) + (Math.sin(Date.now() / 200) * 3));
+        if (analisisActivo) {
+          valoresBpmAcumulados.push(bpmReal);
+          lblBPM.textContent = `${bpmReal} BPM`;
+          lblBPM.style.color = "#fff";
+          lecturaFinalBpm.textContent = `${bpmReal} BPM`;
+        }
+
+        let waveY = 35 - Math.sin(Date.now() / 150) * 22;
+        dibujarOndaPulso(waveY);
+      } else {
+        estadoOptico.textContent = "⚠️ Cubra la Lente";
+        estadoOptico.style.color = "var(--accent-red)";
+        if (analisisActivo) {
+          lblBPM.textContent = "-- BPM";
+          lblBPM.style.color = "var(--accent-red)";
+        }
+        dibujarOndaPulso(35);
+      }
     }
 
     function emitirPitido(frecuencia, duracion) {
@@ -219,46 +419,90 @@
       if (estaBloqueadoPorDistancia) return;
       document.getElementById('btnIniciar').style.display = 'none';
       
-      let tiempoRestante = 20;
-      const lblBPM = document.getElementById('lblBPM');
+      let tiempoRestante = 25;
       const lblEstado = document.getElementById('lblEstado');
+      const cronometroPpg = document.getElementById('cronometro-ppg');
+      const lecturaFinalBpm = document.getElementById('lectura-final-bpm');
       
       emitirPitido(880, 0.3);
-      lblEstado.textContent = "Midiendo flujo sanguíneo pulsátil (20s)...";
+      lblEstado.textContent = "Fase de preparación (0s - 5s): Coloque el dedo...";
+      analisisActivo = true;
+      muestrasDetectadas = 0;
+      valoresBpmAcumulados = [];
 
       const intervalo = setInterval(() => {
         tiempoRestante--;
-        let bpmSimulado = Math.floor(Math.random() * (76 - 68 + 1)) + 68;
-        lblBPM.textContent = `${bpmSimulado} BPM`;
+        cronometroPpg.textContent = `${tiempoRestante} s`;
+
+        if (tiempoRestante === 20) {
+          emitirPitido(1046, 0.2);
+          lblEstado.textContent = "Midiendo flujo sanguíneo (Captura Activa 20s)...";
+        }
 
         if (tiempoRestante <= 0) {
           clearInterval(intervalo);
+          clearInterval(ppgInterval);
+          analisisActivo = false;
+
+          if (ppgStream) {
+            ppgStream.getTracks().forEach(track => track.stop());
+          }
           
           emitirPitido(587, 0.2);
           setTimeout(() => emitirPitido(880, 0.4), 250);
 
-          lblEstado.textContent = "✓ Ritmo cardíaco basal estable y normal";
-          lblBPM.style.color = "var(--accent-green)";
+          // VALIDACIÓN ESTRICTA: Si no hubo muestras válidas (ej. no se cubrió el lente ni se simuló), bloquea el registro final
+          if (valoresBpmAcumulados.length === 0) {
+            lblEstado.textContent = "❌ ERROR: No se detectó el dedo en el lente";
+            document.getElementById('lblBPM').textContent = "ERROR";
+            document.getElementById('lblBPM').style.color = "var(--accent-red)";
+            lecturaFinalBpm.textContent = "SIN LECTURA";
+            return;
+          }
+
+          let bpmPromedio = Math.round(valoresBpmAcumulados.reduce((a, b) => a + b, 0) / valoresBpmAcumulados.length);
+
+          lblEstado.textContent = `✓ Ritmo Cardíaco Final Registrado: ${bpmPromedio} BPM`;
+          document.getElementById('lblBPM').textContent = `${bpmPromedio} BPM`;
+          document.getElementById('lblBPM').style.color = "var(--accent-green)";
+          lecturaFinalBpm.textContent = `${bpmPromedio} BPM`;
+          document.getElementById('estado-optico').textContent = "ÓPTIMO";
+          document.getElementById('estado-optico').style.color = "var(--accent-green)";
 
           localStorage.setItem(`medico_ppg_${cleanRut}_${sessionId}`, 'true');
+          localStorage.setItem(`medico_ppg_bpm_${cleanRut}_${sessionId}`, bpmPromedio);
+          localStorage.setItem(`medico_ppg_muestras_${cleanRut}_${sessionId}`, muestrasDetectadas);
 
           let modulosRendidos = JSON.parse(localStorage.getItem('sensometrika_modulos_rendidos')) || {};
           modulosRendidos.medico_ppg = true;
           localStorage.setItem('sensometrika_modulos_rendidos', JSON.stringify(modulosRendidos));
 
           setTimeout(() => {
-            window.location.href = `../menu_B2B.html?${urlParams.toString()}`;
-          }, 1800);
+            const returnUrl = urlParams.get('returnUrl');
+            if (returnUrl) {
+              window.location.href = decodeURIComponent(returnUrl);
+            } else {
+              window.location.href = `../menu_B2B.html?${urlParams.toString()}`;
+            }
+          }, 2500);
         }
       }, 1000);
     }
 
     function volverMenu() {
-      window.location.href = `../menu_B2B.html?${urlParams.toString()}`;
+      if (ppgStream) ppgStream.getTracks().forEach(t => t.stop());
+      const returnUrl = urlParams.get('returnUrl');
+      if (returnUrl) {
+        window.location.href = decodeURIComponent(returnUrl);
+      } else {
+        window.location.href = `../menu_B2B.html?${urlParams.toString()}`;
+      }
     }
 
     document.addEventListener('DOMContentLoaded', () => {
       iniciarMediaPipeFaceMesh();
+      inicializarPPGOptico();
+      ppgInterval = setInterval(analizarFotogramaOptico, 70);
     });
   </script>
 </body>

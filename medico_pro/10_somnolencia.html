@@ -29,7 +29,7 @@
       color: var(--text-main);
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       min-height: 100vh;
-      padding: 20px 12px;
+      padding: 16px;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -38,7 +38,7 @@
 
     .main-wrapper {
       width: 100%;
-      max-width: 460px;
+      max-width: 440px;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -118,6 +118,32 @@
 
     .instruction-text { font-size: 0.74rem; color: #cbd5e1; line-height: 1.35; text-align: center; }
 
+    /* Estructura oficial de rejilla de telemetría SENSOMETRIKA */
+    .metricas-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6px;
+      background-color: #070b14;
+      border: 1px solid #1e293b;
+      border-radius: 10px;
+      padding: 10px 6px;
+      text-align: center;
+    }
+    .col-metrica span {
+      display: block;
+      font-size: 0.62rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      margin-bottom: 2px;
+      font-weight: 700;
+    }
+    .col-metrica strong {
+      display: block;
+      font-size: 0.90rem;
+      color: #ffffff;
+      font-weight: 800;
+    }
+
     .distance-block-overlay {
       position: absolute; inset: 0; background: rgba(4, 8, 16, 0.95);
       backdrop-filter: blur(4px); z-index: 30; display: none;
@@ -136,7 +162,7 @@
     <div class="main-card">
       <div class="top-nav-bar">
         <button type="button" onclick="volverMenu()">← Menú B2B</button>
-        <div class="cam-preview-pip">
+        <div class="cam-preview-pip" id="pipContainer">
           <video id="webcamVideo" autoplay playsinline muted></video>
         </div>
         <button type="button" onclick="location.reload()">↺ Reiniciar</button>
@@ -146,21 +172,36 @@
         10. Tamizaje de Fatiga y Somnolencia (Pro)
       </h3>
       <p class="instruction-text">
-        Mantenga los ojos abiertos y la mirada fija al frente para evaluar signos de fatiga durante <strong>20 segundos</strong>.
+        Manténgase a <strong>30 cm</strong> de distancia. Mantenga los ojos abiertos y la mirada fija al frente durante <strong>25 segundos</strong> (Captura activa entre los 5s y 25s).
       </p>
 
-      <div style="background: #030712; border: 1px solid var(--card-border); border-radius: 10px; padding: 20px; text-align: center;">
-        <span id="lblTimer" style="font-size: 2.5rem; font-weight: 900; color: #fff;">20s</span>
-        <p id="lblEstado" style="font-size: 0.72rem; color: var(--accent-cyan); margin-top: 6px;">Listo para iniciar análisis de alerta</p>
-        <p style="font-size: 0.65rem; color: var(--text-muted); margin-top: 4px;">Índice de Alerta: <b id="lblAlertaVal" style="color:var(--accent-green);">100% (Óptimo)</b></p>
+      <div style="background: #030712; border: 1px solid var(--card-border); border-radius: 10px; padding: 16px; text-align: center;">
+        <span id="lblTimer" style="font-size: 2.2rem; font-weight: 900; color: #fff;">25s</span>
+        <p id="lblEstado" style="font-size: 0.75rem; color: var(--accent-cyan); margin-top: 4px;">Listo para iniciar análisis de alerta</p>
+      </div>
+
+      <!-- PANEL DE TELEMETRÍA OFICIAL SENSOMETRIKA CON DATOS EN VIVO -->
+      <div class="metricas-grid">
+        <div class="col-metrica">
+          <span>Tiempo</span>
+          <strong id="cronometro-fatiga" style="color:#38bdf8;">25 s</strong>
+        </div>
+        <div class="col-metrica">
+          <span>Estado Ocular</span>
+          <strong id="tel-estado-ojos" style="color:#ffffff;">Abiertos</strong>
+        </div>
+        <div class="col-metrica">
+          <span>Índice Alerta</span>
+          <strong id="tel-alerta" style="color:#34d399;">100%</strong>
+        </div>
       </div>
 
       <button class="btn-action" id="btnIniciar" onclick="iniciarSomnolencia()">INICIAR TAMIZAJE DE FATIGA →</button>
 
-      <!-- OVERLAY DE BLOQUEO POR DISTANCIA -->
+      <!-- OVERLAY DE BLOQUEO POR DISTANCIA (Calibrado a 25 - 38 cm) -->
       <div id="boxBlockDistancia" class="distance-block-overlay">
-        <span style="color: var(--accent-red); font-weight: 900; font-size: 0.9rem;">⚠️ DISTANCIA / POSTURA FUERA DE RANGO</span>
-        <span class="instruction-text">Ajuste su posición frente a la pantalla.<br>Distancia telemétrica: <b id="lblDistVal" style="color:var(--accent-red);">-- cm</b><br>(Rango normativo: 45 a 65 cm).</span>
+        <span style="color: var(--accent-red); font-weight: 900; font-size: 0.9rem;">⚠️ DISTANCIA FUERA DE RANGO</span>
+        <span class="instruction-text">Acérquese o aléjese de la cámara.<br>Distancia telemétrica: <b id="lblDistVal" style="color:var(--accent-red);">-- cm</b><br>(Rango normativo cercano: 25 a 38 cm).</span>
       </div>
     </div>
   </div>
@@ -170,26 +211,71 @@
     const cleanRut = (urlParams.get('rut') || '12345678K').replace(/[^0-9Kk]/g, '');
     const sessionId = urlParams.get('session') || `SESION_${cleanRut}_${Date.now()}`;
 
-    let distanciaMedidaCm = 55;
+    let distanciaMedidaCm = 30;
     let estaBloqueadoPorDistancia = false;
     let testEnCurso = false;
-    let tiempoRestante = 20;
     let intervaloTimer = null;
+    let indiceAlerta = 100;
+    let conteoParpadeosRapidos = 0;
+    let estadoAnteriorCerrado = false;
 
     function iniciarMediaPipeFaceMesh() {
       const videoElement = document.getElementById('webcamVideo');
       const faceMesh = new FaceMesh({ locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}` });
       faceMesh.setOptions({ maxNumFaces: 1, refineLandmarks: true, minDetectionConfidence: 0.5, minTrackingConfidence: 0.5 });
+      
       faceMesh.onResults((results) => {
-        if (!results.multiFaceLandmarks || results.multiFaceLandmarks.length === 0) return;
+        const telEstadoOjos = document.getElementById('tel-estado-ojos');
+        const telAlerta = document.getElementById('tel-alerta');
+        const overlay = document.getElementById('boxBlockDistancia');
+
+        if (!results.multiFaceLandmarks || results.multiFaceLandmarks.length === 0) {
+          if (testEnCurso) {
+            telEstadoOjos.textContent = "Ausente";
+            telEstadoOjos.style.color = "var(--accent-red)";
+          }
+          return;
+        }
+
         const landmarks = results.multiFaceLandmarks[0];
+
+        // Cálculo EAR calibrado
+        const verticalOjoIzq = Math.abs(landmarks[159].y - landmarks[145].y);
+        const verticalOjoDer = Math.abs(landmarks[386].y - landmarks[374].y);
+        const aperturaPromedio = (verticalOjoIzq + verticalOjoDer) / 2;
+
+        const ojosCerrados = aperturaPromedio < 0.014;
+
+        if (ojosCerrados) {
+          if (!estadoAnteriorCerrado && testEnCurso) {
+            // Detecta el inicio de un nuevo parpadeo o cierre
+            conteoParpadeosRapidos++;
+            indiceAlerta = Math.max(0, indiceAlerta - 4); // Penalización más estricta por parpadeo/cierre
+          }
+          estadoAnteriorCerrado = true;
+          if (testEnCurso) {
+            telEstadoOjos.textContent = "Cerrados / Parpadeo";
+            telEstadoOjos.style.color = "var(--accent-red)";
+            telAlerta.textContent = `${indiceAlerta}%`;
+            telAlerta.style.color = "var(--accent-red)";
+          }
+        } else {
+          estadoAnteriorCerrado = false;
+          if (testEnCurso) {
+            telEstadoOjos.textContent = "Abiertos";
+            telEstadoOjos.style.color = "var(--accent-green)";
+            telAlerta.textContent = `${indiceAlerta}%`;
+            telAlerta.style.color = indiceAlerta >= 70 ? "var(--accent-green)" : "var(--accent-red)";
+          }
+        }
+
+        // Control de distancia cercana (25 a 38 cm)
         const dx = landmarks[33].x - landmarks[263].x;
         const dy = landmarks[33].y - landmarks[263].y;
         let dist = Math.round(9.5 / Math.sqrt(dx * dx + dy * dy));
         distanciaMedidaCm = Math.round(distanciaMedidaCm * 0.5 + dist * 0.5);
         
-        const overlay = document.getElementById('boxBlockDistancia');
-        if (distanciaMedidaCm >= 45 && distanciaMedidaCm <= 65) {
+        if (distanciaMedidaCm >= 25 && distanciaMedidaCm <= 38) {
           estaBloqueadoPorDistancia = false;
           overlay.style.display = 'none';
         } else {
@@ -222,18 +308,28 @@
       if (estaBloqueadoPorDistancia) return;
       document.getElementById('btnIniciar').style.display = 'none';
       testEnCurso = true;
-      tiempoRestante = 20;
-
+      indiceAlerta = 100;
+      conteoParpadeosRapidos = 0;
+      estadoAnteriorCerrado = false;
+      
+      let tiempoRestante = 25;
+      const cronometroFatiga = document.getElementById('cronometro-fatiga');
       const lblTimer = document.getElementById('lblTimer');
       const lblEstado = document.getElementById('lblEstado');
-      const lblAlerta = document.getElementById('lblAlertaVal');
+      const telAlerta = document.getElementById('tel-alerta');
       
       emitirPitido(880, 0.3);
-      lblEstado.textContent = "Analizando apertura ocular y signos de fatiga...";
+      lblEstado.textContent = "Fase de preparación (0s - 5s): Mantenga la mirada abierta...";
 
       intervaloTimer = setInterval(() => {
         tiempoRestante--;
+        cronometroFatiga.textContent = `${tiempoRestante} s`;
         lblTimer.textContent = `${tiempoRestante}s`;
+
+        if (tiempoRestante === 20) {
+          emitirPitido(1046, 0.2);
+          lblEstado.textContent = "Tamizaje de somnolencia activo (Captura 20s)...";
+        }
 
         if (tiempoRestante <= 0) {
           clearInterval(intervaloTimer);
@@ -242,25 +338,46 @@
           emitirPitido(587, 0.2);
           setTimeout(() => emitirPitido(880, 0.4), 250);
 
-          lblEstado.textContent = "✓ Tamizaje de somnolencia superado (Alerta normal)";
-          lblTimer.style.color = "var(--accent-green)";
-          lblAlerta.style.color = "var(--accent-green)";
+          // Criterio normativo ocupacional estricto: Si parpadeó en exceso (>8 veces en total durante el test), se marca alerta de fatiga
+          let aprobadoFatiga = indiceAlerta >= 75 && conteoParpadeosRapidos <= 8;
 
-          localStorage.setItem(`medico_somnolencia_${cleanRut}_${sessionId}`, 'true');
+          if (aprobadoFatiga) {
+            lblEstado.textContent = "✓ Tamizaje de somnolencia superado con éxito";
+            lblTimer.style.color = "var(--accent-green)";
+            telAlerta.textContent = `${indiceAlerta}% (Óptimo)`;
+            telAlerta.style.color = "var(--accent-green)";
+            localStorage.setItem(`medico_somnolencia_${cleanRut}_${sessionId}`, 'true');
+          } else {
+            lblEstado.textContent = "⚠️ Alerta: Exceso de parpadeo / Signos de fatiga detectados";
+            lblTimer.style.color = "var(--accent-red)";
+            telAlerta.textContent = `${indiceAlerta}% (Fatiga)`;
+            telAlerta.style.color = "var(--accent-red)";
+            localStorage.setItem(`medico_somnolencia_${cleanRut}_${sessionId}`, 'false');
+          }
 
           let modulosRendidos = JSON.parse(localStorage.getItem('sensometrika_modulos_rendidos')) || {};
           modulosRendidos.medico_somnolencia = true;
           localStorage.setItem('sensometrika_modulos_rendidos', JSON.stringify(modulosRendidos));
 
           setTimeout(() => {
-            window.location.href = `../menu_B2B.html?${urlParams.toString()}`;
-          }, 1800);
+            const returnUrl = urlParams.get('returnUrl');
+            if (returnUrl) {
+              window.location.href = decodeURIComponent(returnUrl);
+            } else {
+              window.location.href = `../menu_B2B.html?${urlParams.toString()}`;
+            }
+          }, 2500);
         }
       }, 1000);
     }
 
     function volverMenu() {
-      window.location.href = `../menu_B2B.html?${urlParams.toString()}`;
+      const returnUrl = urlParams.get('returnUrl');
+      if (returnUrl) {
+        window.location.href = decodeURIComponent(returnUrl);
+      } else {
+        window.location.href = `../menu_B2B.html?${urlParams.toString()}`;
+      }
     }
 
     document.addEventListener('DOMContentLoaded', () => {

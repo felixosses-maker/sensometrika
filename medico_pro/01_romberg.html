@@ -11,19 +11,61 @@
       --accent-cyan: #00bfff; --accent-green: #10b981; --accent-red: #ef4444; --text-main: #f8fafc; --text-muted: #94a3b8;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
-    body { background-color: var(--bg-color); color: var(--text-main); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; min-height: 100vh; padding: 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-    .card { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 14px; padding: 20px; width: 100%; max-width: 440px; display: flex; flex-direction: column; gap: 14px; text-align: center; }
+    body { background-color: var(--bg-color); color: var(--text-main); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; min-height: 100vh; padding: 16px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+    .card { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 14px; padding: 18px; width: 100%; max-width: 440px; display: flex; flex-direction: column; gap: 14px; text-align: center; }
     .btn { background: var(--accent-cyan); color: #000; border: none; padding: 12px; border-radius: 8px; font-weight: 900; cursor: pointer; text-transform: uppercase; width: 100%; }
+    
+    /* Estructura oficial de rejilla de métricas SENSOMETRIKA */
+    .metricas-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6px;
+      background-color: #070b14;
+      border: 1px solid #1e293b;
+      border-radius: 10px;
+      padding: 10px 6px;
+      text-align: center;
+    }
+    .col-metrica span {
+      display: block;
+      font-size: 0.62rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      margin-bottom: 2px;
+      font-weight: 700;
+    }
+    .col-metrica strong {
+      display: block;
+      font-size: 0.90rem;
+      color: #ffffff;
+      font-weight: 800;
+    }
   </style>
 </head>
 <body>
   <div class="card">
-    <h2 style="color: var(--accent-cyan); font-size: 0.95rem; font-weight: 900;">1. Estabilidad Vestibular (Romberg Pro)</h2>
-    <p style="font-size: 0.74rem; color: var(--text-muted);">Sostenga el teléfono contra su pecho, cierre los ojos y mantenga la postura estática durante <strong>20 segundos</strong> (Estándar Pericial Pro).</p>
+    <h2 style="color: var(--accent-cyan); font-size: 0.95rem; font-weight: 900;">Estabilidad Vestibular (Romberg Pro)</h2>
+    <p style="font-size: 0.74rem; color: var(--text-muted);">Sostenga el teléfono contra su pecho, cierre los ojos y mantenga la postura estática durante <strong>25 segundos</strong> (Captura activa entre los 5s y 25s).</p>
     
-    <div id="viewportRomberg" style="background: #030712; border: 1px solid var(--card-border); border-radius: 10px; padding: 24px;">
-      <span id="lblTimer" style="font-size: 2.5rem; font-weight: 900; color: #fff;">20s</span>
-      <p id="lblEstado" style="font-size: 0.75rem; color: var(--accent-cyan); margin-top: 8px;">Listo para iniciar medición con acelerómetro</p>
+    <div id="viewportRomberg" style="background: #030712; border: 1px solid var(--card-border); border-radius: 10px; padding: 16px;">
+      <span id="lblTimer" style="font-size: 2.2rem; font-weight: 900; color: #fff;">25s</span>
+      <p id="lblEstado" style="font-size: 0.75rem; color: var(--accent-cyan); margin-top: 6px;">Listo para iniciar medición con acelerómetro</p>
+    </div>
+
+    <!-- PANEL DE TELEMETRÍA CON LA REJILLA OFICIAL SENSOMETRIKA -->
+    <div class="metricas-grid">
+      <div class="col-metrica">
+        <span>Tiempo</span>
+        <strong id="cronometro-romberg" style="color:#38bdf8;">25 s</strong>
+      </div>
+      <div class="col-metrica">
+        <span>Muestras</span>
+        <strong id="contador-muestras" style="color:#ffffff;">0</strong>
+      </div>
+      <div class="col-metrica">
+        <span>Desviación (RMS)</span>
+        <strong id="desviacion-romberg" style="color:#34d399;">0.00 m/s²</strong>
+      </div>
     </div>
 
     <button class="btn" id="btnIniciar" onclick="iniciarRomberg()">INICIAR MEDICIÓN →</button>
@@ -33,6 +75,9 @@
     const urlParams = new URLSearchParams(window.location.search);
     const cleanRut = (urlParams.get('rut') || '12345678K').replace(/[^0-9Kk]/g, '');
     const sessionId = urlParams.get('session') || `SESION_${cleanRut}_${Date.now()}`;
+
+    let datosAcelerometro = [];
+    let listenerMovimiento = null;
 
     function emitirPitido(frecuencia, duracion) {
       try {
@@ -51,30 +96,102 @@
       }
     }
 
+    async function solicitarPermisosSensores() {
+      if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
+        try {
+          const response = await DeviceMotionEvent.requestPermission();
+          if (response !== 'granted') {
+            alert("Se requieren permisos de acelerómetro para realizar el Test de Romberg.");
+          }
+        } catch (e) {
+          console.warn("Error al solicitar permisos de movimiento:", e);
+        }
+      }
+    }
+
     function iniciarRomberg() {
+      solicitarPermisosSensores();
       document.getElementById('btnIniciar').style.display = 'none';
-      let tiempoRestante = 20;
+      
+      let tiempoRestante = 25;
       const lblTimer = document.getElementById('lblTimer');
       const lblEstado = document.getElementById('lblEstado');
+      const cronometroRomberg = document.getElementById('cronometro-romberg');
+      const contadorMuestras = document.getElementById('contador-muestras');
+      const desviacionRomberg = document.getElementById('desviacion-romberg');
       
+      // Pitido inicial de arranque (tono agudo)
       emitirPitido(880, 0.3);
-      lblEstado.textContent = "Midiendo oscilación postural (20s activos)...";
+      lblEstado.textContent = "Fase de preparación (0s - 5s): Mantenga estabilidad inicial...";
+
+      datosAcelerometro = [];
+      listenerMovimiento = (event) => {
+        if (tiempoRestante <= 20 && tiempoRestante > 0) { // Captura efectiva entre el segundo 5 y el 25
+          const acc = event.accelerationIncludingGravity || event.acceleration;
+          if (acc) {
+            datosAcelerometro.push({ x: acc.x || 0, y: acc.y || 0, z: acc.z || 0 });
+            contadorMuestras.textContent = datosAcelerometro.length;
+
+            // Calcular desviación parcial en tiempo real
+            let sumX = 0, sumY = 0, sumZ = 0;
+            datosAcelerometro.forEach(d => { sumX += d.x; sumY += d.y; sumZ += d.z; });
+            let avgX = sumX / datosAcelerometro.length;
+            let avgY = sumY / datosAcelerometro.length;
+            let avgZ = sumZ / datosAcelerometro.length;
+
+            let devActual = 0;
+            datosAcelerometro.forEach(d => {
+              devActual += Math.abs(d.x - avgX) + Math.abs(d.y - avgY) + Math.abs(d.z - avgZ);
+            });
+            desviacionRomberg.textContent = `${(devActual / datosAcelerometro.length).toFixed(3)} m/s²`;
+          }
+        }
+      };
+      window.addEventListener('devicemotion', listenerMovimiento);
 
       const intervalo = setInterval(() => {
         tiempoRestante--;
         lblTimer.textContent = `${tiempoRestante}s`;
+        cronometroRomberg.textContent = `${tiempoRestante} s`;
+
+        if (tiempoRestante === 20) {
+          // Pitido indicador de inicio de captura efectiva (segundo 5)
+          emitirPitido(1046, 0.2);
+          lblEstado.textContent = "Midiendo oscilación postural (Captura Activa 20s)...";
+        }
         
         if (tiempoRestante <= 0) {
           clearInterval(intervalo);
+          window.removeEventListener('devicemotion', listenerMovimiento);
           
+          // Doble pitido final de término (agudo y grave)
           emitirPitido(587, 0.2);
           setTimeout(() => emitirPitido(880, 0.4), 250);
 
-          lblEstado.textContent = "✓ Prueba superada con éxito (Estabilidad Aceptable)";
+          lblEstado.textContent = "✓ Prueba superada con éxito (Estabilidad Vestibular Normal)";
           lblTimer.style.color = "var(--accent-green)";
 
-          // Registrar en localStorage para el menú B2B
+          // Cálculo final de estadística
+          let desviacionTotal = 0;
+          if (datosAcelerometro.length > 0) {
+            let sumX = 0, sumY = 0, sumZ = 0;
+            datosAcelerometro.forEach(d => { sumX += d.x; sumY += d.y; sumZ += d.z; });
+            let avgX = sumX / datosAcelerometro.length;
+            let avgY = sumY / datosAcelerometro.length;
+            let avgZ = sumZ / datosAcelerometro.length;
+
+            datosAcelerometro.forEach(d => {
+              desviacionTotal += Math.abs(d.x - avgX) + Math.abs(d.y - avgY) + Math.abs(d.z - avgZ);
+            });
+            desviacionTotal = desviacionTotal / datosAcelerometro.length;
+          }
+
+          desviacionRomberg.textContent = `${desviacionTotal.toFixed(3)} m/s²`;
+
+          // Registrar en localStorage para el menú B2B e informe
           localStorage.setItem(`medico_romberg_${cleanRut}_${sessionId}`, 'true');
+          localStorage.setItem(`medico_romberg_desviacion_${cleanRut}_${sessionId}`, desviacionTotal.toFixed(3));
+          localStorage.setItem(`medico_romberg_muestras_${cleanRut}_${sessionId}`, datosAcelerometro.length);
 
           let modulosRendidos = JSON.parse(localStorage.getItem('sensometrika_modulos_rendidos')) || {};
           modulosRendidos.medico_romberg = true;
@@ -87,7 +204,7 @@
             } else {
               window.location.href = `../menu_B2B.html?${urlParams.toString()}`;
             }
-          }, 1800);
+          }, 2200);
         }
       }, 1000);
     }

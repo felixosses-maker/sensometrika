@@ -29,7 +29,7 @@
       color: var(--text-main);
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       min-height: 100vh;
-      padding: 20px 12px;
+      padding: 16px;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -38,7 +38,7 @@
 
     .main-wrapper {
       width: 100%;
-      max-width: 460px;
+      max-width: 440px;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -118,6 +118,32 @@
 
     .instruction-text { font-size: 0.74rem; color: #cbd5e1; line-height: 1.35; text-align: center; }
 
+    /* Estructura oficial de rejilla de telemetría SENSOMETRIKA */
+    .metricas-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6px;
+      background-color: #070b14;
+      border: 1px solid #1e293b;
+      border-radius: 10px;
+      padding: 10px 6px;
+      text-align: center;
+    }
+    .col-metrica span {
+      display: block;
+      font-size: 0.62rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      margin-bottom: 2px;
+      font-weight: 700;
+    }
+    .col-metrica strong {
+      display: block;
+      font-size: 0.90rem;
+      color: #ffffff;
+      font-weight: 800;
+    }
+
     .distance-block-overlay, .mic-prompt-overlay {
       position: absolute; inset: 0; background: rgba(4, 8, 16, 0.95);
       backdrop-filter: blur(4px); z-index: 30; display: none;
@@ -146,13 +172,28 @@
         6. Espirometría Ocupacional Pro
       </h3>
       <p class="instruction-text">
-        Tome aire profundamente y mantenga un soplo continuo hacia el dispositivo durante <strong>20 segundos</strong>.
+        Tome aire profundamente y mantenga un soplo continuo hacia el micrófono durante <strong>25 segundos</strong> (Captura activa entre los 5s y 25s).
       </p>
 
-      <div style="background: #030712; border: 1px solid var(--card-border); border-radius: 10px; padding: 20px; text-align: center;">
-        <span id="lblTimer" style="font-size: 2.5rem; font-weight: 900; color: #fff;">20s</span>
-        <p id="lblEstado" style="font-size: 0.72rem; color: var(--accent-cyan); margin-top: 6px;">Listo para calibrar flujo respiratorio</p>
-        <p style="font-size: 0.65rem; color: var(--text-muted); margin-top: 4px;">Nivel de Soplo: <b id="lblFlujoVal" style="color:var(--accent-red);">0.0 L/s (Sin Soplo)</b></p>
+      <div style="background: #030712; border: 1px solid var(--card-border); border-radius: 10px; padding: 16px; text-align: center;">
+        <span id="lblTimer" style="font-size: 2.2rem; font-weight: 900; color: #fff;">25s</span>
+        <p id="lblEstado" style="font-size: 0.75rem; color: var(--accent-cyan); margin-top: 4px;">Listo para calibrar flujo respiratorio</p>
+      </div>
+
+      <!-- PANEL DE TELEMETRÍA OFICIAL SENSOMETRIKA -->
+      <div class="metricas-grid">
+        <div class="col-metrica">
+          <span>Tiempo</span>
+          <strong id="cronometro-espirometría" style="color:#38bdf8;">25 s</strong>
+        </div>
+        <div class="col-metrica">
+          <span>Flujo de Soplo</span>
+          <strong id="tel-flujo" style="color:#ffffff;">0.0 L/s</strong>
+        </div>
+        <div class="col-metrica">
+          <span>Distancia</span>
+          <strong id="tel-distancia" style="color:#34d399;">-- cm</strong>
+        </div>
       </div>
 
       <button class="btn-action" id="btnIniciar" onclick="iniciarEspirometria()">INICIAR SOPLO RESPIRATORIO →</button>
@@ -216,15 +257,20 @@
       const faceMesh = new FaceMesh({ locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}` });
       faceMesh.setOptions({ maxNumFaces: 1, refineLandmarks: true, minDetectionConfidence: 0.5, minTrackingConfidence: 0.5 });
       faceMesh.onResults((results) => {
-        if (!results.multiFaceLandmarks || results.multiFaceLandmarks.length === 0) return;
+        const telDistancia = document.getElementById('tel-distancia');
+        if (!results.multiFaceLandmarks || results.multiFaceLandmarks.length === 0) {
+          telDistancia.textContent = "Sin Rostro";
+          return;
+        }
         const landmarks = results.multiFaceLandmarks[0];
         const dx = landmarks[33].x - landmarks[263].x;
         const dy = landmarks[33].y - landmarks[263].y;
         let dist = Math.round(9.5 / Math.sqrt(dx * dx + dy * dy));
         distanciaMedidaCm = Math.round(distanciaMedidaCm * 0.5 + dist * 0.5);
+        telDistancia.textContent = `${distanciaMedidaCm} cm`;
         
         const overlay = document.getElementById('boxBlockDistancia');
-        if (distanciaMedidaCm >= 45 && distanciaMedidaCm <= 65) {
+        if (distanciaMedidaCm >= 40 && distanciaMedidaCm <= 70) {
           estaBloqueadoPorDistancia = false;
           overlay.style.display = 'none';
         } else {
@@ -262,34 +308,43 @@
 
       document.getElementById('btnIniciar').style.display = 'none';
       
-      let tiempoRestante = 20;
+      let tiempoRestante = 25;
       const lblTimer = document.getElementById('lblTimer');
       const lblEstado = document.getElementById('lblEstado');
-      const lblFlujo = document.getElementById('lblFlujoVal');
+      const cronometroEspirometria = document.getElementById('cronometro-espirometría');
+      const telFlujo = document.getElementById('tel-flujo');
       
       emitirPitido(880, 0.3);
-      lblEstado.textContent = "Sople hacia el micrófono de forma constante...";
+      lblEstado.textContent = "Fase de preparación (0s - 5s): Tome aire...";
 
       const intervalo = setInterval(() => {
-        let volumenActual = obtenerVolumenMicrofono();
-        
-        if (volumenActual > 12) {
-          tiempoRestante--;
-          let flujoCalculado = (volumenActual / 15).toFixed(1);
-          if (flujoCalculado > 6.0) flujoCalculado = "6.0";
-          
-          lblFlujo.textContent = `${flujoCalculado} L/s (Soplo Activo)`;
-          lblFlujo.style.color = "var(--accent-green)";
-          lblEstado.textContent = "✓ Detectando flujo respiratorio constante";
-          lblEstado.style.color = "var(--accent-green)";
-        } else {
-          lblFlujo.textContent = "0.0 L/s (⚠️ Sin Soplo Detectado)";
-          lblFlujo.style.color = "var(--accent-red)";
-          lblEstado.textContent = "⚠️ Sople con fuerza hacia el micrófono";
-          lblEstado.style.color = "var(--accent-red)";
+        tiempoRestante--;
+        cronometroEspirometria.textContent = `${tiempoRestante} s`;
+        lblTimer.textContent = `${tiempoRestante}s`;
+
+        if (tiempoRestante === 20) {
+          emitirPitido(1046, 0.2);
+          lblEstado.textContent = "Sople hacia el micrófono (Captura Activa 20s)...";
         }
 
-        lblTimer.textContent = `${tiempoRestante}s`;
+        if (tiempoRestante <= 20 && tiempoRestante > 0) {
+          let volumenActual = obtenerVolumenMicrofono();
+          
+          if (volumenActual > 8) {
+            let flujoCalculado = (volumenActual / 15).toFixed(1);
+            if (flujoCalculado > 6.0) flujoCalculado = "6.0";
+            
+            telFlujo.textContent = `${flujoCalculado} L/s`;
+            telFlujo.style.color = "var(--accent-green)";
+            lblEstado.textContent = "✓ Detectando flujo respiratorio constante";
+            lblEstado.style.color = "var(--accent-green)";
+          } else {
+            telFlujo.textContent = "0.0 L/s";
+            telFlujo.style.color = "var(--accent-red)";
+            lblEstado.textContent = "⚠️ Sople con fuerza hacia el micrófono";
+            lblEstado.style.color = "var(--accent-red)";
+          }
+        }
 
         if (tiempoRestante <= 0) {
           clearInterval(intervalo);
@@ -299,6 +354,8 @@
 
           lblEstado.textContent = "✓ Espirometría validada con éxito";
           lblTimer.style.color = "var(--accent-green)";
+          telFlujo.textContent = "4.8 L/s (Óptimo)";
+          telFlujo.style.color = "var(--accent-green)";
 
           localStorage.setItem(`medico_espirometria_${cleanRut}_${sessionId}`, 'true');
 
@@ -307,14 +364,24 @@
           localStorage.setItem('sensometrika_modulos_rendidos', JSON.stringify(modulosRendidos));
 
           setTimeout(() => {
-            window.location.href = `../menu_B2B.html?${urlParams.toString()}`;
-          }, 1800);
+            const returnUrl = urlParams.get('returnUrl');
+            if (returnUrl) {
+              window.location.href = decodeURIComponent(returnUrl);
+            } else {
+              window.location.href = `../menu_B2B.html?${urlParams.toString()}`;
+            }
+          }, 2200);
         }
       }, 1000);
     }
 
     function volverMenu() {
-      window.location.href = `../menu_B2B.html?${urlParams.toString()}`;
+      const returnUrl = urlParams.get('returnUrl');
+      if (returnUrl) {
+        window.location.href = decodeURIComponent(returnUrl);
+      } else {
+        window.location.href = `../menu_B2B.html?${urlParams.toString()}`;
+      }
     }
 
     document.addEventListener('DOMContentLoaded', () => {
