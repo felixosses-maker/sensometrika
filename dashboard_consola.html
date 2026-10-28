@@ -375,25 +375,37 @@
     </div>
 
     <script>
+        // Diccionario completo de los 27 módulos oficiales actualizados
         const nombresModulos = {
-            mod1: "1. Reactímetro Simple ⚡",
-            mod2: "2. Reactímetro Complejo 🚦",
-            mod3: "3. Palancas Bimanual 🎮",
-            mod4: "4. Punteo Visomotriz (Lahy) 🎯",
-            mod5: "5. Frenado Selectivo Dinámico 🛑",
-            mod6: "6. Tamizaje Visual (Snellen) 👁️",
-            mod7: "7. Test de Ishihara (Daltonismo) 🎨",
-            mod8: "8. Visión de Profundidad 📐",
-            mod9: "9. Campo Visual Periférico 👁️‍🗨️",
-            mod10: "10. Tamizaje Auditivo Binaural 🎧",
-            mod11: "11. Velocidad de Anticipación ⏱️",
-            mod12: "12. Atención Sostenida (CPT) 🧠",
-            mod13: "13. Test de Fatiga (Karolinska) 😴",
-            mod14: "14. Memoria de Trabajo Operativa 🧩",
-            mod15: "15. Cero Alcohol/Drogas 🧪",
-            mod16: "16. Control de Impulsos Viales ⚖️",
-            mod17: "17. Declaración Médica 📋",
-            mod18: "18. Consolidado & Credencial QR 🛡️"
+            mod1: "Anticipación Pro ⏱️",
+            mod2: "Reactímetro Pro ⚡",
+            mod3: "Reactímetro Estándar ⚡",
+            mod4: "Punteo Pro 🎯",
+            mod5: "Punteo Estándar 🎯",
+            mod6: "Punteo Transporte 🚛",
+            mod7: "Test de Palancas Bimanual 🎮",
+            mod8: "Visomotriz Pro 🚗",
+            mod9: "Tamizaje Visual Pro (Snellen) 👁️",
+            mod10: "Visual Transporte 🚚",
+            mod11: "Campo Periférico 👁️‍🗨️",
+            mod12: "Estereopsis (Profundidad) 📐",
+            mod13: "Resistencia al Encandilamiento 💡",
+            mod14: "Tamizaje Audiometría General 🎧",
+            mod15: "Audiometría Transporte 🚛",
+            mod16: "Test de Carga Dual 🔀",
+            mod17: "Memoria de Trabajo Operativa 🧩",
+            mod18: "Test de Fatiga y Vigilancia 😴",
+            mod19: "M1. Estabilidad Vestibular (Romberg Pro) ⚖️",
+            mod20: "M2. Estabilidad Motora (Temblores Pro) ✋",
+            mod21: "M3. Dinamometría y Fuerza (Grip Pro) ✊",
+            mod22: "M4. Frecuencia Cardíaca Basal (PPG Pro) 💓",
+            mod23: "M5. Reflejo Fotomotor Pupilar Pro 👁️",
+            mod24: "M6. Espirometría Ocupacional Pro 🫁",
+            mod25: "M7. Agilidad y Praxias Digitales (Tapping) ⚡",
+            mod26: "M8. Reacción a Alarma de Faena 🚨",
+            mod27: "M9. Estabilidad Oculomotriz (Nistagmo) 🔄",
+            mod28: "M10. Tamizaje de Somnolencia Pro 😴",
+            mod29: "Declaración Médica / Consolidado QR 📋"
         };
 
         let empresaActiva = '';
@@ -431,18 +443,19 @@
             container.innerHTML = '';
             
             const modulosActivosStr = localStorage.getItem('sensometrika_modulos_b2b_activos') || '';
-            const modulosArray = modulosActivosStr ? modulosActivosStr.split(',') : ['mod1', 'mod3', 'mod10'];
+            const modulosArray = modulosActivosStr ? modulosActivosStr.split(',') : ['mod1', 'mod2', 'mod9', 'mod19', 'mod23', 'mod28'];
 
             let count = 0;
             modulosArray.forEach(key => {
-                if (nombresModulos[key]) {
+                const cleanKey = key.trim().toLowerCase();
+                if (nombresModulos[cleanKey]) {
                     count++;
-                    container.innerHTML += `<span class="mod-pill">${nombresModulos[key]}</span>`;
+                    container.innerHTML += `<span class="mod-pill">${nombresModulos[cleanKey]}</span>`;
                 }
             });
 
             if (count === 0) {
-                container.innerHTML = `<span style="color:var(--text-muted); font-size:0.75rem;">Ningún módulo adicional seleccionado (Solo Credencial QR base).</span>`;
+                container.innerHTML = `<span style="color:var(--text-muted); font-size:0.75rem;">Batería Pericial Full Activa.</span>`;
             }
         }
 
@@ -469,8 +482,8 @@
 
             const baseUrl = window.location.origin.replace(/\/$/, '');
             
-            // 🔥 AQUÍ ESTÁ LA CLAVE: El enlace apunta obligatoriamente a registro_B2B.html para iniciar el flujo formal con biometría y firma
-            const urlCompleta = `${baseUrl}/registro_B2B.html?rut=${encodeURIComponent(rut)}&nombre=${encodeURIComponent(nombre)}&cargo=${encodeURIComponent(cargo)}&session=${sessionId}`;
+            // Enlace apunta al menú B2B del trabajador con su sesión
+            const urlCompleta = `${baseUrl}/menu_B2B.html?rut=${encodeURIComponent(rut)}&nombre=${encodeURIComponent(nombre)}&cargo=${encodeURIComponent(cargo)}&session=${sessionId}&mode=b2b`;
 
             document.getElementById('txtLinkGenerado').value = urlCompleta;
             
@@ -530,7 +543,7 @@
                 const estado = res ? (aprobadoFlag ? 'APROBADO D.S. 170' : 'OBSERVADO') : 'PENDIENTE';
                 const clase = res ? (aprobadoFlag ? 'badge-ok' : 'badge-bad') : 'badge-pending';
 
-                const urlInforme = `informe_b2b.html?rut=${t.rut}&nombre=${encodeURIComponent(t.nombre)}&cargo=${encodeURIComponent(t.cargo)}&session=${sessionParam}`;
+                const urlInforme = `informe_b2b.html?rut=${t.rut}&nombre=${encodeURIComponent(t.nombre)}&cargo=${encodeURIComponent(t.cargo)}&session=${sessionParam}&mode=b2b`;
                 const qrContainerId = `qrcode_table_${index}`;
 
                 const textoWpFila = encodeURIComponent(`Hola *${t.nombre}*, desde *${t.empresa}* te enviamos tu enlace de evaluación Sensometrika:\n\n${t.url}`);
@@ -566,7 +579,7 @@
                     const el = document.getElementById(qrContainerId);
                     if (el && el.innerHTML === "") {
                         const sessionParam = t.session || '';
-                        const urlInforme = `${window.location.origin}/informe_b2b.html?rut=${t.rut}&nombre=${encodeURIComponent(t.nombre)}&session=${sessionParam}`;
+                        const urlInforme = `${window.location.origin}/informe_b2b.html?rut=${t.rut}&nombre=${encodeURIComponent(t.nombre)}&session=${sessionParam}&mode=b2b`;
                         new QRCode(el, {
                             text: urlInforme,
                             width: 38,
