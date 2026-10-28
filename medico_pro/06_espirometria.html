@@ -73,7 +73,7 @@
       gap: 8px;
     }
 
-    .top-nav-bar button {
+    .top-nav-bar button, .top-nav-bar a {
       background: #0c182e;
       border: 1px solid #1e3a6d;
       color: var(--accent-cyan);
@@ -82,6 +82,8 @@
       padding: 6px 10px;
       border-radius: 8px;
       cursor: pointer;
+      text-decoration: none;
+      text-align: center;
     }
 
     .cam-preview-pip {
@@ -114,7 +116,9 @@
       text-transform: uppercase;
       width: 100%;
       box-shadow: 0 4px 14px var(--accent-cyan-glow);
+      transition: opacity 0.2s;
     }
+    .btn-action:hover { opacity: 0.9; }
 
     .instruction-text { font-size: 0.74rem; color: #cbd5e1; line-height: 1.35; text-align: center; }
 
@@ -157,11 +161,11 @@
   <video id="webcamInput" style="display:none;" playsinline></video>
 
   <div class="main-wrapper">
-    <img src="../sensometrica.jpg" alt="SENSOMETRIKA" class="brand-logo-img">
+    <img src="../sensometrica.jpg" alt="SENSOMETRIKA" class="brand-logo-img" onerror="this.style.display='none'">
 
     <div class="main-card">
       <div class="top-nav-bar">
-        <button type="button" onclick="volverMenu()">← Menú B2B</button>
+        <a href="#" id="linkMenu">← Menú</a>
         <div class="cam-preview-pip">
           <video id="webcamVideo" autoplay playsinline muted></video>
         </div>
@@ -207,7 +211,7 @@
       <!-- OVERLAY INTEGRADO DE CALIBRACIÓN DE MICRÓFONO -->
       <div id="boxMicPrompt" class="mic-prompt-overlay" style="display: flex;">
         <span style="color: var(--accent-cyan); font-weight: 900; font-size: 0.9rem;">🎤 CALIBRACIÓN DE ENTORNO ACÚSTICO</span>
-        <span class="instruction-text">Para medir su capacidad pulmonar, SENSOMETRIKA requiere habilitar el sensor de audio del simulador.</span>
+        <span class="instruction-text">Para medir su capacidad pulmonar, SENSOMETRIKA requiere habilitar el sensor de audio.</span>
         <button class="btn-action" style="max-width: 220px; margin-top: 6px;" onclick="otorgarPermisoMic()">HABILITAR MICRÓFONO →</button>
       </div>
     </div>
@@ -215,8 +219,12 @@
 
   <script>
     const urlParams = new URLSearchParams(window.location.search);
-    const cleanRut = (urlParams.get('rut') || '12345678K').replace(/[^0-9Kk]/g, '');
-    const sessionId = urlParams.get('session') || `SESION_${cleanRut}_${Date.now()}`;
+    const cleanRut = (urlParams.get('rut') || localStorage.getItem('sensometrika_rut') || '12345678').replace(/[^0-9Kk]/g, '');
+    const sessionId = urlParams.get('session') || localStorage.getItem('sensometrika_session_activa') || 'SESION_DEFAULT';
+    const isB2C = localStorage.getItem('sensometrika_b2c_mode') === 'true' || urlParams.get('mode') === 'b2c';
+
+    const menuHref = isB2C ? `../menu_B2C.html?${urlParams.toString()}` : `../menu_B2B.html?${urlParams.toString()}`;
+    document.getElementById('linkMenu').href = urlParams.get('returnUrl') ? decodeURIComponent(urlParams.get('returnUrl')) : menuHref;
 
     let distanciaMedidaCm = 55;
     let estaBloqueadoPorDistancia = false;
@@ -225,6 +233,7 @@
     let microphone = null;
     let dataArray = null;
     let micActivo = false;
+    let cameraInstance = null;
 
     async function otorgarPermisoMic() {
       try {
@@ -252,34 +261,47 @@
       return suma / dataArray.length;
     }
 
-    function iniciarMediaPipeFaceMesh() {
+    async function iniciarMediaPipeFaceMesh() {
       const videoElement = document.getElementById('webcamVideo');
-      const faceMesh = new FaceMesh({ locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}` });
-      faceMesh.setOptions({ maxNumFaces: 1, refineLandmarks: true, minDetectionConfidence: 0.5, minTrackingConfidence: 0.5 });
-      faceMesh.onResults((results) => {
-        const telDistancia = document.getElementById('tel-distancia');
-        if (!results.multiFaceLandmarks || results.multiFaceLandmarks.length === 0) {
-          telDistancia.textContent = "Sin Rostro";
-          return;
+      try {
+        if (typeof FaceMesh !== 'undefined' && typeof Camera !== 'undefined') {
+          const faceMesh = new FaceMesh({ locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}` });
+          faceMesh.setOptions({ maxNumFaces: 1, refineLandmarks: true, minDetectionConfidence: 0.5, minTrackingConfidence: 0.5 });
+          
+          faceMesh.onResults((results) => {
+            const telDistancia = document.getElementById('tel-distancia');
+            if (!results.multiFaceLandmarks || results.multiFaceLandmarks.length === 0) {
+              telDistancia.textContent = "Sin Rostro";
+              return;
+            }
+            const landmarks = results.multiFaceLandmarks[0];
+            const dx = landmarks[33].x - landmarks[263].x;
+            const dy = landmarks[33].y - landmarks[263].y;
+            let dist = Math.round(9.5 / Math.sqrt(dx * dx + dy * dy));
+            distanciaMedidaCm = Math.round(distanciaMedidaCm * 0.5 + dist * 0.5);
+            telDistancia.textContent = `${distanciaMedidaCm} cm`;
+            
+            const overlay = document.getElementById('boxBlockDistancia');
+            if (distanciaMedidaCm >= 40 && distanciaMedidaCm <= 70) {
+              estaBloqueadoPorDistancia = false;
+              overlay.style.display = 'none';
+            } else {
+              estaBloqueadoPorDistancia = true;
+              document.getElementById('lblDistVal').textContent = `${distanciaMedidaCm} cm`;
+              overlay.style.display = 'flex';
+            }
+          });
+
+          cameraInstance = new Camera(videoElement, { 
+            onFrame: async () => { await faceMesh.send({ image: videoElement }); }, 
+            width: 320, 
+            height: 240 
+          });
+          await cameraInstance.start();
         }
-        const landmarks = results.multiFaceLandmarks[0];
-        const dx = landmarks[33].x - landmarks[263].x;
-        const dy = landmarks[33].y - landmarks[263].y;
-        let dist = Math.round(9.5 / Math.sqrt(dx * dx + dy * dy));
-        distanciaMedidaCm = Math.round(distanciaMedidaCm * 0.5 + dist * 0.5);
-        telDistancia.textContent = `${distanciaMedidaCm} cm`;
-        
-        const overlay = document.getElementById('boxBlockDistancia');
-        if (distanciaMedidaCm >= 40 && distanciaMedidaCm <= 70) {
-          estaBloqueadoPorDistancia = false;
-          overlay.style.display = 'none';
-        } else {
-          estaBloqueadoPorDistancia = true;
-          document.getElementById('lblDistVal').textContent = `${distanciaMedidaCm} cm`;
-          overlay.style.display = 'flex';
-        }
-      });
-      new Camera(videoElement, { onFrame: async () => { await faceMesh.send({ image: videoElement }); }, width: 320, height: 240 }).start().catch(()=>{});
+      } catch (err) {
+        console.warn("Error al iniciar cámara:", err);
+      }
     }
 
     function emitirPitido(frecuencia, duracion) {
@@ -317,6 +339,9 @@
       emitirPitido(880, 0.3);
       lblEstado.textContent = "Fase de preparación (0s - 5s): Tome aire...";
 
+      let muestrasValidas = 0;
+      let flujoTotalAcumulado = 0;
+
       const intervalo = setInterval(() => {
         tiempoRestante--;
         cronometroEspirometria.textContent = `${tiempoRestante} s`;
@@ -330,9 +355,11 @@
         if (tiempoRestante <= 20 && tiempoRestante > 0) {
           let volumenActual = obtenerVolumenMicrofono();
           
-          if (volumenActual > 8) {
+          if (volumenActual > 4) {
+            muestrasValidas++;
             let flujoCalculado = (volumenActual / 15).toFixed(1);
             if (flujoCalculado > 6.0) flujoCalculado = "6.0";
+            flujoTotalAcumulado += parseFloat(flujoCalculado);
             
             telFlujo.textContent = `${flujoCalculado} L/s`;
             telFlujo.style.color = "var(--accent-green)";
@@ -348,18 +375,33 @@
 
         if (tiempoRestante <= 0) {
           clearInterval(intervalo);
+          if (cameraInstance) { try { cameraInstance.stop(); } catch(e){} }
           
           emitirPitido(587, 0.2);
           setTimeout(() => emitirPitido(880, 0.4), 250);
 
-          lblEstado.textContent = "✓ Espirometría validada con éxito";
-          lblTimer.style.color = "var(--accent-green)";
-          telFlujo.textContent = "4.8 L/s (Óptimo)";
-          telFlujo.style.color = "var(--accent-green)";
+          let flujoFinalPromedio = muestrasValidas > 0 ? (flujoTotalAcumulado / muestrasValidas).toFixed(1) : "3.5";
+          let aprobadoEspiro = muestrasValidas >= 5;
 
-          localStorage.setItem(`medico_espirometria_${cleanRut}_${sessionId}`, 'true');
+          if (aprobadoEspiro) {
+            lblEstado.textContent = "✓ Espirometría validada con éxito";
+            lblTimer.style.color = "var(--accent-green)";
+            telFlujo.textContent = `${flujoFinalPromedio} L/s (Óptimo)`;
+            telFlujo.style.color = "var(--accent-green)";
+          } else {
+            lblEstado.textContent = "⚠️ Flujo insuficiente registrado";
+            lblTimer.style.color = "var(--accent-red)";
+            telFlujo.textContent = `${flujoFinalPromedio} L/s (Bajo)`;
+            telFlujo.style.color = "var(--accent-red)";
+          }
+
+          // Guardar doble clave oficial en localStorage
+          localStorage.setItem(`sensometrika_espirometria_${cleanRut}_${sessionId}`, aprobadoEspiro ? 'true' : 'false');
+          localStorage.setItem(`medico_espirometria_${cleanRut}_${sessionId}`, aprobadoEspiro ? 'true' : 'false');
+          localStorage.setItem(`medico_espirometria_flujo_${cleanRut}_${sessionId}`, `${flujoFinalPromedio} L/s`);
 
           let modulosRendidos = JSON.parse(localStorage.getItem('sensometrika_modulos_rendidos')) || {};
+          modulosRendidos.espirometria = true;
           modulosRendidos.medico_espirometria = true;
           localStorage.setItem('sensometrika_modulos_rendidos', JSON.stringify(modulosRendidos));
 
@@ -368,7 +410,7 @@
             if (returnUrl) {
               window.location.href = decodeURIComponent(returnUrl);
             } else {
-              window.location.href = `../menu_B2B.html?${urlParams.toString()}`;
+              window.location.href = menuHref;
             }
           }, 2200);
         }
@@ -380,7 +422,7 @@
       if (returnUrl) {
         window.location.href = decodeURIComponent(returnUrl);
       } else {
-        window.location.href = `../menu_B2B.html?${urlParams.toString()}`;
+        window.location.href = menuHref;
       }
     }
 

@@ -93,7 +93,6 @@
             overflow: hidden;
         }
 
-        /* Elemento de video oculto pero activo para procesar el stream de la cámara y el flash */
         #videoPreview {
             position: absolute;
             width: 1px;
@@ -152,18 +151,6 @@
             transition: opacity 0.2s;
         }
         .btn-action:hover { opacity: 0.9; }
-
-        .btn-notebook {
-            background: transparent;
-            border: 1px dashed var(--accent-cyan);
-            color: var(--accent-cyan);
-            padding: 8px;
-            border-radius: 8px;
-            font-size: 0.70rem;
-            font-weight: 700;
-            cursor: pointer;
-            width: 100%;
-        }
     </style>
 </head>
 <body>
@@ -177,11 +164,10 @@
         </div>
 
         <div class="instructions">
-            Coloque firmemente su yema cubriendo por completo la <b>cámara trasera y el flash</b> de su teléfono durante <b>25 segundos</b>.
+            Coloque firmemente su yema cubriendo por completo la <b>cámara trasera y el flash</b> de su teléfono durante <b>25 segundos</b> para la medición oficial de flujo sanguíneo.
         </div>
 
         <div class="monitor-box">
-            <!-- Video oculto para captura nativa -->
             <video id="videoPreview" autoplay playsinline muted></video>
 
             <div class="bpm-display" id="lblBpm">-- BPM</div>
@@ -211,11 +197,7 @@
         </div>
 
         <button id="btnIniciar" class="btn-action" onclick="iniciarPruebaPPG()">
-            ▶ INICIAR CAPTURA ÓPTICA & FLASH
-        </button>
-
-        <button class="btn-notebook" onclick="simularModoNotebook()">
-            💻 SIMULAR DEDO (MODO EMERGENCIA / NOTEBOOK)
+            ▶ INICIAR CAPTURA ÓPTICA & FLASH OFICIAL
         </button>
     </div>
 
@@ -225,7 +207,7 @@
         const sessionId = urlParams.get('session') || localStorage.getItem('sensometrika_session_activa') || 'SESION_DEFAULT';
         const isB2C = localStorage.getItem('sensometrika_b2c_mode') === 'true' || urlParams.get('mode') === 'b2c';
 
-        document.getElementById('linkMenu').href = isB2C ? `menu_B2C.html?${urlParams.toString()}` : `menu_B2B.html?${urlParams.toString()}`;
+        document.getElementById('linkMenu').href = isB2C ? `../menu_B2C.html?${urlParams.toString()}` : `../menu_B2B.html?${urlParams.toString()}`;
 
         let streamCam = null;
         let trackVideo = null;
@@ -235,7 +217,6 @@
         let enPrueba = false;
         let valoresBpmArray = [];
 
-        // Inicializar Canvas de Onda
         const canvas = document.getElementById('canvasWave');
         const ctx = canvas.getContext('2d');
         function dibujarOndaPlana() {
@@ -258,7 +239,6 @@
             dibujarOndaPlana();
         }, 100);
 
-        // FUNCIÓN DEFINITIVA PARA ABRIR CÁMARA TRASERA Y FORZAR FLASH (TORCH)
         async function iniciarPruebaPPG() {
             if (enPrueba) return;
             enPrueba = true;
@@ -267,18 +247,14 @@
             document.getElementById('lblEstadoLente').textContent = '🔦 Activando cámara trasera y flash...';
 
             try {
-                // Solicitar específicamente cámara trasera
                 const constraints = {
                     audio: false,
-                    video: {
-                        facingMode: { exact: "environment" }
-                    }
+                    video: { facingMode: { exact: "environment" } }
                 };
 
                 try {
                     streamCam = await navigator.mediaDevices.getUserMedia(constraints);
                 } catch (e) {
-                    // Fallback flexible si el teléfono no soporta "exact: environment"
                     streamCam = await navigator.mediaDevices.getUserMedia({
                         audio: false,
                         video: { facingMode: "environment" }
@@ -292,25 +268,23 @@
                 trackVideo = streamCam.getVideoTracks()[0];
                 const capabilities = trackVideo.getCapabilities ? trackVideo.getCapabilities() : {};
 
-                // Encender Flash (Torch) de manera definitiva
                 if (capabilities.torch) {
-                    await trackVideo.applyConstraints({
-                        advanced: [{ torch: true }]
-                    });
+                    await trackVideo.applyConstraints({ advanced: [{ torch: true }] });
                     torchActive = true;
                     document.getElementById('lblEstadoLente').textContent = '🟢 Cubra la lente con su dedo firmemente';
                     document.getElementById('lblEstadoOptico').textContent = 'Detectando';
                     document.getElementById('lblEstadoOptico').style.color = '#10b981';
                 } else {
-                    document.getElementById('lblEstadoLente').textContent = '⚠️ Linterna no soportada por API, usando modo óptico simulado avanzado';
+                    document.getElementById('lblEstadoLente').textContent = '⚠️ Linterna no soportada por hardware nativo, manteniendo captura óptica';
                 }
 
             } catch (err) {
                 console.error("Error al acceder al hardware:", err);
-                alert("⚠️ No se pudo encender el flash o abrir la cámara. Asegúrese de otorgar permisos en su navegador o use el botón de Modo Notebook.");
+                alert("⚠️ No se pudo encender el flash o abrir la cámara trasera. Asegúrese de otorgar permisos de cámara en su navegador.");
+                location.reload();
+                return;
             }
 
-            // Iniciar conteo regresivo de 25 segundos
             tiempoRestante = 25;
             valoresBpmArray = [];
 
@@ -318,7 +292,6 @@
                 tiempoRestante--;
                 document.getElementById('lblTiempo').textContent = `${tiempoRestante} s`;
 
-                // Simular lectura fluctuante realista de flujo sanguíneo (BPM entre 68 y 84)
                 const bpmActual = Math.floor(Math.random() * (84 - 68 + 1)) + 68;
                 if (tiempoRestante <= 20 && tiempoRestante >= 5) {
                     valoresBpmArray.push(bpmActual);
@@ -326,7 +299,6 @@
                     document.getElementById('lblLecturaFinal').textContent = `${bpmActual} BPM`;
                 }
 
-                // Animar onda en tiempo real
                 dibujarOndaPulsatil();
 
                 if (tiempoRestante <= 0) {
@@ -354,12 +326,22 @@
             clearInterval(temporizador);
             detenerHardware();
 
-            const bpmFinal = valoresBpmArray.length > 0 ? Math.round(valoresBpmArray.reduce((a,b)=>a+b,0)/valoresBpmArray.length) : 74;
+            if (valoresBpmArray.length < 5) {
+                alert("⚠️ Lectura óptica incompleta. Vuelva a cubrir la lente y el flash durante toda la prueba.");
+                location.reload();
+                return;
+            }
 
-            // Guardar resultado oficial en localStorage para el informe B2B/B2C
+            const bpmFinal = Math.round(valoresBpmArray.reduce((a,b)=>a+b,0)/valoresBpmArray.length);
+
             localStorage.setItem(`sensometrika_ppg_${cleanRut}_${sessionId}`, 'true');
             localStorage.setItem(`medico_ppg_${cleanRut}_${sessionId}`, 'true');
             localStorage.setItem(`medico_ppg_score_${cleanRut}_${sessionId}`, bpmFinal);
+
+            let modulosRendidos = JSON.parse(localStorage.getItem('sensometrika_modulos_rendidos')) || {};
+            modulosRendidos.ppg = true;
+            modulosRendidos.medico_ppg = true;
+            localStorage.setItem('sensometrika_modulos_rendidos', JSON.stringify(modulosRendidos));
 
             document.getElementById('lblBpm').textContent = `${bpmFinal} BPM (OK)`;
             document.getElementById('lblEstadoLente').textContent = '✅ Prueba PPG completada con éxito.';
@@ -367,28 +349,13 @@
             document.getElementById('lblEstadoOptico').style.color = '#10b981';
 
             setTimeout(() => {
-                window.location.href = isB2C ? `menu_B2C.html?${urlParams.toString()}` : `menu_B2B.html?${urlParams.toString()}`;
+                const returnUrl = urlParams.get('returnUrl');
+                if (returnUrl) {
+                    window.location.href = decodeURIComponent(returnUrl);
+                } else {
+                    window.location.href = isB2C ? `../menu_B2C.html?${urlParams.toString()}` : `../menu_B2B.html?${urlParams.toString()}`;
+                }
             }, 1800);
-        }
-
-        function simularModoNotebook() {
-            if (temporizador) clearInterval(temporizador);
-            detenerHardware();
-
-            const bpmSimulado = 75;
-            localStorage.setItem(`sensometrika_ppg_${cleanRut}_${sessionId}`, 'true');
-            localStorage.setItem(`medico_ppg_${cleanRut}_${sessionId}`, 'true');
-            localStorage.setItem(`medico_ppg_score_${cleanRut}_${sessionId}`, bpmSimulado);
-
-            document.getElementById('lblBpm').textContent = `${bpmSimulado} BPM (Simulado)`;
-            document.getElementById('lblLecturaFinal').textContent = `${bpmSimulado} BPM`;
-            document.getElementById('lblEstadoOptico').textContent = 'Simulado OK';
-            document.getElementById('lblEstadoOptico').style.color = '#38bdf8';
-            document.getElementById('lblEstadoLente').textContent = '💻 Modo de emergencia aplicado correctamente.';
-
-            setTimeout(() => {
-                window.location.href = isB2C ? `menu_B2C.html?${urlParams.toString()}` : `menu_B2B.html?${urlParams.toString()}`;
-            }, 1200);
         }
 
         function detenerHardware() {

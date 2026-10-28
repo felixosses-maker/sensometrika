@@ -73,7 +73,7 @@
       gap: 8px;
     }
 
-    .top-nav-bar button {
+    .top-nav-bar button, .top-nav-bar a {
       background: #0c182e;
       border: 1px solid #1e3a6d;
       color: var(--accent-cyan);
@@ -82,6 +82,8 @@
       padding: 6px 10px;
       border-radius: 8px;
       cursor: pointer;
+      text-decoration: none;
+      text-align: center;
     }
 
     .cam-preview-pip {
@@ -114,7 +116,9 @@
       text-transform: uppercase;
       width: 100%;
       box-shadow: 0 4px 14px var(--accent-cyan-glow);
+      transition: opacity 0.2s;
     }
+    .btn-action:hover { opacity: 0.9; }
 
     .alarm-pad {
       background: #030712;
@@ -145,11 +149,11 @@
   <video id="webcamInput" style="display:none;" playsinline></video>
 
   <div class="main-wrapper">
-    <img src="../sensometrica.jpg" alt="SENSOMETRIKA" class="brand-logo-img">
+    <img src="../sensometrica.jpg" alt="SENSOMETRIKA" class="brand-logo-img" onerror="this.style.display='none'">
 
     <div class="main-card">
       <div class="top-nav-bar">
-        <button type="button" onclick="volverMenu()">← Menú B2B</button>
+        <a href="#" id="linkMenu">← Menú</a>
         <div class="cam-preview-pip">
           <video id="webcamVideo" autoplay playsinline muted></video>
         </div>
@@ -184,8 +188,12 @@
 
   <script>
     const urlParams = new URLSearchParams(window.location.search);
-    const cleanRut = (urlParams.get('rut') || '12345678K').replace(/[^0-9Kk]/g, '');
-    const sessionId = urlParams.get('session') || `SESION_${cleanRut}_${Date.now()}`;
+    const cleanRut = (urlParams.get('rut') || localStorage.getItem('sensometrika_rut') || '12345678').replace(/[^0-9Kk]/g, '');
+    const sessionId = urlParams.get('session') || localStorage.getItem('sensometrika_session_activa') || 'SESION_DEFAULT';
+    const isB2C = localStorage.getItem('sensometrika_b2c_mode') === 'true' || urlParams.get('mode') === 'b2c';
+
+    const menuHref = isB2C ? `../menu_B2C.html?${urlParams.toString()}` : `../menu_B2B.html?${urlParams.toString()}`;
+    document.getElementById('linkMenu').href = urlParams.get('returnUrl') ? decodeURIComponent(urlParams.get('returnUrl')) : menuHref;
 
     let distanciaMedidaCm = 55;
     let estaBloqueadoPorDistancia = false;
@@ -195,30 +203,44 @@
     let intervaloTimer = null;
     let audioCtx = null;
     let alarmaActivaMomento = false;
+    let cameraInstance = null;
 
-    function iniciarMediaPipeFaceMesh() {
+    async function iniciarMediaPipeFaceMesh() {
       const videoElement = document.getElementById('webcamVideo');
-      const faceMesh = new FaceMesh({ locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}` });
-      faceMesh.setOptions({ maxNumFaces: 1, refineLandmarks: true, minDetectionConfidence: 0.5, minTrackingConfidence: 0.5 });
-      faceMesh.onResults((results) => {
-        if (!results.multiFaceLandmarks || results.multiFaceLandmarks.length === 0) return;
-        const landmarks = results.multiFaceLandmarks[0];
-        const dx = landmarks[33].x - landmarks[263].x;
-        const dy = landmarks[33].y - landmarks[263].y;
-        let dist = Math.round(9.5 / Math.sqrt(dx * dx + dy * dy));
-        distanciaMedidaCm = Math.round(distanciaMedidaCm * 0.5 + dist * 0.5);
-        
-        const overlay = document.getElementById('boxBlockDistancia');
-        if (distanciaMedidaCm >= 45 && distanciaMedidaCm <= 65) {
-          estaBloqueadoPorDistancia = false;
-          overlay.style.display = 'none';
-        } else {
-          estaBloqueadoPorDistancia = true;
-          document.getElementById('lblDistVal').textContent = `${distanciaMedidaCm} cm`;
-          overlay.style.display = 'flex';
+      try {
+        if (typeof FaceMesh !== 'undefined' && typeof Camera !== 'undefined') {
+          const faceMesh = new FaceMesh({ locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}` });
+          faceMesh.setOptions({ maxNumFaces: 1, refineLandmarks: true, minDetectionConfidence: 0.5, minTrackingConfidence: 0.5 });
+          
+          faceMesh.onResults((results) => {
+            if (!results.multiFaceLandmarks || results.multiFaceLandmarks.length === 0) return;
+            const landmarks = results.multiFaceLandmarks[0];
+            const dx = landmarks[33].x - landmarks[263].x;
+            const dy = landmarks[33].y - landmarks[263].y;
+            let dist = Math.round(9.5 / Math.sqrt(dx * dx + dy * dy));
+            distanciaMedidaCm = Math.round(distanciaMedidaCm * 0.5 + dist * 0.5);
+            
+            const overlay = document.getElementById('boxBlockDistancia');
+            if (distanciaMedidaCm >= 45 && distanciaMedidaCm <= 65) {
+              estaBloqueadoPorDistancia = false;
+              overlay.style.display = 'none';
+            } else {
+              estaBloqueadoPorDistancia = true;
+              document.getElementById('lblDistVal').textContent = `${distanciaMedidaCm} cm`;
+              overlay.style.display = 'flex';
+            }
+          });
+
+          cameraInstance = new Camera(videoElement, { 
+            onFrame: async () => { await faceMesh.send({ image: videoElement }); }, 
+            width: 320, 
+            height: 240 
+          });
+          await cameraInstance.start();
         }
-      });
-      new Camera(videoElement, { onFrame: async () => { await faceMesh.send({ image: videoElement }); }, width: 320, height: 240 }).start().catch(()=>{});
+      } catch (err) {
+        console.warn("Error al iniciar cámara:", err);
+      }
     }
 
     function emitirTonoAlarma(frecuencia, duracion) {
@@ -266,7 +288,6 @@
         tiempoRestante--;
         lblTimer.textContent = `${tiempoRestante}s`;
 
-        // Generar estímulos de alarma en momentos específicos (ej: segundos 16, 12, 8, 4)
         if (tiempoRestante === 16 || tiempoRestante === 12 || tiempoRestante === 8 || tiempoRestante === 4) {
           emitirTonoAlarma(1200, 0.8);
           alarmaActivaMomento = true;
@@ -277,6 +298,7 @@
         if (tiempoRestante <= 0) {
           clearInterval(intervaloTimer);
           testEnCurso = false;
+          if (cameraInstance) { try { cameraInstance.stop(); } catch(e){} }
           
           emitirTonoAlarma(587, 0.2);
           setTimeout(() => emitirTonoAlarma(880, 0.4), 250);
@@ -284,22 +306,35 @@
           lblEstado.textContent = `✓ Tamizaje auditivo completado (${aciertosAuditivos} aciertos)`;
           lblTimer.style.color = "var(--accent-green)";
 
+          // Guardar doble clave oficial en localStorage
+          localStorage.setItem(`sensometrika_auditivo_${cleanRut}_${sessionId}`, 'true');
           localStorage.setItem(`medico_auditivo_${cleanRut}_${sessionId}`, 'true');
           localStorage.setItem(`medico_auditivo_score_${cleanRut}_${sessionId}`, aciertosAuditivos);
 
           let modulosRendidos = JSON.parse(localStorage.getItem('sensometrika_modulos_rendidos')) || {};
+          modulosRendidos.auditivo = true;
           modulosRendidos.medico_auditivo = true;
           localStorage.setItem('sensometrika_modulos_rendidos', JSON.stringify(modulosRendidos));
 
           setTimeout(() => {
-            window.location.href = `../menu_B2B.html?${urlParams.toString()}`;
+            const returnUrl = urlParams.get('returnUrl');
+            if (returnUrl) {
+              window.location.href = decodeURIComponent(returnUrl);
+            } else {
+              window.location.href = menuHref;
+            }
           }, 1800);
         }
       }, 1000);
     }
 
     function volverMenu() {
-      window.location.href = `../menu_B2B.html?${urlParams.toString()}`;
+      const returnUrl = urlParams.get('returnUrl');
+      if (returnUrl) {
+        window.location.href = decodeURIComponent(returnUrl);
+      } else {
+        window.location.href = menuHref;
+      }
     }
 
     document.addEventListener('DOMContentLoaded', () => {

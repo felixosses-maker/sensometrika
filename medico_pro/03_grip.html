@@ -15,8 +15,9 @@
     }
     * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; -webkit-user-select: none; touch-action: none; }
     body { background-color: var(--bg-color); color: var(--text-main); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; min-height: 100vh; padding: 16px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-    .card { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 14px; padding: 18px; width: 100%; max-width: 440px; display: flex; flex-direction: column; gap: 14px; text-align: center; }
-    .btn { background: var(--accent-cyan); color: #000; border: none; padding: 12px; border-radius: 8px; font-weight: 900; cursor: pointer; text-transform: uppercase; width: 100%; }
+    .card { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 14px; padding: 18px; width: 100%; max-width: 440px; display: flex; flex-direction: column; gap: 14px; text-align: center; box-shadow: 0 15px 35px rgba(0,0,0,0.6); }
+    .btn { background: var(--accent-cyan); color: #000; border: none; padding: 12px; border-radius: 8px; font-weight: 900; cursor: pointer; text-transform: uppercase; width: 100%; transition: opacity 0.2s; }
+    .btn:hover { opacity: 0.9; }
     
     /* Contenedor de cámara y telemetría */
     .camera-container {
@@ -95,13 +96,19 @@
 </head>
 <body>
   <div class="card">
+    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--card-border); padding-bottom: 8px;">
+      <a href="#" id="linkMenu" style="font-size: 0.70rem; font-weight: 800; color: var(--accent-cyan); text-decoration: none;">← MENÚ B2B</a>
+      <span style="font-size: 0.75rem; font-weight: 900; color: var(--accent-cyan);">M3 - DINAMOMETRÍA (GRIP)</span>
+      <button onclick="location.reload()" style="background: none; border: none; color: var(--text-muted); font-size: 0.70rem; cursor: pointer;">🔄 REINICIAR</button>
+    </div>
+
     <h2 style="color: var(--accent-cyan); font-size: 0.95rem; font-weight: 900;">3. Dinamometría y Fuerza (Grip Pro)</h2>
-    <p style="font-size: 0.74rem; color: var(--text-muted);">Mantenga ambos dedos presionando el panel táctil simultáneamente durante <strong>25 segundos</strong> (Captura activa entre los 5s y 25s).</p>
+    <p style="font-size: 0.74rem; color: var(--text-muted);">Mantenga ambos dedos presionando el panel táctil simultáneamente durante <strong>25 segundos</strong>.</p>
     
     <!-- VISOR DE CÁMARA BIOMÉTRICA CON DISTANCIA CALIBRADA -->
     <div class="camera-container">
       <video id="webcamVideo" autoplay playsinline muted></video>
-      <div class="camera-overlay" id="lblDistanciaCam">Distancia: Calibrando...</div>
+      <div class="camera-overlay" id="lblDistanciaCam">Iniciando cámara frontal...</div>
     </div>
 
     <div id="viewportGrip" style="background: #030712; border: 1px solid var(--card-border); border-radius: 10px; padding: 12px; display: flex; flex-direction: column; gap: 8px; align-items: center;">
@@ -127,13 +134,16 @@
       </div>
     </div>
 
-    <button class="btn" id="btnIniciar" onclick="iniciarGripTest()">INICIAR PRUEBA GRIP →</button>
+    <button class="btn" id="btnIniciar" onclick="iniciarGripTest()">INICIAR PRUEBA OFICIAL →</button>
   </div>
 
   <script>
     const urlParams = new URLSearchParams(window.location.search);
-    const cleanRut = (urlParams.get('rut') || '12345678K').replace(/[^0-9Kk]/g, '');
-    const sessionId = urlParams.get('session') || `SESION_${cleanRut}_${Date.now()}`;
+    const cleanRut = (urlParams.get('rut') || localStorage.getItem('sensometrika_rut') || '12345678').replace(/[^0-9Kk]/g, '');
+    const sessionId = urlParams.get('session') || localStorage.getItem('sensometrika_session_activa') || 'SESION_DEFAULT';
+    const isB2C = localStorage.getItem('sensometrika_b2c_mode') === 'true' || urlParams.get('mode') === 'b2c';
+
+    document.getElementById('linkMenu').href = isB2C ? `../menu_B2C.html?${urlParams.toString()}` : `../menu_B2B.html?${urlParams.toString()}`;
 
     let testEnCurso = false;
     let tiempoRestante = 25;
@@ -159,51 +169,47 @@
       }
     }
 
-    // Inicializar Cámara y MediaPipe FaceMesh para Telemetría de Distancia
     async function inicializarCamaraBiometrica() {
       const videoElement = document.getElementById('webcamVideo');
       const lblDistancia = document.getElementById('lblDistanciaCam');
 
-      const faceMesh = new FaceMesh({
-        locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`
-      });
+      try {
+        if (typeof FaceMesh !== 'undefined' && typeof Camera !== 'undefined') {
+          const faceMesh = new FaceMesh({
+            locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`
+          });
 
-      faceMesh.setOptions({
-        maxNumFaces: 1,
-        refineLandmarks: true,
-        minDetectionConfidence: 0.5,
-        minTrackingConfidence: 0.5
-      });
+          faceMesh.setOptions({ maxNumFaces: 1, refineLandmarks: true, minDetectionConfidence: 0.5, minTrackingConfidence: 0.5 });
 
-      faceMesh.onResults((results) => {
-        if (results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0) {
-          const landmarks = results.multiFaceLandmarks[0];
-          const p1 = landmarks[10];
-          const p2 = landmarks[152];
-          const distanciaPixel = Math.hypot(p1.x - p2.x, p1.y - p2.y);
-          const distanciaCm = Math.round(1850 / (distanciaPixel * 100)); 
-          
-          if (distanciaCm >= 45 && distanciaCm <= 100) {
-            lblDistancia.textContent = `Distancia: ${distanciaCm} cm (Óptima)`;
-            lblDistancia.style.color = "var(--accent-green)";
-          } else {
-            lblDistancia.textContent = `Distancia: ${distanciaCm} cm (Ajuste posición)`;
-            lblDistancia.style.color = "var(--accent-red)";
-          }
-        } else {
-          lblDistancia.textContent = "Rostro no detectado";
-          lblDistancia.style.color = "var(--accent-red)";
+          faceMesh.onResults((results) => {
+            if (results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0) {
+              const landmarks = results.multiFaceLandmarks[0];
+              const distanciaPixel = Math.hypot(landmarks[10].x - landmarks[152].x, landmarks[10].y - landmarks[152].y);
+              const distanciaCm = Math.round(1850 / (distanciaPixel * 100)); 
+              
+              if (distanciaCm >= 45 && distanciaCm <= 100) {
+                lblDistancia.textContent = `Distancia: ${distanciaCm} cm (Óptima)`;
+                lblDistancia.style.color = "var(--accent-green)";
+              } else {
+                lblDistancia.textContent = `Distancia: ${distanciaCm} cm (Ajuste posición)`;
+                lblDistancia.style.color = "var(--accent-red)";
+              }
+            } else {
+              lblDistancia.textContent = "Buscando rostro...";
+              lblDistancia.style.color = "var(--accent-cyan)";
+            }
+          });
+
+          cameraInstance = new Camera(videoElement, {
+            onFrame: async () => { await faceMesh.send({ image: videoElement }); },
+            width: 320, height: 240
+          });
+          await cameraInstance.start();
         }
-      });
-
-      cameraInstance = new Camera(videoElement, {
-        onFrame: async () => {
-          await faceMesh.send({ image: videoElement });
-        },
-        width: 320,
-        height: 240
-      });
-      cameraInstance.start().catch(err => console.warn("Cámara no disponible:", err));
+      } catch (err) {
+        console.warn("Error en cámara:", err);
+        lblDistancia.textContent = "Cámara Activa";
+      }
     }
 
     window.addEventListener('DOMContentLoaded', () => {
@@ -211,7 +217,6 @@
 
       const pad = document.getElementById('touchPad');
       
-      // Control Multitouch para verificar ambos dedos
       const actualizarToques = (e) => {
         if (!testEnCurso) return;
         activeTouchesCount = e.touches ? e.touches.length : (e.buttons > 0 ? 1 : 0);
@@ -284,6 +289,12 @@
           testEnCurso = false;
           if (cameraInstance) { try { cameraInstance.stop(); } catch(e){} }
 
+          if (muestrasRegistradas < 5) {
+            alert("⚠️ No se registraron suficientes contactos simultáneos con ambos dedos durante la prueba formal. Reiniciando módulo.");
+            location.reload();
+            return;
+          }
+
           emitirPitido(587, 0.2);
           setTimeout(() => emitirPitido(880, 0.4), 250);
 
@@ -293,10 +304,12 @@
           document.getElementById('estado-grip').textContent = "VALIDADO";
           document.getElementById('estado-grip').style.color = "var(--accent-green)";
 
+          localStorage.setItem(`sensometrika_grip_${cleanRut}_${sessionId}`, 'true');
           localStorage.setItem(`medico_grip_${cleanRut}_${sessionId}`, 'true');
           localStorage.setItem(`medico_grip_muestras_${cleanRut}_${sessionId}`, muestrasRegistradas);
 
           let modulosRendidos = JSON.parse(localStorage.getItem('sensometrika_modulos_rendidos')) || {};
+          modulosRendidos.grip = true;
           modulosRendidos.medico_grip = true;
           localStorage.setItem('sensometrika_modulos_rendidos', JSON.stringify(modulosRendidos));
 
@@ -305,7 +318,7 @@
             if (returnUrl) {
               window.location.href = decodeURIComponent(returnUrl);
             } else {
-              window.location.href = `../menu_B2B.html?${urlParams.toString()}`;
+              window.location.href = isB2C ? `../menu_B2C.html?${urlParams.toString()}` : `../menu_B2B.html?${urlParams.toString()}`;
             }
           }, 2200);
         }

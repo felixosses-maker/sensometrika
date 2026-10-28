@@ -73,7 +73,7 @@
       gap: 8px;
     }
 
-    .top-nav-bar button {
+    .top-nav-bar button, .top-nav-bar a {
       background: #0c182e;
       border: 1px solid #1e3a6d;
       color: var(--accent-cyan);
@@ -82,6 +82,8 @@
       padding: 6px 10px;
       border-radius: 8px;
       cursor: pointer;
+      text-decoration: none;
+      text-align: center;
     }
 
     .cam-preview-pip {
@@ -114,7 +116,9 @@
       text-transform: uppercase;
       width: 100%;
       box-shadow: 0 4px 14px var(--accent-cyan-glow);
+      transition: opacity 0.2s;
     }
+    .btn-action:hover { opacity: 0.9; }
 
     .instruction-text { font-size: 0.74rem; color: #cbd5e1; line-height: 1.35; text-align: center; }
 
@@ -157,11 +161,11 @@
   <video id="webcamInput" style="display:none;" playsinline></video>
 
   <div class="main-wrapper">
-    <img src="../sensometrica.jpg" alt="SENSOMETRIKA" class="brand-logo-img">
+    <img src="../sensometrica.jpg" alt="SENSOMETRIKA" class="brand-logo-img" onerror="this.style.display='none'">
 
     <div class="main-card">
       <div class="top-nav-bar">
-        <button type="button" onclick="volverMenu()">← Menú B2B</button>
+        <a href="#" id="linkMenu">← Menú</a>
         <div class="cam-preview-pip" id="pipContainer">
           <video id="webcamVideo" autoplay playsinline muted></video>
         </div>
@@ -172,7 +176,7 @@
         10. Tamizaje de Fatiga y Somnolencia (Pro)
       </h3>
       <p class="instruction-text">
-        Manténgase a <strong>30 cm</strong> de distancia. Mantenga los ojos abiertos y la mirada fija al frente durante <strong>25 segundos</strong> (Captura activa entre los 5s y 25s).
+        Manténgase a <strong>30 cm</strong> de distancia. Mantenga los ojos abiertos y la mirada fija al frente durante <strong>25 segundos</strong>.
       </p>
 
       <div style="background: #030712; border: 1px solid var(--card-border); border-radius: 10px; padding: 16px; text-align: center;">
@@ -180,7 +184,7 @@
         <p id="lblEstado" style="font-size: 0.75rem; color: var(--accent-cyan); margin-top: 4px;">Listo para iniciar análisis de alerta</p>
       </div>
 
-      <!-- PANEL DE TELEMETRÍA OFICIAL SENSOMETRIKA CON DATOS EN VIVO -->
+      <!-- PANEL DE TELEMETRÍA OFICIAL SENSOMETRIKA -->
       <div class="metricas-grid">
         <div class="col-metrica">
           <span>Tiempo</span>
@@ -198,18 +202,23 @@
 
       <button class="btn-action" id="btnIniciar" onclick="iniciarSomnolencia()">INICIAR TAMIZAJE DE FATIGA →</button>
 
-      <!-- OVERLAY DE BLOQUEO POR DISTANCIA (Calibrado a 25 - 38 cm) -->
+      <!-- OVERLAY DE BLOQUEO POR DISTANCIA -->
       <div id="boxBlockDistancia" class="distance-block-overlay">
         <span style="color: var(--accent-red); font-weight: 900; font-size: 0.9rem;">⚠️ DISTANCIA FUERA DE RANGO</span>
-        <span class="instruction-text">Acérquese o aléjese de la cámara.<br>Distancia telemétrica: <b id="lblDistVal" style="color:var(--accent-red);">-- cm</b><br>(Rango normativo cercano: 25 a 38 cm).</span>
+        <span class="instruction-text">Acérquese o aléjese de la cámara.<br>Distancia telemétrica: <b id="lblDistVal" style="color:var(--accent-red);">-- cm</b><br>(Rango normativo: 25 a 38 cm).</span>
       </div>
     </div>
   </div>
 
   <script>
     const urlParams = new URLSearchParams(window.location.search);
-    const cleanRut = (urlParams.get('rut') || '12345678K').replace(/[^0-9Kk]/g, '');
-    const sessionId = urlParams.get('session') || `SESION_${cleanRut}_${Date.now()}`;
+    const cleanRut = (urlParams.get('rut') || localStorage.getItem('sensometrika_rut') || '12345678').replace(/[^0-9Kk]/g, '');
+    const sessionId = urlParams.get('session') || localStorage.getItem('sensometrika_session_activa') || 'SESION_DEFAULT';
+    const isB2C = localStorage.getItem('sensometrika_b2c_mode') === 'true' || urlParams.get('mode') === 'b2c';
+
+    // Configurar enlace del menú según B2B o B2C con soporte para returnUrl
+    const menuHref = isB2C ? `../menu_B2C.html?${urlParams.toString()}` : `../menu_B2B.html?${urlParams.toString()}`;
+    document.getElementById('linkMenu').href = urlParams.get('returnUrl') ? decodeURIComponent(urlParams.get('returnUrl')) : menuHref;
 
     let distanciaMedidaCm = 30;
     let estaBloqueadoPorDistancia = false;
@@ -217,72 +226,7 @@
     let intervaloTimer = null;
     let totalFramesActivos = 0;
     let framesOjosCerradosTotal = 0;
-
-    function iniciarMediaPipeFaceMesh() {
-      const videoElement = document.getElementById('webcamVideo');
-      const faceMesh = new FaceMesh({ locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}` });
-      faceMesh.setOptions({ maxNumFaces: 1, refineLandmarks: true, minDetectionConfidence: 0.5, minTrackingConfidence: 0.5 });
-      
-      faceMesh.onResults((results) => {
-        const telEstadoOjos = document.getElementById('tel-estado-ojos');
-        const telAlerta = document.getElementById('tel-alerta');
-        const overlay = document.getElementById('boxBlockDistancia');
-
-        if (!results.multiFaceLandmarks || results.multiFaceLandmarks.length === 0) {
-          if (testEnCurso) {
-            totalFramesActivos++;
-            framesOjosCerradosTotal++; // Si no hay rostro, cuenta como pérdida de contacto / cierre
-            telEstadoOjos.textContent = "Ausente";
-            telEstadoOjos.style.color = "var(--accent-red)";
-          }
-          return;
-        }
-
-        const landmarks = results.multiFaceLandmarks[0];
-
-        // Cálculo EAR (Eye Aspect Ratio) estricto
-        const verticalOjoIzq = Math.abs(landmarks[159].y - landmarks[145].y);
-        const verticalOjoDer = Math.abs(landmarks[386].y - landmarks[374].y);
-        const aperturaPromedio = (verticalOjoIzq + verticalOjoDer) / 2;
-
-        const ojosCerrados = aperturaPromedio < 0.014;
-
-        if (testEnCurso) {
-          totalFramesActivos++;
-          if (ojosCerrados) {
-            framesOjosCerradosTotal++;
-            telEstadoOjos.textContent = "Cerrados / Fatiga";
-            telEstadoOjos.style.color = "var(--accent-red)";
-          } else {
-            telEstadoOjos.textContent = "Abiertos";
-            telEstadoOjos.style.color = "var(--accent-green)";
-          }
-
-          // Cálculo en tiempo real del porcentaje de alerta basado en el acumulado global
-          let porcentajeCierre = (framesOjosCerradosTotal / totalFramesActivos) * 100;
-          let indiceActual = Math.max(0, Math.round(100 - porcentajeCierre * 1.5));
-          
-          telAlerta.textContent = `${indiceActual}%`;
-          telAlerta.style.color = indiceActual >= 70 ? "var(--accent-green)" : "var(--accent-red)";
-        }
-
-        // Control de distancia cercana (25 a 38 cm)
-        const dx = landmarks[33].x - landmarks[263].x;
-        const dy = landmarks[33].y - landmarks[263].y;
-        let dist = Math.round(9.5 / Math.sqrt(dx * dx + dy * dy));
-        distanciaMedidaCm = Math.round(distanciaMedidaCm * 0.5 + dist * 0.5);
-        
-        if (distanciaMedidaCm >= 25 && distanciaMedidaCm <= 38) {
-          estaBloqueadoPorDistancia = false;
-          overlay.style.display = 'none';
-        } else {
-          estaBloqueadoPorDistancia = true;
-          document.getElementById('lblDistVal').textContent = `${distanciaMedidaCm} cm`;
-          overlay.style.display = 'flex';
-        }
-      });
-      new Camera(videoElement, { onFrame: async () => { await faceMesh.send({ image: videoElement }); }, width: 320, height: 240 }).start().catch(()=>{});
-    }
+    let cameraInstance = null;
 
     function emitirPitido(frecuencia, duracion) {
       try {
@@ -298,6 +242,84 @@
         osc.stop(audioCtx.currentTime + duracion);
       } catch (e) {
         console.log("Audio no soportado", e);
+      }
+    }
+
+    async function iniciarMediaPipeFaceMesh() {
+      const videoElement = document.getElementById('webcamVideo');
+      
+      try {
+        if (typeof FaceMesh !== 'undefined' && typeof Camera !== 'undefined') {
+          const faceMesh = new FaceMesh({ locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}` });
+          faceMesh.setOptions({ maxNumFaces: 1, refineLandmarks: true, minDetectionConfidence: 0.5, minTrackingConfidence: 0.5 });
+          
+          faceMesh.onResults((results) => {
+            const telEstadoOjos = document.getElementById('tel-estado-ojos');
+            const telAlerta = document.getElementById('tel-alerta');
+            const overlay = document.getElementById('boxBlockDistancia');
+
+            if (!results.multiFaceLandmarks || results.multiFaceLandmarks.length === 0) {
+              if (testEnCurso) {
+                totalFramesActivos++;
+                framesOjosCerradosTotal++;
+                telEstadoOjos.textContent = "Ausente";
+                telEstadoOjos.style.color = "var(--accent-red)";
+              }
+              return;
+            }
+
+            const landmarks = results.multiFaceLandmarks[0];
+
+            // Cálculo EAR (Eye Aspect Ratio) estricto
+            const verticalOjoIzq = Math.abs(landmarks[159].y - landmarks[145].y);
+            const verticalOjoDer = Math.abs(landmarks[386].y - landmarks[374].y);
+            const aperturaPromedio = (verticalOjoIzq + verticalOjoDer) / 2;
+
+            const ojosCerrados = aperturaPromedio < 0.014;
+
+            if (testEnCurso) {
+              totalFramesActivos++;
+              if (ojosCerrados) {
+                framesOjosCerradosTotal++;
+                telEstadoOjos.textContent = "Cerrados / Fatiga";
+                telEstadoOjos.style.color = "var(--accent-red)";
+              } else {
+                telEstadoOjos.textContent = "Abiertos";
+                telEstadoOjos.style.color = "var(--accent-green)";
+              }
+
+              let porcentajeCierre = (framesOjosCerradosTotal / totalFramesActivos) * 100;
+              let indiceActual = Math.max(0, Math.round(100 - porcentajeCierre * 1.5));
+              
+              telAlerta.textContent = `${indiceActual}%`;
+              telAlerta.style.color = indiceActual >= 70 ? "var(--accent-green)" : "var(--accent-red)";
+            }
+
+            // Control de distancia (25 a 38 cm)
+            const dx = landmarks[33].x - landmarks[263].x;
+            const dy = landmarks[33].y - landmarks[263].y;
+            let dist = Math.round(9.5 / Math.sqrt(dx * dx + dy * dy));
+            distanciaMedidaCm = Math.round(distanciaMedidaCm * 0.5 + dist * 0.5);
+            
+            if (distanciaMedidaCm >= 25 && distanciaMedidaCm <= 38) {
+              estaBloqueadoPorDistancia = false;
+              overlay.style.display = 'none';
+            } else {
+              estaBloqueadoPorDistancia = true;
+              document.getElementById('lblDistVal').textContent = `${distanciaMedidaCm} cm`;
+              overlay.style.display = 'flex';
+            }
+          });
+
+          cameraInstance = new Camera(videoElement, { 
+            onFrame: async () => { await faceMesh.send({ image: videoElement }); }, 
+            width: 320, 
+            height: 240 
+          });
+          await cameraInstance.start();
+        }
+      } catch (err) {
+        console.warn("Error al iniciar MediaPipe:", err);
       }
     }
 
@@ -330,15 +352,14 @@
         if (tiempoRestante <= 0) {
           clearInterval(intervaloTimer);
           testEnCurso = false;
+          if (cameraInstance) { try { cameraInstance.stop(); } catch(e){} }
           
           emitirPitido(587, 0.2);
           setTimeout(() => emitirPitido(880, 0.4), 250);
 
-          // Cálculo definitivo al finalizar los 25s
           let proporcionCierre = totalFramesActivos > 0 ? (framesOjosCerradosTotal / totalFramesActivos) : 0;
           let indiceFinal = Math.max(0, Math.round(100 - proporcionCierre * 100));
 
-          // Si pasó más del 25% del tiempo con los ojos cerrados, se reprueba estrictamente
           let aprobadoFatiga = proporcionCierre < 0.25 && indiceFinal >= 70;
 
           if (aprobadoFatiga) {
@@ -346,16 +367,20 @@
             lblTimer.style.color = "var(--accent-green)";
             telAlerta.textContent = `${indiceFinal}% (Óptimo)`;
             telAlerta.style.color = "var(--accent-green)";
-            localStorage.setItem(`medico_somnolencia_${cleanRut}_${sessionId}`, 'true');
           } else {
             lblEstado.textContent = "⚠️ Alerta: Cierre ocular prolongado detectado";
             lblTimer.style.color = "var(--accent-red)";
             telAlerta.textContent = `${indiceFinal}% (Fatiga Crítica)`;
             telAlerta.style.color = "var(--accent-red)";
-            localStorage.setItem(`medico_somnolencia_${cleanRut}_${sessionId}`, 'false');
           }
 
+          // Guardar doble clave oficial en localStorage
+          localStorage.setItem(`sensometrika_somnolencia_${cleanRut}_${sessionId}`, aprobadoFatiga ? 'true' : 'false');
+          localStorage.setItem(`medico_somnolencia_${cleanRut}_${sessionId}`, aprobadoFatiga ? 'true' : 'false');
+          localStorage.setItem(`medico_somnolencia_score_${cleanRut}_${sessionId}`, `${indiceFinal}%`);
+
           let modulosRendidos = JSON.parse(localStorage.getItem('sensometrika_modulos_rendidos')) || {};
+          modulosRendidos.somnolencia = true;
           modulosRendidos.medico_somnolencia = true;
           localStorage.setItem('sensometrika_modulos_rendidos', JSON.stringify(modulosRendidos));
 
@@ -364,7 +389,7 @@
             if (returnUrl) {
               window.location.href = decodeURIComponent(returnUrl);
             } else {
-              window.location.href = `../menu_B2B.html?${urlParams.toString()}`;
+              window.location.href = menuHref;
             }
           }, 2500);
         }
@@ -376,7 +401,7 @@
       if (returnUrl) {
         window.location.href = decodeURIComponent(returnUrl);
       } else {
-        window.location.href = `../menu_B2B.html?${urlParams.toString()}`;
+        window.location.href = menuHref;
       }
     }
 

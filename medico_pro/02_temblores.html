@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>SENSOMETRIKA | Test de Temblores Pro (Estabilidad Motora)</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- MediaPipe FaceMesh y Camera Utils -->
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
   <style>
@@ -15,14 +14,14 @@
     }
     * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
     body { background-color: var(--bg-color); color: var(--text-main); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; min-height: 100vh; padding: 16px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-    .card { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 14px; padding: 18px; width: 100%; max-width: 440px; display: flex; flex-direction: column; gap: 14px; text-align: center; }
-    .btn { background: var(--accent-cyan); color: #000; border: none; padding: 12px; border-radius: 8px; font-weight: 900; cursor: pointer; text-transform: uppercase; width: 100%; }
+    .card { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 14px; padding: 18px; width: 100%; max-width: 440px; display: flex; flex-direction: column; gap: 14px; text-align: center; box-shadow: 0 15px 35px rgba(0,0,0,0.6); }
+    .btn { background: var(--accent-cyan); color: #000; border: none; padding: 12px; border-radius: 8px; font-weight: 900; cursor: pointer; text-transform: uppercase; width: 100%; transition: opacity 0.2s; }
+    .btn:hover { opacity: 0.9; }
     
-    /* Contenedor de cámara y telemetría */
     .camera-container {
       position: relative;
       width: 100%;
-      height: 140px;
+      height: 130px;
       background: #000;
       border-radius: 10px;
       overflow: hidden;
@@ -36,7 +35,7 @@
       width: 100%;
       height: 100%;
       object-fit: cover;
-      transform: scaleX(-1); /* Efecto espejo */
+      transform: scaleX(-1);
       opacity: 0.65;
     }
     .camera-overlay {
@@ -51,7 +50,6 @@
       border: 1px solid var(--card-border);
     }
 
-    /* Estructura oficial de rejilla de métricas SENSOMETRIKA */
     .metricas-grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
@@ -80,21 +78,25 @@
 </head>
 <body>
   <div class="card">
+    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--card-border); padding-bottom: 8px;">
+      <a href="#" id="linkMenu" style="font-size: 0.70rem; font-weight: 800; color: var(--accent-cyan); text-decoration: none;">← MENÚ B2B</a>
+      <span style="font-size: 0.75rem; font-weight: 900; color: var(--accent-cyan);">M2 - ESTABILIDAD MOTORA</span>
+      <button onclick="location.reload()" style="background: none; border: none; color: var(--text-muted); font-size: 0.70rem; cursor: pointer;">🔄 REINICIAR</button>
+    </div>
+
     <h2 style="color: var(--accent-cyan); font-size: 0.95rem; font-weight: 900;">2. Estabilidad Motora (Temblores Pro)</h2>
-    <p style="font-size: 0.74rem; color: var(--text-muted);">Extienda sus brazos hacia el frente sosteniendo el teléfono durante <strong>25 segundos</strong> (Captura activa entre los 5s y 25s).</p>
+    <p style="font-size: 0.74rem; color: var(--text-muted);">Extienda sus brazos al frente sosteniendo el dispositivo durante <strong>25 segundos</strong>.</p>
     
-    <!-- VISOR DE CÁMARA BIOMÉTRICA CON DISTANCIA CALIBRADA -->
     <div class="camera-container">
       <video id="webcamVideo" autoplay playsinline muted></video>
-      <div class="camera-overlay" id="lblDistanciaCam">Distancia: Calibrando...</div>
+      <div class="camera-overlay" id="lblDistanciaCam">Iniciando cámara frontal...</div>
     </div>
 
     <div id="viewportTemblores" style="background: #030712; border: 1px solid var(--card-border); border-radius: 10px; padding: 12px;">
       <span id="lblTimer" style="font-size: 2.0rem; font-weight: 900; color: #fff;">25s</span>
-      <p id="lblEstado" style="font-size: 0.75rem; color: var(--accent-cyan); margin-top: 4px;">Listo para iniciar medición motora</p>
+      <p id="lblEstado" style="font-size: 0.75rem; color: var(--accent-cyan); margin-top: 4px;">En espera de inicio</p>
     </div>
 
-    <!-- PANEL DE TELEMETRÍA OFICIAL SENSOMETRIKA -->
     <div class="metricas-grid">
       <div class="col-metrica">
         <span>Tiempo</span>
@@ -110,17 +112,21 @@
       </div>
     </div>
 
-    <button class="btn" id="btnIniciar" onclick="iniciarTemblores()">INICIAR MEDICIÓN →</button>
+    <button class="btn" id="btnIniciar" onclick="iniciarTemblores()">INICIAR MEDICIÓN OFICIAL →</button>
   </div>
 
   <script>
     const urlParams = new URLSearchParams(window.location.search);
-    const cleanRut = (urlParams.get('rut') || '12345678K').replace(/[^0-9Kk]/g, '');
-    const sessionId = urlParams.get('session') || `SESION_${cleanRut}_${Date.now()}`;
+    const cleanRut = (urlParams.get('rut') || localStorage.getItem('sensometrika_rut') || '12345678').replace(/[^0-9Kk]/g, '');
+    const sessionId = urlParams.get('session') || localStorage.getItem('sensometrika_session_activa') || 'SESION_DEFAULT';
+    const isB2C = localStorage.getItem('sensometrika_b2c_mode') === 'true' || urlParams.get('mode') === 'b2c';
+
+    document.getElementById('linkMenu').href = isB2C ? `../menu_B2C.html?${urlParams.toString()}` : `../menu_B2B.html?${urlParams.toString()}`;
 
     let datosAcelerometro = [];
     let listenerMovimiento = null;
     let cameraInstance = null;
+    let intervalo = null;
 
     function emitirPitido(frecuencia, duracion) {
       try {
@@ -144,70 +150,58 @@
         try {
           await DeviceMotionEvent.requestPermission();
         } catch (e) {
-          console.warn("Permiso de acelerómetro denegado o no disponible", e);
+          console.warn("Permiso de acelerómetro:", e);
         }
       }
     }
 
-    // Inicializar Cámara y MediaPipe FaceMesh para Telemetría de Distancia Calibrada a Brazos Extendidos
     async function inicializarCamaraBiometrica() {
       const videoElement = document.getElementById('webcamVideo');
       const lblDistancia = document.getElementById('lblDistanciaCam');
 
-      const faceMesh = new FaceMesh({
-        locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`
-      });
+      try {
+        if (typeof FaceMesh !== 'undefined' && typeof Camera !== 'undefined') {
+          const faceMesh = new FaceMesh({
+            locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`
+          });
 
-      faceMesh.setOptions({
-        maxNumFaces: 1,
-        refineLandmarks: true,
-        minDetectionConfidence: 0.5,
-        minTrackingConfidence: 0.5
-      });
+          faceMesh.setOptions({ maxNumFaces: 1, refineLandmarks: true, minDetectionConfidence: 0.5, minTrackingConfidence: 0.5 });
 
-      faceMesh.onResults((results) => {
-        if (results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0) {
-          const landmarks = results.multiFaceLandmarks[0];
-          // Distancia vertical entre ceja superior (10) y mentón (152)
-          const p1 = landmarks[10];
-          const p2 = landmarks[152];
-          const distanciaPixel = Math.hypot(p1.x - p2.x, p1.y - p2.y);
-          
-          // Factor de conversión ajustado para brazos extendidos (~50 a 90 cm)
-          const distanciaCm = Math.round(1850 / (distanciaPixel * 100)); 
-          
-          if (distanciaCm >= 45 && distanciaCm <= 100) {
-            lblDistancia.textContent = `Distancia: ${distanciaCm} cm (Óptima)`;
-            lblDistancia.style.color = "var(--accent-green)";
-          } else if (distanciaCm < 45) {
-            lblDistancia.textContent = `Distancia: ${distanciaCm} cm (Demasiado cerca)`;
-            lblDistancia.style.color = "var(--accent-red)";
-          } else {
-            lblDistancia.textContent = `Distancia: ${distanciaCm} cm (Extienda más)`;
-            lblDistancia.style.color = "var(--accent-red)";
-          }
-        } else {
-          lblDistancia.textContent = "Rostro no detectado";
-          lblDistancia.style.color = "var(--accent-red)";
+          faceMesh.onResults((results) => {
+            if (results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0) {
+              const landmarks = results.multiFaceLandmarks[0];
+              const distanciaPixel = Math.hypot(landmarks[10].x - landmarks[152].x, landmarks[10].y - landmarks[152].y);
+              const distanciaCm = Math.round(1850 / (distanciaPixel * 100)); 
+              
+              if (distanciaCm >= 45 && distanciaCm <= 100) {
+                lblDistancia.textContent = `Distancia: ${distanciaCm} cm (Óptima)`;
+                lblDistancia.style.color = "var(--accent-green)";
+              } else {
+                lblDistancia.textContent = `Distancia: ${distanciaCm} cm (Ajuste brazos)`;
+                lblDistancia.style.color = "var(--accent-red)";
+              }
+            } else {
+              lblDistancia.textContent = "Buscando rostro...";
+              lblDistancia.style.color = "var(--accent-cyan)";
+            }
+          });
+
+          cameraInstance = new Camera(videoElement, {
+            onFrame: async () => { await faceMesh.send({ image: videoElement }); },
+            width: 320, height: 240
+          });
+          await cameraInstance.start();
         }
-      });
-
-      cameraInstance = new Camera(videoElement, {
-        onFrame: async () => {
-          await faceMesh.send({ image: videoElement });
-        },
-        width: 320,
-        height: 240
-      });
-      cameraInstance.start().catch(err => console.warn("Cámara no disponible:", err));
+      } catch (err) {
+        console.warn("Error en MediaPipe:", err);
+        lblDistancia.textContent = "Cámara Activa";
+      }
     }
 
-    window.addEventListener('DOMContentLoaded', () => {
-      inicializarCamaraBiometrica();
-    });
+    window.addEventListener('DOMContentLoaded', () => { inicializarCamaraBiometrica(); });
 
-    function iniciarTemblores() {
-      solicitarPermisosSensores();
+    async function iniciarTemblores() {
+      await solicitarPermisosSensores();
       document.getElementById('btnIniciar').style.display = 'none';
       
       let tiempoRestante = 25;
@@ -217,19 +211,17 @@
       const contadorMuestras = document.getElementById('contador-muestras');
       const desviacionTemblores = document.getElementById('desviacion-temblores');
       
-      // Pitido inicial de arranque (tono agudo)
       emitirPitido(880, 0.3);
       lblEstado.textContent = "Fase de preparación (0s - 5s): Extienda brazos al frente...";
 
       datosAcelerometro = [];
       listenerMovimiento = (event) => {
-        if (tiempoRestante <= 20 && tiempoRestante > 0) { // Captura efectiva entre el segundo 5 y el 25
+        if (tiempoRestante <= 20 && tiempoRestante > 0) {
           const acc = event.accelerationIncludingGravity || event.acceleration;
           if (acc) {
             datosAcelerometro.push({ x: acc.x || 0, y: acc.y || 0, z: acc.z || 0 });
             contadorMuestras.textContent = datosAcelerometro.length;
 
-            // Calcular micro-oscilación parcial en tiempo real
             let sumX = 0, sumY = 0, sumZ = 0;
             datosAcelerometro.forEach(d => { sumX += d.x; sumY += d.y; sumZ += d.z; });
             let avgX = sumX / datosAcelerometro.length;
@@ -246,65 +238,75 @@
       };
       window.addEventListener('devicemotion', listenerMovimiento);
 
-      const intervalo = setInterval(() => {
+      intervalo = setInterval(() => {
         tiempoRestante--;
         lblTimer.textContent = `${tiempoRestante}s`;
         cronometroTemblores.textContent = `${tiempoRestante} s`;
 
         if (tiempoRestante === 20) {
-          // Pitido indicador de inicio de captura efectiva (segundo 5)
           emitirPitido(1046, 0.2);
-          lblEstado.textContent = "Midiendo micro-oscilaciones (Captura Activa 20s)...";
+          lblEstado.textContent = "Midiendo micro-oscilaciones reales (Captura Activa 20s)...";
         }
         
         if (tiempoRestante <= 0) {
-          clearInterval(intervalo);
-          window.removeEventListener('devicemotion', listenerMovimiento);
-          if (cameraInstance) { try { cameraInstance.stop(); } catch(e){} }
-          
-          // Doble pitido final de término (agudo y grave)
-          emitirPitido(587, 0.2);
-          setTimeout(() => emitirPitido(880, 0.4), 250);
-
-          lblEstado.textContent = "✓ Prueba superada (Control motor óptimo)";
-          lblTimer.style.color = "var(--accent-green)";
-
-          // Cálculo final de estadística de temblor
-          let desviacionTotal = 0;
-          if (datosAcelerometro.length > 0) {
-            let sumX = 0, sumY = 0, sumZ = 0;
-            datosAcelerometro.forEach(d => { sumX += d.x; sumY += d.y; sumZ += d.z; });
-            let avgX = sumX / datosAcelerometro.length;
-            let avgY = sumY / datosAcelerometro.length;
-            let avgZ = sumZ / datosAcelerometro.length;
-
-            datosAcelerometro.forEach(d => {
-              desviacionTotal += Math.abs(d.x - avgX) + Math.abs(d.y - avgY) + Math.abs(d.z - avgZ);
-            });
-            desviacionTotal = desviacionTotal / datosAcelerometro.length;
-          }
-
-          desviacionTemblores.textContent = `${desviacionTotal.toFixed(3)} m/s²`;
-
-          // Registrar en localStorage para el menú B2B e informe
-          localStorage.setItem(`medico_temblores_${cleanRut}_${sessionId}`, 'true');
-          localStorage.setItem(`medico_temblores_desviacion_${cleanRut}_${sessionId}`, desviacionTotal.toFixed(3));
-          localStorage.setItem(`medico_temblores_muestras_${cleanRut}_${sessionId}`, datosAcelerometro.length);
-
-          let modulosRendidos = JSON.parse(localStorage.getItem('sensometrika_modulos_rendidos')) || {};
-          modulosRendidos.medico_temblores = true;
-          localStorage.setItem('sensometrika_modulos_rendidos', JSON.stringify(modulosRendidos));
-
-          setTimeout(() => {
-            const returnUrl = urlParams.get('returnUrl');
-            if (returnUrl) {
-              window.location.href = decodeURIComponent(returnUrl);
-            } else {
-              window.location.href = `../menu_B2B.html?${urlParams.toString()}`;
-            }
-          }, 2200);
+          finalizarPruebaFormal();
         }
       }, 1000);
+    }
+
+    function finalizarPruebaFormal() {
+      clearInterval(intervalo);
+      if (listenerMovimiento) window.removeEventListener('devicemotion', listenerMovimiento);
+      if (cameraInstance) { try { cameraInstance.stop(); } catch(e){} }
+      
+      emitirPitido(587, 0.2);
+      setTimeout(() => emitirPitido(880, 0.4), 250);
+
+      const lblTimer = document.getElementById('lblTimer');
+      const lblEstado = document.getElementById('lblEstado');
+      const desviacionTemblores = document.getElementById('desviacion-temblores');
+
+      if (datosAcelerometro.length < 10) {
+        alert("⚠️ No se registraron muestras motrices suficientes. Compruebe los sensores del dispositivo.");
+        location.reload();
+        return;
+      }
+
+      lblEstado.textContent = "✓ Evaluación de estabilidad motora completada";
+      lblTimer.style.color = "var(--accent-green)";
+
+      let sumX = 0, sumY = 0, sumZ = 0;
+      datosAcelerometro.forEach(d => { sumX += d.x; sumY += d.y; sumZ += d.z; });
+      let avgX = sumX / datosAcelerometro.length;
+      let avgY = sumY / datosAcelerometro.length;
+      let avgZ = sumZ / datosAcelerometro.length;
+
+      let desviacionTotal = 0;
+      datosAcelerometro.forEach(d => {
+        desviacionTotal += Math.abs(d.x - avgX) + Math.abs(d.y - avgY) + Math.abs(d.z - avgZ);
+      });
+      desviacionTotal = desviacionTotal / datosAcelerometro.length;
+
+      desviacionTemblores.textContent = `${desviacionTotal.toFixed(3)} m/s²`;
+
+      localStorage.setItem(`sensometrika_temblores_${cleanRut}_${sessionId}`, 'true');
+      localStorage.setItem(`medico_temblores_${cleanRut}_${sessionId}`, 'true');
+      localStorage.setItem(`medico_temblores_desviacion_${cleanRut}_${sessionId}`, desviacionTotal.toFixed(3));
+      localStorage.setItem(`medico_temblores_muestras_${cleanRut}_${sessionId}`, datosAcelerometro.length);
+
+      let modulosRendidos = JSON.parse(localStorage.getItem('sensometrika_modulos_rendidos')) || {};
+      modulosRendidos.temblores = true;
+      modulosRendidos.medico_temblores = true;
+      localStorage.setItem('sensometrika_modulos_rendidos', JSON.stringify(modulosRendidos));
+
+      setTimeout(() => {
+        const returnUrl = urlParams.get('returnUrl');
+        if (returnUrl) {
+          window.location.href = decodeURIComponent(returnUrl);
+        } else {
+          window.location.href = isB2C ? `../menu_B2C.html?${urlParams.toString()}` : `../menu_B2B.html?${urlParams.toString()}`;
+        }
+      }, 1800);
     }
   </script>
 </body>

@@ -73,7 +73,7 @@
       gap: 8px;
     }
 
-    .top-nav-bar button {
+    .top-nav-bar button, .top-nav-bar a {
       background: #0c182e;
       border: 1px solid #1e3a6d;
       color: var(--accent-cyan);
@@ -82,6 +82,8 @@
       padding: 6px 10px;
       border-radius: 8px;
       cursor: pointer;
+      text-decoration: none;
+      text-align: center;
     }
 
     .cam-preview-pip {
@@ -114,7 +116,9 @@
       text-transform: uppercase;
       width: 100%;
       box-shadow: 0 4px 14px var(--accent-cyan-glow);
+      transition: opacity 0.2s;
     }
+    .btn-action:hover { opacity: 0.9; }
 
     .target-dot {
       width: 20px; height: 20px; background: var(--accent-cyan); border-radius: 50%;
@@ -163,11 +167,11 @@
   <video id="webcamInput" style="display:none;" playsinline></video>
 
   <div class="main-wrapper">
-    <img src="../sensometrica.jpg" alt="SENSOMETRIKA" class="brand-logo-img">
+    <img src="../sensometrica.jpg" alt="SENSOMETRIKA" class="brand-logo-img" onerror="this.style.display='none'">
 
     <div class="main-card">
       <div class="top-nav-bar">
-        <button type="button" onclick="volverMenu()">← Menú B2B</button>
+        <a href="#" id="linkMenu">← Menú</a>
         <div class="cam-preview-pip" id="pipContainer">
           <video id="webcamVideo" autoplay playsinline muted></video>
         </div>
@@ -178,7 +182,7 @@
         9. Estabilidad Oculomotriz (Nistagmo Pro)
       </h3>
       <p class="instruction-text">
-        Manténgase a <strong>30 cm</strong>. Siga el punto luminoso **con los ojos abiertos** sin cerrar los párpados durante <strong>25 segundos</strong>.
+        Manténgase a <strong>30 cm</strong>. Siga el punto luminoso <strong>con los ojos abiertos</strong> sin cerrar los párpados durante <strong>25 segundos</strong>.
       </p>
 
       <div style="background: #030712; border: 1px solid var(--card-border); border-radius: 10px; height: 95px; position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center;">
@@ -187,7 +191,7 @@
 
       <p id="lblEstado" style="font-size: 0.72rem; color: var(--accent-cyan); text-align: center;">Listo para iniciar seguimiento nistágmico</p>
 
-      <!-- PANEL DE TELEMETRÍA OFICIAL SENSOMETRIKA CON ESTADO OCULAR EN VIVO -->
+      <!-- PANEL DE TELEMETRÍA OFICIAL SENSOMETRIKA -->
       <div class="metricas-grid">
         <div class="col-metrica">
           <span>Tiempo</span>
@@ -215,77 +219,89 @@
 
   <script>
     const urlParams = new URLSearchParams(window.location.search);
-    const cleanRut = (urlParams.get('rut') || '12345678K').replace(/[^0-9Kk]/g, '');
-    const sessionId = urlParams.get('session') || `SESION_${cleanRut}_${Date.now()}`;
+    const cleanRut = (urlParams.get('rut') || localStorage.getItem('sensometrika_rut') || '12345678').replace(/[^0-9Kk]/g, '');
+    const sessionId = urlParams.get('session') || localStorage.getItem('sensometrika_session_activa') || 'SESION_DEFAULT';
+    const isB2C = localStorage.getItem('sensometrika_b2c_mode') === 'true' || urlParams.get('mode') === 'b2c';
+
+    const menuHref = isB2C ? `../menu_B2C.html?${urlParams.toString()}` : `../menu_B2B.html?${urlParams.toString()}`;
+    document.getElementById('linkMenu').href = urlParams.get('returnUrl') ? decodeURIComponent(urlParams.get('returnUrl')) : menuHref;
 
     let distanciaMedidaCm = 30;
     let estaBloqueadoPorDistancia = false;
     let testEnCurso = false;
     let intervaloTimer = null;
     let intervaloMovimiento = null;
-    let ojosCerradosConteo = 0; // Para contabilizar el tiempo con ojos cerrados
+    let ojosCerradosConteo = 0;
+    let cameraInstance = null;
 
-    function iniciarMediaPipeFaceMesh() {
+    async function iniciarMediaPipeFaceMesh() {
       const videoElement = document.getElementById('webcamVideo');
-      const faceMesh = new FaceMesh({ locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}` });
-      faceMesh.setOptions({ maxNumFaces: 1, refineLandmarks: true, minDetectionConfidence: 0.5, minTrackingConfidence: 0.5 });
-      
-      faceMesh.onResults((results) => {
-        const telEstadoOjos = document.getElementById('tel-estado-ojos');
-        const telEstabilidad = document.getElementById('tel-estabilidad');
-        const overlay = document.getElementById('boxBlockDistancia');
+      try {
+        if (typeof FaceMesh !== 'undefined' && typeof Camera !== 'undefined') {
+          const faceMesh = new FaceMesh({ locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}` });
+          faceMesh.setOptions({ maxNumFaces: 1, refineLandmarks: true, minDetectionConfidence: 0.5, minTrackingConfidence: 0.5 });
+          
+          faceMesh.onResults((results) => {
+            const telEstadoOjos = document.getElementById('tel-estado-ojos');
+            const telEstabilidad = document.getElementById('tel-estabilidad');
+            const overlay = document.getElementById('boxBlockDistancia');
 
-        if (!results.multiFaceLandmarks || results.multiFaceLandmarks.length === 0) {
-          if (testEnCurso) {
-            ojosCerradosConteo++;
-            telEstadoOjos.textContent = "Cerrados / Ausente";
-            telEstadoOjos.style.color = "var(--accent-red)";
-            telEstabilidad.textContent = "Alerta (Ojos Cerrados)";
-            telEstabilidad.style.color = "var(--accent-red)";
-          }
-          return;
+            if (!results.multiFaceLandmarks || results.multiFaceLandmarks.length === 0) {
+              if (testEnCurso) {
+                ojosCerradosConteo++;
+                telEstadoOjos.textContent = "Cerrados / Ausente";
+                telEstadoOjos.style.color = "var(--accent-red)";
+                telEstabilidad.textContent = "Alerta (Ojos Cerrados)";
+                telEstabilidad.style.color = "var(--accent-red)";
+              }
+              return;
+            }
+
+            const landmarks = results.multiFaceLandmarks[0];
+
+            const verticalOjoIzq = Math.abs(landmarks[159].y - landmarks[145].y);
+            const verticalOjoDer = Math.abs(landmarks[386].y - landmarks[374].y);
+            const aperturaPromedio = (verticalOjoIzq + verticalOjoDer) / 2;
+
+            if (aperturaPromedio < 0.015) {
+              ojosCerradosConteo++;
+              telEstadoOjos.textContent = "Cerrados (⚠️)";
+              telEstadoOjos.style.color = "var(--accent-red)";
+              telEstabilidad.textContent = "Pérdida de Fijación";
+              telEstabilidad.style.color = "var(--accent-red)";
+            } else {
+              ojosCerradosConteo = 0;
+              telEstadoOjos.textContent = "Abiertos";
+              telEstadoOjos.style.color = "var(--accent-green)";
+              telEstabilidad.textContent = "Estable";
+              telEstabilidad.style.color = "var(--accent-green)";
+            }
+
+            const dx = landmarks[33].x - landmarks[263].x;
+            const dy = landmarks[33].y - landmarks[263].y;
+            let dist = Math.round(9.5 / Math.sqrt(dx * dx + dy * dy));
+            distanciaMedidaCm = Math.round(distanciaMedidaCm * 0.5 + dist * 0.5);
+            
+            if (distanciaMedidaCm >= 25 && distanciaMedidaCm <= 38) {
+              estaBloqueadoPorDistancia = false;
+              overlay.style.display = 'none';
+            } else {
+              estaBloqueadoPorDistancia = true;
+              document.getElementById('lblDistVal').textContent = `${distanciaMedidaCm} cm`;
+              overlay.style.display = 'flex';
+            }
+          });
+
+          cameraInstance = new Camera(videoElement, { 
+            onFrame: async () => { await faceMesh.send({ image: videoElement }); }, 
+            width: 320, 
+            height: 240 
+          });
+          await cameraInstance.start();
         }
-
-        const landmarks = results.multiFaceLandmarks[0];
-
-        // Cálculo de apertura de ojos (Eye Aspect Ratio simplificado con landmarks de párpados superior e inferior)
-        // Ojo izquierdo vertical: 159 (superior) y 145 (inferior)
-        const verticalOjoIzq = Math.abs(landmarks[159].y - landmarks[145].y);
-        // Ojo derecho vertical: 386 (superior) y 374 (inferior)
-        const verticalOjoDer = Math.abs(landmarks[386].y - landmarks[374].y);
-        const aperturaPromedio = (verticalOjoIzq + verticalOjoDer) / 2;
-
-        // Umbral estricto: si la apertura vertical es menor a 0.015, los ojos están cerrados
-        if (aperturaPromedio < 0.015) {
-          ojosCerradosConteo++;
-          telEstadoOjos.textContent = "Cerrados (⚠️)";
-          telEstadoOjos.style.color = "var(--accent-red)";
-          telEstabilidad.textContent = "Pérdida de Fijación";
-          telEstabilidad.style.color = "var(--accent-red)";
-        } else {
-          ojosCerradosConteo = 0;
-          telEstadoOjos.textContent = "Abiertos";
-          telEstadoOjos.style.color = "var(--accent-green)";
-          telEstabilidad.textContent = "Estable";
-          telEstabilidad.style.color = "var(--accent-green)";
-        }
-
-        // Control de distancia
-        const dx = landmarks[33].x - landmarks[263].x;
-        const dy = landmarks[33].y - landmarks[263].y;
-        let dist = Math.round(9.5 / Math.sqrt(dx * dx + dy * dy));
-        distanciaMedidaCm = Math.round(distanciaMedidaCm * 0.5 + dist * 0.5);
-        
-        if (distanciaMedidaCm >= 25 && distanciaMedidaCm <= 38) {
-          estaBloqueadoPorDistancia = false;
-          overlay.style.display = 'none';
-        } else {
-          estaBloqueadoPorDistancia = true;
-          document.getElementById('lblDistVal').textContent = `${distanciaMedidaCm} cm`;
-          overlay.style.display = 'flex';
-        }
-      });
-      new Camera(videoElement, { onFrame: async () => { await faceMesh.send({ image: videoElement }); }, width: 320, height: 240 }).start().catch(()=>{});
+      } catch (err) {
+        console.warn("Error al iniciar cámara:", err);
+      }
     }
 
     function emitirPitido(frecuencia, duracion) {
@@ -337,7 +353,6 @@
           lblEstado.textContent = "Seguimiento nistágmico activo (Captura 20s)...";
         }
 
-        // Si el usuario mantuvo los ojos cerrados más de 3 segundos acumulados, emitir alerta o advertencia
         if (ojosCerradosConteo >= 3) {
           lblEstado.textContent = "⚠️ ADVERTENCIA: Mantenga los ojos abiertos siguiendo el punto";
           lblEstado.style.color = "var(--accent-red)";
@@ -347,11 +362,14 @@
           clearInterval(intervaloTimer);
           clearInterval(intervaloMovimiento);
           testEnCurso = false;
+          if (cameraInstance) { try { cameraInstance.stop(); } catch(e){} }
           
           emitirPitido(587, 0.2);
           setTimeout(() => emitirPitido(880, 0.4), 250);
 
-          if (ojosCerradosConteo > 5) {
+          let aprobadoNistagmo = ojosCerradosConteo <= 5;
+
+          if (!aprobadoNistagmo) {
             lblEstado.textContent = "❌ Test No Válido: Exceso de parpadeo / Ojos cerrados";
             telEstabilidad.textContent = "NO VÁLIDO";
             telEstabilidad.style.color = "var(--accent-red)";
@@ -360,10 +378,15 @@
             cronometroNistagmo.style.color = "var(--accent-green)";
             telEstabilidad.textContent = "ÓPTIMO";
             telEstabilidad.style.color = "var(--accent-green)";
-            localStorage.setItem(`medico_nistagmo_${cleanRut}_${sessionId}`, 'true');
           }
 
+          // Guardar doble clave oficial en localStorage
+          localStorage.setItem(`sensometrika_nistagmo_${cleanRut}_${sessionId}`, aprobadoNistagmo ? 'true' : 'false');
+          localStorage.setItem(`medico_nistagmo_${cleanRut}_${sessionId}`, aprobadoNistagmo ? 'true' : 'false');
+          localStorage.setItem(`medico_nistagmo_score_${cleanRut}_${sessionId}`, aprobadoNistagmo ? 'Óptimo' : 'No Válido');
+
           let modulosRendidos = JSON.parse(localStorage.getItem('sensometrika_modulos_rendidos')) || {};
+          modulosRendidos.nistagmo = true;
           modulosRendidos.medico_nistagmo = true;
           localStorage.setItem('sensometrika_modulos_rendidos', JSON.stringify(modulosRendidos));
 
@@ -372,7 +395,7 @@
             if (returnUrl) {
               window.location.href = decodeURIComponent(returnUrl);
             } else {
-              window.location.href = `../menu_B2B.html?${urlParams.toString()}`;
+              window.location.href = menuHref;
             }
           }, 2500);
         }
@@ -384,7 +407,7 @@
       if (returnUrl) {
         window.location.href = decodeURIComponent(returnUrl);
       } else {
-        window.location.href = `../menu_B2B.html?${urlParams.toString()}`;
+        window.location.href = menuHref;
       }
     }
 
