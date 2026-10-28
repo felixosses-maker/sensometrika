@@ -128,7 +128,6 @@
 
     .instruction-text { font-size: 0.74rem; color: #cbd5e1; line-height: 1.35; text-align: center; }
 
-    /* Estructura oficial de rejilla de telemetría SENSOMETRIKA */
     .metricas-grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
@@ -182,7 +181,7 @@
         9. Estabilidad Oculomotriz (Nistagmo Pro)
       </h3>
       <p class="instruction-text">
-        Manténgase a <strong>30 cm</strong>. Siga el punto luminoso <strong>con los ojos abiertos</strong> sin cerrar los párpados durante <strong>25 segundos</strong>.
+        Manténgase a <strong>30 cm</strong>. Siga estrictamente el punto luminoso <strong>con los ojos y la mirada en movimiento</strong> durante <strong>25 segundos</strong>.
       </p>
 
       <div style="background: #030712; border: 1px solid var(--card-border); border-radius: 10px; height: 95px; position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center;">
@@ -198,12 +197,12 @@
           <strong id="cronometro-nistagmo" style="color:#38bdf8;">25 s</strong>
         </div>
         <div class="col-metrica">
-          <span>Estado Ocular</span>
-          <strong id="tel-estado-ojos" style="color:#ffffff;">Abiertos</strong>
+          <span>Seguimiento</span>
+          <strong id="tel-estado-ojos" style="color:#ffffff;">Activo</strong>
         </div>
         <div class="col-metrica">
           <span>Estabilidad</span>
-          <strong id="tel-estabilidad" style="color:#34d399;">Óptima</strong>
+          <strong id="tel-estabilidad" style="color:#34d399;">100%</strong>
         </div>
       </div>
 
@@ -231,7 +230,12 @@
     let testEnCurso = false;
     let intervaloTimer = null;
     let intervaloMovimiento = null;
-    let ojosCerradosConteo = 0;
+    
+    // Variables de control de seguimiento y estricta penalización
+    let puntajeEstabilidad = 100;
+    let ultimaPosicionNarizX = null;
+    let tiempoSinMovimientoMs = 0;
+    let ultimoTimestampFrame = Date.now();
     let cameraInstance = null;
 
     async function iniciarMediaPipeFaceMesh() {
@@ -246,12 +250,16 @@
             const telEstabilidad = document.getElementById('tel-estabilidad');
             const overlay = document.getElementById('boxBlockDistancia');
 
+            const ahora = Date.now();
+            const deltaT = ahora - ultimoTimestampFrame;
+            ultimoTimestampFrame = ahora;
+
             if (!results.multiFaceLandmarks || results.multiFaceLandmarks.length === 0) {
               if (testEnCurso) {
-                ojosCerradosConteo++;
-                telEstadoOjos.textContent = "Cerrados / Ausente";
+                puntajeEstabilidad = Math.max(0, puntajeEstabilidad - 1.5);
+                telEstadoOjos.textContent = "Ausente / Ojos";
                 telEstadoOjos.style.color = "var(--accent-red)";
-                telEstabilidad.textContent = "Alerta (Ojos Cerrados)";
+                telEstabilidad.textContent = `${Math.round(puntajeEstabilidad)}%`;
                 telEstabilidad.style.color = "var(--accent-red)";
               }
               return;
@@ -259,24 +267,48 @@
 
             const landmarks = results.multiFaceLandmarks[0];
 
+            // 1. Control de apertura de ojos (Párpados)
             const verticalOjoIzq = Math.abs(landmarks[159].y - landmarks[145].y);
             const verticalOjoDer = Math.abs(landmarks[386].y - landmarks[374].y);
             const aperturaPromedio = (verticalOjoIzq + verticalOjoDer) / 2;
 
-            if (aperturaPromedio < 0.015) {
-              ojosCerradosConteo++;
-              telEstadoOjos.textContent = "Cerrados (⚠️)";
-              telEstadoOjos.style.color = "var(--accent-red)";
-              telEstabilidad.textContent = "Pérdida de Fijación";
-              telEstabilidad.style.color = "var(--accent-red)";
-            } else {
-              ojosCerradosConteo = 0;
-              telEstadoOjos.textContent = "Abiertos";
-              telEstadoOjos.style.color = "var(--accent-green)";
-              telEstabilidad.textContent = "Estable";
-              telEstabilidad.style.color = "var(--accent-green)";
+            // 2. Control de seguimiento activo (Posición de la nariz / centro de la cara ID 1)
+            const narizX = landmarks[1].x;
+
+            if (testEnCurso) {
+              // Si cierra los ojos
+              if (aperturaPromedio < 0.022) {
+                puntajeEstabilidad = Math.max(0, puntajeEstabilidad - 1.2);
+                telEstadoOjos.textContent = "Cerrados (⚠️)";
+                telEstadoOjos.style.color = "var(--accent-red)";
+              } else {
+                telEstadoOjos.textContent = "Siguiendo";
+                telEstadoOjos.style.color = "var(--accent-green)";
+              }
+
+              // Si se queda estático mirando al frente sin seguir el movimiento lateral del punto
+              if (ultimaPosicionNarizX !== null) {
+                const desplazamiento = Math.abs(narizX - ultimaPosicionNarizX);
+                // Si el desplazamiento es casi nulo (se quedó estático mirando fijo al frente)
+                if (desplazamiento < 0.003) {
+                  tiempoSinMovimientoMs += deltaT;
+                  if (tiempoSinMovimientoMs > 2000) { // Si pasan más de 2 segundos estático sin seguir el punto
+                    puntajeEstabilidad = Math.max(0, puntajeEstabilidad - 0.8);
+                    telEstadoOjos.textContent = "Fijo / Sin Seguimiento";
+                    telEstadoOjos.style.color = "var(--accent-red)";
+                  }
+                } else {
+                  tiempoSinMovimientoMs = 0; // Reinicia contador si se mueve siguiendo el estímulo
+                }
+              }
+              ultimaPosicionNarizX = narizX;
+
+              let puntajeFinalRedondeado = Math.round(puntajeEstabilidad);
+              telEstabilidad.textContent = `${puntajeFinalRedondeado}%`;
+              telEstabilidad.style.color = puntajeFinalRedondeado >= 80 ? "var(--accent-green)" : "var(--accent-red)";
             }
 
+            // Control de distancia telemétrica (25 a 38 cm)
             const dx = landmarks[33].x - landmarks[263].x;
             const dy = landmarks[33].y - landmarks[263].y;
             let dist = Math.round(9.5 / Math.sqrt(dx * dx + dy * dy));
@@ -325,7 +357,9 @@
       if (estaBloqueadoPorDistancia) return;
       document.getElementById('btnIniciar').style.display = 'none';
       testEnCurso = true;
-      ojosCerradosConteo = 0;
+      puntajeEstabilidad = 100;
+      tiempoSinMovimientoMs = 0;
+      ultimaPosicionNarizX = null;
       
       let tiempoRestante = 25;
       const cronometroNistagmo = document.getElementById('cronometro-nistagmo');
@@ -334,7 +368,7 @@
       const telEstabilidad = document.getElementById('tel-estabilidad');
       
       emitirPitido(880, 0.3);
-      lblEstado.textContent = "Fase de preparación (0s - 5s): Mantenga los ojos abiertos...";
+      lblEstado.textContent = "Fase de preparación (0s - 5s): Prepárese para seguir el punto...";
 
       let direccion = 1;
       let posicionX = 50;
@@ -350,12 +384,7 @@
 
         if (tiempoRestante === 20) {
           emitirPitido(1046, 0.2);
-          lblEstado.textContent = "Seguimiento nistágmico activo (Captura 20s)...";
-        }
-
-        if (ojosCerradosConteo >= 3) {
-          lblEstado.textContent = "⚠️ ADVERTENCIA: Mantenga los ojos abiertos siguiendo el punto";
-          lblEstado.style.color = "var(--accent-red)";
+          lblEstado.textContent = "¡Seguimiento nistágmico activo! Siga el punto con los ojos...";
         }
 
         if (tiempoRestante <= 0) {
@@ -367,23 +396,23 @@
           emitirPitido(587, 0.2);
           setTimeout(() => emitirPitido(880, 0.4), 250);
 
-          let aprobadoNistagmo = ojosCerradosConteo <= 5;
+          let puntajeFinalRedondeado = Math.round(puntajeEstabilidad);
+          let aprobadoNistagmo = puntajeFinalRedondeado >= 80; // Exige al menos 80% de estabilidad real
 
           if (!aprobadoNistagmo) {
-            lblEstado.textContent = "❌ Test No Válido: Exceso de parpadeo / Ojos cerrados";
-            telEstabilidad.textContent = "NO VÁLIDO";
+            lblEstado.textContent = `❌ Test No Válido: Falta de seguimiento / Fatiga (${puntajeFinalRedondeado}%)`;
+            telEstabilidad.textContent = `${puntajeFinalRedondeado}% (No Válido)`;
             telEstabilidad.style.color = "var(--accent-red)";
           } else {
-            lblEstado.textContent = "✓ Test de Nistagmo superado con éxito";
+            lblEstado.textContent = `✓ Test de Nistagmo superado con éxito (${puntajeFinalRedondeado}%)`;
             cronometroNistagmo.style.color = "var(--accent-green)";
-            telEstabilidad.textContent = "ÓPTIMO";
+            telEstabilidad.textContent = `${puntajeFinalRedondeado}% (Óptimo)`;
             telEstabilidad.style.color = "var(--accent-green)";
           }
 
-          // Guardar doble clave oficial en localStorage
           localStorage.setItem(`sensometrika_nistagmo_${cleanRut}_${sessionId}`, aprobadoNistagmo ? 'true' : 'false');
           localStorage.setItem(`medico_nistagmo_${cleanRut}_${sessionId}`, aprobadoNistagmo ? 'true' : 'false');
-          localStorage.setItem(`medico_nistagmo_score_${cleanRut}_${sessionId}`, aprobadoNistagmo ? 'Óptimo' : 'No Válido');
+          localStorage.setItem(`medico_nistagmo_score_${cleanRut}_${sessionId}`, `${puntajeFinalRedondeado}%`);
 
           let modulosRendidos = JSON.parse(localStorage.getItem('sensometrika_modulos_rendidos')) || {};
           modulosRendidos.nistagmo = true;
