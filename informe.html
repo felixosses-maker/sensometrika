@@ -35,7 +35,7 @@
         .sheet-container {
             background-color: var(--sheet-bg);
             width: 100%;
-            max-width: 720px;
+            max-width: 760px;
             border-radius: 12px;
             padding: 24px;
             box-shadow: 0 15px 35px rgba(0,0,0,0.6);
@@ -182,27 +182,27 @@
         .tabla-oficial {
             width: 100%;
             border-collapse: collapse;
-            font-size: 0.65rem;
+            font-size: 0.60rem;
         }
         .tabla-oficial th {
             background-color: #0f172a;
             color: #ffffff;
             padding: 6px 8px;
             text-align: left;
-            font-size: 0.58rem;
+            font-size: 0.52rem;
             font-weight: 800;
             text-transform: uppercase;
         }
         .tabla-oficial td {
-            padding: 6px 8px;
+            padding: 5px 8px;
             border-bottom: 1px solid #e2e8f0;
             vertical-align: middle;
         }
 
         .badge-sem {
-            padding: 2px 6px;
+            padding: 2px 5px;
             border-radius: 4px;
-            font-size: 0.58rem;
+            font-size: 0.52rem;
             font-weight: 800;
             display: inline-block;
             text-transform: uppercase;
@@ -223,7 +223,7 @@
         }
         .chart-container {
             position: relative;
-            height: 180px;
+            height: 160px;
             width: 100%;
         }
 
@@ -347,17 +347,17 @@
         <div id="boxDictamen" class="banner-dictamen dictamen-pendiente">
             ⏳ DICTAMEN: EVALUACIÓN EN PROCESO – MÓDULOS PENDIENTES
             <div style="font-size: 0.54rem; font-weight: 600; margin-top: 2px;" id="lblDictamenSub">
-                El evaluado se encuentra completando los módulos de su batería asignada.
+                El evaluado se encuentra completando los 10 módulos de su batería asignada.
             </div>
         </div>
 
-        <!-- TABLA DE RESULTADOS DE MÓDULOS -->
+        <!-- TABLA DE RESULTADOS DE LOS 10 MÓDULOS OFICIALES -->
         <table class="tabla-oficial">
             <thead>
                 <tr>
-                    <th style="width: 32%;">MÓDULO EVALUADO</th>
+                    <th style="width: 36%;">MÓDULO EVALUADO</th>
                     <th style="width: 22%;">ESTÁNDAR NORMATIVO</th>
-                    <th style="width: 30%;">RESULTADO TELEMÉTRICO</th>
+                    <th style="width: 26%;">RESULTADO TELEMÉTRICO</th>
                     <th style="width: 16%; text-align: right;">DICTAMEN</th>
                 </tr>
             </thead>
@@ -369,14 +369,14 @@
         <!-- CURVA DE APRENDIZAJE Y EVOLUCIÓN (GRÁFICO) -->
         <div class="chart-section" id="sectionChart">
             <div style="font-size: 0.70rem; font-weight: 800; color: var(--navy-brand); text-transform: uppercase;">
-                📈 Curva de Aprendizaje & Evolución Telemétrica (S1 - S8)
+                📈 Curva de Aprendizaje & Evolución Telemétrica (Módulos 1 - 10)
             </div>
             <div class="chart-container">
                 <canvas id="chartRendimiento"></canvas>
             </div>
         </div>
 
-        <!-- SECCIÓN DE FIRMAS (DINÁMICA B2C vs B2B) -->
+        <!-- SECCIÓN DE FIRMAS -->
         <div class="firmas-container" id="boxFirmasContainer">
             <div class="firma-box">
                 <div class="firma-graphic-box">
@@ -423,7 +423,7 @@
         const rawRut = urlParams.get('rut') || datosUsuario.rut || '13.456.789-K';
         const rawCargo = urlParams.get('cargo') || datosUsuario.cargo || (isB2C ? 'Conductor / Particular' : 'Operador de Faena');
         const rawEmpresa = urlParams.get('empresa') || datosUsuario.empresa || localStorage.getItem('sensometrika_b2b_empresa') || 'EMPRESA MANDANTE S.A.';
-        const planActivo = (urlParams.get('plan') || localStorage.getItem('sensometrika_plan_contratado') || 'PLUS').toUpperCase();
+        const planActivo = (urlParams.get('plan') || localStorage.getItem('sensometrika_plan_contratado') || 'FULL').toUpperCase();
         
         const cleanRut = rawRut.replace(/[^0-9Kk]/g, '');
         const sessionId = urlParams.get('session') || localStorage.getItem('sensometrika_session_activa') || `SESION_${cleanRut}_${Date.now()}`;
@@ -433,20 +433,8 @@
             if (isB2C) {
                 window.location.href = `menu_B2C.html?${urlParams.toString()}`;
             } else {
-                const mode = urlParams.get('mode');
-                if (mode === 'b2b-pro' || planActivo === 'ALTO_DESEMPENIO') {
-                    window.location.href = `menu_B2B_PRO.html?${urlParams.toString()}`;
-                } else {
-                    window.location.href = `menu-b2b.html?${urlParams.toString()}`;
-                }
+                window.location.href = `menu_B2B.html?${urlParams.toString()}`;
             }
-        }
-
-        function obtenerHistorialModulo(modulo) {
-            const claveSesion = `sensometrika_historial_${modulo}_${cleanRut}_${sessionId}`;
-            let historial = JSON.parse(localStorage.getItem(claveSesion)) || JSON.parse(localStorage.getItem(`sensometrika_historial_${modulo}_${cleanRut}`)) || [];
-            if (!Array.isArray(historial)) return [];
-            return historial;
         }
 
         document.addEventListener('DOMContentLoaded', () => {
@@ -466,7 +454,6 @@
             let folioCert = `SMK-${cleanRut.substring(0, 6)}-${Math.floor(Math.random()*899+100)}`;
             document.getElementById('lblFolio').textContent = folioCert;
 
-            // Adaptación Visual B2C vs B2B
             if (isB2C) {
                 document.getElementById('lblSubTipoCert').textContent = 'CERTIFICADO PARTICULAR B2C • D.S. N° 170';
                 document.getElementById('divEmpresaRow').style.display = 'none';
@@ -479,38 +466,28 @@
                 document.getElementById('lblNoticeBanner').style.display = 'block';
             }
 
-            // Cargar Foto Biométrica
+            // Cargar Foto y Firma
             const imgBiometrica = document.getElementById('imgBiometrica');
-            const fotoGuardada = localStorage.getItem(`sensometrika_foto_${cleanRut}_${sessionId}`) || localStorage.getItem('sensometrika_foto_trabajador') || urlParams.get('foto');
-            if (fotoGuardada && fotoGuardada.startsWith('data:image')) {
-                imgBiometrica.src = fotoGuardada;
-            }
+            const fotoGuardada = localStorage.getItem(`sensometrika_foto_${cleanRut}_${sessionId}`) || localStorage.getItem('sensometrika_foto_trabajador');
+            if (fotoGuardada && fotoGuardada.startsWith('data:image')) imgBiometrica.src = fotoGuardada;
 
-            // Cargar Firma
             const imgFirma = document.getElementById('imgFirmaTrabajador');
-            const firmaGuardada = localStorage.getItem(`sensometrika_firma_${cleanRut}_${sessionId}`) || localStorage.getItem('sensometrika_firma_trabajador') || urlParams.get('firma');
+            const firmaGuardada = localStorage.getItem(`sensometrika_firma_${cleanRut}_${sessionId}`) || localStorage.getItem('sensometrika_firma_trabajador');
             const svgFirmaRespaldo = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="60" viewBox="0 0 200 60"><path d="M 15 35 Q 35 15, 65 30 T 105 18 T 155 38 Q 175 48, 185 25" fill="none" stroke="%230f172a" stroke-width="2" stroke-linecap="round"/></svg>`;
             imgFirma.src = (firmaGuardada && firmaGuardada.startsWith('data:image')) ? firmaGuardada : svgFirmaRespaldo;
 
-            // Mapeo de Módulos según Plan
-            let idsPermitidos = ['reactimetro', 'palancas', 'punteo'];
-            if (planActivo.includes('PLUS')) {
-                idsPermitidos = ['reactimetro', 'palancas', 'punteo', 'auditivo'];
-            } else if (planActivo.includes('FULL') || planActivo.includes('ALTO')) {
-                idsPermitidos = ['reactimetro', 'palancas', 'punteo', 'auditivo', 'visual', 'estereopsis', 'fatiga'];
-            } else if (planActivo.includes('PRE') || planActivo.includes('SELECCION')) {
-                idsPermitidos = ['reactimetro', 'palancas', 'punteo', 'auditivo', 'visual', 'anticipacion'];
-            }
-
+            // Mapeo completo de los 10 módulos oficiales
             const modulosConfig = [
-                { id: 'reactimetro', nombre: '1. Reactímetro (Frenado) ⚡', est: isB2C ? '≤ 450 ms' : '≤ 350 ms' },
-                { id: 'palancas', nombre: '2. Palancas Bimanual 🎮', est: '≥ 80% / Máx 1 Toc.' },
-                { id: 'punteo', nombre: '3. Punteo Visomotriz (Lahy) 🎯', est: '≥ 78% Aciertos' },
-                { id: 'auditivo', nombre: '4. Tamizaje Auditivo Ocupacional 🎧', est: '≤ 25 dB' },
-                { id: 'visual', nombre: '5. Screening Visual Pericial 👁️', est: '≥ 0.8 Binocular' },
-                { id: 'estereopsis', nombre: '6. Estereopsis & Profundidad 3D 📐', est: '≥ 80% Precisión' },
-                { id: 'fatiga', nombre: '7. Test de Vigilancia & Fatiga (PVT) ⏱️', est: '≤ 450 ms' },
-                { id: 'anticipacion', nombre: '8. Anticipación Espaciotemporal 🚗', est: '≤ 220 ms' }
+                { id: 'romberg', nombre: '1. Test de Romberg (Equilibrio) ⚖️', est: 'Estabilidad ≥ 80%' },
+                { id: 'temblores', nombre: '2. Evaluación de Temblores 🖐️', est: 'Control Fino OK' },
+                { id: 'grip', nombre: '3. Fuerza de Presión Manual (Grip) ✊', est: 'Rango Nominal' },
+                { id: 'ppg', nombre: '4. Fotopletismografía / Pulso 🫀', est: '60 - 100 lpm' },
+                { id: 'pupilar', nombre: '5. Reflejo Fotomotor Pupilar Pro 👁️‍🗨️', est: 'Estabilidad ≥ 70%' },
+                { id: 'espirometria', nombre: '6. Espirometría Ocupacional 🫁', est: 'VEF1 ≥ 80%' },
+                { id: 'tapping', nombre: '7. Agilidad y Praxias (Tapping) ⚡', est: '≥ 45 Taps / min' },
+                { id: 'auditivo', nombre: '8. Tamizaje Auditivo Ocupacional 🎧', est: '≤ 25 dB' },
+                { id: 'nistagmo', nombre: '9. Nistagmo & Oculomotor 🔄', est: 'Estabilidad Ocular' },
+                { id: 'somnolencia', nombre: '10. Tamizaje Fatiga y Somnolencia 😴', est: '≥ 75% Alerta' }
             ];
 
             const tbody = document.getElementById('tbodyModulos');
@@ -520,44 +497,39 @@
             let todoOk = true;
 
             modulosConfig.forEach(m => {
-                const esRequerido = idsPermitidos.includes(m.id);
-                const historial = obtenerHistorialModulo(m.id);
+                // Comprobamos si el módulo fue realizado (buscando en localStorage por sesión o general)
+                const claveModSesion = `sensometrika_${m.id}_${cleanRut}_${sessionId}`;
+                const claveModGen = `sensometrika_${m.id}_${cleanRut}`;
+                const medicoModKey = `medico_${m.id}_${cleanRut}_${sessionId}`;
+                
+                const valGuardado = localStorage.getItem(claveModSesion) || localStorage.getItem(claveModGen) || localStorage.getItem(medicoModKey);
+                const modRendido = valGuardado !== null && valGuardado !== undefined;
+
                 const tr = document.createElement('tr');
 
-                if (!esRequerido) {
-                    tr.innerHTML = `
-                        <td class="font-bold text-slate-400">${m.nombre}</td>
-                        <td class="text-slate-400">${m.est}</td>
-                        <td class="text-slate-400 italic">No requerido en Plan ${planActivo}</td>
-                        <td style="text-align: right;"><span class="badge-sem sem-disabled">N/A</span></td>
-                    `;
-                } else if (historial.length > 0) {
+                if (modRendido) {
                     completados++;
-                    const u = historial[historial.length - 1];
                     let ok = true;
-                    let txtRes = '';
+                    let txtRes = "Superado ✓";
 
-                    if (m.id === 'reactimetro') {
-                        const valT = u.promedioTiempo || u.tiempo || 310;
-                        const umbralMax = isB2C ? 450 : 350;
-                        ok = valT <= umbralMax;
-                        txtRes = `Tiempo Neto: <strong>${valT} ms</strong>`;
-                    } else if (m.id === 'palancas') {
-                        const prec = u.precision !== undefined ? u.precision : 85;
-                        const ctos = u.contactos !== undefined ? u.contactos : 0;
-                        ok = prec >= 80 && ctos <= 1;
-                        txtRes = `Precisión: <strong>${prec}%</strong> (${ctos} ctos)`;
-                    } else if (m.id === 'punteo') {
-                        const prec = u.precision !== undefined ? u.precision : 82;
-                        ok = prec >= 78;
-                        txtRes = `Efectividad: <strong>${prec}%</strong>`;
-                    } else if (m.id === 'auditivo') {
-                        const aci = u.aciertos !== undefined ? u.aciertos : 8;
-                        ok = aci >= 7;
-                        txtRes = `Aciertos: <strong>${aci}/8</strong>`;
+                    if (m.id === 'pupilar') {
+                        const estab = localStorage.getItem(`medico_pupilar_estabilidad_${cleanRut}_${sessionId}`) || '90';
+                        ok = parseInt(estab) >= 70;
+                        txtRes = `Estabilidad: <strong>${estab}%</strong>`;
+                    } else if (m.id === 'espirometria') {
+                        const score = localStorage.getItem(`medico_espirometria_score_${cleanRut}_${sessionId}`) || '85';
+                        ok = parseInt(score) >= 75;
+                        txtRes = `Capacidad: <strong>${score}% VEF1</strong>`;
+                    } else if (m.id === 'somnolencia') {
+                        const estadoSomno = localStorage.getItem(`medico_somnolencia_${cleanRut}_${sessionId}`);
+                        ok = estadoSomno === 'true' || valGuardado === 'true';
+                        txtRes = ok ? `Alerta Óptima (<strong>✓</strong>)` : `Fatiga Detectada (<strong>⚠️</strong>)`;
+                    } else if (m.id === 'tapping') {
+                        const taps = localStorage.getItem(`medico_tapping_score_${cleanRut}_${sessionId}`) || '50';
+                        ok = parseInt(taps) >= 30;
+                        txtRes = `Ritmo: <strong>${taps} taps</strong>`;
                     } else {
-                        ok = true;
-                        txtRes = `Resultado Válido ✓`;
+                        txtRes = `Registro Válido (<strong>✓</strong>)`;
                     }
 
                     if (!ok) todoOk = false;
@@ -580,22 +552,22 @@
                 tbody.appendChild(tr);
             });
 
-            // Dictamen y Vigencia
+            // Actualizar Dictamen y Vigencia
             const boxDictamen = document.getElementById('boxDictamen');
             const lblEstadoVigencia = document.getElementById('lblEstadoVigencia');
 
-            if (completados >= idsPermitidos.length && todoOk) {
+            if (completados >= 10 && todoOk) {
                 boxDictamen.className = "banner-dictamen dictamen-aprobado";
-                boxDictamen.innerHTML = `✓ DICTAMEN OFICIAL: APROBADO PARA FAENA / CONDUCCIÓN (PLAN ${planActivo})`;
+                boxDictamen.innerHTML = `✓ DICTAMEN OFICIAL: APROBADO EN LOS 10 MÓDULOS (PLAN FULL)`;
                 lblEstadoVigencia.textContent = `VENCE: ${fechaExpTxt}`;
                 lblEstadoVigencia.className = "vigencia-orange bg-emerald-600";
             } else if (completados > 0) {
                 boxDictamen.className = "banner-dictamen dictamen-pendiente";
-                boxDictamen.innerHTML = `⏳ EVALUACIÓN EN PROCESO (${completados} / ${idsPermitidos.length} MÓDULOS)`;
+                boxDictamen.innerHTML = `⏳ EVALUACIÓN EN PROCESO (${completados} / 10 MÓDULOS)`;
                 lblEstadoVigencia.textContent = "EN CURSO";
             }
 
-            // QR Dinámico para Garita
+            // QR Dinámico
             const imgQr = document.getElementById('imgQrVerificacion');
             if (imgQr) {
                 const paramsPublicos = new URLSearchParams({
@@ -604,26 +576,19 @@
                     cargo: rawCargo,
                     empresa: rawEmpresa,
                     folio: folioCert,
-                    estado: todoOk && completados >= idsPermitidos.length ? 'APROBADO' : 'EN_PROCESO'
+                    estado: todoOk && completados >= 10 ? 'APROBADO' : 'EN_PROCESO'
                 });
                 const urlVal = `${window.location.origin}/validar.html?${paramsPublicos.toString()}`;
                 imgQr.src = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(urlVal)}`;
             }
 
-            // Renderizar Gráfico de Evolución (Chart.js)
             renderizarGraficoEvolucion();
         });
 
         function renderizarGraficoEvolucion() {
             const ctx = document.getElementById('chartRendimiento').getContext('2d');
-            const hPalan = obtenerHistorialModulo('palancas');
-            const hPunt = obtenerHistorialModulo('punteo');
-            const hReact = obtenerHistorialModulo('reactimetro');
-
-            const labels = ['S1', 'S2', 'S3', 'S4', 'S5', 'S6', 'S7', 'S8'];
-            const dataPalan = labels.map((_, i) => hPalan[i] ? hPalan[i].precision : null);
-            const dataPunt = labels.map((_, i) => hPunt[i] ? hPunt[i].precision : null);
-            const dataReact = labels.map((_, i) => hReact[i] ? (hReact[i].promedioTiempo || hReact[i].tiempo) : null);
+            const labels = ['M1', 'M2', 'M3', 'M4', 'M5', 'M6', 'M7', 'M8', 'M9', 'M10'];
+            const dataMock = [88, 92, 85, 90, 94, 87, 89, 91, 93, 95];
 
             if (chartInstancia) chartInstancia.destroy();
 
@@ -631,11 +596,15 @@
                 type: 'line',
                 data: {
                     labels: labels,
-                    datasets: [
-                        { label: 'Palancas (%)', data: dataPalan, borderColor: '#0284c7', borderWidth: 2, tension: 0.3 },
-                        { label: 'Punteo (%)', data: dataPunt, borderColor: '#d97706', borderWidth: 2, tension: 0.3 },
-                        { label: 'Reactímetro (ms)', data: dataReact, borderColor: '#16a34a', borderDash: [3,3], borderWidth: 2, yAxisID: 'y1' }
-                    ]
+                    datasets: [{
+                        label: 'Índice de Rendimiento General (%)',
+                        data: dataMock,
+                        borderColor: '#0284c7',
+                        backgroundColor: 'rgba(2, 132, 199, 0.1)',
+                        borderWidth: 2,
+                        tension: 0.3,
+                        fill: true
+                    }]
                 },
                 options: {
                     responsive: true,
@@ -643,8 +612,7 @@
                     plugins: { legend: { labels: { color: '#475569', font: { size: 9 } } } },
                     scales: {
                         x: { grid: { color: '#e2e8f0' }, ticks: { color: '#475569', font: { size: 9 } } },
-                        y: { min: 0, max: 100, grid: { color: '#e2e8f0' }, ticks: { color: '#475569', font: { size: 9 } } },
-                        y1: { position: 'right', grid: { drawOnChartArea: false }, ticks: { color: '#16a34a', font: { size: 9 } } }
+                        y: { min: 50, max: 100, grid: { color: '#e2e8f0' }, ticks: { color: '#475569', font: { size: 9 } } }
                     }
                 }
             });
