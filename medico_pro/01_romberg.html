@@ -82,7 +82,7 @@
     const sessionId = urlParams.get('session') || localStorage.getItem('sensometrika_session_activa') || 'SESION_DEFAULT';
     const isB2C = localStorage.getItem('sensometrika_b2c_mode') === 'true' || urlParams.get('mode') === 'b2c';
 
-    document.getElementById('linkMenu').href = isB2C ? `../menu_B2C.html?${urlParams.toString()}` : `../menu_B2B.html?${urlParams.toString()}`;
+    document.getElementById('linkMenu').href = urlParams.get('returnUrl') ? decodeURIComponent(urlParams.get('returnUrl')) : (isB2C ? `../menu_B2C.html?${urlParams.toString()}` : `../menu_B2B.html?${urlParams.toString()}`);
 
     let datosAcelerometro = [];
     let listenerMovimiento = null;
@@ -210,7 +210,7 @@
 
       desviacionRomberg.textContent = `${desviacionTotal.toFixed(3)} m/s²`;
 
-      // Guardar registro oficial
+      // Guardado formal y persistencia en localStorage
       localStorage.setItem(`sensometrika_romberg_${cleanRut}_${sessionId}`, 'true');
       localStorage.setItem(`medico_romberg_${cleanRut}_${sessionId}`, 'true');
       localStorage.setItem(`medico_romberg_desviacion_${cleanRut}_${sessionId}`, desviacionTotal.toFixed(3));

@@ -121,7 +121,8 @@
     const sessionId = urlParams.get('session') || localStorage.getItem('sensometrika_session_activa') || 'SESION_DEFAULT';
     const isB2C = localStorage.getItem('sensometrika_b2c_mode') === 'true' || urlParams.get('mode') === 'b2c';
 
-    document.getElementById('linkMenu').href = isB2C ? `../menu_B2C.html?${urlParams.toString()}` : `../menu_B2B.html?${urlParams.toString()}`;
+    const menuHref = isB2C ? `../menu_B2C.html?${urlParams.toString()}` : `../menu_B2B.html?${urlParams.toString()}`;
+    document.getElementById('linkMenu').href = urlParams.get('returnUrl') ? decodeURIComponent(urlParams.get('returnUrl')) : menuHref;
 
     let datosAcelerometro = [];
     let listenerMovimiento = null;
@@ -289,6 +290,7 @@
 
       desviacionTemblores.textContent = `${desviacionTotal.toFixed(3)} m/s²`;
 
+      // Guardado formal y persistencia en localStorage
       localStorage.setItem(`sensometrika_temblores_${cleanRut}_${sessionId}`, 'true');
       localStorage.setItem(`medico_temblores_${cleanRut}_${sessionId}`, 'true');
       localStorage.setItem(`medico_temblores_desviacion_${cleanRut}_${sessionId}`, desviacionTotal.toFixed(3));
@@ -304,7 +306,7 @@
         if (returnUrl) {
           window.location.href = decodeURIComponent(returnUrl);
         } else {
-          window.location.href = isB2C ? `../menu_B2C.html?${urlParams.toString()}` : `../menu_B2B.html?${urlParams.toString()}`;
+          window.location.href = menuHref;
         }
       }, 1800);
     }

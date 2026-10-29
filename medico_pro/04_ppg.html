@@ -207,7 +207,8 @@
         const sessionId = urlParams.get('session') || localStorage.getItem('sensometrika_session_activa') || 'SESION_DEFAULT';
         const isB2C = localStorage.getItem('sensometrika_b2c_mode') === 'true' || urlParams.get('mode') === 'b2c';
 
-        document.getElementById('linkMenu').href = isB2C ? `../menu_B2C.html?${urlParams.toString()}` : `../menu_B2B.html?${urlParams.toString()}`;
+        const menuHref = isB2C ? `../menu_B2C.html?${urlParams.toString()}` : `../menu_B2B.html?${urlParams.toString()}`;
+        document.getElementById('linkMenu').href = urlParams.get('returnUrl') ? decodeURIComponent(urlParams.get('returnUrl')) : menuHref;
 
         let streamCam = null;
         let trackVideo = null;
@@ -334,6 +335,7 @@
 
             const bpmFinal = Math.round(valoresBpmArray.reduce((a,b)=>a+b,0)/valoresBpmArray.length);
 
+            // Guardado formal y persistencia en localStorage
             localStorage.setItem(`sensometrika_ppg_${cleanRut}_${sessionId}`, 'true');
             localStorage.setItem(`medico_ppg_${cleanRut}_${sessionId}`, 'true');
             localStorage.setItem(`medico_ppg_score_${cleanRut}_${sessionId}`, bpmFinal);
@@ -353,7 +355,7 @@
                 if (returnUrl) {
                     window.location.href = decodeURIComponent(returnUrl);
                 } else {
-                    window.location.href = isB2C ? `../menu_B2C.html?${urlParams.toString()}` : `../menu_B2B.html?${urlParams.toString()}`;
+                    window.location.href = menuHref;
                 }
             }, 1800);
         }
