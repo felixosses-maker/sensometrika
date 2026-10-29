@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>SENSOMETRIKA | Control Médico de Ingreso a Faena (B2B-MF)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        :root {
+            --bg-color: #040810;
+            --card-bg: #091120;
+            --card-border: #132238;
+            --accent-green: #10b981;
+            --accent-cyan: #00bfff;
+            --accent-red: #ef4444;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            min-height: 100vh;
+            padding: 20px 12px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .main-container {
+            width: 100%;
+            max-width: 500px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .brand-header {
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .brand-logo-img {
+            width: 170px;
+            height: auto;
+            mix-blend-mode: lighten;
+            filter: drop-shadow(0 0 10px rgba(0, 191, 255, 0.3));
+        }
+
+        .eval-card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            padding: 18px;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.7);
+        }
+
+        .user-header-box {
+            background: #030712;
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            padding: 12px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .modules-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            width: 100%;
+            max-height: 55vh;
+            overflow-y: auto;
+            padding-right: 4px;
+        }
+
+        .mod-item {
+            background-color: #070b14;
+            border: 1px solid #1e293b;
+            border-radius: 10px;
+            padding: 10px 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .mod-info { display: flex; flex-direction: column; gap: 2px; flex: 1; }
+        .mod-title { font-size: 0.78rem; font-weight: 800; color: #f8fafc; }
+        .mod-desc { font-size: 0.62rem; color: var(--text-muted); line-height: 1.2; }
+
+        .btn-mod-start {
+            background-color: #0284c7;
+            border: 1px solid #0369a1;
+            color: #ffffff;
+            padding: 6px 10px;
+            border-radius: 6px;
+            font-size: 0.68rem;
+            font-weight: 800;
+            text-decoration: none;
+            white-space: nowrap;
+        }
+
+        .badge-mod-ok {
+            background: rgba(16, 185, 129, 0.15);
+            border: 1px solid rgba(16, 185, 129, 0.4);
+            color: var(--accent-green);
+            padding: 5px 8px;
+            border-radius: 6px;
+            font-size: 0.64rem;
+            font-weight: 800;
+            white-space: nowrap;
+        }
+
+        .btn-informe {
+            background-color: var(--accent-green);
+            color: #000;
+            border: none;
+            border-radius: 10px;
+            padding: 12px;
+            font-weight: 900;
+            font-size: 0.85rem;
+            text-align: center;
+            text-decoration: none;
+            width: 100%;
+            display: block;
+            text-transform: uppercase;
+            box-shadow: 0 4px 14px rgba(16, 185, 129, 0.3);
+            cursor: pointer;
+        }
+
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(4, 8, 16, 0.95); backdrop-filter: blur(6px);
+            display: flex; justify-content: center; align-items: center; z-index: 100; padding: 16px;
+        }
+        .modal-card {
+            background-color: var(--card-bg); border: 1px solid var(--accent-cyan); border-radius: 16px;
+            padding: 20px; width: 100%; max-width: 440px; display: flex; flex-direction: column; gap: 12px;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.85);
+        }
+        .form-group { display: flex; flex-direction: column; gap: 4px; }
+        .form-group label { font-size: 0.68rem; color: var(--text-muted); text-transform: uppercase; font-weight: 800; }
+        .form-input { background: #030712; border: 1px solid var(--card-border); color: #fff; padding: 10px; border-radius: 8px; font-size: 0.82rem; font-weight: 700; width: 100%; }
+    </style>
+</head>
+<body>
+
+    <!-- MODAL DE CHECK-IN CON LECTOR QR / CÉDULA -->
+    <div id="modalCheckIn" class="modal-overlay">
+        <div class="modal-card">
+            <h3 style="color: var(--accent-cyan); font-size: 0.95rem; font-weight: 900; text-align: center; text-transform: uppercase;">
+                🩺 Check-in Médico & Escáner QR de Cédula
+            </h3>
+            <p style="font-size: 0.72rem; color: var(--text-muted); text-align: center;">
+                Escanee el código QR del carnet o ingrese los datos manualmente para iniciar turno.
+            </p>
+
+            <div style="background: #030712; border: 1px dashed var(--accent-cyan); padding: 10px; border-radius: 8px; display: flex; flex-direction: column; gap: 6px;">
+                <label style="font-size: 0.65rem; color: var(--accent-cyan); font-weight: 900; text-transform: uppercase;">📲 Escanear Código QR / Barra de Cédula</label>
+                <input type="text" id="inputScanQR" class="form-input" placeholder="Haga clic aquí y escanee con pistola o cámara..." oninput="procesarLecturaQR(this.value)" autofocus>
+            </div>
+
+            <form onsubmit="procesarCheckInFaena(event)" style="display: flex; flex-direction: column; gap: 10px; margin-top: 2px;">
+                <div class="form-group">
+                    <label>Nombre Completo del Trabajador *</label>
+                    <input type="text" id="chkNombre" class="form-input" placeholder="Ej: Juan Pérez Soto" required>
+                </div>
+                <div class="form-group">
+                    <label>RUT / Cédula de Identidad *</label>
+                    <input type="text" id="chkRut" class="form-input" placeholder="Ej: 12345678-K" required>
+                </div>
+                <div class="form-group">
+                    <label>Faena / Empresa Mandante *</label>
+                    <input type="text" id="chkFaena" class="form-input" placeholder="Ej: Faena Minera / Constructora" required>
+                </div>
+
+                <div style="background: #030712; border: 1px solid var(--card-border); padding: 10px; border-radius: 8px; font-size: 0.68rem; color: #cbd5e1; line-height: 1.3;">
+                    <label style="display: flex; gap: 8px; align-items: flex-start; cursor: pointer;">
+                        <input type="checkbox" id="chkTramite" required style="margin-top: 2px;">
+                        <span>Autorizo la captura biométrica telemétrica y declaro bajo juramento médico encontrarme apto para la evaluación de turno (Art. 36 D.S. N° 170).</span>
+                    </label>
+                </div>
+
+                <button type="submit" style="background: var(--accent-cyan); color: #000; border: none; padding: 12px; border-radius: 8px; font-weight: 900; font-size: 0.8rem; cursor: pointer; text-transform: uppercase; margin-top: 2px;">
+                    INICIAR PROTOCOLO MÉDICO →
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <div class="main-container">
+        <header class="brand-header">
+            <img src="sensometrica.jpg" alt="SENSOMETRIKA" class="brand-logo-img" onerror="this.style.display='none'">
+            <span style="color: var(--accent-green); font-size: 0.70rem; font-weight: 900; text-transform: uppercase; letter-spacing: 1px;">🩺 CONSOLA MÉDICA DE INGRESO A FAENA (B2B-MF)</span>
+        </header>
+
+        <div class="eval-card">
+            <div class="user-header-box">
+                <span style="font-size: 0.65rem; color: var(--text-muted); text-transform: uppercase; font-weight: 800;">Trabajador en Evaluación</span>
+                <div style="font-size: 0.82rem; color: var(--accent-cyan); font-weight: 900;" id="lblNombreTrabajador">--</div>
+                <div style="font-size: 0.72rem; color: #fff; font-weight: 700;" id="lblRutTrabajador">RUT: -- | Faena: --</div>
+                <button onclick="abrirCheckIn()" style="background: #0f172a; border: 1px solid var(--accent-cyan); color: var(--accent-cyan); padding: 4px 10px; border-radius: 6px; font-size: 0.65rem; font-weight: 800; cursor: pointer; margin-top: 4px; align-self: center;">🔄 Cambiar / Escanear otro QR</button>
+            </div>
+
+            <div class="modules-list" id="contenedorModulosFaena">
+                <!-- Se inyectan dinámicamente -->
+            </div>
+
+            <button type="button" class="btn-informe" onclick="abrirInformeMedicoFaena()">📋 GENERAR INFORME PERICIAL DE FAENA →</button>
+            <a href="index.html" style="text-align: center; color: var(--text-muted); font-size: 0.70rem; text-decoration: none; font-weight: 700;">← Volver al Portal Principal</a>
+        </div>
+    </div>
+
+    <script>
+        let currentRut = localStorage.getItem('sensometrika_rut') || '';
+        let currentNombre = localStorage.getItem('sensometrika_nombre') || '';
+        let currentFaena = localStorage.getItem('sensometrika_faena') || '';
+        let sessionId = localStorage.getItem('sensometrika_session_activa') || '';
+
+        const modulosMedicoFaena = [
+            { id: 'romberg', nombre: '1. Estabilidad Vestibular (Romberg Pro) ⚖️', file: 'medico_pro/01_romberg.html' },
+            { id: 'temblores', nombre: '2. Estabilidad Motora (Temblores Pro) ✋', file: 'medico_pro/02_temblores.html' },
+            { id: 'grip', nombre: '3. Dinamometría y Fuerza (Grip Pro) ✊', file: 'medico_pro/03_grip.html' },
+            { id: 'ppg', nombre: '4. Frecuencia Cardíaca Basal (PPG Pro) 💓', file: 'medico_pro/04_ppg.html' },
+            { id: 'pupilar', nombre: '5. Reflejo Fotomotor Pupilar Pro 👁️', file: 'medico_pro/05_pupilar.html' },
+            { id: 'espirometria', nombre: '6. Espirometría Ocupacional Pro 🫁', file: 'medico_pro/06_espirometria.html' },
+            { id: 'tapping', nombre: '7. Agilidad y Praxias (Tapping) ⚡', file: 'medico_pro/07_tapping.html' },
+            { id: 'auditivo', nombre: '8. Reacción a Alarma de Faena 🚨', file: 'medico_pro/08_auditivo.html' },
+            { id: 'nistagmo', nombre: '9. Estabilidad Oculomotriz (Nistagmo) 🔄', file: 'medico_pro/09_nistagmo.html' },
+            { id: 'somnolencia', nombre: '10. Tamizaje de Somnolencia Pro 😴', file: 'medico_pro/10_somnolencia.html' }
+        ];
+
+        function abrirCheckIn() {
+            document.getElementById('modalCheckIn').style.display = 'flex';
+            setTimeout(() => document.getElementById('inputScanQR').focus(), 100);
+        }
+
+        // Función para procesar la lectura del código QR o barra de la cédula
+        function procesarLecturaQR(valor) {
+            if (!valor || valor.length < 6) return;
+            // Ejemplo de formato de cédula chilena en QR o código de barra: RUT;NOMBRE;... o cadena directa
+            const limpio = valor.trim();
+            
+            // Si el texto contiene punto y coma (formato típico de PDF417 de cédula)
+            if (limpio.includes(';')) {
+                const partes = limpio.split(';');
+                if (partes.length >= 2) {
+                    document.getElementById('chkRut').value = partes[0];
+                    document.getElementById('chkNombre').value = partes[1].replace(/_/g, ' ');
+                }
+            } else {
+                // Si es un escaneo directo del RUT o código único
+                document.getElementById('chkRut').value = limpio;
+                document.getElementById('chkNombre').value = "Trabajador Verificado por QR";
+            }
+            // Limpiar campo de escaneo tras lectura exitosa
+            document.getElementById('inputScanQR').value = '';
+        }
+
+        function procesarCheckInFaena(e) {
+            e.preventDefault();
+            const nombre = document.getElementById('chkNombre').value.trim();
+            const rut = document.getElementById('chkRut').value.trim();
+            const faena = document.getElementById('chkFaena').value.trim();
+
+            if (!nombre || !rut || !faena) {
+                alert("Por favor complete o escanee todos los campos obligatorios.");
+                return;
+            }
+
+            currentNombre = nombre;
+            currentRut = rut.replace(/[^0-9Kk]/g, '');
+            currentFaena = faena;
+            sessionId = `SESION_FAENA_${currentRut}_${Date.now()}`;
+
+            localStorage.setItem('sensometrika_nombre', currentNombre);
+            localStorage.setItem('sensometrika_rut', currentRut);
+            localStorage.setItem('sensometrika_faena', currentFaena);
+            localStorage.setItem('sensometrika_session_activa', sessionId);
+
+            document.getElementById('lblNombreTrabajador').textContent = currentNombre.toUpperCase();
+            document.getElementById('lblRutTrabajador').textContent = `RUT: ${currentRut} | Faena: ${currentFaena}`;
+            
+            document.getElementById('modalCheckIn').style.display = 'none';
+            renderizarMenuFaena();
+        }
+
+        function verificarRendido(modId) {
+            const cleanRut = currentRut.replace(/[^0-9Kk]/g, '');
+            const clave1 = localStorage.getItem(`medico_${modId}_${cleanRut}_${sessionId}`);
+            const clave2 = localStorage.getItem(`sensometrika_${modId}_${cleanRut}_${sessionId}`);
+            return clave1 === 'true' || clave2 === 'true';
+        }
+
+        function renderizarMenuFaena() {
+            if (!currentRut) {
+                abrirCheckIn();
+                return;
+            }
+
+            const contenedor = document.getElementById('contenedorModulosFaena');
+            contenedor.innerHTML = '';
+
+            const paramsObj = { rut: currentRut, nombre: currentNombre, session: sessionId, mode: 'b2b_mf' };
+            const queryParams = new URLSearchParams(paramsObj).toString();
+            
+            paramsObj.returnUrl = encodeURIComponent(`B2B_medico_faena.html?${queryParams}`);
+            const finalQuery = new URLSearchParams(paramsObj).toString();
+
+            modulosMedicoFaena.forEach(mod => {
+                const rendido = verificarRendido(mod.id);
+                let accionHtml = '';
+
+                if (rendido) {
+                    accionHtml = `<span class="badge-mod-ok">✓ APROBADO</span>`;
+                } else {
+                    accionHtml = `<a href="${mod.file}?${finalQuery}" class="btn-mod-start">EVALUAR →</a>`;
+                }
+
+                const card = document.createElement('div');
+                card.className = 'mod-item';
+                card.innerHTML = `
+                    <div class="mod-info">
+                        <span class="mod-title">${mod.nombre}</span>
+                        <span class="mod-desc">Evaluación telemétrica pericial de control de turno.</span>
+                    </div>
+                    <div>${accionHtml}</div>
+                `;
+                contenedor.appendChild(card);
+            });
+        }
+
+        function abrirInformeMedicoFaena() {
+            if (!currentRut) {
+                alert("Debe realizar el Check-in del trabajador antes de generar el informe.");
+                abrirCheckIn();
+                return;
+            }
+            const params = new URLSearchParams({ rut: currentRut, nombre: currentNombre, session: sessionId, mode: 'b2b_mf' });
+            window.location.href = `informe_faena.html?${params.toString()}`;
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            if (currentRut && currentNombre) {
+                document.getElementById('lblNombreTrabajador').textContent = currentNombre.toUpperCase();
+                document.getElementById('lblRutTrabajador').textContent = `RUT: ${currentRut} | Faena: ${currentFaena || 'General'}`;
+                document.getElementById('modalCheckIn').style.display = 'none';
+                renderizarMenuFaena();
+            } else {
+                abrirCheckIn();
+            }
+        });
+    </script>
+</body>
+</html>

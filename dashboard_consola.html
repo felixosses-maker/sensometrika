@@ -139,7 +139,7 @@
             font-weight: 700;
         }
 
-        .form-group input {
+        .form-group input, .form-group select {
             background: #080d17;
             border: 1px solid var(--card-border);
             color: #fff;
@@ -243,7 +243,6 @@
             align-items: center;
         }
 
-        /* Modal Integrado del Simulador */
         .modal-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(6, 11, 19, 0.85); backdrop-filter: blur(4px);
@@ -280,36 +279,22 @@
                 <strong id="lblEmpresa" style="color: #fff; font-size: 0.88rem;">Cargando...</strong>
             </div>
             <div>
-                <span style="color: var(--text-muted); text-transform: uppercase; font-size: 0.65rem; display: block;">Simulaciones Disponibles (Sin Caducidad)</span>
+                <span style="color: var(--text-muted); text-transform: uppercase; font-size: 0.65rem; display: block;">Simulaciones Disponibles</span>
                 <strong id="lblFoliosRestantes" style="color: var(--accent-green); font-size: 0.88rem;">10 Disponibles</strong>
             </div>
             <div>
-                <span style="color: var(--text-muted); text-transform: uppercase; font-size: 0.65rem; display: block;">Encargado / APR</span>
+                <span style="color: var(--text-muted); text-transform: uppercase; font-size: 0.65rem; display: block;">Encargado / APR / Médico</span>
                 <strong id="lblEncargado" style="color: var(--accent-cyan); font-size: 0.88rem;">Cargando...</strong>
             </div>
         </div>
 
-        <!-- PANEL DE DESCRIPCIÓN DE MÓDULOS ACTIVOS EN LA BATERÍA -->
+        <!-- FORMULARIO DE GENERACIÓN DE ENLACE Y TIPO DE PROTOCOLO -->
         <div class="panel-card">
-            <div class="card-title">
-                <span>🛡️ Batería Pericial Activa para esta Empresa</span>
-                <span style="font-size: 0.68rem; color: var(--accent-gold);">Estándar Corporativo B2B</span>
-            </div>
-            <p style="font-size: 0.75rem; color: var(--text-muted);">
-                Los enlaces generados asignarán una sesión única y evaluarán los siguientes módulos normativos seleccionados:
-            </p>
-            <div id="listaModulosActivos" class="modulos-badge-container">
-                <!-- Se inyecta dinámicamente -->
-            </div>
-        </div>
-
-        <!-- FORMULARIO DE GENERACIÓN DE ENLACE -->
-        <div class="panel-card">
-            <div class="card-title">🎟️ Generar y Enviar Link de Evaluación a Conductor</div>
+            <div class="card-title">🎟️ Generar Link o Código QR de Ingreso para Trabajador</div>
             <form id="formRegistrar" onsubmit="generarLinkTrabajador(event)">
                 <div class="form-grid">
                     <div class="form-group">
-                        <label>RUT del Conductor *</label>
+                        <label>RUT del Trabajador *</label>
                         <input type="text" id="inputRut" placeholder="Ej: 12.345.678-9" required>
                     </div>
                     <div class="form-group">
@@ -325,37 +310,44 @@
                         <input type="text" id="inputTelefono" placeholder="Ej: +56912345678" required>
                     </div>
                     <div class="form-group">
-                        <label>Cargo / Función en Flota</label>
-                        <input type="text" id="inputCargo" placeholder="Ej: Conductor Carga Pesada" required>
+                        <label>Cargo / Función</label>
+                        <input type="text" id="inputCargo" placeholder="Ej: Conductor / Operador Faena" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Tipo de Protocolo / Evaluación *</label>
+                        <select id="selectTipoProtocolo" required style="background: #080d17; border: 1px solid var(--card-border); color: #fff; padding: 10px 12px; border-radius: 8px; font-size: 0.82rem;">
+                            <option value="b2b">B2B Vial - Módulos Psicotécnicos Operaciones</option>
+                            <option value="b2b_mf">B2B-MF - Check Médico Ingreso a Faena /Rol /Turno</option>
+                        </select>
                     </div>
                 </div>
-                <button type="submit" class="btn-generate">⚡ GENERAR ENLACE DE REGISTRO Y DESPACHAR VÍA CORREO 💬</button>
+                <button type="submit" class="btn-generate">⚡ GENERAR ENLACE Y CÓDIGO QR DE ACCESO →</button>
             </form>
 
             <div id="boxLinkResultado" class="link-out-box">
                 <span style="font-size: 0.70rem; color: var(--text-muted); font-weight: 800; text-transform: uppercase;">
-                    Enlace Único de Evaluación B2B (Vigencia 48 hrs):
+                    Enlace Único de Acceso para el Trabajador (Escaneo QR o Wp):
                 </span>
                 <input type="text" id="txtLinkGenerado" class="link-out-input" readonly>
                 <div class="btn-actions-row">
                     <button type="button" class="btn-copy" onclick="copiarLinkGenerado()">📋 Copiar Link</button>
-                    <a id="btnWhatsappDirecto" href="#" target="_blank" class="btn-wp">💬 WhatsApp Alternativo</a>
+                    <a id="btnWhatsappDirecto" href="#" target="_blank" class="btn-wp">💬 WhatsApp Trabajador</a>
                 </div>
             </div>
         </div>
 
-        <!-- NÓMINA Y TRAZABILIDAD DE CONDUCTORES CON QR -->
+        <!-- NÓMINA Y TRAZABILIDAD DE TRABAJADORES CON QR -->
         <div class="panel-card">
-            <div class="card-title">📋 Nómina de Conductores Evaluados, Informes & Código QR de Garita</div>
+            <div class="card-title">📋 Nómina de Trabajadores Registrados, Protocolos & Códigos QR</div>
             <div class="table-container">
                 <table>
                     <thead>
                         <tr>
-                            <th>Conductor / RUT</th>
-                            <th>Cargo</th>
-                            <th>Estado Acreditación B2B</th>
-                            <th>Link Enlace</th>
-                            <th>Informe Pericial & QR Garita</th>
+                            <th>Trabajador / RUT</th>
+                            <th>Protocolo Asignado</th>
+                            <th>Estado Acreditación</th>
+                            <th>Enlace / QR de Ingreso</th>
+                            <th>Informe Pericial & Dictamen</th>
                         </tr>
                     </thead>
                     <tbody id="tablaNominaConsola">
@@ -365,7 +357,7 @@
         </div>
     </div>
 
-    <!-- Modal Integrado del Simulador -->
+    <!-- Modal Integrado -->
     <div id="modalSimulador" class="modal-overlay">
         <div class="modal-content">
             <div id="modalSimuladorTitulo" class="modal-title">NOTIFICACIÓN SENSOMETRIKA</div>
@@ -375,47 +367,14 @@
     </div>
 
     <script>
-        // Diccionario completo de los 27 módulos oficiales actualizados
-        const nombresModulos = {
-            mod1: "Anticipación Pro ⏱️",
-            mod2: "Reactímetro Pro ⚡",
-            mod3: "Reactímetro Estándar ⚡",
-            mod4: "Punteo Pro 🎯",
-            mod5: "Punteo Estándar 🎯",
-            mod6: "Punteo Transporte 🚛",
-            mod7: "Test de Palancas Bimanual 🎮",
-            mod8: "Visomotriz Pro 🚗",
-            mod9: "Tamizaje Visual Pro (Snellen) 👁️",
-            mod10: "Visual Transporte 🚚",
-            mod11: "Campo Periférico 👁️‍🗨️",
-            mod12: "Estereopsis (Profundidad) 📐",
-            mod13: "Resistencia al Encandilamiento 💡",
-            mod14: "Tamizaje Audiometría General 🎧",
-            mod15: "Audiometría Transporte 🚛",
-            mod16: "Test de Carga Dual 🔀",
-            mod17: "Memoria de Trabajo Operativa 🧩",
-            mod18: "Test de Fatiga y Vigilancia 😴",
-            mod19: "M1. Estabilidad Vestibular (Romberg Pro) ⚖️",
-            mod20: "M2. Estabilidad Motora (Temblores Pro) ✋",
-            mod21: "M3. Dinamometría y Fuerza (Grip Pro) ✊",
-            mod22: "M4. Frecuencia Cardíaca Basal (PPG Pro) 💓",
-            mod23: "M5. Reflejo Fotomotor Pupilar Pro 👁️",
-            mod24: "M6. Espirometría Ocupacional Pro 🫁",
-            mod25: "M7. Agilidad y Praxias Digitales (Tapping) ⚡",
-            mod26: "M8. Reacción a Alarma de Faena 🚨",
-            mod27: "M9. Estabilidad Oculomotriz (Nistagmo) 🔄",
-            mod28: "M10. Tamizaje de Somnolencia Pro 😴",
-            mod29: "Declaración Médica / Consolidado QR 📋"
-        };
-
         let empresaActiva = '';
         let llaveNominaEmpresa = 'sensometrika_consola_nomina_default';
         let trabajadores = [];
         let foliosRestantes = parseInt(localStorage.getItem('sensometrika_b2b_folios') || '10', 10);
 
         document.addEventListener('DOMContentLoaded', () => {
-            empresaActiva = (localStorage.getItem('sensometrika_b2b_empresa') || 'EMPRESA DE TRANSPORTE S.A.').trim().toUpperCase();
-            const encargado = localStorage.getItem('sensometrika_b2b_encargado') || 'DPTO PREVENCIÓN';
+            empresaActiva = (localStorage.getItem('sensometrika_b2b_empresa') || 'EMPRESA MINERA / TRANSPORTE').trim().toUpperCase();
+            const encargado = localStorage.getItem('sensometrika_b2b_encargado') || 'DPTO PREVENCIÓN / MÉDICO';
 
             llaveNominaEmpresa = `sensometrika_consola_nomina_${empresaActiva.replace(/[^A-Z0-9]/g, '_')}`;
             trabajadores = JSON.parse(localStorage.getItem(llaveNominaEmpresa)) || [];
@@ -424,7 +383,6 @@
             document.getElementById('lblEncargado').innerText = encargado.toUpperCase();
             document.getElementById('lblFoliosRestantes').innerText = `${foliosRestantes} Simulaciones`;
 
-            renderizarModulosActivos();
             renderizarNomina();
         });
 
@@ -438,32 +396,11 @@
             document.getElementById('modalSimulador').style.display = 'none';
         }
 
-        function renderizarModulosActivos() {
-            const container = document.getElementById('listaModulosActivos');
-            container.innerHTML = '';
-            
-            const modulosActivosStr = localStorage.getItem('sensometrika_modulos_b2b_activos') || '';
-            const modulosArray = modulosActivosStr ? modulosActivosStr.split(',') : ['mod1', 'mod2', 'mod9', 'mod19', 'mod23', 'mod28'];
-
-            let count = 0;
-            modulosArray.forEach(key => {
-                const cleanKey = key.trim().toLowerCase();
-                if (nombresModulos[cleanKey]) {
-                    count++;
-                    container.innerHTML += `<span class="mod-pill">${nombresModulos[cleanKey]}</span>`;
-                }
-            });
-
-            if (count === 0) {
-                container.innerHTML = `<span style="color:var(--text-muted); font-size:0.75rem;">Batería Pericial Full Activa.</span>`;
-            }
-        }
-
         function generarLinkTrabajador(e) {
             e.preventDefault();
 
             if (foliosRestantes <= 0) {
-                mostrarModalSimulador("ATENCIÓN SIMULADOR", "⚠️ Bolsa de simulaciones corporativas agotada. Recargue folios desde el catálogo corporativo.");
+                mostrarModalSimulador("ATENCIÓN", "⚠️ Bolsa de simulaciones agotada. Recargue folios desde el catálogo corporativo.");
                 return;
             }
 
@@ -472,9 +409,10 @@
             const email = document.getElementById('inputEmail').value.trim();
             const telefono = document.getElementById('inputTelefono').value.trim();
             const cargo = document.getElementById('inputCargo').value.trim();
+            const tipoProtocolo = document.getElementById('selectTipoProtocolo').value;
 
             const cleanRut = rut.replace(/[^0-9Kk]/g, '');
-            const sessionId = `SESION_${cleanRut}_${Date.now()}`;
+            const sessionId = `SESION_${tipoProtocolo.toUpperCase()}_${cleanRut}_${Date.now()}`;
 
             foliosRestantes--;
             localStorage.setItem('sensometrika_b2b_folios', foliosRestantes);
@@ -482,28 +420,29 @@
 
             const baseUrl = window.location.origin.replace(/\/$/, '');
             
-            // Enlace apunta al menú B2B del trabajador con su sesión
-            const urlCompleta = `${baseUrl}/menu_B2B.html?rut=${encodeURIComponent(rut)}&nombre=${encodeURIComponent(nombre)}&cargo=${encodeURIComponent(cargo)}&session=${sessionId}&mode=b2b`;
+            // Redirigir según corresponda: B2B Vial (menu_B2B.html) o B2B Médico de Faena (B2B_medico_faena.html)
+            let paginaMenu = tipoProtocolo === 'b2b_mf' ? 'B2B_medico_faena.html' : 'menu_B2B.html';
+            const urlCompleta = `${baseUrl}/${paginaMenu}?rut=${encodeURIComponent(rut)}&nombre=${encodeURIComponent(nombre)}&cargo=${encodeURIComponent(cargo)}&session=${sessionId}&mode=${tipoProtocolo}`;
 
             document.getElementById('txtLinkGenerado').value = urlCompleta;
             
-            // Configurar WhatsApp Alternativo
-            const msgWp = encodeURIComponent(`Hola *${nombre}* (RUT: ${rut}), desde Prevención de Riesgos de *${empresaActiva}* te enviamos tu acceso obligatorio para la evaluación Sensometrika (Vigencia 48 hrs):\n\n${urlCompleta}`);
+            const msgWp = encodeURIComponent(`Hola *${nombre}* (RUT: ${rut}), desde *${empresaActiva}* te enviamos tu acceso oficial para la evaluación Sensometrika (Vigencia 48 hrs):\n\n${urlCompleta}`);
             document.getElementById('btnWhatsappDirecto').href = `https://wa.me/${telefono.replace(/[^0-9+]/g, '')}?text=${msgWp}`;
 
             document.getElementById('boxLinkResultado').style.display = 'flex';
 
-            // Guardar datos temporales del usuario asignado
-            localStorage.setItem('sensometrika_datos_usuario', JSON.stringify({ nombre, rut, email, telefono, cargo, session: sessionId }));
+            localStorage.setItem('sensometrika_rut', cleanRut);
+            localStorage.setItem('sensometrika_nombre', nombre);
+            localStorage.setItem('sensometrika_faena', empresaActiva);
+            localStorage.setItem('sensometrika_session_activa', sessionId);
 
-            trabajadores.unshift({ rut, cleanRut, session: sessionId, nombre, email, telefono, cargo, empresa: empresaActiva, url: urlCompleta });
+            trabajadores.unshift({ rut, cleanRut, session: sessionId, nombre, email, telefono, cargo, tipoProtocolo, empresa: empresaActiva, url: urlCompleta });
             localStorage.setItem(llaveNominaEmpresa, JSON.stringify(trabajadores));
             renderizarNomina();
 
-            // Despacho Automático de Correo desde Sensometrika (Simulador)
             mostrarModalSimulador(
-                "DESPACHO AUTOMÁTICO SENSOMETRIKA ✉️",
-                `El correo electrónico de evaluación ha sido despachado <strong>automáticamente desde el servidor de SENSOMETRIKA (contacto@sensometrica.cl)</strong> a la casilla del trabajador:<br><br><code>${email}</code><br><br><em>Sesión generada: ${sessionId}</em>`
+                "ENLACE Y QR GENERADOS 🚀",
+                `El pase de evaluación ha sido generado exitosamente para <strong>${nombre}</strong> bajo el protocolo <strong>${tipoProtocolo === 'b2b_mf' ? 'Médico de Faena (B2B-MF)' : 'Transporte Vial (B2B)'}</strong>.<br><br>El trabajador ya puede escanear su código QR en garita o utilizar el enlace directo.`
             );
 
             document.getElementById('inputRut').value = '';
@@ -517,7 +456,7 @@
             const input = document.getElementById('txtLinkGenerado');
             input.select();
             navigator.clipboard.writeText(input.value);
-            mostrarModalSimulador("ENLACE COPIADO 📋", "El enlace individual con sesión única ha sido copiado al portapapeles.");
+            mostrarModalSimulador("ENLACE COPIADO 📋", "El enlace individual ha sido copiado al portapapeles.");
         }
 
         function renderizarNomina() {
@@ -525,49 +464,45 @@
             tbody.innerHTML = '';
 
             if (trabajadores.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:var(--text-muted);">Sin conductores registrados para ${empresaActiva}.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color: var(--text-muted);">Sin trabajadores registrados actualmente.</td></tr>`;
                 return;
             }
 
             trabajadores.forEach((t, index) => {
-                const cleanRut = t.cleanRut || t.rut.replace(/[^0-9Kk]/g, '');
                 const sessionParam = t.session || '';
-
-                const claveLastReactimetro = sessionParam 
-                    ? `sensometrika_last_reactimetro_${cleanRut}_${sessionParam}` 
-                    : `sensometrika_last_reactimetro_${cleanRut}`;
+                const isFaena = t.tipoProtocolo === 'b2b_mf';
                 
-                const res = JSON.parse(localStorage.getItem(claveLastReactimetro)) || JSON.parse(localStorage.getItem(`sensometrika_last_reactimetro_${cleanRut}`)) || null;
-                
-                const aprobadoFlag = res ? (res.go_no_go_flag || res.aprobado) : false;
-                const estado = res ? (aprobadoFlag ? 'APROBADO D.S. 170' : 'OBSERVADO') : 'PENDIENTE';
-                const clase = res ? (aprobadoFlag ? 'badge-ok' : 'badge-bad') : 'badge-pending';
+                const claveCheck = isFaena ? `medico_romberg_${t.cleanRut}_${sessionParam}` : `sensometrika_last_reactimetro_${t.cleanRut}_${sessionParam}`;
+                const rEval = localStorage.getItem(claveCheck);
+                const aprobado = rEval !== null;
 
-                const urlInforme = `informe_b2b.html?rut=${t.rut}&nombre=${encodeURIComponent(t.nombre)}&cargo=${encodeURIComponent(t.cargo)}&session=${sessionParam}&mode=b2b`;
+                const estado = aprobado ? (isFaena ? 'APROBADO FAENA' : 'APROBADO VIAL') : 'PENDIENTE INGRESO';
+                const clase = aprobado ? 'badge-ok' : 'badge-pending';
+
+                const urlInforme = isFaena 
+                    ? `informe_faena.html?rut=${t.rut}&nombre=${encodeURIComponent(t.nombre)}&session=${sessionParam}&mode=b2b_mf`
+                    : `informe_b2b.html?rut=${t.rut}&nombre=${encodeURIComponent(t.nombre)}&session=${sessionParam}&mode=b2b`;
+
                 const qrContainerId = `qrcode_table_${index}`;
-
-                const textoWpFila = encodeURIComponent(`Hola *${t.nombre}*, desde *${t.empresa}* te enviamos tu enlace de evaluación Sensometrika:\n\n${t.url}`);
+                const textoWpFila = encodeURIComponent(`Hola *${t.nombre}*, desde *${t.empresa}* te enviamos tu acceso de evaluación Sensometrika:\n\n${t.url}`);
                 const linkWpFila = t.telefono ? `https://wa.me/${t.telefono.replace(/[^0-9+]/g, '')}?text=${textoWpFila}` : `https://wa.me/?text=${textoWpFila}`;
 
                 tbody.innerHTML += `
                     <tr>
-                        <td><b>${t.nombre}</b><br><span style="color:var(--text-muted);">RUT: ${t.rut}</span></td>
-                        <td>${t.cargo}</td>
+                        <td><b>${t.nombre}</b><br><span style="color:var(--text-muted);">RUT: ${t.rut} | Cargo: ${t.cargo}</span></td>
+                        <td><span style="color:var(--accent-cyan); font-weight:700; font-size:0.7rem;">${isFaena ? '🩺 Médico Faena (B2B-MF)' : '🚛 Transporte Vial (B2B)'}</span></td>
                         <td><span class="badge-status ${clase}">${estado}</span></td>
                         <td>
-                            <div style="display:flex; gap:6px;">
-                                <button onclick="navigator.clipboard.writeText('${t.url}');mostrarModalSimulador('ENLACE COPIADO 📋', 'El enlace individual fue copiado.');" style="background:#0284c7; color:#fff; border:none; padding:5px 8px; border-radius:4px; cursor:pointer; font-weight:700; font-size:0.7rem;">🔗 Copiar</button>
-                                <a href="${linkWpFila}" target="_blank" style="background:#16a34a; color:#fff; padding:5px 8px; border-radius:4px; font-weight:700; text-decoration:none; font-size:0.7rem; display:inline-flex; align-items:center;">💬 Wp</a>
+                            <div class="qr-cell-box">
+                                <div id="${qrContainerId}" class="mini-qr" title="QR Escaneo Trabajador"></div>
+                                <div style="display:flex; flex-direction:column; gap:4px;">
+                                    <button onclick="navigator.clipboard.writeText('${t.url}');mostrarModalSimulador('ENLACE COPIADO 📋', 'Enlace copiado.');" style="background:#0284c7; color:#fff; border:none; padding:4px 8px; border-radius:4px; cursor:pointer; font-weight:700; font-size:0.68rem;">🔗 Copiar Link</button>
+                                    <a href="${linkWpFila}" target="_blank" style="background:#16a34a; color:#fff; padding:4px 8px; border-radius:4px; font-weight:700; text-decoration:none; font-size:0.68rem; text-align:center;">💬 Wp</a>
+                                </div>
                             </div>
                         </td>
                         <td>
-                            <div class="qr-cell-box">
-                                <div id="${qrContainerId}" class="mini-qr" title="QR Validez Garita"></div>
-                                <div style="display:flex; flex-direction:column; gap:4px;">
-                                    <a href="${urlInforme}" target="_blank" style="color:var(--accent-cyan); font-weight:800; text-decoration:underline; font-size:0.75rem;">📄 Ver Informe Pericial</a>
-                                    <span style="color:var(--text-muted); font-size:0.62rem;">Código QR Garita Faena</span>
-                                </div>
-                            </div>
+                            <a href="${urlInforme}" target="_blank" style="color:var(--accent-cyan); font-weight:800; text-decoration:underline; font-size:0.75rem;">📄 Ver Informe Pericial (${isFaena ? 'Faena' : 'Vial'})</a>
                         </td>
                     </tr>
                 `;
@@ -578,10 +513,8 @@
                     const qrContainerId = `qrcode_table_${index}`;
                     const el = document.getElementById(qrContainerId);
                     if (el && el.innerHTML === "") {
-                        const sessionParam = t.session || '';
-                        const urlInforme = `${window.location.origin}/informe_b2b.html?rut=${t.rut}&nombre=${encodeURIComponent(t.nombre)}&session=${sessionParam}&mode=b2b`;
                         new QRCode(el, {
-                            text: urlInforme,
+                            text: t.url,
                             width: 38,
                             height: 38,
                             colorDark: "#000000",

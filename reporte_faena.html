@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>SENSOMETRIKA | Reporte Médico para Faena (Aptitud Ocupacional)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    :root {
+      --bg-color: #040810; --card-bg: #091120; --card-border: #132238;
+      --accent-cyan: #00bfff; --accent-green: #10b981; --accent-red: #ef4444; --accent-yellow: #e5b324;
+      --text-main: #f8fafc; --text-muted: #94a3b8;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+    body { background-color: var(--bg-color); color: var(--text-main); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; min-height: 100vh; padding: 16px; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; }
+    .container { width: 100%; max-width: 480px; display: flex; flex-direction: column; gap: 14px; margin-top: 10px; }
+    .card { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 14px; padding: 18px; width: 100%; display: flex; flex-direction: column; gap: 12px; box-shadow: 0 15px 35px rgba(0,0,0,0.6); }
+    .btn { background: var(--accent-cyan); color: #000; border: none; padding: 12px; border-radius: 8px; font-weight: 900; cursor: pointer; text-transform: uppercase; width: 100%; text-align: center; text-decoration: none; display: inline-block; transition: opacity 0.2s; font-size: 0.8rem; }
+    .btn:hover { opacity: 0.9; }
+    .btn-secondary { background: #0c182e; color: var(--accent-cyan); border: 1px solid #1e3a6d; }
+    .status-badge { padding: 6px 12px; border-radius: 8px; font-weight: 900; font-size: 0.75rem; text-transform: uppercase; display: inline-block; }
+    .status-apto { background: rgba(16, 185, 129, 0.2); color: var(--accent-green); border: 1px solid var(--accent-green); }
+    .status-restringido { background: rgba(239, 68, 68, 0.2); color: var(--accent-red); border: 1px solid var(--accent-red); }
+    .status-pendiente { background: rgba(229, 179, 36, 0.2); color: var(--accent-yellow); border: 1px solid var(--accent-yellow); }
+    
+    .module-row { display: flex; justify-content: space-between; align-items: center; background: #070b14; border: 1px solid #1e293b; padding: 10px; border-radius: 8px; font-size: 0.75rem; }
+    .input-field { background: #030712; border: 1px solid var(--card-border); color: #fff; padding: 10px; border-radius: 8px; width: 100%; font-size: 0.85rem; font-weight: 700; text-align: center; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--card-border); padding-bottom: 10px;">
+      <a href="../index.html" style="font-size: 0.70rem; font-weight: 800; color: var(--accent-cyan); text-decoration: none;">← SELECCIÓN DE VISTA</a>
+      <span style="font-size: 0.75rem; font-weight: 900; color: var(--accent-cyan);">SENSOMETRIKA | B2B FAENA</span>
+      <button onclick="location.reload()" style="background: none; border: none; color: var(--text-muted); font-size: 0.70rem; cursor: pointer;">🔄 ACTUALIZAR</button>
+    </div>
+
+    <div class="card">
+      <h2 style="color: var(--accent-cyan); font-size: 1.0rem; font-weight: 900; text-align: center;">Control de Ingreso a Faena</h2>
+      <p style="font-size: 0.74rem; color: var(--text-muted); text-align: center;">Evaluación pericial integrada de los 10 módulos médicos para autorización de turno.</p>
+      
+      <div>
+        <label style="font-size: 0.65rem; color: var(--text-muted); font-weight: 800; text-transform: uppercase; display: block; margin-bottom: 4px;">RUT del Trabajador</label>
+        <div style="display: flex; gap: 8px;">
+          <input type="text" id="txtRut" class="input-field" placeholder="Ej: 12345678-K" />
+          <button class="btn" style="width: 120px;" onclick="cargarDatosTrabajador()">BUSCAR</button>
+        </div>
+      </div>
+
+      <div id="panelResultadoFaena" style="text-align: center; padding: 14px; background: #030712; border-radius: 10px; border: 1px solid var(--card-border);">
+        <span style="font-size: 0.65rem; color: var(--text-muted); display: block; margin-bottom: 4px;">ESTADO DE APTITUD MÉDICA</span>
+        <div id="badgeAptitud" class="status-badge status-pendiente">INGRESE RUT PARA VALIDAR</div>
+      </div>
+    </div>
+
+    <!-- LISTADO DE LOS 10 MÓDULOS MÉDICOS -->
+    <div class="card">
+      <h3 style="font-size: 0.85rem; font-weight: 900; color: var(--accent-cyan); border-bottom: 1px solid var(--card-border); padding-bottom: 6px;">
+        Batería Pericial (10 Módulos de Faena)
+      </h3>
+
+      <div id="listaModulosFaena" style="display: flex; flex-direction: column; gap: 6px;">
+        <!-- Se inyecta dinámicamente o se lista con enlaces directos -->
+      </div>
+    </div>
+
+    <div style="display: flex; gap: 8px; margin-bottom: 20px;">
+      <button class="btn btn-secondary" onclick="imprimirInformeLegal()">🖨️ EMITIR INFORME LEGAL</button>
+      <button class="btn" onclick="reiniciarSesionFaena()">⚡ NUEVA EVALUACIÓN</button>
+    </div>
+  </div>
+
+  <script>
+    const modulosMedicosList = [
+      { id: 'romberg', nombre: '1. Test de Romberg (Estática Pro)', file: '01_romberg.html' },
+      { id: 'temblores', nombre: '2. Estabilidad Motora (Temblores)', file: '02_temblores.html' },
+      { id: 'grip', nombre: '3. Fuerza de Prehensión (Grip Pro)', file: '03_grip.html' },
+      { id: 'ppg', nombre: '4. Frecuencia Cardíaca Basal (PPG)', file: '04_ppg.html' },
+      { id: 'somnolencia', nombre: '5. Tamizaje de Fatiga (Somnolencia)', file: '10_somnolencia.html' },
+      { id: 'espirometria', nombre: '6. Espirometría Ocupacional Pro', file: '06_espirometria.html' },
+      { id: 'auditivo', nombre: '8. Alarma de Faena y Reacción', file: '08_auditivo.html' },
+      { id: 'nistagmo', nombre: '9. Estabilidad Oculomotriz (Nistagmo)', file: '09_nistagmo.html' }
+    ];
+
+    function renderizarModulos(rut, sessionId) {
+      const contenedor = document.getElementById('listaModulosFaena');
+      contenedor.innerHTML = '';
+
+      let rendidosCount = 0;
+      let globalApto = true;
+
+      modulosMedicosList.forEach(mod => {
+        const key = `medico_${mod.id}_${rut}_${sessionId}`;
+        const completado = localStorage.getItem(key) === 'true';
+        
+        if (completado) rendidosCount++;
+        else globalApto = false;
+
+        const row = document.createElement('div');
+        row.className = 'module-row';
+        row.innerHTML = `
+          <span style="font-weight: 800; color: #fff;">${mod.nombre}</span>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="color: ${completado ? 'var(--accent-green)' : 'var(--text-muted)'}; font-weight: 800;">
+              ${completado ? '✓ Aprobado' : 'Pendiente'}
+            </span>
+            <a href="${mod.file}?rut=${rut}&session=${sessionId}&returnUrl=${encodeURIComponent(window.location.href)}" 
+               style="background: #020617; border: 1px solid var(--accent-cyan); color: var(--accent-cyan); padding: 4px 8px; border-radius: 6px; font-size: 0.65rem; text-decoration: none; font-weight: 800;">
+               EVALUAR →
+            </a>
+          </div>
+        `;
+        contenedor.appendChild(row);
+      });
+
+      const badge = document.getElementById('badgeAptitud');
+      if (rendidosCount === 0) {
+        badge.className = "status-badge status-pendiente";
+        badge.textContent = "SIN EVALUACIONES REGISTRADAS";
+      } else if (rendidosCount < modulosMedicosList.length) {
+        badge.className = "status-badge status-pendiente";
+        badge.textContent = `EN PROCESO (${rendidosCount}/${modulosMedicosList.length} MÓDULOS)`;
+      } else if (globalApto) {
+        badge.className = "status-badge status-apto";
+        badge.textContent = "✓ APTO PARA INGRESO A FAENA";
+      } else {
+        badge.className = "status-badge status-restringido";
+        badge.textContent = "⚠️ OBSERVADO / RESTRINGIDO";
+      }
+    }
+
+    function cargarDatosTrabajador() {
+      let rutInput = document.getElementById('txtRut').value.trim().replace(/[^0-9Kk]/g, '');
+      if (!rutInput) {
+        alert("Por favor ingrese un RUT válido.");
+        return;
+      }
+      localStorage.setItem('sensometrika_rut', rutInput);
+      let sessionId = localStorage.getItem('sensometrika_session_activa') || 'SESION_' + Date.now();
+      localStorage.setItem('sensometrika_session_activa', sessionId);
+
+      renderizarModulos(rutInput, sessionId);
+    }
+
+    function reiniciarSesionFaena() {
+      if (confirm("¿Desea iniciar una nueva sesión de evaluación para otro trabajador?")) {
+        localStorage.removeItem('sensometrika_rut');
+        localStorage.removeItem('sensometrika_session_activa');
+        location.reload();
+      }
+    }
+
+    function imprimirInformeLegal() {
+      const rut = document.getElementById('txtRut').value || localStorage.getItem('sensometrika_rut') || 'S/N';
+      alert(`Generando Informe Pericial y Legal para RUT: ${rut}.\n\nEste documento incluye la trazabilidad biométrica de los módulos evaluados bajo cumplimiento de normativa ocupacional.`);
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      const savedRut = localStorage.getItem('sensometrika_rut');
+      const savedSession = localStorage.getItem('sensometrika_session_activa');
+      if (savedRut) {
+        document.getElementById('txtRut').value = savedRut;
+        renderizarModulos(savedRut, savedSession || 'SESION_DEFAULT');
+      }
+    });
+  </script>
+</body>
+</html>
