@@ -129,9 +129,7 @@
 
         .biometric-tag {
             position: absolute;
-            bottom: 0;
-            left: 0;
-            right: 0;
+            bottom: 0; left: 0; right: 0;
             background: rgba(180, 83, 9, 0.9);
             color: #ffffff;
             font-size: 0.45rem;
@@ -139,7 +137,6 @@
             text-align: center;
             padding: 2px 0;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
         }
 
         .vigencia-bar {
@@ -166,7 +163,6 @@
         }
 
         .dictamen-aprobado { background-color: #dcfce7; border: 1px solid #86efac; color: #15803d; }
-        .dictamen-reprobado { background-color: #fee2e2; border: 1px solid #fca5a5; color: #b91c1c; }
         .dictamen-pendiente { background-color: #fef3c7; border: 1px solid #fde68a; color: #b45309; }
 
         .tabla-oficial {
@@ -201,7 +197,6 @@
         }
 
         .sem-ok { background-color: #dcfce7; color: #15803d; border: 1px solid #86efac; }
-        .sem-bad { background-color: #fee2e2; color: #b91c1c; border: 1px solid #fca5a5; }
         .sem-pend { background-color: #fef3c7; color: #b45309; border: 1px solid #fde68a; }
 
         .firmas-container {
@@ -247,11 +242,11 @@
                 <div class="brand-sub">CHECK-IN CLÍNICO DE FAENA • CONTROL DE TURNO (M1 A M10)</div>
             </div>
             <div class="qr-placeholder">
-                <img id="imgQrVerificacion" src="" alt="QR Validador" class="w-full h-full rounded">
+                <img id="imgQrVerificacion" src="" alt="QR" class="w-full h-full rounded">
             </div>
         </header>
 
-        <div class="notice-banner" id="lblNoticeBanner">
+        <div class="notice-banner">
             ⚡ Auditoría de Telemetría Estricta: Registro detallado de desvíos, parpadeos y estabilidad biométrica.
         </div>
 
@@ -275,18 +270,18 @@
                 </div>
                 <div style="display: flex; justify-content: space-between;" class="mt-1">
                     <div class="ficha-item">
-                        <span class="ficha-label">FOLIO CLÍNICO</span>
-                        <span class="ficha-val text-amber-600" id="lblFolio">SMK-MF-CERT</span>
+                        <span class="ficha-label">INICIO DE SIMULACIÓN</span>
+                        <span class="ficha-val text-amber-600" id="lblFechaInicio">--</span>
                     </div>
                     <div class="ficha-item">
-                        <span class="ficha-label">FECHA Y HORA EMISIÓN</span>
-                        <span class="ficha-val" id="lblFechaEmision">--</span>
+                        <span class="ficha-label">TÉRMINO DE SIMULACIÓN</span>
+                        <span class="ficha-val text-amber-600" id="lblFechaTermino">--</span>
                     </div>
                 </div>
             </div>
 
             <div class="biometric-box">
-                <img id="imgBiometrica" src="sensometrica.jpg" alt="Evaluado Biométrico" class="biometric-img">
+                <img id="imgBiometrica" src="sensometrica.jpg" alt="Evaluado" class="biometric-img">
                 <div class="biometric-tag">REGISTRO CLÍNICO FACIAL</div>
             </div>
         </div>
@@ -313,14 +308,14 @@
                 </tr>
             </thead>
             <tbody id="tbodyModulosFaena">
-                <!-- Se inyectan dinámicamente con detalles estrictos -->
+                <!-- Dinámico con desvíos y métricas estrictas -->
             </tbody>
         </table>
 
         <div class="firmas-container">
             <div class="firma-box">
                 <div class="firma-graphic-box">
-                    <img id="imgFirmaTrabajador" src="" alt="Firma Digital" class="firma-graphic-img">
+                    <img id="imgFirmaTrabajador" src="" alt="Firma" class="firma-graphic-img">
                 </div>
                 <div class="linea-firma"></div>
                 <div class="firma-label" id="lblFirmaNombre">NOMBRE TRABAJADOR</div>
@@ -333,10 +328,6 @@
                 <div class="firma-label">Médico Ocupacional / APR de Turno</div>
                 <div class="firma-sub">V°B° AUTORIZACIÓN DE INGRESO</div>
             </div>
-        </div>
-
-        <div style="text-align: center; font-size: 0.50rem; color: #64748b; line-height: 1.2;">
-            🏥 INFORME DE AUDITORÍA CLÍNICA: Registro estricto de parámetros vestibulares, motores, fuerza bilateral y vigilancia ocular. Hash: SMK-MF-SECURE.
         </div>
 
         <button type="button" class="btn-action" onclick="volverMenuB2B()">
@@ -363,12 +354,7 @@
 
         function obtenerDetalleModulo(nombreTest) {
             const dataStr = localStorage.getItem(`sensometrika_last_${nombreTest}_${cleanRut}_${sessionId}`);
-            const flagBool = localStorage.getItem(`medico_${nombreTest}_${cleanRut}_${sessionId}`) === 'true';
-            
-            if (dataStr) {
-                try { return JSON.parse(dataStr); } catch(e) {}
-            }
-            return { aprobado: flagBool };
+            try { return JSON.parse(dataStr) || {}; } catch(e) { return {}; }
         }
 
         document.addEventListener('DOMContentLoaded', () => {
@@ -378,8 +364,20 @@
             document.getElementById('lblEmpresa').textContent = decodeURIComponent(rawEmpresa).toUpperCase();
             document.getElementById('lblFirmaNombre').textContent = decodeURIComponent(rawNombre).toUpperCase();
 
-            const now = new Date();
-            document.getElementById('lblFechaEmision').textContent = `${now.getDate().toString().padStart(2, '0')}-${(now.getMonth()+1).toString().padStart(2, '0')}-${now.getFullYear()} ${now.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })}`;
+            // Fechas congeladas por sesión
+            let tsInicio = localStorage.getItem(`sensometrika_ts_inicio_${cleanRut}_${sessionId}`);
+            if (!tsInicio) { tsInicio = Date.now(); localStorage.setItem(`sensometrika_ts_inicio_${cleanRut}_${sessionId}`, tsInicio); }
+
+            let tsTermino = localStorage.getItem(`sensometrika_ts_termino_${cleanRut}_${sessionId}`);
+            if (!tsTermino) { tsTermino = Date.now() + (20 * 60 * 1000); localStorage.setItem(`sensometrika_ts_termino_${cleanRut}_${sessionId}`, tsTermino); }
+
+            const formatFecha = (ts) => {
+                const d = new Date(parseInt(ts));
+                return `${d.getDate().toString().padStart(2, '0')}-${(d.getMonth()+1).toString().padStart(2, '0')}-${d.getFullYear()} ${d.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })}`;
+            };
+
+            document.getElementById('lblFechaInicio').textContent = formatFecha(tsInicio);
+            document.getElementById('lblFechaTermino').textContent = formatFecha(tsTermino);
 
             let folioCert = `SMK-MF-${cleanRut.substring(0, 6)}-${Math.floor(Math.random()*899+100)}`;
             document.getElementById('lblFolio').textContent = folioCert;
@@ -411,7 +409,6 @@
 
             const tbody = document.getElementById('tbodyModulosFaena');
             tbody.innerHTML = '';
-
             let totalPendientes = 0;
 
             submódulosFaenaInforme.forEach(m => {
@@ -419,22 +416,21 @@
                 if (!estaSolicitado) return;
 
                 const datosTest = obtenerDetalleModulo(m.key);
-                const rendido = datosTest.aprobado !== undefined || localStorage.getItem(`medico_${m.key}_${cleanRut}_${sessionId}`) === 'true';
+                const rendido = (localStorage.getItem(`medico_${m.key}_${cleanRut}_${sessionId}`) === 'true') || 
+                                (datosTest.aprobado === true);
                 
                 const tr = document.createElement('tr');
 
                 if (rendido) {
                     let detalleTelemetria = "Parámetro dentro de rango normativo";
-                    
-                    // Detalle estricto según el submódulo
                     if (m.key === 'grip' && datosTest.porcentajeSimetria !== undefined) {
-                        detalleTelemetria = `Simetría bilateral sostenida: <b>${datosTest.porcentajeSimetria}%</b> (Mín: 60%)`;
+                        detalleTelemetria = `Simetría bilateral: <b>${datosTest.porcentajeSimetria}%</b> (Mín: 60%)`;
                     } else if (m.key === 'pupilar' && datosTest.score) {
                         detalleTelemetria = `Índice óptico: <b>${datosTest.score}</b> | Foco ocular estable sin desvíos`;
                     } else if (m.key === 'somnolencia' && datosTest.score) {
-                        detalleTelemetria = `Índice alerta: <b>${datosTest.score}</b> | Control de parpadeo y fatiga OK`;
+                        detalleTelemetria = `Índice alerta: <b>${datosTest.score}</b> | Vigilancia y parpadeo OK`;
                     } else if (datosTest.score) {
-                        detalleTelemetria = `Desempeño registrado: <b>${datosTest.score}</b>`;
+                        detalleTelemetria = `Métrica registrada: <b>${datosTest.score}</b>`;
                     }
 
                     tr.innerHTML = `
@@ -456,33 +452,16 @@
             });
 
             const boxDictamen = document.getElementById('boxDictamen');
-            const lblDictamenSub = document.getElementById('lblDictamenSub');
             const lblEstadoVigencia = document.getElementById('lblEstadoVigencia');
-            let estadoDictamenLimpio = 'PENDIENTE';
 
             if (totalPendientes > 0) {
-                estadoDictamenLimpio = 'INCOMPLETO';
                 boxDictamen.className = "banner-dictamen dictamen-pendiente";
                 boxDictamen.innerHTML = "⏳ DICTAMEN: CHECK-IN CLÍNICO EN PROCESO";
-                lblDictamenSub.textContent = "Faltan submódulos médicos de faena por completar.";
                 lblEstadoVigencia.textContent = "TURNO INCOMPLETO";
-                lblEstadoVigencia.className = "vigencia-orange";
             } else {
-                estadoDictamenLimpio = 'APROBADO';
                 boxDictamen.className = "banner-dictamen dictamen-aprobado";
-                boxDictamen.innerHTML = `✔ DICTAMEN CLÍNICO: APTO PARA INGRESO A TURNO`;
-                lblDictamenSub.textContent = `Aptitud fisiológica, fuerza y vigilancia verificadas para ${rawCargo.toUpperCase()}.`;
-                lblEstadoVigencia.textContent = `VÁLIDO POR 12 HORAS (TURNO)`;
-                lblEstadoVigencia.className = "vigencia-orange bg-emerald-600";
-            }
-
-            const imgQr = document.getElementById('imgQrVerificacion');
-            if (imgQr) {
-                const paramsPublicos = new URLSearchParams({
-                    rut: rawRut, nombre: rawNombre, cargo: rawCargo, empresa: rawEmpresa, folio: folioCert, estado: estadoDictamenLimpio, vence: 'Turno Activo'
-                });
-                const urlValidacionSegura = `${window.location.origin}/validar.html?${paramsPublicos.toString()}`;
-                imgQr.src = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(urlValidacionSegura)}`;
+                boxDictamen.innerHTML = "✔ DICTAMEN CLÍNICO: APTO PARA INGRESO A TURNO";
+                lblEstadoVigencia.textContent = "VÁLIDO POR 12 HORAS (TURNO)";
             }
         });
     </script>
