@@ -66,8 +66,8 @@
         }
 
         .qr-placeholder {
-            width: 48px;
-            height: 48px;
+            width: 52px;
+            height: 52px;
             background: #f1f5f9;
             border: 1px solid #cbd5e1;
             border-radius: 6px;
@@ -75,7 +75,10 @@
             justify-content: center;
             align-items: center;
             overflow: hidden;
+            flex-shrink: 0;
         }
+
+        .qr-placeholder img { width: 100%; height: 100%; object-fit: contain; }
 
         .notice-banner {
             background-color: #fefce8;
@@ -152,6 +155,7 @@
 
         .vigencia-gold { background-color: #d97706; color: #ffffff; padding: 6px; }
         .vigencia-orange { background-color: #ea580c; color: #ffffff; padding: 6px; }
+        .vigencia-green { background-color: #16a34a; color: #ffffff; padding: 6px; }
 
         .banner-dictamen {
             border-radius: 8px;
@@ -242,7 +246,7 @@
                 <div class="brand-sub">CHECK-IN CLÍNICO DE FAENA • CONTROL DE TURNO (M1 A M10)</div>
             </div>
             <div class="qr-placeholder">
-                <img id="imgQrVerificacion" src="" alt="QR" class="w-full h-full rounded">
+                <img id="imgQrVerificacion" src="" alt="QR Validador">
             </div>
         </header>
 
@@ -308,7 +312,7 @@
                 </tr>
             </thead>
             <tbody id="tbodyModulosFaena">
-                <!-- Dinámico con desvíos y métricas estrictas -->
+                <!-- Se inyectan dinámicamente -->
             </tbody>
         </table>
 
@@ -364,12 +368,21 @@
             document.getElementById('lblEmpresa').textContent = decodeURIComponent(rawEmpresa).toUpperCase();
             document.getElementById('lblFirmaNombre').textContent = decodeURIComponent(rawNombre).toUpperCase();
 
-            // Fechas congeladas por sesión
-            let tsInicio = localStorage.getItem(`sensometrika_ts_inicio_${cleanRut}_${sessionId}`);
-            if (!tsInicio) { tsInicio = Date.now(); localStorage.setItem(`sensometrika_ts_inicio_${cleanRut}_${sessionId}`, tsInicio); }
+            // CONTROL FIJO DE FECHA Y HORA DE INICIO Y TÉRMINO (CONGELADAS POR SESIÓN)
+            let timestampInicioKey = `sensometrika_ts_inicio_${cleanRut}_${sessionId}`;
+            let timestampTerminoKey = `sensometrika_ts_termino_${cleanRut}_${sessionId}`;
 
-            let tsTermino = localStorage.getItem(`sensometrika_ts_termino_${cleanRut}_${sessionId}`);
-            if (!tsTermino) { tsTermino = Date.now() + (20 * 60 * 1000); localStorage.setItem(`sensometrika_ts_termino_${cleanRut}_${sessionId}`, tsTermino); }
+            let tsInicio = localStorage.getItem(timestampInicioKey);
+            if (!tsInicio) {
+                tsInicio = Date.now();
+                localStorage.setItem(timestampInicioKey, tsInicio);
+            }
+
+            let tsTermino = localStorage.getItem(timestampTerminoKey);
+            if (!tsTermino) {
+                tsTermino = Date.now() + (20 * 60 * 1000); // 20 min simulados
+                localStorage.setItem(timestampTerminoKey, tsTermino);
+            }
 
             const formatFecha = (ts) => {
                 const d = new Date(parseInt(ts));
@@ -380,14 +393,19 @@
             document.getElementById('lblFechaTermino').textContent = formatFecha(tsTermino);
 
             let folioCert = `SMK-MF-${cleanRut.substring(0, 6)}-${Math.floor(Math.random()*899+100)}`;
-            document.getElementById('lblFolio').textContent = folioCert;
 
-            const fotoGuardada = localStorage.getItem(`sensometrika_foto_${cleanRut}_${sessionId}`) || localStorage.getItem(`sensometrika_foto_${cleanRut}`) || localStorage.getItem('sensometrika_foto_trabajador');
-            if (fotoGuardada && fotoGuardada.startsWith('data:image')) {
+            // RECUPERACIÓN ROBUSTA DE FOTO BIOMÉTRICA
+            const fotoGuardada = localStorage.getItem(`sensometrika_foto_${cleanRut}_${sessionId}`) || 
+                                 localStorage.getItem(`sensometrika_foto_${cleanRut}`) || 
+                                 localStorage.getItem('sensometrika_foto_trabajador');
+            if (fotoGuardada && (fotoGuardada.startsWith('data:image') || fotoGuardada.startsWith('blob:') || fotoGuardada.length > 50)) {
                 document.getElementById('imgBiometrica').src = fotoGuardada;
             }
 
-            const firmaGuardada = localStorage.getItem(`sensometrika_firma_${cleanRut}_${sessionId}`) || localStorage.getItem(`sensometrika_firma_${cleanRut}`) || localStorage.getItem('sensometrika_firma_trabajador');
+            // RECUPERACIÓN DE FIRMA DIGITAL
+            const firmaGuardada = localStorage.getItem(`sensometrika_firma_${cleanRut}_${sessionId}`) || 
+                                  localStorage.getItem(`sensometrika_firma_${cleanRut}`) || 
+                                  localStorage.getItem('sensometrika_firma_trabajador');
             const svgFirmaRespaldo = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="60" viewBox="0 0 200 60"><path d="M 15 35 Q 35 15, 65 30 T 105 18 T 155 38 Q 175 48, 185 25" fill="none" stroke="%230f172a" stroke-width="2" stroke-linecap="round"/></svg>`;
             document.getElementById('imgFirmaTrabajador').src = (firmaGuardada && firmaGuardada.startsWith('data:image')) ? firmaGuardada : svgFirmaRespaldo;
 
@@ -453,15 +471,29 @@
 
             const boxDictamen = document.getElementById('boxDictamen');
             const lblEstadoVigencia = document.getElementById('lblEstadoVigencia');
+            const lblDictamenSub = document.getElementById('lblDictamenSub');
 
             if (totalPendientes > 0) {
                 boxDictamen.className = "banner-dictamen dictamen-pendiente";
                 boxDictamen.innerHTML = "⏳ DICTAMEN: CHECK-IN CLÍNICO EN PROCESO";
+                if(lblDictamenSub) lblDictamenSub.textContent = "El operador presenta submódulos médicos pendientes para habilitar su ingreso al turno de faena.";
                 lblEstadoVigencia.textContent = "TURNO INCOMPLETO";
+                lblEstadoVigencia.className = "vigencia-orange";
             } else {
                 boxDictamen.className = "banner-dictamen dictamen-aprobado";
-                boxDictamen.innerHTML = "✔ DICTAMEN CLÍNICO: APTO PARA INGRESO A TURNO";
-                lblEstadoVigencia.textContent = "VÁLIDO POR 12 HORAS (TURNO)";
+                boxDictamen.innerHTML = `✔ DICTAMEN CLÍNICO: APTO PARA INGRESO A TURNO`;
+                if(lblDictamenSub) lblDictamenSub.textContent = `Aptitud fisiológica, fuerza y vigilancia verificadas para ${rawCargo.toUpperCase()}.`;
+                lblEstadoVigencia.textContent = `VÁLIDO POR 12 HORAS (TURNO)`;
+                lblEstadoVigencia.className = "vigencia-green";
+            }
+
+            const imgQr = document.getElementById('imgQrVerificacion');
+            if (imgQr) {
+                const paramsPublicos = new URLSearchParams({
+                    rut: rawRut, nombre: rawNombre, cargo: rawCargo, empresa: rawEmpresa, folio: folioCert, estado: totalPendientes > 0 ? 'INCOMPLETO' : 'APROBADO', vence: 'Turno Activo'
+                });
+                const urlValidacionSegura = `${window.location.origin}/validar.html?${paramsPublicos.toString()}`;
+                imgQr.src = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(urlValidacionSegura)}`;
             }
         });
     </script>
