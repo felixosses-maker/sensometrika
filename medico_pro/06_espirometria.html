@@ -122,7 +122,6 @@
 
     .instruction-text { font-size: 0.74rem; color: #cbd5e1; line-height: 1.35; text-align: center; }
 
-    /* Estructura oficial de rejilla de telemetría SENSOMETRIKA */
     .metricas-grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
@@ -148,8 +147,8 @@
       font-weight: 800;
     }
 
-    .distance-block-overlay, .mic-prompt-overlay {
-      position: absolute; inset: 0; background: rgba(4, 8, 16, 0.95);
+    .distance-block-overlay, .mic-prompt-overlay, .orientation-block-overlay {
+      position: absolute; inset: 0; background: rgba(4, 8, 16, 0.96);
       backdrop-filter: blur(4px); z-index: 30; display: none;
       flex-direction: column; justify-content: center; align-items: center; padding: 16px; text-align: center; gap: 10px; border-radius: 12px;
     }
@@ -176,12 +175,12 @@
         6. Espirometría Ocupacional Pro
       </h3>
       <p class="instruction-text">
-        Tome aire profundamente y mantenga un soplo continuo hacia el micrófono durante <strong>25 segundos</strong> (Captura activa entre los 5s y 25s).
+        Coloque el teléfono en <strong>posición horizontal (paisaje)</strong> frente a su boca. Prepárese (0s-5s), sople con fuerza entre el <strong>segundo 5 y el 20</strong>, y finalice hasta los 25s.
       </p>
 
       <div style="background: #030712; border: 1px solid var(--card-border); border-radius: 10px; padding: 16px; text-align: center;">
         <span id="lblTimer" style="font-size: 2.2rem; font-weight: 900; color: #fff;">25s</span>
-        <p id="lblEstado" style="font-size: 0.75rem; color: var(--accent-cyan); margin-top: 4px;">Listo para calibrar flujo respiratorio</p>
+        <p id="lblEstado" style="font-size: 0.75rem; color: var(--accent-cyan); margin-top: 4px;">Listo para iniciar espirometría</p>
       </div>
 
       <!-- PANEL DE TELEMETRÍA OFICIAL SENSOMETRIKA -->
@@ -204,15 +203,21 @@
 
       <!-- OVERLAY DE BLOQUEO POR DISTANCIA -->
       <div id="boxBlockDistancia" class="distance-block-overlay">
-        <span style="color: var(--accent-red); font-weight: 900; font-size: 0.9rem;">⚠️ DISTANCIA / POSTURA FUERA DE RANGO</span>
-        <span class="instruction-text">Ajuste su posición frente a la pantalla.<br>Distancia telemétrica: <b id="lblDistVal" style="color:var(--accent-red);">-- cm</b><br>(Rango normativo: 45 a 65 cm).</span>
+        <span style="color: var(--accent-red); font-weight: 900; font-size: 0.9rem;">⚠️ DISTANCIA FUERA DE RANGO</span>
+        <span class="instruction-text">Ajuste su posición frente a la pantalla.<br>Distancia telemétrica: <b id="lblDistVal" style="color:var(--accent-red);">-- cm</b><br>(Rango normativo: 40 a 70 cm).</span>
+      </div>
+
+      <!-- OVERLAY DE BLOQUEO POR ORIENTACIÓN -->
+      <div id="boxBlockOrientation" class="orientation-block-overlay">
+        <span style="color: var(--accent-red); font-weight: 900; font-size: 0.9rem;">📱 GIRE SU TELÉFONO A HORIZONTAL</span>
+        <span class="instruction-text">Coloque el dispositivo en <b>posición horizontal (paisaje)</b> frente a su boca para capturar el flujo de aire correctamente.</span>
       </div>
 
       <!-- OVERLAY INTEGRADO DE CALIBRACIÓN DE MICRÓFONO -->
       <div id="boxMicPrompt" class="mic-prompt-overlay" style="display: flex;">
         <span style="color: var(--accent-cyan); font-weight: 900; font-size: 0.9rem;">🎤 CALIBRACIÓN DE ENTORNO ACÚSTICO</span>
-        <span class="instruction-text">Para medir su capacidad pulmonar, SENSOMETRIKA requiere habilitar el sensor de audio.</span>
-        <button class="btn-action" style="max-width: 220px; margin-top: 6px;" onclick="otorgarPermisoMic()">HABILITAR MICRÓFONO →</button>
+        <span class="instruction-text">Para medir su capacidad pulmonar, SENSOMETRIKA requiere calibrar el sensor de audio. Haga clic abajo para iniciar los sensores.</span>
+        <button class="btn-action" style="max-width: 220px; margin-top: 6px;" onclick="otorgarPermisoMic()">INICIAR CALIBRACIÓN →</button>
       </div>
     </div>
   </div>
@@ -228,12 +233,35 @@
 
     let distanciaMedidaCm = 55;
     let estaBloqueadoPorDistancia = false;
+    let estaBloqueadoPorOrientacion = false;
     let audioContext = null;
     let analyser = null;
     let microphone = null;
     let dataArray = null;
     let micActivo = false;
     let cameraInstance = null;
+
+    function verificarOrientacionDispositivo() {
+      const overlayOri = document.getElementById('boxBlockOrientation');
+      const esAnchoMayor = window.innerWidth > window.innerHeight;
+      let enPaisaje = esAnchoMayor;
+      if (window.screen && window.screen.orientation) {
+        const type = window.screen.orientation.type;
+        if (type.includes('portrait')) enPaisaje = false;
+        else if (type.includes('landscape')) enPaisaje = true;
+      }
+
+      if (!enPaisaje) {
+        estaBloqueadoPorOrientacion = true;
+        overlayOri.style.display = 'flex';
+      } else {
+        estaBloqueadoPorOrientacion = false;
+        overlayOri.style.display = 'none';
+      }
+    }
+
+    window.addEventListener('resize', verificarOrientacionDispositivo);
+    window.addEventListener('orientationchange', verificarOrientacionDispositivo);
 
     async function otorgarPermisoMic() {
       try {
@@ -247,7 +275,7 @@
         micActivo = true;
         document.getElementById('boxMicPrompt').style.display = 'none';
       } catch (e) {
-        alert("No se pudo acceder al micrófono. Por favor verifique los permisos en su navegador.");
+        alert("No se pudo activar el sensor de audio. Verifique que el navegador tenga permitido el acceso al micrófono.");
       }
     }
 
@@ -322,7 +350,8 @@
     }
 
     function iniciarEspirometria() {
-      if (estaBloqueadoPorDistancia) return;
+      verificarOrientacionDispositivo();
+      if (estaBloqueadoPorOrientacion || estaBloqueadoPorDistancia) return;
       if (!micActivo) {
         document.getElementById('boxMicPrompt').style.display = 'flex';
         return;
@@ -330,34 +359,45 @@
 
       document.getElementById('btnIniciar').style.display = 'none';
       
-      let tiempoRestante = 25;
+      let tiempoTranscurrido = 0;
+      const totalSegundos = 25;
       const lblTimer = document.getElementById('lblTimer');
       const lblEstado = document.getElementById('lblEstado');
       const cronometroEspirometria = document.getElementById('cronometro-espirometría');
       const telFlujo = document.getElementById('tel-flujo');
       
       emitirPitido(880, 0.3);
-      lblEstado.textContent = "Fase de preparación (0s - 5s): Tome aire...";
+      lblEstado.textContent = "Fase de preparación (0s - 5s): Tome aire profundamente...";
 
       let muestrasValidas = 0;
       let flujoTotalAcumulado = 0;
 
       const intervalo = setInterval(() => {
-        tiempoRestante--;
+        tiempoTranscurrido++;
+        let tiempoRestante = totalSegundos - tiempoTranscurrido;
         cronometroEspirometria.textContent = `${tiempoRestante} s`;
         lblTimer.textContent = `${tiempoRestante}s`;
 
-        if (tiempoRestante === 20) {
+        if (tiempoTranscurrido === 5) {
           emitirPitido(1046, 0.2);
-          lblEstado.textContent = "Sople hacia el micrófono (Captura Activa 20s)...";
+          lblEstado.textContent = "⚡ ¡SOPLE FUERTE HACIA EL MICRÓFONO! (Captura Activa 5s a 20s)...";
+          lblEstado.style.color = "var(--accent-cyan)";
         }
 
-        if (tiempoRestante <= 20 && tiempoRestante > 0) {
+        if (tiempoTranscurrido === 20) {
+          emitirPitido(784, 0.2);
+          lblEstado.textContent = "Prueba completada. Relájese (20s - 25s)...";
+        }
+
+        // VENTANA DE CAPTURA ACTIVA (5s a 20s)
+        if (tiempoTranscurrido >= 5 && tiempoTranscurrido <= 20) {
           let volumenActual = obtenerVolumenMicrofono();
           
-          if (volumenActual > 4) {
+          // UMBRAL ESTRICTO: Se exige un volumen > 16 para evitar falsos positivos por ruido ambiente
+          if (volumenActual > 16) {
             muestrasValidas++;
-            let flujoCalculado = (volumenActual / 15).toFixed(1);
+            let flujoCalculado = ((volumenActual - 15) / 5).toFixed(1);
+            if (flujoCalculado < 1.0) flujoCalculado = "1.5";
             if (flujoCalculado > 6.0) flujoCalculado = "6.0";
             flujoTotalAcumulado += parseFloat(flujoCalculado);
             
@@ -366,21 +406,21 @@
             lblEstado.textContent = "✓ Detectando flujo respiratorio constante";
             lblEstado.style.color = "var(--accent-green)";
           } else {
-            telFlujo.textContent = "0.0 L/s";
+            telFlujo.textContent = "0.0 L/s (Sin Soplo)";
             telFlujo.style.color = "var(--accent-red)";
-            lblEstado.textContent = "⚠️ Sople con fuerza hacia el micrófono";
+            lblEstado.textContent = "⚠️ ADVERTENCIA: No se detecta flujo de soplo en el micrófono";
             lblEstado.style.color = "var(--accent-red)";
           }
         }
 
-        if (tiempoRestante <= 0) {
+        if (tiempoTranscurrido >= totalSegundos) {
           clearInterval(intervalo);
           if (cameraInstance) { try { cameraInstance.stop(); } catch(e){} }
           
           emitirPitido(587, 0.2);
           setTimeout(() => emitirPitido(880, 0.4), 250);
 
-          let flujoFinalPromedio = muestrasValidas > 0 ? (flujoTotalAcumulado / muestrasValidas).toFixed(1) : "3.5";
+          let flujoFinalPromedio = muestrasValidas > 0 ? (flujoTotalAcumulado / muestrasValidas).toFixed(1) : "0.0";
           let aprobadoEspiro = muestrasValidas >= 5;
 
           if (aprobadoEspiro) {
@@ -389,13 +429,12 @@
             telFlujo.textContent = `${flujoFinalPromedio} L/s (Óptimo)`;
             telFlujo.style.color = "var(--accent-green)";
           } else {
-            lblEstado.textContent = "⚠️ Flujo insuficiente registrado";
+            lblEstado.textContent = "⚠️ Sin flujo o flujo insuficiente registrado";
             lblTimer.style.color = "var(--accent-red)";
-            telFlujo.textContent = `${flujoFinalPromedio} L/s (Bajo)`;
+            telFlujo.textContent = `${flujoFinalPromedio} L/s (Nulo/Bajo)`;
             telFlujo.style.color = "var(--accent-red)";
           }
 
-          // Guardar doble clave oficial en localStorage
           localStorage.setItem(`sensometrika_espirometria_${cleanRut}_${sessionId}`, aprobadoEspiro ? 'true' : 'false');
           localStorage.setItem(`medico_espirometria_${cleanRut}_${sessionId}`, aprobadoEspiro ? 'true' : 'false');
           localStorage.setItem(`medico_espirometria_flujo_${cleanRut}_${sessionId}`, `${flujoFinalPromedio} L/s`);
@@ -417,17 +456,9 @@
       }, 1000);
     }
 
-    function volverMenu() {
-      const returnUrl = urlParams.get('returnUrl');
-      if (returnUrl) {
-        window.location.href = decodeURIComponent(returnUrl);
-      } else {
-        window.location.href = menuHref;
-      }
-    }
-
     document.addEventListener('DOMContentLoaded', () => {
       iniciarMediaPipeFaceMesh();
+      verificarOrientacionDispositivo();
     });
   </script>
 </body>
