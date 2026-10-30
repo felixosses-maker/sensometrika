@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SENSOMETRIKA | Menú B2B Corporativo - Módulos Evaluados</title>
+    <title>SENSOMETRIKA | Menú B2B Corporativo - Separación de Áreas</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         :root {
@@ -16,6 +16,7 @@
             --blue-btn: #0284c7;
             --blue-btn-border: #0369a1;
             --accent-cyan: #38bdf8;
+            --accent-gold: #e5b324;
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
@@ -33,7 +34,7 @@
 
         .main-container {
             width: 100%;
-            max-width: 520px;
+            max-width: 560px;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -111,14 +112,47 @@
             text-align: left;
         }
 
-        .modules-list {
-            display: flex;
+        /* Pestañas de Navegación */
+        .tabs-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            background: #04070d;
+            padding: 4px;
+            border-radius: 10px;
+            border: 1px solid var(--card-border);
+        }
+
+        .tab-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            padding: 10px;
+            font-size: 0.72rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .tab-btn.active {
+            background: var(--accent-cyan);
+            color: #000;
+        }
+
+        .modules-section {
+            display: none;
             flex-direction: column;
             gap: 10px;
             width: 100%;
-            max-height: 60vh;
+            max-height: 50vh;
             overflow-y: auto;
             padding-right: 4px;
+        }
+
+        .modules-section.active {
+            display: flex;
         }
 
         .mod-item {
@@ -182,7 +216,7 @@
             text-decoration: none;
             width: 100%;
             display: block;
-            margin-top: 6px;
+            margin-top: 4px;
             text-transform: uppercase;
             cursor: pointer;
         }
@@ -205,8 +239,22 @@
                 </div>
             </div>
 
-            <div class="modules-list" id="contenedorModulosB2B">
-                <!-- Se inyectan los módulos dinámicamente -->
+            <!-- Pestañas de Selección de Área -->
+            <div class="tabs-container">
+                <button type="button" class="tab-btn active" id="tabVialBtn" onclick="cambiarTab('vial')">🚛 Psicosensométricos (Vial)</button>
+                <button type="button" class="tab-btn" id="tabFaenaBtn" onclick="cambiarTab('faena')">🩺 Check Médico Faena</button>
+            </div>
+
+            <!-- Sección 1: Módulos Psicosensométricos (Vial) -->
+            <div class="modules-section active" id="secVial">
+                <div style="font-size: 0.70rem; color: var(--accent-cyan); font-weight: 800; text-transform: uppercase; padding-top: 2px;">Área Psicomotricidad, Visual, Audiométrica & Cognitiva</div>
+                <div id="contenedorModulosVial" style="display:flex; flex-direction:column; gap:10px;"></div>
+            </div>
+
+            <!-- Sección 2: Check-In Médico de Faena (M1 al M10) -->
+            <div class="modules-section" id="secFaena">
+                <div style="font-size: 0.70rem; color: var(--accent-gold); font-weight: 800; text-transform: uppercase; padding-top: 2px;">Batería Clínica y Submódulos Médicos Pro (20s)</div>
+                <div id="contenedorModulosFaena" style="display:flex; flex-direction:column; gap:10px;"></div>
             </div>
 
             <button type="button" id="btnVerInforme" class="btn-informe" onclick="abrirInformePericial()">VER INFORME PERICIAL B2B →</button>
@@ -231,12 +279,30 @@
         localStorage.setItem('sensometrika_session_activa', sessionId);
         document.getElementById('lblUserData').innerHTML = `EVALUADO: <strong>${decodeURIComponent(nombreUsuario).toUpperCase()}</strong><br>RUT: ${rawRut} | CARGO: ${cargoUsuario}`;
 
-        // Mostrar foto capturada en verificación si existe
         const fotoGuardada = localStorage.getItem('sensometrika_foto_trabajador') || localStorage.getItem(`sensometrika_foto_${cleanRut}`);
         if (fotoGuardada) {
             const avatar = document.getElementById('userAvatarImg');
             avatar.src = fotoGuardada;
             avatar.style.display = 'block';
+        }
+
+        function cambiarTab(area) {
+            const tabVialBtn = document.getElementById('tabVialBtn');
+            const tabFaenaBtn = document.getElementById('tabFaenaBtn');
+            const secVial = document.getElementById('secVial');
+            const secFaena = document.getElementById('secFaena');
+
+            if (area === 'vial') {
+                tabVialBtn.classList.add('active');
+                tabFaenaBtn.classList.remove('active');
+                secVial.classList.add('active');
+                secFaena.classList.remove('active');
+            } else {
+                tabFaenaBtn.classList.add('active');
+                tabVialBtn.classList.remove('active');
+                secFaena.classList.add('active');
+                secVial.classList.remove('active');
+            }
         }
 
         function verifRendidoRut(modKey) {
@@ -278,7 +344,8 @@
             return (hSesion || lSesion || localStorage.getItem(`medico_${nombreModuloTest}_${cleanRut}_${sessionId}`) === 'true');
         }
 
-        const catModulos17 = [
+        // Divididos formalmente en Vial (1-17) y Faena (18-27)
+        const modulosVial = [
             { id: 'mod1', nombre: '1. Punteo y Coordinación Visomotora 🎯', desc: 'Ritmo motor, velocidad máxima y resistencia a fatiga (1A a 1D).', archivo: 'demo_punteo_pro.html' },
             { id: 'mod2', nombre: '2. Reactímetro B2B ⚡', desc: 'Tiempos de respuesta y frenado en ms con compensación de hardware.', archivo: 'demo_reactimetro_pro.html' },
             { id: 'mod3', nombre: '3. Coordinación Visomotriz y Tracking 🚗', desc: 'Seguimiento continuo de trayectoria sobre circuitos variables.', archivo: 'demo_visomotriz_pro.html' },
@@ -295,7 +362,10 @@
             { id: 'mod14', nombre: '14. Memoria de Trabajo Operativa 🧩', desc: 'Retención de secuencias lógicas e instrucciones operativas complejas.', archivo: 'memoria_trabajo.html' },
             { id: 'mod15', nombre: '15. Frenado Selectivo 🛑', desc: 'Precisión de frenado bajo presión de tiempo y control inhibitorio.', archivo: 'reactimetro.html' },
             { id: 'mod16', nombre: '16. Control de Impulsos Viales ⚖️', desc: 'Detección conductual de perfiles de riesgo y temperamento al volante.', archivo: 'micro-fit.html' },
-            { id: 'mod17', nombre: '17. Declaración Médica 📋', desc: 'Declaración jurada digital de aptitud física (Art. 36 D.S. N° 170).', archivo: 'declaracion_medica.html' },
+            { id: 'mod17', nombre: '17. Declaración Médica 📋', desc: 'Declaración jurada digital de aptitud física (Art. 36 D.S. N° 170).', archivo: 'declaracion_medica.html' }
+        ];
+
+        const modulosFaena = [
             { id: 'mod18', nombre: 'M1. Estabilidad Vestibular (Romberg Pro) ⚖️', desc: 'Prueba estática vestibular de 20s con acelerómetro y aviso sonoro.', archivo: 'medico_pro/01_romberg.html' },
             { id: 'mod19', nombre: 'M2. Estabilidad Motora (Temblores Pro) ✋', desc: 'Control de micro-oscilaciones y pulso estacionario durante 20s.', archivo: 'medico_pro/02_temblores.html' },
             { id: 'mod20', nombre: 'M3. Dinamometría y Fuerza (Grip Pro) ✊', desc: 'Fuerza isométrica y prehensión sostenida por 20s en pantalla táctil.', archivo: 'medico_pro/03_grip.html' },
@@ -315,32 +385,42 @@
             const paramsObj = { rut: rawRut, nombre: nombreUsuario, cargo: cargoUsuario, plan: planContratado, session: sessionId, mode: 'b2b' };
             const queryParamsString = new URLSearchParams(paramsObj).toString();
 
-            const contenedor = document.getElementById('contenedorModulosB2B');
-            contenedor.innerHTML = '';
-
-            catModulos17.forEach(mod => {
+            // Renderizar Vial
+            const contVial = document.getElementById('contenedorModulosVial');
+            contVial.innerHTML = '';
+            modulosVial.forEach(mod => {
                 const estaSolicitado = bolsaActivaArray.includes(mod.id.toLowerCase());
                 const rendido = verifRendidoRut(mod.id);
+                let accionHtml = !estaSolicitado ? `<span class="badge-mod-nosol">NO SOLICITADO</span>` : (rendido ? `<span class="badge-mod-ok">✓ COMPLETADO</span>` : `<a href="${mod.archivo}?${queryParamsString}" class="btn-mod-start">INICIAR →</a>`);
 
-                let accionHtml = '';
-                if (!estaSolicitado) {
-                    accionHtml = `<span class="badge-mod-nosol">NO SOLICITADO</span>`;
-                } else if (rendido) {
-                    accionHtml = `<span class="badge-mod-ok">✓ COMPLETADO</span>`;
-                } else {
-                    accionHtml = `<a href="${mod.archivo}?${queryParamsString}" class="btn-mod-start">INICIAR →</a>`;
-                }
-
-                const card = document.createElement('div');
-                card.className = 'mod-item';
-                card.innerHTML = `
-                    <div class="mod-info">
-                        <span class="mod-title" style="color: ${estaSolicitado ? '#f8fafc' : '#64748b'};">${mod.nombre}</span>
-                        <span class="mod-desc">${mod.desc}</span>
+                contVial.innerHTML += `
+                    <div class="mod-item">
+                        <div class="mod-info">
+                            <span class="mod-title" style="color: ${estaSolicitado ? '#f8fafc' : '#64748b'};">${mod.nombre}</span>
+                            <span class="mod-desc">${mod.desc}</span>
+                        </div>
+                        <div>${accionHtml}</div>
                     </div>
-                    <div>${accionHtml}</div>
                 `;
-                contenedor.appendChild(card);
+            });
+
+            // Renderizar Faena
+            const contFaena = document.getElementById('contenedorModulosFaena');
+            contFaena.innerHTML = '';
+            modulosFaena.forEach(mod => {
+                const estaSolicitado = bolsaActivaArray.includes(mod.id.toLowerCase());
+                const rendido = verifRendidoRut(mod.id);
+                let accionHtml = !estaSolicitado ? `<span class="badge-mod-nosol">NO SOLICITADO</span>` : (rendido ? `<span class="badge-mod-ok">✓ COMPLETADO</span>` : `<a href="${mod.archivo}?${queryParamsString}" class="btn-mod-start">INICIAR →</a>`);
+
+                contFaena.innerHTML += `
+                    <div class="mod-item">
+                        <div class="mod-info">
+                            <span class="mod-title" style="color: ${estaSolicitado ? '#f8fafc' : '#64748b'};">${mod.nombre}</span>
+                            <span class="mod-desc">${mod.desc}</span>
+                        </div>
+                        <div>${accionHtml}</div>
+                    </div>
+                `;
             });
         }
 

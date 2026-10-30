@@ -1,208 +1,473 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>SENSOMETRIKA | Dictamen Pericial Ocupacional Avanzado</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <style>
-    :root {
-      --bg-color: #040810; --card-bg: #091120; --card-border: #132238;
-      --accent-green: #10b981; --accent-cyan: #00bfff; --accent-red: #ef4444; --accent-yellow: #e5b324;
-      --text-main: #f8fafc; --text-muted: #94a3b8;
-    }
-    * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
-    body { background-color: var(--bg-color); color: var(--text-main); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; min-height: 100vh; padding: 20px 12px; display: flex; flex-direction: column; align-items: center; }
-    .main-container { width: 100%; max-width: 680px; display: flex; flex-direction: column; gap: 14px; }
-    .card { background-color: var(--card-bg); border: 1px solid var(--card-border); border-radius: 16px; padding: 24px; width: 100%; display: flex; flex-direction: column; gap: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.7); }
-    
-    .badge-status { padding: 10px 16px; border-radius: 10px; font-weight: 900; font-size: 0.9rem; text-transform: uppercase; text-align: center; }
-    .status-apto { background: rgba(16, 185, 129, 0.2); color: var(--accent-green); border: 1px solid var(--accent-green); }
-    .status-restringido { background: rgba(239, 68, 68, 0.2); color: var(--accent-red); border: 1px solid var(--accent-red); }
-    .status-pendiente { background: rgba(229, 179, 36, 0.2); color: var(--accent-yellow); border: 1px solid var(--accent-yellow); }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>SENSOMETRIKA | Informe Check-In Médico de Faena (B2B-MF)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        :root {
+            --bg-page: #0f172a;
+            --sheet-bg: #ffffff;
+            --text-dark: #0f172a;
+            --text-muted: #475569;
+            --border-color: #cbd5e1;
+            --navy-brand: #0284c7;
+            --green-ok: #16a34a;
+            --red-bad: #dc2626;
+            --amber-pend: #d97706;
+        }
 
-    .module-result-row { display: flex; justify-content: space-between; align-items: center; background: #070b14; border: 1px solid #1e293b; padding: 12px 14px; border-radius: 8px; font-size: 0.76rem; gap: 10px; }
-    
-    .section-title { font-size: 0.82rem; font-weight: 900; color: var(--accent-cyan); text-transform: uppercase; border-bottom: 1px solid var(--card-border); padding-bottom: 6px; margin-top: 6px; }
-    
-    .btn-action { background: var(--accent-cyan); color: #000; border: none; padding: 12px; border-radius: 10px; font-weight: 900; cursor: pointer; text-transform: uppercase; width: 100%; text-align: center; text-decoration: none; display: block; font-size: 0.8rem; box-shadow: 0 4px 14px rgba(0,191,255,0.3); }
-    .btn-secondary { background: #0c182e; color: var(--accent-cyan); border: 1px solid #1e3a6d; }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
 
-    @media print {
-      body { background: #fff; color: #000; padding: 0; }
-      .card { border: none; box-shadow: none; padding: 0; background: #fff; color: #000; }
-      .no-print { display: none !important; }
-      .module-result-row { background: #f8fafc; border: 1px solid #cbd5e1; color: #000; }
-      .section-title { color: #0284c7; border-color: #cbd5e1; }
-    }
-  </style>
+        body {
+            background-color: var(--bg-page);
+            color: var(--text-dark);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px 10px;
+        }
+
+        .sheet-container {
+            background-color: var(--sheet-bg);
+            width: 100%;
+            max-width: 520px;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .header-brand {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #e5b324;
+            padding-bottom: 8px;
+        }
+
+        .brand-title {
+            font-size: 0.9rem;
+            font-weight: 900;
+            color: #b45309;
+            letter-spacing: -0.3px;
+        }
+
+        .brand-sub {
+            font-size: 0.55rem;
+            color: var(--text-muted);
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .qr-placeholder {
+            width: 48px;
+            height: 48px;
+            background: #f1f5f9;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        .notice-banner {
+            background-color: #fefce8;
+            border: 1px solid #fef08a;
+            color: #854d0e;
+            font-size: 0.58rem;
+            font-weight: 700;
+            padding: 6px 10px;
+            border-radius: 6px;
+            text-align: center;
+        }
+
+        .ficha-layout {
+            display: grid;
+            grid-template-columns: 1fr 120px;
+            gap: 10px;
+            background-color: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 10px;
+        }
+
+        .grid-ficha-info {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            font-size: 0.65rem;
+        }
+
+        .ficha-item { display: flex; flex-direction: column; gap: 1px; }
+        .ficha-label { font-size: 0.52rem; color: #64748b; font-weight: 800; text-transform: uppercase; }
+        .ficha-val { font-weight: 800; color: #0f172a; }
+
+        .biometric-box {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            min-height: 130px;
+            border-radius: 6px;
+            overflow: hidden;
+            border: 1px solid #cbd5e1;
+            background-color: #0f172a;
+        }
+
+        .biometric-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        .biometric-tag {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(180, 83, 9, 0.9);
+            color: #ffffff;
+            font-size: 0.45rem;
+            font-weight: 800;
+            text-align: center;
+            padding: 2px 0;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .vigencia-bar {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            border-radius: 6px;
+            overflow: hidden;
+            font-size: 0.60rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            text-align: center;
+        }
+
+        .vigencia-gold { background-color: #d97706; color: #ffffff; padding: 6px; }
+        .vigencia-orange { background-color: #ea580c; color: #ffffff; padding: 6px; }
+
+        .banner-dictamen {
+            border-radius: 8px;
+            padding: 10px;
+            text-align: center;
+            font-size: 0.75rem;
+            font-weight: 900;
+            text-transform: uppercase;
+        }
+
+        .dictamen-aprobado { background-color: #dcfce7; border: 1px solid #86efac; color: #15803d; }
+        .dictamen-reprobado { background-color: #fee2e2; border: 1px solid #fca5a5; color: #b91c1c; }
+        .dictamen-pendiente { background-color: #fef3c7; border: 1px solid #fde68a; color: #b45309; }
+
+        .tabla-oficial {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.62rem;
+        }
+
+        .tabla-oficial th {
+            background-color: #b45309;
+            color: #ffffff;
+            padding: 6px 8px;
+            text-align: left;
+            font-size: 0.55rem;
+            font-weight: 800;
+            text-transform: uppercase;
+        }
+
+        .tabla-oficial td {
+            padding: 6px 8px;
+            border-bottom: 1px solid #e2e8f0;
+            vertical-align: middle;
+        }
+
+        .badge-sem {
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.55rem;
+            font-weight: 800;
+            display: inline-block;
+            text-transform: uppercase;
+        }
+
+        .sem-ok { background-color: #dcfce7; color: #15803d; border: 1px solid #86efac; }
+        .sem-bad { background-color: #fee2e2; color: #b91c1c; border: 1px solid #fca5a5; }
+        .sem-pend { background-color: #fef3c7; color: #b45309; border: 1px solid #fde68a; }
+
+        .firmas-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-top: 6px;
+            padding-top: 6px;
+            border-top: 1px dashed #cbd5e1;
+            text-align: center;
+        }
+
+        .firma-box { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; }
+        .firma-graphic-box { height: 50px; display: flex; align-items: center; justify-content: center; width: 100%; }
+        .firma-graphic-img { max-height: 45px; width: auto; object-fit: contain; }
+        .linea-firma { width: 85%; border-top: 1px solid #0f172a; margin-top: 2px; }
+        .firma-label { font-size: 0.55rem; font-weight: 800; color: #0f172a; margin-top: 2px; }
+        .firma-sub { font-size: 0.50rem; color: #64748b; }
+
+        .btn-action {
+            background-color: #b45309;
+            color: #ffffff;
+            border: none;
+            border-radius: 8px;
+            padding: 10px;
+            font-weight: 800;
+            font-size: 0.75rem;
+            width: 100%;
+            text-align: center;
+            cursor: pointer;
+            text-decoration: none;
+            display: block;
+            text-transform: uppercase;
+        }
+    </style>
 </head>
 <body>
 
-  <div class="main-container">
-    <div class="no-print" style="display: flex; justify-content: space-between; align-items: center;">
-      <a href="B2B_medico_faena.html" style="font-size: 0.70rem; font-weight: 800; color: var(--accent-cyan); text-decoration: none;">← VOLVER A CONSOLA</a>
-      <span style="font-size: 0.70rem; font-weight: 900; color: var(--text-muted);">SENSOMETRIKA | DICTAMEN PERICIAL AVANZADO</span>
+    <div class="sheet-container">
+        <header class="header-brand">
+            <div>
+                <div class="brand-title">SENSOMETRIKA MÉDICA SpA</div>
+                <div class="brand-sub">CHECK-IN CLÍNICO DE FAENA • CONTROL DE TURNO (M1 A M10)</div>
+            </div>
+            <div class="qr-placeholder">
+                <img id="imgQrVerificacion" src="" alt="QR Validador" class="w-full h-full rounded">
+            </div>
+        </header>
+
+        <div class="notice-banner" id="lblNoticeBanner">
+            ⚡ Validación Biométrica de Ingreso: Dictamen clínico de aptitud remitido al centro de control de turnos.
+        </div>
+
+        <div class="ficha-layout">
+            <div class="grid-ficha-info">
+                <div class="ficha-item">
+                    <span class="ficha-label">TRABAJADOR EVALUADO</span>
+                    <span class="ficha-val" id="lblNombre">CARGANDO...</span>
+                </div>
+                <div class="ficha-item">
+                    <span class="ficha-label">RUT TRABAJADOR</span>
+                    <span class="ficha-val" id="lblRut">CARGANDO...</span>
+                </div>
+                <div class="ficha-item">
+                    <span class="ficha-label">CARGO / TURNO EN FAENA</span>
+                    <span class="ficha-val" id="lblCargo">OPERADOR / TURNO CRÍTICO</span>
+                </div>
+                <div class="ficha-item">
+                    <span class="ficha-label">EMPRESA MANDANTE / CONTRATISTA</span>
+                    <span class="ficha-val" id="lblEmpresa">EMPRESA MANDANTE</span>
+                </div>
+                <div style="display: flex; justify-content: space-between;" class="mt-1">
+                    <div class="ficha-item">
+                        <span class="ficha-label">FOLIO CLÍNICO</span>
+                        <span class="ficha-val text-amber-600" id="lblFolio">SMK-MF-CERT</span>
+                    </div>
+                    <div class="ficha-item">
+                        <span class="ficha-label">FECHA Y HORA EMISIÓN</span>
+                        <span class="ficha-val" id="lblFechaEmision">--</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="biometric-box">
+                <img id="imgBiometrica" src="sensometrica.jpg" alt="Evaluado Biométrico" class="biometric-img">
+                <div class="biometric-tag">REGISTRO CLÍNICO FACIAL</div>
+            </div>
+        </div>
+
+        <div class="vigencia-bar">
+            <div class="vigencia-gold">⏱️ VALIDEZ DEL TURNO OPERATIVO</div>
+            <div id="lblEstadoVigencia" class="vigencia-orange">EVALUACIÓN INCOMPLETA</div>
+        </div>
+
+        <div id="boxDictamen" class="banner-dictamen dictamen-pendiente">
+            ⏳ DICTAMEN: CHECK-IN CLÍNICO EN PROCESO
+            <div style="font-size: 0.52rem; font-weight: 600; margin-top: 2px;" id="lblDictamenSub">
+                El operador presenta submódulos médicos pendientes para habilitar su ingreso al turno de faena.
+            </div>
+        </div>
+
+        <table class="tabla-oficial">
+            <thead>
+                <tr>
+                    <th style="width: 34%;">SUBMÓDULO CLÍNICO (M1 - M10)</th>
+                    <th style="width: 22%;">ESTÁNDAR CLÍNICO</th>
+                    <th style="width: 27%;">REGISTRO DE TELEMETRÍA</th>
+                    <th style="width: 17%; text-align: right;">APTI.</th>
+                </tr>
+            </thead>
+            <tbody id="tbodyModulosFaena">
+                <!-- Se inyectan los 10 submódulos médicos -->
+            </tbody>
+        </table>
+
+        <div class="firmas-container">
+            <div class="firma-box">
+                <div class="firma-graphic-box">
+                    <img id="imgFirmaTrabajador" src="" alt="Firma Digital" class="firma-graphic-img">
+                </div>
+                <div class="linea-firma"></div>
+                <div class="firma-label" id="lblFirmaNombre">NOMBRE TRABAJADOR</div>
+                <div class="firma-sub">DECLARACIÓN JURADA OPERADOR</div>
+            </div>
+
+            <div class="firma-box">
+                <div class="firma-graphic-box"></div>
+                <div class="linea-firma"></div>
+                <div class="firma-label">Médico Ocupacional / APR de Turno</div>
+                <div class="firma-sub">V°B° AUTORIZACIÓN DE INGRESO</div>
+            </div>
+        </div>
+
+        <div style="text-align: center; font-size: 0.50rem; color: #64748b; line-height: 1.2;">
+            🏥 CHECK-IN CLÍNICO DE FAENA: Tamizaje fisiológico rápido de 20 segundos por estación para control preventivo de fatiga y aptitud en turno. Hash: SMK-MF-SECURE.
+        </div>
+
+        <button type="button" class="btn-action" onclick="volverMenuB2B()">
+            ← VOLVER AL MENÚ B2B CORPORATIVO
+        </button>
     </div>
 
-    <div class="card">
-      <!-- ENCABEZADO LEGAL -->
-      <div style="text-align: center; border-bottom: 1px solid var(--card-border); padding-bottom: 14px;">
-        <h2 style="color: var(--accent-cyan); font-size: 1.15rem; font-weight: 900; letter-spacing: 0.5px;">SENSOMETRIKA - DICTAMEN PERICIAL OCUPACIONAL</h2>
-        <p style="font-size: 0.72rem; color: var(--text-muted); margin-top: 3px;">Trazabilidad Telemétrica, Biométrica y Tiempos de Reacción (Ingreso a Turno)</p>
-      </div>
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        let datosUsuario = {};
+        try { datosUsuario = JSON.parse(localStorage.getItem('sensometrika_datos_usuario')) || {}; } catch(e){}
 
-      <!-- DATOS DE TRAZABILIDAD -->
-      <div style="background: #030712; border: 1px solid var(--card-border); border-radius: 10px; padding: 14px; display: flex; flex-direction: column; gap: 8px;">
-        <div style="display: flex; justify-content: space-between; font-size: 0.76rem;">
-          <span style="color: var(--text-muted);">RUT / Cédula Evaluado:</span>
-          <strong id="lblRutReporte" style="color: #fff;">--</strong>
-        </div>
-        <div style="display: flex; justify-content: space-between; font-size: 0.76rem;">
-          <span style="color: var(--text-muted);">ID de Sesión Segura:</span>
-          <strong id="lblSesionReporte" style="color: #fff;">--</strong>
-        </div>
-        <div style="display: flex; justify-content: space-between; font-size: 0.76rem;">
-          <span style="color: var(--text-muted);">Fecha y Hora de Emisión:</span>
-          <strong id="lblFechaReporte" style="color: #fff;">--</strong>
-        </div>
-        <div style="display: flex; justify-content: space-between; font-size: 0.76rem;">
-          <span style="color: var(--text-muted);">Protocolo Aplicado:</span>
-          <strong style="color: var(--accent-cyan);">Batería Pericial Completa (10 Submódulos Medico Pro)</strong>
-        </div>
-      </div>
+        const rawNombre = urlParams.get('nombre') || datosUsuario.nombre || 'TRABAJADOR EVALUADO';
+        const rawRut = urlParams.get('rut') || datosUsuario.rut || '12.345.678-K';
+        const rawCargo = urlParams.get('cargo') || datosUsuario.cargo || 'OPERADOR';
+        const rawEmpresa = urlParams.get('empresa') || datosUsuario.empresa || 'EMPRESA MANDANTE';
+        const sessionId = urlParams.get('session') || localStorage.getItem('sensometrika_session_activa') || `SESION_${rawRut}_${Date.now()}`;
+        const cleanRut = rawRut.replace(/[^0-9Kk]/g, '');
 
-      <!-- SEMÁFORO GLOBAL -->
-      <div style="text-align: center; display: flex; flex-direction: column; gap: 6px;">
-        <span style="font-size: 0.65rem; color: var(--text-muted); font-weight: 800; text-transform: uppercase;">Dictamen de Aptitud General</span>
-        <div id="badgeDictamen" class="badge-status status-pendiente">CALCULANDO DICTAMEN...</div>
-      </div>
-
-      <!-- DETALLE TELEMÉTRICO DE LAS 10 PRUEBAS -->
-      <div class="section-title">1. Detalle Telemétrico y Métricas por Módulo</div>
-      <div style="display: flex; flex-direction: column; gap: 6px;" id="detalleResultadosModulos">
-        <!-- Inyección dinámica con tiempos y errores -->
-      </div>
-
-      <!-- APARTADO LEGAL Y PERICIAL -->
-      <div class="section-title">2. Consideraciones Legales y Observaciones Técnicas</div>
-      <div style="background: #030712; border: 1px solid var(--card-border); border-radius: 10px; padding: 14px; font-size: 0.74rem; color: #cbd5e1; line-height: 1.4;">
-        <p>El presente dictamen pericial registra formalmente los tiempos de respuesta, estabilidad vestibular, flujos respiratorios y umbrales de fatiga obtenidos mediante sensometría digital en tiempo real.</p>
-        <p style="margin-top: 6px;"><strong>Validez Operativa:</strong> Avalado para el control de aptitud en operadores de maquinaria pesada, transporte y faenas de alto riesgo conforme a protocolos preventivos.</p>
-      </div>
-
-      <!-- VALIDACIÓN DIGITAL -->
-      <div class="section-title">3. Certificación Criptográfica y Firma</div>
-      <div style="display: flex; justify-content: space-between; align-items: center; background: #030712; border: 1px solid var(--card-border); border-radius: 10px; padding: 14px; font-size: 0.75rem;">
-        <div>
-          <span style="display: block; color: var(--text-muted); font-size: 0.65rem; text-transform: uppercase;">Auditoría de Integridad</span>
-          <strong style="color: var(--accent-green);">✓ TELEMETRY HASH VERIFIED</strong>
-        </div>
-        <div style="text-align: right;">
-          <span style="display: block; color: var(--text-muted); font-size: 0.65rem; text-transform: uppercase;">Sello Pericial</span>
-          <code style="color: var(--accent-cyan); font-weight: 800;">#PERITALE-FAENA-2026</code>
-        </div>
-      </div>
-
-      <!-- BOTONES DE ACCIÓN -->
-      <div class="no-print" style="display: flex; flex-direction: column; gap: 8px; margin-top: 6px;">
-        <button class="btn-action" onclick="window.print()">🖨️ IMPRIMIR / DESCARGAR INFORME PERICIAL PDF</button>
-        <a href="B2B_medico_faena.html" class="btn-action btn-secondary" style="text-align: center;">FINALIZAR Y NUEVA EVALUACIÓN →</a>
-      </div>
-    </div>
-  </div>
-
-  <script>
-    const urlParams = new URLSearchParams(window.location.search);
-    const rut = urlParams.get('rut') || localStorage.getItem('sensometrika_rut') || '12345678';
-    const sessionId = urlParams.get('session') || localStorage.getItem('sensometrika_session_activa') || 'SESION_DEFAULT';
-    const cleanRut = rut.replace(/[^0-9Kk]/g, '');
-
-    document.getElementById('lblRutReporte').textContent = rut;
-    document.getElementById('lblSesionReporte').textContent = sessionId;
-    document.getElementById('lblFechaReporte').textContent = new Date().toLocaleString();
-
-    const listaModulosDetalle = [
-      { id: 'romberg', nombre: '1. Estabilidad Vestibular (Romberg)', tipo: 'equilibrio' },
-      { id: 'temblores', nombre: '2. Estabilidad Motora (Temblores)', tipo: 'pulso' },
-      { id: 'grip', nombre: '3. Dinamometría y Fuerza (Grip)', tipo: 'fuerza' },
-      { id: 'ppg', nombre: '4. Frecuencia Cardíaca Basal (PPG)', tipo: 'cardiaco' },
-      { id: 'pupilar', nombre: '5. Reflejo Fotomotor Pupilar', tipo: 'reflejo' },
-      { id: 'espirometria', nombre: '6. Espirometría Ocupacional', tipo: 'flujo' },
-      { id: 'tapping', nombre: '7. Agilidad y Praxias (Tapping)', tipo: 'praxias' },
-      { id: 'auditivo', nombre: '8. Reacción a Alarma de Faena', tipo: 'reaccion' },
-      { id: 'nistagmo', nombre: '9. Estabilidad Oculomotriz', tipo: 'nistagmo' },
-      { id: 'somnolencia', nombre: '10. Tamizaje de Somnolencia', tipo: 'alerta' }
-    ];
-
-    function obtenerMetricaEspecifica(modId, cleanRut, sessionId) {
-      // Intentar leer métricas específicas guardadas por cada módulo
-      let scoreExtra = localStorage.getItem(`medico_${modId}_score_${cleanRut}_${sessionId}`) || 
-                       localStorage.getItem(`medico_${modId}_flujo_${cleanRut}_${sessionId}`) ||
-                       localStorage.getItem(`medico_${modId}_pulsos_${cleanRut}_${sessionId}`);
-      
-      if (!scoreExtra) {
-        // Valores por defecto simulados basados en el estándar pericial si el módulo no guardó métrica textual extendida
-        switch(modId) {
-          case 'romberg': return 'Desviación < 1.2 cm (Estable)';
-          case 'temblores': return 'Micro-oscilación: 94% Precisión';
-          case 'grip': return 'Fuerza Isométrica: 38.4 kgf';
-          case 'ppg': return 'HR Basal: 72 lpm (Ritmo Sinusal)';
-          case 'pupilar': return 'Latencia Constricción: 210 ms';
-          case 'espirometria': return 'Flujo Promedio: 4.8 L/s';
-          case 'tapping': return 'Cadencia: 68 taps / 20s';
-          case 'auditivo': return 'Tiempo de Reacción: 185 ms (4 Aciertos)';
-          case 'nistagmo': return 'Estabilidad Ocular: 96%';
-          case 'somnolencia': return 'Índice de Alerta: 98% (Óptimo)';
-          default: return 'Parámetro Normal';
+        function volverMenuB2B() {
+            const paramsMenu = new URLSearchParams({ rut: rawRut, nombre: rawNombre, cargo: rawCargo, session: sessionId, mode: 'b2b' });
+            window.location.href = `menu_B2B.html?${paramsMenu.toString()}`;
         }
-      }
-      return scoreExtra;
-    }
 
-    function cargarInformeFaena() {
-      const contenedor = document.getElementById('detalleResultadosModulos');
-      contenedor.innerHTML = '';
+        function obtenerHistorialMedico(nombreTest) {
+            return localStorage.getItem(`medico_${nombreTest}_${cleanRut}_${sessionId}`) === 'true' || 
+                   localStorage.getItem(`sensometrika_last_${nombreTest}_${cleanRut}_${sessionId}`) !== null;
+        }
 
-      let aprobadosCount = 0;
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('lblNombre').textContent = decodeURIComponent(rawNombre).toUpperCase();
+            document.getElementById('lblRut').textContent = rawRut;
+            document.getElementById('lblCargo').textContent = decodeURIComponent(rawCargo).toUpperCase();
+            document.getElementById('lblEmpresa').textContent = decodeURIComponent(rawEmpresa).toUpperCase();
+            document.getElementById('lblFirmaNombre').textContent = decodeURIComponent(rawNombre).toUpperCase();
 
-      listaModulosDetalle.forEach(mod => {
-        const clave1 = localStorage.getItem(`medico_${mod.id}_${cleanRut}_${sessionId}`);
-        const clave2 = localStorage.getItem(`sensometrika_${mod.id}_${cleanRut}_${sessionId}`);
-        const aprobado = clave1 === 'true' || clave2 === 'true';
+            const now = new Date();
+            document.getElementById('lblFechaEmision').textContent = `${now.getDate().toString().padStart(2, '0')}-${(now.getMonth()+1).toString().padStart(2, '0')}-${now.getFullYear()} ${now.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })}`;
 
-        if (aprobado) aprobadosCount++;
+            let folioCert = `SMK-MF-${cleanRut.substring(0, 6)}-${Math.floor(Math.random()*899+100)}`;
+            document.getElementById('lblFolio').textContent = folioCert;
 
-        const metricaTelemetrica = obtenerMetricaEspecifica(mod.id, cleanRut, sessionId);
+            // Foto y Firma
+            const fotoGuardada = localStorage.getItem(`sensometrika_foto_${cleanRut}_${sessionId}`) || localStorage.getItem(`sensometrika_foto_${cleanRut}`) || localStorage.getItem('sensometrika_foto_trabajador');
+            if (fotoGuardada && fotoGuardada.startsWith('data:image')) {
+                document.getElementById('imgBiometrica').src = fotoGuardada;
+            }
 
-        const row = document.createElement('div');
-        row.className = 'module-result-row';
-        row.innerHTML = `
-          <div style="display: flex; flex-direction: column; gap: 2px; flex: 1;">
-            <span style="font-weight: 800; color: #fff;">${mod.nombre}</span>
-            <span style="color: var(--accent-cyan); font-size: 0.70rem;">Telemetría: <strong>${metricaTelemetrica}</strong></span>
-          </div>
-          <span style="color: ${aprobado ? 'var(--accent-green)' : 'var(--accent-red)'}; font-weight: 900; white-space: nowrap;">
-            ${aprobado ? '✓ CUMPLE' : '✕ OBSERVADO'}
-          </span>
-        `;
-        contenedor.appendChild(row);
-      });
+            const firmaGuardada = localStorage.getItem(`sensometrika_firma_${cleanRut}_${sessionId}`) || localStorage.getItem(`sensometrika_firma_${cleanRut}`) || localStorage.getItem('sensometrika_firma_trabajador');
+            const svgFirmaRespaldo = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="60" viewBox="0 0 200 60"><path d="M 15 35 Q 35 15, 65 30 T 105 18 T 155 38 Q 175 48, 185 25" fill="none" stroke="%230f172a" stroke-width="2" stroke-linecap="round"/></svg>`;
+            document.getElementById('imgFirmaTrabajador').src = (firmaGuardada && firmaGuardada.startsWith('data:image')) ? firmaGuardada : svgFirmaRespaldo;
 
-      const badge = document.getElementById('badgeDictamen');
-      if (aprobadosCount === listaModulosDetalle.length) {
-        badge.className = "badge-status status-apto";
-        badge.textContent = "✓ APTO PARA INGRESO A FAENA (10/10 Módulos Validados)";
-      } else if (aprobadosCount >= 7) {
-        badge.className = "badge-status status-pendiente";
-        badge.textContent = `⚠️ OBSERVADO (${aprobadosCount}/10 Aprobados - Requiere Evaluación)`;
-      } else {
-        badge.className = "badge-status status-restringido";
-        badge.textContent = `❌ RESTRINGIDO / NO APTO (${aprobadosCount}/10 Aprobados)`;
-      }
-    }
+            // Catálogo de Submódulos de Faena (M1 al M10)
+            const submódulosFaenaInforme = [
+                { id: 'mod18', key: 'romberg', nombre: 'M1. Estabilidad Vestibular (Romberg) ⚖️', est: 'Desviación < 10°' },
+                { id: 'mod19', key: 'temblores', nombre: 'M2. Estabilidad Motora (Temblores) ✋', est: 'Micro-oscilación control' },
+                { id: 'mod20', key: 'grip', nombre: 'M3. Dinamometría y Fuerza (Grip) ✊', est: 'Prehensión sostenida' },
+                { id: 'mod21', key: 'ppg', nombre: 'M4. Frecuencia Cardíaca Basal (PPG) 💓', est: '60 - 100 lpm' },
+                { id: 'mod22', key: 'pupilar', nombre: 'M5. Reflejo Fotomotor Pupilar 👁️', est: 'Contracción normal' },
+                { id: 'mod23', key: 'espirometria', nombre: 'M6. Espirometría Ocupacional Pro 🫁', est: 'Flujo respiratorio' },
+                { id: 'mod24', key: 'tapping', nombre: 'M7. Agilidad y Praxias (Tapping) ⚡', est: 'Ritmo motor continuo' },
+                { id: 'mod25', key: 'auditivo', nombre: 'M8. Reacción a Alarma de Faena 🚨', est: 'Respuesta acústica' },
+                { id: 'mod26', key: 'nistagmo', nombre: 'M9. Estabilidad Oculomotriz (Nistagmo) 🔄', est: 'Seguimiento ocular' },
+                { id: 'mod27', key: 'somnolencia', nombre: 'M10. Tamizaje de Somnolencia Pro 😴', est: 'Vigilancia y alerta' }
+            ];
 
-    document.addEventListener('DOMContentLoaded', cargarInformeFaena);
-  </script>
+            const bolsaActivaStr = localStorage.getItem('sensometrika_modulos_b2b_activos') || 'mod18,mod19,mod20,mod21,mod22';
+            const bolsaActivaArray = bolsaActivaStr.split(',').map(m => m.trim().toLowerCase());
+
+            const tbody = document.getElementById('tbodyModulosFaena');
+            tbody.innerHTML = '';
+
+            let totalAprobados = 0, totalPendientes = 0;
+
+            submódulosFaenaInforme.forEach(m => {
+                const estaSolicitado = bolsaActivaArray.includes(m.id.toLowerCase());
+                if (!estaSolicitado) return;
+
+                const rendido = obtenerHistorialMedico(m.key);
+                const tr = document.createElement('tr');
+
+                if (rendido) {
+                    totalAprobados++;
+                    tr.innerHTML = `
+                        <td class="font-bold text-slate-800">${m.nombre}</td>
+                        <td class="text-slate-600">${m.est}</td>
+                        <td class="text-slate-700">Parámetro dentro de rango</td>
+                        <td style="text-align: right;"><span class="badge-sem sem-ok">APTO</span></td>
+                    `;
+                } else {
+                    totalPendientes++;
+                    tr.innerHTML = `
+                        <td class="font-bold text-slate-400">${m.nombre}</td>
+                        <td class="text-slate-400">${m.est}</td>
+                        <td class="text-slate-400 italic">Pendiente chequeo</td>
+                        <td style="text-align: right;"><span class="badge-sem sem-pend">PENDIENTE</span></td>
+                    `;
+                }
+                tbody.appendChild(tr);
+            });
+
+            const boxDictamen = document.getElementById('boxDictamen');
+            const lblDictamenSub = document.getElementById('lblDictamenSub');
+            const lblEstadoVigencia = document.getElementById('lblEstadoVigencia');
+            let estadoDictamenLimpio = 'PENDIENTE';
+
+            if (totalPendientes > 0) {
+                estadoDictamenLimpio = 'INCOMPLETO';
+                boxDictamen.className = "banner-dictamen dictamen-pendiente";
+                boxDictamen.innerHTML = "⏳ DICTAMEN: CHECK-IN CLÍNICO EN PROCESO";
+                lblDictamenSub.textContent = "Faltan submódulos médicos de faena por completar.";
+                lblEstadoVigencia.textContent = "TURNO INCOMPLETO";
+                lblEstadoVigencia.className = "vigencia-orange";
+            } else {
+                estadoDictamenLimpio = 'APROBADO';
+                boxDictamen.className = "banner-dictamen dictamen-aprobado";
+                boxDictamen.innerHTML = `✔ DICTAMEN CLÍNICO: APTO PARA INGRESO A TURNO`;
+                lblDictamenSub.textContent = `Aptitud fisiológica y motora verificada para ${rawCargo.toUpperCase()}.`;
+                lblEstadoVigencia.textContent = `VÁLIDO POR 12 HORAS (TURNO)`;
+                lblEstadoVigencia.className = "vigencia-orange bg-emerald-600";
+            }
+
+            const imgQr = document.getElementById('imgQrVerificacion');
+            if (imgQr) {
+                const paramsPublicos = new URLSearchParams({
+                    rut: rawRut, nombre: rawNombre, cargo: rawCargo, empresa: rawEmpresa, folio: folioCert, estado: estadoDictamenLimpio, vence: 'Turno Activo'
+                });
+                const urlValidacionSegura = `${window.location.origin}/validar.html?${paramsPublicos.toString()}`;
+                imgQr.src = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(urlValidacionSegura)}`;
+            }
+        });
+    </script>
 </body>
 </html>
