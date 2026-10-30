@@ -122,7 +122,6 @@
 
     .instruction-text { font-size: 0.74rem; color: #cbd5e1; line-height: 1.35; text-align: center; }
 
-    /* Estructura oficial de rejilla de telemetría SENSOMETRIKA */
     .metricas-grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
@@ -173,10 +172,10 @@
       </div>
 
       <h3 style="color: var(--accent-cyan); font-size: 0.88rem; font-weight: 900; text-align: center; text-transform: uppercase;">
-        10. Tamizaje de Fatiga y Somnolencia (Pro)
+        M10. Tamizaje de Somnolencia Pro
       </h3>
       <p class="instruction-text">
-        Manténgase a <strong>30 cm</strong> de distancia. Mantenga los ojos abiertos y la mirada fija al frente durante <strong>25 segundos</strong> (Captura activa entre los 5s y 25s).
+        Manténgase a <strong>30 cm</strong> de distancia. Mantenga los ojos abiertos y la mirada fija al frente durante <strong>25 segundos</strong>.
       </p>
 
       <div style="background: #030712; border: 1px solid var(--card-border); border-radius: 10px; padding: 16px; text-align: center;">
@@ -184,7 +183,6 @@
         <p id="lblEstado" style="font-size: 0.75rem; color: var(--accent-cyan); margin-top: 4px;">Listo para iniciar análisis de alerta</p>
       </div>
 
-      <!-- PANEL DE TELEMETRÍA OFICIAL SENSOMETRIKA -->
       <div class="metricas-grid">
         <div class="col-metrica">
           <span>Tiempo</span>
@@ -202,17 +200,18 @@
 
       <button class="btn-action" id="btnIniciar" onclick="iniciarSomnolencia()">INICIAR TAMIZAJE DE FATIGA →</button>
 
-      <!-- OVERLAY DE BLOQUEO POR DISTANCIA (Calibrado a 25 - 38 cm) -->
+      <!-- OVERLAY DE BLOQUEO POR DISTANCIA -->
       <div id="boxBlockDistancia" class="distance-block-overlay">
         <span style="color: var(--accent-red); font-weight: 900; font-size: 0.9rem;">⚠️ DISTANCIA FUERA DE RANGO</span>
-        <span class="instruction-text">Acérquese o aléjese de la cámara.<br>Distancia telemétrica: <b id="lblDistVal" style="color:var(--accent-red);">-- cm</b><br>(Rango normativo cercano: 25 a 38 cm).</span>
+        <span class="instruction-text">Acérquese o aléjese de la cámara.<br>Distancia telemétrica: <b id="lblDistVal" style="color:var(--accent-red);">-- cm</b><br>(Rango normativo: 25 a 38 cm).</span>
       </div>
     </div>
   </div>
 
   <script>
     const urlParams = new URLSearchParams(window.location.search);
-    const cleanRut = (urlParams.get('rut') || localStorage.getItem('sensometrika_rut') || '12345678').replace(/[^0-9Kk]/g, '');
+    const rawRut = urlParams.get('rut') || localStorage.getItem('sensometrika_rut') || '12345678';
+    const cleanRut = rawRut.replace(/[^0-9Kk]/g, '');
     const sessionId = urlParams.get('session') || localStorage.getItem('sensometrika_session_activa') || 'SESION_DEFAULT';
     const isB2C = localStorage.getItem('sensometrika_b2c_mode') === 'true' || urlParams.get('mode') === 'b2c';
 
@@ -223,13 +222,30 @@
     let estaBloqueadoPorDistancia = false;
     let testEnCurso = false;
     let intervaloTimer = null;
-    let indiceAlerta = 100;
-    let conteoParpadeosRapidos = 0;
-    let estadoAnteriorCerrado = false;
+    let totalFramesActivos = 0;
+    let framesOjosCerradosTotal = 0;
     let cameraInstance = null;
+
+    function emitirPitido(frecuencia, duracion) {
+      try {
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.value = frecuencia;
+        gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + duracion);
+      } catch (e) {
+        console.log("Audio no soportado", e);
+      }
+    }
 
     async function iniciarMediaPipeFaceMesh() {
       const videoElement = document.getElementById('webcamVideo');
+      
       try {
         if (typeof FaceMesh !== 'undefined' && typeof Camera !== 'undefined') {
           const faceMesh = new FaceMesh({ locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}` });
@@ -242,6 +258,8 @@
 
             if (!results.multiFaceLandmarks || results.multiFaceLandmarks.length === 0) {
               if (testEnCurso) {
+                totalFramesActivos++;
+                framesOjosCerradosTotal++;
                 telEstadoOjos.textContent = "Ausente";
                 telEstadoOjos.style.color = "var(--accent-red)";
               }
@@ -249,33 +267,27 @@
             }
 
             const landmarks = results.multiFaceLandmarks[0];
-
             const verticalOjoIzq = Math.abs(landmarks[159].y - landmarks[145].y);
             const verticalOjoDer = Math.abs(landmarks[386].y - landmarks[374].y);
             const aperturaPromedio = (verticalOjoIzq + verticalOjoDer) / 2;
-
             const ojosCerrados = aperturaPromedio < 0.014;
 
-            if (ojosCerrados) {
-              if (!estadoAnteriorCerrado && testEnCurso) {
-                conteoParpadeosRapidos++;
-                indiceAlerta = Math.max(0, indiceAlerta - 4);
-              }
-              estadoAnteriorCerrado = true;
-              if (testEnCurso) {
-                telEstadoOjos.textContent = "Cerrados / Parpadeo";
+            if (testEnCurso) {
+              totalFramesActivos++;
+              if (ojosCerrados) {
+                framesOjosCerradosTotal++;
+                telEstadoOjos.textContent = "Cerrados / Fatiga";
                 telEstadoOjos.style.color = "var(--accent-red)";
-                telAlerta.textContent = `${indiceAlerta}%`;
-                telAlerta.style.color = "var(--accent-red)";
-              }
-            } else {
-              estadoAnteriorCerrado = false;
-              if (testEnCurso) {
+              } else {
                 telEstadoOjos.textContent = "Abiertos";
                 telEstadoOjos.style.color = "var(--accent-green)";
-                telAlerta.textContent = `${indiceAlerta}%`;
-                telAlerta.style.color = indiceAlerta >= 70 ? "var(--accent-green)" : "var(--accent-red)";
               }
+
+              let porcentajeCierre = (framesOjosCerradosTotal / totalFramesActivos) * 100;
+              let indiceActual = Math.max(0, Math.round(100 - porcentajeCierre * 1.5));
+              
+              telAlerta.textContent = `${indiceActual}%`;
+              telAlerta.style.color = indiceActual >= 70 ? "var(--accent-green)" : "var(--accent-red)";
             }
 
             const dx = landmarks[33].x - landmarks[263].x;
@@ -301,24 +313,7 @@
           await cameraInstance.start();
         }
       } catch (err) {
-        console.warn("Error al iniciar cámara:", err);
-      }
-    }
-
-    function emitirPitido(frecuencia, duracion) {
-      try {
-        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        const osc = audioCtx.createOscillator();
-        const gain = audioCtx.createGain();
-        osc.type = 'sine';
-        osc.frequency.value = frecuencia;
-        gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
-        osc.connect(gain);
-        gain.connect(audioCtx.destination);
-        osc.start();
-        osc.stop(audioCtx.currentTime + duracion);
-      } catch (e) {
-        console.log("Audio no soportado", e);
+        console.warn("Error al iniciar MediaPipe:", err);
       }
     }
 
@@ -326,9 +321,8 @@
       if (estaBloqueadoPorDistancia) return;
       document.getElementById('btnIniciar').style.display = 'none';
       testEnCurso = true;
-      indiceAlerta = 100;
-      conteoParpadeosRapidos = 0;
-      estadoAnteriorCerrado = false;
+      totalFramesActivos = 0;
+      framesOjosCerradosTotal = 0;
       
       let tiempoRestante = 25;
       const cronometroFatiga = document.getElementById('cronometro-fatiga');
@@ -357,29 +351,29 @@
           emitirPitido(587, 0.2);
           setTimeout(() => emitirPitido(880, 0.4), 250);
 
-          let aprobadoFatiga = indiceAlerta >= 75 && conteoParpadeosRapidos <= 8;
+          let proporcionCierre = totalFramesActivos > 0 ? (framesOjosCerradosTotal / totalFramesActivos) : 0;
+          let indiceFinal = Math.max(0, Math.round(100 - proporcionCierre * 100));
+          let aprobadoFatiga = proporcionCierre < 0.25 && indiceFinal >= 70;
 
           if (aprobadoFatiga) {
-            lblEstado.textContent = "✓ Tamizaje de somnolencia superado con éxito";
+            lblEstado.textContent = "✓ Tamizaje superado con éxito";
             lblTimer.style.color = "var(--accent-green)";
-            telAlerta.textContent = `${indiceAlerta}% (Óptimo)`;
+            telAlerta.textContent = `${indiceFinal}% (Óptimo)`;
             telAlerta.style.color = "var(--accent-green)";
           } else {
-            lblEstado.textContent = "⚠️ Alerta: Exceso de parpadeo / Signos de fatiga detectados";
+            lblEstado.textContent = "⚠️ Alerta: Cierre ocular prolongado detectado";
             lblTimer.style.color = "var(--accent-red)";
-            telAlerta.textContent = `${indiceAlerta}% (Fatiga)`;
+            telAlerta.textContent = `${indiceFinal}% (Fatiga Crítica)`;
             telAlerta.style.color = "var(--accent-red)";
           }
 
-          // Guardar doble clave oficial en localStorage
-          localStorage.setItem(`sensometrika_somnolencia_${cleanRut}_${sessionId}`, aprobadoFatiga ? 'true' : 'false');
-          localStorage.setItem(`medico_somnolencia_${cleanRut}_${sessionId}`, aprobadoFatiga ? 'true' : 'false');
-          localStorage.setItem(`medico_somnolencia_score_${cleanRut}_${sessionId}`, `${indiceAlerta}%`);
-
-          let modulosRendidos = JSON.parse(localStorage.getItem('sensometrika_modulos_rendidos')) || {};
-          modulosRendidos.somnolencia = true;
-          modulosRendidos.medico_somnolencia = true;
-          localStorage.setItem('sensometrika_modulos_rendidos', JSON.stringify(modulosRendidos));
+          // GUARDADO CLAVE ESPECÍFICA PARA M10 (SOMNOLENCIA) - SIN CRUZARSE CON M5
+          localStorage.setItem(`medico_somnolencia_${cleanRut}_${sessionId}`, 'true');
+          localStorage.setItem(`sensometrika_last_somnolencia_${cleanRut}_${sessionId}`, JSON.stringify({
+            aprobado: aprobadoFatiga,
+            score: indiceFinal,
+            timestamp: Date.now()
+          }));
 
           setTimeout(() => {
             const returnUrl = urlParams.get('returnUrl');
@@ -388,18 +382,9 @@
             } else {
               window.location.href = menuHref;
             }
-          }, 2500);
+          }, 2000);
         }
       }, 1000);
-    }
-
-    function volverMenu() {
-      const returnUrl = urlParams.get('returnUrl');
-      if (returnUrl) {
-        window.location.href = decodeURIComponent(returnUrl);
-      } else {
-        window.location.href = menuHref;
-      }
     }
 
     document.addEventListener('DOMContentLoaded', () => {

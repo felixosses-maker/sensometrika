@@ -1,331 +1,276 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>SENSOMETRIKA | Test de Fuerza de Prehensión Pro (Grip)</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <!-- MediaPipe FaceMesh y Camera Utils -->
-  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
-  <style>
-    :root {
-      --bg-color: #040810; --card-bg: #091120; --card-border: #132238;
-      --accent-cyan: #00bfff; --accent-green: #10b981; --accent-red: #ef4444; --text-main: #f8fafc; --text-muted: #94a3b8;
-    }
-    * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; -webkit-user-select: none; touch-action: none; }
-    body { background-color: var(--bg-color); color: var(--text-main); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; min-height: 100vh; padding: 16px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-    .card { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 14px; padding: 18px; width: 100%; max-width: 440px; display: flex; flex-direction: column; gap: 14px; text-align: center; box-shadow: 0 15px 35px rgba(0,0,0,0.6); }
-    .btn { background: var(--accent-cyan); color: #000; border: none; padding: 12px; border-radius: 8px; font-weight: 900; cursor: pointer; text-transform: uppercase; width: 100%; transition: opacity 0.2s; }
-    .btn:hover { opacity: 0.9; }
-    
-    /* Contenedor de cámara y telemetría */
-    .camera-container {
-      position: relative;
-      width: 100%;
-      height: 120px;
-      background: #000;
-      border-radius: 10px;
-      overflow: hidden;
-      border: 1px solid var(--card-border);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    #webcamVideo {
-      position: absolute;
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      transform: scaleX(-1);
-      opacity: 0.65;
-    }
-    .camera-overlay {
-      position: absolute;
-      z-index: 2;
-      font-size: 0.70rem;
-      font-weight: 800;
-      color: var(--accent-cyan);
-      background: rgba(4, 8, 16, 0.75);
-      padding: 4px 10px;
-      border-radius: 6px;
-      border: 1px solid var(--card-border);
-    }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>SENSOMETRIKA | M3: Dinamometría y Fuerza (Grip Pro Bilateral)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        :root {
+            --bg-color: #060b13;
+            --card-bg: #0b1320;
+            --card-border: #1a2638;
+            --accent-gold: #e5b324;
+            --accent-cyan: #38bdf8;
+            --text-main: #f1f5f9;
+            --text-muted: #94a3b8;
+        }
 
-    .grip-pad { 
-      background: #030712; 
-      border: 2px dashed var(--accent-cyan); 
-      border-radius: 12px; 
-      height: 110px; 
-      display: flex; 
-      flex-direction: column; 
-      align-items: center; 
-      justify-content: center; 
-      cursor: pointer; 
-      transition: background 0.15s, border-color 0.15s; 
-    }
-    .grip-pad.partial { background: rgba(229, 179, 36, 0.12); border-color: #e5b324; }
-    .grip-pad.active { background: rgba(16, 185, 129, 0.18); border-color: var(--accent-green); }
+        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
 
-    /* Estructura oficial de rejilla de métricas SENSOMETRIKA */
-    .metricas-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 6px;
-      background-color: #070b14;
-      border: 1px solid #1e293b;
-      border-radius: 10px;
-      padding: 10px 6px;
-      text-align: center;
-    }
-    .col-metrica span {
-      display: block;
-      font-size: 0.62rem;
-      color: var(--text-muted);
-      text-transform: uppercase;
-      margin-bottom: 2px;
-      font-weight: 700;
-    }
-    .col-metrica strong {
-      display: block;
-      font-size: 0.90rem;
-      color: #ffffff;
-      font-weight: 800;
-    }
-  </style>
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+            touch-action: none;
+        }
+
+        .main-container {
+            width: 100%;
+            max-width: 460px;
+            background-color: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 16px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+        }
+
+        .title-box { text-align: center; }
+        .title-main { font-size: 0.95rem; font-weight: 900; color: var(--accent-gold); text-transform: uppercase; letter-spacing: 0.5px; }
+        .title-sub { font-size: 0.68rem; color: var(--text-muted); margin-top: 4px; }
+
+        .timer-display {
+            font-size: 2.5rem;
+            font-weight: 900;
+            color: #fff;
+            background: #04070d;
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            width: 100%;
+            text-align: center;
+            padding: 10px;
+            letter-spacing: 2px;
+        }
+
+        .grip-pad-area {
+            width: 100%;
+            height: 180px;
+            background: #04070d;
+            border: 2px dashed var(--accent-gold);
+            border-radius: 14px;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            position: relative;
+            cursor: pointer;
+            overflow: hidden;
+        }
+
+        .grip-zone {
+            flex: 1;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 10px;
+            transition: background 0.1s;
+        }
+
+        .grip-zone:first-child { border-right: 1px dashed var(--card-border); }
+
+        .active-touch {
+            background: rgba(229, 179, 36, 0.25) !important;
+        }
+
+        .btn-start {
+            background: var(--accent-gold);
+            color: #000;
+            border: none;
+            padding: 14px;
+            border-radius: 10px;
+            font-weight: 900;
+            font-size: 0.85rem;
+            width: 100%;
+            cursor: pointer;
+            text-transform: uppercase;
+        }
+
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(6, 11, 19, 0.9); backdrop-filter: blur(4px);
+            display: none; justify-content: center; align-items: center; z-index: 100;
+        }
+        .modal-card {
+            background: var(--card-bg); border: 1px solid var(--card-border);
+            border-radius: 14px; padding: 24px; width: 90%; max-width: 360px;
+            text-align: center; display: flex; flex-direction: column; gap: 14px;
+        }
+    </style>
 </head>
 <body>
-  <div class="card">
-    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--card-border); padding-bottom: 8px;">
-      <a href="#" id="linkMenu" style="font-size: 0.70rem; font-weight: 800; color: var(--accent-cyan); text-decoration: none;">← MENÚ B2B</a>
-      <span style="font-size: 0.75rem; font-weight: 900; color: var(--accent-cyan);">M3 - DINAMOMETRÍA (GRIP)</span>
-      <button onclick="location.reload()" style="background: none; border: none; color: var(--text-muted); font-size: 0.70rem; cursor: pointer;">🔄 REINICIAR</button>
+
+    <div class="main-container">
+        <div class="title-box">
+            <div class="title-main">M3: DINAMOMETRÍA & FUERZA (GRIP PRO) ✊</div>
+            <div class="title-sub">Mantén presionados <strong>AMBOS LADOS</strong> de la pantalla simultáneamente durante los 20 segundos.</div>
+        </div>
+
+        <div class="timer-display" id="lblTimer">20s</div>
+
+        <div id="gripPad" class="grip-pad-area">
+            <div id="zoneLeft" class="grip-zone">
+                <span style="font-size: 1.5rem;">👈</span>
+                <span style="font-size: 0.72rem; font-weight: 800; color: var(--accent-gold); margin-top: 4px;">ZONA IZQUIERDA</span>
+                <span id="statusLeft" style="font-size: 0.62rem; color: var(--text-muted);">Sin contacto</span>
+            </div>
+            <div id="zoneRight" class="grip-zone">
+                <span style="font-size: 1.5rem;">👉</span>
+                <span style="font-size: 0.72rem; font-weight: 800; color: var(--accent-gold); margin-top: 4px;">ZONA DERECHA</span>
+                <span id="statusRight" style="font-size: 0.62rem; color: var(--text-muted);">Sin contacto</span>
+            </div>
+        </div>
+
+        <button id="btnIniciar" onclick="iniciarPruebaGrip()" class="btn-start">INICIAR PRUEBA DE FUERZA (20s) →</button>
     </div>
 
-    <h2 style="color: var(--accent-cyan); font-size: 0.95rem; font-weight: 900;">3. Dinamometría y Fuerza (Grip Pro)</h2>
-    <p style="font-size: 0.74rem; color: var(--text-muted);">Mantenga ambos dedos presionando el panel táctil simultáneamente durante <strong>25 segundos</strong>.</p>
-    
-    <!-- VISOR DE CÁMARA BIOMÉTRICA CON DISTANCIA CALIBRADA -->
-    <div class="camera-container">
-      <video id="webcamVideo" autoplay playsinline muted></video>
-      <div class="camera-overlay" id="lblDistanciaCam">Iniciando cámara frontal...</div>
+    <div id="modalResultado" class="modal-overlay">
+        <div class="modal-card">
+            <div style="font-size: 1.1rem; font-weight: 900; color: #10b981;">PRUEBA COMPLETADA ✊</div>
+            <div id="txtResumenGrip" style="font-size: 0.80rem; color: var(--text-main); line-height: 1.4;">Registrando telemetría...</div>
+            <button onclick="finalizarYVolver()" style="background:#10b981; color:#000; border:none; padding:10px; border-radius:8px; font-weight:900; cursor:pointer; text-transform:uppercase;">GUARDAR Y VOLVER AL MENÚ</button>
+        </div>
     </div>
 
-    <div id="viewportGrip" style="background: #030712; border: 1px solid var(--card-border); border-radius: 10px; padding: 12px; display: flex; flex-direction: column; gap: 8px; align-items: center;">
-      <span id="lblTimer" style="font-size: 2.0rem; font-weight: 900; color: #fff;">25s</span>
-      <div id="touchPad" class="grip-pad" style="width: 100%;">
-        <span id="lblEstadoPad" style="font-size: 0.8rem; font-weight: 800; color: var(--accent-cyan);">COLOQUE AMBOS DEDOS AQUÍ</span>
-      </div>
-    </div>
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const rut = urlParams.get('rut') || '12.345.678-K';
+        const cleanRut = rut.replace(/[^0-9Kk]/g, '');
+        const sessionId = urlParams.get('session') || localStorage.getItem('sensometrika_session_activa') || 'SESION_DEFAULT';
 
-    <!-- PANEL DE TELEMETRÍA OFICIAL SENSOMETRIKA -->
-    <div class="metricas-grid">
-      <div class="col-metrica">
-        <span>Tiempo</span>
-        <strong id="cronometro-grip" style="color:#38bdf8;">25 s</strong>
-      </div>
-      <div class="col-metrica">
-        <span>Contactos</span>
-        <strong id="contador-muestras" style="color:#ffffff;">0 / 2 dedos</strong>
-      </div>
-      <div class="col-metrica">
-        <span>Estado Grip</span>
-        <strong id="estado-grip" style="color:#34d399;">Inactivo</strong>
-      </div>
-    </div>
+        let tiempoRestante = 20;
+        let intervalo = null;
+        let testActivo = false;
+        let totalMuestras = 0;
+        let muestrasExitosasDual = 0;
 
-    <button class="btn" id="btnIniciar" onclick="iniciarGripTest()">INICIAR PRUEBA OFICIAL →</button>
-  </div>
+        const gripPad = document.getElementById('gripPad');
+        const zoneLeft = document.getElementById('zoneLeft');
+        const zoneRight = document.getElementById('zoneRight');
+        const statusLeft = document.getElementById('statusLeft');
+        const statusRight = document.getElementById('statusRight');
 
-  <script>
-    const urlParams = new URLSearchParams(window.location.search);
-    const cleanRut = (urlParams.get('rut') || localStorage.getItem('sensometrika_rut') || '12345678').replace(/[^0-9Kk]/g, '');
-    const sessionId = urlParams.get('session') || localStorage.getItem('sensometrika_session_activa') || 'SESION_DEFAULT';
-    const isB2C = localStorage.getItem('sensometrika_b2c_mode') === 'true' || urlParams.get('mode') === 'b2c';
+        function iniciarPruebaGrip() {
+            document.getElementById('btnIniciar').style.display = 'none';
+            tiempoRestante = 20;
+            totalMuestras = 0;
+            muestrasExitosasDual = 0;
+            testActivo = true;
 
-    const menuHref = isB2C ? `../menu_B2C.html?${urlParams.toString()}` : `../menu_B2B.html?${urlParams.toString()}`;
-    document.getElementById('linkMenu').href = urlParams.get('returnUrl') ? decodeURIComponent(urlParams.get('returnUrl')) : menuHref;
+            document.getElementById('lblTimer').textContent = `${tiempoRestante}s`;
 
-    let testEnCurso = false;
-    let tiempoRestante = 25;
-    let intervaloTimer = null;
-    let muestrasRegistradas = 0;
-    let cameraInstance = null;
-    let activeTouchesCount = 0;
+            intervalo = setInterval(() => {
+                tiempoRestante--;
+                document.getElementById('lblTimer').textContent = `${tiempoRestante}s`;
 
-    function emitirPitido(frecuencia, duracion) {
-      try {
-        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        const osc = audioCtx.createOscillator();
-        const gain = audioCtx.createGain();
-        osc.type = 'sine';
-        osc.frequency.value = frecuencia;
-        gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
-        osc.connect(gain);
-        gain.connect(audioCtx.destination);
-        osc.start();
-        osc.stop(audioCtx.currentTime + duracion);
-      } catch (e) {
-        console.log("Audio no soportado", e);
-      }
-    }
+                if (tiempoRestante <= 0) {
+                    clearInterval(intervalo);
+                    terminarPrueba();
+                }
+            }, 1000);
+        }
 
-    async function inicializarCamaraBiometrica() {
-      const videoElement = document.getElementById('webcamVideo');
-      const lblDistancia = document.getElementById('lblDistanciaCam');
+        gripPad.addEventListener('touchstart', procesarToques, { passive: false });
+        gripPad.addEventListener('touchmove', procesarToques, { passive: false });
+        gripPad.addEventListener('touchend', procesarToques, { passive: false });
 
-      try {
-        if (typeof FaceMesh !== 'undefined' && typeof Camera !== 'undefined') {
-          const faceMesh = new FaceMesh({
-            locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`
-          });
+        gripPad.addEventListener('mousedown', () => { if(testActivo) marcarDual(true, true); });
+        gripPad.addEventListener('mouseup', () => { if(testActivo) marcarDual(false, false); });
 
-          faceMesh.setOptions({ maxNumFaces: 1, refineLandmarks: true, minDetectionConfidence: 0.5, minTrackingConfidence: 0.5 });
+        function procesarToques(e) {
+            if (!testActivo) return;
+            e.preventDefault();
 
-          faceMesh.onResults((results) => {
-            if (results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0) {
-              const landmarks = results.multiFaceLandmarks[0];
-              const distanciaPixel = Math.hypot(landmarks[10].x - landmarks[152].x, landmarks[10].y - landmarks[152].y);
-              const distanciaCm = Math.round(1850 / (distanciaPixel * 100)); 
-              
-              if (distanciaCm >= 45 && distanciaCm <= 100) {
-                lblDistancia.textContent = `Distancia: ${distanciaCm} cm (Óptima)`;
-                lblDistancia.style.color = "var(--accent-green)";
-              } else {
-                lblDistancia.textContent = `Distancia: ${distanciaCm} cm (Ajuste posición)`;
-                lblDistancia.style.color = "var(--accent-red)";
-              }
-            } else {
-              lblDistancia.textContent = "Buscando rostro...";
-              lblDistancia.style.color = "var(--accent-cyan)";
+            const rect = gripPad.getBoundingClientRect();
+            const mitadAncho = rect.width / 2;
+
+            let tocaIzquierda = false;
+            let tocaDerecha = false;
+
+            for (let i = 0; i < e.touches.length; i++) {
+                const touchX = e.touches[i].clientX - rect.left;
+                if (touchX < mitadAncho) tocaIzquierda = true;
+                else tocaDerecha = true;
             }
-          });
 
-          cameraInstance = new Camera(videoElement, {
-            onFrame: async () => { await faceMesh.send({ image: videoElement }); },
-            width: 320, height: 240
-          });
-          await cameraInstance.start();
-        }
-      } catch (err) {
-        console.warn("Error en cámara:", err);
-        lblDistancia.textContent = "Cámara Activa";
-      }
-    }
-
-    window.addEventListener('DOMContentLoaded', () => {
-      inicializarCamaraBiometrica();
-
-      const pad = document.getElementById('touchPad');
-      
-      const actualizarToques = (e) => {
-        if (!testEnCurso) return;
-        activeTouchesCount = e.touches ? e.touches.length : (e.buttons > 0 ? 1 : 0);
-        
-        const lblEstadoPad = document.getElementById('lblEstadoPad');
-        const contadorMuestras = document.getElementById('contador-muestras');
-        const estadoGrip = document.getElementById('estado-grip');
-
-        contadorMuestras.textContent = `${activeTouchesCount} / 2 dedos`;
-
-        if (activeTouchesCount >= 2) {
-          pad.className = "grip-pad active";
-          lblEstadoPad.textContent = "✓ AMBOS DEDOS PRESIONANDO";
-          lblEstadoPad.style.color = "var(--accent-green)";
-          estadoGrip.textContent = "Óptimo (2 dedos)";
-          estadoGrip.style.color = "var(--accent-green)";
-        } else if (activeTouchesCount === 1) {
-          pad.className = "grip-pad partial";
-          lblEstadoPad.textContent = "⚠️ FALTA UN DEDO (Coloque 2)";
-          lblEstadoPad.style.color = "#e5b324";
-          estadoGrip.textContent = "Incompleto";
-          estadoGrip.style.color = "#e5b324";
-        } else {
-          pad.className = "grip-pad";
-          lblEstadoPad.textContent = "⚠️ ¡COLOQUE AMBOS DEDOS!";
-          lblEstadoPad.style.color = "var(--accent-red)";
-          estadoGrip.textContent = "Sin contacto";
-          estadoGrip.style.color = "var(--accent-red)";
-        }
-      };
-
-      pad.addEventListener('touchstart', actualizarToques, { passive: true });
-      pad.addEventListener('touchmove', actualizarToques, { passive: true });
-      pad.addEventListener('touchend', actualizarToques, { passive: true });
-      pad.addEventListener('mousedown', () => { if(testEnCurso) { activeTouchesCount = 1; actualizarToques({buttons: 1}); } });
-      window.addEventListener('mouseup', () => { if(testEnCurso) { activeTouchesCount = 0; actualizarToques({buttons: 0}); } });
-    });
-
-    function iniciarGripTest() {
-      document.getElementById('btnIniciar').style.display = 'none';
-      testEnCurso = true;
-      tiempoRestante = 25;
-      muestrasRegistradas = 0;
-      
-      const lblTimer = document.getElementById('lblTimer');
-      const lblEstadoPad = document.getElementById('lblEstadoPad');
-      const cronometroGrip = document.getElementById('cronometro-grip');
-
-      emitirPitido(880, 0.3);
-      lblEstadoPad.textContent = "¡PREPARE AMBOS DEDOS (5s)!";
-
-      intervaloTimer = setInterval(() => {
-        tiempoRestante--;
-        lblTimer.textContent = `${tiempoRestante}s`;
-        cronometroGrip.textContent = `${tiempoRestante} s`;
-
-        if (tiempoRestante === 20) {
-          emitirPitido(1046, 0.2);
-          lblEstadoPad.textContent = "¡MANTENGA AMBOS DEDOS (Captura Activa)!";
+            marcarDual(tocaIzquierda, tocaDerecha);
         }
 
-        if (tiempoRestante <= 20 && tiempoRestante > 0) {
-          if (activeTouchesCount >= 2) {
-            muestrasRegistradas++;
-          }
-        }
-
-        if (tiempoRestante <= 0) {
-          clearInterval(intervaloTimer);
-          testEnCurso = false;
-          if (cameraInstance) { try { cameraInstance.stop(); } catch(e){} }
-
-          if (muestrasRegistradas < 5) {
-            alert("⚠️ No se registraron suficientes contactos simultáneos con ambos dedos durante la prueba formal. Reiniciando módulo.");
-            location.reload();
-            return;
-          }
-
-          emitirPitido(587, 0.2);
-          setTimeout(() => emitirPitido(880, 0.4), 250);
-
-          lblEstadoPad.textContent = "✓ Fuerza isométrica validada con éxito";
-          lblTimer.style.color = "var(--accent-green)";
-          document.getElementById('touchPad').className = "grip-pad active";
-          document.getElementById('estado-grip').textContent = "VALIDADO";
-          document.getElementById('estado-grip').style.color = "var(--accent-green)";
-
-          // Guardado formal y persistencia en localStorage
-          localStorage.setItem(`sensometrika_grip_${cleanRut}_${sessionId}`, 'true');
-          localStorage.setItem(`medico_grip_${cleanRut}_${sessionId}`, 'true');
-          localStorage.setItem(`medico_grip_muestras_${cleanRut}_${sessionId}`, muestrasRegistradas);
-
-          let modulosRendidos = JSON.parse(localStorage.getItem('sensometrika_modulos_rendidos')) || {};
-          modulosRendidos.grip = true;
-          modulosRendidos.medico_grip = true;
-          localStorage.setItem('sensometrika_modulos_rendidos', JSON.stringify(modulosRendidos));
-
-          setTimeout(() => {
-            const returnUrl = urlParams.get('returnUrl');
-            if (returnUrl) {
-              window.location.href = decodeURIComponent(returnUrl);
+        function marcarDual(izq, der) {
+            totalMuestras++;
+            if (izq) {
+                zoneLeft.classList.add('active-touch');
+                statusLeft.textContent = 'Presionando ✓';
+                statusLeft.style.color = '#10b981';
             } else {
-              window.location.href = menuHref;
+                zoneLeft.classList.remove('active-touch');
+                statusLeft.textContent = 'Sin contacto';
+                statusLeft.style.color = 'var(--text-muted)';
             }
-          }, 2200);
+
+            if (der) {
+                zoneRight.classList.add('active-touch');
+                statusRight.textContent = 'Presionando ✓';
+                statusRight.style.color = '#10b981';
+            } else {
+                zoneRight.classList.remove('active-touch');
+                statusRight.textContent = 'Sin contacto';
+                statusRight.style.color = 'var(--text-muted)';
+            }
+
+            if (izq && der) {
+                muestrasExitosasDual++;
+            }
         }
-      }, 1000);
-    }
-  </script>
+
+        function terminarPrueba() {
+            testActivo = false;
+            zoneLeft.classList.remove('active-touch');
+            zoneRight.classList.remove('active-touch');
+
+            const porcentajeSimetria = totalMuestras > 0 ? Math.round((muestrasExitosasDual / totalMuestras) * 100) : 100;
+            const aprobado = porcentajeSimetria >= 60;
+
+            // GUARDADO OFICIAL ESPECÍFICO PARA M3 (GRIP)
+            localStorage.setItem(`medico_grip_${cleanRut}_${sessionId}`, 'true');
+            localStorage.setItem(`sensometrika_last_grip_${cleanRut}_${sessionId}`, JSON.stringify({
+                aprobado: aprobado,
+                porcentajeSimetria: porcentajeSimetria,
+                timestamp: Date.now()
+            }));
+
+            document.getElementById('txtResumenGrip').innerHTML = `
+                Estabilidad Bilateral Sostenida: <strong>${porcentajeSimetria}%</strong><br>
+                Resultado Clínico: <strong style="color:${aprobado ? '#10b981':'#ef4444'}">${aprobado ? 'APTO / FUERZA ESTABLE' : 'OBSERVADO'}</strong>
+            `;
+            document.getElementById('modalResultado').style.display = 'flex';
+        }
+
+        function finalizarYVolver() {
+            const paramsRedir = new URLSearchParams(window.location.search);
+            window.location.href = `../menu_B2B.html?${paramsRedir.toString()}`;
+        }
+    </script>
 </body>
 </html>
