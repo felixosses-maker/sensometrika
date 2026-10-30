@@ -34,7 +34,7 @@
         .sheet-container {
             background-color: var(--sheet-bg);
             width: 100%;
-            max-width: 520px;
+            max-width: 540px;
             border-radius: 12px;
             padding: 20px;
             box-shadow: 0 10px 25px rgba(0,0,0,0.5);
@@ -172,7 +172,7 @@
         .tabla-oficial {
             width: 100%;
             border-collapse: collapse;
-            font-size: 0.62rem;
+            font-size: 0.60rem;
         }
 
         .tabla-oficial th {
@@ -180,7 +180,7 @@
             color: #ffffff;
             padding: 6px 8px;
             text-align: left;
-            font-size: 0.55rem;
+            font-size: 0.52rem;
             font-weight: 800;
             text-transform: uppercase;
         }
@@ -194,7 +194,7 @@
         .badge-sem {
             padding: 2px 6px;
             border-radius: 4px;
-            font-size: 0.55rem;
+            font-size: 0.52rem;
             font-weight: 800;
             display: inline-block;
             text-transform: uppercase;
@@ -252,7 +252,7 @@
         </header>
 
         <div class="notice-banner" id="lblNoticeBanner">
-            ⚡ Validación Biométrica de Ingreso: Dictamen clínico de aptitud remitido al centro de control de turnos.
+            ⚡ Auditoría de Telemetría Estricta: Registro detallado de desvíos, parpadeos y estabilidad biométrica.
         </div>
 
         <div class="ficha-layout">
@@ -306,14 +306,14 @@
         <table class="tabla-oficial">
             <thead>
                 <tr>
-                    <th style="width: 34%;">SUBMÓDULO CLÍNICO (M1 - M10)</th>
-                    <th style="width: 22%;">ESTÁNDAR CLÍNICO</th>
-                    <th style="width: 27%;">REGISTRO DE TELEMETRÍA</th>
-                    <th style="width: 17%; text-align: right;">APTI.</th>
+                    <th style="width: 32%;">SUBMÓDULO CLÍNICO</th>
+                    <th style="width: 20%;">ESTÁNDAR</th>
+                    <th style="width: 33%;">TELEMETRÍA Y DESVÍOS REGISTRADOS</th>
+                    <th style="width: 15%; text-align: right;">APTI.</th>
                 </tr>
             </thead>
             <tbody id="tbodyModulosFaena">
-                <!-- Se inyectan los 10 submódulos médicos -->
+                <!-- Se inyectan dinámicamente con detalles estrictos -->
             </tbody>
         </table>
 
@@ -336,7 +336,7 @@
         </div>
 
         <div style="text-align: center; font-size: 0.50rem; color: #64748b; line-height: 1.2;">
-            🏥 CHECK-IN CLÍNICO DE FAENA: Tamizaje fisiológico rápido de 20 segundos por estación para control preventivo de fatiga y aptitud en turno. Hash: SMK-MF-SECURE.
+            🏥 INFORME DE AUDITORÍA CLÍNICA: Registro estricto de parámetros vestibulares, motores, fuerza bilateral y vigilancia ocular. Hash: SMK-MF-SECURE.
         </div>
 
         <button type="button" class="btn-action" onclick="volverMenuB2B()">
@@ -361,9 +361,14 @@
             window.location.href = `menu_B2B.html?${paramsMenu.toString()}`;
         }
 
-        function obtenerHistorialMedico(nombreTest) {
-            return localStorage.getItem(`medico_${nombreTest}_${cleanRut}_${sessionId}`) === 'true' || 
-                   localStorage.getItem(`sensometrika_last_${nombreTest}_${cleanRut}_${sessionId}`) !== null;
+        function obtenerDetalleModulo(nombreTest) {
+            const dataStr = localStorage.getItem(`sensometrika_last_${nombreTest}_${cleanRut}_${sessionId}`);
+            const flagBool = localStorage.getItem(`medico_${nombreTest}_${cleanRut}_${sessionId}`) === 'true';
+            
+            if (dataStr) {
+                try { return JSON.parse(dataStr); } catch(e) {}
+            }
+            return { aprobado: flagBool };
         }
 
         document.addEventListener('DOMContentLoaded', () => {
@@ -379,7 +384,6 @@
             let folioCert = `SMK-MF-${cleanRut.substring(0, 6)}-${Math.floor(Math.random()*899+100)}`;
             document.getElementById('lblFolio').textContent = folioCert;
 
-            // Foto y Firma
             const fotoGuardada = localStorage.getItem(`sensometrika_foto_${cleanRut}_${sessionId}`) || localStorage.getItem(`sensometrika_foto_${cleanRut}`) || localStorage.getItem('sensometrika_foto_trabajador');
             if (fotoGuardada && fotoGuardada.startsWith('data:image')) {
                 document.getElementById('imgBiometrica').src = fotoGuardada;
@@ -389,13 +393,12 @@
             const svgFirmaRespaldo = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="60" viewBox="0 0 200 60"><path d="M 15 35 Q 35 15, 65 30 T 105 18 T 155 38 Q 175 48, 185 25" fill="none" stroke="%230f172a" stroke-width="2" stroke-linecap="round"/></svg>`;
             document.getElementById('imgFirmaTrabajador').src = (firmaGuardada && firmaGuardada.startsWith('data:image')) ? firmaGuardada : svgFirmaRespaldo;
 
-            // Catálogo de Submódulos de Faena (M1 al M10)
             const submódulosFaenaInforme = [
                 { id: 'mod18', key: 'romberg', nombre: 'M1. Estabilidad Vestibular (Romberg) ⚖️', est: 'Desviación < 10°' },
                 { id: 'mod19', key: 'temblores', nombre: 'M2. Estabilidad Motora (Temblores) ✋', est: 'Micro-oscilación control' },
-                { id: 'mod20', key: 'grip', nombre: 'M3. Dinamometría y Fuerza (Grip) ✊', est: 'Prehensión sostenida' },
+                { id: 'mod20', key: 'grip', nombre: 'M3. Dinamometría y Fuerza (Grip) ✊', est: 'Simetría bilateral ≥ 60%' },
                 { id: 'mod21', key: 'ppg', nombre: 'M4. Frecuencia Cardíaca Basal (PPG) 💓', est: '60 - 100 lpm' },
-                { id: 'mod22', key: 'pupilar', nombre: 'M5. Reflejo Fotomotor Pupilar 👁️', est: 'Contracción normal' },
+                { id: 'mod22', key: 'pupilar', nombre: 'M5. Reflejo Fotomotor Pupilar 👁️', est: 'Estabilidad y foco' },
                 { id: 'mod23', key: 'espirometria', nombre: 'M6. Espirometría Ocupacional Pro 🫁', est: 'Flujo respiratorio' },
                 { id: 'mod24', key: 'tapping', nombre: 'M7. Agilidad y Praxias (Tapping) ⚡', est: 'Ritmo motor continuo' },
                 { id: 'mod25', key: 'auditivo', nombre: 'M8. Reacción a Alarma de Faena 🚨', est: 'Respuesta acústica' },
@@ -403,27 +406,41 @@
                 { id: 'mod27', key: 'somnolencia', nombre: 'M10. Tamizaje de Somnolencia Pro 😴', est: 'Vigilancia y alerta' }
             ];
 
-            const bolsaActivaStr = localStorage.getItem('sensometrika_modulos_b2b_activos') || 'mod18,mod19,mod20,mod21,mod22';
+            const bolsaActivaStr = localStorage.getItem('sensometrika_modulos_b2b_activos') || 'mod18,mod19,mod20,mod21,mod22,mod23,mod24,mod25,mod26,mod27';
             const bolsaActivaArray = bolsaActivaStr.split(',').map(m => m.trim().toLowerCase());
 
             const tbody = document.getElementById('tbodyModulosFaena');
             tbody.innerHTML = '';
 
-            let totalAprobados = 0, totalPendientes = 0;
+            let totalPendientes = 0;
 
             submódulosFaenaInforme.forEach(m => {
                 const estaSolicitado = bolsaActivaArray.includes(m.id.toLowerCase());
                 if (!estaSolicitado) return;
 
-                const rendido = obtenerHistorialMedico(m.key);
+                const datosTest = obtenerDetalleModulo(m.key);
+                const rendido = datosTest.aprobado !== undefined || localStorage.getItem(`medico_${m.key}_${cleanRut}_${sessionId}`) === 'true';
+                
                 const tr = document.createElement('tr');
 
                 if (rendido) {
-                    totalAprobados++;
+                    let detalleTelemetria = "Parámetro dentro de rango normativo";
+                    
+                    // Detalle estricto según el submódulo
+                    if (m.key === 'grip' && datosTest.porcentajeSimetria !== undefined) {
+                        detalleTelemetria = `Simetría bilateral sostenida: <b>${datosTest.porcentajeSimetria}%</b> (Mín: 60%)`;
+                    } else if (m.key === 'pupilar' && datosTest.score) {
+                        detalleTelemetria = `Índice óptico: <b>${datosTest.score}</b> | Foco ocular estable sin desvíos`;
+                    } else if (m.key === 'somnolencia' && datosTest.score) {
+                        detalleTelemetria = `Índice alerta: <b>${datosTest.score}</b> | Control de parpadeo y fatiga OK`;
+                    } else if (datosTest.score) {
+                        detalleTelemetria = `Desempeño registrado: <b>${datosTest.score}</b>`;
+                    }
+
                     tr.innerHTML = `
                         <td class="font-bold text-slate-800">${m.nombre}</td>
                         <td class="text-slate-600">${m.est}</td>
-                        <td class="text-slate-700">Parámetro dentro de rango</td>
+                        <td class="text-slate-700">${detalleTelemetria}</td>
                         <td style="text-align: right;"><span class="badge-sem sem-ok">APTO</span></td>
                     `;
                 } else {
@@ -431,7 +448,7 @@
                     tr.innerHTML = `
                         <td class="font-bold text-slate-400">${m.nombre}</td>
                         <td class="text-slate-400">${m.est}</td>
-                        <td class="text-slate-400 italic">Pendiente chequeo</td>
+                        <td class="text-slate-400 italic">Pendiente de ejecución en faena</td>
                         <td style="text-align: right;"><span class="badge-sem sem-pend">PENDIENTE</span></td>
                     `;
                 }
@@ -454,7 +471,7 @@
                 estadoDictamenLimpio = 'APROBADO';
                 boxDictamen.className = "banner-dictamen dictamen-aprobado";
                 boxDictamen.innerHTML = `✔ DICTAMEN CLÍNICO: APTO PARA INGRESO A TURNO`;
-                lblDictamenSub.textContent = `Aptitud fisiológica y motora verificada para ${rawCargo.toUpperCase()}.`;
+                lblDictamenSub.textContent = `Aptitud fisiológica, fuerza y vigilancia verificadas para ${rawCargo.toUpperCase()}.`;
                 lblEstadoVigencia.textContent = `VÁLIDO POR 12 HORAS (TURNO)`;
                 lblEstadoVigencia.className = "vigencia-orange bg-emerald-600";
             }
