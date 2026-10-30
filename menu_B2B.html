@@ -112,7 +112,6 @@
             text-align: left;
         }
 
-        /* Pestañas de Navegación */
         .tabs-container {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -257,7 +256,8 @@
                 <div id="contenedorModulosFaena" style="display:flex; flex-direction:column; gap:10px;"></div>
             </div>
 
-            <button type="button" id="btnVerInforme" class="btn-informe" onclick="abrirInformePericial()">VER INFORME PERICIAL B2B →</button>
+            <!-- Botón de informe dinámico según la pestaña activa -->
+            <button type="button" id="btnVerInforme" class="btn-informe" onclick="abrirInformeCorrespondiente()">VER INFORME PERICIAL B2B →</button>
         </div>
     </div>
 
@@ -286,27 +286,56 @@
             avatar.style.display = 'block';
         }
 
+        let areaActual = 'vial';
+
         function cambiarTab(area) {
+            areaActual = area;
             const tabVialBtn = document.getElementById('tabVialBtn');
             const tabFaenaBtn = document.getElementById('tabFaenaBtn');
             const secVial = document.getElementById('secVial');
             const secFaena = document.getElementById('secFaena');
+            const btnInforme = document.getElementById('btnVerInforme');
 
             if (area === 'vial') {
                 tabVialBtn.classList.add('active');
                 tabFaenaBtn.classList.remove('active');
                 secVial.classList.add('active');
                 secFaena.classList.remove('active');
+                btnInforme.textContent = 'VER INFORME PERICIAL B2B (VIAL) →';
+                btnInforme.style.backgroundColor = '#10b981';
             } else {
                 tabFaenaBtn.classList.add('active');
                 tabVialBtn.classList.remove('active');
                 secFaena.classList.add('active');
                 secVial.classList.remove('active');
+                btnInforme.textContent = 'VER CHECK-IN CLÍNICO DE FAENA →';
+                btnInforme.style.backgroundColor = '#d97706';
             }
         }
 
         function verifRendidoRut(modKey) {
             if (!cleanRut) return false;
+            
+            // Si es médico de faena (mod18 al mod27)
+            if (modKey.startsWith('mod') && parseInt(modKey.replace('mod','')) >= 18) {
+                let keyMed = '';
+                switch(modKey) {
+                    case 'mod18': keyMed = 'romberg'; break;
+                    case 'mod19': keyMed = 'temblores'; break;
+                    case 'mod20': keyMed = 'grip'; break;
+                    case 'mod21': keyMed = 'ppg'; break;
+                    case 'mod22': keyMed = 'pupilar'; break;
+                    case 'mod23': keyMed = 'espirometria'; break;
+                    case 'mod24': keyMed = 'tapping'; break;
+                    case 'mod25': keyMed = 'auditivo'; break;
+                    case 'mod26': keyMed = 'nistagmo'; break;
+                    case 'mod27': keyMed = 'somnolencia'; break;
+                }
+                return localStorage.getItem(`medico_${keyMed}_${cleanRut}_${sessionId}`) === 'true' ||
+                       localStorage.getItem(`sensometrika_last_${keyMed}_${cleanRut}_${sessionId}`) !== null;
+            }
+
+            // Si es vial (mod1 al mod17)
             let nombreModuloTest = '';
             switch(modKey) {
                 case 'mod1': nombreModuloTest = 'punteo'; break;
@@ -319,63 +348,52 @@
                 case 'mod8': nombreModuloTest = 'estereopsis'; break;
                 case 'mod9': nombreModuloTest = 'campo_periferico'; break;
                 case 'mod10': nombreModuloTest = 'auditivo'; break;
-                case 'mod11': nombreModuloTest = 'atencion_cpt'; break;
-                case 'mod12': nombreModuloTest = 'fatiga_karolinska'; break;
-                case 'mod13': nombreModuloTest = 'palancas'; break;
+                case 'mod11': nombreModuloTest = 'fatiga'; break;
+                case 'mod12': nombreModuloTest = 'carga_dual'; break;
+                case 'mod13': nombreModuloTest = 'punteo_transporte'; break;
                 case 'mod14': nombreModuloTest = 'memoria_trabajo'; break;
-                case 'mod15': nombreModuloTest = 'frenado_selectivo'; break;
-                case 'mod16': nombreModuloTest = 'control_impulsos'; break;
+                case 'mod15': nombreModuloTest = 'reactimetro'; break;
+                case 'mod16': nombreModuloTest = 'micro-fit'; break;
                 case 'mod17': nombreModuloTest = 'declaracion_medica'; break;
-                case 'mod18': nombreModuloTest = 'romberg'; break;
-                case 'mod19': nombreModuloTest = 'temblores'; break;
-                case 'mod20': nombreModuloTest = 'grip'; break;
-                case 'mod21': nombreModuloTest = 'ppg'; break;
-                case 'mod22': nombreModuloTest = 'pupilar'; break;
-                case 'mod23': nombreModuloTest = 'espirometria'; break;
-                case 'mod24': nombreModuloTest = 'tapping'; break;
-                case 'mod25': nombreModuloTest = 'auditivo'; break;
-                case 'mod26': nombreModuloTest = 'nistagmo'; break;
-                case 'mod27': nombreModuloTest = 'somnolencia'; break;
                 default: nombreModuloTest = modKey;
             }
 
             const hSesion = localStorage.getItem(`sensometrika_historial_${nombreModuloTest}_${cleanRut}_${sessionId}`);
             const lSesion = localStorage.getItem(`sensometrika_last_${nombreModuloTest}_${cleanRut}_${sessionId}`);
-            return (hSesion || lSesion || localStorage.getItem(`medico_${nombreModuloTest}_${cleanRut}_${sessionId}`) === 'true');
+            return (hSesion || lSesion);
         }
 
-        // Divididos formalmente en Vial (1-17) y Faena (18-27)
         const modulosVial = [
-            { id: 'mod1', nombre: '1. Punteo y Coordinación Visomotora 🎯', desc: 'Ritmo motor, velocidad máxima y resistencia a fatiga (1A a 1D).', archivo: 'demo_punteo_pro.html' },
-            { id: 'mod2', nombre: '2. Reactímetro B2B ⚡', desc: 'Tiempos de respuesta y frenado en ms con compensación de hardware.', archivo: 'demo_reactimetro_pro.html' },
-            { id: 'mod3', nombre: '3. Coordinación Visomotriz y Tracking 🚗', desc: 'Seguimiento continuo de trayectoria sobre circuitos variables.', archivo: 'demo_visomotriz_pro.html' },
-            { id: 'mod4', nombre: '4. Anticipación de Tiempo y Velocidad ⏱️', desc: 'Cálculo espaciotemporal ante puntos ciegos y velocidad variable.', archivo: 'demo_anticipacion_pro.html' },
-            { id: 'mod5', nombre: '5. Resistencia al Encandilamiento 💡', desc: 'Velocidad de recuperación visual ante destellos frontales (D.S. N° 170).', archivo: 'demo_encandilamiento_pro.html' },
-            { id: 'mod6', nombre: '6. Tamizaje Visual (Agudeza Snellen) 👁️', desc: 'Evaluación de agudeza visual lejana y cercana con auditoría telemétrica.', archivo: 'visual.html' },
-            { id: 'mod7', nombre: '7. Test de Ishihara (Daltonismo) 🎨', desc: 'Detección digital de discromatopsias para lectura de semáforos.', archivo: 'visual_transporte.html' },
-            { id: 'mod8', nombre: '8. Visión de Profundidad (Estereopsis) 📐', desc: 'Percepción tridimensional y cálculo preciso de distancias en faena.', archivo: 'estereopsis.html' },
-            { id: 'mod9', nombre: '9. Campo Visual Periférico 👁️‍🗨️', desc: 'Amplitud de cono visual lateral para prevención de ángulos muertos.', archivo: 'campo_periferico.html' },
-            { id: 'mod10', nombre: '10. Tamizaje Auditivo Binaural 🎧', desc: 'Audiometría tonal orientada a frecuencias críticas y umbrales.', archivo: 'audicion.html' },
-            { id: 'mod11', nombre: '11. Atención Sostenida (CPT) 🧠', desc: 'Test de vigilancia y estabilidad atencional para prevención de micro-sueños.', archivo: 'fatiga.html' },
-            { id: 'mod12', nombre: '12. Test de Fatiga (Karolinska) 😴', desc: 'Nivel de alerta y somnolencia en ruta para operadores de turno.', archivo: 'carga_dual.html' },
-            { id: 'mod13', nombre: '13. Palancas Bimanual 🎮', desc: 'Coordinación motriz fina bilateral y disociación de mandos independientes.', archivo: 'punteo_transporte.html' },
-            { id: 'mod14', nombre: '14. Memoria de Trabajo Operativa 🧩', desc: 'Retención de secuencias lógicas e instrucciones operativas complejas.', archivo: 'memoria_trabajo.html' },
-            { id: 'mod15', nombre: '15. Frenado Selectivo 🛑', desc: 'Precisión de frenado bajo presión de tiempo y control inhibitorio.', archivo: 'reactimetro.html' },
-            { id: 'mod16', nombre: '16. Control de Impulsos Viales ⚖️', desc: 'Detección conductual de perfiles de riesgo y temperamento al volante.', archivo: 'micro-fit.html' },
-            { id: 'mod17', nombre: '17. Declaración Médica 📋', desc: 'Declaración jurada digital de aptitud física (Art. 36 D.S. N° 170).', archivo: 'declaracion_medica.html' }
+            { id: 'mod1', nombre: '1. Punteo y Coordinación Visomotora 🎯', desc: 'Ritmo motor, velocidad máxima y resistencia a fatiga.', archivo: 'demo_punteo_pro.html' },
+            { id: 'mod2', nombre: '2. Reactímetro B2B ⚡', desc: 'Tiempos de respuesta y frenado en ms con compensación.', archivo: 'demo_reactimetro_pro.html' },
+            { id: 'mod3', nombre: '3. Coordinación Visomotriz y Tracking 🚗', desc: 'Seguimiento continuo de trayectoria sobre circuitos.', archivo: 'demo_visomotriz_pro.html' },
+            { id: 'mod4', nombre: '4. Anticipación de Tiempo y Velocidad ⏱️', desc: 'Cálculo espaciotemporal ante puntos ciegos.', archivo: 'demo_anticipacion_pro.html' },
+            { id: 'mod5', nombre: '5. Resistencia al Encandilamiento 💡', desc: 'Velocidad de recuperación visual ante destellos.', archivo: 'demo_encandilamiento_pro.html' },
+            { id: 'mod6', nombre: '6. Tamizaje Visual (Agudeza Snellen) 👁️', desc: 'Evaluación de agudeza visual lejana y cercana.', archivo: 'visual.html' },
+            { id: 'mod7', nombre: '7. Test de Ishihara (Daltonismo) 🎨', desc: 'Detección digital de discromatopsias.', archivo: 'visual_transporte.html' },
+            { id: 'mod8', nombre: '8. Visión de Profundidad (Estereopsis) 📐', desc: 'Percepción tridimensional y cálculo de distancias.', archivo: 'estereopsis.html' },
+            { id: 'mod9', nombre: '9. Campo Visual Periférico 👁️‍🗨️', desc: 'Amplitud de cono visual lateral en faena.', archivo: 'campo_periferico.html' },
+            { id: 'mod10', nombre: '10. Tamizaje Auditivo Binaural 🎧', desc: 'Audiometría tonal en frecuencias críticas.', archivo: 'audicion.html' },
+            { id: 'mod11', nombre: '11. Atención Sostenida (CPT) 🧠', desc: 'Test de vigilancia y estabilidad atencional.', archivo: 'fatiga.html' },
+            { id: 'mod12', nombre: '12. Test de Fatiga (Karolinska) 😴', desc: 'Nivel de alerta y somnolencia en ruta.', archivo: 'carga_dual.html' },
+            { id: 'mod13', nombre: '13. Palancas Bimanual 🎮', desc: 'Coordinación motriz fina bilateral y mandos.', archivo: 'punteo_transporte.html' },
+            { id: 'mod14', nombre: '14. Memoria de Trabajo Operativa 🧩', desc: 'Retención de secuencias lógicas e instrucciones.', archivo: 'memoria_trabajo.html' },
+            { id: 'mod15', nombre: '15. Frenado Selectivo 🛑', desc: 'Precisión de frenado bajo presión temporal.', archivo: 'reactimetro.html' },
+            { id: 'mod16', nombre: '16. Control de Impulsos Viales ⚖️', desc: 'Detección conductual de perfiles de riesgo.', archivo: 'micro-fit.html' },
+            { id: 'mod17', nombre: '17. Declaración Médica 📋', desc: 'Declaración jurada digital de aptitud física.', archivo: 'declaracion_medica.html' }
         ];
 
         const modulosFaena = [
-            { id: 'mod18', nombre: 'M1. Estabilidad Vestibular (Romberg Pro) ⚖️', desc: 'Prueba estática vestibular de 20s con acelerómetro y aviso sonoro.', archivo: 'medico_pro/01_romberg.html' },
-            { id: 'mod19', nombre: 'M2. Estabilidad Motora (Temblores Pro) ✋', desc: 'Control de micro-oscilaciones y pulso estacionario durante 20s.', archivo: 'medico_pro/02_temblores.html' },
-            { id: 'mod20', nombre: 'M3. Dinamometría y Fuerza (Grip Pro) ✊', desc: 'Fuerza isométrica y prehensión sostenida por 20s en pantalla táctil.', archivo: 'medico_pro/03_grip.html' },
-            { id: 'mod21', nombre: 'M4. Frecuencia Cardíaca Basal (PPG Pro) 💓', desc: 'Pletismografía óptica y análisis de flujo pulsátil durante 20s.', archivo: 'medico_pro/04_ppg.html' },
-            { id: 'mod22', nombre: 'M5. Reflejo Fotomotor Pupilar Pro 👁️', desc: 'Seguimiento facial fino con MediaPipe y alerta por inatención.', archivo: 'medico_pro/05_pupilar.html' },
-            { id: 'mod23', nombre: 'M6. Espirometría Ocupacional Pro 🫁', desc: 'Screening de flujo respiratorio por micrófono integrado durante 20s.', archivo: 'medico_pro/06_espirometria.html' },
+            { id: 'mod18', nombre: 'M1. Estabilidad Vestibular (Romberg Pro) ⚖️', desc: 'Prueba estática vestibular de 20s con acelerómetro.', archivo: 'medico_pro/01_romberg.html' },
+            { id: 'mod19', nombre: 'M2. Estabilidad Motora (Temblores Pro) ✋', desc: 'Control de micro-oscilaciones y pulso estacionario.', archivo: 'medico_pro/02_temblores.html' },
+            { id: 'mod20', nombre: 'M3. Dinamometría y Fuerza (Grip Pro) ✊', desc: 'Fuerza isométrica y prehensión sostenida por 20s.', archivo: 'medico_pro/03_grip.html' },
+            { id: 'mod21', nombre: 'M4. Frecuencia Cardíaca Basal (PPG Pro) 💓', desc: 'Pletismografía óptica y análisis de flujo pulsátil.', archivo: 'medico_pro/04_ppg.html' },
+            { id: 'mod22', nombre: 'M5. Reflejo Fotomotor Pupilar Pro 👁️', desc: 'Seguimiento facial fino con MediaPipe.', archivo: 'medico_pro/05_pupilar.html' },
+            { id: 'mod23', nombre: 'M6. Espirometría Ocupacional Pro 🫁', desc: 'Screening de flujo respiratorio por micrófono.', archivo: 'medico_pro/06_espirometria.html' },
             { id: 'mod24', nombre: 'M7. Agilidad y Praxias Digitales (Tapping) ⚡', desc: 'Velocidad de ejecución rítmica continua por 20s.', archivo: 'medico_pro/07_tapping.html' },
-            { id: 'mod25', nombre: 'M8. Reacción a Alarma de Faena 🚨', desc: 'Tamizaje auditivo de emergencia y tiempo de respuesta acústica.', archivo: 'medico_pro/08_auditivo.html' },
-            { id: 'mod26', nombre: 'M9. Estabilidad Oculomotriz (Nistagmo) 🔄', desc: 'Seguimiento ocular de punto móvil y control de sacadas.', archivo: 'medico_pro/09_nistagmo.html' },
-            { id: 'mod27', nombre: 'M10. Tamizaje de Somnolencia Pro 😴', desc: 'Detección de fatiga, vigilancia y apertura ocular prolongada.', archivo: 'medico_pro/10_somnolencia.html' }
+            { id: 'mod25', nombre: 'M8. Reacción a Alarma de Faena 🚨', desc: 'Tamizaje auditivo de emergencia y respuesta.', archivo: 'medico_pro/08_auditivo.html' },
+            { id: 'mod26', nombre: 'M9. Estabilidad Oculomotriz (Nistagmo) 🔄', desc: 'Seguimiento ocular de punto móvil y sacadas.', archivo: 'medico_pro/09_nistagmo.html' },
+            { id: 'mod27', nombre: 'M10. Tamizaje de Somnolencia Pro 😴', desc: 'Detección de fatiga y vigilancia prolongada.', archivo: 'medico_pro/10_somnolencia.html' }
         ];
 
         function renderizarMenuB2B() {
@@ -424,12 +442,19 @@
             });
         }
 
-        function abrirInformePericial() {
+        function abrirInformeCorrespondiente() {
             const params = new URLSearchParams({ rut: rawRut, nombre: nombreUsuario, cargo: cargoUsuario, plan: planContratado, session: sessionId, mode: 'b2b' });
-            window.location.href = `informe_b2b.html?${params.toString()}`;
+            if (areaActual === 'faena') {
+                window.location.href = `informe_faena.html?${params.toString()}`;
+            } else {
+                window.location.href = `informe_b2b.html?${params.toString()}`;
+            }
         }
 
-        document.addEventListener('DOMContentLoaded', renderizarMenuB2B);
+        document.addEventListener('DOMContentLoaded', () => {
+            renderizarMenuB2B();
+            cambiarTab('vial'); // Iniciar en pestaña vial por defecto
+        });
     </script>
 </body>
 </html>
