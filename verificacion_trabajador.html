@@ -266,17 +266,15 @@
       const empresa = urlParams.get('empresa') || datosUsuario.empresa || '';
       const cleanRut = rut.replace(/[^0-9Kk]/g, '');
 
-      // --- PURGA OBLIGATORIA DE CACHÉ ANTERIOR (EVITA Falsos Completados) ---
       if (cleanRut) {
         const mods = ['reactimetro', 'palancas', 'punteo', 'audicion', 'visual', 'anticipacion', 'estereopsis', 'fatiga'];
         mods.forEach(m => {
-          // Limpiar historiales antiguos para forzar pruebas desde cero
           localStorage.removeItem(`sensometrika_historial_${m}_${cleanRut}`);
           localStorage.removeItem(`${m}_demo_completada_${cleanRut}`);
         });
       }
 
-      const sessionId = `SESION_${cleanRut}_${Date.now()}`;
+      const sessionId = urlParams.get('session') || `SESION_${cleanRut}_${Date.now()}`;
       localStorage.setItem('sensometrika_session_activa', sessionId);
 
       document.getElementById('lblRut').textContent = rut || 'SIN RUT';
@@ -449,7 +447,7 @@
       const plan = (urlParams.get('plan') || localStorage.getItem('sensometrika_plan_contratado') || 'PLUS').toUpperCase();
       const token = urlParams.get('token') || '';
       const cleanRut = rut.replace(/[^0-9Kk]/g, '');
-      const sessionId = localStorage.getItem('sensometrika_session_activa') || `SESION_${cleanRut}_${Date.now()}`;
+      const sessionId = urlParams.get('session') || localStorage.getItem('sensometrika_session_activa') || `SESION_${cleanRut}_${Date.now()}`;
 
       if (!isB2C && canvas) {
         const firmaB64 = canvas.toDataURL('image/png');
@@ -459,7 +457,9 @@
         }
       }
 
+      // CORREGIDO: Redirige directamente al menú B2B limpio sin bucles de verificación
       let menuDestino = 'menu_B2B.html';
+      if (modeParam === 'b2b_mf') menuDestino = 'B2B_medico_faena.html';
       if (isB2C) menuDestino = 'menu_B2C.html';
       if (isB2BPro) menuDestino = 'menu_B2B_PRO.html';
 
