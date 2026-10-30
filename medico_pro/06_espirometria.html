@@ -147,7 +147,7 @@
       font-weight: 800;
     }
 
-    .distance-block-overlay, .mic-prompt-overlay, .orientation-block-overlay {
+    .distance-block-overlay, .mic-prompt-overlay {
       position: absolute; inset: 0; background: rgba(4, 8, 16, 0.96);
       backdrop-filter: blur(4px); z-index: 30; display: none;
       flex-direction: column; justify-content: center; align-items: center; padding: 16px; text-align: center; gap: 10px; border-radius: 12px;
@@ -175,7 +175,7 @@
         6. Espirometría Ocupacional Pro
       </h3>
       <p class="instruction-text">
-        Coloque el teléfono en <strong>posición horizontal (paisaje)</strong> frente a su boca. Prepárese (0s-5s), sople con fuerza entre el <strong>segundo 5 y el 20</strong>, y finalice hasta los 25s.
+        Se sugiere colocar el teléfono en <strong>posición horizontal</strong> frente a su boca. Prepárese (0s-5s), sople con fuerza entre el <strong>segundo 5 y el 20</strong>, y finalice hasta los 25s.
       </p>
 
       <div style="background: #030712; border: 1px solid var(--card-border); border-radius: 10px; padding: 16px; text-align: center;">
@@ -207,12 +207,6 @@
         <span class="instruction-text">Ajuste su posición frente a la pantalla.<br>Distancia telemétrica: <b id="lblDistVal" style="color:var(--accent-red);">-- cm</b><br>(Rango normativo: 40 a 70 cm).</span>
       </div>
 
-      <!-- OVERLAY DE BLOQUEO POR ORIENTACIÓN -->
-      <div id="boxBlockOrientation" class="orientation-block-overlay">
-        <span style="color: var(--accent-red); font-weight: 900; font-size: 0.9rem;">📱 GIRE SU TELÉFONO A HORIZONTAL</span>
-        <span class="instruction-text">Coloque el dispositivo en <b>posición horizontal (paisaje)</b> frente a su boca para capturar el flujo de aire correctamente.</span>
-      </div>
-
       <!-- OVERLAY INTEGRADO DE CALIBRACIÓN DE MICRÓFONO -->
       <div id="boxMicPrompt" class="mic-prompt-overlay" style="display: flex;">
         <span style="color: var(--accent-cyan); font-weight: 900; font-size: 0.9rem;">🎤 CALIBRACIÓN DE ENTORNO ACÚSTICO</span>
@@ -233,35 +227,12 @@
 
     let distanciaMedidaCm = 55;
     let estaBloqueadoPorDistancia = false;
-    let estaBloqueadoPorOrientacion = false;
     let audioContext = null;
     let analyser = null;
     let microphone = null;
     let dataArray = null;
     let micActivo = false;
     let cameraInstance = null;
-
-    function verificarOrientacionDispositivo() {
-      const overlayOri = document.getElementById('boxBlockOrientation');
-      const esAnchoMayor = window.innerWidth > window.innerHeight;
-      let enPaisaje = esAnchoMayor;
-      if (window.screen && window.screen.orientation) {
-        const type = window.screen.orientation.type;
-        if (type.includes('portrait')) enPaisaje = false;
-        else if (type.includes('landscape')) enPaisaje = true;
-      }
-
-      if (!enPaisaje) {
-        estaBloqueadoPorOrientacion = true;
-        overlayOri.style.display = 'flex';
-      } else {
-        estaBloqueadoPorOrientacion = false;
-        overlayOri.style.display = 'none';
-      }
-    }
-
-    window.addEventListener('resize', verificarOrientacionDispositivo);
-    window.addEventListener('orientationchange', verificarOrientacionDispositivo);
 
     async function otorgarPermisoMic() {
       try {
@@ -350,8 +321,7 @@
     }
 
     function iniciarEspirometria() {
-      verificarOrientacionDispositivo();
-      if (estaBloqueadoPorOrientacion || estaBloqueadoPorDistancia) return;
+      if (estaBloqueadoPorDistancia) return;
       if (!micActivo) {
         document.getElementById('boxMicPrompt').style.display = 'flex';
         return;
@@ -393,7 +363,6 @@
         if (tiempoTranscurrido >= 5 && tiempoTranscurrido <= 20) {
           let volumenActual = obtenerVolumenMicrofono();
           
-          // UMBRAL ESTRICTO: Se exige un volumen > 16 para evitar falsos positivos por ruido ambiente
           if (volumenActual > 16) {
             muestrasValidas++;
             let flujoCalculado = ((volumenActual - 15) / 5).toFixed(1);
@@ -458,7 +427,6 @@
 
     document.addEventListener('DOMContentLoaded', () => {
       iniciarMediaPipeFaceMesh();
-      verificarOrientacionDispositivo();
     });
   </script>
 </body>
