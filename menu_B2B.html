@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SENSOMETRIKA | Menú B2B Corporativo</title>
+    <title>SENSOMETRIKA | Acreditación y Menú B2B Corporativo</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         :root {
@@ -16,6 +16,7 @@
             --blue-btn: #0284c7;
             --blue-btn-border: #0369a1;
             --accent-cyan: #38bdf8;
+            --accent-gold: #e5b324;
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
@@ -78,6 +79,100 @@
             box-shadow: 0 10px 30px rgba(0,0,0,0.5);
         }
 
+        /* Pantalla de Acreditación */
+        #vistaAcreditacion {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .acreditacion-title {
+            font-size: 0.85rem;
+            font-weight: 900;
+            color: var(--accent-gold);
+            text-transform: uppercase;
+            text-align: center;
+            border-bottom: 1px solid var(--card-border);
+            padding-bottom: 8px;
+        }
+
+        .acreditacion-desc {
+            font-size: 0.74rem;
+            color: var(--text-muted);
+            text-align: center;
+            line-height: 1.4;
+        }
+
+        .camera-box {
+            width: 100%;
+            height: 180px;
+            background: #04070d;
+            border: 2px dashed var(--accent-cyan);
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .camera-box video, .camera-box canvas {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
+        .form-group-cred {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .form-group-cred label {
+            font-size: 0.68rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            font-weight: 700;
+        }
+
+        .form-group-cred input {
+            background: #070d17;
+            border: 1px solid var(--card-border);
+            color: #fff;
+            padding: 10px 12px;
+            border-radius: 8px;
+            font-size: 0.82rem;
+            outline: none;
+        }
+
+        .btn-acreditar {
+            background-color: var(--accent-green);
+            color: #000;
+            border: none;
+            padding: 12px;
+            border-radius: 10px;
+            font-weight: 900;
+            font-size: 0.85rem;
+            cursor: pointer;
+            text-transform: uppercase;
+            text-align: center;
+            transition: opacity 0.2s;
+            margin-top: 4px;
+        }
+
+        .btn-acreditar:hover { opacity: 0.9; }
+
+        /* Vista de Módulos (Oculta hasta acreditarse) */
+        #vistaModulos {
+            display: none;
+            flex-direction: column;
+            gap: 14px;
+        }
+
         .user-header-box {
             background: #0f172a;
             border: 1px solid #1e293b;
@@ -85,8 +180,16 @@
             padding: 12px 14px;
             text-align: center;
             display: flex;
-            flex-direction: column;
-            gap: 4px;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .user-avatar-img {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid var(--accent-cyan);
         }
 
         .user-plan-title {
@@ -98,8 +201,9 @@
 
         .user-info-text {
             color: #cbd5e1;
-            font-size: 0.75rem;
+            font-size: 0.72rem;
             font-weight: 700;
+            text-align: left;
         }
 
         .modules-list {
@@ -107,7 +211,7 @@
             flex-direction: column;
             gap: 10px;
             width: 100%;
-            max-height: 60vh;
+            max-height: 55vh;
             overflow-y: auto;
             padding-right: 4px;
         }
@@ -173,8 +277,9 @@
             text-decoration: none;
             width: 100%;
             display: block;
-            margin-top: 6px;
+            margin-top: 2px;
             text-transform: uppercase;
+            cursor: pointer;
         }
     </style>
 </head>
@@ -187,16 +292,56 @@
         </header>
 
         <div class="eval-card">
-            <div class="user-header-box">
-                <div class="user-plan-title" id="lblPlanHeader">EVALUACIÓN B2B • PLAN PERSONALIZADO</div>
-                <div class="user-info-text" id="lblUserData">EVALUADO: CARGANDO... | RUT: --</div>
+            
+            <!-- VISTA 1: ACREDITACIÓN Y VALIDACIÓN DE IDENTIDAD -->
+            <div id="vistaAcreditacion">
+                <div class="acreditacion-title">🔐 Acreditación Biométrica & Validación de Identidad</div>
+                <div class="acreditacion-desc">Por favor, verifique sus datos, active su cámara y capture su fotografía frontal para habilitar la sesión pericial oficial.</div>
+
+                <div class="camera-box" id="cameraContainer">
+                    <video id="videoPreview" autoplay playsinline muted style="display:none;"></video>
+                    <canvas id="canvasPreview" style="display:none;"></canvas>
+                    <div id="cameraPlaceholder" style="text-align: center; color: var(--text-muted); font-size: 0.75rem; padding: 10px;">
+                        📷 Cámara desactivada<br>
+                        <button type="button" onclick="iniciarCamara()" style="margin-top: 8px; background: var(--blue-btn); color:#fff; border:none; padding: 6px 12px; border-radius: 6px; font-weight:700; cursor:pointer; font-size:0.7rem;">ACTIVAR CÁMARA</button>
+                    </div>
+                </div>
+
+                <div class="form-group-cred">
+                    <label>RUT del Evaluado *</label>
+                    <input type="text" id="inputRut" placeholder="Ej: 12.345.678-9" required>
+                </div>
+                <div class="form-group-cred">
+                    <label>Nombre Completo *</label>
+                    <input type="text" id="inputNombre" placeholder="Ej: Juan Pérez Santana" required>
+                </div>
+                <div class="form-group-cred">
+                    <label>Cargo / Función en Faena *</label>
+                    <input type="text" id="inputCargo" placeholder="Ej: Operador de Camión Tolva" required>
+                </div>
+
+                <button type="button" class="btn-acreditar" onclick="completarAcreditacion()">
+                    ✓ CONFIRMAR IDENTIDAD Y ACCEDER A MÓDULOS →
+                </button>
             </div>
 
-            <div class="modules-list" id="contenedorModulosB2B">
-                <!-- Se inyectan los módulos dinámicamente -->
+            <!-- VISTA 2: MENÚ DE MÓDULOS B2B (Se muestra tras acreditarse) -->
+            <div id="vistaModulos">
+                <div class="user-header-box">
+                    <img id="userAvatarImg" src="" alt="Avatar" class="user-avatar-img" style="display:none;">
+                    <div style="flex:1;">
+                        <div class="user-plan-title" id="lblPlanHeader">EVALUACIÓN B2B • PLAN PERSONALIZADO</div>
+                        <div class="user-info-text" id="lblUserData">EVALUADO: -- | RUT: --</div>
+                    </div>
+                </div>
+
+                <div class="modules-list" id="contenedorModulosB2B">
+                    <!-- Se inyectan los módulos dinámicamente -->
+                </div>
+
+                <button type="button" id="btnVerInforme" class="btn-informe" onclick="abrirInformePericial()">VER INFORME PERICIAL B2B →</button>
             </div>
 
-            <button type="button" id="btnVerInforme" class="btn-informe" onclick="abrirInformePericial()">VER INFORME PERICIAL B2B →</button>
         </div>
     </div>
 
@@ -209,17 +354,111 @@
         const modulosUrl = urlParams.get('modulos');
         if (modulosUrl) { localStorage.setItem('sensometrika_modulos_b2b_activos', modulosUrl); }
 
-        const rawRut = urlParams.get('rut') || datosUsuario.rut || '12.345.678-K';
-        const cleanRut = rawRut.replace(/[^0-9Kk]/g, '');
-        const nombreUsuario = urlParams.get('nombre') || datosUsuario.nombre || 'TRABAJADOR EVALUADO';
-        const sessionId = urlParams.get('session') || localStorage.getItem('sensometrika_session_activa') || `SESION_${cleanRut}_${Date.now()}`;
-        
-        localStorage.setItem('sensometrika_session_activa', sessionId);
-        document.getElementById('lblUserData').textContent = `EVALUADO: ${decodeURIComponent(nombreUsuario).toUpperCase()} | RUT: ${rawRut}`;
+        const rawRut = urlParams.get('rut') || datosUsuario.rut || '';
+        const nombreUsuario = urlParams.get('nombre') || datosUsuario.nombre || '';
+        const cargoUsuario = urlParams.get('cargo') || datosUsuario.cargo || '';
 
-        function verifRendidoRut(modKey) {
+        // Prellenar inputs de acreditación con parámetros de URL si existen
+        if (rawRut) document.getElementById('inputRut').value = decodeURIComponent(rawRut);
+        if (nombreUsuario) document.getElementById('inputNombre').value = decodeURIComponent(nombreUsuario);
+        if (cargoUsuario) document.getElementById('inputCargo').value = decodeURIComponent(cargoUsuario);
+
+        let streamCamara = null;
+        let fotoCapturadaBase64 = '';
+
+        async function iniciarCamara() {
+            try {
+                streamCamara = await navigator.mediaDevices.getUserMedia({ video: { width: 400, height: 400, facingMode: 'user' } });
+                const video = document.getElementById('videoPreview');
+                video.srcObject = streamCamara;
+                video.style.display = 'block';
+                document.getElementById('cameraPlaceholder').style.display = 'none';
+            } catch (err) {
+                alert("⚠️ No se pudo acceder a la cámara. Puede continuar con la acreditación de identidad ingresando sus datos.");
+            }
+        }
+
+        function completarAcreditacion() {
+            const rutVal = document.getElementById('inputRut').value.trim();
+            const nombreVal = document.getElementById('inputNombre').value.trim();
+            const cargoVal = document.getElementById('inputCargo').value.trim();
+
+            if (!rutVal || !nombreVal) {
+                alert("⚠️ Por favor ingrese su RUT y Nombre Completo para continuar.");
+                return;
+            }
+
+            // Capturar foto si la cámara está activa
+            const video = document.getElementById('videoPreview');
+            const canvas = document.getElementById('canvasPreview');
+            if (streamCamara && video.readyState === video.HAVE_ENOUGH_DATA) {
+                canvas.width = video.videoWidth || 300;
+                canvas.height = video.videoHeight || 300;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                fotoCapturadaBase64 = canvas.toDataURL('image/jpeg', 0.85);
+                localStorage.setItem('sensometrika_foto_evaluado', fotoCapturadaBase64);
+                
+                // Apagar cámara
+                streamCamara.getTracks().forEach(track => track.stop());
+            }
+
+            // Guardar datos acreditados
+            localStorage.setItem('sensometrika_b2b_rut_activo', rutVal);
+            localStorage.setItem('sensometrika_b2b_nombre_activo', nombreVal);
+            localStorage.setItem('sensometrika_b2b_cargo_activo', cargoVal);
+
+            const cleanRut = rutVal.replace(/[^0-9Kk]/g, '');
+            const sessionId = urlParams.get('session') || localStorage.getItem('sensometrika_session_activa') || `SESION_${cleanRut}_${Date.now()}`;
+            localStorage.setItem('sensometrika_session_activa', sessionId);
+
+            // Cambiar a vista de módulos
+            document.getElementById('vistaAcreditacion').style.display = 'none';
+            document.getElementById('vistaModulos').style.display = 'flex';
+
+            if (fotoCapturadaBase64) {
+                const avatar = document.getElementById('userAvatarImg');
+                avatar.src = fotoCapturadaBase64;
+                avatar.style.display = 'block';
+            }
+
+            document.getElementById('lblUserData').innerHTML = `EVALUADO: <strong>${nombreVal.toUpperCase()}</strong><br>RUT: ${rutVal} | CARGO: ${cargoVal || 'Operador'}`;
+
+            renderizarMenuB2B(cleanRut, nombreVal, sessionId);
+        }
+
+        const catModulos17 = [
+            { id: 'mod1', nombre: '1. Punteo y Coordinación Visomotora 🎯', desc: 'Ritmo motor, velocidad máxima y resistencia a fatiga (1A a 1D).', archivo: 'demo_punteo_pro.html' },
+            { id: 'mod2', nombre: '2. Reactímetro B2B ⚡', desc: 'Tiempos de respuesta y frenado en ms con compensación de hardware.', archivo: 'demo_reactimetro_pro.html' },
+            { id: 'mod3', nombre: '3. Coordinación Visomotriz y Tracking 🚗', desc: 'Seguimiento continuo de trayectoria sobre circuitos variables.', archivo: 'demo_visomotriz_pro.html' },
+            { id: 'mod4', nombre: '4. Anticipación de Tiempo y Velocidad ⏱️', desc: 'Cálculo espaciotemporal ante puntos ciegos y velocidad variable.', archivo: 'demo_anticipacion_pro.html' },
+            { id: 'mod5', nombre: '5. Resistencia al Encandilamiento 💡', desc: 'Velocidad de recuperación visual ante destellos frontales (D.S. N° 170).', archivo: 'demo_encandilamiento_pro.html' },
+            { id: 'mod6', nombre: '6. Tamizaje Visual (Agudeza Snellen) 👁️', desc: 'Evaluación de agudeza visual lejana y cercana con auditoría telemétrica.', archivo: 'visual.html' },
+            { id: 'mod7', nombre: '7. Test de Ishihara (Daltonismo) 🎨', desc: 'Detección digital de discromatopsias para lectura de semáforos.', archivo: 'visual_transporte.html' },
+            { id: 'mod8', nombre: '8. Visión de Profundidad (Estereopsis) 📐', desc: 'Percepción tridimensional y cálculo preciso de distancias en faena.', archivo: 'estereopsis.html' },
+            { id: 'mod9', nombre: '9. Campo Visual Periférico 👁️‍🗨️', desc: 'Amplitud de cono visual lateral para prevención de ángulos muertos.', archivo: 'campo_periferico.html' },
+            { id: 'mod10', nombre: '10. Tamizaje Auditivo Binaural 🎧', desc: 'Audiometría tonal orientada a frecuencias críticas y umbrales.', archivo: 'audicion.html' },
+            { id: 'mod11', nombre: '11. Atención Sostenida (CPT) 🧠', desc: 'Test de vigilancia y estabilidad atencional para prevención de micro-sueños.', archivo: 'fatiga.html' },
+            { id: 'mod12', nombre: '12. Test de Fatiga (Karolinska) 😴', desc: 'Nivel de alerta y somnolencia en ruta para operadores de turno.', archivo: 'carga_dual.html' },
+            { id: 'mod13', nombre: '13. Palancas Bimanual 🎮', desc: 'Coordinación motriz fina bilateral y disociación de mandos independientes.', archivo: 'punteo_transporte.html' },
+            { id: 'mod14', nombre: '14. Memoria de Trabajo Operativa 🧩', desc: 'Retención de secuencias lógicas e instrucciones operativas complejas.', archivo: 'memoria_trabajo.html' },
+            { id: 'mod15', nombre: '15. Frenado Selectivo 🛑', desc: 'Precisión de frenado bajo presión de tiempo y control inhibitorio.', archivo: 'reactimetro.html' },
+            { id: 'mod16', nombre: '16. Control de Impulsos Viales ⚖️', desc: 'Detección conductual de perfiles de riesgo y temperamento al volante.', archivo: 'micro-fit.html' },
+            { id: 'mod17', nombre: '17. Declaración Médica 📋', desc: 'Declaración jurada digital de aptitud física (Art. 36 D.S. N° 170).', archivo: 'declaracion_medica.html' },
+            { id: 'mod18', nombre: 'M1. Estabilidad Vestibular (Romberg Pro) ⚖️', desc: 'Prueba estática vestibular de 20s con acelerómetro y aviso sonoro.', archivo: 'medico_pro/01_romberg.html' },
+            { id: 'mod19', nombre: 'M2. Estabilidad Motora (Temblores Pro) ✋', desc: 'Control de micro-oscilaciones y pulso estacionario durante 20s.', archivo: 'medico_pro/02_temblores.html' },
+            { id: 'mod20', nombre: 'M3. Dinamometría y Fuerza (Grip Pro) ✊', desc: 'Fuerza isométrica y prehensión sostenida por 20s en pantalla táctil.', archivo: 'medico_pro/03_grip.html' },
+            { id: 'mod21', nombre: 'M4. Frecuencia Cardíaca Basal (PPG Pro) 💓', desc: 'Pletismografía óptica y análisis de flujo pulsátil durante 20s.', archivo: 'medico_pro/04_ppg.html' },
+            { id: 'mod22', nombre: 'M5. Reflejo Fotomotor Pupilar Pro 👁️', desc: 'Seguimiento facial fino con MediaPipe y alerta por inatención.', archivo: 'medico_pro/05_pupilar.html' },
+            { id: 'mod23', nombre: 'M6. Espirometría Ocupacional Pro 🫁', desc: 'Screening de flujo respiratorio por micrófono integrado durante 20s.', archivo: 'medico_pro/06_espirometria.html' },
+            { id: 'mod24', nombre: 'M7. Agilidad y Praxias Digitales (Tapping) ⚡', desc: 'Velocidad de ejecución rítmica continua por 20s.', archivo: 'medico_pro/07_tapping.html' },
+            { id: 'mod25', nombre: 'M8. Reacción a Alarma de Faena 🚨', desc: 'Tamizaje auditivo de emergencia y tiempo de respuesta acústica.', archivo: 'medico_pro/08_auditivo.html' },
+            { id: 'mod26', nombre: 'M9. Estabilidad Oculomotriz (Nistagmo) 🔄', desc: 'Seguimiento ocular de punto móvil y control de sacadas.', archivo: 'medico_pro/09_nistagmo.html' },
+            { id: 'mod27', nombre: 'M10. Tamizaje de Somnolencia Pro 😴', desc: 'Detección de fatiga, vigilancia y apertura ocular prolongada.', archivo: 'medico_pro/10_somnolencia.html' }
+        ];
+
+        function verifRendidoRut(modKey, cleanRut, sessionId) {
             if (!cleanRut) return false;
-
             let nombreModuloTest = '';
             switch(modKey) {
                 case 'mod1': nombreModuloTest = 'punteo'; break;
@@ -239,7 +478,6 @@
                 case 'mod15': nombreModuloTest = 'frenado_selectivo'; break;
                 case 'mod16': nombreModuloTest = 'control_impulsos'; break;
                 case 'mod17': nombreModuloTest = 'declaracion_medica'; break;
-                // Mapeo de la Batería Clínica Aislada (Medico Pro)
                 case 'mod18': nombreModuloTest = 'romberg'; break;
                 case 'mod19': nombreModuloTest = 'temblores'; break;
                 case 'mod20': nombreModuloTest = 'grip'; break;
@@ -253,69 +491,17 @@
                 default: nombreModuloTest = modKey;
             }
 
-            const claveHistorialSesion = sessionId ? `sensometrika_historial_${nombreModuloTest}_${cleanRut}_${sessionId}` : null;
-            const claveLastSesion = sessionId ? `sensometrika_last_${nombreModuloTest}_${cleanRut}_${sessionId}` : null;
-            
-            const claveHistorialRut = `sensometrika_historial_${nombreModuloTest}_${cleanRut}`;
-            const claveLastRut = `sensometrika_last_${nombreModuloTest}_${cleanRut}`;
-            const claveGeneralDirecta = `medico_${nombreModuloTest}_${cleanRut}_${sessionId}`;
-            const claveSenseDirecta = `sensometrika_${nombreModuloTest}_${cleanRut}_${sessionId}`;
-
-            const hSesion = claveHistorialSesion ? JSON.parse(localStorage.getItem(claveHistorialSesion)) : null;
-            const lSesion = claveLastSesion ? JSON.parse(localStorage.getItem(claveLastSesion)) : null;
-            const hRut = JSON.parse(localStorage.getItem(claveHistorialRut)) || [];
-            const lRut = localStorage.getItem(claveLastRut);
-            const directCheck = localStorage.getItem(claveGeneralDirecta);
-            const senseCheck = localStorage.getItem(claveSenseDirecta);
-
-            if ((hSesion && hSesion.length > 0) || lSesion || (hRut && hRut.length > 0) || lRut || directCheck === 'true' || senseCheck === 'true') {
-                return true;
-            }
-
-            return false;
+            const hSesion = localStorage.getItem(`sensometrika_historial_${nombreModuloTest}_${cleanRut}_${sessionId}`);
+            const lSesion = localStorage.getItem(`sensometrika_last_${nombreModuloTest}_${cleanRut}_${sessionId}`);
+            return (hSesion || lSesion || localStorage.getItem(`medico_${nombreModuloTest}_${cleanRut}_${sessionId}`) === 'true');
         }
 
-        // Catálogo operativo unificado (17 Clásicos + 10 Submódulos Medico Pro)
-        const catModulos17 = [
-            { id: 'mod1', nombre: '1. Punteo y Coordinación Visomotora 🎯', desc: 'Ritmo motor, velocidad máxima y resistencia a fatiga (1A a 1D).', archivo: 'demo_punteo_pro.html' },
-            { id: 'mod2', nombre: '2. Reactímetro B2B ⚡', desc: 'Tiempos de respuesta y frenado en ms con compensación de hardware.', archivo: 'demo_reactimetro_pro.html' },
-            { id: 'mod3', nombre: '3. Coordinación Visomotriz y Tracking 🚗', desc: 'Seguimiento continuo de trayectoria sobre circuitos variables.', archivo: 'demo_visomotriz_pro.html' },
-            { id: 'mod4', nombre: '4. Anticipación de Tiempo y Velocidad ⏱️', desc: 'Cálculo espaciotemporal ante puntos ciegos y velocidad variable.', archivo: 'demo_anticipacion_pro.html' },
-            { id: 'mod5', nombre: '5. Resistencia al Encandilamiento 💡', desc: 'Velocidad de recuperación visual ante destellos frontales (D.S. N° 170).', archivo: 'demo_encandilamiento_pro.html' },
-            { id: 'mod6', nombre: '6. Tamizaje Visual (Agudeza Snellen) 👁️', desc: 'Evaluación de agudeza visual lejana y cercana con auditoría telemétrica.', archivo: 'visual.html' },
-            { id: 'mod7', nombre: '7. Test de Ishihara (Daltonismo) 🎨', desc: 'Detección digital de discromatopsias para lectura de semáforos.', archivo: 'visual_transporte.html' },
-            { id: 'mod8', nombre: '8. Visión de Profundidad (Estereopsis) 📐', desc: 'Percepción tridimensional y cálculo preciso de distancias en faena.', archivo: 'estereopsis.html' },
-            { id: 'mod9', nombre: '9. Campo Visual Periférico 👁️‍🗨️', desc: 'Amplitud de cono visual lateral para prevención de ángulos muertos.', archivo: 'campo_periferico.html' },
-            { id: 'mod10', nombre: '10. Tamizaje Auditivo Binaural 🎧', desc: 'Audiometría tonal orientada a frecuencias críticas y umbrales.', archivo: 'audicion.html' },
-            { id: 'mod11', nombre: '11. Atención Sostenida (CPT) 🧠', desc: 'Test de vigilancia y estabilidad atencional para prevención de micro-sueños.', archivo: 'fatiga.html' },
-            { id: 'mod12', nombre: '12. Test de Fatiga (Karolinska) 😴', desc: 'Nivel de alerta y somnolencia en ruta para operadores de turno.', archivo: 'carga_dual.html' },
-            { id: 'mod13', nombre: '13. Palancas Bimanual 🎮', desc: 'Coordinación motriz fina bilateral y disociación de mandos independientes.', archivo: 'punteo_transporte.html' },
-            { id: 'mod14', nombre: '14. Memoria de Trabajo Operativa 🧩', desc: 'Retención de secuencias lógicas e instrucciones operativas complejas.', archivo: 'memoria_trabajo.html' },
-            { id: 'mod15', nombre: '15. Frenado Selectivo 🛑', desc: 'Precisión de frenado bajo presión de tiempo y control inhibitorio.', archivo: 'reactimetro.html' },
-            { id: 'mod16', nombre: '16. Control de Impulsos Viales ⚖️', desc: 'Detección conductual de perfiles de riesgo y temperamento al volante.', archivo: 'micro-fit.html' },
-            { id: 'mod17', nombre: '17. Declaración Médica 📋', desc: 'Declaración jurada digital de aptitud física (Art. 36 D.S. N° 170).', archivo: 'declaracion_medica.html' },
-            // Batería Clínica Aislada Pro (20s c/u con control biométrico y audio)
-            { id: 'mod18', nombre: 'M1. Estabilidad Vestibular (Romberg Pro) ⚖️', desc: 'Prueba estática vestibular de 20s con acelerómetro y aviso sonoro.', archivo: 'medico_pro/01_romberg.html' },
-            { id: 'mod19', nombre: 'M2. Estabilidad Motora (Temblores Pro) ✋', desc: 'Control de micro-oscilaciones y pulso estacionario durante 20s.', archivo: 'medico_pro/02_temblores.html' },
-            { id: 'mod20', nombre: 'M3. Dinamometría y Fuerza (Grip Pro) ✊', desc: 'Fuerza isométrica y prehensión sostenida por 20s en pantalla táctil.', archivo: 'medico_pro/03_grip.html' },
-            { id: 'mod21', nombre: 'M4. Frecuencia Cardíaca Basal (PPG Pro) 💓', desc: 'Pletismografía óptica y análisis de flujo pulsátil durante 20s.', archivo: 'medico_pro/04_ppg.html' },
-            { id: 'mod22', nombre: 'M5. Reflejo Fotomotor Pupilar Pro 👁️', desc: 'Seguimiento facial fino con MediaPipe y alerta por inatención.', archivo: 'medico_pro/05_pupilar.html' },
-            { id: 'mod23', nombre: 'M6. Espirometría Ocupacional Pro 🫁', desc: 'Screening de flujo respiratorio por micrófono integrado durante 20s.', archivo: 'medico_pro/06_espirometria.html' },
-            { id: 'mod24', nombre: 'M7. Agilidad y Praxias Digitales (Tapping) ⚡', desc: 'Velocidad de ejecución rítmica continua por 20s.', archivo: 'medico_pro/07_tapping.html' },
-            { id: 'mod25', nombre: 'M8. Reacción a Alarma de Faena 🚨', desc: 'Tamizaje auditivo de emergencia y tiempo de respuesta acústica.', archivo: 'medico_pro/08_auditivo.html' },
-            { id: 'mod26', nombre: 'M9. Estabilidad Oculomotriz (Nistagmo) 🔄', desc: 'Seguimiento ocular de punto móvil y control de sacadas.', archivo: 'medico_pro/09_nistagmo.html' },
-            { id: 'mod27', nombre: 'M10. Tamizaje de Somnolencia Pro 😴', desc: 'Detección de fatiga, vigilancia y apertura ocular prolongada.', archivo: 'medico_pro/10_somnolencia.html' }
-        ];
-
-        function renderizarMenuB2B() {
+        function renderizarMenuB2B(cleanRut, nombreVal, sessionId) {
             const bolsaActivaStr = localStorage.getItem('sensometrika_modulos_b2b_activos') || 'mod1,mod2,mod3,mod6,mod10,mod18,mod19,mod20,mod21,mod22,mod23,mod24,mod25,mod26,mod27';
             const bolsaActivaArray = bolsaActivaStr.split(',').map(m => m.trim().toLowerCase());
 
-            const paramsObj = { rut: rawRut, nombre: nombreUsuario, plan: planContratado, session: sessionId, mode: 'b2b' };
+            const paramsObj = { rut: cleanRut, nombre: nombreVal, plan: planContratado, session: sessionId, mode: 'b2b' };
             if (modulosUrl) paramsObj.modulos = modulosUrl;
-            
-            paramsObj.returnUrl = encodeURIComponent(`menu_B2B.html?${new URLSearchParams(paramsObj).toString()}`);
-            
             const queryParamsString = new URLSearchParams(paramsObj).toString();
 
             const contenedor = document.getElementById('contenedorModulosB2B');
@@ -323,7 +509,7 @@
 
             catModulos17.forEach(mod => {
                 const estaSolicitado = bolsaActivaArray.includes(mod.id.toLowerCase());
-                const rendido = verifRendidoRut(mod.id);
+                const rendido = verifRendidoRut(mod.id, cleanRut, sessionId);
 
                 let accionHtml = '';
                 if (!estaSolicitado) {
@@ -348,12 +534,14 @@
         }
 
         function abrirInformePericial() {
-            const params = new URLSearchParams({ rut: rawRut, nombre: nombreUsuario, plan: planContratado, session: sessionId, mode: 'b2b' });
+            const rutVal = localStorage.getItem('sensometrika_b2b_rut_activo') || rawRut;
+            const nombreVal = localStorage.getItem('sensometrika_b2b_nombre_activo') || nombreUsuario;
+            const sessionId = localStorage.getItem('sensometrika_session_activa');
+
+            const params = new URLSearchParams({ rut: rutVal, nombre: nombreVal, plan: planContratado, session: sessionId, mode: 'b2b' });
             if (modulosUrl) params.set('modulos', modulosUrl);
             window.location.href = `informe_b2b.html?${params.toString()}`;
         }
-
-        document.addEventListener('DOMContentLoaded', renderizarMenuB2B);
     </script>
 </body>
 </html>
