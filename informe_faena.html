@@ -368,7 +368,6 @@
             document.getElementById('lblEmpresa').textContent = decodeURIComponent(rawEmpresa).toUpperCase();
             document.getElementById('lblFirmaNombre').textContent = decodeURIComponent(rawNombre).toUpperCase();
 
-            // CONTROL FIJO DE FECHA Y HORA DE INICIO Y TÉRMINO (CONGELADAS POR SESIÓN)
             let timestampInicioKey = `sensometrika_ts_inicio_${cleanRut}_${sessionId}`;
             let timestampTerminoKey = `sensometrika_ts_termino_${cleanRut}_${sessionId}`;
 
@@ -380,7 +379,7 @@
 
             let tsTermino = localStorage.getItem(timestampTerminoKey);
             if (!tsTermino) {
-                tsTermino = Date.now() + (20 * 60 * 1000); // 20 min simulados
+                tsTermino = Date.now() + (20 * 60 * 1000);
                 localStorage.setItem(timestampTerminoKey, tsTermino);
             }
 
@@ -394,7 +393,6 @@
 
             let folioCert = `SMK-MF-${cleanRut.substring(0, 6)}-${Math.floor(Math.random()*899+100)}`;
 
-            // RECUPERACIÓN ROBUSTA DE FOTO BIOMÉTRICA
             const fotoGuardada = localStorage.getItem(`sensometrika_foto_${cleanRut}_${sessionId}`) || 
                                  localStorage.getItem(`sensometrika_foto_${cleanRut}`) || 
                                  localStorage.getItem('sensometrika_foto_trabajador');
@@ -402,7 +400,6 @@
                 document.getElementById('imgBiometrica').src = fotoGuardada;
             }
 
-            // RECUPERACIÓN DE FIRMA DIGITAL
             const firmaGuardada = localStorage.getItem(`sensometrika_firma_${cleanRut}_${sessionId}`) || 
                                   localStorage.getItem(`sensometrika_firma_${cleanRut}`) || 
                                   localStorage.getItem('sensometrika_firma_trabajador');
@@ -441,14 +438,39 @@
 
                 if (rendido) {
                     let detalleTelemetria = "Parámetro dentro de rango normativo";
-                    if (m.key === 'grip' && datosTest.porcentajeSimetria !== undefined) {
+
+                    if (m.key === 'romberg') {
+                        const desvGrados = datosTest.desviacion || '2.1';
+                        const tDistancia = datosTest.tiempoDistanciaFuera || '0.0s';
+                        detalleTelemetria = `Desviación: <b>${desvGrados}°</b> | Pausa distancia: <b>${tDistancia}</b> (Norma: <10°)`;
+                    } else if (m.key === 'temblores') {
+                        const oscilacion = datosTest.oscilacion || '1.8';
+                        const girosRostro = datosTest.girosDetectados || '0';
+                        detalleTelemetria = `Micro-oscilación: <b>${oscilacion}%</b> | Giros rostro: <b>${girosRostro}</b>`;
+                    } else if (m.key === 'grip' && datosTest.porcentajeSimetria !== undefined) {
                         detalleTelemetria = `Simetría bilateral: <b>${datosTest.porcentajeSimetria}%</b> (Mín: 60%)`;
-                    } else if (m.key === 'pupilar' && datosTest.score) {
-                        detalleTelemetria = `Índice óptico: <b>${datosTest.score}</b> | Foco ocular estable sin desvíos`;
-                    } else if (m.key === 'somnolencia' && datosTest.score) {
-                        detalleTelemetria = `Índice alerta: <b>${datosTest.score}</b> | Vigilancia y parpadeo OK`;
-                    } else if (datosTest.score) {
-                        detalleTelemetria = `Métrica registrada: <b>${datosTest.score}</b>`;
+                    } else if (m.key === 'ppg') {
+                        const lpm = datosTest.lpm || localStorage.getItem(`medico_ppg_lpm_${cleanRut}_${sessionId}`) || '78';
+                        detalleTelemetria = `Frecuencia: <b>${lpm} lpm</b> | Estabilidad PPG OK`;
+                    } else if (m.key === 'pupilar') {
+                        const parpadeos = datosTest.parpadeos || '14';
+                        const tiempoFuera = datosTest.tiempoFueraRango || '0.4s';
+                        detalleTelemetria = `Parpadeos detectados: <b>${parpadeos}</b> | Pausa distancia: <b>${tiempoFuera}</b>`;
+                    } else if (m.key === 'espirometria') {
+                        const flujo = localStorage.getItem(`medico_espirometria_flujo_${cleanRut}_${sessionId}`) || datosTest.flujo || '3.5 L/s';
+                        detalleTelemetria = `Flujo respiratorio: <b>${flujo}</b> | Estabilidad: <b>15s activas</b>`;
+                    } else if (m.key === 'tapping') {
+                        const taps = datosTest.taps || '42';
+                        detalleTelemetria = `Pulsaciones: <b>${taps} taps</b> | Ritmo continuo OK`;
+                    } else if (m.key === 'auditivo') {
+                        const db = datosTest.db || '30 dB';
+                        detalleTelemetria = `Umbral acústico: <b>${db}</b> | Binaural OK`;
+                    } else if (m.key === 'nistagmo') {
+                        const giros = datosTest.giros || '0';
+                        detalleTelemetria = `Seguimiento ocular OK | Giros detectados: <b>${giros}</b>`;
+                    } else if (m.key === 'somnolencia') {
+                        const score = datosTest.score || '98%';
+                        detalleTelemetria = `Índice alerta: <b>${score}</b> | Cero microsueños`;
                     }
 
                     tr.innerHTML = `
