@@ -71,6 +71,42 @@
       margin: 0 auto;
     }
 
+    /* PESTAÑAS DE NAVEGACIÓN B2B */
+    .tabs-container {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      width: 100%;
+    }
+
+    .tab-btn {
+      background: #0c182e;
+      border: 1px solid var(--card-border);
+      color: var(--text-muted);
+      padding: 10px;
+      border-radius: 10px;
+      font-size: 0.72rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.2s;
+    }
+
+    .tab-btn.active {
+      background: var(--accent-cyan);
+      color: #000;
+      border-color: var(--accent-cyan);
+      box-shadow: 0 0 12px var(--accent-cyan-glow);
+    }
+
+    .section-group {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
     .module-card {
       background-color: var(--card-bg);
       border: 1px solid var(--card-border);
@@ -152,15 +188,26 @@
     <div class="header-card">
       <img id="imgAvatar" src="../sensometrica.jpg" alt="Evaluado" class="user-avatar-small" onerror="this.src='../sensometrica.jpg'">
       <div>
-        <span style="font-size: 0.65rem; color: var(--accent-cyan); font-weight: 800; text-transform: uppercase;">EVALUACIÓN B2B • PLAN PERSONALIZADO</span>
+        <span style="font-size: 0.65rem; color: var(--accent-cyan); font-weight: 800; text-transform: uppercase;">EVALUACIÓN B2B • PANEL CORPORATIVO</span>
         <h3 id="lblNombreEvaluado" style="font-size: 0.95rem; font-weight: 900; color: #fff; margin-top: 2px;">CARGANDO TRABAJADOR...</h3>
         <p id="lblRutCargo" style="font-size: 0.7rem; color: var(--text-muted); margin-top: 2px;">RUT: -- | Cargo: --</p>
       </div>
     </div>
 
-    <!-- LISTADO DE MÓDULOS M1 A M10 -->
-    <div id="contenedorModulosB2B" style="width: 100%; display: flex; flex-direction: column; gap: 10px;">
-      <!-- Se inyectan dinámicamente -->
+    <!-- PESTAÑAS DE CAMBIO DE VISTA B2B -->
+    <div class="tabs-container">
+      <button id="tabVial" class="tab-btn active" onclick="cambiarVistaB2B('vial')">🏎️ Psicosensométricos (Vial)</button>
+      <button id="tabFaena" class="tab-btn" onclick="cambiarVistaB2B('faena')">🩺 Check Médico Faena</button>
+    </div>
+
+    <!-- CONTENEDOR GRUPO VIAL -->
+    <div id="grupoVial" class="section-group">
+      <!-- Se inyectan módulos viales / psicotécnicos -->
+    </div>
+
+    <!-- CONTENEDOR GRUPO FAENA (M1 a M10) -->
+    <div id="grupoFaena" class="section-group" style="display: none;">
+      <!-- Se inyectan módulos médicos M1 a M10 -->
     </div>
 
     <!-- BOTÓN INFORME FINAL -->
@@ -188,50 +235,96 @@
       document.getElementById('imgAvatar').src = fotoGuardada;
     }
 
-    const listaModulosB2B = [
-      { id: 'mod18', key: 'romberg', title: 'M1. Estabilidad Vestibular (Romberg) ⚖️', desc: 'Control de estabilidad postural con telemetría de distancia.', archivo: '01_romberg.html' },
-      { id: 'mod19', key: 'temblores', title: 'M2. Estabilidad Motora (Temblores) ✋', desc: 'Evaluación de micro-oscilación y control motor fino.', archivo: '02_temblores.html' },
-      { id: 'mod20', key: 'grip', title: 'M3. Dinamometría y Fuerza (Grip) ✊', desc: 'Medición de fuerza de prensión y simetría bilateral.', archivo: '03_grip.html' },
-      { id: 'mod21', key: 'ppg', title: 'M4. Frecuencia Cardíaca Basal (PPG) 💓', desc: 'Pletismografía óptica para control de frecuencia cardíaca.', archivo: '04_ppg.html' },
-      { id: 'mod22', key: 'pupilar', title: 'M5. Reflejo Fotomotor Pupilar 👁️', desc: 'Auditoría biométrica visual y conteo de parpadeos.', archivo: '05_pupilar.html' },
-      { id: 'mod23', key: 'espirometria', title: 'M6. Espirometría Ocupacional Pro 🫁', desc: 'Screening de flujo respiratorio a través del micrófono.', archivo: '06_espirometria.html' },
-      { id: 'mod24', key: 'tapping', title: 'M7. Agilidad y Praxias (Tapping) ⚡', desc: 'Velocidad de ejecución rítmica continua por 20s.', archivo: '07_tapping.html' },
-      { id: 'mod25', key: 'auditivo', title: 'M8. Reacción a Alarma de Faena 🚨', desc: 'Tamizaje auditivo de emergencia y respuesta acústica.', archivo: '08_auditivo.html' },
-      { id: 'mod26', key: 'nistagmo', title: 'M9. Estabilidad Oculomotriz (Nistagmo) 🔄', desc: 'Seguimiento ocular de punto móvil y sacadas.', archivo: '09_nistagmo.html' },
+    // MÓDULOS PSICOSENSOMÉTRICOS (VIAL)
+    const modulosVial = [
+      { id: 'v1', key: 'reactimetro', title: 'Reactímetro de Freno 🎯', desc: 'Medición de tiempo de reacción ante estímulo visual.', archivo: 'reactimetro.html' },
+      { id: 'v2', key: 'palancas', title: 'Coordinación Bimanual (Palancas) 🕹️', desc: 'Control de trayectoria en pista sinuosa.', archivo: 'palancas.html' },
+      { id: 'v3', key: 'punteo', title: 'Test de Punteo (Lahy) ⚡', desc: 'Sincronización rítmica y precisión de impactos.', archivo: 'punteo.html' }
+    ];
+
+    // MÓDULOS CHECK-IN FAENA (M1 a M10)
+    const modulosFaena = [
+      { id: 'mod18', key: 'romberg', title: 'M1. Estabilidad Vestibular (Romberg) ⚖️', desc: 'Control postural con telemetría de distancia.', archivo: '01_romberg.html' },
+      { id: 'mod19', key: 'temblores', title: 'M2. Estabilidad Motora (Temblores) ✋', desc: 'Micro-oscilación y control motor fino.', archivo: '02_temblores.html' },
+      { id: 'mod20', key: 'grip', title: 'M3. Dinamometría y Fuerza (Grip) ✊', desc: 'Fuerza de prensión y simetría bilateral.', archivo: '03_grip.html' },
+      { id: 'mod21', key: 'ppg', title: 'M4. Frecuencia Cardíaca Basal (PPG) 💓', desc: 'Pletismografía óptica y flujo pulsátil.', archivo: '04_ppg.html' },
+      { id: 'mod22', key: 'pupilar', title: 'M5. Reflejo Fotomotor Pupilar 👁️', desc: 'Auditoría biométrica visual y parpadeos.', archivo: '05_pupilar.html' },
+      { id: 'mod23', key: 'espirometria', title: 'M6. Espirometría Ocupacional Pro 🫁', desc: 'Screening de flujo respiratorio por micrófono.', archivo: '06_espirometria.html' },
+      { id: 'mod24', key: 'tapping', title: 'M7. Agilidad y Praxias (Tapping) ⚡', desc: 'Velocidad de ejecución rítmica continua.', archivo: '07_tapping.html' },
+      { id: 'mod25', key: 'auditivo', title: 'M8. Reacción a Alarma de Faena 🚨', desc: 'Tamizaje auditivo y respuesta acústica.', archivo: '08_auditivo.html' },
+      { id: 'mod26', key: 'nistagmo', title: 'M9. Estabilidad Oculomotriz (Nistagmo) 🔄', desc: 'Seguimiento ocular y control de giros.', archivo: '09_nistagmo.html' },
       { id: 'mod27', key: 'somnolencia', title: 'M10. Tamizaje de Somnolencia Pro 😴', desc: 'Detección de fatiga y vigilancia prolongada.', archivo: '10_somnolencia.html' }
     ];
 
-    const bolsaActivaStr = localStorage.getItem('sensometrika_modulos_b2b_activos') || 'mod18,mod19,mod20,mod21,mod22,mod23,mod24,mod25,mod26,mod27';
-    const bolsaActivaArray = bolsaActivaStr.split(',').map(m => m.trim().toLowerCase());
+    function renderizarModulos() {
+      // Renderizar Vial
+      const contVial = document.getElementById('grupoVial');
+      contVial.innerHTML = '';
+      modulosVial.forEach(m => {
+        const rendido = localStorage.getItem(`medico_${m.key}_${cleanRut}_${sessionId}`) === 'true';
+        const card = document.createElement('div');
+        card.className = 'module-card';
+        card.innerHTML = `
+          <div class="module-info">
+            <span class="module-title">${m.title}</span>
+            <span class="module-desc">${m.desc}</span>
+          </div>
+          <a href="${m.archivo}?${urlParams.toString()}" class="btn-module ${rendido ? 'completed' : ''}">
+            ${rendido ? '✓ COMPLETADO' : 'INICIAR →'}
+          </a>
+        `;
+        contVial.appendChild(card);
+      });
 
-    const contenedor = document.getElementById('contenedorModulosB2B');
-    contenedor.innerHTML = '';
+      // Renderizar Faena
+      const bolsaActivaStr = localStorage.getItem('sensometrika_modulos_b2b_activos') || 'mod18,mod19,mod20,mod21,mod22,mod23,mod24,mod25,mod26,mod27';
+      const bolsaActivaArray = bolsaActivaStr.split(',').map(item => item.trim().toLowerCase());
 
-    listaModulosB2B.forEach(m => {
-      const estaSolicitado = bolsaActivaArray.includes(m.id.toLowerCase());
-      if (!estaSolicitado) return;
+      const contFaena = document.getElementById('grupoFaena');
+      contFaena.innerHTML = '';
+      modulosFaena.forEach(m => {
+        const estaSolicitado = bolsaActivaArray.includes(m.id.toLowerCase());
+        if (!estaSolicitado) return;
 
-      const rendido = (localStorage.getItem(`medico_${m.key}_${cleanRut}_${sessionId}`) === 'true') ||
-                      (localStorage.getItem(`sensometrika_espirometria_${cleanRut}_${sessionId}`) === 'true' && m.key === 'espirometria');
+        const rendido = (localStorage.getItem(`medico_${m.key}_${cleanRut}_${sessionId}`) === 'true') ||
+                        (localStorage.getItem(`sensometrika_espirometria_${cleanRut}_${sessionId}`) === 'true' && m.key === 'espirometria');
 
-      const card = document.createElement('div');
-      card.className = 'module-card';
-      
-      const linkDestino = `${m.archivo}?${urlParams.toString()}`;
+        const card = document.createElement('div');
+        card.className = 'module-card';
+        card.innerHTML = `
+          <div class="module-info">
+            <span class="module-title">${m.title}</span>
+            <span class="module-desc">${m.desc}</span>
+          </div>
+          <a href="${m.archivo}?${urlParams.toString()}" class="btn-module ${rendido ? 'completed' : ''}">
+            ${rendido ? '✓ COMPLETADO' : 'INICIAR →'}
+          </a>
+        `;
+        contFaena.appendChild(card);
+      });
+    }
 
-      card.innerHTML = `
-        <div class="module-info">
-          <span class="module-title">${m.title}</span>
-          <span class="module-desc">${m.desc}</span>
-        </div>
-        <a href="${linkDestino}" class="btn-module ${rendido ? 'completed' : ''}">
-          ${rendido ? '✓ COMPLETADO' : 'INICIAR →'}
-        </a>
-      `;
-      contenedor.appendChild(card);
-    });
+    function cambiarVistaB2B(vista) {
+      const tabVial = document.getElementById('tabVial');
+      const tabFaena = document.getElementById('tabFaena');
+      const grupoVial = document.getElementById('grupoVial');
+      const grupoFaena = document.getElementById('grupoFaena');
+
+      if (vista === 'vial') {
+        tabVial.classList.add('active');
+        tabFaena.classList.remove('active');
+        grupoVial.style.display = 'flex';
+        grupoFaena.style.display = 'none';
+      } else {
+        tabFaena.classList.add('active');
+        tabVial.classList.remove('active');
+        grupoFaena.style.display = 'flex';
+        grupoVial.style.display = 'none';
+      }
+    }
 
     document.getElementById('btnInformeFaena').href = `informe_faena.html?${urlParams.toString()}`;
+    renderizarModulos();
   </script>
 </body>
 </html>
