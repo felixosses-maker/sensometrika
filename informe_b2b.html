@@ -34,7 +34,7 @@
         .sheet-container {
             background-color: var(--sheet-bg);
             width: 100%;
-            max-width: 540px;
+            max-width: 580px;
             border-radius: 12px;
             padding: 20px;
             box-shadow: 0 10px 25px rgba(0,0,0,0.5);
@@ -251,7 +251,7 @@
         </header>
 
         <div class="notice-banner">
-            ⚡ Auditoría Pericial Vial: Registro estricto de tiempos de reacción, visibilidad y coordinación motriz.
+            ⚡ Auditoría Pericial Vial: Registro estricto de los 17 módulos de tiempos de reacción, visibilidad y coordinación motriz.
         </div>
 
         <div class="ficha-layout">
@@ -312,7 +312,7 @@
                 </tr>
             </thead>
             <tbody id="tbodyModulosVial">
-                <!-- Se inyectan dinámicamente con telemetría real -->
+                <!-- Se inyectan dinámicamente los 17 módulos -->
             </tbody>
         </table>
 
@@ -368,7 +368,6 @@
             document.getElementById('lblEmpresa').textContent = decodeURIComponent(rawEmpresa).toUpperCase();
             document.getElementById('lblFirmaNombre').textContent = decodeURIComponent(rawNombre).toUpperCase();
 
-            // CONTROL FIJO DE FECHA Y HORA DE INICIO Y TÉRMINO (CONGELADAS POR SESIÓN)
             let timestampInicioKey = `sensometrika_ts_inicio_${cleanRut}_${sessionId}`;
             let timestampTerminoKey = `sensometrika_ts_termino_${cleanRut}_${sessionId}`;
 
@@ -380,7 +379,7 @@
 
             let tsTermino = localStorage.getItem(timestampTerminoKey);
             if (!tsTermino) {
-                tsTermino = Date.now() + (15 * 60 * 1000); // 15 min simulados
+                tsTermino = Date.now() + (15 * 60 * 1000);
                 localStorage.setItem(timestampTerminoKey, tsTermino);
             }
 
@@ -394,48 +393,50 @@
 
             let folioCert = `SMK-VIAL-${cleanRut.substring(0, 6)}-${Math.floor(Math.random()*899+100)}`;
 
-            // RECUPERACIÓN ROBUSTA DE FOTO BIOMÉTRICA
             const fotoGuardada = localStorage.getItem(`sensometrika_foto_${cleanRut}_${sessionId}`) || 
-                                 localStorage.getItem(`sensometrika_foto_${cleanRut}`) || 
-                                 localStorage.getItem('sensometrika_foto_trabajador');
+                                   localStorage.getItem(`sensometrika_foto_${cleanRut}`) || 
+                                   localStorage.getItem('sensometrika_foto_trabajador');
             if (fotoGuardada && (fotoGuardada.startsWith('data:image') || fotoGuardada.startsWith('blob:') || fotoGuardada.length > 50)) {
                 document.getElementById('imgBiometrica').src = fotoGuardada;
             }
 
-            // RECUPERACIÓN DE FIRMA DIGITAL
             const firmaGuardada = localStorage.getItem(`sensometrika_firma_${cleanRut}_${sessionId}`) || 
-                                  localStorage.getItem(`sensometrika_firma_${cleanRut}`) || 
-                                  localStorage.getItem('sensometrika_firma_trabajador');
+                                    localStorage.getItem(`sensometrika_firma_${cleanRut}`) || 
+                                    localStorage.getItem('sensometrika_firma_trabajador');
             const svgFirmaRespaldo = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="60" viewBox="0 0 200 60"><path d="M 15 35 Q 35 15, 65 30 T 105 18 T 155 38 Q 175 48, 185 25" fill="none" stroke="%230f172a" stroke-width="2" stroke-linecap="round"/></svg>`;
             document.getElementById('imgFirmaTrabajador').src = (firmaGuardada && firmaGuardada.startsWith('data:image')) ? firmaGuardada : svgFirmaRespaldo;
 
+            // LISTA OFICIAL DE LOS 17 MÓDULOS VIALES SINCRONIZADA CON EL MENÚ B2B
             const modulosVialInforme = [
-                { id: 'mod1', key: 'punteo', nombre: '1. Punteo y Coordinación 🎯', est: 'Precisión lineal' },
-                { id: 'mod2', key: 'reactimetro_simple', nombre: '2. Reactímetro B2B ⚡', est: 'Tiempo reacción < 350ms' },
-                { id: 'mod3', key: 'visomotriz', nombre: '3. Coordinación Visomotriz 🚗', est: 'Control de trayectoria' },
-                { id: 'mod4', key: 'anticipacion', nombre: '4. Anticipación Velocidad ⏱️', est: 'Margen error < 0.2s' },
-                { id: 'mod5', key: 'encandilamiento', nombre: '5. Resistencia Encandilamiento 💡', est: 'Recuperación fotópica' },
-                { id: 'mod6', key: 'visual_snellen', nombre: '6. Tamizaje Visual Snellen 👁️', est: 'Agudeza 20/20' },
-                { id: 'mod7', key: 'ishihara', nombre: '7. Test Ishihara (Daltonismo) 🎨', est: 'Discriminación cromática' },
-                { id: 'mod8', key: 'estereopsis', nombre: '8. Visión de Profundidad 📐', est: 'Percepción 3D' },
-                { id: 'mod9', key: 'campo_periferico', nombre: '9. Campo Visual Periférico 👁️‍🗨️', est: 'Amplitud lateral' },
-                { id: 'mod10', key: 'auditivo', nombre: '10. Tamizaje Auditivo 🎧', est: 'Umbral auditivo OK' }
+                { key: 'punteo', nombre: '1. Punteo y Coordinación Visomotora 🎯', est: 'Precisión lineal' },
+                { key: 'reactimetro', nombre: '2. Reactímetro B2B ⚡', est: 'Tiempo reacción < 350ms' },
+                { key: 'palancas', nombre: '3. Coordinación Visomotriz y Tracking 🕹️', est: 'Control de trayectoria' },
+                { key: 'anticipacion', nombre: '4. Anticipación de Tiempo y Velocidad ⏱️', est: 'Margen error < 0.2s' },
+                { key: 'encandilamiento', nombre: '5. Resistencia al Encandilamiento 💡', est: 'Recuperación fotópica' },
+                { key: 'visual', nombre: '6. Tamizaje Visual (Agudeza Snellen) 👁️', est: 'Agudeza 20/20' },
+                { key: 'ishihara', nombre: '7. Test de Ishihara (Daltonismo) 🎨', est: 'Discriminación cromática' },
+                { key: 'estereopsis', nombre: '8. Visión de Profundidad (Estereopsis) 📐', est: 'Percepción 3D' },
+                { key: 'periferico', nombre: '9. Campo Visual Periférico 👁️‍🗨️', est: 'Amplitud lateral' },
+                { key: 'auditivo', nombre: '10. Tamizaje Auditivo Binaural 🔊', est: 'Umbral auditivo OK' },
+                { key: 'atencion', nombre: '11. Atención Sostenida (CPT) 🧠', est: 'Estabilidad atencional' },
+                { key: 'fatiga', nombre: '12. Test de Fatiga (Karolinska) 😴', est: 'Nivel de alerta' },
+                { key: 'palancas_bimanual', nombre: '13. Palancas Bimanual 🎛️', est: 'Coordinación bilateral' },
+                { key: 'memoria', nombre: '14. Memoria de Trabajo Operativa 🧩', est: 'Retención de secuencias' },
+                { key: 'frenado', nombre: '15. Frenado Selectivo 🛑', est: 'Precisión bajo presión' },
+                { key: 'impulsos', nombre: '16. Control de Impulsos Viales 👁️', est: 'Perfil de riesgo' },
+                { key: 'declaracion', nombre: '17. Declaración Médica 📋', est: 'Aptitud jurada' }
             ];
-
-            const bolsaActivaStr = localStorage.getItem('sensometrika_modulos_b2b_activos') || 'mod1,mod2,mod3,mod6,mod10';
-            const bolsaActivaArray = bolsaActivaStr.split(',').map(m => m.trim().toLowerCase());
 
             const tbody = document.getElementById('tbodyModulosVial');
             tbody.innerHTML = '';
             let totalPendientes = 0;
 
             modulosVialInforme.forEach(m => {
-                const estaSolicitado = bolsaActivaArray.includes(m.id.toLowerCase());
-                if (!estaSolicitado) return;
-
                 const datosTest = obtenerDetalleModulo(m.key);
                 const rendido = (localStorage.getItem(`sensometrika_historial_${m.key}_${cleanRut}_${sessionId}`) !== null) || 
                                 (localStorage.getItem(`sensometrika_last_${m.key}_${cleanRut}_${sessionId}`) !== null) || 
+                                (localStorage.getItem(`medico_${m.key}_${cleanRut}_${sessionId}`) === 'true') ||
+                                (localStorage.getItem(`sensometrika_${m.key}_${cleanRut}_${sessionId}`) === 'true') ||
                                 (datosTest.aprobado === true);
                 
                 const tr = document.createElement('tr');
@@ -473,7 +474,7 @@
             if (totalPendientes > 0) {
                 boxDictamen.className = "banner-dictamen dictamen-pendiente";
                 boxDictamen.innerHTML = "⏳ ESTADO: EVALUACIÓN VIAL EN PROCESO";
-                if(lblDictamenSub) lblDictamenSub.textContent = "El conductor presenta módulos psicosensométricos pendientes.";
+                if(lblDictamenSub) lblDictamenSub.textContent = `Faltan ${totalPendientes} módulos por rendir de un total de 17.`;
                 lblEstadoVigencia.textContent = "INCOMPLETO";
                 lblEstadoVigencia.className = "vigencia-orange";
             } else {
