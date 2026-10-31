@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>SENSOMETRIKA | Estabilidad Oculomotriz (Nistagmo Pro)</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Google MediaPipe para Control Biométrico y Seguimiento Ocular/Facial -->
+  <!-- Google MediaPipe para Control Biométrico y Seguimiento Ocular/Facial en Tiempo Real -->
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
 
@@ -185,7 +185,7 @@
 </head>
 <body>
 
-  <!-- Video oculto para MediaPipe -->
+  <!-- Video oculto para procesamiento de MediaPipe -->
   <video id="webcamInput" style="display:none;" playsinline></video>
 
   <div class="main-wrapper">
@@ -204,7 +204,7 @@
         9. Estabilidad Oculomotriz (Nistagmo)
       </h3>
       <p class="instruction-text">
-        Mantenga el equipo a una distancia cómoda. <strong>Siga con la mirada el punto móvil</strong> sin mover el cuello ni cerrar los ojos en exceso.
+        Mantenga el equipo a una distancia de <strong>25 a 40 cm</strong>. Siga con la mirada el punto móvil sin mover el cuello.
       </p>
 
       <!-- PISTA DE SEGUIMIENTO -->
@@ -213,12 +213,12 @@
       </div>
 
       <div id="bannerAlerta" class="distance-warning-banner">
-        ⚠️ Rostro fuera de rango o giro detectado. Mantenga la vista al frente.
+        ⚠️ Distancia fuera de rango (25-40 cm) o giro detectado.
       </div>
 
       <div style="background: #030712; border: 1px solid var(--card-border); border-radius: 10px; padding: 10px; text-align: center;">
         <span id="lblTimer" style="font-size: 1.8rem; font-weight: 900; color: #fff;">15s</span>
-        <p id="lblEstado" style="font-size: 0.72rem; color: var(--accent-cyan); margin-top: 2px;">Listo para iniciar prueba ocular</p>
+        <p id="lblEstado" style="font-size: 0.72rem; color: var(--accent-cyan); margin-top: 2px;">Verificando distancia reglamentaria...</p>
       </div>
 
       <!-- PANEL DE TELEMETRÍA FORENSE SENSOMETRIKA -->
@@ -237,7 +237,7 @@
         </div>
       </div>
 
-      <button class="btn-action" id="btnIniciar" onclick="iniciarNistagmo()">INICIAR TEST OCULAR →</button>
+      <button class="btn-action" id="btnIniciar" disabled style="opacity: 0.4; cursor: not-allowed;" onclick="iniciarNistagmo()">CALIBRANDO DISTANCIA...</button>
     </div>
   </div>
 
@@ -252,12 +252,12 @@
 
     let cameraInstance = null;
     let pruebaActiva = false;
+    let distanciaOk = false;
     
     let tiempoFueraRegistroMs = 0;
     let girosRostroDetectados = 0;
     let parpadeosProlongados = 0;
     let ultimaPosicionNarizX = null;
-    let estaFueraDeRangoActual = false;
     let tiempoUltimoFrame = Date.now();
 
     async function iniciarMediaPipeFaceMesh() {
@@ -265,34 +265,45 @@
       try {
         if (typeof FaceMesh !== 'undefined' && typeof Camera !== 'undefined') {
           const faceMesh = new FaceMesh({ locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}` });
-          faceMesh.setOptions({ maxNumFaces: 1, refineLandmarks: true, minDetectionConfidence: 0.4, minTrackingConfidence: 0.4 });
+          faceMesh.setOptions({ maxNumFaces: 1, refineLandmarks: true, minDetectionConfidence: 0.5, minTrackingConfidence: 0.5 });
           
           faceMesh.onResults((results) => {
             const banner = document.getElementById('bannerAlerta');
+            const btnIniciar = document.getElementById('btnIniciar');
+            const lblEstado = document.getElementById('lblEstado');
             const ahora = Date.now();
             let deltaT = (ahora - tiempoUltimoFrame) / 1000;
             tiempoUltimoFrame = ahora;
 
             if (!results.multiFaceLandmarks || results.multiFaceLandmarks.length === 0) {
-              estaFueraDeRangoActual = true;
+              distanciaOk = false;
+              banner.style.display = 'block';
+              banner.textContent = "⚠️ Rostro no detectado / Posiciónese frente a la cámara";
               if (pruebaActiva) {
                 tiempoFueraRegistroMs += deltaT;
                 document.getElementById('tel-fuera').textContent = `${tiempoFueraRegistroMs.toFixed(1)}s`;
-                banner.style.display = 'block';
-                banner.textContent = "⚠️ Rostro no detectado / Fuera de plano";
+              }
+              if (!pruebaActiva) {
+                btnIniciar.disabled = true;
+                btnIniciar.style.opacity = '0.4';
+                btnIniciar.style.cursor = 'not-allowed';
+                btnIniciar.textContent = "POSICIONE SU ROSTRO (25-40 CM)";
               }
               return;
             }
 
             const landmarks = results.multiFaceLandmarks[0];
+            
+            // Cálculo telemétrico estricto de distancia (25 a 40 cm)
             const dx = landmarks[33].x - landmarks[263].x;
             const dy = landmarks[33].y - landmarks[263].y;
             let dist = Math.round(9.5 / Math.sqrt(dx * dx + dy * dy));
 
+            // Detección de giros bruscos de cabeza
             const narizX = landmarks[1].x;
             if (ultimaPosicionNarizX !== null) {
               let diferenciaMovimiento = Math.abs(narizX - ultimaPosicionNarizX);
-              if (diferenciaMovimiento > 0.09) {
+              if (diferenciaMovimiento > 0.08) {
                 if (pruebaActiva) {
                   girosRostroDetectados++;
                   document.getElementById('tel-giros').textContent = girosRostroDetectados;
@@ -301,24 +312,46 @@
             }
             ultimaPosicionNarizX = narizX;
 
+            // Detección de parpadeo prolongado
             const ojoIzqAlto = Math.abs(landmarks[159].y - landmarks[145].y);
-            if (ojoIzqAlto < 0.008) {
+            if (ojoIzqAlto < 0.007) {
               if (pruebaActiva) {
                 parpadeosProlongados++;
                 document.getElementById('tel-parpadeos').textContent = parpadeosProlongados;
               }
             }
 
-            if (dist >= 25 && dist <= 80) {
-              estaFueraDeRangoActual = false;
+            // REGLA ESTRICTA DE DISTANCIA: 25 cm a 40 cm
+            if (dist >= 25 && dist <= 40) {
+              distanciaOk = true;
               banner.style.display = 'none';
+              if (!pruebaActiva) {
+                btnIniciar.disabled = false;
+                btnIniciar.style.opacity = '1';
+                btnIniciar.style.cursor = 'pointer';
+                btnIniciar.textContent = "INICIAR TEST OCULAR →";
+                lblEstado.textContent = `✓ Distancia óptima (${dist} cm). Listo para iniciar.`;
+                lblEstado.style.color = "var(--accent-green)";
+              }
             } else {
-              estaFueraDeRangoActual = true;
+              distanciaOk = false;
+              banner.style.display = 'block';
+              if (dist < 25) {
+                banner.textContent = `⚠️ Demasiado cerca (${dist} cm). Aléjese a 25-40 cm.`;
+              } else {
+                banner.textContent = `⚠️ Demasiado lejos (${dist} cm). Acérquese a 25-40 cm.`;
+              }
+
               if (pruebaActiva) {
                 tiempoFueraRegistroMs += deltaT;
                 document.getElementById('tel-fuera').textContent = `${tiempoFueraRegistroMs.toFixed(1)}s`;
-                banner.style.display = 'block';
-                banner.textContent = `⚠️ Distancia inadecuada (${dist} cm). Rango: 25-80 cm`;
+              } else {
+                btnIniciar.disabled = true;
+                btnIniciar.style.opacity = '0.4';
+                btnIniciar.style.cursor = 'not-allowed';
+                btnIniciar.textContent = `BLOQUEADO: ${dist} CM (MANTENGA 25-40 CM)`;
+                lblEstado.textContent = "Ajuste su distancia frente al equipo...";
+                lblEstado.style.color = "var(--accent-red)";
               }
             }
           });
@@ -336,6 +369,8 @@
     }
 
     function iniciarNistagmo() {
+      if (!distanciaOk) return;
+
       document.getElementById('btnIniciar').style.display = 'none';
       pruebaActiva = true;
 
