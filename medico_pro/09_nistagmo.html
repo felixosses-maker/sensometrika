@@ -142,7 +142,7 @@
     }
     .col-metrica strong {
       display: block;
-      font-size: 0.90rem;
+      font-size: 0.85rem;
       color: #ffffff;
       font-weight: 800;
     }
@@ -170,10 +170,16 @@
       transition: left 0.4s ease-in-out;
     }
 
-    .distance-block-overlay {
-      position: absolute; inset: 0; background: rgba(4, 8, 16, 0.96);
-      backdrop-filter: blur(4px); z-index: 30; display: none;
-      flex-direction: column; justify-content: center; align-items: center; padding: 16px; text-align: center; gap: 10px; border-radius: 12px;
+    .distance-warning-banner {
+      background: rgba(239, 68, 68, 0.15);
+      border: 1px solid var(--accent-red);
+      border-radius: 8px;
+      padding: 6px;
+      text-align: center;
+      font-size: 0.68rem;
+      color: #fca5a5;
+      display: none;
+      font-weight: 700;
     }
   </style>
 </head>
@@ -198,7 +204,7 @@
         9. Estabilidad Oculomotriz (Nistagmo)
       </h3>
       <p class="instruction-text">
-        Estira el brazo manteniendo el teléfono a <strong>40-70 cm</strong> frente a tu rostro. Sigue con la mirada el punto en pantalla sin mover el cuello.
+        Mantenga el equipo a una distancia cómoda. <strong>Siga con la mirada el punto móvil</strong> sin mover el cuello ni cerrar los ojos en exceso.
       </p>
 
       <!-- PISTA DE SEGUIMIENTO -->
@@ -206,34 +212,32 @@
         <div class="target-dot" id="targetDot"></div>
       </div>
 
-      <div style="background: #030712; border: 1px solid var(--card-border); border-radius: 10px; padding: 12px; text-align: center;">
-        <span id="lblTimer" style="font-size: 1.8rem; font-weight: 900; color: #fff;">15s</span>
-        <p id="lblEstado" style="font-size: 0.75rem; color: var(--accent-cyan); margin-top: 4px;">Listo para iniciar prueba ocular</p>
+      <div id="bannerAlerta" class="distance-warning-banner">
+        ⚠️ Rostro fuera de rango o giro detectado. Mantenga la vista al frente.
       </div>
 
-      <!-- PANEL DE TELEMETRÍA OFICIAL SENSOMETRIKA -->
+      <div style="background: #030712; border: 1px solid var(--card-border); border-radius: 10px; padding: 10px; text-align: center;">
+        <span id="lblTimer" style="font-size: 1.8rem; font-weight: 900; color: #fff;">15s</span>
+        <p id="lblEstado" style="font-size: 0.72rem; color: var(--accent-cyan); margin-top: 2px;">Listo para iniciar prueba ocular</p>
+      </div>
+
+      <!-- PANEL DE TELEMETRÍA FORENSE SENSOMETRIKA -->
       <div class="metricas-grid">
         <div class="col-metrica">
-          <span>Seguimiento</span>
-          <strong id="tel-seguimiento" style="color:#38bdf8;">100%</strong>
+          <span>Tiempo Fuera</span>
+          <strong id="tel-fuera" style="color:#ef4444;">0.0s</strong>
         </div>
         <div class="col-metrica">
-          <span>Giros Rostro</span>
-          <strong id="tel-giros" style="color:#ffffff;">0</strong>
+          <span>Giros / Desvíos</span>
+          <strong id="tel-giros" style="color:#f59e0b;">0</strong>
         </div>
         <div class="col-metrica">
-          <span>Distancia</span>
-          <strong id="tel-distancia" style="color:#34d399;">-- cm</strong>
+          <span>Parpadeos Ext.</span>
+          <strong id="tel-parpadeos" style="color:#38bdf8;">0</strong>
         </div>
       </div>
 
       <button class="btn-action" id="btnIniciar" onclick="iniciarNistagmo()">INICIAR TEST OCULAR →</button>
-
-      <!-- OVERLAY DE BLOQUEO POR DISTANCIA (ESTÁNDAR 40-70 cm) -->
-      <div id="boxBlockDistancia" class="distance-block-overlay">
-        <span style="color: var(--accent-red); font-weight: 900; font-size: 0.9rem;">⚠️ DISTANCIA FUERA DE RANGO</span>
-        <span class="instruction-text">Ajuste su posición frente a la pantalla.<br>Distancia telemétrica: <b id="lblDistVal" style="color:var(--accent-red);">-- cm</b><br>(Rango normativo estricto: 40 a 70 cm).</span>
-      </div>
     </div>
   </div>
 
@@ -246,57 +250,76 @@
     const menuHref = isB2C ? `../menu_B2C.html?${urlParams.toString()}` : `../menu_B2B.html?${urlParams.toString()}`;
     document.getElementById('linkMenu').href = urlParams.get('returnUrl') ? decodeURIComponent(urlParams.get('returnUrl')) : menuHref;
 
-    let distanciaMedidaCm = 50;
-    let estaBloqueadoPorDistancia = false;
     let cameraInstance = null;
+    let pruebaActiva = false;
+    
+    let tiempoFueraRegistroMs = 0;
     let girosRostroDetectados = 0;
+    let parpadeosProlongados = 0;
     let ultimaPosicionNarizX = null;
+    let estaFueraDeRangoActual = false;
+    let tiempoUltimoFrame = Date.now();
 
     async function iniciarMediaPipeFaceMesh() {
       const videoElement = document.getElementById('webcamVideo');
       try {
         if (typeof FaceMesh !== 'undefined' && typeof Camera !== 'undefined') {
           const faceMesh = new FaceMesh({ locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}` });
-          faceMesh.setOptions({ maxNumFaces: 1, refineLandmarks: true, minDetectionConfidence: 0.5, minTrackingConfidence: 0.5 });
+          faceMesh.setOptions({ maxNumFaces: 1, refineLandmarks: true, minDetectionConfidence: 0.4, minTrackingConfidence: 0.4 });
           
           faceMesh.onResults((results) => {
-            const telDistancia = document.getElementById('tel-distancia');
-            const lblDistVal = document.getElementById('lblDistVal');
-            const overlay = document.getElementById('boxBlockDistancia');
+            const banner = document.getElementById('bannerAlerta');
+            const ahora = Date.now();
+            let deltaT = (ahora - tiempoUltimoFrame) / 1000;
+            tiempoUltimoFrame = ahora;
 
             if (!results.multiFaceLandmarks || results.multiFaceLandmarks.length === 0) {
-              telDistancia.textContent = "Sin Rostro";
+              estaFueraDeRangoActual = true;
+              if (pruebaActiva) {
+                tiempoFueraRegistroMs += deltaT;
+                document.getElementById('tel-fuera').textContent = `${tiempoFueraRegistroMs.toFixed(1)}s`;
+                banner.style.display = 'block';
+                banner.textContent = "⚠️ Rostro no detectado / Fuera de plano";
+              }
               return;
             }
 
             const landmarks = results.multiFaceLandmarks[0];
-            
-            // Cálculo telemétrico estándar
             const dx = landmarks[33].x - landmarks[263].x;
             const dy = landmarks[33].y - landmarks[263].y;
             let dist = Math.round(9.5 / Math.sqrt(dx * dx + dy * dy));
-            distanciaMedidaCm = Math.round(distanciaMedidaCm * 0.5 + dist * 0.5);
-            telDistancia.textContent = `${distanciaMedidaCm} cm`;
 
-            // Detección de giros de cabeza / cuello
             const narizX = landmarks[1].x;
             if (ultimaPosicionNarizX !== null) {
               let diferenciaMovimiento = Math.abs(narizX - ultimaPosicionNarizX);
-              if (diferenciaMovimiento > 0.08) {
-                girosRostroDetectados++;
-                document.getElementById('tel-giros').textContent = girosRostroDetectados;
+              if (diferenciaMovimiento > 0.09) {
+                if (pruebaActiva) {
+                  girosRostroDetectados++;
+                  document.getElementById('tel-giros').textContent = girosRostroDetectados;
+                }
               }
             }
             ultimaPosicionNarizX = narizX;
 
-            // CONTROL DE RANGO ESTÁNDAR (40 a 70 cm)
-            if (distanciaMedidaCm >= 40 && distanciaMedidaCm <= 70) {
-              estaBloqueadoPorDistancia = false;
-              overlay.style.display = 'none';
+            const ojoIzqAlto = Math.abs(landmarks[159].y - landmarks[145].y);
+            if (ojoIzqAlto < 0.008) {
+              if (pruebaActiva) {
+                parpadeosProlongados++;
+                document.getElementById('tel-parpadeos').textContent = parpadeosProlongados;
+              }
+            }
+
+            if (dist >= 25 && dist <= 80) {
+              estaFueraDeRangoActual = false;
+              banner.style.display = 'none';
             } else {
-              estaBloqueadoPorDistancia = true;
-              lblDistVal.textContent = `${distanciaMedidaCm} cm`;
-              overlay.style.display = 'flex';
+              estaFueraDeRangoActual = true;
+              if (pruebaActiva) {
+                tiempoFueraRegistroMs += deltaT;
+                document.getElementById('tel-fuera').textContent = `${tiempoFueraRegistroMs.toFixed(1)}s`;
+                banner.style.display = 'block';
+                banner.textContent = `⚠️ Distancia inadecuada (${dist} cm). Rango: 25-80 cm`;
+              }
             }
           });
 
@@ -313,16 +336,15 @@
     }
 
     function iniciarNistagmo() {
-      if (estaBloqueadoPorDistancia) return;
       document.getElementById('btnIniciar').style.display = 'none';
+      pruebaActiva = true;
 
       let tiempoRestante = 15;
       const lblTimer = document.getElementById('lblTimer');
       const lblEstado = document.getElementById('lblEstado');
       const targetDot = document.getElementById('targetDot');
-      const telSeguimiento = document.getElementById('tel-seguimiento');
 
-      lblEstado.textContent = "Siga el punto de izquierda a derecha...";
+      lblEstado.textContent = "Siga el punto con la vista de forma continua...";
       lblEstado.style.color = "var(--accent-cyan)";
 
       let posicionPaso = 0;
@@ -340,21 +362,18 @@
         if (tiempoRestante <= 0) {
           clearInterval(cronometroIntervalo);
           clearInterval(movimientoIntervalo);
+          pruebaActiva = false;
           if (cameraInstance) { try { cameraInstance.stop(); } catch(e){} }
 
-          let aprobadoNistagmo = girosRostroDetectados <= 3;
-          let scoreFinal = aprobadoNistagmo ? "98%" : "82%";
+          let aprobadoNistagmo = (girosRostroDetectados <= 4 && tiempoFueraRegistroMs <= 3.5);
+          let scoreSeguimiento = Math.max(60, 100 - Math.round((tiempoFueraRegistroMs * 4) + (girosRostroDetectados * 3))).toString() + "%";
 
           if (aprobadoNistagmo) {
             lblEstado.textContent = "✓ Estabilidad oculomotriz validada con éxito";
             lblTimer.style.color = "var(--accent-green)";
-            telSeguimiento.textContent = scoreFinal;
-            telSeguimiento.style.color = "var(--accent-green)";
           } else {
-            lblEstado.textContent = "⚠️ Exceso de movimientos de cabeza detectados";
+            lblEstado.textContent = "⚠️ Observación: Exceso de pausas o giros registrados";
             lblTimer.style.color = "var(--accent-red)";
-            telSeguimiento.textContent = scoreFinal;
-            telSeguimiento.style.color = "var(--accent-red)";
           }
 
           localStorage.setItem(`sensometrika_nistagmo_${cleanRut}_${sessionId}`, aprobadoNistagmo ? 'true' : 'false');
@@ -362,9 +381,11 @@
           
           let detalleJson = {
             aprobado: aprobadoNistagmo,
-            score: scoreFinal,
+            score: scoreSeguimiento,
             giros: girosRostroDetectados,
-            seguimiento: "Estable"
+            tiempoFuera: `${tiempoFueraRegistroMs.toFixed(1)}s`,
+            parpadeosExt: parpadeosProlongados,
+            seguimiento: aprobadoNistagmo ? "Estable" : "Con Desvíos"
           };
           localStorage.setItem(`sensometrika_last_nistagmo_${cleanRut}_${sessionId}`, JSON.stringify(detalleJson));
 
@@ -380,7 +401,7 @@
             } else {
               window.location.href = menuHref;
             }
-          }, 2200);
+          }, 2500);
         }
       }, 1000);
     }
