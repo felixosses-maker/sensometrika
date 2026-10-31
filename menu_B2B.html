@@ -202,7 +202,7 @@
 
     <!-- CONTENEDOR GRUPO VIAL -->
     <div id="grupoVial" class="section-group">
-      <!-- Se inyectan módulos viales / psicotécnicos -->
+      <!-- Se inyectan módulos viales -->
     </div>
 
     <!-- CONTENEDOR GRUPO FAENA (M1 a M10) -->
@@ -257,7 +257,7 @@
     ];
 
     function renderizarModulos() {
-      // Renderizar Vial
+      // 1. Renderizar Vial
       const contVial = document.getElementById('grupoVial');
       contVial.innerHTML = '';
       modulosVial.forEach(m => {
@@ -276,18 +276,14 @@
         contVial.appendChild(card);
       });
 
-      // Renderizar Faena
-      const bolsaActivaStr = localStorage.getItem('sensometrika_modulos_b2b_activos') || 'mod18,mod19,mod20,mod21,mod22,mod23,mod24,mod25,mod26,mod27';
-      const bolsaActivaArray = bolsaActivaStr.split(',').map(item => item.trim().toLowerCase());
-
+      // 2. Renderizar Faena (Forzando carga completa M1 a M10)
       const contFaena = document.getElementById('grupoFaena');
       contFaena.innerHTML = '';
+      
       modulosFaena.forEach(m => {
-        const estaSolicitado = bolsaActivaArray.includes(m.id.toLowerCase());
-        if (!estaSolicitado) return;
-
         const rendido = (localStorage.getItem(`medico_${m.key}_${cleanRut}_${sessionId}`) === 'true') ||
-                        (localStorage.getItem(`sensometrika_espirometria_${cleanRut}_${sessionId}`) === 'true' && m.key === 'espirometria');
+                        (localStorage.getItem(`sensometrika_espirometria_${cleanRut}_${sessionId}`) === 'true' && m.key === 'espirometria') ||
+                        (localStorage.getItem(`sensometrika_${m.key}_${cleanRut}_${sessionId}`) === 'true');
 
         const card = document.createElement('div');
         card.className = 'module-card';
