@@ -71,7 +71,7 @@
       margin: 0 auto;
     }
 
-    /* PESTAÑAS DE NAVEGACIÓN B2B */
+    /* PESTAÑAS DINÁMICAS B2B */
     .tabs-container {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -91,6 +91,7 @@
       cursor: pointer;
       text-align: center;
       transition: all 0.2s;
+      display: none; /* Se muestran dinámicamente según contrato */
     }
 
     .tab-btn.active {
@@ -188,20 +189,20 @@
     <div class="header-card">
       <img id="imgAvatar" src="../sensometrica.jpg" alt="Evaluado" class="user-avatar-small" onerror="this.src='../sensometrica.jpg'">
       <div>
-        <span style="font-size: 0.65rem; color: var(--accent-cyan); font-weight: 800; text-transform: uppercase;">EVALUACIÓN B2B • PANEL CORPORATIVO</span>
+        <span style="font-size: 0.65rem; color: var(--accent-cyan); font-weight: 800; text-transform: uppercase;">EVALUACIÓN B2B • PANEL CORPORATIVO DINÁMICO</span>
         <h3 id="lblNombreEvaluado" style="font-size: 0.95rem; font-weight: 900; color: #fff; margin-top: 2px;">CARGANDO TRABAJADOR...</h3>
         <p id="lblRutCargo" style="font-size: 0.7rem; color: var(--text-muted); margin-top: 2px;">RUT: -- | Cargo: --</p>
       </div>
     </div>
 
-    <!-- PESTAÑAS DE CAMBIO DE VISTA B2B -->
-    <div class="tabs-container">
-      <button id="tabVial" class="tab-btn active" onclick="cambiarVistaB2B('vial')">🏎️ Psicosensométricos (Vial)</button>
+    <!-- PESTAÑAS DINÁMICAS (SE ACTIVAN SEGÚN CONTRATO) -->
+    <div class="tabs-container" id="tabsContainer">
+      <button id="tabVial" class="tab-btn" onclick="cambiarVistaB2B('vial')">🏎️ Psicosensométricos (Vial)</button>
       <button id="tabFaena" class="tab-btn" onclick="cambiarVistaB2B('faena')">🩺 Check Médico Faena</button>
     </div>
 
     <!-- CONTENEDOR GRUPO VIAL -->
-    <div id="grupoVial" class="section-group">
+    <div id="grupoVial" class="section-group" style="display: none;">
       <!-- Se inyectan módulos viales -->
     </div>
 
@@ -210,9 +211,9 @@
       <!-- Se inyectan módulos médicos M1 a M10 -->
     </div>
 
-    <!-- BOTÓN INFORME FINAL -->
+    <!-- BOTÓN INFORME DINÁMICO -->
     <a href="informe_faena.html" id="btnInformeFaena" class="btn-action-main">
-      VER CHECK-IN CLÍNICO DE FAENA →
+      VER INFORME DE EVALUACIÓN →
     </a>
   </div>
 
@@ -235,15 +236,14 @@
       document.getElementById('imgAvatar').src = fotoGuardada;
     }
 
-    // MÓDULOS PSICOSENSOMÉTRICOS (VIAL)
-    const modulosVial = [
-      { id: 'v1', key: 'reactimetro', title: 'Reactímetro de Freno 🎯', desc: 'Medición de tiempo de reacción ante estímulo visual.', archivo: 'reactimetro.html' },
-      { id: 'v2', key: 'palancas', title: 'Coordinación Bimanual (Palancas) 🕹️', desc: 'Control de trayectoria en pista sinuosa.', archivo: 'palancas.html' },
-      { id: 'v3', key: 'punteo', title: 'Test de Punteo (Lahy) ⚡', desc: 'Sincronización rítmica y precisión de impactos.', archivo: 'punteo.html' }
+    // CATÁLOGO COMPLETO DE MÓDULOS
+    const modulosVialCatalogo = [
+      { id: 'v1', key: 'reactimetro', title: 'Reactímetro de Freno 🎯', desc: 'Medición de tiempo de reacción ante estímulo visual.', archivo: '../reactimetro.html' },
+      { id: 'v2', key: 'palancas', title: 'Coordinación Bimanual (Palancas) 🕹️', desc: 'Control de trayectoria en pista sinuosa.', archivo: '../palancas.html' },
+      { id: 'v3', key: 'punteo', title: 'Test de Punteo (Lahy) ⚡', desc: 'Sincronización rítmica y precisión de impactos.', archivo: '../punteo.html' }
     ];
 
-    // MÓDULOS CHECK-IN FAENA (M1 a M10)
-    const modulosFaena = [
+    const modulosFaenaCatalogo = [
       { id: 'mod18', key: 'romberg', title: 'M1. Estabilidad Vestibular (Romberg) ⚖️', desc: 'Control postural con telemetría de distancia.', archivo: '01_romberg.html' },
       { id: 'mod19', key: 'temblores', title: 'M2. Estabilidad Motora (Temblores) ✋', desc: 'Micro-oscilación y control motor fino.', archivo: '02_temblores.html' },
       { id: 'mod20', key: 'grip', title: 'M3. Dinamometría y Fuerza (Grip) ✊', desc: 'Fuerza de prensión y simetría bilateral.', archivo: '03_grip.html' },
@@ -256,48 +256,89 @@
       { id: 'mod27', key: 'somnolencia', title: 'M10. Tamizaje de Somnolencia Pro 😴', desc: 'Detección de fatiga y vigilancia prolongada.', archivo: '10_somnolencia.html' }
     ];
 
-    function renderizarModulos() {
-      // 1. Renderizar Vial
+    function renderizarPanelB2B() {
+      // Obtener la bolsa de módulos contratados de la empresa
+      const bolsaActivaStr = localStorage.getItem('sensometrika_modulos_b2b_activos') || 'v1,v2,v3,mod18,mod19,mod20,mod21,mod22,mod23,mod24,mod25,mod26,mod27';
+      const bolsaActivaArray = bolsaActivaStr.split(',').map(item => item.trim().toLowerCase());
+
+      // Verificar qué segmentos están presentes
+      const tieneVial = modulosVialCatalogo.some(m => bolsaActivaArray.includes(m.id.toLowerCase()) || bolsaActivaArray.includes(m.key.toLowerCase()));
+      const tieneFaena = modulosFaenaCatalogo.some(m => bolsaActivaArray.includes(m.id.toLowerCase()) || bolsaActivaArray.includes(m.key.toLowerCase()));
+
+      const tabVial = document.getElementById('tabVial');
+      const tabFaena = document.getElementById('tabFaena');
       const contVial = document.getElementById('grupoVial');
-      contVial.innerHTML = '';
-      modulosVial.forEach(m => {
-        const rendido = localStorage.getItem(`medico_${m.key}_${cleanRut}_${sessionId}`) === 'true';
-        const card = document.createElement('div');
-        card.className = 'module-card';
-        card.innerHTML = `
-          <div class="module-info">
-            <span class="module-title">${m.title}</span>
-            <span class="module-desc">${m.desc}</span>
-          </div>
-          <a href="${m.archivo}?${urlParams.toString()}" class="btn-module ${rendido ? 'completed' : ''}">
-            ${rendido ? '✓ COMPLETADO' : 'INICIAR →'}
-          </a>
-        `;
-        contVial.appendChild(card);
-      });
-
-      // 2. Renderizar Faena (Forzando carga completa M1 a M10)
       const contFaena = document.getElementById('grupoFaena');
-      contFaena.innerHTML = '';
-      
-      modulosFaena.forEach(m => {
-        const rendido = (localStorage.getItem(`medico_${m.key}_${cleanRut}_${sessionId}`) === 'true') ||
-                        (localStorage.getItem(`sensometrika_espirometria_${cleanRut}_${sessionId}`) === 'true' && m.key === 'espirometria') ||
-                        (localStorage.getItem(`sensometrika_${m.key}_${cleanRut}_${sessionId}`) === 'true');
 
-        const card = document.createElement('div');
-        card.className = 'module-card';
-        card.innerHTML = `
-          <div class="module-info">
-            <span class="module-title">${m.title}</span>
-            <span class="module-desc">${m.desc}</span>
-          </div>
-          <a href="${m.archivo}?${urlParams.toString()}" class="btn-module ${rendido ? 'completed' : ''}">
-            ${rendido ? '✓ COMPLETADO' : 'INICIAR →'}
-          </a>
-        `;
-        contFaena.appendChild(card);
-      });
+      let vistaInicialDefinida = null;
+
+      // 1. Gestionar Pestaña Vial
+      if (tieneVial) {
+        tabVial.style.display = 'block';
+        contVial.innerHTML = '';
+        modulosVialCatalogo.forEach(m => {
+          const rendido = (localStorage.getItem(`medico_${m.key}_${cleanRut}_${sessionId}`) === 'true') ||
+                          (localStorage.getItem(`sensometrika_${m.key}_${cleanRut}_${sessionId}`) === 'true');
+          const card = document.createElement('div');
+          card.className = 'module-card';
+          card.innerHTML = `
+            <div class="module-info">
+              <span class="module-title">${m.title}</span>
+              <span class="module-desc">${m.desc}</span>
+            </div>
+            <a href="${m.archivo}?${urlParams.toString()}" class="btn-module ${rendido ? 'completed' : ''}">
+              ${rendido ? '✓ COMPLETADO' : 'INICIAR →'}
+            </a>
+          `;
+          contVial.appendChild(card);
+        });
+        if (!vistaInicialDefinida) vistaInicialDefinida = 'vial';
+      } else {
+        tabVial.style.display = 'none';
+      }
+
+      // 2. Gestionar Pestaña Faena (Médica M1 a M10)
+      if (tieneFaena) {
+        tabFaena.style.display = 'block';
+        contFaena.innerHTML = '';
+        modulosFaenaCatalogo.forEach(m => {
+          const estaSolicitado = bolsaActivaArray.includes(m.id.toLowerCase()) || bolsaActivaArray.includes(m.key.toLowerCase());
+          if (!estaSolicitado) return;
+
+          const rendido = (localStorage.getItem(`medico_${m.key}_${cleanRut}_${sessionId}`) === 'true') ||
+                          (localStorage.getItem(`sensometrika_espirometria_${cleanRut}_${sessionId}`) === 'true' && m.key === 'espirometria') ||
+                          (localStorage.getItem(`sensometrika_${m.key}_${cleanRut}_${sessionId}`) === 'true');
+
+          const card = document.createElement('div');
+          card.className = 'module-card';
+          card.innerHTML = `
+            <div class="module-info">
+              <span class="module-title">${m.title}</span>
+              <span class="module-desc">${m.desc}</span>
+            </div>
+            <a href="${m.archivo}?${urlParams.toString()}" class="btn-module ${rendido ? 'completed' : ''}">
+              ${rendido ? '✓ COMPLETADO' : 'INICIAR →'}
+            </a>
+          `;
+          contFaena.appendChild(card);
+        });
+        if (!vistaInicialDefinida && !tieneVial) vistaInicialDefinida = 'faena';
+      } else {
+        tabFaena.style.display = 'none';
+      }
+
+      // Ajustar diseño de pestañas si solo hay una activa
+      const tabsContainer = document.getElementById('tabsContainer');
+      if (tieneVial && !tieneFaena) {
+        tabsContainer.style.gridTemplateColumns = '1fr';
+      } else if (!tieneVial && tieneFaena) {
+        tabsContainer.style.gridTemplateColumns = '1fr';
+      }
+
+      // Activar vista por defecto inicial
+      if (vistaInicialDefinida) {
+        cambiarVistaB2B(vistaInicialDefinida);
+      }
     }
 
     function cambiarVistaB2B(vista) {
@@ -305,22 +346,26 @@
       const tabFaena = document.getElementById('tabFaena');
       const grupoVial = document.getElementById('grupoVial');
       const grupoFaena = document.getElementById('grupoFaena');
+      const btnInforme = document.getElementById('btnInformeFaena');
 
-      if (vista === 'vial') {
+      if (vista === 'vial' && tabVial.style.display !== 'none') {
         tabVial.classList.add('active');
         tabFaena.classList.remove('active');
         grupoVial.style.display = 'flex';
         grupoFaena.style.display = 'none';
-      } else {
+        btnInforme.textContent = "VER INFORME PSICOSENSOMÉTRICO (VIAL) →";
+        btnInforme.href = `../dashboard.html?${urlParams.toString()}`;
+      } else if (vista === 'faena' && tabFaena.style.display !== 'none') {
         tabFaena.classList.add('active');
         tabVial.classList.remove('active');
         grupoFaena.style.display = 'flex';
         grupoVial.style.display = 'none';
+        btnInforme.textContent = "VER CHECK-IN CLÍNICO DE FAENA →";
+        btnInforme.href = `informe_faena.html?${urlParams.toString()}`;
       }
     }
 
-    document.getElementById('btnInformeFaena').href = `informe_faena.html?${urlParams.toString()}`;
-    renderizarModulos();
+    renderizarPanelB2B();
   </script>
 </body>
 </html>
