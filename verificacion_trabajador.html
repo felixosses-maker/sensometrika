@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>SENSOMETRIKA | Acreditación & Calibración de Hardware</title>
+  <title>SENSOMETRIKA | Acreditación & Calibración Pro de Hardware</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     :root {
@@ -87,16 +87,21 @@
 
     .latency-btn-box {
       background: #030712;
-      border: 1px dashed var(--accent-cyan);
+      border: 2px dashed var(--accent-cyan);
       border-radius: 10px;
-      padding: 20px;
+      padding: 22px;
       text-align: center;
       cursor: pointer;
-      transition: all 0.2s ease;
+      transition: all 0.15s ease;
       display: flex;
       flex-direction: column;
       align-items: center;
       gap: 6px;
+    }
+
+    .latency-btn-box:active {
+      background-color: var(--accent-cyan);
+      transform: scale(0.98);
     }
 
     .btn-action {
@@ -149,7 +154,7 @@
     <header class="brand-header">
       <img src="sensometrica.jpg" alt="SENSOMETRIKA" class="brand-logo-img">
       <span style="color: var(--accent-cyan); font-size: 0.75rem; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase;">
-        VERIFICACIÓN Y ACREDITACIÓN DEL EVALUADO
+        VERIFICACIÓN Y CALIBRACIÓN PRO DE HARDWARE
       </span>
     </header>
 
@@ -192,26 +197,26 @@
       </div>
     </div>
 
-    <!-- CALIBRACIÓN DE LATENCIA HARDWARE -->
+    <!-- CALIBRACIÓN PRO DE LATENCIA HARDWARE -->
     <div class="card-box">
-      <div class="card-title">📱 CALIBRACIÓN DE LATENCIA DEL HARDWARE</div>
+      <div class="card-title">📱 CALIBRACIÓN PRO DE LATENCIA Y TERMINAL</div>
       
-      <div id="btnLatenciaArea" class="latency-btn-box" onclick="registrarToqueLatencia()">
+      <div id="btnLatenciaArea" class="latency-btn-box" onpointerdown="registrarToqueLatencia(event)">
         <span id="txtLatenciaMain" style="font-size: 0.90rem; font-weight: 800; color: var(--accent-cyan);">
-          TOCA AQUÍ PARA CALIBRAR HARDWARE (0 / 5)
+          TOCA AQUÍ 5 VECES RÁPIDO (0 / 5)
         </span>
         <span id="txtLatenciaSub" style="font-size: 0.70rem; color: var(--text-muted);">
-          Realiza 5 toques rítmicos. Se promediarán los toques 2, 3 y 4.
+          Mide la latencia táctil pura descartando el 1.° y 5.° intento (se usan 2, 3 y 4).
         </span>
       </div>
 
       <div class="info-grid" style="margin-top: 4px;">
         <div>
-          <span class="info-label">Latencia Medida</span>
+          <span class="info-label">Latencia Táctil</span>
           <span id="lblLatenciaVal" class="info-val">-- ms</span>
         </div>
         <div>
-          <span class="info-label">Estado Hardware</span>
+          <span class="info-label">Perfil de Terminal</span>
           <span id="lblLatenciaEstado" class="info-val" style="color: #f59e0b;">PENDIENTE</span>
         </div>
       </div>
@@ -226,7 +231,7 @@
     </div>
 
     <button id="btnContinuar" onclick="confirmarYPasarAlMenu()" class="btn-action btn-disabled" disabled>
-      INICIAR MÓDULO DEMO / INDUCCIÓN →
+      COMPLETA LA CALIBRACIÓN PARA CONTINUAR →
     </button>
   </div>
 
@@ -237,7 +242,7 @@
     let canvas, ctx, dibujando = false;
     let videoStream = null;
 
-    let toquesLatencia = [];
+    let toquesTiempos = [];
     let tiempoUltimoToque = 0;
     let latenciaCompletada = false;
 
@@ -388,35 +393,67 @@
       if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
     }
 
-    function registrarToqueLatencia() {
+    function registrarToqueLatencia(e) {
       if (latenciaCompletada) return;
+      e.preventDefault();
+      
       const ahora = performance.now();
 
-      if (tiempoUltimoToque > 0) {
-        const deltamS = Math.round(ahora - tiempoUltimoToque);
-        toquesLatencia.push(deltamS);
+      if (toquesTiempos.length === 0) {
+        tiempoUltimoToque = ahora;
+        toquesTiempos.push(0);
       } else {
-        toquesLatencia.push(0);
+        const delta = ahora - tiempoUltimoToque;
+        tiempoUltimoToque = ahora;
+        toquesTiempos.push(delta);
       }
 
-      tiempoUltimoToque = ahora;
-      const totalToques = toquesLatencia.length;
-
-      document.getElementById('txtLatenciaMain').textContent = `TOCA AQUÍ PARA CALIBRAR HARDWARE (${totalToques} / 5)`;
+      const totalToques = toquesTiempos.length;
+      document.getElementById('txtLatenciaMain').textContent = `TOCA AQUÍ 5 VECES RÁPIDO (${totalToques} / 5)`;
 
       if (totalToques >= 5) {
-        const toquesValidos = [toquesLatencia[1], toquesLatencia[2], toquesLatencia[3]];
-        const suma = toquesValidos.reduce((acc, val) => acc + val, 0);
-        const promedioLatencia = Math.round(suma / toquesValidos.length);
+        // Descartar 1.° y 5.°; usar exclusivamente 2, 3 y 4
+        const intentosCentrales = [toquesTiempos[1], toquesTiempos[2], toquesTiempos[3]];
+        intentosCentrales.sort((a, b) => a - b);
+        
+        const suma = intentosCentrales.reduce((acc, val) => acc + val, 0);
+        const promedioLatencia = Math.round(suma / intentosCentrales.length);
+
+        // Perfilamiento automático del terminal
+        let categoriaHardware = "GAMA_ALTA";
+        if (promedioLatencia > 60 && promedioLatencia <= 120) {
+          categoriaHardware = "GAMA_MEDIA";
+        } else if (promedioLatencia > 120) {
+          categoriaHardware = "GAMA_BAJA_LAG";
+        }
 
         latenciaCompletada = true;
+
+        // Guardar datos estructurados de hardware en localStorage
+        const perfilHardwareData = {
+          latencia_ms: promedioLatencia,
+          categoria: categoriaHardware,
+          offset_compensacion: promedioLatencia,
+          device_info: {
+            userAgent: navigator.userAgent,
+            maxTouchPoints: navigator.maxTouchPoints,
+            isTouch: 'ontouchstart' in window || navigator.maxTouchPoints > 0
+          }
+        };
+
+        localStorage.setItem('sensometrika_latencia_hardware', JSON.stringify(perfilHardwareData));
         localStorage.setItem('sensometrika_latencia_ms', promedioLatencia);
 
-        document.getElementById('txtLatenciaMain').textContent = '✓ CALIBRACIÓN COMPLETADA';
-        document.getElementById('txtLatenciaMain').style.color = '#10b981';
-        document.getElementById('txtLatenciaSub').textContent = 'Latencia de hardware registrada correctamente.';
+        // Feedback visual en pantalla
+        const caja = document.getElementById('btnLatenciaArea');
+        caja.style.backgroundColor = '#065f46';
+        caja.style.borderColor = '#10b981';
+
+        document.getElementById('txtLatenciaMain').textContent = '✓ CALIBRACIÓN PRO COMPLETADA';
+        document.getElementById('txtLatenciaMain').style.color = '#34d399';
+        document.getElementById('txtLatenciaSub').textContent = `Hardware perfilado (${categoriaHardware}). Offset aplicado.`;
         document.getElementById('lblLatenciaVal').textContent = `${promedioLatencia} ms`;
-        document.getElementById('lblLatenciaEstado').textContent = 'OPTIMIZADO';
+        document.getElementById('lblLatenciaEstado').textContent = categoriaHardware;
         document.getElementById('lblLatenciaEstado').style.color = '#10b981';
 
         validarTerminosYLatencia();
@@ -430,9 +467,15 @@
       if (latenciaCompletada && chk) {
         btnContinuar.classList.remove('btn-disabled');
         btnContinuar.disabled = false;
+        btnContinuar.textContent = 'INICIAR BATERÍA DE EVALUACIÓN →';
       } else {
         btnContinuar.classList.add('btn-disabled');
         btnContinuar.disabled = true;
+        if (!latenciaCompletada) {
+          btnContinuar.textContent = 'COMPLETE LOS 5 TOQUES DE CALIBRACIÓN';
+        } else {
+          btnContinuar.textContent = 'ACEPTE LOS TÉRMINOS Y CONDICIONES';
+        }
       }
     }
 
@@ -457,7 +500,6 @@
         }
       }
 
-      // CORREGIDO: Redirige directamente al menú B2B limpio sin bucles de verificación
       let menuDestino = 'menu_B2B.html';
       if (modeParam === 'b2b_mf') menuDestino = 'B2B_medico_faena.html';
       if (isB2C) menuDestino = 'menu_B2C.html';
