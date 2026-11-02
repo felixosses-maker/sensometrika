@@ -80,7 +80,35 @@
             gap: 6px;
         }
 
-        /* SELECTOR DE CANTIDAD B2B */
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            font-size: 0.72rem;
+        }
+
+        .form-group label {
+            font-weight: 700;
+            color: var(--text-muted);
+            text-transform: uppercase;
+        }
+
+        .form-input {
+            width: 100%;
+            height: 38px;
+            background-color: #030712;
+            border: 1px solid var(--card-border);
+            border-radius: 8px;
+            color: #fff;
+            padding: 0 10px;
+            font-size: 0.80rem;
+            outline: none;
+        }
+
+        .form-input:focus {
+            border-color: var(--accent-cyan);
+        }
+
         .caja-contador-b2b {
             background-color: #050b16;
             border: 1.5px solid var(--accent-cyan);
@@ -122,7 +150,6 @@
             outline: none;
         }
 
-        /* GRID DE PLANES COMERCIALES */
         .plans-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -157,7 +184,6 @@
         .plan-badge { font-size: 0.50rem; padding: 2px 5px; border-radius: 4px; font-weight: 800; background: rgba(0,191,255,0.15); color: var(--accent-cyan); }
         .plan-desc { font-size: 0.60rem; color: var(--text-muted); line-height: 1.25; }
 
-        /* LISTA DE MÓDULOS POR CATEGORÍA */
         .module-item {
             display: flex;
             align-items: center;
@@ -205,6 +231,67 @@
             gap: 6px;
             font-size: 0.75rem;
         }
+
+        /* MODAL INTERNO ESTILO SIMULADOR */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: rgba(4, 8, 16, 0.85);
+            backdrop-filter: blur(4px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.25s ease;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .modal-container {
+            background-color: var(--card-bg);
+            border: 1px solid var(--accent-cyan);
+            border-radius: 14px;
+            width: 90%;
+            max-width: 420px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            box-shadow: 0 15px 35px rgba(0, 191, 255, 0.25);
+            transform: translateY(10px);
+            transition: transform 0.25s ease;
+        }
+
+        .modal-overlay.active .modal-container {
+            transform: translateY(0);
+        }
+
+        .modal-title {
+            font-size: 0.85rem;
+            font-weight: 900;
+            color: var(--accent-cyan);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 1px solid var(--card-border);
+            padding-bottom: 8px;
+        }
+
+        .modal-body {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            line-height: 1.4;
+        }
+
+        .modal-footer {
+            display: flex;
+            gap: 8px;
+            margin-top: 4px;
+        }
     </style>
 </head>
 <body>
@@ -217,7 +304,35 @@
             </span>
         </header>
 
-        <!-- SECCIÓN 0: SELECTOR DE VOLUMEN (PAQUETE MÍNIMO 10, SIN EXPIRACIÓN) -->
+        <!-- IDENTIFICACIÓN DE LA EMPRESA Y RESPONSABLE APR -->
+        <div class="card-box">
+            <div class="card-title">
+                <span>🏢 IDENTIFICACIÓN DE LA EMPRESA MANDANTE</span>
+                <span style="font-size: 0.60rem; color: var(--accent-gold);">REGISTRO CORPORATIVO</span>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 8px;">
+                <div class="form-group">
+                    <label>Razón Social Empresa *</label>
+                    <input type="text" id="empresaRazonSocial" class="form-input" placeholder="Ej: Minera o Constructora del Sur SpA" required>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                    <div class="form-group">
+                        <label>RUT Empresa *</label>
+                        <input type="text" id="empresaRut" class="form-input" placeholder="Ej: 76.432.110-K" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Encargado / Supervisor APR *</label>
+                        <input type="text" id="empresaEncargado" class="form-input" placeholder="Ej: Carlos Mendoza" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Correo Electrónico (Notificaciones de Informes) *</label>
+                    <input type="email" id="empresaCorreo" class="form-input" placeholder="Ej: apr@empresa.cl" required>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECCIÓN 0: SELECTOR DE VOLUMEN -->
         <div class="card-box">
             <div class="card-title">
                 <span>📦 PAQUETE CORPORATIVO DE EVALUACIONES</span>
@@ -231,7 +346,7 @@
                     <button type="button" class="btn-ctrl" onclick="alterarCantidad(-1)">-</button>
                     <input type="number" id="cant-trabajadores" class="inp-ctrl" value="10" min="10" step="1" onchange="actualizarResumen()">
                     <button type="button" class="btn-ctrl" onclick="alterarCantidad(1)">+</button>
-                    <span style="font-size: 0.70rem; color: var(--text-muted);">Stock acumulable permanente (Sin fecha de vencimiento)</span>
+                    <span style="font-size: 0.70rem; color: var(--text-muted);">Stock acumulable permanente</span>
                 </div>
             </div>
         </div>
@@ -324,6 +439,17 @@
         </button>
     </div>
 
+    <!-- MODAL INTERNO DINÁMICO SENSOMETRIKA -->
+    <div id="modalSimulador" class="modal-overlay">
+        <div class="modal-container">
+            <div class="modal-title" id="modalTitulo">Aviso del Sistema B2B</div>
+            <div class="modal-body" id="modalMensaje">Contenido del mensaje...</div>
+            <div class="modal-footer">
+                <button type="button" class="btn-action" onclick="cerrarModalInterno()">ENTENDIDO</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         const modulosVialCategorizados = [
             { cat: 'checkin', key: 'visual', title: '1. Tamizaje Visual (Snellen)', precio: 4000 },
@@ -363,6 +489,16 @@
             { key: 'nistagmo', title: 'M9. Estabilidad Oculomotriz (Nistagmo)', precio: 4500 },
             { key: 'somnolencia', title: 'M10. Tamizaje de Somnolencia Pro', precio: 4800 }
         ];
+
+        function mostrarModalInterno(titulo, mensaje) {
+            document.getElementById('modalTitulo').textContent = titulo;
+            document.getElementById('modalMensaje').textContent = mensaje;
+            document.getElementById('modalSimulador').classList.add('active');
+        }
+
+        function cerrarModalInterno() {
+            document.getElementById('modalSimulador').classList.remove('active');
+        }
 
         function renderizarDashboard() {
             renderizarCategoria('checkin', 'catCheckin', 'chk-vial');
@@ -459,17 +595,33 @@
         }
 
         function guardarConfiguracionEmpresa() {
+            const razon = document.getElementById('empresaRazonSocial').value.trim();
+            const rut = document.getElementById('empresaRut').value.trim();
+            const encargado = document.getElementById('empresaEncargado').value.trim();
+            const correo = document.getElementById('empresaCorreo').value.trim();
+
+            if (!razon || !rut || !encargado || !correo) {
+                mostrarModalInterno("⚠️ Faltan Datos Obligatorios", "Por favor complete todos los datos de identificación de la empresa y del encargado APR antes de continuar.");
+                return;
+            }
+
             const cantidad = parseInt(document.getElementById('cant-trabajadores').value) || 10;
             const modulosVialActivos = Array.from(document.querySelectorAll('.chk-vial:checked')).map(c => c.value);
             const modulosFaenaActivos = Array.from(document.querySelectorAll('.chk-faena:checked')).map(c => c.value);
 
-            // Guardamos la configuración y stock permanente en localStorage
+            const datosEmpresa = { 
+                razonSocial: razon, 
+                rutEmpresa: rut, 
+                encargadoAPR: encargado, 
+                correoNotif: correo 
+            };
+            
+            localStorage.setItem('sensometrika_datos_empresa_activa', JSON.stringify(datosEmpresa));
             localStorage.setItem('sensometrika_cantidad_perfiles', cantidad);
             localStorage.setItem('sensometrika_modulos_vial_config', JSON.stringify(modulosVialActivos));
             localStorage.setItem('sensometrika_modulos_faena_config', JSON.stringify(modulosFaenaActivos));
 
-            // Redirigir al checkout para pago B2B
-            window.location.href = 'checkout.html?rol=empresa';
+            window.location.href = `dashboard_consola.html?token=smk_b2b_${rut.replace(/[^0-9Kk]/g, '')}`;
         }
 
         renderizarDashboard();
