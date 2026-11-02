@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>SENSOMETRIKA | Estabilidad Emocional & Control de Impulsos (Go/No-Go)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- LIBRERÍAS GOOGLE MEDIAPIPE PARA TELEMETRÍA Y CONTROL FACIAL B2B -->
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
+  <style>
+    :root {
+      --bg-color: #040810;
+      --card-bg: #091120;
+      --card-border: #132238;
+      --accent-cyan: #00bfff;
+      --accent-cyan-glow: rgba(0, 191, 255, 0.4);
+      --accent-gold: #e5b324;
+      --accent-red: #ef4444;
+      --accent-green: #10b981;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+
+    body {
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      min-height: 100vh;
+      padding: 20px 12px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .main-wrapper {
+      width: 100%;
+      max-width: 480px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .brand-header { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+    .logo-container { background: #060d1d; border: 1px solid var(--card-border); border-radius: 14px; padding: 10px 22px; box-shadow: 0 0 20px rgba(0, 191, 255, 0.2); }
+    .brand-logo-img { width: 160px; height: auto; mix-blend-mode: lighten; filter: drop-shadow(0 0 10px var(--accent-cyan-glow)); }
+    .subtitle-neon { font-size: 0.72rem; font-weight: 800; color: var(--accent-cyan); text-transform: uppercase; letter-spacing: 0.6px; text-align: center; }
+
+    .main-card {
+      background-color: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 14px;
+      padding: 18px;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
+      position: relative;
+    }
+
+    .top-nav-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      width: 100%;
+      margin-bottom: 4px;
+      gap: 8px;
+    }
+
+    .top-nav-bar button {
+      background: #0c182e;
+      border: 1px solid #1e3a6d;
+      color: var(--accent-cyan);
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 6px 10px;
+      border-radius: 8px;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .cam-preview-pip-header {
+      position: relative;
+      width: 56px;
+      height: 56px;
+      border: 1.5px solid var(--accent-cyan);
+      border-radius: 8px;
+      overflow: hidden;
+      background: #030712;
+      flex-shrink: 0;
+    }
+    .cam-preview-pip-header video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); display: block; }
+    .cam-tag-header { position: absolute; bottom: 0; left: 0; right: 0; background: rgba(0, 191, 255, 0.9); color: #000; font-size: 0.42rem; font-weight: 900; text-align: center; padding: 1px 0; text-transform: uppercase; }
+
+    .pill-mode {
+      background: rgba(0, 191, 255, 0.12);
+      border: 1px solid var(--accent-cyan);
+      color: var(--accent-cyan);
+      padding: 4px 14px;
+      border-radius: 20px;
+      font-size: 0.65rem;
+      font-weight: 800;
+      text-align: center;
+      margin: 0 auto;
+      text-transform: uppercase;
+    }
+
+    .distance-block-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(4, 8, 16, 0.94);
+      backdrop-filter: blur(5px);
+      z-index: 30;
+      display: none;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 16px;
+      text-align: center;
+      gap: 8px;
+      border-radius: 12px;
+    }
+
+    /* ZONA DE ESTÍMULO INTERACTIVO GO/NO-GO */
+    .stimulus-target-box {
+      width: 100%;
+      height: 170px;
+      background: #050a14;
+      border: 2px dashed var(--accent-cyan);
+      border-radius: 12px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      position: relative;
+      transition: background 0.1s;
+    }
+    .stimulus-target-box:active { background: #0c182e; }
+
+    .btn-action-main {
+      background: var(--accent-cyan);
+      color: #000;
+      border: none;
+      padding: 13px;
+      border-radius: 9px;
+      font-weight: 900;
+      font-size: 0.83rem;
+      cursor: pointer;
+      text-transform: uppercase;
+      width: 100%;
+      box-shadow: 0 4px 16px var(--accent-cyan-glow);
+    }
+
+    .telemetry-row {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      background: #030712;
+      border: 1px solid var(--card-border);
+      border-radius: 10px;
+      padding: 10px 2px;
+      text-align: center;
+    }
+    .telemetry-col { display: flex; flex-direction: column; gap: 2px; }
+    .telemetry-lbl { font-size: 0.50rem; color: var(--text-muted); font-weight: 800; text-transform: uppercase; }
+    .telemetry-val { font-size: 0.80rem; font-weight: 900; color: #fff; }
+  </style>
+</head>
+<body>
+
+  <video id="webcamInput" style="display:none;" playsinline></video>
+
+  <div class="main-wrapper">
+    <header class="brand-header">
+      <div class="logo-container">
+        <img src="sensometrica.jpg" alt="SENSOMETRIKA" class="brand-logo-img">
+      </div>
+      <div class="subtitle-neon">MÓDULO 17 • CONTROL DE IMPULSOS (GO / NO-GO)</div>
+    </header>
+
+    <div class="main-card">
+      <div class="top-nav-bar">
+        <button type="button" onclick="volverMenu()">← Menú Pruebas</button>
+        <div class="cam-preview-pip-header">
+          <video id="webcamVideo" autoplay playsinline muted></video>
+          <div class="cam-tag-header">Biometría</div>
+        </div>
+        <button type="button" onclick="mostrarAyuda()">? Ayuda</button>
+      </div>
+
+      <div class="pill-mode">• Inhibición Motora B2B PRO</div>
+
+      <div style="position: relative;">
+        <div id="boxBlockDistancia" class="distance-block-overlay">
+          <span style="color: var(--accent-red); font-weight: 900; font-size: 0.9rem;">⚠️ POSTURA FUERA DE RANGO</span>
+          <span style="font-size: 0.72rem; color: #cbd5e1;">Mantenga el dispositivo a una distancia de 45 a 65 cm.<br>Actual: <b id="lblDistVal" style="color:var(--accent-red);">-- cm</b></span>
+        </div>
+
+        <div id="cajaAccion" class="stimulus-target-box" onclick="registrarToqueOperativo()">
+          <span id="txtIndicador" style="font-size: 0.85rem; font-weight: 800; color: var(--accent-cyan); text-align: center; padding: 0 10px;">
+            Toque cuando aparezca VERDE.<br>NO toque si aparece ROJO.
+          </span>
+        </div>
+      </div>
+
+      <button id="btnIniciar" class="btn-action-main" onclick="iniciarTestGoNoGo()">INICIAR TEST DE IMPULSOS</button>
+
+      <div class="telemetry-row">
+        <div class="telemetry-col"><span class="telemetry-lbl">FASE</span><span id="lblFase" class="telemetry-val" style="color: var(--accent-cyan);">GO/NO</span></div>
+        <div class="telemetry-col"><span class="telemetry-lbl">ENSAYO</span><span id="lblEnsayo" class="telemetry-val" style="color: var(--accent-gold);">0/10</span></div>
+        <div class="telemetry-col"><span class="telemetry-lbl">ACIERTOS</span><span id="lblAciertos" class="telemetry-val" style="color: var(--accent-green);">0</span></div>
+        <div class="telemetry-col"><span class="telemetry-lbl">IMPULSOS</span><span id="lblImpulsos" class="telemetry-val" style="color: var(--accent-red);">0</span></div>
+        <div class="telemetry-col"><span class="telemetry-lbl">DISTANCIA</span><span id="m-distancia" class="telemetry-val" style="color: var(--accent-green);">-- cm</span></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const urlParams = new URLSearchParams(window.location.search);
+    let distanciaMedidaCm = 55;
+    let estaBloqueado = false;
+
+    // Validación de distancia con MediaPipe
+    function iniciarMediaPipe() {
+      const videoEl = document.getElementById('webcamVideo');
+      const fm = new FaceMesh({ locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}` });
+      fm.setOptions({ maxNumFaces: 1, refineLandmarks: true, minDetectionConfidence: 0.5, minTrackingConfidence: 0.5 });
+      fm.onResults((results) => {
+        if (!results.multiFaceLandmarks || results.multiFaceLandmarks.length === 0) return;
+        const l = results.multiFaceLandmarks[0];
+        const dx = l[33].x - l[263].x;
+        const dy = l[33].y - l[263].y;
+        const distNorm = Math.sqrt(dx * dx + dy * dy);
+        distanciaMedidaCm = Math.round(Math.round(9.5 / distNorm) * 0.5 + distanciaMedidaCm * 0.5);
+        actualizarDistanciaUI();
+      });
+      const cam = new Camera(videoEl, { onFrame: async () => { await fm.send({ image: videoEl }); }, width: 320, height: 240 });
+      cam.start().catch(() => {});
+    }
+
+    function actualizarDistanciaUI() {
+      const overlay = document.getElementById('boxBlockDistancia');
+      const mDist = document.getElementById('m-distancia');
+      mDist.textContent = `${distanciaMedidaCm} cm`;
+      if (distanciaMedidaCm >= 45 && distanciaMedidaCm <= 65) {
+        estaBloqueado = false;
+        mDist.style.color = 'var(--accent-green)';
+        if (overlay) overlay.style.display = 'none';
+      } else {
+        estaBloqueado = true;
+        mDist.style.color = 'var(--accent-red)';
+        document.getElementById('lblDistVal').textContent = `${distanciaMedidaCm} cm`;
+        if (overlay) overlay.style.display = 'flex';
+      }
+    }
+
+    // Motor Go / No-Go
+    let ensayoActual = 0;
+    const totalEnsayos = 10;
+    let aciertos = 0;
+    let impulsosFalsos = 0;
+    let tipoEstímuloActual = ''; // 'GO' o 'NOGO'
+    let estadoActivo = false;
+    let timeoutEstímulo = null;
+
+    function iniciarTestGoNoGo() {
+      if (estaBloqueado) return;
+      document.getElementById('btnIniciar').style.display = 'none';
+      ensayoActual = 0;
+      aciertos = 0;
+      impulsosFalsos = 0;
+      siguienteCiclo();
+    }
+
+    function siguienteCiclo() {
+      if (ensayoActual >= totalEnsayos) {
+        finalizarTest();
+        return;
+      }
+      ensayoActual++;
+      document.getElementById('lblEnsayo').textContent = `${ensayoActual}/${totalEnsayos}`;
+      estadoActivo = false;
+
+      const caja = document.getElementById('cajaAccion');
+      const txt = document.getElementById('txtIndicador');
+
+      caja.style.backgroundColor = '#050a14';
+      txt.textContent = 'Preparando...';
+
+      // Espera aleatoria entre 1 y 2 segundos antes de mostrar el estímulo
+      const delayAparicion = Math.random() * 1000 + 1000;
+
+      timeoutEstímulo = setTimeout(() => {
+        // 70% de probabilidad de ser GO (verde), 30% de ser NO-GO (rojo de alta tensión)
+        tipoEstímuloActual = Math.random() < 0.7 ? 'GO' : 'NOGO';
+        estadoActivo = true;
+
+        if (tipoEstímuloActual === 'GO') {
+          caja.style.backgroundColor = '#065f46'; // Verde operativo
+          txt.textContent = '¡TOCA AHORA!';
+          txt.style.color = '#34d399';
+        } else {
+          caja.style.backgroundColor = '#7f1d1d'; // Rojo de parada (No-Go)
+          txt.textContent = '¡ALTO / NO TOCAR!';
+          txt.style.color = '#fca5a5';
+        }
+
+        // El estímulo desaparece tras 900 ms
+        setTimeout(() => {
+          if (estadoActivo) {
+            // Si era GO y el usuario no tocó a tiempo (omisión)
+            if (tipoEstímuloActual === 'GO') {
+              impulsosFalsos++;
+              document.getElementById('lblImpulsos').textContent = impulsosFalsos;
+            } else {
+              // Si era NO-GO y el usuario logró frenarse con éxito
+              aciertos++;
+              document.getElementById('lblAciertos').textContent = aciertos;
+            }
+            estadoActivo = false;
+            caja.style.backgroundColor = '#050a14';
+            txt.textContent = '...';
+            setTimeout(siguienteCiclo, 600);
+          }
+        }, 900);
+
+      }, delayAparicion);
+    }
+
+    function registrarToqueOperativo() {
+      if (!estadoActivo) return;
+      estadoActivo = false;
+      clearTimeout(timeoutEstímulo);
+
+      const caja = document.getElementById('cajaAccion');
+      const txt = document.getElementById('txtIndicador');
+
+      if (tipoEstímuloActual === 'GO') {
+        // Acierto al tocar el estímulo verde
+        aciertos++;
+        document.getElementById('lblAciertos').textContent = aciertos;
+        caja.style.backgroundColor = '#047857';
+        txt.textContent = '✓ BIEN';
+      } else {
+        // Error de impulso: tocó la pantalla cuando el estímulo era ROJO (No-Go)
+        impulsosFalsos++;
+        document.getElementById('lblImpulsos').textContent = impulsosFalsos;
+        caja.style.backgroundColor = '#991b1b';
+        txt.textContent = '✕ ERROR DE IMPULSO';
+      }
+
+      setTimeout(() => {
+        caja.style.backgroundColor = '#050a14';
+        txt.textContent = '...';
+        setTimeout(siguienteCiclo, 600);
+      }, 600);
+    }
+
+    function finalizarTest() {
+      const caja = document.getElementById('cajaAccion');
+      const txt = document.getElementById('txtIndicador');
+      caja.style.backgroundColor = '#0c182e';
+      txt.textContent = 'TEST COMPLETADO';
+      txt.style.color = 'var(--accent-cyan)';
+
+      const aprobado = impulsosFalsos <= 2;
+      const rut = urlParams.get('rut') || localStorage.getItem('sensometrika_rut') || 'S/RUT';
+      const cleanRut = rut.replace(/[^0-9Kk]/g, '');
+      const sessionId = urlParams.get('session') || localStorage.getItem('sensometrika_session_activa') || `SESION_${Date.now()}`;
+
+      localStorage.setItem(`sensometrika_emocional_${cleanRut}_${sessionId}`, 'true');
+      localStorage.setItem(`sensometrika_last_emocional_${cleanRut}_${sessionId}`, JSON.stringify({
+        aprobado: aprobado,
+        score: `${aciertos} Aciertos / ${impulsosFalsos} Errores de Impulso`
+      }));
+
+      setTimeout(() => {
+        const returnUrl = urlParams.get('returnUrl');
+        window.location.href = returnUrl ? decodeURIComponent(returnUrl) : `menu_B2B.html?${urlParams.toString()}`;
+      }, 1500);
+    }
+
+    function volverMenu() {
+      const returnUrl = urlParams.get('returnUrl');
+      window.location.href = returnUrl ? decodeURIComponent(returnUrl) : `menu_B2B.html?${urlParams.toString()}`;
+    }
+
+    function mostrarAyuda() { alert('Instrucciones: Toque la pantalla únicamente cuando se muestre el color verde (GO). Evite tocar cuando se encienda el color rojo de parada (NO-GO).'); }
+
+    document.addEventListener('DOMContentLoaded', iniciarMediaPipe);
+  </script>
+</body>
+</html>

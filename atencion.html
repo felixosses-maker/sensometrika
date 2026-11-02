@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>SENSOMETRIKA | Atención Sostenida (CPT)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- LIBRERÍAS GOOGLE MEDIAPIPE PARA TELEMETRÍA Y CONTROL FACIAL B2B -->
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
+  <style>
+    :root {
+      --bg-color: #040810;
+      --card-bg: #091120;
+      --card-border: #132238;
+      --accent-cyan: #00bfff;
+      --accent-cyan-glow: rgba(0, 191, 255, 0.4);
+      --accent-gold: #e5b324;
+      --accent-red: #ef4444;
+      --accent-green: #10b981;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+
+    body {
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      min-height: 100vh;
+      padding: 20px 12px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .main-wrapper {
+      width: 100%;
+      max-width: 480px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .brand-header { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+    .logo-container { background: #060d1d; border: 1px solid var(--card-border); border-radius: 14px; padding: 10px 22px; box-shadow: 0 0 20px rgba(0, 191, 255, 0.2); }
+    .brand-logo-img { width: 160px; height: auto; mix-blend-mode: lighten; filter: drop-shadow(0 0 10px var(--accent-cyan-glow)); }
+    .subtitle-neon { font-size: 0.72rem; font-weight: 800; color: var(--accent-cyan); text-transform: uppercase; letter-spacing: 0.6px; text-align: center; }
+
+    .main-card {
+      background-color: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 14px;
+      padding: 18px;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
+      position: relative;
+    }
+
+    .top-nav-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      width: 100%;
+      margin-bottom: 4px;
+      gap: 8px;
+    }
+
+    .top-nav-bar button {
+      background: #0c182e;
+      border: 1px solid #1e3a6d;
+      color: var(--accent-cyan);
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 6px 10px;
+      border-radius: 8px;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .cam-preview-pip-header {
+      position: relative;
+      width: 56px;
+      height: 56px;
+      border: 1.5px solid var(--accent-cyan);
+      border-radius: 8px;
+      overflow: hidden;
+      background: #030712;
+      flex-shrink: 0;
+    }
+    .cam-preview-pip-header video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); display: block; }
+    .cam-tag-header { position: absolute; bottom: 0; left: 0; right: 0; background: rgba(0, 191, 255, 0.9); color: #000; font-size: 0.42rem; font-weight: 900; text-align: center; padding: 1px 0; text-transform: uppercase; }
+
+    .pill-mode {
+      background: rgba(0, 191, 255, 0.12);
+      border: 1px solid var(--accent-cyan);
+      color: var(--accent-cyan);
+      padding: 4px 14px;
+      border-radius: 20px;
+      font-size: 0.65rem;
+      font-weight: 800;
+      text-align: center;
+      margin: 0 auto;
+      text-transform: uppercase;
+    }
+
+    .distance-block-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(4, 8, 16, 0.94);
+      backdrop-filter: blur(5px);
+      z-index: 30;
+      display: none;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 16px;
+      text-align: center;
+      gap: 8px;
+      border-radius: 12px;
+    }
+
+    .stimulus-screen {
+      width: 100%;
+      height: 170px;
+      background: #050a14;
+      border: 2px dashed var(--accent-cyan);
+      border-radius: 12px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      position: relative;
+      transition: background 0.1s;
+    }
+    .stimulus-screen:active { background: #0c182e; }
+
+    .btn-action-main {
+      background: var(--accent-cyan);
+      color: #000;
+      border: none;
+      padding: 13px;
+      border-radius: 9px;
+      font-weight: 900;
+      font-size: 0.83rem;
+      cursor: pointer;
+      text-transform: uppercase;
+      width: 100%;
+      box-shadow: 0 4px 16px var(--accent-cyan-glow);
+    }
+
+    .telemetry-row {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      background: #030712;
+      border: 1px solid var(--card-border);
+      border-radius: 10px;
+      padding: 10px 2px;
+      text-align: center;
+    }
+    .telemetry-col { display: flex; flex-direction: column; gap: 2px; }
+    .telemetry-lbl { font-size: 0.50rem; color: var(--text-muted); font-weight: 800; text-transform: uppercase; }
+    .telemetry-val { font-size: 0.80rem; font-weight: 900; color: #fff; }
+  </style>
+</head>
+<body>
+
+  <video id="webcamInput" style="display:none;" playsinline></video>
+
+  <div class="main-wrapper">
+    <header class="brand-header">
+      <div class="logo-container">
+        <img src="sensometrica.jpg" alt="SENSOMETRIKA" class="brand-logo-img">
+      </div>
+      <div class="subtitle-neon">MÓDULO 14 • ATENCIÓN SOSTENIDA (CPT)</div>
+    </header>
+
+    <div class="main-card">
+      <div class="top-nav-bar">
+        <button type="button" onclick="volverMenu()">← Menú Pruebas</button>
+        <div class="cam-preview-pip-header">
+          <video id="webcamVideo" autoplay playsinline muted></video>
+          <div class="cam-tag-header">Biometría</div>
+        </div>
+        <button type="button" onclick="mostrarAyuda()">? Ayuda</button>
+      </div>
+
+      <div class="pill-mode">• Vigilancia Continua B2B PRO</div>
+
+      <div style="position: relative;">
+        <div id="boxBlockDistancia" class="distance-block-overlay">
+          <span style="color: var(--accent-red); font-weight: 900; font-size: 0.9rem;">⚠️ POSTURA FUERA DE RANGO</span>
+          <span style="font-size: 0.72rem; color: #cbd5e1;">Mantenga el dispositivo a una distancia de 45 a 65 cm.<br>Actual: <b id="lblDistVal" style="color:var(--accent-red);">-- cm</b></span>
+        </div>
+
+        <div id="cajaEstimulo" class="stimulus-screen" onclick="registrarImpacto()">
+          <span style="font-size: 0.65rem; color: var(--text-muted); text-transform: uppercase; margin-bottom: 4px;">Estímulo Objetivo: [ X ]</span>
+          <span id="txtEstimulo" style="font-size: 3rem; font-weight: 900; color: var(--accent-cyan);">--</span>
+          <span style="font-size: 0.60rem; color: var(--accent-gold); margin-top: 4px;">Toque la pantalla si aparece la letra X</span>
+        </div>
+      </div>
+
+      <button id="btnIniciar" class="btn-action-main" onclick="iniciarCPT()">INICIAR EVALUACIÓN CPT</button>
+
+      <div class="telemetry-row">
+        <div class="telemetry-col"><span class="telemetry-lbl">FASE</span><span id="lblFase" class="telemetry-val" style="color: var(--accent-cyan);">CPT</span></div>
+        <div class="telemetry-col"><span class="telemetry-lbl">ENSAYO</span><span id="lblEnsayo" class="telemetry-val" style="color: var(--accent-gold);">0/15</span></div>
+        <div class="telemetry-col"><span class="telemetry-lbl">ACIERTOS</span><span id="lblAciertos" class="telemetry-val" style="color: var(--accent-green);">0</span></div>
+        <div class="telemetry-col"><span class="telemetry-lbl">ERRORES</span><span id="lblErrores" class="telemetry-val" style="color: var(--accent-red);">0</span></div>
+        <div class="telemetry-col"><span class="telemetry-lbl">DISTANCIA</span><span id="m-distancia" class="telemetry-val" style="color: var(--accent-green);">-- cm</span></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const urlParams = new URLSearchParams(window.location.search);
+    let distanciaMedidaCm = 55;
+    let estaBloqueado = false;
+
+    // Configuración MediaPipe Face Mesh para distancia
+    function iniciarMediaPipe() {
+      const videoEl = document.getElementById('webcamVideo');
+      const fm = new FaceMesh({ locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}` });
+      fm.setOptions({ maxNumFaces: 1, refineLandmarks: true, minDetectionConfidence: 0.5, minTrackingConfidence: 0.5 });
+      fm.onResults((results) => {
+        if (!results.multiFaceLandmarks || results.multiFaceLandmarks.length === 0) return;
+        const l = results.multiFaceLandmarks[0];
+        const dx = l[33].x - l[263].x;
+        const dy = l[33].y - l[263].y;
+        const distNorm = Math.sqrt(dx * dx + dy * dy);
+        distanciaMedidaCm = Math.round(Math.round(9.5 / distNorm) * 0.5 + distanciaMedidaCm * 0.5);
+        actualizarDistanciaUI();
+      });
+      const cam = new Camera(videoEl, { onFrame: async () => { await fm.send({ image: videoEl }); }, width: 320, height: 240 });
+      cam.start().catch(() => {});
+    }
+
+    function actualizarDistanciaUI() {
+      const overlay = document.getElementById('boxBlockDistancia');
+      const mDist = document.getElementById('m-distancia');
+      mDist.textContent = `${distanciaMedidaCm} cm`;
+      if (distanciaMedidaCm >= 45 && distanciaMedidaCm <= 65) {
+        estaBloqueado = false;
+        mDist.style.color = 'var(--accent-green)';
+        if (overlay) overlay.style.display = 'none';
+      } else {
+        estaBloqueado = true;
+        mDist.style.color = 'var(--accent-red)';
+        document.getElementById('lblDistVal').textContent = `${distanciaMedidaCm} cm`;
+        if (overlay) overlay.style.display = 'flex';
+      }
+    }
+
+    // Motor CPT
+    let ensayo = 0;
+    const totalEnsayos = 15;
+    let aciertos = 0;
+    let errores = 0;
+    let letraActual = '';
+    let activoParaPulsar = false;
+    let timeoutCiclo = null;
+
+    function iniciarCPT() {
+      if (estaBloqueado) return;
+      document.getElementById('btnIniciar').style.display = 'none';
+      ensayo = 0;
+      aciertos = 0;
+      errores = 0;
+      siguienteEstimulo();
+    }
+
+    function siguienteEstimulo() {
+      if (ensayo >= totalEnsayos) {
+        finalizarCPT();
+        return;
+      }
+      ensayo++;
+      document.getElementById('lblEnsayo').textContent = `${ensayo}/${totalEnsayos}`;
+      
+      const setLetras = ['A', 'C', 'X', 'E', 'M', 'X', 'P', 'S', 'X', 'F', 'H', 'X', 'T', 'N', 'X'];
+      letraActual = setLetras[ensayo - 1];
+
+      const txt = document.getElementById('txtEstimulo');
+      txt.textContent = letraActual;
+      txt.style.color = letraActual === 'X' ? '#34d399' : 'var(--accent-cyan)';
+      
+      activoParaPulsar = true;
+
+      timeoutCiclo = setTimeout(() => {
+        if (activoParaPulsar && letraActual === 'X') {
+          // Omisión
+          errores++;
+          document.getElementById('lblErrores').textContent = errores;
+        }
+        activoParaPulsar = false;
+        txt.textContent = '-';
+        setTimeout(siguienteEstimulo, 600);
+      }, 1000);
+    }
+
+    function registrarImpacto() {
+      if (!activoParaPulsar) return;
+      activoParaPulsar = false;
+      clearTimeout(timeoutCiclo);
+
+      if (letraActual === 'X') {
+        aciertos++;
+        document.getElementById('lblAciertos').textContent = aciertos;
+      } else {
+        errores++; // Comisión (presionó cuando no era X)
+        document.getElementById('lblErrores').textContent = errores;
+      }
+
+      document.getElementById('txtEstimulo').textContent = '✓';
+      setTimeout(siguienteEstimulo, 600);
+    }
+
+    function finalizarCPT() {
+      document.getElementById('txtEstimulo').textContent = 'FIN';
+      const aprobado = errores <= 3;
+      const rut = urlParams.get('rut') || localStorage.getItem('sensometrika_rut') || 'S/RUT';
+      const cleanRut = rut.replace(/[^0-9Kk]/g, '');
+      const sessionId = urlParams.get('session') || localStorage.getItem('sensometrika_session_activa') || `SESION_${Date.now()}`;
+
+      localStorage.setItem(`sensometrika_atencion_${cleanRut}_${sessionId}`, 'true');
+      localStorage.setItem(`sensometrika_last_atencion_${cleanRut}_${sessionId}`, JSON.stringify({
+        aprobado: aprobado,
+        score: `${aciertos} Aciertos / ${errores} Errores`
+      }));
+
+      setTimeout(() => {
+        const returnUrl = urlParams.get('returnUrl');
+        window.location.href = returnUrl ? decodeURIComponent(returnUrl) : `menu_B2B.html?${urlParams.toString()}`;
+      }, 1500);
+    }
+
+    function volverMenu() {
+      const returnUrl = urlParams.get('returnUrl');
+      window.location.href = returnUrl ? decodeURIComponent(returnUrl) : `menu_B2B.html?${urlParams.toString()}`;
+    }
+
+    function mostrarAyuda() { alert('Instrucciones: Toque la pantalla únicamente cuando la letra sea X. Evite pulsar ante cualquier otra letra.'); }
+
+    document.addEventListener('DOMContentLoaded', iniciarMediaPipe);
+  </script>
+</body>
+</html>

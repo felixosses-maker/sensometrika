@@ -33,7 +33,7 @@
 
         .main-container {
             width: 100%;
-            max-width: 1050px;
+            max-width: 1100px;
             display: flex;
             flex-direction: column;
             gap: 18px;
@@ -139,7 +139,7 @@
             font-weight: 700;
         }
 
-        .form-group input, .form-group select {
+        .form-group input {
             background: #080d17;
             border: 1px solid var(--card-border);
             color: #fff;
@@ -274,11 +274,11 @@
         <!-- RESUMEN DE MÓDULOS CONTRATADOS Y BOLSAS -->
         <div class="panel-card" style="padding: 16px;">
             <div class="card-title" style="margin-bottom: 4px;">
-                <span>📦 Detalle del Plan / Módulos Contratados en Bolsa</span>
-                <span style="font-size: 0.68rem; color: var(--accent-green);">Protocolo Activo</span>
+                <span>📦 Módulos Viales y Médicos Integrados en Bolsa</span>
+                <span style="font-size: 0.68rem; color: var(--accent-green);">Stock Permanente (Sin Expiración)</span>
             </div>
             <div id="contenedorModulosContratados" class="modulos-badge-container">
-                <span class="mod-pill">Cargando módulos contratados...</span>
+                <span class="mod-pill">Cargando módulos configurados...</span>
             </div>
         </div>
 
@@ -289,7 +289,7 @@
                 <strong id="lblEmpresa" style="color: #fff; font-size: 0.88rem;">Cargando...</strong>
             </div>
             <div>
-                <span style="color: var(--text-muted); text-transform: uppercase; font-size: 0.65rem; display: block;">Simulaciones Disponibles</span>
+                <span style="color: var(--text-muted); text-transform: uppercase; font-size: 0.65rem; display: block;">Evaluaciones Disponibles</span>
                 <strong id="lblFoliosRestantes" style="color: var(--accent-green); font-size: 0.88rem;">10 Disponibles</strong>
             </div>
             <div>
@@ -298,9 +298,9 @@
             </div>
         </div>
 
-        <!-- FORMULARIO DE GENERACIÓN DE ENLACE Y TIPO DE PROTOCOLO -->
+        <!-- FORMULARIO DE GENERACIÓN DE ENLACE (SIN SELECTOR DE PROTOCOLO) -->
         <div class="panel-card">
-            <div class="card-title">🎟️ Generar Link o Código QR de Ingreso para Trabajador</div>
+            <div class="card-title">🎟️ Generar Enlace o Código QR Integral para Trabajador</div>
             <form id="formRegistrar" onsubmit="generarLinkTrabajador(event)">
                 <div class="form-grid">
                     <div class="form-group">
@@ -319,24 +319,17 @@
                         <label>Teléfono WhatsApp *</label>
                         <input type="text" id="inputTelefono" placeholder="Ej: +56912345678" required>
                     </div>
-                    <div class="form-group">
-                        <label>Cargo / Función</label>
-                        <input type="text" id="inputCargo" placeholder="Ej: Conductor / Operador Faena" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Tipo de Protocolo / Evaluación *</label>
-                        <select id="selectTipoProtocolo" required style="background: #080d17; border: 1px solid var(--card-border); color: #fff; padding: 10px 12px; border-radius: 8px; font-size: 0.82rem;">
-                            <option value="b2b">B2B Vial - Módulos Psicotécnicos Operaciones</option>
-                            <option value="b2b_mf">B2B-MF - Check Médico Ingreso a Faena / Rol / Turno</option>
-                        </select>
+                    <div class="form-group" style="grid-column: span 2;">
+                        <label>Cargo / Función en Faena</label>
+                        <input type="text" id="inputCargo" placeholder="Ej: Conductor de Camión / Operador Maquinaria Pesada" required>
                     </div>
                 </div>
-                <button type="submit" class="btn-generate">⚡ GENERAR ENLACE Y CÓDIGO QR DE ACCESO →</button>
+                <button type="submit" class="btn-generate">⚡ GENERAR ENLACE Y CÓDIGO QR INTEGRAL →</button>
             </form>
 
             <div id="boxLinkResultado" class="link-out-box">
                 <span style="font-size: 0.70rem; color: var(--text-muted); font-weight: 800; text-transform: uppercase;">
-                    Enlace Único de Acceso para el Trabajador (Escaneo QR o Wp):
+                    Enlace Único Integral (Vial + Clínico de Faena):
                 </span>
                 <input type="text" id="txtLinkGenerado" class="link-out-input" readonly>
                 <div class="btn-actions-row">
@@ -346,18 +339,18 @@
             </div>
         </div>
 
-        <!-- NÓMINA Y TRAZABILIDAD DE TRABAJADORES CON QR -->
+        <!-- NÓMINA Y TRAZABILIDAD CON ACCESOS A AMBOS INFORMES -->
         <div class="panel-card">
-            <div class="card-title">📋 Nómina de Trabajadores Registrados, Protocolos & Códigos QR</div>
+            <div class="card-title">📋 Nómina de Trabajadores, Estado & Doble Informe (Vial y Clínico)</div>
             <div class="table-container">
                 <table>
                     <thead>
                         <tr>
                             <th>Trabajador / RUT</th>
-                            <th>Protocolo Asignado</th>
-                            <th>Estado Acreditación</th>
+                            <th>Estado Evaluación</th>
                             <th>Enlace / QR de Ingreso</th>
-                            <th>Informe Pericial & Dictamen</th>
+                            <th>Informe Vial & Psicotécnico</th>
+                            <th>Informe Médico & Faena</th>
                         </tr>
                     </thead>
                     <tbody id="tablaNominaConsola">
@@ -378,22 +371,23 @@
 
     <script>
         const diccionarioModulos = {
-            mod1: "⏱️ Anticipación Pro", mod2: "⚡ Reactímetro Pro", mod3: "⚡ Reactímetro Estándar",
-            mod4: "🎯 Punteo Pro", mod5: "🎯 Punteo Estándar", mod6: "🚛 Punteo Transporte",
-            mod7: "🎮 Test de Palancas Bimanual", mod8: "🚗 Visomotriz Pro", mod9: "👁️ Tamizaje Visual Pro",
-            mod10: "🚚 Visual Transporte", mod11: "👁️‍🗨️ Campo Periférico", mod12: "📐 Estereopsis (Profundidad)",
-            mod13: "💡 Encandilamiento", mod14: "🎧 Audiometría General", mod15: "🚛 Audiometría Transporte",
-            mod16: "🔀 Test de Carga Dual", mod17: "🧩 Memoria de Trabajo", mod18: "😴 Fatiga y Vigilancia",
-            mod19: "⚖️ Romberg Pro (Vestibular)", mod20: "✋ Temblores Pro (Motora)", mod21: "✊ Grip Pro (Dinamometría)",
-            mod22: "💓 PPG Pro (Cardíaca)", mod23: "👁️ Reflejo Pupilar Pro", mod24: "🫁 Espirometría Pro",
-            mod25: "⚡ Tapping Pro (Praxias)", mod26: "🚨 Alarma Faena", mod27: "🔄 Nistagmo (Oculomotriz)",
-            mod28: "😴 Somnolencia Pro", mod29: "📄 Declaración Médica y QR"
+            visual: "1. Tamizaje Visual (Snellen)", auditivo: "2. Tamizaje Auditivo Ocupacional", ishihara: "3. Discriminación Colores (Ishihara)",
+            anticipacion: "4. Anticipación Pro", reactimetro: "5. Reactímetro Simple", punteo: "6. Punteo Viso-Motriz",
+            palancas: "7. Test de Palancas Bimanual", periferico: "8. Campo Periférico", estereopsis: "9. Estereopsis (Profundidad)",
+            encandilamiento: "10. Encandilamiento & Recuperación", cargadual: "11. Test de Carga Dual", memoria: "12. Memoria de Trabajo Operativa",
+            fatiga: "13. Fatiga y Vigilancia (PVT)", visomotriz: "14. Visomotriz Avanzada", atencion: "15. Atención Sostenida (CPT)",
+            reaccion_compleja: "16. Reacción Compleja Múltiple", emocional: "17. Estabilidad Emocional (Go/No-Go)", dinamica: "18. Coordinación Dinámica",
+            tapping: "19. Agilidad Digital (Tapping)", monotonia: "20. Tolerancia a la Monotonía",
+            romberg: "M1. Estabilidad Vestibular (Romberg Pro)", temblores: "M2. Estabilidad Motora (Temblores Pro)", grip: "M3. Dinamometría y Fuerza (Grip Pro)",
+            ppg: "M4. Frecuencia Cardíaca Basal (PPG Pro)", pupilar: "M5. Reflejo Fotomotor Pupilar Pro", espirometria: "M6. Espirometría Ocupacional Pro",
+            tapping_faena: "M7. Agilidad y Praxias Digitales", auditivo_faena: "M8. Reacción a Alarma de Faena", nistagmo: "M9. Estabilidad Oculomotriz (Nistagmo)",
+            somnolencia: "M10. Tamizaje de Somnolencia Pro"
         };
 
         let empresaActiva = '';
         let llaveNominaEmpresa = 'sensometrika_consola_nomina_default';
         let trabajadores = [];
-        let foliosRestantes = parseInt(localStorage.getItem('sensometrika_b2b_folios') || '10', 10);
+        let foliosRestantes = parseInt(localStorage.getItem('sensometrika_b2b_folios') || localStorage.getItem('sensometrika_cantidad_perfiles') || '10', 10);
 
         document.addEventListener('DOMContentLoaded', () => {
             empresaActiva = (localStorage.getItem('sensometrika_b2b_empresa') || 'EMPRESA MINERA / TRANSPORTE').trim().toUpperCase();
@@ -404,7 +398,7 @@
 
             document.getElementById('lblEmpresa').innerText = empresaActiva;
             document.getElementById('lblEncargado').innerText = encargado.toUpperCase();
-            document.getElementById('lblFoliosRestantes').innerText = `${foliosRestantes} Simulaciones`;
+            document.getElementById('lblFoliosRestantes').innerText = `${foliosRestantes} Evaluaciones`;
 
             renderizarModulosContratados();
             renderizarNomina();
@@ -412,19 +406,27 @@
 
         function renderizarModulosContratados() {
             const contenedor = document.getElementById('contenedorModulosContratados');
-            const modulosGuardados = localStorage.getItem('sensometrika_modulos_b2b_activos');
+            const vialesGuardados = JSON.parse(localStorage.getItem('sensometrika_modulos_vial_config') || 'null');
+            const faenaGuardadas = JSON.parse(localStorage.getItem('sensometrika_modulos_faena_config') || 'null');
             
-            if (!modulosGuardados) {
-                contenedor.innerHTML = `<span class="mod-pill" style="color:var(--accent-gold);">Batería Completa / Pack Estándar Asignado</span>`;
+            if (!vialesGuardados && !faenaGuardadas) {
+                contenedor.innerHTML = `<span class="mod-pill" style="color:var(--accent-gold);">Batería Completa Vial + Faena Asignada (Sin Expiración)</span>`;
                 return;
             }
 
-            const listaMod = modulosGuardados.split(',');
             contenedor.innerHTML = '';
-            listaMod.forEach(mKey => {
-                const nombreBonito = diccionarioModulos[mKey] || mKey;
-                contenedor.innerHTML += `<span class="mod-pill">${nombreBonito}</span>`;
-            });
+            if (vialesGuardados) {
+                vialesGuardados.forEach(mKey => {
+                    const nombreBonito = diccionarioModulos[mKey] || mKey;
+                    contenedor.innerHTML += `<span class="mod-pill">Vial: ${nombreBonito}</span>`;
+                });
+            }
+            if (faenaGuardadas) {
+                faenaGuardadas.forEach(mKey => {
+                    const nombreBonito = diccionarioModulos[mKey] || mKey;
+                    contenedor.innerHTML += `<span class="mod-pill" style="border-color:var(--accent-gold); color:var(--accent-gold);">Faena: ${nombreBonito}</span>`;
+                });
+            }
         }
 
         function mostrarModalSimulador(titulo, cuerpo) {
@@ -441,7 +443,7 @@
             e.preventDefault();
 
             if (foliosRestantes <= 0) {
-                mostrarModalSimulador("ATENCIÓN", "⚠️ Bolsa de simulaciones agotada. Recargue folios desde el catálogo corporativo.");
+                mostrarModalSimulador("ATENCIÓN", "⚠️ Bolsa de evaluaciones agotada. Recargue folios desde el catálogo corporativo.");
                 return;
             }
 
@@ -450,22 +452,20 @@
             const email = document.getElementById('inputEmail').value.trim();
             const telefono = document.getElementById('inputTelefono').value.trim();
             const cargo = document.getElementById('inputCargo').value.trim();
-            const tipoProtocolo = document.getElementById('selectTipoProtocolo').value;
 
             const cleanRut = rut.replace(/[^0-9Kk]/g, '');
-            const sessionId = `SESION_${tipoProtocolo.toUpperCase()}_${cleanRut}_${Date.now()}`;
+            const sessionId = `SESION_INTEGRAL_${cleanRut}_${Date.now()}`;
 
             foliosRestantes--;
             localStorage.setItem('sensometrika_b2b_folios', foliosRestantes);
-            document.getElementById('lblFoliosRestantes').innerText = `${foliosRestantes} Simulaciones`;
+            document.getElementById('lblFoliosRestantes').innerText = `${foliosRestantes} Evaluaciones`;
 
             const baseUrl = window.location.origin.replace(/\/$/, '');
-            // APUNTAR AL PASO OBLIGATORIO DE VERIFICACIÓN
-            const urlCompleta = `${baseUrl}/verificacion_trabajador.html?rut=${encodeURIComponent(rut)}&nombre=${encodeURIComponent(nombre)}&cargo=${encodeURIComponent(cargo)}&empresa=${encodeURIComponent(empresaActiva)}&session=${sessionId}&mode=${tipoProtocolo}`;
+            const urlCompleta = `${baseUrl}/verificacion_trabajador.html?rut=${encodeURIComponent(rut)}&nombre=${encodeURIComponent(nombre)}&cargo=${encodeURIComponent(cargo)}&empresa=${encodeURIComponent(empresaActiva)}&session=${sessionId}&mode=integral`;
 
             document.getElementById('txtLinkGenerado').value = urlCompleta;
             
-            const msgWp = encodeURIComponent(`Hola *${nombre}* (RUT: ${rut}), desde *${empresaActiva}* te enviamos tu acceso oficial para la evaluación Sensometrika (Vigencia 48 hrs):\n\n${urlCompleta}`);
+            const msgWp = encodeURIComponent(`Hola *${nombre}* (RUT: ${rut}), desde *${empresaActiva}* te enviamos tu acceso oficial para la evaluación Sensometrika Integral (Sin fecha de expiración):\n\n${urlCompleta}`);
             document.getElementById('btnWhatsappDirecto').href = `https://wa.me/${telefono.replace(/[^0-9+]/g, '')}?text=${msgWp}`;
 
             document.getElementById('boxLinkResultado').style.display = 'flex';
@@ -475,13 +475,13 @@
             localStorage.setItem('sensometrika_faena', empresaActiva);
             localStorage.setItem('sensometrika_session_activa', sessionId);
 
-            trabajadores.unshift({ rut, cleanRut, session: sessionId, nombre, email, telefono, cargo, tipoProtocolo, empresa: empresaActiva, url: urlCompleta });
+            trabajadores.unshift({ rut, cleanRut, session: sessionId, nombre, email, telefono, cargo, empresa: empresaActiva, url: urlCompleta });
             localStorage.setItem(llaveNominaEmpresa, JSON.stringify(trabajadores));
             renderizarNomina();
 
             mostrarModalSimulador(
                 "ENLACE Y QR GENERADOS 🚀",
-                `El pase de evaluación ha sido generado exitosamente para <strong>${nombre}</strong> bajo el protocolo <strong>${tipoProtocolo === 'b2b_mf' ? 'Médico de Faena (B2B-MF)' : 'Transporte Vial (B2B)'}</strong>.<br><br>El trabajador ya puede escanear su código QR o utilizar el enlace directo.`
+                `El pase integral ha sido generado exitosamente para <strong>${nombre}</strong>.<br><br>El trabajador podrá completar tanto sus módulos viales como clínicos de faena con este mismo enlace.`
             );
 
             document.getElementById('inputRut').value = '';
@@ -509,39 +509,47 @@
 
             trabajadores.forEach((t, index) => {
                 const sessionParam = t.session || '';
-                const isFaena = t.tipoProtocolo === 'b2b_mf';
                 
-                const claveCheck = isFaena ? `medico_romberg_${t.cleanRut}_${sessionParam}` : `sensometrika_last_reactimetro_${t.cleanRut}_${sessionParam}`;
-                const rEval = localStorage.getItem(claveCheck);
-                const aprobado = rEval !== null;
+                const rVial = localStorage.getItem(`sensometrika_last_reactimetro_${t.cleanRut}_${sessionParam}`);
+                const rFaena = localStorage.getItem(`medico_romberg_${t.cleanRut}_${sessionParam}`);
+                const aprobadoVial = rVial !== null;
+                const aprobadoFaena = rFaena !== null;
 
-                const estado = aprobado ? (isFaena ? 'APROBADO FAENA' : 'APROBADO VIAL') : 'PENDIENTE INGRESO';
-                const clase = aprobado ? 'badge-ok' : 'badge-pending';
+                let estadoTxt = 'PENDIENTE INGRESO';
+                let claseEstado = 'badge-pending';
+                if (aprobadoVial && aprobadoFaena) {
+                    estadoTxt = 'COMPLETO (VIAL + FAENA)';
+                    claseEstado = 'badge-ok';
+                } else if (aprobadoVial || aprobadoFaena) {
+                    estadoTxt = 'EN PROCESO PARCIAL';
+                    claseEstado = 'badge-pending';
+                }
 
-                const urlInforme = isFaena 
-                    ? `informe_faena.html?rut=${t.rut}&nombre=${encodeURIComponent(t.nombre)}&session=${sessionParam}&mode=b2b_mf`
-                    : `informe_b2b.html?rut=${t.rut}&nombre=${encodeURIComponent(t.nombre)}&session=${sessionParam}&mode=b2b`;
+                const urlInformeVial = `informe_b2b.html?rut=${t.rut}&nombre=${encodeURIComponent(t.nombre)}&session=${sessionParam}&mode=b2b`;
+                const urlInformeFaena = `informe_faena.html?rut=${t.rut}&nombre=${encodeURIComponent(t.nombre)}&session=${sessionParam}&mode=b2b_mf`;
 
                 const qrContainerId = `qrcode_table_${index}`;
-                const textoWpFila = encodeURIComponent(`Hola *${t.nombre}*, desde *${t.empresa}* te enviamos tu acceso de evaluación Sensometrika:\n\n${t.url}`);
+                const textoWpFila = encodeURIComponent(`Hola *${t.nombre}*, desde *${t.empresa}* te enviamos tu acceso de evaluación Sensometrika Integral:\n\n${t.url}`);
                 const linkWpFila = t.telefono ? `https://wa.me/${t.telefono.replace(/[^0-9+]/g, '')}?text=${textoWpFila}` : `https://wa.me/?text=${textoWpFila}`;
 
                 tbody.innerHTML += `
                     <tr>
                         <td><b>${t.nombre}</b><br><span style="color:var(--text-muted);">RUT: ${t.rut} | Cargo: ${t.cargo}</span></td>
-                        <td><span style="color:var(--accent-cyan); font-weight:700; font-size:0.7rem;">${isFaena ? '🩺 Médico Faena (B2B-MF)' : '🚛 Transporte Vial (B2B)'}</span></td>
-                        <td><span class="badge-status ${clase}">${estado}</span></td>
+                        <td><span class="badge-status ${claseEstado}">${estadoTxt}</span></td>
                         <td>
                             <div class="qr-cell-box">
                                 <div id="${qrContainerId}" class="mini-qr" title="QR Escaneo Trabajador"></div>
                                 <div style="display:flex; flex-direction:column; gap:4px;">
-                                    <button onclick="navigator.clipboard.writeText('${t.url}');mostrarModalSimulador('ENLACE COPIADO 📋', 'En enlace ha sido copiado.');" style="background:#0284c7; color:#fff; border:none; padding:4px 8px; border-radius:4px; cursor:pointer; font-weight:700; font-size:0.68rem;">🔗 Copiar Link</button>
+                                    <button onclick="navigator.clipboard.writeText('${t.url}');mostrarModalSimulador('ENLACE COPIADO 📋', 'Enlace copiado.');" style="background:#0284c7; color:#fff; border:none; padding:4px 8px; border-radius:4px; cursor:pointer; font-weight:700; font-size:0.68rem;">🔗 Copiar</button>
                                     <a href="${linkWpFila}" target="_blank" style="background:#16a34a; color:#fff; padding:4px 8px; border-radius:4px; font-weight:700; text-decoration:none; font-size:0.68rem; text-align:center;">💬 Wp</a>
                                 </div>
                             </div>
                         </td>
                         <td>
-                            <a href="${urlInforme}" target="_blank" style="color:var(--accent-cyan); font-weight:800; text-decoration:underline; font-size:0.75rem;">📄 Ver Informe Pericial (${isFaena ? 'Faena' : 'Vial'})</a>
+                            <a href="${urlInformeVial}" target="_blank" style="color:var(--accent-cyan); font-weight:800; text-decoration:underline; font-size:0.75rem;">📄 Informe Vial & Psicotécnico</a>
+                        </td>
+                        <td>
+                            <a href="${urlInformeFaena}" target="_blank" style="color:var(--accent-gold); font-weight:800; text-decoration:underline; font-size:0.75rem;">🩺 Informe Médico de Faena</a>
                         </td>
                     </tr>
                 `;
