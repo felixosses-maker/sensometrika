@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>SENSOMETRIKA | Módulo: Tamizaje Auditivo Ocupacional Avanzado</title>
+  <title>SENSOMETRIKA | Tamizaje Auditivo Ocupacional Pro B2B</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     :root {
@@ -67,7 +67,7 @@
     
     <header class="brand-header">
       <img src="sensometrica.jpg" alt="SENSOMETRIKA" class="brand-logo-img">
-      <span class="brand-subtitle">MÓDULO TAMIZAJE AUDITIVO OCUPACIONAL</span>
+      <span class="brand-subtitle">MÓDULO TAMIZAJE AUDITIVO OCUPACIONAL B2B</span>
     </header>
 
     <section class="modulo-card-container">
@@ -106,6 +106,10 @@
         🔊 REPRODUCIR TONO ACÚSTICO
       </button>
 
+      <button type="button" class="btn-audio-accion" id="btnRetornarMenu" style="display: none; background: var(--verde-destacado);" onclick="ejecutarRetornoMenu()">
+        VOLVER AL MENÚ DE PRUEBAS →
+      </button>
+
       <div class="metricas-inferiores-grid">
         <div class="col-metrica"><span>Progreso</span><strong id="mProgreso">0 / 8</strong></div>
         <div class="col-metrica"><span>Aciertos</span><strong id="mAciertos" class="badge-verde">0</strong></div>
@@ -116,18 +120,21 @@
 
   <script>
     const urlParams = new URLSearchParams(window.location.search);
-    const modeParam = urlParams.get('mode') || (localStorage.getItem('sensometrika_b2c_mode') === 'true' ? 'b2c' : 'b2b');
-    const esB2B = (modeParam === 'b2b');
+    const modeParam = urlParams.get('mode') || 'b2b';
+    const esB2B = (modeParam === 'b2b') || urlParams.has('token') || urlParams.has('session');
 
     let datosUsuario = {};
     try { datosUsuario = JSON.parse(localStorage.getItem('sensometrika_datos_usuario')) || {}; } catch(e){}
 
-    const rut = urlParams.get('rut') || datosUsuario.rut || 'GENERICO';
+    const rawNombre = urlParams.get('nombre') || datosUsuario.nombre || localStorage.getItem('sensometrika_nombre') || '';
+    const rawCargo = urlParams.get('cargo') || datosUsuario.cargo || localStorage.getItem('sensometrika_cargo') || '';
+    const rawEmpresa = urlParams.get('empresa') || datosUsuario.empresa || localStorage.getItem('sensometrika_b2b_empresa') || '';
+    const planActivo = (urlParams.get('plan') || localStorage.getItem('sensometrika_b2b_plan') || 'BASICO').toUpperCase();
+    const rut = urlParams.get('rut') || datosUsuario.rut || localStorage.getItem('sensometrika_rut') || '12345678-K';
     const cleanRut = rut.replace(/[^0-9Kk]/g, '');
+    const sessionId = urlParams.get('session') || localStorage.getItem('sensometrika_session_activa') || `SESION_B2B_${cleanRut}_${Date.now()}`;
 
-    const isDemoURL = urlParams.get('demo') === 'true' || urlParams.get('fase') === 'demo';
-    let modoActual = isDemoURL ? 'DEMO' : 'OFICIAL';
-
+    let modoActual = 'DEMO';
     let audioCtx = null;
     let oscilador = null;
     let gainNode = null;
@@ -144,6 +151,7 @@
     const statusText = document.getElementById('statusText');
     const btnIniciar = document.getElementById('btnIniciarAudio');
     const btnEmitirTono = document.getElementById('btnEmitirTono');
+    const btnRetornarMenu = document.getElementById('btnRetornarMenu');
     const panelOidos = document.getElementById('panelOidos');
     const lblOido = document.getElementById('lblOido');
     const lblFrecuencia = document.getElementById('lblFrecuencia');
@@ -152,45 +160,33 @@
     const mAciertos = document.getElementById('mAciertos');
     const mEstado = document.getElementById('mEstado');
 
-    // --- FUNCIÓN CORREGIDA PARA SOPORTAR returnUrl ---
     function ejecutarRetornoMenu() {
-      const returnUrlParam = urlParams.get('returnUrl');
-      if (returnUrlParam) {
-        window.location.href = decodeURIComponent(returnUrlParam);
-      } else {
-        const menuDestino = esB2B ? 'menu_b2b_planes.html' : 'menu_B2C.html';
-        window.location.href = `${menuDestino}?${urlParams.toString()}`;
-      }
+      const paramsRegreso = new URLSearchParams({
+        rut: rut,
+        nombre: rawNombre,
+        cargo: rawCargo,
+        empresa: rawEmpresa,
+        plan: planActivo,
+        session: sessionId,
+        mode: 'b2b'
+      });
+      window.location.href = `menu_b2b_planes.html?${paramsRegreso.toString()}`;
     }
 
-    function obtenerHistorialAuditivoRut() {
-      let raw = JSON.parse(localStorage.getItem(`sensometrika_historial_auditivo_${cleanRut}`)) || [];
-      if (!Array.isArray(raw) || raw.length === 0) {
-        raw = JSON.parse(localStorage.getItem(`sensometrika_historial_audicion_${cleanRut}`)) || [];
-      }
-      return raw.filter(item => item && (item.total === 8 || item.precision !== undefined || item.dictamen !== undefined));
+    function verificarModuloEjecutadoEnSesion() {
+      const dataStr = localStorage.getItem(`sensometrika_audicion_${cleanRut}_${sessionId}`) ||
+                      localStorage.getItem(`sensometrika_last_audicion_${cleanRut}_${sessionId}`) ||
+                      localStorage.getItem('sensometrika_audicion');
+      return dataStr !== null;
     }
 
     function actualizarEstadoUI() {
-      const historial = obtenerHistorialAuditivoRut();
-      const numEnsayosRealizados = historial.length;
+      const ejecucionOficialConcluida = verificarModuloEjecutadoEnSesion();
+      const demoRealizada = localStorage.getItem(`audicion_demo_completada_${cleanRut}_${sessionId}`) === 'true';
 
-      const planStorage = (localStorage.getItem('sensometrika_plan_contratado') || urlParams.get('plan') || 'PLUS').toUpperCase();
-      
-      let maxIntentosPlan = 5;
-      if (esB2B) {
-        maxIntentosPlan = planStorage.includes('ALTO') ? 3 : 1;
-      } else {
-        if (planStorage.includes('FULL') || planStorage.includes('ALTO')) {
-          maxIntentosPlan = 8;
-        }
-      }
-
-      const demoRealizada = localStorage.getItem(`audicion_demo_completada_${cleanRut}`) === 'true';
-
-      if (numEnsayosRealizados >= maxIntentosPlan) {
+      if (ejecucionOficialConcluida) {
         modoActual = 'BLOQUEADO';
-      } else if (isDemoURL || (!demoRealizada && numEnsayosRealizados === 0)) {
+      } else if (!demoRealizada) {
         modoActual = 'DEMO';
       } else {
         modoActual = 'OFICIAL';
@@ -199,27 +195,37 @@
       if (modoActual === 'BLOQUEADO') {
         cajaCheck.style.display = 'none';
         btnIniciar.style.display = 'none';
-        badgeFase.innerText = esB2B ? `✓ Evaluación B2B Registrada (${numEnsayosRealizados}/${maxIntentosPlan})` : `✓ Plan ${planStorage} Completado (${numEnsayosRealizados}/${maxIntentosPlan})`;
+        btnRetornarMenu.style.display = 'block';
+        badgeFase.innerText = `✓ EVALUACIÓN REGISTRADA (1/1)`;
         badgeFase.style.color = '#10b981';
+        badgeFase.style.borderColor = '#10b981';
+        badgeFase.style.background = 'rgba(16, 185, 129, 0.1)';
         lblOido.innerText = '✓ MÓDULO REGISTRADO';
         lblFrecuencia.innerText = 'Completado';
-        lblUmbral.innerText = 'Evaluación registrada en el sistema';
+        lblUmbral.innerText = 'Evaluación auditiva registrada en el sistema';
         mEstado.innerText = 'Completado';
         mEstado.style.color = '#10b981';
-        statusText.innerText = esB2B ? 'Evaluación corporativa finalizada. Retorna al menú de evaluaciones.' : `Has completado la cuota de ${maxIntentosPlan} simulaciones de tu Plan ${planStorage}. Retorna al menú.`;
+        statusText.innerText = 'Evaluación corporativa B2B finalizada con éxito. Retorna al menú de evaluaciones.';
       } else if (modoActual === 'DEMO') {
+        cajaCheck.style.display = 'flex';
+        btnIniciar.style.display = 'block';
+        btnRetornarMenu.style.display = 'none';
         badgeFase.innerText = 'Paso 1: Calibración Demo (1/1)';
         badgeFase.style.borderColor = '#e5b324';
         badgeFase.style.color = '#e5b324';
+        badgeFase.style.background = 'rgba(229, 179, 36, 0.1)';
         btnIniciar.innerText = 'INICIAR CALIBRACIÓN DEMO (8 TONOS)';
         btnIniciar.style.backgroundColor = '#e5b324';
       } else {
-        const siguienteSimu = numEnsayosRealizados + 1;
-        badgeFase.innerText = esB2B ? `🔴 Tamizaje Auditivo B2B (Simulación Oficial)` : `🔴 Tamizaje Auditivo Oficial S${siguienteSimu} de ${maxIntentosPlan}`;
-        badgeFase.style.borderColor = 'rgba(56, 189, 248, 0.35)';
-        badgeFase.style.color = '#38bdf8';
-        btnIniciar.innerText = esB2B ? `INICIAR SIMULACIÓN OFICIAL B2B` : `INICIAR SIMULACIÓN OFICIAL (S${siguienteSimu} DE ${maxIntentosPlan})`;
-        btnIniciar.style.backgroundColor = '#0284c7';
+        cajaCheck.style.display = 'flex';
+        btnIniciar.style.display = 'block';
+        btnRetornarMenu.style.display = 'none';
+        badgeFase.innerText = `Fase 2: Simulación Oficial B2B (1/1)`;
+        badgeFase.style.borderColor = '#10b981';
+        badgeFase.style.color = '#10b981';
+        badgeFase.style.background = 'rgba(16, 185, 129, 0.1)';
+        btnIniciar.innerText = `INICIAR SIMULACIÓN OFICIAL B2B (1/1)`;
+        btnIniciar.style.backgroundColor = '#10b981';
       }
     }
 
@@ -297,6 +303,8 @@
 
       lblOido.innerText = 'Listo para emitir tono';
       lblFrecuencia.innerText = 'Tono 1 / 8';
+      mAciertos.innerText = '0';
+      mProgreso.innerText = '0 / 8';
     }
 
     function reproducirSiguienteTono() {
@@ -382,44 +390,40 @@
       const precisionVal = Math.round((aciertosTotales / 8) * 100);
 
       if (modoActual === 'DEMO') {
-        localStorage.setItem(`audicion_demo_completada_${cleanRut}`, 'true');
+        localStorage.setItem(`audicion_demo_completada_${cleanRut}_${sessionId}`, 'true');
         mostrarModalResultadoAudio(aciertosTotales, aprobado, true);
-      } else if (modoActual === 'OFICIAL') {
-        let historial = obtenerHistorialAuditivoRut();
-        
-        historial.push({
-          simulacion: historial.length + 1,
-          fecha: new Date().toISOString(),
+      } else {
+        const registroData = {
           aciertos: aciertosTotales,
           total: 8,
+          score: precisionVal,
           precision: precisionVal,
+          efectividad: precisionVal,
+          dictamen: aprobado ? 'APROBADO' : 'OBSERVADO',
           aprobado: aprobado,
-          dictamen: aprobado ? 'APROBADO' : 'OBSERVADO'
-        });
+          fecha: new Date().toISOString()
+        };
 
-        localStorage.setItem(`sensometrika_historial_auditivo_${cleanRut}`, JSON.stringify(historial));
-        localStorage.setItem(`sensometrika_historial_audicion_${cleanRut}`, JSON.stringify(historial));
+        // GUARDAR EN TODAS LAS CLAVES COMPATIBLES CON INFORME-B2B.HTML
+        localStorage.setItem(`sensometrika_audicion_${cleanRut}_${sessionId}`, JSON.stringify(registroData));
+        localStorage.setItem(`sensometrika_last_audicion_${cleanRut}_${sessionId}`, JSON.stringify(registroData));
+        localStorage.setItem('sensometrika_audicion', JSON.stringify(registroData));
 
-        actualizarEstadoUI();
+        let modulosRendidos = {};
+        try { modulosRendidos = JSON.parse(localStorage.getItem('sensometrika_modulos_rendidos')) || {}; } catch(e){}
+        modulosRendidos.audicion = true;
+        localStorage.setItem('sensometrika_modulos_rendidos', JSON.stringify(modulosRendidos));
+
         mostrarModalResultadoAudio(aciertosTotales, aprobado, false);
       }
-    }
-
-    function irASimulacionOficial() {
-      urlParams.set('demo', 'false');
-      urlParams.set('fase', 'oficial');
-      window.location.href = `${window.location.pathname}?${urlParams.toString()}`;
     }
 
     function mostrarModalResultadoAudio(aciertos, aprobado, esDemo) {
       const modalExistente = document.getElementById('modalResultadoAudio');
       if (modalExistente) modalExistente.remove();
 
-      const historial = obtenerHistorialAuditivoRut();
-      const numSimu = historial.length;
-
-      const tituloModal = esDemo ? 'CALIBRACIÓN DEMO COMPLETADA' : (esB2B ? `Simulación Oficial B2B Registrada` : `Simulación Oficial S${numSimu} Registrada`);
-      const mensajeModal = esDemo ? 'Has finalizado tu ensayo. Ya puedes realizar tu Simulación Oficial.' : '<b>¡Evaluación registrada correctamente!</b>';
+      const tituloModal = esDemo ? 'CALIBRACIÓN DEMO COMPLETADA' : 'SIMULACIÓN OFICIAL B2B REGISTRADA';
+      const mensajeModal = esDemo ? 'Has finalizado la inducción libre. Presiona continuar para rendir la <b>Simulación Oficial B2B</b>.' : '<b>¡Resultado guardado con éxito!</b>';
 
       const modalHtml = `
         <div id="modalResultadoAudio" style="position: fixed; inset: 0; background: rgba(5, 8, 18, 0.9); backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center; z-index: 99999; padding: 16px;">
@@ -446,16 +450,27 @@
 
             <p style="font-size: 0.8rem; color: #cbd5e1; margin-bottom: 16px;">${mensajeModal}</p>
 
-            <button onclick="${esDemo ? 'irASimulacionOficial()' : 'ejecutarRetornoMenu()'}" style="width: 100%; background: #0284c7; color: #ffffff; border: none; border-radius: 10px; padding: 12px; font-weight: 700; cursor: pointer; font-size: 0.9rem; text-transform: uppercase; box-shadow: 0 4px 14px rgba(2, 132, 199, 0.4);">
+            <button id="btnContinuarModal" style="width: 100%; background: #0284c7; color: #ffffff; border: none; border-radius: 10px; padding: 12px; font-weight: 700; cursor: pointer; font-size: 0.9rem; text-transform: uppercase; box-shadow: 0 4px 14px rgba(2, 132, 199, 0.4);">
               ${esDemo ? 'CONTINUAR A SIMULACIÓN OFICIAL →' : '← VOLVER AL MENÚ DE EVALUACIONES'}
             </button>
           </div>
         </div>
       `;
       document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+      document.getElementById('btnContinuarModal').onclick = () => {
+        document.getElementById('modalResultadoAudio').remove();
+        if (esDemo) {
+          actualizarEstadoUI();
+        } else {
+          ejecutarRetornoMenu();
+        }
+      };
     }
 
-    actualizarEstadoUI();
+    document.addEventListener('DOMContentLoaded', () => {
+      actualizarEstadoUI();
+    });
   </script>
 </body>
 </html>
