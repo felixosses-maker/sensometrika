@@ -90,7 +90,6 @@
             position: relative;
         }
 
-        /* BARRA SUPERIOR UNIFICADA CON BIOMETRÍA PIP EN HEADER (ALTERNATIVA 1) */
         .top-nav {
             display: flex !important;
             justify-content: space-between !important;
@@ -120,7 +119,6 @@
             color: #ffffff !important;
         }
 
-        /* PIP BIOMÉTRICO RESTRINGIDO A 56px X 56px */
         .cam-preview-pip-header {
             position: relative !important;
             width: 56px !important;
@@ -192,7 +190,6 @@
 
         canvas { width: 100%; height: 100%; display: block; touch-action: none; }
 
-        /* OVERLAY DE BLOQUEO POR DISTANCIA NORMATIVA */
         .distance-block-overlay {
             position: absolute;
             inset: 0;
@@ -300,7 +297,6 @@
 </head>
 <body>
 
-    <!-- ELEMENTO OCULTO PARA RECEPCIÓN DE VIDEO DE CÁMARA -->
     <video id="webcamInput" style="display:none;" playsinline></video>
 
     <div class="main-container">
@@ -310,18 +306,15 @@
         </header>
 
         <div class="eval-card">
-            
-            <!-- NAV TOP ROW CON PIP BIOMÉTRICO HEADER -->
             <div class="top-nav">
-                <button class="nav-btn" onclick="ejecutarRetornoMenu()">&larr; Menú Pruebas</button>
+                <button class="nav-btn" onclick="ejecutarRetornoMenu()">← Menú Pruebas</button>
 
-                <!-- PIP BIOMÉTRICO RESTRINGIDO A 56px X 56px -->
                 <div class="cam-preview-pip-header">
                     <video id="webcamVideo" autoplay playsinline muted></video>
                     <div class="cam-tag-header">Biometría</div>
                 </div>
 
-                <button id="btnInfo" class="nav-btn">? &iquest;C&oacute;mo funciona?</button>
+                <button id="btnInfo" class="nav-btn">? ¿Cómo funciona?</button>
             </div>
 
             <div class="status-badge-container">
@@ -334,7 +327,6 @@
             <div class="canvas-wrapper" id="canvasContainer">
                 <canvas id="punteoCanvas" width="400" height="300"></canvas>
 
-                <!-- OVERLAY DE BLOQUEO POR DISTANCIA NORMATIVA -->
                 <div id="boxBlockDistancia" class="distance-block-overlay">
                     <span class="distance-block-title">⚠️ DISTANCIA / POSTURA FUERA DE RANGO</span>
                     <span id="txtDistanciaDetalle" class="distance-block-desc">
@@ -416,8 +408,7 @@
         const cleanRut = rutEvaluado.replace(/[^0-9Kk]/g, '');
         const sessionId = urlParams.get('session') || urlParams.get('token') || localStorage.getItem('sensometrika_session_activa') || `SESION_${cleanRut}_${Date.now()}`;
 
-        let isDemoURL = (urlParams.get('demo') === 'true' || urlParams.get('fase') === 'demo') && !esB2B;
-        let modoActual = isDemoURL ? 'DEMO' : 'OFICIAL';
+        let modoActual = 'OFICIAL';
 
         let evaluacionActiva = false;
         let aciertos = 0;
@@ -434,30 +425,23 @@
         let bola = { x: 200, y: -20, r: 18, vy: 3.2 };
         const targetZone = { yMin: 200, yMax: 270 };
 
-        // PARÁMETROS TELEMÉTRICOS DE CÁMARA
         let distanciaMedidaCm = 55;
         let estaBloqueadoPorDistancia = false;
 
         function ejecutarRetornoMenu() {
-            const returnUrlParam = urlParams.get('returnUrl');
-            if (returnUrlParam) {
-                window.location.href = decodeURIComponent(returnUrlParam);
-            } else {
-                const paramsRegreso = new URLSearchParams({
-                    rut: rutEvaluado,
-                    nombre: urlParams.get('nombre') || datosUsuario.nombre || '',
-                    plan: urlParams.get('plan') || localStorage.getItem('sensometrika_plan_contratado') || 'PLUS',
-                    session: sessionId,
-                    mode: esB2B ? 'b2b' : 'b2c'
-                });
-                if (urlParams.get('token')) paramsRegreso.set('token', urlParams.get('token'));
-
-                const menuDestino = esB2B ? 'menu_b2b_planes.html' : 'menu_B2C.html';
-                window.location.href = `${menuDestino}?${paramsRegreso.toString()}`;
-            }
+            const paramsRegreso = new URLSearchParams({
+                rut: rutEvaluado,
+                nombre: urlParams.get('nombre') || datosUsuario.nombre || '',
+                cargo: urlParams.get('cargo') || datosUsuario.cargo || '',
+                empresa: urlParams.get('empresa') || datosUsuario.empresa || '',
+                plan: urlParams.get('plan') || localStorage.getItem('sensometrika_b2b_plan') || 'PLUS',
+                session: sessionId,
+                mode: esB2B ? 'b2b' : 'b2c'
+            });
+            const menuDestino = esB2B ? 'menu_b2b_planes.html' : 'menu_B2C.html';
+            window.location.href = `${menuDestino}?${paramsRegreso.toString()}`;
         }
 
-        // CONTROL DE CÁMARA MEDIAPIPE FACEMESH
         function iniciarMediaPipeFaceMesh() {
             const videoElement = document.getElementById('webcamVideo');
 
@@ -490,6 +474,8 @@
 
         function onResultsFaceMesh(results) {
             if (!results.multiFaceLandmarks || results.multiFaceLandmarks.length === 0) {
+                distanciaMedidaCm = 70;
+                evaluarRangoDistancia();
                 return;
             }
 
@@ -502,7 +488,6 @@
             const eyeDistanceNormalized = Math.sqrt(dx * dx + dy * dy);
 
             let distCalculada = Math.round(9.5 / eyeDistanceNormalized);
-
             distanciaMedidaCm = Math.round(distanciaMedidaCm * 0.5 + distCalculada * 0.5);
             evaluarRangoDistancia();
         }
@@ -525,68 +510,28 @@
             }
         }
 
-        function obtenerHistorialPunteoRut() {
-            if (!cleanRut) return [];
-            const claveSesion = `sensometrika_historial_punteo_${cleanRut}_${sessionId}`;
-            let rawSesion = JSON.parse(localStorage.getItem(claveSesion)) || [];
-            if (Array.isArray(rawSesion) && rawSesion.length > 0) return rawSesion;
-
-            let raw = JSON.parse(localStorage.getItem(`sensometrika_historial_punteo_${cleanRut}`)) || [];
-            return raw.filter(item => item && (item.precision !== undefined || item.aciertos !== undefined || item.efectividad !== undefined));
+        function verificarModuloEjecutado() {
+            const dataStr = localStorage.getItem(`sensometrika_punteo_${cleanRut}_${sessionId}`) ||
+                            localStorage.getItem(`sensometrika_last_punteo_${cleanRut}_${sessionId}`) ||
+                            localStorage.getItem('sensometrika_punteo');
+            return dataStr !== null;
         }
 
         function actualizarEstadoUI() {
-            const historial = obtenerHistorialPunteoRut();
-            const numEnsayosRealizados = historial.length;
+            const yaRendido = verificarModuloEjecutado();
 
-            const planStorage = (localStorage.getItem('sensometrika_plan_contratado') || urlParams.get('plan') || 'PLUS').toUpperCase();
-            
-            let maxIntentosPlan = 1; 
-            if (esB2B) {
-                maxIntentosPlan = planStorage.includes('ALTO') ? 3 : 1;
-            } else {
-                maxIntentosPlan = 3;
-                if (planStorage.includes('PLUS')) maxIntentosPlan = 5;
-                if (planStorage.includes('FULL') || planStorage.includes('ALTO')) maxIntentosPlan = 8;
-            }
-
-            const demoRealizada = !esB2B && ((localStorage.getItem(`punteo_demo_completada_${cleanRut}`) === 'true') ||
-                                             (localStorage.getItem(`btnMod3_demo_completada_${cleanRut}`) === 'true'));
-
-            if (isDemoURL && demoRealizada) {
-                mostrarModal("MÓDULO DEMO YA COMPLETADO", "Ya has ejecutado la calibración demo para este ensayo. Retornando al menú de pruebas...", () => {
-                    ejecutarRetornoMenu();
-                });
-                return;
-            }
-
-            if (numEnsayosRealizados >= maxIntentosPlan) {
+            if (yaRendido && !urlParams.has('reeval')) {
                 modoActual = 'BLOQUEADO';
-            } else if (isDemoURL) {
-                modoActual = 'DEMO';
-            } else {
-                modoActual = 'OFICIAL';
-            }
-
-            if (modoActual === 'BLOQUEADO') {
-                badgeText.textContent = esB2B ? `EVALUACIÓN REGISTRADA (1/1)` : `PLAN ${planStorage} COMPLETADO (${numEnsayosRealizados}/${maxIntentosPlan})`;
+                badgeText.textContent = `EVALUACIÓN REGISTRADA (1/1)`;
                 badgeDot.style.backgroundColor = "#10b981"; 
                 btnStart.style.display = 'none';
                 btnNext.style.display = 'block';
-                instructionText.textContent = esB2B ? 'Evaluación B2B finalizada con éxito. Retorna al menú.' : `Has alcanzado el límite de ${maxIntentosPlan} simulaciones de tu Plan ${planStorage}. Retorna al menú.`;
-            } else if (modoActual === 'DEMO') {
-                badgeText.textContent = "Paso 1: Calibración Demo (1/1)";
-                badgeDot.style.backgroundColor = "#e5b324"; 
-                btnStart.textContent = "INICIAR CALIBRACIÓN DEMO";
-                btnStart.style.backgroundColor = "#e5b324";
-                btnStart.style.display = 'block';
-                btnNext.style.display = 'none';
-                instructionText.textContent = "Modo Demo: Toca la pantalla cuando el círculo cruce la zona inferior de ensayo.";
+                instructionText.textContent = 'Evaluación Viso-Motriz finalizada con éxito. Retorna al menú.';
             } else {
-                const siguienteSimu = numEnsayosRealizados + 1;
-                badgeText.textContent = esB2B ? `Simulación Oficial B2B` : `Simulación Oficial S${siguienteSimu} de ${maxIntentosPlan}`;
+                modoActual = 'OFICIAL';
+                badgeText.textContent = `Simulación Oficial B2B`;
                 badgeDot.style.backgroundColor = "#38bdf8"; 
-                btnStart.textContent = esB2B ? `INICIAR SIMULACIÓN OFICIAL B2B` : `INICIAR SIMULACIÓN OFICIAL (S${siguienteSimu} DE ${maxIntentosPlan})`;
+                btnStart.textContent = `INICIAR SIMULACIÓN OFICIAL B2B`;
                 btnStart.style.backgroundColor = "#0284c7";
                 btnStart.style.display = 'block';
                 btnNext.style.display = 'none';
@@ -607,7 +552,6 @@
             ctx.fillText('ZONA DE IMPACTO RÍTMICO', 25, targetZone.yMin + 18);
 
             if (evaluacionActiva) {
-                // Solo avanza la bola si la persona está a la distancia correcta
                 if (!estaBloqueadoPorDistancia) {
                     bola.y += bola.vy;
                 }
@@ -723,51 +667,40 @@
             clearInterval(timerInterval);
 
             const total = aciertos + errores;
-            const precisionVal = total > 0 ? Math.round((aciertos / total) * 100) : 100;
+            const precisionVal = total > 0 ? Math.round((aciertos / total) * 100) : 0;
             const latenciaMediaVal = tiemposReaccion.length > 0 ? Math.round(tiemposReaccion.reduce((a, b) => a + b, 0) / tiemposReaccion.length) : 0;
 
             const registroData = { 
                 aciertos: aciertos, 
-                errores: errores, 
+                errores: errores,
+                perdidas: errores,
                 efectividad: precisionVal,
+                score: precisionVal,
+                precision: precisionVal, 
                 latencia: latenciaMediaVal,
                 desviacionMs: latenciaMediaVal,
                 latenciaRitmoMs: latenciaMediaVal,
-                precision: precisionVal, 
                 distanciaAvgCm: distanciaMedidaCm,
+                aprobado: precisionVal >= 75 && aciertos >= 4,
                 fecha: new Date().toISOString() 
             };
 
-            const claveSesion = `sensometrika_historial_punteo_${cleanRut}_${sessionId}`;
-            localStorage.setItem(claveSesion, JSON.stringify([registroData]));
+            // ESCRITURA EN MÚLTIPLES CLAVES PARA COMPATIBILIDAD CON EL INFORME PERICIAL
+            localStorage.setItem(`sensometrika_punteo_${cleanRut}_${sessionId}`, JSON.stringify(registroData));
+            localStorage.setItem(`sensometrika_last_punteo_${cleanRut}_${sessionId}`, JSON.stringify(registroData));
+            localStorage.setItem('sensometrika_punteo', JSON.stringify(registroData));
 
-            let hRut = JSON.parse(localStorage.getItem(`sensometrika_historial_punteo_${cleanRut}`)) || [];
-            hRut.push(registroData);
-            localStorage.setItem(`sensometrika_historial_punteo_${cleanRut}`, JSON.stringify(hRut));
+            // REGISTRO GLOBAL DE MÓDULO COMPLETADO
+            let modulosRendidos = {};
+            try { modulosRendidos = JSON.parse(localStorage.getItem('sensometrika_modulos_rendidos')) || {}; } catch(e){}
+            modulosRendidos.punteo = true;
+            localStorage.setItem('sensometrika_modulos_rendidos', JSON.stringify(modulosRendidos));
 
-            if (modoActual === 'DEMO') {
-                localStorage.setItem(`punteo_demo_completada_${cleanRut}`, 'true');
-
-                mostrarModal(
-                    "CALIBRACIÓN DEMO COMPLETADA",
-                    `Aciertos: <b>${aciertos}</b><br>Pérdidas/Errores: <b>${errores}</b><br>Latencia Media: <b>${latenciaMediaVal} ms</b><br>Efectividad: <b>${precisionVal}%</b><br>Distancia Media: <b>${distanciaMedidaCm} cm</b><br><br>Has completado el ensayo demo. Retornando a la batería de pruebas...`,
-                    () => {
-                        ejecutarRetornoMenu();
-                    }
-                );
-            } else {
-                let hGen = JSON.parse(localStorage.getItem('sensometrika_historial_punteo')) || [];
-                hGen.push(registroData);
-                localStorage.setItem('sensometrika_historial_punteo', JSON.stringify(hGen));
-
-                const tituloModal = esB2B ? "SIMULACIÓN OFICIAL B2B REGISTRADA" : `SIMULACIÓN OFICIAL REGISTRADA`;
-
-                mostrarModal(
-                    tituloModal,
-                    `Aciertos: <b>${aciertos}</b><br>Pérdidas/Errores: <b>${errores}</b><br>Latencia Media: <b>${latenciaMediaVal} ms</b><br>Precisión Rítmica: <b>${precisionVal}%</b><br>Distancia Biométrica: <b>${distanciaMedidaCm} cm</b><br><br><b>Resultado guardado con éxito.</b>`,
-                    () => { ejecutarRetornoMenu(); }
-                );
-            }
+            mostrarModal(
+                "SIMULACIÓN OFICIAL B2B REGISTRADA",
+                `Aciertos: <b>${aciertos}</b><br>Pérdidas/Errores: <b>${errores}</b><br>Latencia Media: <b>${latenciaMediaVal} ms</b><br>Precisión Rítmica: <b>${precisionVal}%</b><br>Distancia Biométrica: <b>${distanciaMedidaCm} cm</b><br><br><b>Resultado guardado con éxito.</b>`,
+                () => { ejecutarRetornoMenu(); }
+            );
         }
 
         function mostrarModal(titulo, cuerpo, callback) {
