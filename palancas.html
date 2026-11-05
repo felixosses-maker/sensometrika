@@ -269,6 +269,12 @@
             border-color: #38bdf8;
         }
 
+        .btn-ctrl:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+            background-color: #0f172a;
+        }
+
         .btn-start {
             background-color: var(--blue-btn);
             color: #ffffff;
@@ -380,6 +386,7 @@
             <div class="canvas-wrapper" id="canvasContainer">
                 <canvas id="palancasCanvas" width="400" height="300"></canvas>
 
+                <!-- OVERLAY DE BLOQUEO POR DISTANCIA NORMATIVA RECONECTADO -->
                 <div id="boxBlockDistancia" class="distance-block-overlay">
                     <span class="distance-block-title">⚠️ DISTANCIA / POSTURA FUERA DE RANGO</span>
                     <span id="txtDistanciaDetalle" class="distance-block-desc">
@@ -537,7 +544,12 @@
         }
 
         function onResultsFaceMesh(results) {
-            if (!results.multiFaceLandmarks || results.multiFaceLandmarks.length === 0) return;
+            if (!results.multiFaceLandmarks || results.multiFaceLandmarks.length === 0) {
+                // Si no hay rostro en cámara, se considera ausente/fuera de rango
+                distanciaMedidaCm = 70;
+                evaluarRangoDistancia();
+                return;
+            }
 
             const landmarks = results.multiFaceLandmarks[0];
             const leftEye = landmarks[33];
@@ -558,68 +570,116 @@
 
             metricDistancia.textContent = `${distanciaMedidaCm} cm`;
 
-            // Calibrado a tolerancia 35 cm - 65 cm
+            // EVALUACIÓN DE RANGO NORMATIVO DE DISTANCIA (35 cm a 65 cm)
             if (distanciaMedidaCm >= 35 && distanciaMedidaCm <= 65) {
                 estaBloqueadoPorDistancia = false;
                 metricDistancia.style.color = 'var(--accent-green)';
                 if (overlayBlock) overlayBlock.style.display = 'none';
             } else {
-                estaBloqueadoPorDistancia = false; // Flexibilidad telemétrica
+                estaBloqueadoPorDistancia = true;
                 metricDistancia.style.color = 'var(--accent-red)';
                 if (lblDetalle) lblDetalle.textContent = `${distanciaMedidaCm} cm`;
-                if (overlayBlock) overlayBlock.style.display = 'none';
+                if (overlayBlock) overlayBlock.style.display = 'flex';
+
+                // Si está fuera de rango, cancela inputs activos de mandos
+                keys = { left: false, right: false, up: false, down: false };
             }
         }
 
-        function generarCircuitoAntiMemorizacion(numSimu) {
-            const seed = (numSimu * 37 + Date.now()) % 1000;
-            const variante = (numSimu + Math.floor(Math.random() * 5)) % 5;
-
-            const offsetX = (seed % 30) - 15;
-            const offsetY = ((seed * 13) % 25) - 12;
+        function generarCircuitoAntiMemorizacion(semillaUnica) {
+            const variante = Math.floor(Math.random() * 6);
+            const rndX = (Math.sin(semillaUnica) * 10000) % 25 - 12;
+            const rndY = (Math.cos(semillaUnica) * 10000) % 20 - 10;
 
             switch (variante) {
                 case 0:
                     return {
                         pista: [
-                            {x: 50 + offsetX, y: 220},
-                            {x: 160 + offsetX, y: 220},
-                            {x: 160 + offsetX, y: 90 + offsetY},
-                            {x: 240 + offsetX, y: 90 + offsetY},
-                            {x: 240 + offsetX, y: 220},
-                            {x: 350 + offsetX, y: 220},
-                            {x: 350 + offsetX, y: 75}
+                            {x: 45 + rndX, y: 230},
+                            {x: 140 + rndX, y: 230},
+                            {x: 140 + rndX, y: 110 + rndY},
+                            {x: 250 + rndX, y: 110 + rndY},
+                            {x: 250 + rndX, y: 230},
+                            {x: 355 + rndX, y: 230},
+                            {x: 355 + rndX, y: 70}
                         ],
-                        inicio: {x: 50 + offsetX, y: 220},
-                        meta: {x: 350 + offsetX, y: 75}
+                        inicio: {x: 45 + rndX, y: 230},
+                        meta: {x: 355 + rndX, y: 70}
                     };
+
                 case 1:
                     return {
                         pista: [
-                            {x: 350 + offsetX, y: 225},
-                            {x: 240 + offsetX, y: 225},
-                            {x: 240 + offsetX, y: 100 + offsetY},
-                            {x: 160 + offsetX, y: 100 + offsetY},
-                            {x: 160 + offsetX, y: 225},
-                            {x: 50 + offsetX, y: 225},
-                            {x: 50 + offsetX, y: 75}
+                            {x: 355 + rndX, y: 230},
+                            {x: 250 + rndX, y: 230},
+                            {x: 250 + rndX, y: 100 + rndY},
+                            {x: 140 + rndX, y: 100 + rndY},
+                            {x: 140 + rndX, y: 230},
+                            {x: 45 + rndX, y: 230},
+                            {x: 45 + rndX, y: 70}
                         ],
-                        inicio: {x: 350 + offsetX, y: 225},
-                        meta: {x: 50 + offsetX, y: 75}
+                        inicio: {x: 355 + rndX, y: 230},
+                        meta: {x: 45 + rndX, y: 70}
                     };
+
+                case 2:
+                    return {
+                        pista: [
+                            {x: 50, y: 240},
+                            {x: 120 + rndX, y: 240},
+                            {x: 120 + rndX, y: 160 + rndY},
+                            {x: 210 + rndX, y: 160 + rndY},
+                            {x: 210 + rndX, y: 80 + rndY},
+                            {x: 340 + rndX, y: 80 + rndY},
+                            {x: 340 + rndX, y: 220}
+                        ],
+                        inicio: {x: 50, y: 240},
+                        meta: {x: 340 + rndX, y: 220}
+                    };
+
+                case 3:
+                    return {
+                        pista: [
+                            {x: 350, y: 230},
+                            {x: 180 + rndX, y: 230},
+                            {x: 180 + rndX, y: 65 + rndY},
+                            {x: 80 + rndX, y: 65 + rndY},
+                            {x: 80 + rndX, y: 240 + rndY},
+                            {x: 280 + rndX, y: 240 + rndY},
+                            {x: 280 + rndX, y: 130}
+                        ],
+                        inicio: {x: 350, y: 230},
+                        meta: {x: 280 + rndX, y: 130}
+                    };
+
+                case 4:
+                    return {
+                        pista: [
+                            {x: 50, y: 80},
+                            {x: 50, y: 220 + rndY},
+                            {x: 180 + rndX, y: 220 + rndY},
+                            {x: 180 + rndX, y: 130 + rndY},
+                            {x: 310 + rndX, y: 130 + rndY},
+                            {x: 310 + rndX, y: 240},
+                            {x: 360, y: 240}
+                        ],
+                        inicio: {x: 50, y: 80},
+                        meta: {x: 360, y: 240}
+                    };
+
                 default:
                     return {
                         pista: [
-                            {x: 50, y: 220},
-                            {x: 130 + offsetX, y: 220},
-                            {x: 130 + offsetX, y: 120 + offsetY},
-                            {x: 270 + offsetX, y: 120 + offsetY},
-                            {x: 270 + offsetX, y: 220},
-                            {x: 350, y: 220},
-                            {x: 350, y: 70}
+                            {x: 60 + rndX, y: 230},
+                            {x: 200 + rndX, y: 230},
+                            {x: 200 + rndX, y: 75 + rndY},
+                            {x: 290 + rndX, y: 75 + rndY},
+                            {x: 290 + rndX, y: 210 + rndY},
+                            {x: 350 + rndX, y: 210 + rndY},
+                            {x: 350 + rndX, y: 110}
                         ],
-                        inicio: {x: 50, y: 220},
-                        meta: {x: 350, y: 70}
+                        inicio: {x: 60 + rndX, y: 230},
+                        meta: {x: 350 + rndX, y: 110}
                     };
             }
         }
@@ -656,7 +716,7 @@
                 modoActual = 'OFICIAL';
             }
 
-            const circuito = generarCircuitoAntiMemorizacion(1);
+            const circuito = generarCircuitoAntiMemorizacion(Date.now());
             trackPoints = circuito.pista;
             posicionInicio = circuito.inicio;
             posicionMeta = circuito.meta;
@@ -684,7 +744,7 @@
                 btnStart.style.backgroundColor = "#10b981";
                 btnStart.style.display = 'block';
                 btnNext.style.display = 'none';
-                instructionText.textContent = "Evaluación Oficial D.S. N° 170: Recorre la pista hasta la meta verde.";
+                instructionText.textContent = "Evaluación Oficial D.S. N° 170: Recorre la pista serpenteante hasta la meta verde.";
             }
         }
 
@@ -721,7 +781,7 @@
                 ctx.fill();
             }
 
-            if (evaluacionActiva) {
+            if (evaluacionActiva && !estaBloqueadoPorDistancia) {
                 if (keys.left) pua.x = Math.max(12, pua.x - pua.speed);
                 if (keys.right) pua.x = Math.min(canvas.width - 12, pua.x + pua.speed);
                 if (keys.up) pua.y = Math.max(12, pua.y - pua.speed);
@@ -781,8 +841,14 @@
 
         const setupBtn = (id, key) => {
             const el = document.getElementById(id);
-            const on = (e) => { e.preventDefault(); keys[key] = true; };
-            const off = (e) => { e.preventDefault(); keys[key] = false; };
+            const on = (e) => { 
+                e.preventDefault(); 
+                if (!estaBloqueadoPorDistancia) keys[key] = true; 
+            };
+            const off = (e) => { 
+                e.preventDefault(); 
+                keys[key] = false; 
+            };
             el.addEventListener('mousedown', on);
             el.addEventListener('mouseup', off);
             el.addEventListener('mouseleave', off);
@@ -796,7 +862,7 @@
         setupBtn('btnDown', 'down');
 
         function iniciarPrueba() {
-            if (modoActual === 'BLOQUEADO') return;
+            if (modoActual === 'BLOQUEADO' || estaBloqueadoPorDistancia) return;
 
             contactosCount = 0;
             tiempoErrorMs = 0;
@@ -804,7 +870,7 @@
             tiempoTranscurrido = 0;
             evaluacionActiva = true;
 
-            const circuito = generarCircuitoAntiMemorizacion(Date.now());
+            const circuito = generarCircuitoAntiMemorizacion(Date.now() + Math.random());
             trackPoints = circuito.pista;
             posicionInicio = circuito.inicio;
             posicionMeta = circuito.meta;
@@ -821,11 +887,13 @@
             if (timerInterval) clearInterval(timerInterval);
 
             timerInterval = setInterval(() => {
-                tiempoTranscurrido++;
-                metricTiempo.textContent = `${tiempoTranscurrido} / ${TIEMPO_LIMITE_MAX_SEG} s`;
+                if (!estaBloqueadoPorDistancia) {
+                    tiempoTranscurrido++;
+                    metricTiempo.textContent = `${tiempoTranscurrido} / ${TIEMPO_LIMITE_MAX_SEG} s`;
 
-                if (tiempoTranscurrido >= TIEMPO_LIMITE_MAX_SEG) {
-                    finalizarPrueba(true);
+                    if (tiempoTranscurrido >= TIEMPO_LIMITE_MAX_SEG) {
+                        finalizarPrueba(true);
+                    }
                 }
             }, 1000);
         }
@@ -834,7 +902,6 @@
             evaluacionActiva = false;
             clearInterval(timerInterval);
 
-            const latenciaHardware = 2.4;
             const tiempoTotalMsNeto = Math.max(1000, (tiempoTranscurrido * 1000));
             const tiempoTotalSecNeto = Math.round(tiempoTotalMsNeto / 1000);
             const tErrorSeg = (tiempoErrorMs / 1000).toFixed(1);
@@ -845,7 +912,7 @@
             if (modoActual === 'DEMO') {
                 localStorage.setItem(`palancas_demo_completada_${cleanRut}`, 'true');
 
-                mostrarModal("CALIBRACIÓN DEMO COMPLETADA", `Tiempo: <b>${tiempoTotalSecNeto} s</b><br>Toques: <b>${contactosCount}</b><br><br>Has completado la inducción. Presiona continuar para rendir la simulación oficial B2B.`, () => {
+                mostrarModal("CALIBRACIÓN DEMO COMPLETADA", `Tiempo: <b>${tiempoTotalSecNeto} s</b><br>Toques: <b>${contactosCount}</b><br><br>Has completado la inducción libre. Presiona continuar para rendir la simulación oficial B2B.`, () => {
                     actualizarEstadoUI();
                 });
             } else {
