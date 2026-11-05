@@ -101,6 +101,7 @@
       gap: 12px;
       box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
       position: relative;
+      cursor: pointer;
       transition: all 0.2s ease;
     }
 
@@ -280,12 +281,12 @@
 
     <!-- SWITCHER B2C / B2B -->
     <div class="tab-switcher">
-      <button id="tabB2C" class="tab-btn active-b2c" onclick="switchPerfil('b2c')">👤 PARTICULAR (B2C)</button>
-      <button id="tabB2B" class="tab-btn" onclick="switchPerfil('b2b')">🏢 EMPRESAS (B2B)</button>
+      <button id="tabB2C" class="tab-btn" onclick="switchPerfil('b2c')">👤 PARTICULAR (B2C)</button>
+      <button id="tabB2B" class="tab-btn active-b2b" onclick="switchPerfil('b2b')">🏢 EMPRESAS (B2B)</button>
     </div>
 
     <!-- SECCIÓN PLANES PARTICULARES (B2C) -->
-    <div id="secB2C" class="section-container">
+    <div id="secB2C" class="section-container" style="display: none;">
       <div class="card-plan">
         <div class="card-header">
           <span class="plan-title">Pase Básico (B2C)</span>
@@ -339,16 +340,16 @@
     </div>
 
     <!-- SECCIÓN PLANES CORPORATIVOS (B2B) -->
-    <div id="secB2B" class="section-container" style="display: none;">
+    <div id="secB2B" class="section-container">
       
       <div class="bolsa-counter-card">
         <div style="font-size: 0.75rem; font-weight: 800; color: var(--accent-green); text-transform: uppercase;">
           💼 SELECCIONE TAMAÑO DE LA BOLSA (MÍNIMO 10 EVALUACIONES)
         </div>
         <div class="counter-control">
-          <button class="btn-counter" onclick="ajustarBolsa(-1)">-</button>
+          <button type="button" class="btn-counter" onclick="ajustarBolsa(-1)">-</button>
           <span class="counter-value" id="lblCantBolsa">10</span>
-          <button class="btn-counter" onclick="ajustarBolsa(1)">+</button>
+          <button type="button" class="btn-counter" onclick="ajustarBolsa(1)">+</button>
         </div>
         <div style="font-size: 0.62rem; color: var(--text-muted);">
           Sin fecha de expiración • Reintegro automático a las 72 hrs.
@@ -425,35 +426,35 @@
       </div>
 
       <!-- FORMULARIO DE ACCESO AL DASHBOARD APR -->
-      <form id="formAccesoAPR" onsubmit="procesarIngresoAPR(event)" class="form-b2b-card">
+      <div class="form-b2b-card">
         <span style="font-size: 0.72rem; color: var(--accent-green); font-weight: 800; text-transform: uppercase;">
           🏢 REGISTRO CORPORATIVO & ACCESO A DASHBOARD APR
         </span>
 
         <div class="form-group">
           <label>Razón Social Empresa *</label>
-          <input type="text" id="inputRazonSocial" class="form-control" placeholder="Ej: Socadep Chillan SpA" required>
+          <input type="text" id="inputRazonSocial" class="form-control" placeholder="Ej: Socadep Chillan SpA" value="Socadep Chillan SpA">
         </div>
 
         <div class="form-group">
           <label>RUT Empresa *</label>
-          <input type="text" id="inputRutEmpresa" class="form-control" placeholder="Ej: 75.151.701-3" required>
+          <input type="text" id="inputRutEmpresa" class="form-control" placeholder="Ej: 75.151.701-3" value="75.151.701-3">
         </div>
 
         <div class="form-group">
           <label>Nombre Encargado / APR *</label>
-          <input type="text" id="inputNombreApr" class="form-control" placeholder="Ej: Francisco Ferregut" required>
+          <input type="text" id="inputNombreApr" class="form-control" placeholder="Ej: Francisco Ferregut" value="Francisco Ferregut">
         </div>
 
         <div class="form-group">
           <label>Correo Electrónico Notificaciones *</label>
-          <input type="email" id="inputCorreoApr" class="form-control" placeholder="Ej: felix.osses@gmail.com" required>
+          <input type="email" id="inputCorreoApr" class="form-control" placeholder="Ej: felix.osses@gmail.com" value="felix.osses@gmail.com">
         </div>
 
-        <button type="submit" class="btn-action btn-b2b" style="margin-top: 6px;">
+        <button type="button" onclick="procesarIngresoAPR()" class="btn-action btn-b2b" style="margin-top: 6px;">
           INGRESAR A DASHBOARD APR →
         </button>
-      </form>
+      </div>
 
     </div>
   </div>
@@ -525,13 +526,11 @@
       });
     }
 
-    function procesarIngresoAPR(e) {
-      e.preventDefault();
-
-      const razon = document.getElementById('inputRazonSocial').value.trim();
-      const rutEmp = document.getElementById('inputRutEmpresa').value.trim();
-      const aprNombre = document.getElementById('inputNombreApr').value.trim();
-      const aprCorreo = document.getElementById('inputCorreoApr').value.trim();
+    function procesarIngresoAPR() {
+      const razon = document.getElementById('inputRazonSocial').value.trim() || 'SOCADEP CHILLAN';
+      const rutEmp = document.getElementById('inputRutEmpresa').value.trim() || '75.151.701-3';
+      const aprNombre = document.getElementById('inputNombreApr').value.trim() || 'FRANCISCO FERREGUT';
+      const aprCorreo = document.getElementById('inputCorreoApr').value.trim() || 'felix.osses@gmail.com';
 
       const tokenEmpresa = `SENSE-B2B-${Math.floor(1000 + Math.random() * 9000)}`;
 
@@ -549,7 +548,6 @@
       localStorage.setItem('sensometrika_b2b_plan', planSeleccionadoB2B);
       localStorage.setItem('sensometrika_b2b_token', tokenEmpresa);
 
-      // REDIRECCIÓN OBLIGATORIA A DASHBOARD_APR.HTML
       const params = new URLSearchParams({
         empresa: razon,
         rut: rutEmp,
@@ -560,6 +558,7 @@
         mode: 'b2b'
       });
 
+      // Redirección explicita a dashboard_apr.html
       window.location.href = `dashboard_apr.html?${params.toString()}`;
     }
 
