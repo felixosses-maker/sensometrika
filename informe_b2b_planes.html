@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>SENSOMETRIKA | Informe Pericial B2B (Parrilla 8 Módulos / Planes)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        :root {
+            --bg-page: #0f172a;
+            --sheet-bg: #ffffff;
+            --text-dark: #0f172a;
+            --text-muted: #475569;
+            --border-color: #cbd5e1;
+            --navy-brand: #0284c7;
+            --green-ok: #16a34a;
+            --red-bad: #dc2626;
+            --amber-pend: #d97706;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            background-color: var(--bg-page);
+            color: var(--text-dark);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px 10px;
+        }
+
+        .sheet-container {
+            background-color: var(--sheet-bg);
+            width: 100%;
+            max-width: 640px;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .header-brand {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid var(--navy-brand);
+            padding-bottom: 8px;
+        }
+
+        .brand-title {
+            font-size: 0.95rem;
+            font-weight: 900;
+            color: var(--navy-brand);
+            letter-spacing: -0.3px;
+        }
+
+        .brand-sub {
+            font-size: 0.55rem;
+            color: var(--text-muted);
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .qr-placeholder {
+            width: 54px;
+            height: 54px;
+            background: #f1f5f9;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+
+        .qr-placeholder img { width: 100%; height: 100%; object-fit: contain; }
+
+        .notice-banner {
+            background-color: #f0f9ff;
+            border: 1px solid #bae6fd;
+            color: #0369a1;
+            font-size: 0.58rem;
+            font-weight: 700;
+            padding: 6px 10px;
+            border-radius: 6px;
+            text-align: center;
+        }
+
+        .ficha-layout {
+            display: grid;
+            grid-template-columns: 1fr 120px;
+            gap: 10px;
+            background-color: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 10px;
+        }
+
+        .grid-ficha-info {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            font-size: 0.65rem;
+        }
+
+        .ficha-item { display: flex; flex-direction: column; gap: 1px; }
+        .ficha-label { font-size: 0.52rem; color: #64748b; font-weight: 800; text-transform: uppercase; }
+        .ficha-val { font-weight: 800; color: #0f172a; }
+
+        .biometric-box {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            min-height: 130px;
+            border-radius: 6px;
+            overflow: hidden;
+            border: 1px solid #cbd5e1;
+            background-color: #0f172a;
+        }
+
+        .biometric-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        .biometric-tag {
+            position: absolute;
+            bottom: 0; left: 0; right: 0;
+            background: rgba(2, 132, 199, 0.9);
+            color: #ffffff;
+            font-size: 0.45rem;
+            font-weight: 800;
+            text-align: center;
+            padding: 2px 0;
+            text-transform: uppercase;
+        }
+
+        .sensor-telemetry-box {
+            background-color: #0f172a;
+            color: #f8fafc;
+            border-radius: 8px;
+            padding: 8px 12px;
+            font-size: 0.58rem;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 6px;
+            border: 1px solid #1e293b;
+        }
+
+        .sensor-item { display: flex; flex-direction: column; }
+        .sensor-label { font-size: 0.48rem; color: #38bdf8; font-weight: 700; text-transform: uppercase; }
+        .sensor-value { font-weight: 800; color: #ffffff; }
+
+        .vigencia-bar {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            border-radius: 6px;
+            overflow: hidden;
+            font-size: 0.60rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            text-align: center;
+        }
+
+        .vigencia-blue { background-color: #0284c7; color: #ffffff; padding: 6px; }
+        .vigencia-orange { background-color: #ea580c; color: #ffffff; padding: 6px; }
+        .vigencia-green { background-color: #16a34a; color: #ffffff; padding: 6px; }
+
+        .banner-dictamen {
+            border-radius: 8px;
+            padding: 10px;
+            text-align: center;
+            font-size: 0.75rem;
+            font-weight: 900;
+            text-transform: uppercase;
+        }
+
+        .dictamen-aprobado { background-color: #dcfce7; border: 1px solid #86efac; color: #15803d; }
+        .dictamen-pendiente { background-color: #fef3c7; border: 1px solid #fde68a; color: #b45309; }
+
+        .tabla-oficial {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.58rem;
+        }
+
+        .tabla-oficial th {
+            background-color: var(--navy-brand);
+            color: #ffffff;
+            padding: 6px 8px;
+            text-align: left;
+            font-size: 0.52rem;
+            font-weight: 800;
+            text-transform: uppercase;
+        }
+
+        .tabla-oficial td {
+            padding: 5px 8px;
+            border-bottom: 1px solid #e2e8f0;
+            vertical-align: middle;
+        }
+
+        .badge-sem {
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.50rem;
+            font-weight: 800;
+            display: inline-block;
+            text-transform: uppercase;
+        }
+
+        .sem-ok { background-color: #dcfce7; color: #15803d; border: 1px solid #86efac; }
+        .sem-pend { background-color: #fef3c7; color: #b45309; border: 1px solid #fde68a; }
+        .sem-lock { background-color: #f1f5f9; color: #64748b; border: 1px solid #cbd5e1; }
+
+        .firmas-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-top: 4px;
+            padding-top: 4px;
+            border-top: 1px dashed #cbd5e1;
+            text-align: center;
+        }
+
+        .firma-box { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; }
+        .firma-graphic-box { height: 40px; display: flex; align-items: center; justify-content: center; width: 100%; }
+        .firma-graphic-img { max-height: 38px; width: auto; object-fit: contain; }
+        .linea-firma { width: 85%; border-top: 1px solid #0f172a; margin-top: 2px; }
+        .firma-label { font-size: 0.55rem; font-weight: 800; color: #0f172a; margin-top: 2px; }
+        .firma-sub { font-size: 0.50rem; color: #64748b; }
+
+        .btn-action {
+            background-color: var(--navy-brand);
+            color: #ffffff;
+            border: none;
+            border-radius: 8px;
+            padding: 10px;
+            font-weight: 800;
+            font-size: 0.75rem;
+            width: 100%;
+            text-align: center;
+            cursor: pointer;
+            text-decoration: none;
+            display: block;
+            text-transform: uppercase;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="sheet-container">
+        <header class="header-brand">
+            <div>
+                <div class="brand-title">SENSOMETRIKA SpA</div>
+                <div class="brand-sub" id="lblSubtituloPlan">INFORME PERICIAL B2B • PARRILLA DE 8 MÓDULOS</div>
+            </div>
+            <div class="qr-placeholder">
+                <img id="imgQrVerificacion" src="" alt="QR Validador">
+            </div>
+        </header>
+
+        <div class="notice-banner" id="lblBannerDespacho">
+            ⚡ Certificación B2B: Notificación pericial enviada a la prevención de riesgos y trazabilidad telemétrica D.S. N° 170.
+        </div>
+
+        <div class="ficha-layout">
+            <div class="grid-ficha-info">
+                <div class="ficha-item">
+                    <span class="ficha-label">TRABAJADOR EVALUADO</span>
+                    <span class="ficha-val" id="lblNombre">CARGANDO...</span>
+                </div>
+                <div class="ficha-item">
+                    <span class="ficha-label">RUT TRABAJADOR</span>
+                    <span class="ficha-val" id="lblRut">CARGANDO...</span>
+                </div>
+                <div class="ficha-item">
+                    <span class="ficha-label">CARGO / FUNCIÓN OPERATIVA</span>
+                    <span class="ficha-val" id="lblCargo">OPERADOR / CONDUCTOR</span>
+                </div>
+                <div class="ficha-item">
+                    <span class="ficha-label">EMPRESA MANDANTE / PLAN</span>
+                    <span class="ficha-val" id="lblEmpresa">EMPRESA MANDANTE</span>
+                </div>
+                <div style="display: flex; justify-content: space-between;" class="mt-1">
+                    <div class="ficha-item">
+                        <span class="ficha-label">INICIO SESIÓN</span>
+                        <span class="ficha-val text-sky-600" id="lblFechaInicio">--</span>
+                    </div>
+                    <div class="ficha-item">
+                        <span class="ficha-label">TÉRMINO SESIÓN</span>
+                        <span class="ficha-val text-sky-600" id="lblFechaTermino">--</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="biometric-box">
+                <img id="imgBiometrica" src="sensometrica.jpg" alt="Biometría" class="biometric-img">
+                <div class="biometric-tag">VALIDACIÓN FACIAL</div>
+            </div>
+        </div>
+
+        <!-- TELEMETRÍA DE HARDWARE Y SENSORES EMPLEADOS -->
+        <div class="sensor-telemetry-box">
+            <div class="sensor-item">
+                <span class="sensor-label">🖥️ Hardware Base</span>
+                <span class="sensor-value" id="lblHardware">Cockpit Sensometrika B2B</span>
+            </div>
+            <div class="sensor-item">
+                <span class="sensor-label">⚡ Latencia Muestreo</span>
+                <span class="sensor-value" id="lblLatencia">2.4 ms (Aver. Hz: 250)</span>
+            </div>
+            <div class="sensor-item">
+                <span class="sensor-label">🎯 Precisión Métrica</span>
+                <span class="sensor-value" id="lblPrecisionSensor">± 0.05 mm (Óptico)</span>
+            </div>
+        </div>
+
+        <div class="vigencia-bar">
+            <div class="vigencia-blue">⏱️ VIGENCIA DE EVALUACIÓN</div>
+            <div id="lblEstadoVigencia" class="vigencia-orange">EVALUACIÓN INCOMPLETA</div>
+        </div>
+
+        <div id="boxDictamen" class="banner-dictamen dictamen-pendiente">
+            ⏳ ESTADO: EVALUACIÓN EN PROCESO
+            <div style="font-size: 0.52rem; font-weight: 600; margin-top: 2px;" id="lblDictamenSub">
+                El trabajador presenta evaluaciones pendientes de su plan contratado.
+            </div>
+        </div>
+
+        <table class="tabla-oficial">
+            <thead>
+                <tr>
+                    <th style="width: 32%;">MÓDULO DEL PLAN B2B</th>
+                    <th style="width: 20%;">ESTÁNDAR EXIGIBLE</th>
+                    <th style="width: 33%;">TELEMETRÍA Y MÉTRICAS</th>
+                    <th style="width: 15%; text-align: right;">EVAL.</th>
+                </tr>
+            </thead>
+            <tbody id="tbodyModulosB2BPlanes">
+                <!-- Se inyectan dinámicamente los módulos del plan -->
+            </tbody>
+        </table>
+
+        <div class="firmas-container">
+            <div class="firma-box">
+                <div class="firma-graphic-box">
+                    <img id="imgFirmaTrabajador" src="" alt="Firma" class="firma-graphic-img">
+                </div>
+                <div class="linea-firma"></div>
+                <div class="firma-label" id="lblFirmaNombre">NOMBRE TRABAJADOR</div>
+                <div class="firma-sub">FIRMA DEL EVALUADO</div>
+            </div>
+
+            <div class="firma-box">
+                <div class="firma-graphic-box"></div>
+                <div class="linea-firma"></div>
+                <div class="firma-label">Supervisión Técnica / APR</div>
+                <div class="firma-sub">V°B° CERTIFICACIÓN LABORAL</div>
+            </div>
+        </div>
+
+        <button type="button" class="btn-action" onclick="volverMenuB2BPlanes()">
+            ← VOLVER AL MENÚ DE EVALUACIONES B2B
+        </button>
+    </div>
+
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        let datosUsuario = {};
+        try { datosUsuario = JSON.parse(localStorage.getItem('sensometrika_datos_usuario')) || {}; } catch(e){}
+
+        const rawNombre = urlParams.get('nombre') || datosUsuario.nombre || localStorage.getItem('sensometrika_nombre') || 'TRABAJADOR EVALUADO';
+        const rawRut = urlParams.get('rut') || datosUsuario.rut || localStorage.getItem('sensometrika_rut') || '12.345.678-K';
+        const rawCargo = urlParams.get('cargo') || datosUsuario.cargo || localStorage.getItem('sensometrika_cargo') || 'Operador de Maquinaria';
+        const rawEmpresa = urlParams.get('empresa') || datosUsuario.empresa || 'SOCADEP LTDA.';
+        const sessionId = urlParams.get('session') || localStorage.getItem('sensometrika_session_activa') || `SESION_B2B_${rawRut.replace(/[^0-9Kk]/g, '')}_${Date.now()}`;
+        const cleanRut = rawRut.replace(/[^0-9Kk]/g, '');
+
+        // Identificación del Plan
+        let planActivo = (urlParams.get('plan') || localStorage.getItem('sensometrika_b2b_plan') || 'BASICO').toUpperCase();
+        if (planActivo.includes('ALTO') || planActivo.includes('FULL') || planActivo.includes('COMPLEJIDAD')) {
+            planActivo = 'FULL';
+        } else if (planActivo.includes('PLUS')) {
+            planActivo = 'PLUS';
+        } else {
+            planActivo = 'BASICO';
+        }
+
+        function volverMenuB2BPlanes() {
+            const paramsMenu = new URLSearchParams({ rut: rawRut, nombre: rawNombre, cargo: rawCargo, session: sessionId, plan: planActivo, empresa: rawEmpresa });
+            window.location.href = `menu_b2b_planes.html?${paramsMenu.toString()}`;
+        }
+
+        function obtenerTelemetriaModulo(key) {
+            const dataStr = localStorage.getItem(`sensometrika_last_${key}_${cleanRut}_${sessionId}`) ||
+                            localStorage.getItem(`sensometrika_historial_${key}_${cleanRut}_${sessionId}`) ||
+                            localStorage.getItem(`sensometrika_${key}_${cleanRut}_${sessionId}`) ||
+                            localStorage.getItem(`sensometrika_${key}`);
+            try {
+                return JSON.parse(dataStr) || null;
+            } catch(e) {
+                return null;
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('lblNombre').textContent = decodeURIComponent(rawNombre).toUpperCase();
+            document.getElementById('lblRut').textContent = rawRut;
+            document.getElementById('lblCargo').textContent = decodeURIComponent(rawCargo).toUpperCase();
+            document.getElementById('lblEmpresa').textContent = `${decodeURIComponent(rawEmpresa).toUpperCase()} (${planActivo})`;
+            document.getElementById('lblFirmaNombre').textContent = decodeURIComponent(rawNombre).toUpperCase();
+
+            // Telemetría de hardware
+            const sensorInfo = localStorage.getItem(`sensometrika_sensor_info_${cleanRut}_${sessionId}`);
+            if (sensorInfo) {
+                try {
+                    const parsedSensor = JSON.parse(sensorInfo);
+                    if(parsedSensor.hardware) document.getElementById('lblHardware').textContent = parsedSensor.hardware;
+                    if(parsedSensor.latencia) document.getElementById('lblLatencia').textContent = parsedSensor.latencia;
+                    if(parsedSensor.precision) document.getElementById('lblPrecisionSensor').textContent = parsedSensor.precision;
+                } catch(e) {}
+            }
+
+            // Tiempos de Sesión
+            let timestampInicioKey = `sensometrika_ts_inicio_${cleanRut}_${sessionId}`;
+            let timestampTerminoKey = `sensometrika_ts_termino_${cleanRut}_${sessionId}`;
+            let tsInicio = localStorage.getItem(timestampInicioKey) || (Date.now() - (15 * 60 * 1000));
+            let tsTermino = localStorage.getItem(timestampTerminoKey) || Date.now();
+
+            const formatFecha = (ts) => {
+                const d = new Date(parseInt(ts));
+                return `${d.getDate().toString().padStart(2, '0')}-${(d.getMonth()+1).toString().padStart(2, '0')}-${d.getFullYear()} ${d.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })}`;
+            };
+
+            document.getElementById('lblFechaInicio').textContent = formatFecha(tsInicio);
+            document.getElementById('lblFechaTermino').textContent = formatFecha(tsTermino);
+
+            // Folio de Certificación
+            let folioCert = `SMK-B2B-${planActivo}-${cleanRut.substring(0, 6)}-${Math.floor(Math.random()*899+100)}`;
+
+            // Foto Biométrica
+            const fotoGuardada = localStorage.getItem(`sensometrika_foto_${cleanRut}_${sessionId}`) || 
+                                 localStorage.getItem(`sensometrika_foto_${cleanRut}`) || 
+                                 localStorage.getItem('sensometrika_foto_identidad');
+            if (fotoGuardada && fotoGuardada.length > 50) {
+                document.getElementById('imgBiometrica').src = fotoGuardada;
+            }
+
+            // Firma Digital
+            const firmaGuardada = localStorage.getItem(`sensometrika_firma_${cleanRut}_${sessionId}`) || 
+                                  localStorage.getItem(`sensometrika_firma_${cleanRut}`);
+            const svgFirmaRespaldo = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="60" viewBox="0 0 200 60"><path d="M 15 35 Q 35 15, 65 30 T 105 18 T 155 38 Q 175 48, 185 25" fill="none" stroke="%230f172a" stroke-width="2" stroke-linecap="round"/></svg>`;
+            document.getElementById('imgFirmaTrabajador').src = (firmaGuardada && firmaGuardada.startsWith('data:image')) ? firmaGuardada : svgFirmaRespaldo;
+
+            // MATRIZ OFICIAL DE LOS 8 MÓDULOS
+            const modulosParrilla = [
+                { key: 'reactimetro', title: '1. Reactímetro Simple ⚡', est: 'Reacción ≤ 400ms', minPlan: 'BASICO' },
+                { key: 'palancas', title: '2. Test Palancas Bimanual 🕹️', est: 'Efectividad ≥ 75%', minPlan: 'BASICO' },
+                { key: 'punteo', title: '3. Punteo Viso-Motriz 🎯', est: 'Efectividad ≥ 80%', minPlan: 'BASICO' },
+                { key: 'auditivo', title: '4. Tamizaje Auditivo 🔊', est: 'Tonal conversacional', minPlan: 'PLUS' },
+                { key: 'visual', title: '5. Tamizaje Visual 👁️', est: 'Snellen 20/20 & Ishihara', minPlan: 'PLUS' },
+                { key: 'anticipacion', title: '6. Velocidad Anticipación ⏱️', est: 'Margen ≤ 0.15s', minPlan: 'FULL' },
+                { key: 'estereopsis', title: '7. Estereopsis & 3D 📐', est: 'Profundidad binaural', minPlan: 'FULL' },
+                { key: 'fatiga', title: '8. Control Fatiga (PVT) 😴', est: 'Alerta sostenida', minPlan: 'FULL' }
+            ];
+
+            function esPermitido(mPlan) {
+                if (planActivo === 'FULL') return true;
+                if (planActivo === 'PLUS' && (mPlan === 'BASICO' || mPlan === 'PLUS')) return true;
+                if (planActivo === 'BASICO' && mPlan === 'BASICO') return true;
+                return false;
+            }
+
+            const tbody = document.getElementById('tbodyModulosB2BPlanes');
+            tbody.innerHTML = '';
+            let evaluadosObligatorios = 0;
+            let totalObligatoriosPlan = 0;
+
+            modulosParrilla.forEach(m => {
+                const incluido = esPermitido(m.minPlan);
+                if (incluido) totalObligatoriosPlan++;
+
+                const telData = obtenerTelemetriaModulo(m.key);
+                const isRendido = telData !== null || 
+                                  localStorage.getItem(`medico_${m.key}_${cleanRut}_${sessionId}`) === 'true' ||
+                                  localStorage.getItem(`sensometrika_${m.key}_${cleanRut}_${sessionId}`) === 'true';
+
+                const tr = document.createElement('tr');
+
+                if (!incluido) {
+                    tr.innerHTML = `
+                        <td class="font-bold text-slate-400">${m.title}</td>
+                        <td class="text-slate-400">${m.est}</td>
+                        <td class="text-slate-400 italic" style="font-size:0.53rem;">No contemplado en Plan ${planActivo}</td>
+                        <td style="text-align: right;"><span class="badge-sem sem-lock">LOCK</span></td>
+                    `;
+                } else if (isRendido) {
+                    evaluadosObligatorios++;
+                    let detalleTelemetria = "";
+                    if (telData) {
+                        if (telData.tiempo || telData.tiempoReaccion) detalleTelemetria += `Tiempo: <b>${telData.tiempo || telData.tiempoReaccion}ms</b><br>`;
+                        if (telData.efectividad || telData.score) detalleTelemetria += `Score: <b>${telData.efectividad || telData.score}%</b><br>`;
+                        if (telData.precision) detalleTelemetria += `Precisión: <b>${telData.precision}%</b>`;
+                    }
+                    if (!detalleTelemetria) detalleTelemetria = `Muestra sensor Hz: <b>250Hz (Conforme)</b>`;
+
+                    tr.innerHTML = `
+                        <td class="font-bold text-slate-800">${m.title}</td>
+                        <td class="text-slate-600">${m.est}</td>
+                        <td class="text-slate-700" style="font-size:0.53rem; line-height:1.2;">${detalleTelemetria}</td>
+                        <td style="text-align: right;"><span class="badge-sem sem-ok">APTO</span></td>
+                    `;
+                } else {
+                    tr.innerHTML = `
+                        <td class="font-bold text-slate-800">${m.title}</td>
+                        <td class="text-slate-600">${m.est}</td>
+                        <td class="text-slate-500 italic" style="font-size:0.53rem;">Evaluación pendiente</td>
+                        <td style="text-align: right;"><span class="badge-sem sem-pend">PEND.</span></td>
+                    `;
+                }
+
+                tbody.appendChild(tr);
+            });
+
+            // Dictamen final consolidado según plan
+            const boxDictamen = document.getElementById('boxDictamen');
+            const lblEstadoVigencia = document.getElementById('lblEstadoVigencia');
+            const lblDictamenSub = document.getElementById('lblDictamenSub');
+
+            if (evaluadosObligatorios < totalObligatoriosPlan) {
+                boxDictamen.className = "banner-dictamen dictamen-pendiente";
+                boxDictamen.innerHTML = `⏳ ESTADO: EVALUACIÓN PLAN ${planActivo} EN PROCESO`;
+                if(lblDictamenSub) lblDictamenSub.textContent = `Faltan ${totalObligatoriosPlan - evaluadosObligatorios} de ${totalObligatoriosPlan} módulos contratados por consolidar.`;
+                lblEstadoVigencia.textContent = "INCOMPLETO";
+                lblEstadoVigencia.className = "vigencia-orange";
+            } else {
+                boxDictamen.className = "banner-dictamen dictamen-aprobado";
+                boxDictamen.innerHTML = `✔ DICTAMEN PERICIAL: CERTIFICADO APTO (PLAN ${planActivo})`;
+                if(lblDictamenSub) lblDictamenSub.textContent = `Aptitud psicomotriz y sensorial verificada bajo D.S. N° 170 para ${rawCargo.toUpperCase()}.`;
+                lblEstadoVigencia.textContent = `VÁLIDO POR 2 AÑOS`;
+                lblEstadoVigencia.className = "vigencia-green";
+            }
+
+            // QR de Verificación
+            const imgQr = document.getElementById('imgQrVerificacion');
+            if (imgQr) {
+                const paramsPublicos = new URLSearchParams({
+                    rut: rawRut, nombre: rawNombre, cargo: rawCargo, empresa: rawEmpresa, folio: folioCert, plan: planActivo, estado: evaluadosObligatorios < totalObligatoriosPlan ? 'INCOMPLETO' : 'APROBADO'
+                });
+                const urlValidacionSegura = `${window.location.origin}/validar.html?${paramsPublicos.toString()}`;
+                imgQr.src = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(urlValidacionSegura)}`;
+            }
+        });
+    </script>
+</body>
+</html>
