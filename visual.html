@@ -312,16 +312,16 @@
         </div>
         <div class="status-item">
           <span class="status-label">FASE EXAMEN</span>
-          <span id="lblFaseExamen" class="status-value">0 / 8</span>
+          <span id="lblFaseExamen" class="status-value">0 / 4</span>
         </div>
         <div class="status-item">
           <span class="status-label">ACIERTOS</span>
-          <span id="lblAciertos" class="status-value" style="color: var(--accent-cyan);">0 / 8</span>
+          <span id="lblAciertos" class="status-value" style="color: var(--accent-cyan);">0 / 4</span>
         </div>
       </div>
 
       <button id="btnIniciarExamen" onclick="iniciarExamenVisual()" class="btn-action-main">
-        INICIAR DEMO (8 ENSAYOS) →
+        INICIAR DEMO (4 ENSAYOS) →
       </button>
 
       <div id="boxKeypad" class="keypad-grid" style="display: none;">
@@ -368,6 +368,7 @@
     let audioCtx = null;
     let esDemo = true;
     let modoActual = 'DEMO';
+    let maxEnsayosActual = 4; // 4 para DEMO, 8 para OFICIAL
     let ensayoActual = 0;
     let aciertosReales = 0;
     let direccionCorrecta = 'DERECHA';
@@ -398,10 +399,10 @@
       };
     }
 
+    // VERIFICACIÓN ESTRICTA ÚNICAMENTE POR SESIÓN CORRIENTE
     function verificarModuloEjecutadoEnSesion() {
-      const dataStr = localStorage.getItem(`sensometrika_visual_${cleanRut}_${sessionId}`) ||
-                      localStorage.getItem(`sensometrika_last_visual_${cleanRut}_${sessionId}`) ||
-                      localStorage.getItem('sensometrika_visual');
+      if (urlParams.has('reeval')) return false;
+      const dataStr = localStorage.getItem(`sensometrika_visual_${cleanRut}_${sessionId}`);
       return dataStr !== null;
     }
 
@@ -421,17 +422,19 @@
       } else if (!demoRealizada) {
         esDemo = true;
         modoActual = 'DEMO';
+        maxEnsayosActual = 4; // REDUCIDO A 4 ENSAYOS PARA LA DEMO
         document.getElementById('lblFaseBadge').textContent = 'Paso 1: Calibración Demo (1/1)';
         document.getElementById('lblFaseBadge').style.borderColor = 'var(--accent-gold)';
         document.getElementById('lblFaseBadge').style.color = 'var(--accent-gold)';
         document.getElementById('lblFaseBadge').style.background = 'rgba(245, 158, 11, 0.1)';
         document.getElementById('btnIniciarExamen').style.display = 'block';
-        document.getElementById('btnIniciarExamen').textContent = 'INICIAR DEMO (8 ENSAYOS) →';
+        document.getElementById('btnIniciarExamen').textContent = 'INICIAR DEMO (4 ENSAYOS) →';
         document.getElementById('btnIniciarExamen').style.background = 'var(--accent-gold)';
         document.getElementById('btnSiguienteFase').style.display = 'none';
       } else {
         esDemo = false;
         modoActual = 'OFICIAL';
+        maxEnsayosActual = 8; // 8 ENSAYOS PARA LA PRUEBA OFICIAL B2B
         document.getElementById('lblFaseBadge').textContent = 'Fase 2: Simulación Oficial B2B (1/1)';
         document.getElementById('lblFaseBadge').style.borderColor = 'var(--accent-cyan)';
         document.getElementById('lblFaseBadge').style.color = 'var(--accent-cyan)';
@@ -443,8 +446,8 @@
       }
 
       document.getElementById('boxKeypad').style.display = 'none';
-      document.getElementById('lblFaseExamen').textContent = '0 / 8';
-      document.getElementById('lblAciertos').textContent = '0 / 8';
+      document.getElementById('lblFaseExamen').textContent = `0 / ${maxEnsayosActual}`;
+      document.getElementById('lblAciertos').textContent = `0 / ${maxEnsayosActual}`;
     }
 
     document.addEventListener('DOMContentLoaded', () => {
@@ -572,7 +575,7 @@
     }
 
     function siguienteEstimulo() {
-      if (ensayoActual >= 8) {
+      if (ensayoActual >= maxEnsayosActual) {
         concluirPruebaVisual();
         return;
       }
@@ -648,8 +651,8 @@
     }
 
     function actualizarTablero() {
-      document.getElementById('lblFaseExamen').textContent = `${ensayoActual} / 8`;
-      document.getElementById('lblAciertos').textContent = `${aciertosReales} / 8`;
+      document.getElementById('lblFaseExamen').textContent = `${ensayoActual} / ${maxEnsayosActual}`;
+      document.getElementById('lblAciertos').textContent = `${aciertosReales} / ${maxEnsayosActual}`;
     }
 
     function concluirPruebaVisual() {
@@ -661,7 +664,7 @@
     }
 
     function finalizarFase() {
-      const porcentaje = Math.round((aciertosReales / 8) * 100);
+      const porcentaje = Math.round((aciertosReales / maxEnsayosActual) * 100);
       let agudezaTexto = "20/20 (1.0 - Sobresaliente)";
       let dictamen = "APROBADO";
 
@@ -680,7 +683,7 @@
 
         mostrarModal(
           "CALIBRACIÓN DEMO COMPLETADA",
-          `Aciertos: <b>${aciertosReales} / 8</b><br>Agudeza Estimada: <b>${agudezaTexto}</b><br>Latencia Media: <b>${promLat} ms</b><br><br>Has completado la calibración demo. Presiona continuar para rendir la <b>Simulación Oficial B2B</b>.`,
+          `Aciertos: <b>${aciertosReales} / 4</b><br>Agudeza Estimada: <b>${agudezaTexto}</b><br>Latencia Media: <b>${promLat} ms</b><br><br>Has completado la calibración demo. Presiona continuar para rendir la <b>Simulación Oficial B2B</b>.`,
           () => {
             actualizarEstadoUI();
           }
@@ -700,7 +703,7 @@
           fecha: new Date().toISOString()
         };
 
-        // REGISTRO DE MÚLTIPLES LLAVES PARA COMPATIBILIDAD CON INFORME-B2B.HTML
+        // REGISTRO DE TODAS LAS CLAVES COMPATIBLES CON INFORME-B2B.HTML Y MENU
         localStorage.setItem(`sensometrika_visual_${cleanRut}_${sessionId}`, JSON.stringify(registroData));
         localStorage.setItem(`sensometrika_last_visual_${cleanRut}_${sessionId}`, JSON.stringify(registroData));
         localStorage.setItem('sensometrika_visual', JSON.stringify(registroData));
