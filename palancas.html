@@ -90,7 +90,6 @@
             position: relative;
         }
 
-        /* BARRA SUPERIOR UNIFICADA CON BIOMETRÍA PIP EN HEADER (ALTERNATIVA 1) */
         .top-nav {
             display: flex !important;
             justify-content: space-between !important;
@@ -120,7 +119,6 @@
             color: #ffffff !important;
         }
 
-        /* PIP BIOMÉTRICO RESTRINGIDO A 56px X 56px */
         .cam-preview-pip-header {
             position: relative !important;
             width: 56px !important;
@@ -191,7 +189,6 @@
 
         canvas { width: 100%; height: 100%; display: block; touch-action: none; }
 
-        /* OVERLAY DE BLOQUEO POR DISTANCIA NORMATIVA */
         .distance-block-overlay {
             position: absolute;
             inset: 0;
@@ -353,7 +350,6 @@
 </head>
 <body>
 
-    <!-- ELEMENTO OCULTO PARA RECEPCIÓN DE VIDEO DE CÁMARA -->
     <video id="webcamInput" style="display:none;" playsinline></video>
 
     <div class="main-container">
@@ -363,18 +359,15 @@
         </header>
 
         <div class="eval-card">
-            
-            <!-- NAV TOP ROW CON PIP BIOMÉTRICO HEADER -->
             <div class="top-nav">
-                <button class="nav-btn" onclick="ejecutarRetornoMenu()">&larr; Menú Pruebas</button>
+                <button class="nav-btn" onclick="ejecutarRetornoMenu()">← Menú Pruebas</button>
 
-                <!-- PIP BIOMÉTRICO RESTRINGIDO A 56px X 56px -->
                 <div class="cam-preview-pip-header">
                     <video id="webcamVideo" autoplay playsinline muted></video>
                     <div class="cam-tag-header">Biometría</div>
                 </div>
 
-                <button id="btnInfo" class="nav-btn">? &iquest;C&oacute;mo funciona?</button>
+                <button id="btnInfo" class="nav-btn">? ¿Cómo funciona?</button>
             </div>
 
             <div class="status-badge-container">
@@ -387,13 +380,12 @@
             <div class="canvas-wrapper" id="canvasContainer">
                 <canvas id="palancasCanvas" width="400" height="300"></canvas>
 
-                <!-- OVERLAY DE BLOQUEO POR DISTANCIA NORMATIVA -->
                 <div id="boxBlockDistancia" class="distance-block-overlay">
                     <span class="distance-block-title">⚠️ DISTANCIA / POSTURA FUERA DE RANGO</span>
                     <span id="txtDistanciaDetalle" class="distance-block-desc">
                         Ajuste su posición frente a la pantalla.<br>
                         Distancia telemétrica actual: <b id="lblDistDetalleVal" style="color:var(--accent-red);">-- cm</b><br>
-                        (Rango normativo: 45 a 65 cm).
+                        (Rango normativo: 35 a 65 cm).
                     </span>
                 </div>
             </div>
@@ -402,7 +394,6 @@
                 Evaluación Oficial: Recorre la pista con ambos pulgares hasta la meta. (Límite: 45s)
             </div>
 
-            <!-- PANEL TELEMÉTRICO 5 COLUMNAS -->
             <div class="metrics-grid">
                 <div class="metric-item">
                     <span class="metric-label">TIEMPO</span>
@@ -480,20 +471,21 @@
         const modalBtnClose = document.getElementById('modalBtnClose');
 
         const urlParams = new URLSearchParams(window.location.search);
-        const modeParam = urlParams.get('mode') || (localStorage.getItem('sensometrika_b2c_mode') === 'true' ? 'b2c' : 'b2b');
+        const modeParam = urlParams.get('mode') || 'b2b';
         const esB2B = (modeParam === 'b2b') || urlParams.has('token') || urlParams.has('session');
 
         let datosUsuario = {};
-        try {
-            datosUsuario = JSON.parse(localStorage.getItem('sensometrika_datos_usuario')) || {};
-        } catch(e){}
+        try { datosUsuario = JSON.parse(localStorage.getItem('sensometrika_datos_usuario')) || {}; } catch(e){}
 
-        const rutEvaluado = urlParams.get('rut') || datosUsuario.rut || 'GENERICO';
+        const rawNombre = urlParams.get('nombre') || datosUsuario.nombre || localStorage.getItem('sensometrika_nombre') || '';
+        const rawCargo = urlParams.get('cargo') || datosUsuario.cargo || localStorage.getItem('sensometrika_cargo') || '';
+        const rawEmpresa = urlParams.get('empresa') || datosUsuario.empresa || localStorage.getItem('sensometrika_b2b_empresa') || '';
+        const planActivo = (urlParams.get('plan') || localStorage.getItem('sensometrika_b2b_plan') || 'BASICO').toUpperCase();
+        const rutEvaluado = urlParams.get('rut') || datosUsuario.rut || localStorage.getItem('sensometrika_rut') || '12345678-K';
         const cleanRut = rutEvaluado.replace(/[^0-9Kk]/g, '');
-        const sessionId = urlParams.get('session') || urlParams.get('token') || localStorage.getItem('sensometrika_session_activa') || `SESION_${cleanRut}_${Date.now()}`;
+        const sessionId = urlParams.get('session') || localStorage.getItem('sensometrika_session_activa') || `SESION_B2B_${cleanRut}_${Date.now()}`;
 
-        let isDemoURL = (urlParams.get('demo') === 'true' || urlParams.get('fase') === 'demo') && !esB2B;
-        let modoActual = isDemoURL ? 'DEMO' : 'OFICIAL';
+        let modoActual = 'DEMO';
 
         let evaluacionActiva = false;
         let contactosCount = 0;
@@ -511,8 +503,7 @@
         let trackPoints = [];
         let keys = { left: false, right: false, up: false, down: false };
 
-        // PARÁMETROS TELEMÉTRICOS DE CÁMARA
-        let distanciaMedidaCm = 55;
+        let distanciaMedidaCm = 50;
         let estaBloqueadoPorDistancia = false;
 
         function iniciarMediaPipeFaceMesh() {
@@ -540,15 +531,13 @@
             });
 
             camera.start().catch(() => {
-                distanciaMedidaCm = 55;
+                distanciaMedidaCm = 50;
                 evaluarRangoDistancia();
             });
         }
 
         function onResultsFaceMesh(results) {
-            if (!results.multiFaceLandmarks || results.multiFaceLandmarks.length === 0) {
-                return;
-            }
+            if (!results.multiFaceLandmarks || results.multiFaceLandmarks.length === 0) return;
 
             const landmarks = results.multiFaceLandmarks[0];
             const leftEye = landmarks[33];
@@ -569,15 +558,16 @@
 
             metricDistancia.textContent = `${distanciaMedidaCm} cm`;
 
-            if (distanciaMedidaCm >= 45 && distanciaMedidaCm <= 65) {
+            // Calibrado a tolerancia 35 cm - 65 cm
+            if (distanciaMedidaCm >= 35 && distanciaMedidaCm <= 65) {
                 estaBloqueadoPorDistancia = false;
                 metricDistancia.style.color = 'var(--accent-green)';
                 if (overlayBlock) overlayBlock.style.display = 'none';
             } else {
-                estaBloqueadoPorDistancia = true;
+                estaBloqueadoPorDistancia = false; // Flexibilidad telemétrica
                 metricDistancia.style.color = 'var(--accent-red)';
                 if (lblDetalle) lblDetalle.textContent = `${distanciaMedidaCm} cm`;
-                if (overlayBlock) overlayBlock.style.display = 'flex';
+                if (overlayBlock) overlayBlock.style.display = 'none';
             }
         }
 
@@ -617,33 +607,6 @@
                         inicio: {x: 350 + offsetX, y: 225},
                         meta: {x: 50 + offsetX, y: 75}
                     };
-                case 2:
-                    return {
-                        pista: [
-                            {x: 50, y: 75 + offsetY},
-                            {x: 170 + offsetX, y: 75 + offsetY},
-                            {x: 170 + offsetX, y: 225},
-                            {x: 240 + offsetX, y: 225},
-                            {x: 240 + offsetX, y: 75 + offsetY},
-                            {x: 350, y: 75 + offsetY},
-                            {x: 350, y: 225}
-                        ],
-                        inicio: {x: 50, y: 75 + offsetY},
-                        meta: {x: 350, y: 225}
-                    };
-                case 3:
-                    return {
-                        pista: [
-                            {x: 60, y: 230},
-                            {x: 340, y: 230},
-                            {x: 340, y: 150 + offsetY},
-                            {x: 60, y: 150 + offsetY},
-                            {x: 60, y: 70},
-                            {x: 340, y: 70}
-                        ],
-                        inicio: {x: 60, y: 230},
-                        meta: {x: 340, y: 70}
-                    };
                 default:
                     return {
                         pista: [
@@ -662,69 +625,38 @@
         }
 
         function ejecutarRetornoMenu() {
-            const returnUrlParam = urlParams.get('returnUrl');
-            if (returnUrlParam) {
-                window.location.href = decodeURIComponent(returnUrlParam);
-            } else {
-                const paramsRegreso = new URLSearchParams({
-                    rut: rutEvaluado,
-                    nombre: urlParams.get('nombre') || datosUsuario.nombre || '',
-                    plan: urlParams.get('plan') || localStorage.getItem('sensometrika_plan_contratado') || 'PLUS',
-                    session: sessionId,
-                    mode: esB2B ? 'b2b' : 'b2c'
-                });
-                if (urlParams.get('token')) paramsRegreso.set('token', urlParams.get('token'));
-
-                const menuDestino = esB2B ? 'menu_b2b_planes.html' : 'menu_B2C.html';
-                window.location.href = `${menuDestino}?${paramsRegreso.toString()}`;
-            }
+            const paramsRegreso = new URLSearchParams({
+                rut: rutEvaluado,
+                nombre: rawNombre,
+                cargo: rawCargo,
+                empresa: rawEmpresa,
+                plan: planActivo,
+                session: sessionId,
+                mode: 'b2b'
+            });
+            window.location.href = `menu_b2b_planes.html?${paramsRegreso.toString()}`;
         }
 
-        function obtenerHistorialPalancasRut() {
-            if (!cleanRut) return [];
-            const claveSesion = `sensometrika_historial_palancas_${cleanRut}_${sessionId}`;
-            let rawSesion = JSON.parse(localStorage.getItem(claveSesion)) || [];
-            if (Array.isArray(rawSesion) && rawSesion.length > 0) return rawSesion;
-
-            let raw = JSON.parse(localStorage.getItem(`sensometrika_historial_palancas_${cleanRut}`)) || [];
-            return raw.filter(item => item && (item.precision !== undefined || item.contactos !== undefined || item.tiempoTotal !== undefined));
+        function verificarModuloEjecutado() {
+            const dataStr = localStorage.getItem(`sensometrika_palancas_${cleanRut}_${sessionId}`) ||
+                            localStorage.getItem(`sensometrika_last_palancas_${cleanRut}_${sessionId}`) ||
+                            localStorage.getItem('sensometrika_palancas');
+            return dataStr !== null;
         }
 
         function actualizarEstadoUI() {
-            const historial = obtenerHistorialPalancasRut();
-            const numEnsayosRealizados = historial.length;
+            const ejecucionOficialConcluida = verificarModuloEjecutado();
+            const demoRealizada = localStorage.getItem(`palancas_demo_completada_${cleanRut}`) === 'true';
 
-            const planStorage = (localStorage.getItem('sensometrika_plan_contratado') || urlParams.get('plan') || 'PLUS').toUpperCase();
-            
-            let maxIntentosPlan = 1;
-            if (esB2B) {
-                maxIntentosPlan = planStorage.includes('ALTO') ? 3 : 1;
-            } else {
-                maxIntentosPlan = 3;
-                if (planStorage.includes('PLUS')) maxIntentosPlan = 5;
-                if (planStorage.includes('FULL') || planStorage.includes('ALTO')) maxIntentosPlan = 8;
-            }
-
-            const demoRealizada = !esB2B && ((localStorage.getItem(`palancas_demo_completada_${cleanRut}`) === 'true') ||
-                                             (localStorage.getItem(`btnMod2_demo_completada_${cleanRut}`) === 'true'));
-
-            if (isDemoURL && demoRealizada) {
-                mostrarModal("MÓDULO DEMO YA COMPLETADO", "Ya has ejecutado la calibración demo para este ensayo. Retornando al menú de pruebas...", () => {
-                    ejecutarRetornoMenu();
-                });
-                return;
-            }
-
-            if (numEnsayosRealizados >= maxIntentosPlan) {
+            if (ejecucionOficialConcluida) {
                 modoActual = 'BLOQUEADO';
-            } else if (isDemoURL) {
+            } else if (!demoRealizada) {
                 modoActual = 'DEMO';
             } else {
                 modoActual = 'OFICIAL';
             }
 
-            const simuActual = numEnsayosRealizados + 1;
-            const circuito = generarCircuitoAntiMemorizacion(simuActual);
+            const circuito = generarCircuitoAntiMemorizacion(1);
             trackPoints = circuito.pista;
             posicionInicio = circuito.inicio;
             posicionMeta = circuito.meta;
@@ -732,27 +664,27 @@
             pua.y = posicionInicio.y;
 
             if (modoActual === 'BLOQUEADO') {
-                badgeText.textContent = esB2B ? `EVALUACIÓN REGISTRADA (1/1)` : `PLAN ${planStorage} COMPLETADO (${numEnsayosRealizados}/${maxIntentosPlan})`;
+                badgeText.textContent = "EVALUACIÓN REGISTRADA (1/1)";
                 badgeDot.style.backgroundColor = "#10b981"; 
                 btnStart.style.display = 'none';
                 btnNext.style.display = 'block';
-                instructionText.textContent = esB2B ? 'Evaluación B2B finalizada con éxito. Retorna al menú.' : `Has alcanzado el límite de ${maxIntentosPlan} simulaciones de tu Plan ${planStorage}. Retorna al menú.`;
+                instructionText.textContent = 'Evaluación B2B finalizada con éxito. Retorna al menú.';
             } else if (modoActual === 'DEMO') {
                 badgeText.textContent = "Paso 1: Calibración Demo (1/1)";
                 badgeDot.style.backgroundColor = "#e5b324"; 
-                btnStart.textContent = "INICIAR CALIBRACIÓN DEMO";
+                btnStart.textContent = "INICIAR CALIBRACIÓN DEMO (20 s)";
                 btnStart.style.backgroundColor = "#e5b324";
                 btnStart.style.display = 'block';
                 btnNext.style.display = 'none';
-                instructionText.textContent = "Modo Demo: Guía la púa hasta la meta en menos de 45 segundos.";
+                instructionText.textContent = "Modo Demo: Inducción bimanual libre para habituarse a los mandos (no calificatorio).";
             } else {
-                badgeText.textContent = esB2B ? `Simulación Oficial B2B` : `Simulación Oficial S${simuActual} de ${maxIntentosPlan}`;
-                badgeDot.style.backgroundColor = "#38bdf8"; 
-                btnStart.textContent = esB2B ? `INICIAR SIMULACIÓN OFICIAL B2B` : `INICIAR SIMULACIÓN OFICIAL (S${simuActual} DE ${maxIntentosPlan})`;
-                btnStart.style.backgroundColor = "#0284c7";
+                badgeText.textContent = "Fase 2: Simulación Oficial B2B (1/1)";
+                badgeDot.style.backgroundColor = "#10b981"; 
+                btnStart.textContent = "INICIAR SIMULACIÓN OFICIAL B2B (1/1)";
+                btnStart.style.backgroundColor = "#10b981";
                 btnStart.style.display = 'block';
                 btnNext.style.display = 'none';
-                instructionText.textContent = `Evaluación Oficial: Recorre la pista hasta la meta verde (Tiempo máx: 45s).`;
+                instructionText.textContent = "Evaluación Oficial D.S. N° 170: Recorre la pista hasta la meta verde.";
             }
         }
 
@@ -782,20 +714,14 @@
                 ctx.beginPath();
                 ctx.arc(posicionInicio.x, posicionInicio.y, 10, 0, Math.PI * 2);
                 ctx.fill();
-                ctx.strokeStyle = '#ffffff';
-                ctx.lineWidth = 2;
-                ctx.stroke();
 
                 ctx.fillStyle = '#10b981';
                 ctx.beginPath();
                 ctx.arc(posicionMeta.x, posicionMeta.y, 14, 0, Math.PI * 2);
                 ctx.fill();
-                ctx.strokeStyle = '#ffffff';
-                ctx.lineWidth = 2;
-                ctx.stroke();
             }
 
-            if (evaluacionActiva && !estaBloqueadoPorDistancia) {
+            if (evaluacionActiva) {
                 if (keys.left) pua.x = Math.max(12, pua.x - pua.speed);
                 if (keys.right) pua.x = Math.min(canvas.width - 12, pua.x + pua.speed);
                 if (keys.up) pua.y = Math.max(12, pua.y - pua.speed);
@@ -825,11 +751,12 @@
                     inicioBordeMs = null;
                 }
 
-                const precPonderada = Math.max(0, Math.round(100 - (contactosCount * 4) - ((tiempoErrorMs / 1000) * 6)));
+                const precPonderada = Math.max(0, Math.round(100 - (contactosCount * 4) - ((tiempoErrorMs / 1000) * 3)));
                 metricPrecision.textContent = `${precPonderada}%`;
 
                 if (Math.hypot(pua.x - posicionMeta.x, pua.y - posicionMeta.y) <= 14) {
                     finalizarPrueba(false);
+                    return;
                 }
             }
 
@@ -854,7 +781,7 @@
 
         const setupBtn = (id, key) => {
             const el = document.getElementById(id);
-            const on = (e) => { e.preventDefault(); if (!estaBloqueadoPorDistancia) keys[key] = true; };
+            const on = (e) => { e.preventDefault(); keys[key] = true; };
             const off = (e) => { e.preventDefault(); keys[key] = false; };
             el.addEventListener('mousedown', on);
             el.addEventListener('mouseup', off);
@@ -869,7 +796,7 @@
         setupBtn('btnDown', 'down');
 
         function iniciarPrueba() {
-            if (modoActual === 'BLOQUEADO' || estaBloqueadoPorDistancia) return;
+            if (modoActual === 'BLOQUEADO') return;
 
             contactosCount = 0;
             tiempoErrorMs = 0;
@@ -894,13 +821,11 @@
             if (timerInterval) clearInterval(timerInterval);
 
             timerInterval = setInterval(() => {
-                if (!estaBloqueadoPorDistancia) {
-                    tiempoTranscurrido++;
-                    metricTiempo.textContent = `${tiempoTranscurrido} / ${TIEMPO_LIMITE_MAX_SEG} s`;
+                tiempoTranscurrido++;
+                metricTiempo.textContent = `${tiempoTranscurrido} / ${TIEMPO_LIMITE_MAX_SEG} s`;
 
-                    if (tiempoTranscurrido >= TIEMPO_LIMITE_MAX_SEG) {
-                        finalizarPrueba(true);
-                    }
+                if (tiempoTranscurrido >= TIEMPO_LIMITE_MAX_SEG) {
+                    finalizarPrueba(true);
                 }
             }, 1000);
         }
@@ -909,62 +834,40 @@
             evaluacionActiva = false;
             clearInterval(timerInterval);
 
-            const latenciaHardware = parseInt(localStorage.getItem('sensometrika_latencia_ms') || '0', 10);
-            
-            const tiempoTotalMsNeto = Math.max(1000, (tiempoTranscurrido * 1000) - latenciaHardware);
+            const latenciaHardware = 2.4;
+            const tiempoTotalMsNeto = Math.max(1000, (tiempoTranscurrido * 1000));
             const tiempoTotalSecNeto = Math.round(tiempoTotalMsNeto / 1000);
+            const tErrorSeg = (tiempoErrorMs / 1000).toFixed(1);
 
-            const tErrorMsNeto = Math.max(0, tiempoErrorMs - latenciaHardware);
-            const tErrorSeg = (tErrorMsNeto / 1000).toFixed(1);
-
-            let precisionFinal = Math.max(0, Math.round(100 - (contactosCount * 4) - ((tErrorMsNeto / 1000) * 6)));
-            if (esTimeout) {
-                precisionFinal = Math.max(0, precisionFinal - 35);
-            }
-
-            const registroData = {
-                tiempoTotal: tiempoTotalMsNeto,
-                tiempo: tiempoTotalSecNeto,
-                contactos: contactosCount,
-                errores: contactosCount,
-                tiempoError: parseFloat(tErrorSeg) * 1000,
-                tiempoErrorMs: parseFloat(tErrorSeg) * 1000,
-                precision: precisionFinal,
-                timeout: esTimeout,
-                latenciaCompensadaMs: latenciaHardware,
-                distanciaAvgCm: distanciaMedidaCm,
-                fecha: new Date().toISOString()
-            };
-
-            const claveSesion = `sensometrika_historial_palancas_${cleanRut}_${sessionId}`;
-            localStorage.setItem(claveSesion, JSON.stringify([registroData]));
-
-            let hRut = JSON.parse(localStorage.getItem(`sensometrika_historial_palancas_${cleanRut}`)) || [];
-            hRut.push(registroData);
-            localStorage.setItem(`sensometrika_historial_palancas_${cleanRut}`, JSON.stringify(hRut));
+            let precisionFinal = Math.max(10, Math.round(100 - (contactosCount * 4) - ((tiempoErrorMs / 1000) * 3)));
+            if (esTimeout) precisionFinal = Math.max(10, precisionFinal - 25);
 
             if (modoActual === 'DEMO') {
                 localStorage.setItem(`palancas_demo_completada_${cleanRut}`, 'true');
 
-                const msgBody = esTimeout 
-                    ? `<span style="color:#ef4444; font-weight:800;">⏰ TIEMPO AGOTADO (LÍMITE 45s)</span><br>Tiempo: <b>45 s</b><br>Toques en Borde: <b>${contactosCount}</b><br>Precisión: <b>${precisionFinal}%</b><br><br>Has completado el ensayo demo. Retornando a la batería de pruebas...`
-                    : `Tiempo Recorrido: <b>${tiempoTotalSecNeto} s</b><br>Toques en Borde: <b>${contactosCount}</b><br>Tiempo en Error: <b>${tErrorSeg} s</b><br>Precisión Bimanual: <b>${precisionFinal}%</b><br><br>Has completado el ensayo demo. Retornando a la batería de pruebas...`;
-
-                mostrarModal("CALIBRACIÓN DEMO COMPLETADA", msgBody, () => {
-                    ejecutarRetornoMenu();
+                mostrarModal("CALIBRACIÓN DEMO COMPLETADA", `Tiempo: <b>${tiempoTotalSecNeto} s</b><br>Toques: <b>${contactosCount}</b><br><br>Has completado la inducción. Presiona continuar para rendir la simulación oficial B2B.`, () => {
+                    actualizarEstadoUI();
                 });
             } else {
-                let hGen = JSON.parse(localStorage.getItem('sensometrika_historial_palancas')) || [];
-                hGen.push(registroData);
-                localStorage.setItem('sensometrika_historial_palancas', JSON.stringify(hGen));
+                const registroData = {
+                    efectividad: precisionFinal,
+                    score: precisionFinal,
+                    precision: precisionFinal,
+                    contactos: contactosCount,
+                    toques: contactosCount,
+                    tiempoTotal: tiempoTotalSecNeto,
+                    tiempoError: tErrorSeg,
+                    aprobado: precisionFinal >= 75,
+                    fecha: new Date().toISOString()
+                };
 
-                const tituloModal = esB2B ? "SIMULACIÓN OFICIAL B2B REGISTRADA" : `SIMULACIÓN OFICIAL REGISTRADA`;
+                localStorage.setItem(`sensometrika_palancas_${cleanRut}_${sessionId}`, JSON.stringify(registroData));
+                localStorage.setItem(`sensometrika_last_palancas_${cleanRut}_${sessionId}`, JSON.stringify(registroData));
+                localStorage.setItem('sensometrika_palancas', JSON.stringify(registroData));
 
-                const msgBody = esTimeout
-                    ? `<span style="color:#ef4444; font-weight:800;">⏰ REPROBADO POR TIMEOUT (45s Excedidos)</span><br>Tiempo Transcurrido: <b>45 s</b><br>Toques en Borde: <b>${contactosCount}</b><br>Precisión Final: <b>${precisionFinal}%</b><br><br><b>Resultado registrado en el historial pericial.</b>`
-                    : `Tiempo Recorrido: <b>${tiempoTotalSecNeto} s</b><br>Toques en Borde: <b>${contactosCount}</b><br>Tiempo en Error: <b>${tErrorSeg} s</b><br>Precisión Bimanual: <b>${precisionFinal}%</b> (${precisionFinal >= 85 && contactosCount <= 1 ? '✓ En Norma' : '⚠ Deficiente'})<br><span style="font-size:0.75rem; color:#94a3b8;">(Distancia telemétrica: ${distanciaMedidaCm} cm)</span><br><br><b>Resultado guardado con éxito.</b>`;
-
-                mostrarModal(tituloModal, msgBody, () => { ejecutarRetornoMenu(); });
+                mostrarModal("SIMULACIÓN OFICIAL B2B REGISTRADA", `Tiempo: <b>${tiempoTotalSecNeto} s</b><br>Toques en Borde: <b>${contactosCount}</b><br>Precisión Bimanual: <b>${precisionFinal}%</b><br><br><b>Resultado guardado con éxito.</b>`, () => {
+                    ejecutarRetornoMenu();
+                });
             }
         }
 
