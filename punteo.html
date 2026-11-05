@@ -396,7 +396,7 @@
         const modalBtnClose = document.getElementById('modalBtnClose');
 
         const urlParams = new URLSearchParams(window.location.search);
-        const modeParam = urlParams.get('mode') || (localStorage.getItem('sensometrika_b2c_mode') === 'true' ? 'b2c' : 'b2b');
+        const modeParam = urlParams.get('mode') || 'b2b';
         const esB2B = (modeParam === 'b2b') || urlParams.has('token') || urlParams.has('session');
 
         let datosUsuario = {};
@@ -404,11 +404,12 @@
             datosUsuario = JSON.parse(localStorage.getItem('sensometrika_datos_usuario')) || {};
         } catch(e){}
 
-        const rutEvaluado = urlParams.get('rut') || datosUsuario.rut || 'GENERICO';
+        const rutEvaluado = urlParams.get('rut') || datosUsuario.rut || localStorage.getItem('sensometrika_rut') || '12345678-K';
         const cleanRut = rutEvaluado.replace(/[^0-9Kk]/g, '');
-        const sessionId = urlParams.get('session') || urlParams.get('token') || localStorage.getItem('sensometrika_session_activa') || `SESION_${cleanRut}_${Date.now()}`;
+        const sessionId = urlParams.get('session') || localStorage.getItem('sensometrika_session_activa') || `SESION_${cleanRut}_${Date.now()}`;
 
-        let modoActual = 'OFICIAL';
+        // Control de Estado: Prioridad para forzar Demo en Sesión Activa
+        let modoActual = 'DEMO'; 
 
         let evaluacionActiva = false;
         let aciertos = 0;
@@ -436,10 +437,9 @@
                 empresa: urlParams.get('empresa') || datosUsuario.empresa || '',
                 plan: urlParams.get('plan') || localStorage.getItem('sensometrika_b2b_plan') || 'PLUS',
                 session: sessionId,
-                mode: esB2B ? 'b2b' : 'b2c'
+                mode: 'b2b'
             });
-            const menuDestino = esB2B ? 'menu_b2b_planes.html' : 'menu_B2C.html';
-            window.location.href = `${menuDestino}?${paramsRegreso.toString()}`;
+            window.location.href = `menu_b2b_planes.html?${paramsRegreso.toString()}`;
         }
 
         function iniciarMediaPipeFaceMesh() {
@@ -510,32 +510,45 @@
             }
         }
 
-        function verificarModuloEjecutado() {
-            const dataStr = localStorage.getItem(`sensometrika_punteo_${cleanRut}_${sessionId}`) ||
-                            localStorage.getItem(`sensometrika_last_punteo_${cleanRut}_${sessionId}`) ||
-                            localStorage.getItem('sensometrika_punteo');
+        function verificarModuloEjecutadoEnSesion() {
+            const dataStr = localStorage.getItem(`sensometrika_punteo_${cleanRut}_${sessionId}`);
             return dataStr !== null;
         }
 
         function actualizarEstadoUI() {
-            const yaRendido = verificarModuloEjecutado();
+            const ejecucionOficialConcluida = verificarModuloEjecutadoEnSesion();
+            const demoRealizada = localStorage.getItem(`punteo_demo_completada_${cleanRut}_${sessionId}`) === 'true';
 
-            if (yaRendido && !urlParams.has('reeval')) {
+            if (ejecucionOficialConcluida) {
                 modoActual = 'BLOQUEADO';
+            } else if (!demoRealizada) {
+                modoActual = 'DEMO';
+            } else {
+                modoActual = 'OFICIAL';
+            }
+
+            if (modoActual === 'BLOQUEADO') {
                 badgeText.textContent = `EVALUACIÓN REGISTRADA (1/1)`;
                 badgeDot.style.backgroundColor = "#10b981"; 
                 btnStart.style.display = 'none';
                 btnNext.style.display = 'block';
                 instructionText.textContent = 'Evaluación Viso-Motriz finalizada con éxito. Retorna al menú.';
-            } else {
-                modoActual = 'OFICIAL';
-                badgeText.textContent = `Simulación Oficial B2B`;
-                badgeDot.style.backgroundColor = "#38bdf8"; 
-                btnStart.textContent = `INICIAR SIMULACIÓN OFICIAL B2B`;
-                btnStart.style.backgroundColor = "#0284c7";
+            } else if (modoActual === 'DEMO') {
+                badgeText.textContent = "Paso 1: Calibración Demo (1/1)";
+                badgeDot.style.backgroundColor = "#e5b324"; 
+                btnStart.textContent = "INICIAR CALIBRACIÓN DEMO (15 s)";
+                btnStart.style.backgroundColor = "#e5b324";
                 btnStart.style.display = 'block';
                 btnNext.style.display = 'none';
-                instructionText.textContent = `Mantén el ritmo constante presionando sobre el área indicada al cruzar el objetivo.`;
+                instructionText.textContent = "Modo Demo: Inducción táctil libre para habituarse al tiempo de caída del objetivo.";
+            } else {
+                badgeText.textContent = "Fase 2: Simulación Oficial B2B (1/1)";
+                badgeDot.style.backgroundColor = "#10b981"; 
+                btnStart.textContent = "INICIAR SIMULACIÓN OFICIAL B2B (1/1)";
+                btnStart.style.backgroundColor = "#10b981";
+                btnStart.style.display = 'block';
+                btnNext.style.display = 'none';
+                instructionText.textContent = "Evaluación Oficial D.S. N° 170: Registra la mayor precisión rítmica posible ante los impactos.";
             }
         }
 
@@ -670,37 +683,50 @@
             const precisionVal = total > 0 ? Math.round((aciertos / total) * 100) : 0;
             const latenciaMediaVal = tiemposReaccion.length > 0 ? Math.round(tiemposReaccion.reduce((a, b) => a + b, 0) / tiemposReaccion.length) : 0;
 
-            const registroData = { 
-                aciertos: aciertos, 
-                errores: errores,
-                perdidas: errores,
-                efectividad: precisionVal,
-                score: precisionVal,
-                precision: precisionVal, 
-                latencia: latenciaMediaVal,
-                desviacionMs: latenciaMediaVal,
-                latenciaRitmoMs: latenciaMediaVal,
-                distanciaAvgCm: distanciaMedidaCm,
-                aprobado: precisionVal >= 75 && aciertos >= 4,
-                fecha: new Date().toISOString() 
-            };
+            if (modoActual === 'DEMO') {
+                localStorage.setItem(`punteo_demo_completada_${cleanRut}_${sessionId}`, 'true');
 
-            // ESCRITURA EN MÚLTIPLES CLAVES PARA COMPATIBILIDAD CON EL INFORME PERICIAL
-            localStorage.setItem(`sensometrika_punteo_${cleanRut}_${sessionId}`, JSON.stringify(registroData));
-            localStorage.setItem(`sensometrika_last_punteo_${cleanRut}_${sessionId}`, JSON.stringify(registroData));
-            localStorage.setItem('sensometrika_punteo', JSON.stringify(registroData));
+                mostrarModal(
+                    "CALIBRACIÓN DEMO COMPLETADA",
+                    `Aciertos: <b>${aciertos}</b><br>Pérdidas: <b>${errores}</b><br>Latencia Media: <b>${latenciaMediaVal} ms</b><br><br>Has completado la inducción libre. Presiona continuar para rendir la <b>Simulación Oficial B2B</b>.`,
+                    () => {
+                        actualizarEstadoUI();
+                    }
+                );
+            } else {
+                const registroData = { 
+                    aciertos: aciertos, 
+                    errores: errores,
+                    perdidas: errores,
+                    efectividad: precisionVal,
+                    score: precisionVal,
+                    precision: precisionVal, 
+                    latencia: latenciaMediaVal,
+                    desviacionMs: latenciaMediaVal,
+                    latenciaRitmoMs: latenciaMediaVal,
+                    distanciaAvgCm: distanciaMedidaCm,
+                    aprobado: precisionVal >= 75 && aciertos >= 4,
+                    fecha: new Date().toISOString() 
+                };
 
-            // REGISTRO GLOBAL DE MÓDULO COMPLETADO
-            let modulosRendidos = {};
-            try { modulosRendidos = JSON.parse(localStorage.getItem('sensometrika_modulos_rendidos')) || {}; } catch(e){}
-            modulosRendidos.punteo = true;
-            localStorage.setItem('sensometrika_modulos_rendidos', JSON.stringify(modulosRendidos));
+                // Guardar en claves compatibles con informe-b2b.html
+                localStorage.setItem(`sensometrika_punteo_${cleanRut}_${sessionId}`, JSON.stringify(registroData));
+                localStorage.setItem(`sensometrika_last_punteo_${cleanRut}_${sessionId}`, JSON.stringify(registroData));
+                localStorage.setItem('sensometrika_punteo', JSON.stringify(registroData));
 
-            mostrarModal(
-                "SIMULACIÓN OFICIAL B2B REGISTRADA",
-                `Aciertos: <b>${aciertos}</b><br>Pérdidas/Errores: <b>${errores}</b><br>Latencia Media: <b>${latenciaMediaVal} ms</b><br>Precisión Rítmica: <b>${precisionVal}%</b><br>Distancia Biométrica: <b>${distanciaMedidaCm} cm</b><br><br><b>Resultado guardado con éxito.</b>`,
-                () => { ejecutarRetornoMenu(); }
-            );
+                let modulosRendidos = {};
+                try { modulosRendidos = JSON.parse(localStorage.getItem('sensometrika_modulos_rendidos')) || {}; } catch(e){}
+                modulosRendidos.punteo = true;
+                localStorage.setItem('sensometrika_modulos_rendidos', JSON.stringify(modulosRendidos));
+
+                mostrarModal(
+                    "SIMULACIÓN OFICIAL B2B REGISTRADA",
+                    `Aciertos: <b>${aciertos}</b><br>Pérdidas: <b>${errores}</b><br>Latencia Media: <b>${latenciaMediaVal} ms</b><br>Precisión Rítmica: <b>${precisionVal}%</b><br><br><b>Resultado guardado con éxito.</b>`,
+                    () => { 
+                        ejecutarRetornoMenu(); 
+                    }
+                );
+            }
         }
 
         function mostrarModal(titulo, cuerpo, callback) {
@@ -717,7 +743,7 @@
         btnStart.addEventListener('click', iniciarPrueba);
 
         document.getElementById('btnInfo').addEventListener('click', () => {
-            mostrarModal("¿CÓMO FUNCIONA?", "Toca la pantalla o haz clic cuando la bola cruce dentro de la <b>ZONA DE IMPACTO RÍTMICO</b> para registrar aciertos y medir tu latencia viso-motriz.");
+            mostrarModal("¿CÓMO FUNCIONA?", "Toca la pantalla o haz clic cuando el círculo cruce dentro de la <b>ZONA DE IMPACTO RÍTMICO</b> para registrar aciertos y medir tu latencia viso-motriz.");
         });
 
         document.addEventListener('DOMContentLoaded', () => {
