@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>SENSOMETRIKA | Acreditación & Calibración Pro de Hardware</title>
+  <title>SENSOMETRIKA | Acreditación y Verificación del Evaluado</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     :root {
@@ -11,8 +11,9 @@
       --card-bg: #091120;
       --card-border: #132238;
       --accent-cyan: #00bfff;
-      --accent-cyan-glow: rgba(0, 191, 255, 0.45);
+      --accent-cyan-glow: rgba(0, 191, 255, 0.35);
       --accent-green: #10b981;
+      --accent-green-glow: rgba(16, 185, 129, 0.35);
       --text-main: #f8fafc;
       --text-muted: #94a3b8;
     }
@@ -24,501 +25,413 @@
       color: var(--text-main);
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       min-height: 100vh;
-      padding: 20px 12px;
+      padding: 16px 12px 30px;
       display: flex;
       flex-direction: column;
       align-items: center;
     }
 
-    .main-container { width: 100%; max-width: 480px; display: flex; flex-direction: column; gap: 16px; }
+    .main-wrapper {
+      width: 100%;
+      max-width: 460px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+    }
 
-    .brand-header { text-align: center; display: flex; flex-direction: column; align-items: center; gap: 6px; }
-    .brand-logo-img { width: 185px; height: auto; mix-blend-mode: lighten; filter: drop-shadow(0 0 12px var(--accent-cyan-glow)); }
+    .brand-logo-img {
+      width: 170px;
+      height: auto;
+      mix-blend-mode: lighten;
+      filter: drop-shadow(0 0 10px var(--accent-cyan-glow));
+      margin-top: 4px;
+    }
 
-    .card-box {
+    .card-panel {
       background-color: var(--card-bg);
       border: 1px solid var(--card-border);
       border-radius: 14px;
-      padding: 18px;
+      padding: 16px;
+      width: 100%;
       display: flex;
       flex-direction: column;
       gap: 12px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
     }
 
-    .card-title {
-      font-size: 0.80rem;
-      font-weight: 800;
+    .panel-header {
+      border-bottom: 1px solid var(--card-border);
+      padding-bottom: 8px;
+      text-align: center;
+    }
+
+    .panel-title {
+      font-size: 0.85rem;
+      font-weight: 900;
       color: var(--accent-cyan);
       text-transform: uppercase;
-      letter-spacing: 0.8px;
-      border-bottom: 1px solid var(--card-border);
-      padding-bottom: 6px;
+      letter-spacing: 0.5px;
     }
 
-    .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 0.78rem; }
-    .info-label { color: var(--text-muted); font-size: 0.68rem; text-transform: uppercase; font-weight: 700; display: block; }
-    .info-val { color: #fff; font-weight: 800; font-size: 0.85rem; }
-
-    .signature-container {
-      width: 100%;
-      background: #030712;
-      border: 1px dashed var(--accent-cyan);
-      border-radius: 10px;
-      position: relative;
-    }
-
-    canvas {
-      width: 100%;
-      height: 180px;
-      display: block;
-      touch-action: none;
-      border-radius: 10px;
-    }
-
-    .video-preview {
-      width: 100%;
-      height: 180px;
-      background: #000;
-      border-radius: 10px;
-      object-fit: cover;
+    .info-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      background: #050a14;
       border: 1px solid var(--card-border);
+      border-radius: 10px;
+      padding: 10px;
+      font-size: 0.70rem;
     }
 
-    .latency-btn-box {
-      background: #030712;
-      border: 2px dashed var(--accent-cyan);
-      border-radius: 10px;
-      padding: 22px;
-      text-align: center;
-      cursor: pointer;
-      transition: all 0.15s ease;
+    .info-item {
+      display: flex;
+      justify-content: space-between;
+      border-bottom: 1px dashed #1e293b;
+      padding-bottom: 4px;
+    }
+
+    .info-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .info-label { color: var(--text-muted); font-weight: 700; }
+    .info-val { color: #fff; font-weight: 800; text-align: right; }
+
+    /* VISOR CÁMARA WEBCAM */
+    .cam-wrapper {
+      width: 100%;
       display: flex;
       flex-direction: column;
       align-items: center;
+      gap: 8px;
+    }
+
+    .viewport-cam {
+      width: 100%;
+      height: 190px;
+      background: #020617;
+      border: 2px dashed var(--accent-cyan);
+      border-radius: 12px;
+      overflow: hidden;
+      position: relative;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .viewport-cam video, .viewport-cam img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    /* LIENZO DE FIRMA DIGITAL */
+    .firma-container {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
       gap: 6px;
     }
 
-    .latency-btn-box:active {
-      background-color: var(--accent-cyan);
-      transform: scale(0.98);
+    .canvas-firma {
+      width: 100%;
+      height: 100px;
+      background: #020617;
+      border: 1px solid var(--card-border);
+      border-radius: 10px;
+      touch-action: none;
+      cursor: crosshair;
     }
 
-    .btn-action {
-      background: var(--accent-cyan);
+    .btn-action-main {
+      background: var(--accent-green);
       color: #000;
       border: none;
       padding: 14px;
       border-radius: 10px;
       font-weight: 900;
-      font-size: 0.88rem;
+      font-size: 0.80rem;
       cursor: pointer;
       text-transform: uppercase;
       width: 100%;
-      margin-top: 6px;
-      box-shadow: 0 4px 16px var(--accent-cyan-glow);
+      text-align: center;
+      box-shadow: 0 4px 15px var(--accent-green-glow);
     }
 
-    .btn-disabled {
-      opacity: 0.4;
-      cursor: not-allowed;
-      box-shadow: none;
-      background: #1e293b;
-      color: var(--text-muted);
-    }
-
-    .terms-box {
-      display: flex;
-      align-items: flex-start;
-      gap: 10px;
-      font-size: 0.72rem;
-      color: var(--text-muted);
-      background: #030712;
-      padding: 12px;
-      border-radius: 8px;
+    .btn-secondary {
+      background: transparent;
       border: 1px solid var(--card-border);
-    }
-
-    .terms-box input[type="checkbox"] {
-      width: 16px;
-      height: 16px;
-      accent-color: var(--accent-cyan);
+      color: var(--text-muted);
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 0.65rem;
+      font-weight: 700;
       cursor: pointer;
-      margin-top: 2px;
     }
   </style>
 </head>
 <body>
 
-  <div class="main-container">
-    <header class="brand-header">
-      <img src="sensometrica.jpg" alt="SENSOMETRIKA" class="brand-logo-img">
-      <span style="color: var(--accent-cyan); font-size: 0.75rem; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase;">
-        VERIFICACIÓN Y CALIBRACIÓN PRO DE HARDWARE
-      </span>
-    </header>
+  <div class="main-wrapper">
+    <img src="sensometrica.jpg" alt="SENSOMETRIKA" class="brand-logo-img" onerror="this.style.display='none'">
 
-    <!-- DATOS DEL POSTULANTE -->
-    <div class="card-box">
-      <div class="card-title" id="lblHeaderCard">👤 DATOS PERSONALES</div>
-      <div id="gridDatos" class="info-grid">
-        <div>
-          <span class="info-label">Nombre Completo</span>
-          <span id="lblNombre" class="info-val">-</span>
+    <div class="card-panel">
+      <div class="panel-header">
+        <h2 class="panel-title">📋 ACREDITACIÓN & VERIFICACIÓN DE IDENTIDAD</h2>
+        <p style="font-size: 0.62rem; color: var(--text-muted); margin-top: 2px;">Cumplimiento Normativo D.S. N° 170 / Minería & Forestal</p>
+      </div>
+
+      <!-- DATOS DEL TRABAJADOR -->
+      <div class="info-grid">
+        <div class="info-item">
+          <span class="info-label">EVALUADO:</span>
+          <span class="info-val" id="lblNombre">CARGANDO...</span>
         </div>
-        <div>
-          <span class="info-label">RUT / Cédula</span>
-          <span id="lblRut" class="info-val">-</span>
+        <div class="info-item">
+          <span class="info-label">RUT:</span>
+          <span class="info-val" id="lblRut">CARGANDO...</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">CARGO:</span>
+          <span class="info-val" id="lblCargo">CONDUCTOR / OPERADOR</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">EMPRESA:</span>
+          <span class="info-val" id="lblEmpresa">EMPRESA REGISTRADA</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">PLAN VIGENTE:</span>
+          <span class="info-val" style="color: var(--accent-cyan);" id="lblPlan">PLAN BÁSICO</span>
         </div>
       </div>
-    </div>
 
-    <!-- REGISTRO FOTOGRÁFICO WEBCAM -->
-    <div class="card-box" id="boxFotoBiometrica" style="display: none;">
-      <div class="card-title">📷 REGISTRO FOTOGRÁFICO DE IDENTIDAD WEBCAM</div>
-      <div style="position: relative; width: 100%;">
-        <video id="videoCam" autoplay playsinline class="video-preview"></video>
-        <img id="imgSnapshot" class="video-preview" style="display: none;" alt="Captura Facial">
+      <!-- REGISTRO FOTOGRÁFICO WEBCAM -->
+      <div class="cam-wrapper">
+        <span style="font-size: 0.65rem; color: var(--accent-cyan); font-weight: 800; text-transform: uppercase;">
+          📸 REGISTRO BIOMÉTRICO EN VIVO (WEBCAM)
+        </span>
+        <div class="viewport-cam">
+          <video id="videoCam" autoplay playsinline></video>
+          <img id="imgFotoCapturada" style="display: none;" alt="Foto Biometría">
+          <span id="txtCamPlace" style="display:none; font-size: 0.65rem; color: var(--text-muted);">Cámara inactiva</span>
+        </div>
+        <div style="display: flex; gap: 8px; width: 100%;">
+          <button type="button" class="btn-secondary" style="flex:1;" onclick="iniciarCamara()">📷 Encender</button>
+          <button type="button" class="btn-secondary" style="flex:1; border-color: var(--accent-cyan); color: var(--accent-cyan);" onclick="tomarFoto()">📸 Capturar Foto</button>
+        </div>
       </div>
-      <button id="btnCapturarFoto" onclick="capturarFotoFacial()" type="button" style="background:#0284c7; color:#fff; padding:10px; border-radius:8px; font-weight:800; font-size:0.78rem; text-transform:uppercase; border:none; cursor:pointer; width:100%;">
-        📸 CAPTURAR FOTO FACIAL
+
+      <!-- FIRMA DIGITAL -->
+      <div class="firma-container">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <span style="font-size: 0.65rem; color: var(--accent-cyan); font-weight: 800; text-transform: uppercase;">
+            ✍️ FIRMA DIGITAL EN PANTALLA
+          </span>
+          <button type="button" class="btn-secondary" onclick="limpiarFirma()">Limpiar Rúbrica</button>
+        </div>
+        <canvas id="canvasFirma" class="canvas-firma"></canvas>
+      </div>
+
+      <!-- CONSENTIMIENTO D.S. N° 170 -->
+      <div style="display: flex; align-items: flex-start; gap: 8px; background: #050a14; padding: 8px; border-radius: 8px; border: 1px solid var(--card-border);">
+        <input type="checkbox" id="chkTerminos" style="accent-color: var(--accent-green); margin-top: 2px;">
+        <label for="chkTerminos" style="font-size: 0.62rem; color: var(--text-muted); line-height: 1.3;">
+          Declaro bajo juramento la veracidad de mi identidad y acepto la toma de datos psicométricos para la emisión del informe técnico conforme al D.S. N° 170.
+        </label>
+      </div>
+
+      <!-- BOTÓN PRINCIPAL DE CONTINUIDAD -->
+      <button type="button" onclick="confirmarYContinuar()" class="btn-action-main">
+        INGRESAR Y RENDIR EVALUACIONES →
       </button>
+
     </div>
-
-    <!-- FIRMA DIGITAL -->
-    <div class="card-box" id="boxFirmaDigital" style="display: none;">
-      <div class="card-title">✍️ FIRMA DIGITAL DEL EVALUADO</div>
-      <div class="signature-container">
-        <canvas id="canvasFirma"></canvas>
-      </div>
-      <div style="display:flex; justify-content:space-between; align-items:center;">
-        <span style="font-size:0.68rem; color:var(--text-muted);">Estampe su firma manuscrita dentro del cuadro</span>
-        <button onclick="limpiarFirma()" style="background:none; border:none; color:#ef4444; font-size:0.72rem; font-weight:800; cursor:pointer;">Limpiar Firma</button>
-      </div>
-    </div>
-
-    <!-- CALIBRACIÓN PRO DE LATENCIA HARDWARE -->
-    <div class="card-box">
-      <div class="card-title">📱 CALIBRACIÓN PRO DE LATENCIA Y TERMINAL</div>
-      
-      <div id="btnLatenciaArea" class="latency-btn-box" onpointerdown="registrarToqueLatencia(event)">
-        <span id="txtLatenciaMain" style="font-size: 0.90rem; font-weight: 800; color: var(--accent-cyan);">
-          TOCA AQUÍ 5 VECES RÁPIDO (0 / 5)
-        </span>
-        <span id="txtLatenciaSub" style="font-size: 0.70rem; color: var(--text-muted);">
-          Mide la latencia táctil pura descartando el 1.° y 5.° intento (se usan 2, 3 y 4).
-        </span>
-      </div>
-
-      <div class="info-grid" style="margin-top: 4px;">
-        <div>
-          <span class="info-label">Latencia Táctil</span>
-          <span id="lblLatenciaVal" class="info-val">-- ms</span>
-        </div>
-        <div>
-          <span class="info-label">Perfil de Terminal</span>
-          <span id="lblLatenciaEstado" class="info-val" style="color: #f59e0b;">PENDIENTE</span>
-        </div>
-      </div>
-    </div>
-
-    <!-- TÉRMINOS Y CONDICIONES -->
-    <div class="terms-box">
-      <input type="checkbox" id="chkTerminos" onchange="validarTerminosYLatencia()">
-      <label for="chkTerminos" style="cursor: pointer;">
-        Declaro que mis datos son fidedignos, acepto rendir las evaluaciones psicotécnicas bajo consentimiento informado y autorizo el procesamiento de resultados según los <strong style="color: var(--accent-cyan);">Términos y Condiciones del Servicio</strong>.
-      </label>
-    </div>
-
-    <button id="btnContinuar" onclick="confirmarYPasarAlMenu()" class="btn-action btn-disabled" disabled>
-      COMPLETA LA CALIBRACIÓN PARA CONTINUAR →
-    </button>
   </div>
 
   <script>
-    let modeParam = 'b2b';
-    let isB2C = false;
-    let isB2BPro = false;
-    let canvas, ctx, dibujando = false;
-    let videoStream = null;
+    const urlParams = new URLSearchParams(window.location.search);
+    let datosUsuario = {};
+    try { datosUsuario = JSON.parse(localStorage.getItem('sensometrika_datos_usuario')) || {}; } catch(e){}
 
-    let toquesTiempos = [];
-    let tiempoUltimoToque = 0;
-    let latenciaCompletada = false;
+    const rawNombre = urlParams.get('nombre') || datosUsuario.nombre || localStorage.getItem('sensometrika_nombre') || 'OPERARIO EN FAENA';
+    const rawRut = urlParams.get('rut') || datosUsuario.rut || localStorage.getItem('sensometrika_rut') || '12.345.678-K';
+    const rawCargo = urlParams.get('cargo') || datosUsuario.cargo || localStorage.getItem('sensometrika_cargo') || 'Operador de Maquinaria';
+    const rawEmpresa = urlParams.get('empresa') || datosUsuario.empresa || localStorage.getItem('sensometrika_b2b_empresa') || 'EMPRESA MANDANTE';
+    const rawPlan = (urlParams.get('plan') || localStorage.getItem('sensometrika_b2b_plan') || 'BASICO').toUpperCase();
+    const tokenB2B = urlParams.get('token') || localStorage.getItem('sensometrika_b2b_token') || 'SENSE-B2B-1001';
+    const sessionId = urlParams.get('session') || localStorage.getItem('sensometrika_session_activa') || `SESION_B2B_${rawRut.replace(/[^0-9Kk]/g, '')}_${Date.now()}`;
+    const cleanRut = rawRut.replace(/[^0-9Kk]/g, '');
+
+    let streamVideo = null;
+    let fotoBase64 = null;
+    let canvasFirma, ctxFirma;
+    let trazandoFirma = false;
+    let tieneFirmaValida = false;
 
     document.addEventListener('DOMContentLoaded', () => {
-      const urlParams = new URLSearchParams(window.location.search);
-      modeParam = urlParams.get('mode') || 'b2b';
-      const b2cModeStorage = localStorage.getItem('sensometrika_b2c_mode');
+      document.getElementById('lblNombre').textContent = decodeURIComponent(rawNombre).toUpperCase();
+      document.getElementById('lblRut').textContent = rawRut;
+      document.getElementById('lblCargo').textContent = decodeURIComponent(rawCargo).toUpperCase();
+      document.getElementById('lblEmpresa').textContent = decodeURIComponent(rawEmpresa).toUpperCase();
+      document.getElementById('lblPlan').textContent = `PLAN ${rawPlan}`;
 
-      const planParam = (urlParams.get('plan') || localStorage.getItem('sensometrika_plan_contratado') || 'PLUS').toUpperCase();
-      localStorage.setItem('sensometrika_plan_contratado', planParam);
-
-      if (modeParam === 'b2b-pro' || planParam.includes('ALTO') || planParam.includes('PRO')) {
-        isB2BPro = true;
-      } else if (modeParam === 'b2c' || b2cModeStorage === 'true') {
-        isB2C = true;
-      }
-
-      let datosUsuario = {};
-      try {
-        datosUsuario = JSON.parse(localStorage.getItem('sensometrika_datos_usuario')) || {};
-      } catch(e){}
-
-      const rut = urlParams.get('rut') || datosUsuario.rut || '';
-      const nombre = urlParams.get('nombre') || datosUsuario.nombre || '';
-      const cargo = urlParams.get('cargo') || datosUsuario.cargo || '';
-      const empresa = urlParams.get('empresa') || datosUsuario.empresa || '';
-      const cleanRut = rut.replace(/[^0-9Kk]/g, '');
-
-      if (cleanRut) {
-        const mods = ['reactimetro', 'palancas', 'punteo', 'audicion', 'visual', 'anticipacion', 'estereopsis', 'fatiga'];
-        mods.forEach(m => {
-          localStorage.removeItem(`sensometrika_historial_${m}_${cleanRut}`);
-          localStorage.removeItem(`${m}_demo_completada_${cleanRut}`);
-        });
-      }
-
-      const sessionId = urlParams.get('session') || `SESION_${cleanRut}_${Date.now()}`;
-      localStorage.setItem('sensometrika_session_activa', sessionId);
-
-      document.getElementById('lblRut').textContent = rut || 'SIN RUT';
-      document.getElementById('lblNombre').textContent = decodeURIComponent(nombre) || 'SIN NOMBRE';
-
-      if (rut && nombre) {
-        localStorage.setItem('sensometrika_datos_usuario', JSON.stringify({
-          nombre: decodeURIComponent(nombre),
-          rut: rut,
-          cargo: decodeURIComponent(cargo),
-          empresa: decodeURIComponent(empresa),
-          plan: planParam
-        }));
-      }
-
-      if (isB2C) {
-        document.getElementById('lblHeaderCard').textContent = '👤 DATOS PERSONALES';
-        document.getElementById('boxFotoBiometrica').style.display = 'none';
-        document.getElementById('boxFirmaDigital').style.display = 'none';
-      } else {
-        document.getElementById('lblHeaderCard').textContent = '👤 DATOS DEL POSTULANTE / TRABAJADOR';
-        document.getElementById('boxFotoBiometrica').style.display = 'flex';
-        document.getElementById('boxFirmaDigital').style.display = 'flex';
-        iniciarCamaraB2B();
-        initCanvasFirma();
-      }
+      inicializarCanvasFirma();
+      iniciarCamara();
     });
 
-    async function iniciarCamaraB2B() {
+    // CONTROLES DE CÁMARA
+    async function iniciarCamara() {
+      const video = document.getElementById('videoCam');
+      const img = document.getElementById('imgFotoCapturada');
+      img.style.display = 'none';
+      video.style.display = 'block';
+
       try {
-        videoStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" }, audio: false });
-        const videoEl = document.getElementById('videoCam');
-        videoEl.srcObject = videoStream;
+        streamVideo = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false });
+        video.srcObject = streamVideo;
       } catch (err) {
-        console.warn("No se pudo acceder a la cámara:", err);
+        document.getElementById('txtCamPlace').style.display = 'block';
+        document.getElementById('txtCamPlace').textContent = 'Webcam no detectada / Permiso denegado';
       }
     }
 
-    function capturarFotoFacial() {
-      const videoEl = document.getElementById('videoCam');
-      const imgEl = document.getElementById('imgSnapshot');
-      const canvasTmp = document.createElement('canvas');
-      
-      canvasTmp.width = videoEl.videoWidth || 320;
-      canvasTmp.height = videoEl.videoHeight || 240;
-      const ctxTmp = canvasTmp.getContext('2d');
-      ctxTmp.drawImage(videoEl, 0, 0, canvasTmp.width, canvasTmp.height);
+    function tomarFoto() {
+      const video = document.getElementById('videoCam');
+      const img = document.getElementById('imgFotoCapturada');
 
-      const fotoCapturadaB64 = canvasTmp.toDataURL('image/jpeg');
-      const urlParams = new URLSearchParams(window.location.search);
-      const rawRut = urlParams.get('rut') || localStorage.getItem('sensometrika_evaluado_rut') || '';
-      const cleanRut = rawRut.replace(/[^0-9Kk]/g, '');
-
-      localStorage.setItem('sensometrika_foto_trabajador', fotoCapturadaB64);
-      if (cleanRut) {
-        localStorage.setItem(`sensometrika_foto_${cleanRut}`, fotoCapturadaB64);
+      if (!streamVideo) {
+        alert('Active la cámara antes de capturar.');
+        return;
       }
 
-      imgEl.src = fotoCapturadaB64;
-      videoEl.style.display = 'none';
-      imgEl.style.display = 'block';
+      const canvasTemp = document.createElement('canvas');
+      canvasTemp.width = video.videoWidth || 320;
+      canvasTemp.height = video.videoHeight || 240;
+      const ctxTemp = canvasTemp.getContext('2d');
+      ctxTemp.drawImage(video, 0, 0, canvasTemp.width, canvasTemp.height);
 
-      if (videoStream) {
-        videoStream.getTracks().forEach(track => track.stop());
+      fotoBase64 = canvasTemp.toDataURL('image/jpeg', 0.85);
+      img.src = fotoBase64;
+      img.style.display = 'block';
+      video.style.display = 'none';
+
+      if (streamVideo) {
+        streamVideo.getTracks().forEach(track => track.stop());
       }
-
-      document.getElementById('btnCapturarFoto').textContent = '✓ FOTO CAPTURADA (TOCAR PARA REPETIR)';
-      document.getElementById('btnCapturarFoto').style.background = '#10b981';
-      document.getElementById('btnCapturarFoto').onclick = () => {
-        iniciarCamaraB2B();
-        videoEl.style.display = 'block';
-        imgEl.style.display = 'none';
-        document.getElementById('btnCapturarFoto').textContent = '📸 CAPTURAR FOTO FACIAL';
-        document.getElementById('btnCapturarFoto').style.background = '#0284c7';
-        document.getElementById('btnCapturarFoto').onclick = capturarFotoFacial;
-      };
     }
 
-    function initCanvasFirma() {
-      canvas = document.getElementById('canvasFirma');
-      if (!canvas) return;
-      ctx = canvas.getContext('2d');
-      canvas.width = canvas.offsetWidth;
-      canvas.height = 180;
+    // CONTROLES DE FIRMA DIGITAL
+    function inicializarCanvasFirma() {
+      canvasFirma = document.getElementById('canvasFirma');
+      ctxFirma = canvasFirma.getContext('2d');
 
-      ctx.strokeStyle = '#00bfff';
-      ctx.lineWidth = 2.5;
-      ctx.lineCap = 'round';
+      canvasFirma.width = canvasFirma.offsetWidth || 340;
+      canvasFirma.height = canvasFirma.offsetHeight || 100;
 
-      function getPos(e) {
-        const rect = canvas.getBoundingClientRect();
+      ctxFirma.strokeStyle = '#00bfff';
+      ctxFirma.lineWidth = 2.5;
+      ctxFirma.lineCap = 'round';
+
+      const obtenerPos = (e) => {
+        const rect = canvasFirma.getBoundingClientRect();
         const clientX = e.touches ? e.touches[0].clientX : e.clientX;
         const clientY = e.touches ? e.touches[0].clientY : e.clientY;
         return { x: clientX - rect.left, y: clientY - rect.top };
-      }
+      };
 
-      function empezar(e) { dibujando = true; const pos = getPos(e); ctx.beginPath(); ctx.moveTo(pos.x, pos.y); }
-      function mover(e) { if (!dibujando) return; const pos = getPos(e); ctx.lineTo(pos.x, pos.y); ctx.stroke(); }
-      function parar() { dibujando = false; }
+      const empezarTrazo = (e) => {
+        trazandoFirma = true;
+        tieneFirmaValida = true;
+        const pos = obtenerPos(e);
+        ctxFirma.beginPath();
+        ctxFirma.moveTo(pos.x, pos.y);
+      };
 
-      canvas.addEventListener('mousedown', empezar);
-      canvas.addEventListener('mousemove', mover);
-      window.addEventListener('mouseup', parar);
+      const moverTrazo = (e) => {
+        if (!trazandoFirma) return;
+        const pos = obtenerPos(e);
+        ctxFirma.lineTo(pos.x, pos.y);
+        ctxFirma.stroke();
+      };
 
-      canvas.addEventListener('touchstart', empezar);
-      canvas.addEventListener('touchmove', mover);
-      window.addEventListener('touchend', parar);
+      const detenerTrazo = () => { trazandoFirma = false; };
+
+      canvasFirma.addEventListener('mousedown', empezarTrazo);
+      canvasFirma.addEventListener('mousemove', moverTrazo);
+      window.addEventListener('mouseup', detenerTrazo);
+
+      canvasFirma.addEventListener('touchstart', empezarTrazo, { passive: true });
+      canvasFirma.addEventListener('touchmove', moverTrazo, { passive: true });
+      canvasFirma.addEventListener('touchend', detenerTrazo);
     }
 
     function limpiarFirma() {
-      if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctxFirma.clearRect(0, 0, canvasFirma.width, canvasFirma.height);
+      tieneFirmaValida = false;
     }
 
-    function registrarToqueLatencia(e) {
-      if (latenciaCompletada) return;
-      e.preventDefault();
-      
-      const ahora = performance.now();
-
-      if (toquesTiempos.length === 0) {
-        tiempoUltimoToque = ahora;
-        toquesTiempos.push(0);
-      } else {
-        const delta = ahora - tiempoUltimoToque;
-        tiempoUltimoToque = ahora;
-        toquesTiempos.push(delta);
-      }
-
-      const totalToques = toquesTiempos.length;
-      document.getElementById('txtLatenciaMain').textContent = `TOCA AQUÍ 5 VECES RÁPIDO (${totalToques} / 5)`;
-
-      if (totalToques >= 5) {
-        // Descartar 1.° y 5.°; usar exclusivamente 2, 3 y 4
-        const intentosCentrales = [toquesTiempos[1], toquesTiempos[2], toquesTiempos[3]];
-        intentosCentrales.sort((a, b) => a - b);
-        
-        const suma = intentosCentrales.reduce((acc, val) => acc + val, 0);
-        const promedioLatencia = Math.round(suma / intentosCentrales.length);
-
-        // Perfilamiento automático del terminal
-        let categoriaHardware = "GAMA_ALTA";
-        if (promedioLatencia > 60 && promedioLatencia <= 120) {
-          categoriaHardware = "GAMA_MEDIA";
-        } else if (promedioLatencia > 120) {
-          categoriaHardware = "GAMA_BAJA_LAG";
-        }
-
-        latenciaCompletada = true;
-
-        // Guardar datos estructurados de hardware en localStorage
-        const perfilHardwareData = {
-          latencia_ms: promedioLatencia,
-          categoria: categoriaHardware,
-          offset_compensacion: promedioLatencia,
-          device_info: {
-            userAgent: navigator.userAgent,
-            maxTouchPoints: navigator.maxTouchPoints,
-            isTouch: 'ontouchstart' in window || navigator.maxTouchPoints > 0
-          }
-        };
-
-        localStorage.setItem('sensometrika_latencia_hardware', JSON.stringify(perfilHardwareData));
-        localStorage.setItem('sensometrika_latencia_ms', promedioLatencia);
-
-        // Feedback visual en pantalla
-        const caja = document.getElementById('btnLatenciaArea');
-        caja.style.backgroundColor = '#065f46';
-        caja.style.borderColor = '#10b981';
-
-        document.getElementById('txtLatenciaMain').textContent = '✓ CALIBRACIÓN PRO COMPLETADA';
-        document.getElementById('txtLatenciaMain').style.color = '#34d399';
-        document.getElementById('txtLatenciaSub').textContent = `Hardware perfilado (${categoriaHardware}). Offset aplicado.`;
-        document.getElementById('lblLatenciaVal').textContent = `${promedioLatencia} ms`;
-        document.getElementById('lblLatenciaEstado').textContent = categoriaHardware;
-        document.getElementById('lblLatenciaEstado').style.color = '#10b981';
-
-        validarTerminosYLatencia();
-      }
-    }
-
-    function validarTerminosYLatencia() {
+    // RESETEO DE MODULOS Y REDIRECCIÓN A MENÚ DE PLANES
+    function confirmarYContinuar() {
       const chk = document.getElementById('chkTerminos').checked;
-      const btnContinuar = document.getElementById('btnContinuar');
 
-      if (latenciaCompletada && chk) {
-        btnContinuar.classList.remove('btn-disabled');
-        btnContinuar.disabled = false;
-        btnContinuar.textContent = 'INICIAR BATERÍA DE EVALUACIÓN →';
-      } else {
-        btnContinuar.classList.add('btn-disabled');
-        btnContinuar.disabled = true;
-        if (!latenciaCompletada) {
-          btnContinuar.textContent = 'COMPLETE LOS 5 TOQUES DE CALIBRACIÓN';
-        } else {
-          btnContinuar.textContent = 'ACEPTE LOS TÉRMINOS Y CONDICIONES';
-        }
-      }
-    }
-
-    function confirmarYPasarAlMenu() {
-      if (!latenciaCompletada || !document.getElementById('chkTerminos').checked) return;
-
-      const urlParams = new URLSearchParams(window.location.search);
-      const rut = urlParams.get('rut') || localStorage.getItem('sensometrika_evaluado_rut') || '';
-      const nombre = urlParams.get('nombre') || '';
-      const cargo = urlParams.get('cargo') || '';
-      const empresa = urlParams.get('empresa') || '';
-      const plan = (urlParams.get('plan') || localStorage.getItem('sensometrika_plan_contratado') || 'PLUS').toUpperCase();
-      const token = urlParams.get('token') || '';
-      const cleanRut = rut.replace(/[^0-9Kk]/g, '');
-      const sessionId = urlParams.get('session') || localStorage.getItem('sensometrika_session_activa') || `SESION_${cleanRut}_${Date.now()}`;
-
-      if (!isB2C && canvas) {
-        const firmaB64 = canvas.toDataURL('image/png');
-        localStorage.setItem('sensometrika_firma_trabajador', firmaB64);
-        if (cleanRut) {
-          localStorage.setItem(`sensometrika_firma_${cleanRut}`, firmaB64);
-        }
+      if (!chk) {
+        alert('Debe aceptar la declaración jurada y consentimiento normativo D.S. N° 170 para continuar.');
+        return;
       }
 
-      let menuDestino = 'menu_B2B.html';
-      if (modeParam === 'b2b_mf') menuDestino = 'B2B_medico_faena.html';
-      if (isB2C) menuDestino = 'menu_B2C.html';
-      if (isB2BPro) menuDestino = 'menu_B2B_PRO.html';
+      if (!tieneFirmaValida) {
+        alert('Debe estampar su firma digital en el recuadro antes de iniciar.');
+        return;
+      }
 
-      const paramsRedir = new URLSearchParams({
-        rut: rut,
-        nombre: nombre,
-        cargo: cargo,
-        empresa: empresa,
-        plan: plan,
-        mode: modeParam,
+      // Persistir datos del trabajador
+      const datosConsolidados = {
+        nombre: rawNombre,
+        rut: rawRut,
+        cargo: rawCargo,
+        empresa: rawEmpresa,
+        plan: rawPlan,
         session: sessionId,
-        fase: 'demo',
-        demo: 'true'
-      });
-      if (token) paramsRedir.set('token', token);
+        token: tokenB2B
+      };
 
-      window.location.href = `${menuDestino}?${paramsRedir.toString()}`;
+      localStorage.setItem('sensometrika_datos_usuario', JSON.stringify(datosConsolidados));
+      localStorage.setItem('sensometrika_nombre', rawNombre);
+      localStorage.setItem('sensometrika_rut', rawRut);
+      localStorage.setItem('sensometrika_cargo', rawCargo);
+      localStorage.setItem('sensometrika_b2b_plan', rawPlan);
+      localStorage.setItem('sensometrika_session_activa', sessionId);
+      localStorage.setItem('sensometrika_b2b_token', tokenB2B);
+
+      // Guardar Foto y Firma
+      if (fotoBase64) {
+        localStorage.setItem(`sensometrika_foto_${cleanRut}_${sessionId}`, fotoBase64);
+        localStorage.setItem('sensometrika_foto_identidad', fotoBase64);
+      }
+      const firmaData = canvasFirma.toDataURL();
+      localStorage.setItem(`sensometrika_firma_${cleanRut}_${sessionId}`, firmaData);
+      localStorage.setItem(`sensometrika_firma_${cleanRut}`, firmaData);
+
+      // Limpieza preventiva de módulos anteriores para este trabajador
+      const modulosClaves = ['reactimetro', 'palancas', 'punteo', 'auditivo', 'visual', 'anticipacion', 'estereopsis', 'fatiga'];
+      modulosClaves.forEach(m => {
+        localStorage.removeItem(`sensometrika_${m}_${cleanRut}_${sessionId}`);
+        localStorage.removeItem(`sensometrika_historial_${m}_${cleanRut}_${sessionId}`);
+        localStorage.removeItem(`medico_${m}_${cleanRut}_${sessionId}`);
+      });
+
+      // Redirección explicita e inalterable hacia menu_b2b_planes.html
+      const paramsMenu = new URLSearchParams({
+        rut: rawRut,
+        nombre: rawNombre,
+        cargo: rawCargo,
+        empresa: rawEmpresa,
+        plan: rawPlan,
+        session: sessionId,
+        token: tokenB2B,
+        mode: 'b2b'
+      });
+
+      window.location.href = `menu_b2b_planes.html?${paramsMenu.toString()}`;
     }
   </script>
 </body>
