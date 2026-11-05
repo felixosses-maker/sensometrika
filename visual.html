@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>SENSOMETRIKA | Screening Visual Pericial Profesional</title>
+  <title>SENSOMETRIKA | Screening Visual Pericial Profesional B2B</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- LIBRERÍAS GOOGLE MEDIAPIPE PARA TELEMETRÍA FACIAL REAL -->
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
@@ -265,7 +265,7 @@
     <header class="brand-header">
       <img src="sensometrica.jpg" alt="SENSOMETRIKA" class="brand-logo-img">
       <span style="color: var(--accent-cyan); font-size: 0.70rem; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase;">
-        MÓDULO SCREENING VISUAL PERICIAL
+        MÓDULO SCREENING VISUAL PERICIAL B2B
       </span>
     </header>
 
@@ -280,7 +280,7 @@
       </div>
 
       <div class="instructions-card" id="boxInstrucciones">
-        📌 <b>Control Biométrico por Malla Facial:</b> Mantenga la distancia entre <b>50 cm y 60 cm</b>. Si se acerca (&lt; 45 cm) o aleja (&gt; 65 cm), la prueba se bloqueará automáticamente.
+        📌 <b>Control Biométrico por Malla Facial:</b> Mantenga la distancia entre <b>50 cm y 60 cm</b>. Si se acerca (< 45 cm) o aleja (> 65 cm), la prueba se bloqueará automáticamente.
       </div>
 
       <div class="stage-box">
@@ -349,19 +349,25 @@
 
   <script>
     const urlParams = new URLSearchParams(window.location.search);
-    const modeParam = urlParams.get('mode') || (localStorage.getItem('sensometrika_b2c_mode') === 'true' ? 'b2c' : 'b2b');
-    const esB2B = (modeParam === 'b2b');
+    const modeParam = urlParams.get('mode') || 'b2b';
+    const esB2B = (modeParam === 'b2b') || urlParams.has('token') || urlParams.has('session');
 
     let datosUsuario = {};
     try {
       datosUsuario = JSON.parse(localStorage.getItem('sensometrika_datos_usuario')) || {};
     } catch(e){}
 
-    const rut = urlParams.get('rut') || datosUsuario.rut || 'GENERICO';
+    const rawNombre = urlParams.get('nombre') || datosUsuario.nombre || localStorage.getItem('sensometrika_nombre') || '';
+    const rawCargo = urlParams.get('cargo') || datosUsuario.cargo || localStorage.getItem('sensometrika_cargo') || '';
+    const rawEmpresa = urlParams.get('empresa') || datosUsuario.empresa || localStorage.getItem('sensometrika_b2b_empresa') || '';
+    const planActivo = (urlParams.get('plan') || localStorage.getItem('sensometrika_b2b_plan') || 'BASICO').toUpperCase();
+    const rut = urlParams.get('rut') || datosUsuario.rut || localStorage.getItem('sensometrika_rut') || '12345678-K';
     const cleanRut = rut.replace(/[^0-9Kk]/g, '');
+    const sessionId = urlParams.get('session') || localStorage.getItem('sensometrika_session_activa') || `SESION_B2B_${cleanRut}_${Date.now()}`;
 
     let audioCtx = null;
     let esDemo = true;
+    let modoActual = 'DEMO';
     let ensayoActual = 0;
     let aciertosReales = 0;
     let direccionCorrecta = 'DERECHA';
@@ -392,61 +398,60 @@
       };
     }
 
-    document.addEventListener('DOMContentLoaded', () => {
-      const historial = JSON.parse(localStorage.getItem(`sensometrika_historial_visual_${cleanRut}`)) || [];
-      const numEnsayosRealizados = historial.length;
+    function verificarModuloEjecutadoEnSesion() {
+      const dataStr = localStorage.getItem(`sensometrika_visual_${cleanRut}_${sessionId}`) ||
+                      localStorage.getItem(`sensometrika_last_visual_${cleanRut}_${sessionId}`) ||
+                      localStorage.getItem('sensometrika_visual');
+      return dataStr !== null;
+    }
 
-      const planStorage = (localStorage.getItem('sensometrika_plan_contratado') || urlParams.get('plan') || 'PLUS').toUpperCase();
-      let maxIntentosPlan = esB2B ? (planStorage.includes('ALTO') ? 3 : 1) : (planStorage.includes('PLUS') ? 5 : (planStorage.includes('FULL') || planStorage.includes('ALTO') ? 8 : 3));
+    function actualizarEstadoUI() {
+      const yaEjecutadoOficial = verificarModuloEjecutadoEnSesion();
+      const demoRealizada = localStorage.getItem(`visual_demo_completada_${cleanRut}_${sessionId}`) === 'true';
 
-      const isDemoURL = urlParams.get('demo') === 'true' || urlParams.get('fase') === 'demo';
-      const demoRealizada = (localStorage.getItem(`visual_demo_completada_${cleanRut}`) === 'true') || 
-                            (localStorage.getItem(`btnMod5_demo_completada_${cleanRut}`) === 'true');
-
-      // BLOQUEO ESTRICTO SI EL DEMO YA FUE COMPLETADO
-      if (isDemoURL && (demoRealizada || numEnsayosRealizados > 0)) {
-        mostrarModal("MÓDULO DEMO YA COMPLETADO", "Ya has ejecutado la calibración demo para este ensayo. Retornando al menú de pruebas...", () => {
-          volverPortal();
-        });
-        return;
-      }
-
-      if (numEnsayosRealizados >= maxIntentosPlan) {
-        document.getElementById('lblFaseBadge').textContent = esB2B ? `EVALUACIÓN REGISTRADA (${numEnsayosRealizados}/${maxIntentosPlan})` : `PLAN COMPLETADO (${numEnsayosRealizados}/${maxIntentosPlan})`;
+      if (yaEjecutadoOficial) {
+        modoActual = 'BLOQUEADO';
+        document.getElementById('lblFaseBadge').textContent = `EVALUACIÓN REGISTRADA (1/1)`;
         document.getElementById('lblFaseBadge').style.borderColor = 'var(--accent-green)';
         document.getElementById('lblFaseBadge').style.color = 'var(--accent-green)';
+        document.getElementById('lblFaseBadge').style.background = 'rgba(16, 185, 129, 0.1)';
         document.getElementById('btnIniciarExamen').style.display = 'none';
         document.getElementById('btnSiguienteFase').style.display = 'block';
         document.getElementById('btnSiguienteFase').textContent = '← RETORNAR AL MENÚ DE EVALUACIONES';
-      } else if (!isDemoURL && demoRealizada) {
-        iniciarModoOficialUI();
-      } else {
+      } else if (!demoRealizada) {
         esDemo = true;
-        document.getElementById('lblFaseBadge').textContent = esB2B ? 'Calibración Demo B2B (1/1)' : 'Paso 1: Calibración Demo (1/1)';
+        modoActual = 'DEMO';
+        document.getElementById('lblFaseBadge').textContent = 'Paso 1: Calibración Demo (1/1)';
+        document.getElementById('lblFaseBadge').style.borderColor = 'var(--accent-gold)';
+        document.getElementById('lblFaseBadge').style.color = 'var(--accent-gold)';
+        document.getElementById('lblFaseBadge').style.background = 'rgba(245, 158, 11, 0.1)';
+        document.getElementById('btnIniciarExamen').style.display = 'block';
         document.getElementById('btnIniciarExamen').textContent = 'INICIAR DEMO (8 ENSAYOS) →';
+        document.getElementById('btnIniciarExamen').style.background = 'var(--accent-gold)';
+        document.getElementById('btnSiguienteFase').style.display = 'none';
+      } else {
+        esDemo = false;
+        modoActual = 'OFICIAL';
+        document.getElementById('lblFaseBadge').textContent = 'Fase 2: Simulación Oficial B2B (1/1)';
+        document.getElementById('lblFaseBadge').style.borderColor = 'var(--accent-cyan)';
+        document.getElementById('lblFaseBadge').style.color = 'var(--accent-cyan)';
+        document.getElementById('lblFaseBadge').style.background = 'rgba(0, 191, 255, 0.1)';
+        document.getElementById('btnIniciarExamen').style.display = 'block';
+        document.getElementById('btnIniciarExamen').textContent = 'INICIAR SIMULACIÓN OFICIAL B2B (1/1) →';
+        document.getElementById('btnIniciarExamen').style.background = 'var(--accent-cyan)';
+        document.getElementById('btnSiguienteFase').style.display = 'none';
       }
 
-      iniciarMediaPipeFaceMesh();
-      configurarTecladoFisico();
-    });
-
-    function iniciarModoOficialUI() {
-      esDemo = false;
-      const historial = JSON.parse(localStorage.getItem(`sensometrika_historial_visual_${cleanRut}`)) || [];
-      const numSimu = historial.length + 1;
-
-      document.getElementById('lblFaseBadge').textContent = esB2B ? 'Paso 2: Simulación Oficial B2B' : `Paso 2: Evaluación Oficial S${numSimu}`;
-      document.getElementById('lblFaseBadge').style.borderColor = 'var(--accent-cyan)';
-      document.getElementById('lblFaseBadge').style.color = 'var(--accent-cyan)';
-      document.getElementById('lblFaseBadge').style.background = 'rgba(0, 191, 255, 0.1)';
-      
-      document.getElementById('btnSiguienteFase').style.display = 'none';
-      document.getElementById('btnIniciarExamen').style.display = 'block';
-      document.getElementById('btnIniciarExamen').textContent = esB2B ? 'INICIAR SIMULACIÓN OFICIAL B2B →' : 'INICIAR EVALUACIÓN OFICIAL →';
       document.getElementById('boxKeypad').style.display = 'none';
       document.getElementById('lblFaseExamen').textContent = '0 / 8';
       document.getElementById('lblAciertos').textContent = '0 / 8';
     }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      actualizarEstadoUI();
+      iniciarMediaPipeFaceMesh();
+      configurarTecladoFisico();
+    });
 
     function initAudioContext() {
       if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -501,6 +506,8 @@
 
     function onResultsFaceMesh(results) {
       if (!results.multiFaceLandmarks || results.multiFaceLandmarks.length === 0) {
+        distanciaMedidaCm = 70;
+        evaluarRangoDistancia();
         return;
       }
 
@@ -513,7 +520,6 @@
       const eyeDistanceNormalized = Math.sqrt(dx * dx + dy * dy);
 
       let distCalculada = Math.round(9.5 / eyeDistanceNormalized);
-
       distanciaMedidaCm = Math.round(distanciaMedidaCm * 0.5 + distCalculada * 0.5);
       evaluarRangoDistancia();
     }
@@ -551,6 +557,8 @@
     }
 
     function iniciarExamenVisual() {
+      if (modoActual === 'BLOQUEADO' || estaBloqueadoPorDistancia) return;
+
       initAudioContext();
       document.getElementById('btnIniciarExamen').style.display = 'none';
       document.getElementById('boxKeypad').style.display = 'grid';
@@ -649,14 +657,7 @@
       clearInterval(timerInterval);
       document.getElementById('boxKeypad').style.display = 'none';
 
-      const btnSig = document.getElementById('btnSiguienteFase');
-      btnSig.style.display = 'block';
-
-      if (esDemo) {
-        btnSig.textContent = 'RETORNAR AL MENÚ DE PRUEBAS →';
-      } else {
-        btnSig.textContent = 'FINALIZAR Y REGISTRAR PRUEBA →';
-      }
+      finalizarFase();
     }
 
     function finalizarFase() {
@@ -674,48 +675,62 @@
 
       let promLat = latenciasMs.length > 0 ? Math.round(latenciasMs.reduce((a,b)=>a+b,0)/latenciasMs.length) : 310;
 
-      let historial = JSON.parse(localStorage.getItem(`sensometrika_historial_visual_${cleanRut}`)) || [];
-      historial.push({
-        agudeza: agudezaTexto,
-        aciertos: aciertosReales,
-        porcentaje: porcentaje,
-        latenciaMs: promLat,
-        distanciaAvg: distanciaMedidaCm,
-        dictamen: dictamen,
-        fecha: new Date().toISOString()
-      });
-
-      localStorage.setItem(`sensometrika_historial_visual_${cleanRut}`, JSON.stringify(historial));
-
       if (esDemo) {
-        localStorage.setItem(`visual_demo_completada_${cleanRut}`, 'true');
-        localStorage.setItem(`btnMod5_demo_completada_${cleanRut}`, 'true');
+        localStorage.setItem(`visual_demo_completada_${cleanRut}_${sessionId}`, 'true');
 
         mostrarModal(
           "CALIBRACIÓN DEMO COMPLETADA",
-          `Aciertos: <b>${aciertosReales} / 8</b><br>Agudeza Estimada: <b>${agudezaTexto}</b><br>Latencia Media: <b>${promLat} ms</b><br><br>Has completado la calibración demo. Retornando a la batería de pruebas...`,
+          `Aciertos: <b>${aciertosReales} / 8</b><br>Agudeza Estimada: <b>${agudezaTexto}</b><br>Latencia Media: <b>${promLat} ms</b><br><br>Has completado la calibración demo. Presiona continuar para rendir la <b>Simulación Oficial B2B</b>.`,
+          () => {
+            actualizarEstadoUI();
+          }
+        );
+      } else {
+        const registroData = {
+          agudeza: agudezaTexto,
+          aciertos: aciertosReales,
+          score: porcentaje,
+          precision: porcentaje,
+          efectividad: porcentaje,
+          latenciaMs: promLat,
+          distanciaAvg: distanciaMedidaCm,
+          dictamen: dictamen,
+          aprobado: dictamen === "APROBADO",
+          colores: aciertosReales >= 5 ? 'NORMAL (8/8)' : 'OBSERVADO',
+          fecha: new Date().toISOString()
+        };
+
+        // REGISTRO DE MÚLTIPLES LLAVES PARA COMPATIBILIDAD CON INFORME-B2B.HTML
+        localStorage.setItem(`sensometrika_visual_${cleanRut}_${sessionId}`, JSON.stringify(registroData));
+        localStorage.setItem(`sensometrika_last_visual_${cleanRut}_${sessionId}`, JSON.stringify(registroData));
+        localStorage.setItem('sensometrika_visual', JSON.stringify(registroData));
+
+        let modulosRendidos = {};
+        try { modulosRendidos = JSON.parse(localStorage.getItem('sensometrika_modulos_rendidos')) || {}; } catch(e){}
+        modulosRendidos.visual = true;
+        localStorage.setItem('sensometrika_modulos_rendidos', JSON.stringify(modulosRendidos));
+
+        mostrarModal(
+          "SIMULACIÓN OFICIAL B2B REGISTRADA",
+          `Aciertos: <b>${aciertosReales} / 8</b><br>Agudeza Visual: <b>${agudezaTexto}</b><br>Latencia Media: <b>${promLat} ms</b><br><br><b>Resultado guardado con éxito.</b>`,
           () => {
             volverPortal();
           }
         );
-      } else {
-        volverPortal();
       }
     }
 
-    // --- FUNCIÓN DE RETORNO CON SOPORTE PARA returnUrl ---
     function volverPortal() {
-      const returnUrlParam = urlParams.get('returnUrl');
-      if (returnUrlParam) {
-        window.location.href = decodeURIComponent(returnUrlParam);
-      } else {
-        const planStorage = (localStorage.getItem('sensometrika_plan_contratado') || urlParams.get('plan') || 'PLUS').toUpperCase();
-        urlParams.set('plan', planStorage);
-        urlParams.set('mode', esB2B ? 'b2b' : 'b2c');
-
-        const menuDestino = esB2B ? 'menu_b2b_planes.html' : 'menu_B2C.html';
-        window.location.href = `${menuDestino}?${urlParams.toString()}`;
-      }
+      const paramsRegreso = new URLSearchParams({
+        rut: rut,
+        nombre: rawNombre,
+        cargo: rawCargo,
+        empresa: rawEmpresa,
+        plan: planActivo,
+        session: sessionId,
+        mode: 'b2b'
+      });
+      window.location.href = `menu_b2b_planes.html?${paramsRegreso.toString()}`;
     }
 
     function volverMenu() { volverPortal(); }
