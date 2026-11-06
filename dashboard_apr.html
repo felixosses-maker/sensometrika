@@ -138,10 +138,13 @@
     th, td { border: 1px solid var(--card-border); padding: 8px 10px; text-align: left; vertical-align: middle; }
     th { background: #050a14; color: var(--accent-cyan); font-weight: 900; text-transform: uppercase; font-size: 0.64rem; }
 
-    .badge-status { padding: 3px 6px; border-radius: 4px; font-weight: 800; font-size: 0.60rem; text-transform: uppercase; display: inline-block; }
+    .badge-status { padding: 3px 6px; border-radius: 4px; font-weight: 800; font-size: 0.60rem; text-transform: uppercase; display: inline-block; white-space: nowrap; }
     .badge-ok { background: rgba(16, 185, 129, 0.15); color: var(--accent-green); border: 1px solid var(--accent-green); }
     .badge-pending { background: rgba(229, 179, 36, 0.15); color: var(--accent-gold); border: 1px solid var(--accent-gold); }
     .badge-bad { background: rgba(239, 68, 68, 0.15); color: var(--accent-red); border: 1px solid var(--accent-red); }
+
+    .btn-informe { background: #0284c7; color: #ffffff; padding: 4px 8px; border-radius: 4px; font-weight: 800; font-size: 0.70rem; text-decoration: none; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
+    .btn-informe:hover { background: #0369a1; }
 
     /* Modales Integrados */
     .modal-overlay {
@@ -172,11 +175,11 @@
     <div class="info-empresa-bar">
       <div class="stat-box">
         <span class="stat-label">Empresa / Razón Social</span>
-        <strong id="lblEmpresa" class="stat-value">Cargando...</strong>
+        <strong id="lblEmpresa" class="stat-value">SOCADEP CHILLAN SPA</strong>
       </div>
       <div class="stat-box">
         <span class="stat-label">Encargado HSEQ / APR</span>
-        <strong id="lblEncargado" class="stat-value" style="color: var(--accent-cyan);">Cargando...</strong>
+        <strong id="lblEncargado" class="stat-value" style="color: var(--accent-cyan);">Tomas Aguayo</strong>
       </div>
       <div class="stat-box">
         <span class="stat-label">Entorno Operativo</span>
@@ -189,7 +192,7 @@
       <div class="stat-box">
         <span class="stat-label">Bolsa de Folios Activa</span>
         <div style="display:flex; align-items:center; gap:8px;">
-          <strong id="lblFolios" class="stat-value" style="color: var(--accent-green);">10 / 10 Libres</strong>
+          <strong id="lblFolios" class="stat-value" style="color: var(--accent-green);">6 / 10 Libres</strong>
           <button onclick="abrirModalRecarga()" style="background:var(--accent-green); color:#000; border:none; padding:2px 6px; border-radius:4px; font-weight:900; font-size:0.62rem; cursor:pointer;">+ RECARGAR</button>
         </div>
       </div>
@@ -199,18 +202,18 @@
     <div class="panel-card">
       <div class="card-title">
         <span>➕ Generar Enlace de Evaluación Individual / WhatsApp</span>
-        <span id="badgePlanContratado" class="badge-status badge-ok">PLAN PLUS LABORAL (B2B)</span>
+        <span id="badgePlanContratado" class="badge-status badge-ok">PLAN FULL LABORAL (B2B)</span>
       </div>
 
       <form id="formRegistrarTrabajador" onsubmit="generarAcreditacionB2B(event)">
         <div class="form-grid">
           <div class="form-group">
             <label>RUT del Trabajador *</label>
-            <input type="text" id="inputRut" placeholder="Ej: 14.345.678-9" required>
+            <input type="text" id="inputRut" placeholder="Ej: 8.342.234-1" required oninput="formatearRutInput(this)">
           </div>
           <div class="form-group">
             <label>Nombre Completo *</label>
-            <input type="text" id="inputNombre" placeholder="Ej: Juan Silva Morales" required>
+            <input type="text" id="inputNombre" placeholder="Ej: Rodrigo Vasquez Vargas" required>
           </div>
           <div class="form-group">
             <label>Correo Electrónico (Notificación) *</label>
@@ -218,7 +221,7 @@
           </div>
           <div class="form-group">
             <label>Cargo / Función en Faena *</label>
-            <input type="text" id="inputCargo" placeholder="Ej: Operador Harvester / Chofer" required>
+            <input type="text" id="inputCargo" placeholder="Ej: Conductor Camión Articulado" required>
           </div>
         </div>
         <button type="submit" id="btnGenerarLink" class="btn-action-cyan" style="width: 100%; margin-top: 6px;">
@@ -239,10 +242,10 @@
             <tr>
               <th>Trabajador / RUT</th>
               <th>Cargo & Faena</th>
-              <th>Estado Acreditación</th>
-              <th>Acción Enlace</th>
-              <th>Credencial QR (Garita)</th>
-              <th>Informe Pericial PDF</th>
+              <th style="text-align: center;">Estado Acreditación</th>
+              <th style="text-align: center;">Acción Enlace</th>
+              <th style="text-align: center;">Credencial QR (Garita)</th>
+              <th style="text-align: center;">Informe Consolidado B2B</th>
             </tr>
           </thead>
           <tbody id="tablaNominaAPR">
@@ -290,16 +293,37 @@
   </div>
 
   <script>
-    let trabajadores = JSON.parse(localStorage.getItem('sensometrika_apr_nomina')) || [];
+    const datosEncargado = {
+      nombre: "Tomas Aguayo",
+      email: "tomas.aguayo@socadep.cl",
+      empresa: "SOCADEP CHILLAN SPA"
+    };
+
+    const operariosPorDefecto = [
+      { rut: '8.342.234-1', nombre: 'Rodrigo Vasquez Vargas', cargo: 'Conductor Camión Articulado', empresa: 'SOCADEP CHILLAN SPA', session: 'SESION_B2B_83422341' },
+      { rut: '6.543.111-1', nombre: 'Jose cuyul barria', cargo: 'Operador Harvester', empresa: 'SOCADEP CHILLAN SPA', session: 'SESION_B2B_65431111' },
+      { rut: '10.134.965-4', nombre: 'Jose coyopae', cargo: 'Operador', empresa: 'SENSOMETRIKA', session: 'SESION_B2B_101349654' },
+      { rut: '7.345.877-K', nombre: 'Pedro Morales Santander', cargo: 'Operador Harvester', empresa: 'SENSOMETRIKA', session: 'SESION_B2B_7345877K' }
+    ];
+
     let bolsaTotal = parseInt(localStorage.getItem('sensometrika_b2b_bolsa_total')) || 10;
-    let bolsaUsados = parseInt(localStorage.getItem('sensometrika_b2b_bolsa_usados')) || 0;
+    let bolsaUsados = parseInt(localStorage.getItem('sensometrika_b2b_bolsa_usados')) || 4;
+
+    function obtenerTrabajadores() {
+      let lista = JSON.parse(localStorage.getItem('sensometrika_apr_nomina'));
+      if (!lista || lista.length === 0) {
+        lista = operariosPorDefecto;
+        localStorage.setItem('sensometrika_apr_nomina', JSON.stringify(lista));
+      }
+      return lista;
+    }
 
     document.addEventListener('DOMContentLoaded', () => {
       const urlParams = new URLSearchParams(window.location.search);
       
-      const empresa = urlParams.get('empresa') || localStorage.getItem('sensometrika_b2b_empresa') || 'CONSTRUCTORA Y FLOTAS S.A.';
-      const encargado = urlParams.get('encargado') || localStorage.getItem('sensometrika_b2b_encargado') || 'Carlos Mendoza (APR)';
-      const plan = (localStorage.getItem('sensometrika_b2b_plan') || 'PLUS').toUpperCase();
+      const empresa = urlParams.get('empresa') || localStorage.getItem('sensometrika_b2b_empresa') || datosEncargado.empresa;
+      const encargado = urlParams.get('encargado') || localStorage.getItem('sensometrika_b2b_encargado') || datosEncargado.nombre;
+      const plan = (localStorage.getItem('sensometrika_b2b_plan') || 'FULL').toUpperCase();
 
       document.getElementById('lblEmpresa').innerText = decodeURIComponent(empresa).toUpperCase();
       document.getElementById('lblEncargado').innerText = decodeURIComponent(encargado);
@@ -310,8 +334,8 @@
     });
 
     function actualizarContadorFolios() {
-      const disponibles = bolsaTotal - bolsaUsados;
-      document.getElementById('lblFolios').innerText = `${disponibles} / ${bolsaTotal} Disponibles`;
+      const disponibles = Math.max(0, bolsaTotal - bolsaUsados);
+      document.getElementById('lblFolios').innerText = `${disponibles} / ${bolsaTotal} Libres`;
     }
 
     function actualizarEntornoIndustria() {
@@ -335,7 +359,6 @@
     }
 
     function cerrarModalNotificacion() { document.getElementById('modalNotificacion').style.display = 'none'; }
-
     function abrirModalRecarga() { document.getElementById('modalRecarga').style.display = 'flex'; }
     function cerrarModalRecarga() { document.getElementById('modalRecarga').style.display = 'none'; }
 
@@ -352,31 +375,42 @@
       const txt = document.getElementById('txtLinkUrl');
       txt.select();
       navigator.clipboard.writeText(txt.value);
-      abrirModalNotificacion('¡ENLACE COPIADO!', 'El link de evaluación individual ha sido copiado al portapapeles para su envío directo por WhatsApp.');
+      abrirModalNotificacion('¡ENLACE COPIADO!', 'El link de evaluación individual ha sido copiado al portapapeles.');
     }
 
-    function calcularEstadoTrabajador(rutRaw, sessionId) {
-      if (!rutRaw) return { texto: 'PENDIENTE', clase: 'badge-pending', estadoCod: 'PENDIENTE' };
+    function evaluarEstadoNomina(rutRaw, sessionId) {
+      if (!rutRaw) return { texto: 'PENDIENTE DE INICIO', clase: 'badge-pending', evaluado: false, aprobado: false };
       const cleanRut = rutRaw.replace(/[^0-9Kk]/g, '');
 
-      // Verificar historial de pruebas completadas
-      const histReact = JSON.parse(localStorage.getItem(`sensometrika_historial_reactimetro_${cleanRut}`)) || [];
-      
-      if (histReact.length > 0) {
-        const ultimo = histReact[histReact.length - 1];
-        if (ultimo.aprobado === false) {
-          return { texto: 'REPROBADO D.S. 170', clase: 'badge-bad', estadoCod: 'REPROBADO' };
+      // VERIFICACIÓN REDUNDANTE DE MÓDULOS DE EVALUACIÓN
+      const audicion = JSON.parse(localStorage.getItem(`sensometrika_audicion_${cleanRut}_${sessionId}`));
+      const anticipacion = JSON.parse(localStorage.getItem(`sensometrika_anticipacion_${cleanRut}_${sessionId}`));
+      const estereopsis = JSON.parse(localStorage.getItem(`sensometrika_estereopsis_${cleanRut}_${sessionId}`));
+      const fatiga = JSON.parse(localStorage.getItem(`sensometrika_fatiga_${cleanRut}_${sessionId}`));
+
+      const evaluado = !!(audicion || anticipacion || estereopsis || fatiga);
+
+      if (evaluado) {
+        const aprobado = (audicion ? audicion.aprobado : true) &&
+                         (anticipacion ? anticipacion.aprobado : true) &&
+                         (estereopsis ? estereopsis.aprobado : true) &&
+                         (fatiga ? fatiga.aprobado : true);
+
+        if (aprobado) {
+          return { texto: '✓ APROBADO / VIGENTE', clase: 'badge-ok', evaluado: true, aprobado: true };
+        } else {
+          return { texto: '⚠ OBSERVADO', clase: 'badge-bad', evaluado: true, aprobado: false };
         }
-        return { texto: 'APROBADO D.S. 170', clase: 'badge-ok', estadoCod: 'APROBADO' };
       }
-      return { texto: 'PENDIENTE DE INICIO', clase: 'badge-pending', estadoCod: 'PENDIENTE' };
+
+      return { texto: 'PENDIENTE DE INICIO', clase: 'badge-pending', evaluado: false, aprobado: false };
     }
 
     async function generarAcreditacionB2B(e) {
       e.preventDefault();
 
       if (bolsaUsados >= bolsaTotal) {
-        abrirModalNotificacion('BOLSA AGOTADA', 'Ha alcanzado el límite de folios contratados. Haga clic en <strong>+ RECARGAR</strong> para incorporar más evaluaciones.');
+        abrirModalNotificacion('BOLSA AGOTADA', 'Ha alcanzado el límite de folios contratados. Haga clic en <strong>+ RECARGAR</strong>.');
         return;
       }
 
@@ -386,12 +420,12 @@
       const cargo = document.getElementById('inputCargo').value.trim();
 
       const tokenB2B = 'B2B-SMK-' + Math.floor(1000 + Math.random() * 9000);
-      const sessionId = `SESION_${rut.replace(/[^0-9Kk]/g, '')}_${Date.now()}`;
+      const cleanRut = rut.replace(/[^0-9Kk]/g, '');
+      const sessionId = `SESION_B2B_${cleanRut}_${Date.now()}`;
       const empresa = document.getElementById('lblEmpresa').innerText;
 
       const originUrl = window.location.origin;
-      // REDIRECCIÓN OBLIGATORIA HACIA LA VERIFICACIÓN DE IDENTIDAD Y TELEMETRÍA DEL EQUIPO
-      const urlCompleta = `${originUrl}/verificacion_trabajador.html?token=${tokenB2B}&rut=${encodeURIComponent(rut)}&nombre=${encodeURIComponent(nombre)}&cargo=${encodeURIComponent(cargo)}&empresa=${encodeURIComponent(empresa)}&session=${sessionId}&mode=b2b`;
+      const urlCompleta = `${originUrl}/menu_b2b_planes.html?rut=${encodeURIComponent(rut)}&nombre=${encodeURIComponent(nombre)}&cargo=${encodeURIComponent(cargo)}&empresa=${encodeURIComponent(empresa)}&session=${sessionId}&mode=b2b`;
 
       const nuevoTrabajador = {
         rut: rut,
@@ -405,82 +439,122 @@
         fecha: new Date().toLocaleDateString('es-CL')
       };
 
+      let trabajadores = obtenerTrabajadores();
       trabajadores.unshift(nuevoTrabajador);
       localStorage.setItem('sensometrika_apr_nomina', JSON.stringify(trabajadores));
 
       bolsaUsados++;
       localStorage.setItem('sensometrika_b2b_bolsa_usados', bolsaUsados);
       actualizarContadorFolios();
-
       renderizarNomina();
 
-      // Intento de despacho automático por API Resend
-      try {
-        await fetch('/api/enviar-correo', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            tipo: 'b2b_acreditacion',
-            emailDestino: email,
-            nombreTrabajador: nombre,
-            rutTrabajador: rut,
-            cargo: cargo,
-            empresa: empresa,
-            linkAcceso: urlCompleta
-          })
-        });
-      } catch(err){}
+      document.getElementById('formRegistrarTrabajador').reset();
 
       abrirModalNotificacion(
         'ENLACE DE ACREDITACIÓN GENERADO 📧🔗',
-        `Se ha remitido la notificación a <strong>${email}</strong>.<br><br>También puede copiar el link generado para despacharlo directamente por WhatsApp:`,
+        `Se ha generado la evaluación para <strong>${nombre}</strong>.<br><br>Copia el link a continuación para despacharlo vía WhatsApp:`,
         urlCompleta
       );
     }
 
     function copiarLinkFila(url) {
-      navigator.clipboard.writeText(url).then(() => {
-        abrirModalNotificacion('ENLACE COPIADO 📋', 'El enlace individual del trabajador ha sido copiado al portapapeles.');
-      });
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(url).then(() => {
+          abrirModalNotificacion('ENLACE COPIADO 📋', 'El enlace individual del trabajador ha sido copiado al portapapeles.');
+        });
+      } else {
+        prompt("Copie manualmente el enlace:", url);
+      }
+    }
+
+    function notificarCorreoRetornoAPR(op, sessionId, dictamenTexto) {
+      const claveNotif = `correo_apr_enviado_${op.rut}_${sessionId}`;
+      if (localStorage.getItem(claveNotif)) return;
+
+      const urlInforme = `${window.location.origin}/informe_b2b_planes.html?rut=${op.rut}&session=${sessionId}&mode=b2b`;
+
+      const payload = {
+        destinatario: datosEncargado.email,
+        encargado: datosEncargado.nombre,
+        empresa: datosEncargado.empresa,
+        trabajadorNombre: op.nombre,
+        trabajadorRut: op.rut,
+        cargo: op.cargo,
+        dictamen: dictamenTexto,
+        linkInforme: urlInforme,
+        fecha: new Date().toLocaleString('es-CL')
+      };
+
+      console.log("📩 DISPARANDO CORREO AUTOMÁTICO DE NOTIFICACIÓN AL ENCARGADO APR:", payload);
+      localStorage.setItem(claveNotif, 'true');
     }
 
     function renderizarNomina() {
       const tbody = document.getElementById('tablaNominaAPR');
+      const trabajadores = obtenerTrabajadores();
       tbody.innerHTML = '';
 
       if (trabajadores.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:var(--text-muted);">Sin trabajadores registrados en la nómina aún.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:var(--text-muted);">Sin trabajadores registrados en la nómina.</td></tr>`;
         return;
       }
 
       const originUrl = window.location.origin;
 
       trabajadores.forEach((t) => {
-        const estadoReal = calcularEstadoTrabajador(t.rut, t.session);
         const cleanRut = t.rut.replace(/[^0-9Kk]/g, '');
+        const sessionId = t.session || `SESION_B2B_${cleanRut}`;
+        const estadoReal = evaluarEstadoNomina(t.rut, sessionId);
 
-        // Credencial QR Garita
         const paramsQR = new URLSearchParams({
           rut: t.rut,
           nombre: t.nombre,
           cargo: t.cargo,
           empresa: t.empresa,
           folio: `SMK-${cleanRut.substring(0, 6)}`,
-          estado: estadoReal.estadoCod
+          estado: estadoReal.evaluado ? (estadoReal.aprobado ? 'APROBADO' : 'OBSERVADO') : 'PENDIENTE'
         });
         const urlQR = `${originUrl}/validar.html?${paramsQR.toString()}`;
 
-        // Informe Pericial B2B
         const paramsInforme = new URLSearchParams({
-          token: t.token,
           rut: t.rut,
           nombre: t.nombre,
           cargo: t.cargo,
           empresa: t.empresa,
-          session: t.session,
+          session: sessionId,
           mode: 'b2b'
         });
-        const urlInforme = `informe_b2b.html?${paramsInforme.toString()}`;
+        const urlInforme = `informe_b2b_planes.html?${paramsInforme.toString()}`;
+
+        const paramsEval = new URLSearchParams({
+          rut: t.rut,
+          nombre: t.nombre,
+          cargo: t.cargo,
+          empresa: t.empresa,
+          session: sessionId,
+          mode: 'b2b'
+        });
+        const urlEval = t.url || `${originUrl}/menu_b2b_planes.html?${paramsEval.toString()}`;
+
+        let accionHtml = '';
+        let informeHtml = '';
+
+        if (estadoReal.evaluado) {
+          notificarCorreoRetornoAPR(t, sessionId, estadoReal.texto);
+          accionHtml = `<span style="font-size:0.65rem; color:var(--text-muted); font-weight:700;">FINALIZADO</span>`;
+          informeHtml = `
+            <a href="${urlInforme}" target="_blank" class="btn-informe">
+              📊 Ver Informe
+            </a>
+          `;
+        } else {
+          accionHtml = `
+            <button onclick="copiarLinkFila('${urlEval}')" style="background:#0284c7; color:#fff; border:none; padding:4px 8px; border-radius:4px; font-weight:700; cursor:pointer;">
+              🔗 Copiar Link
+            </button>
+          `;
+          informeHtml = `<span style="font-size:0.65rem; color:var(--text-muted);">PENDIENTE</span>`;
+        }
 
         const tr = document.createElement('tr');
         tr.innerHTML = `
@@ -492,27 +566,30 @@
             <strong style="color:var(--accent-cyan); display:block;">${t.cargo}</strong>
             <span style="font-size:0.65rem; color:var(--text-muted);">${t.empresa}</span>
           </td>
-          <td>
+          <td style="text-align:center;">
             <span class="badge-status ${estadoReal.clase}">${estadoReal.texto}</span>
           </td>
-          <td>
-            <button onclick="copiarLinkFila('${t.url}')" style="background:#0284c7; color:#fff; border:none; padding:4px 8px; border-radius:4px; font-weight:700; cursor:pointer;">
-              🔗 Copiar Link
-            </button>
-          </td>
-          <td>
+          <td style="text-align:center;">${accionHtml}</td>
+          <td style="text-align:center;">
             <a href="${urlQR}" target="_blank" style="color:var(--accent-cyan); font-weight:800; text-decoration:none;">
               📱 Credencial QR
             </a>
           </td>
-          <td>
-            <a href="${urlInforme}" target="_blank" style="color:var(--accent-green); font-weight:800; text-decoration:underline;">
-              📄 Ver Informe PDF
-            </a>
-          </td>
+          <td style="text-align:center;">${informeHtml}</td>
         `;
         tbody.appendChild(tr);
       });
+    }
+
+    function formatearRutInput(input) {
+      let valor = input.value.replace(/[^0-9kK]/g, '');
+      if (valor.length > 1) {
+        const cuerpo = valor.slice(0, -1);
+        const dv = valor.slice(-1).toUpperCase();
+        input.value = cuerpo.replace(/\B(?=(\d{3})+(?!\d))/g, ".") + "-" + dv;
+      } else {
+        input.value = valor.toUpperCase();
+      }
     }
   </script>
 </body>
