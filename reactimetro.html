@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SENSOMETRIKA | Reactímetro Simple (Tiempo de Frenado Pro)</title>
+    <title>SENSOMETRIKA | Reactímetro Simple Pro B2B</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- LIBRERÍAS GOOGLE MEDIAPIPE PARA TELEMETRÍA Y CONTROL FACIAL B2B -->
+    <!-- LIBRERÍAS GOOGLE MEDIAPIPE PARA TELEMETRÍA FACIAL B2B -->
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
 
@@ -14,18 +14,23 @@
             --bg-color: #060b13;
             --card-bg: #0b1320;
             --card-border: #1a2638;
-            --accent-gold: #e5b324;
             --accent-green: #10b981;
-            --accent-green-hover: #059669;
             --text-main: #f1f5f9;
             --text-muted: #94a3b8;
             --blue-btn: #0284c7;
-            --blue-btn-border: #0369a1;
             --accent-cyan: #38bdf8;
+            --accent-gold: #e5b324;
             --accent-red: #ef4444;
         }
 
-        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+        * { 
+            box-sizing: border-box; 
+            margin: 0; 
+            padding: 0; 
+            user-select: none; 
+            -webkit-user-select: none;
+            touch-action: manipulation;
+        }
 
         body {
             background-color: var(--bg-color);
@@ -53,8 +58,6 @@
             flex-direction: column;
             align-items: center;
             gap: 6px;
-            padding: 4px 0 8px 0;
-            width: 100%;
         }
 
         .brand-logo-img {
@@ -95,7 +98,7 @@
             gap: 8px !important;
         }
 
-        .top-nav button, .top-nav a {
+        .top-nav button {
             background: #0c182e !important;
             border: 1px solid #1e3a6d !important;
             color: var(--accent-cyan) !important;
@@ -105,30 +108,16 @@
             border-radius: 8px !important;
             cursor: pointer !important;
             white-space: nowrap !important;
-            display: inline-flex !important;
-            align-items: center !important;
-            justify-content: center !important;
-            text-decoration: none !important;
-        }
-
-        .top-nav button:hover, .top-nav a:hover {
-            background: #132342 !important;
-            color: #ffffff !important;
         }
 
         .cam-preview-pip-header {
             position: relative !important;
             width: 56px !important;
             height: 56px !important;
-            min-width: 56px !important;
-            min-height: 56px !important;
-            max-width: 56px !important;
-            max-height: 56px !important;
             border: 1.5px solid var(--accent-cyan) !important;
             border-radius: 8px !important;
             overflow: hidden !important;
             background: #030712 !important;
-            box-shadow: 0 0 10px rgba(0, 191, 255, 0.3) !important;
             flex-shrink: 0 !important;
         }
 
@@ -137,23 +126,17 @@
             height: 100% !important;
             object-fit: cover !important;
             transform: scaleX(-1) !important;
-            display: block !important;
         }
 
         .cam-tag-header {
             position: absolute !important;
-            bottom: 0 !important;
-            left: 0 !important;
-            right: 0 !important;
+            bottom: 0 !important; left: 0 !important; right: 0 !important;
             background: rgba(0, 191, 255, 0.9) !important;
-            color: #000000 !important;
+            color: #000 !important;
             font-size: 0.42rem !important;
             font-weight: 900 !important;
             text-align: center !important;
-            padding: 1px 0 !important;
             text-transform: uppercase !important;
-            letter-spacing: 0.3px !important;
-            z-index: 5 !important;
         }
 
         .status-badge-container { display: flex; justify-content: center; }
@@ -171,14 +154,9 @@
             gap: 8px;
         }
 
-        .dot-status {
-            width: 8px;
-            height: 8px;
-            background-color: #ef4444;
-            border-radius: 50%;
-        }
+        .dot-status { width: 8px; height: 8px; border-radius: 50%; }
 
-        .canvas-wrapper {
+        .viewport-test {
             position: relative;
             width: 100%;
             aspect-ratio: 4/3;
@@ -186,9 +164,41 @@
             border: 1px solid var(--card-border);
             border-radius: 12px;
             overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
         }
 
-        canvas { width: 100%; height: 100%; display: block; }
+        .luz-indicadora {
+            width: 140px;
+            height: 140px;
+            border-radius: 50%;
+            background-color: #1e293b;
+            border: 4px solid #334155;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: 900;
+            font-size: 0.9rem;
+            color: #64748b;
+            text-align: center;
+            transition: background-color 0.1s, box-shadow 0.1s;
+        }
+
+        .luz-indicadora.espera {
+            background-color: #ef4444;
+            border-color: #f87171;
+            box-shadow: 0 0 30px rgba(239, 68, 68, 0.6);
+            color: #ffffff;
+        }
+
+        .luz-indicadora.reaccionar {
+            background-color: #10b981;
+            border-color: #34d399;
+            box-shadow: 0 0 35px rgba(16, 185, 129, 0.8);
+            color: #ffffff;
+        }
 
         .distance-block-overlay {
             position: absolute;
@@ -206,66 +216,44 @@
             border-radius: 12px;
         }
 
-        .distance-block-title { color: var(--accent-red); font-weight: 900; font-size: 0.92rem; text-transform: uppercase; }
-        .distance-block-desc { color: var(--text-main); font-size: 0.74rem; line-height: 1.35; }
+        .distance-block-title { color: var(--accent-red); font-weight: 900; font-size: 0.95rem; text-transform: uppercase; }
+        .distance-block-desc { color: var(--text-main); font-size: 0.75rem; line-height: 1.35; }
 
         .instruction-text {
             text-align: center;
             font-size: 0.85rem;
             color: var(--text-main);
             line-height: 1.4;
-            padding: 0 8px;
         }
-
-        .action-container { display: flex; flex-direction: column; gap: 10px; }
 
         .btn-start {
             background-color: var(--blue-btn);
-            border: 1px solid var(--blue-btn-border);
             color: #ffffff;
+            border: none;
             border-radius: 10px;
             padding: 14px;
             font-weight: 700;
             font-size: 1rem;
             cursor: pointer;
-            transition: background 0.2s;
+            width: 100%;
         }
 
-        .btn-brake {
-            background-color: #ef4444;
-            border: 1px solid #b91c1c;
+        .btn-next {
+            background-color: var(--accent-green);
             color: #ffffff;
+            border: none;
             border-radius: 10px;
-            padding: 16px;
-            font-weight: 900;
-            font-size: 1.1rem;
-            letter-spacing: 1px;
+            padding: 14px;
+            font-weight: 800;
+            font-size: 1rem;
             cursor: pointer;
-            box-shadow: 0 4px 15px rgba(239, 68, 68, 0.4);
+            width: 100%;
             display: none;
-        }
-
-        .salida-buttons-wrapper {
-            display: none;
-            flex-direction: column;
-            gap: 8px;
-        }
-
-        .btn-menu-volver {
-            background-color: #1e293b;
-            color: #38bdf8;
-            border: 1px solid rgba(56, 189, 248, 0.4);
-            border-radius: 10px;
-            padding: 12px;
-            font-weight: 700;
-            font-size: 0.85rem;
-            cursor: pointer;
-            text-align: center;
         }
 
         .metrics-grid {
             display: grid;
-            grid-template-columns: 1fr 1fr 1fr 1fr;
+            grid-template-columns: repeat(4, 1fr);
             text-align: center;
             background-color: #070d17;
             border: 1px solid var(--card-border);
@@ -275,8 +263,7 @@
 
         .metric-item { display: flex; flex-direction: column; gap: 4px; }
         .metric-label { font-size: 0.58rem; color: var(--text-muted); font-weight: 700; }
-        .metric-value { font-size: 0.95rem; font-weight: 800; color: #ffffff; }
-        .metric-value-cyan { color: #38bdf8; }
+        .metric-value { font-size: 0.98rem; font-weight: 800; }
 
         .modal-overlay {
             position: fixed;
@@ -297,52 +284,45 @@
             padding: 22px;
             width: 90%;
             max-width: 420px;
-            text-align: left;
+            text-align: center;
             display: flex;
             flex-direction: column;
             gap: 12px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.8);
         }
 
-        .modal-title { color: #38bdf8; font-size: 1.1rem; font-weight: 800; text-align: center; }
-        .modal-body { font-size: 0.85rem; color: var(--text-main); line-height: 1.5; }
-        .modal-body ul { padding-left: 18px; margin-top: 6px; display: flex; flex-direction: column; gap: 6px; }
-        
+        .modal-title { color: #38bdf8; font-size: 1.1rem; font-weight: 800; }
+        .modal-body { font-size: 0.9rem; color: var(--text-main); line-height: 1.5; }
         .modal-btn {
-            background-color: var(--blue-btn);
+            background-color: var(--accent-green);
             color: #ffffff;
             border: none;
             padding: 12px;
             border-radius: 8px;
             font-weight: 700;
             cursor: pointer;
-            margin-top: 6px;
-            text-align: center;
         }
     </style>
 </head>
 <body>
 
-    <!-- ELEMENTO OCULTO PARA CÁMARA WEB -->
     <video id="webcamInput" style="display:none;" playsinline></video>
 
     <div class="main-container">
         <header class="brand-header">
             <img src="sensometrica.jpg" alt="SENSOMETRIKA" class="brand-logo-img">
-            <span class="brand-subtitle">MÓDULO REACTÍMETRO • TIEMPO DE FRENADO</span>
+            <span class="brand-subtitle">MÓDULO REACTÍMETRO • TIEMPO DE FRENADO B2B</span>
         </header>
 
         <div class="eval-card">
-            
             <div class="top-nav">
-                <button id="btnVolverNav" class="nav-btn" onclick="ejecutarRetornoMenu()">&larr; Menú Pruebas</button>
+                <button onclick="ejecutarRetornoMenu()">← Menú Pruebas</button>
 
                 <div class="cam-preview-pip-header">
                     <video id="webcamVideo" autoplay playsinline muted></video>
                     <div class="cam-tag-header">Biometría</div>
                 </div>
 
-                <button id="btnComoFunciona" class="nav-btn">ℹ &iquest;C&oacute;mo funciona?</button>
+                <button id="btnInfo">? ¿Cómo funciona?</button>
             </div>
 
             <div class="status-badge-container">
@@ -352,8 +332,8 @@
                 </div>
             </div>
 
-            <div class="canvas-wrapper">
-                <canvas id="reactimetroCanvas" width="400" height="300"></canvas>
+            <div class="viewport-test" id="areaTacto">
+                <div id="luzDisplay" class="luz-indicadora">PRESIONA INICIAR</div>
 
                 <div id="boxBlockDistancia" class="distance-block-overlay">
                     <span class="distance-block-title">⚠️ DISTANCIA / POSTURA FUERA DE RANGO</span>
@@ -366,109 +346,100 @@
             </div>
 
             <div class="instruction-text" id="instructionText">
-                Evaluación Oficial: Se promediarán 6 estímulos visuales aleatorios.
+                Cultura de Seguridad: Al encenderse la luz VERDE, toca la pantalla lo más rápido posible.
             </div>
 
-            <div class="action-container">
-                <button id="btnStart" class="btn-start">INICIAR CALIBRACIÓN DEMO (4 ESTÍMULOS)</button>
-                <button id="btnBrake" class="btn-brake">🛑 FRENAR (ESPACIO)</button>
-                
-                <div id="salidaWrapper" class="salida-buttons-wrapper">
-                    <button id="btnVolverMenuExamen" class="btn-menu-volver" onclick="ejecutarRetornoMenu()">← VOLVER AL MENÚ DE PRUEBAS</button>
-                </div>
+            <div>
+                <button id="btnStart" class="btn-start">INICIAR EVALUACIÓN</button>
+                <button id="btnNext" class="btn-next" onclick="ejecutarRetornoMenu()">VOLVER AL MENÚ DE PRUEBAS →</button>
             </div>
 
             <div class="metrics-grid">
                 <div class="metric-item">
                     <span class="metric-label">PROMEDIO</span>
-                    <span id="metricTiempo" class="metric-value metric-value-cyan">0 ms</span>
+                    <span id="metricPromedio" class="metric-value" style="color:#38bdf8;">0 ms</span>
                 </div>
                 <div class="metric-item">
                     <span class="metric-label">ESTÍMULO</span>
-                    <span id="metricEstimulo" class="metric-value" style="color: #e5b324;">0 / 4</span>
+                    <span id="metricEstimulo" class="metric-value" style="color:#e5b324;">0 / 6</span>
                 </div>
                 <div class="metric-item">
                     <span class="metric-label">DISTANCIA</span>
-                    <span id="metricDistancia" class="metric-value" style="color: #10b981;">-- cm</span>
+                    <span id="metricDistancia" class="metric-value" style="color:#10b981;">-- cm</span>
                 </div>
                 <div class="metric-item">
                     <span class="metric-label">NORMA DS 170</span>
-                    <span id="metricNorma" class="metric-value" style="font-size: 0.75rem; color: #10b981; line-height: 1.4;">≤ 450 ms</span>
+                    <span class="metric-value" style="color:#10b981;">≤ 450 ms</span>
                 </div>
-            </div>
-        </div>
-
-        <div id="modalInstrucciones" class="modal-overlay">
-            <div class="modal-content">
-                <div class="modal-title">ℹ ¿CÓMO FUNCIONA ESTE MÓDULO?</div>
-                <div class="modal-body">
-                    Esta prueba mide tu velocidad de reacción simple ante un estímulo visual imprevisto (D.S. N° 170):
-                    <ul>
-                        <li><b>Demo de Práctica:</b> Consta de <b>4 estímulos de calibración</b> para familiarización.</li>
-                        <li><b>Evaluación Oficial:</b> Consta de <b>6 estímulos visuales aleatorios</b>.</li>
-                        <li><b>Instrucción:</b> Presiona el botón <b>FRENAR</b> o la <b>barra espaciadora</b> tan pronto como la luz cambie a <b>ROJO</b>.</li>
-                        <li><b>Anticipación:</b> Si frenas antes del estímulo rojo, se registrará una anticipación/error de tiempo.</li>
-                        <li><b>Control Biométrico:</b> La cámara verifica tu distancia normativa (45 - 65 cm).</li>
-                    </ul>
-                </div>
-                <button id="btnCloseInstrucciones" class="modal-btn">Comprendido, volver a la prueba</button>
             </div>
         </div>
 
         <div id="modalSistema" class="modal-overlay">
-            <div class="modal-content" style="text-align: center;">
+            <div class="modal-content">
                 <div id="modalTitle" class="modal-title">PRUEBA FINALIZADA</div>
-                <div id="modalBody" class="modal-body">Resultados registrados correctamente.</div>
+                <div id="modalBody" class="modal-body">Resultados registrados.</div>
                 <button id="modalBtnClose" class="modal-btn">Continuar</button>
             </div>
         </div>
     </div>
 
-    <script src="reactimetro.js"></script>
     <script>
-        const canvas = document.getElementById('reactimetroCanvas');
         const btnStart = document.getElementById('btnStart');
-        const btnBrake = document.getElementById('btnBrake');
-        const salidaWrapper = document.getElementById('salidaWrapper');
-        const btnVolverMenuExamen = document.getElementById('btnVolverMenuExamen');
-        const btnVolverNav = document.getElementById('btnVolverNav');
-        const btnComoFunciona = document.getElementById('btnComoFunciona');
-
+        const btnNext = document.getElementById('btnNext');
         const badgeDot = document.getElementById('badgeDot');
         const badgeText = document.getElementById('badgeText');
         const instructionText = document.getElementById('instructionText');
+        const luzDisplay = document.getElementById('luzDisplay');
+        const areaTacto = document.getElementById('areaTacto');
 
-        const metricTiempo = document.getElementById('metricTiempo');
+        const metricPromedio = document.getElementById('metricPromedio');
         const metricEstimulo = document.getElementById('metricEstimulo');
         const metricDistancia = document.getElementById('metricDistancia');
 
-        const modalSistema = document.getElementById('modalSistema');
+        const modal = document.getElementById('modalSistema');
         const modalTitle = document.getElementById('modalTitle');
         const modalBody = document.getElementById('modalBody');
         const modalBtnClose = document.getElementById('modalBtnClose');
 
-        const modalInstrucciones = document.getElementById('modalInstrucciones');
-        const btnCloseInstrucciones = document.getElementById('btnCloseInstrucciones');
-
         const urlParams = new URLSearchParams(window.location.search);
-        const modeParam = urlParams.get('mode') || (localStorage.getItem('sensometrika_b2c_mode') === 'true' ? 'b2c' : 'b2b');
-        const esB2B = (modeParam === 'b2b');
-        const sessionParam = urlParams.get('session') || '';
+        const modeParam = urlParams.get('mode') || 'b2b';
+        const esB2B = (modeParam === 'b2b') || urlParams.has('token') || urlParams.has('session');
 
         let datosUsuario = {};
-        try {
-            datosUsuario = JSON.parse(localStorage.getItem('sensometrika_datos_usuario')) || {};
-        } catch(e){}
+        try { datosUsuario = JSON.parse(localStorage.getItem('sensometrika_datos_usuario')) || {}; } catch(e){}
 
-        const rutEvaluado = urlParams.get('rut') || datosUsuario.rut || 'GENERICO';
+        const rawNombre = urlParams.get('nombre') || datosUsuario.nombre || localStorage.getItem('sensometrika_nombre') || '';
+        const rawCargo = urlParams.get('cargo') || datosUsuario.cargo || localStorage.getItem('sensometrika_cargo') || '';
+        const rawEmpresa = urlParams.get('empresa') || datosUsuario.empresa || localStorage.getItem('sensometrika_b2b_empresa') || '';
+        const planActivo = (urlParams.get('plan') || localStorage.getItem('sensometrika_b2b_plan') || 'BASICO').toUpperCase();
+        const rutEvaluado = urlParams.get('rut') || datosUsuario.rut || localStorage.getItem('sensometrika_rut') || '12345678-K';
         const cleanRut = rutEvaluado.replace(/[^0-9Kk]/g, '');
+        const sessionId = urlParams.get('session') || localStorage.getItem('sensometrika_session_activa') || `SESION_B2B_${cleanRut}_${Date.now()}`;
 
-        let isDemoURL = urlParams.get('demo') === 'true' || urlParams.get('fase') === 'demo';
-        let modoActual = isDemoURL ? 'DEMO' : 'OFICIAL';
-        let moduloReactimetro = null;
+        let modoActual = 'DEMO';
+        let evaluacionEnCurso = false;
+        let estadoLuz = 'APAGADO'; // APAGADO, ROJO, VERDE
+        let tiemposReaccion = [];
+        let estimuloActual = 0;
+        const TOTAL_ESTIMULOS = 6;
+        let tiempoInicioEstimuloMs = 0;
+        let timerEsperaLuz = null;
 
         let distanciaMedidaCm = 55;
         let estaBloqueadoPorDistancia = false;
+
+        function ejecutarRetornoMenu() {
+            const paramsRegreso = new URLSearchParams({
+                rut: rutEvaluado,
+                nombre: rawNombre,
+                cargo: rawCargo,
+                empresa: rawEmpresa,
+                plan: planActivo,
+                session: sessionId,
+                mode: 'b2b'
+            });
+            window.location.href = `menu_b2b_planes.html?${paramsRegreso.toString()}`;
+        }
 
         function iniciarMediaPipeFaceMesh() {
             const videoElement = document.getElementById('webcamVideo');
@@ -502,6 +473,8 @@
 
         function onResultsFaceMesh(results) {
             if (!results.multiFaceLandmarks || results.multiFaceLandmarks.length === 0) {
+                distanciaMedidaCm = 70;
+                evaluarRangoDistancia();
                 return;
             }
 
@@ -536,189 +509,194 @@
             }
         }
 
-        function ejecutarRetornoMenu() {
-            const returnUrlParam = urlParams.get('returnUrl');
-            if (returnUrlParam) {
-                window.location.href = decodeURIComponent(returnUrlParam);
-            } else {
-                const menuDestino = esB2B ? 'menu_b2b_planes.html' : 'menu_B2C.html';
-                window.location.href = `${menuDestino}?${urlParams.toString()}`;
-            }
+        // VERIFICACIÓN ESTRICTA POR SESIÓN
+        function verificarModuloEjecutadoEnSesion() {
+            if (urlParams.has('reeval')) return false;
+            const dataStr = localStorage.getItem(`sensometrika_reactimetro_${cleanRut}_${sessionId}`);
+            return dataStr !== null;
         }
 
-        btnVolverNav.addEventListener('click', ejecutarRetornoMenu);
-        if (btnVolverMenuExamen) btnVolverMenuExamen.addEventListener('click', ejecutarRetornoMenu);
+        function actualizarEstadoUI() {
+            const ejecucionOficialConcluida = verificarModuloEjecutadoEnSesion();
+            const demoRealizada = localStorage.getItem(`reactimetro_demo_completada_${cleanRut}_${sessionId}`) === 'true';
 
-        btnComoFunciona.addEventListener('click', () => { modalInstrucciones.style.display = 'flex'; });
-        btnCloseInstrucciones.addEventListener('click', () => { modalInstrucciones.style.display = 'none'; });
-
-        function actualizarEstadoPlanUI() {
-            // LLAVE AISLADA POR SESIÓN PARA EVITAR FALSOS "EJECUTADO"
-            const claveHistorial = sessionParam ? `sensometrika_historial_reactimetro_${cleanRut}_${sessionParam}` : `sensometrika_historial_reactimetro_${cleanRut}`;
-            const rawHistorial = JSON.parse(localStorage.getItem(claveHistorial)) || [];
-            const historial = rawHistorial.filter(item => item && (item.promedioTiempo > 0 || item.tiempoBruto > 0));
-            const numEnsayosRealizados = historial.length;
-
-            const planStorage = (localStorage.getItem('sensometrika_plan_contratado') || urlParams.get('plan') || 'BASICO').toUpperCase();
-            
-            let maxIntentosPlan = 3;
-            if (esB2B) {
-                maxIntentosPlan = planStorage.includes('ALTO') ? 3 : 1;
-            } else {
-                if (planStorage.includes('PLUS')) maxIntentosPlan = 5;
-                if (planStorage.includes('FULL') || planStorage.includes('ALTO')) maxIntentosPlan = 8;
-            }
-
-            const claveDemo = sessionParam ? `reactimetro_demo_completada_${cleanRut}_${sessionParam}` : `reactimetro_demo_completada_${cleanRut}`;
-            const demoRealizada = localStorage.getItem(claveDemo) === 'true';
-
-            if (numEnsayosRealizados >= maxIntentosPlan) {
+            if (ejecucionOficialConcluida) {
                 modoActual = 'BLOQUEADO';
-            } else if (isDemoURL || (!demoRealizada && numEnsayosRealizados === 0)) {
+            } else if (!demoRealizada) {
                 modoActual = 'DEMO';
             } else {
                 modoActual = 'OFICIAL';
             }
 
-            const totalEstimosFase = (modoActual === 'DEMO') ? 4 : 6;
-            moduloReactimetro = new ModuloReactimetro(canvas, { width: 400, height: 300, totalEstimulos: totalEstimosFase }, manejarFinEvaluacion);
-
             if (modoActual === 'BLOQUEADO') {
-                badgeText.textContent = esB2B ? `EVALUACIÓN REGISTRADA (${numEnsayosRealizados}/${maxIntentosPlan})` : `PLAN ${planStorage} COMPLETADO (${numEnsayosRealizados}/${maxIntentosPlan})`;
+                badgeText.textContent = `EVALUACIÓN REGISTRADA (1/1)`;
                 badgeDot.style.backgroundColor = "#10b981"; 
                 btnStart.style.display = 'none';
-                btnBrake.style.display = 'none';
-                salidaWrapper.style.display = 'flex';
-                metricEstimulo.textContent = `0 / ${totalEstimosFase}`;
-                instructionText.textContent = esB2B ? 'Evaluación B2B finalizada con éxito. Retorna al menú.' : `Has alcanzado el límite de ${maxIntentosPlan} simulaciones de tu Plan ${planStorage}. Retorna al menú.`;
+                btnNext.style.display = 'block';
+                instructionText.textContent = 'Evaluación de Tiempo de Reacción finalizada con éxito. Retorna al menú.';
             } else if (modoActual === 'DEMO') {
                 badgeText.textContent = "Paso 1: Calibración Demo (1/1)";
                 badgeDot.style.backgroundColor = "#e5b324"; 
-                btnStart.textContent = "INICIAR CALIBRACIÓN DEMO (4 ESTÍMULOS)";
-                btnStart.style.display = 'block';
+                btnStart.textContent = "INICIAR CALIBRACIÓN DEMO (6 ESTÍMULOS)";
                 btnStart.style.backgroundColor = "#e5b324";
-                btnBrake.style.display = 'none';
-                salidaWrapper.style.display = 'none';
-                metricEstimulo.textContent = `0 / 4`;
-                instructionText.textContent = "Modo Demo: Se realizarán 4 estímulos de ensayo para familiarizarte antes de la prueba oficial.";
-            } else {
-                const siguienteSimu = numEnsayosRealizados + 1;
-                badgeText.textContent = esB2B ? `Simulación Oficial B2B` : `Simulación Oficial S${siguienteSimu} de ${maxIntentosPlan}`;
-                badgeDot.style.backgroundColor = "#0284c7"; 
-                btnStart.textContent = esB2B ? `INICIAR SIMULACIÓN OFICIAL B2B` : `INICIAR SIMULACIÓN OFICIAL (S${siguienteSimu} DE ${maxIntentosPlan})`;
                 btnStart.style.display = 'block';
-                btnStart.style.backgroundColor = "#0284c7";
-                btnBrake.style.display = 'none';
-                salidaWrapper.style.display = 'none';
-                metricEstimulo.textContent = `0 / 6`;
-                instructionText.textContent = `Simulación S${siguienteSimu}: Se promediarán 6 estímulos visuales aleatorios. Mantén la atención.`;
+                btnNext.style.display = 'none';
+                instructionText.textContent = "Modo Demo: Inducción táctil libre para habituarse al estímulo visual de frenado.";
+            } else {
+                badgeText.textContent = "Fase 2: Simulación Oficial B2B (1/1)";
+                badgeDot.style.backgroundColor = "#10b981"; 
+                btnStart.textContent = "INICIAR SIMULACIÓN OFICIAL B2B (1/1)";
+                btnStart.style.backgroundColor = "#10b981";
+                btnStart.style.display = 'block';
+                btnNext.style.display = 'none';
+                instructionText.textContent = "Evaluación Oficial D.S. N° 170: Registra la mayor velocidad de reacción ante la señal verde.";
             }
         }
 
-        function mostrarAlertaSistema(titulo, mensaje, callback) {
+        function iniciarPruebaReactimetro() {
+            if (modoActual === 'BLOQUEADO' || estaBloqueadoPorDistancia) return;
+
+            tiemposReaccion = [];
+            estimuloActual = 0;
+            evaluacionEnCurso = true;
+            btnStart.style.display = 'none';
+            
+            metricPromedio.textContent = '0 ms';
+            metricEstimulo.textContent = `0 / ${TOTAL_ESTIMULOS}`;
+
+            lanzarSiguienteEstimulo();
+        }
+
+        function lanzarSiguienteEstimulo() {
+            if (estimuloActual >= TOTAL_ESTIMULOS) {
+                finalizarPruebaReactimetro();
+                return;
+            }
+
+            estadoLuz = 'ROJO';
+            luzDisplay.className = 'luz-indicadora espera';
+            luzDisplay.textContent = '¡ESPERA!';
+
+            const tiempoRandomMs = 1500 + Math.random() * 2500;
+
+            timerEsperaLuz = setTimeout(() => {
+                if (!evaluacionEnCurso || estaBloqueadoPorDistancia) return;
+                
+                estadoLuz = 'VERDE';
+                luzDisplay.className = 'luz-indicadora reaccionar';
+                luzDisplay.textContent = '¡FRENA AHORA!';
+                tiempoInicioEstimuloMs = Date.now();
+            }, tiempoRandomMs);
+        }
+
+        function registrarReaccion(e) {
+            if (e) { e.preventDefault(); e.stopPropagation(); }
+            if (!evaluacionEnCurso || estaBloqueadoPorDistancia) return;
+
+            if (estadoLuz === 'ROJO') {
+                // Anticipación / Error de partida falsa
+                clearTimeout(timerEsperaLuz);
+                luzDisplay.className = 'luz-indicadora';
+                luzDisplay.style.backgroundColor = '#ef4444';
+                luzDisplay.textContent = '¡ANTICIPADO!';
+                
+                setTimeout(() => {
+                    lanzarSiguienteEstimulo();
+                }, 1000);
+            } else if (estadoLuz === 'VERDE') {
+                const latencia = Date.now() - tiempoInicioEstimuloMs;
+                tiemposReaccion.push(latencia);
+                estimuloActual++;
+
+                metricEstimulo.textContent = `${estimuloActual} / ${TOTAL_ESTIMULOS}`;
+                const suma = tiemposReaccion.reduce((a, b) => a + b, 0);
+                const prom = Math.round(suma / tiemposReaccion.length);
+                metricPromedio.textContent = `${prom} ms`;
+
+                estadoLuz = 'APAGADO';
+                luzDisplay.className = 'luz-indicadora';
+                luzDisplay.textContent = `${latencia} ms`;
+
+                setTimeout(() => {
+                    lanzarSiguienteEstimulo();
+                }, 800);
+            }
+        }
+
+        function finalizarPruebaReactimetro() {
+            evaluacionEnCurso = false;
+            clearTimeout(timerEsperaLuz);
+            luzDisplay.className = 'luz-indicadora';
+            luzDisplay.textContent = 'COMPLETADO';
+
+            const suma = tiemposReaccion.reduce((a, b) => a + b, 0);
+            const promLatencia = tiemposReaccion.length > 0 ? Math.round(suma / tiemposReaccion.length) : 400;
+            const esAprobado = promLatencia <= 450;
+
+            if (modoActual === 'DEMO') {
+                localStorage.setItem(`reactimetro_demo_completada_${cleanRut}_${sessionId}`, 'true');
+
+                mostrarModal(
+                    "CALIBRACIÓN DEMO COMPLETADA",
+                    `Tiempo Promedio: <b>${promLatencia} ms</b><br>Estímulos: <b>6 / 6</b><br><br>Has completado la inducción libre. Presiona continuar para rendir la <b>Simulación Oficial B2B</b>.`,
+                    () => {
+                        actualizarEstadoUI();
+                    }
+                );
+            } else {
+                const registroData = {
+                    tiempoReaccionMs: promLatencia,
+                    latencia: promLatencia,
+                    promedio: promLatencia,
+                    score: promLatencia <= 450 ? 100 : 60,
+                    precision: promLatencia <= 450 ? 100 : 60,
+                    efectividad: promLatencia <= 450 ? 100 : 60,
+                    distanciaAvgCm: distanciaMedidaCm,
+                    aprobado: esAprobado,
+                    dictamen: esAprobado ? 'APROBADO' : 'OBSERVADO',
+                    fecha: new Date().toISOString()
+                };
+
+                // GUARDAR EN CLAVES COMPATIBLES CON INFORME-B2B.HTML Y MENU B2B
+                localStorage.setItem(`sensometrika_reactimetro_${cleanRut}_${sessionId}`, JSON.stringify(registroData));
+                localStorage.setItem(`sensometrika_last_reactimetro_${cleanRut}_${sessionId}`, JSON.stringify(registroData));
+                localStorage.setItem('sensometrika_reactimetro', JSON.stringify(registroData));
+
+                let modulosRendidos = {};
+                try { modulosRendidos = JSON.parse(localStorage.getItem('sensometrika_modulos_rendidos')) || {}; } catch(e){}
+                modulosRendidos.reactimetro = true;
+                localStorage.setItem('sensometrika_modulos_rendidos', JSON.stringify(modulosRendidos));
+
+                mostrarModal(
+                    "SIMULACIÓN OFICIAL B2B REGISTRADA",
+                    `Tiempo de Reacción: <b>${promLatencia} ms</b><br>Estándar D.S. N° 170: <b>${esAprobado ? 'CONFORME (≤ 450 ms)' : 'OBSERVADO (> 450 ms)'}</b><br><br><b>Resultado guardado con éxito.</b>`,
+                    () => {
+                        ejecutarRetornoMenu();
+                    }
+                );
+            }
+        }
+
+        function mostrarModal(titulo, cuerpo, callback) {
             modalTitle.textContent = titulo;
-            modalBody.innerHTML = mensaje;
-            modalSistema.style.display = 'flex';
+            modalBody.innerHTML = cuerpo;
+            modal.style.display = 'flex';
             modalBtnClose.onclick = () => {
-                modalSistema.style.display = 'none';
+                modal.style.display = 'none';
                 if (callback) callback();
             };
         }
 
-        function manejarFinEvaluacion(res) {
-            btnBrake.style.display = 'none';
+        areaTacto.addEventListener('pointerdown', registrarReaccion, { passive: false });
+        btnStart.addEventListener('click', iniciarPruebaReactimetro);
 
-            const latenciaHardware = parseInt(localStorage.getItem('sensometrika_latencia_ms') || '0', 10);
-            const tiempoNetoCompensado = Math.max(100, res.promedioTiempo - latenciaHardware);
-            const tiemposDetalleCompensados = (res.tiemposDetalle || []).map(t => Math.max(100, t - latenciaHardware));
-            const totalEstimosFase = (modoActual === 'DEMO') ? 4 : 6;
-
-            metricTiempo.textContent = `${tiempoNetoCompensado} ms`;
-            metricEstimulo.textContent = `${totalEstimosFase} / ${totalEstimosFase}`;
-
-            if (modoActual === 'DEMO') {
-                const claveDemo = sessionParam ? `reactimetro_demo_completada_${cleanRut}_${sessionParam}` : `reactimetro_demo_completada_${cleanRut}`;
-                localStorage.setItem(claveDemo, 'true');
-                
-                isDemoURL = false;
-                modoActual = 'OFICIAL';
-
-                urlParams.set('demo', 'false');
-                urlParams.set('fase', 'oficial');
-                window.history.replaceState({}, '', `${window.location.pathname}?${urlParams.toString()}`);
-                
-                mostrarAlertaSistema(
-                    "CALIBRACIÓN DEMO COMPLETADA",
-                    `Promedio Neto: <b>${tiempoNetoCompensado} ms</b><br>Distancia Media: <b>${distanciaMedidaCm} cm</b><br>Anticipaciones / Errores: <b>${res.anticipaciones}</b><br><br>Has completado el ensayo de 4 estímulos. Retornando al menú de pruebas...`,
-                    () => {
-                        ejecutarRetornoMenu();
-                    }
-                );
-            } else if (modoActual === 'OFICIAL') {
-                const claveHistorial = sessionParam ? `sensometrika_historial_reactimetro_${cleanRut}_${sessionParam}` : `sensometrika_historial_reactimetro_${cleanRut}`;
-                let historial = JSON.parse(localStorage.getItem(claveHistorial)) || [];
-                
-                historial.push({
-                    promedioTiempo: tiempoNetoCompensado,
-                    tiempoBruto: res.promedioTiempo,
-                    latenciaCompensadaMs: latenciaHardware,
-                    tiemposDetalle: tiemposDetalleCompensados,
-                    anticipaciones: res.anticipaciones,
-                    permanenciaErrorMs: res.permanenciaErrorMs || (res.anticipaciones * 250),
-                    distanciaAvgCm: distanciaMedidaCm,
-                    fecha: new Date().toISOString()
-                });
-                
-                localStorage.setItem(claveHistorial, JSON.stringify(historial));
-
-                const numSimu = historial.length;
-                const tituloModal = esB2B ? "SIMULACIÓN OFICIAL B2B REGISTRADA" : `SIMULACIÓN S${numSimu} REGISTRADA`;
-
-                mostrarAlertaSistema(
-                    tituloModal,
-                    `Promedio Neto Frenado: <b>${tiempoNetoCompensado} ms</b> (${tiempoNetoCompensado <= 450 ? '✓ En Norma' : '⚠ Latencia Elevada'})<br>` +
-                    `<span style="font-size:0.75rem; color:#94a3b8;">(Distancia telemétrica: ${distanciaMedidaCm} cm)</span><br>` +
-                    `Anticipaciones / Errores: <b>${res.anticipaciones}</b><br><br>` +
-                    `<b>Resultado registrado en informe pericial.</b>`,
-                    () => {
-                        ejecutarRetornoMenu();
-                    }
-                );
-            }
-        }
-
-        btnStart.addEventListener('click', () => {
-            if (modoActual === 'BLOQUEADO' || !moduloReactimetro || estaBloqueadoPorDistancia) return;
-            btnStart.style.display = 'none';
-            btnBrake.style.display = 'block';
-            const totalEstimosFase = (modoActual === 'DEMO') ? 4 : 6;
-            metricEstimulo.textContent = `1 / ${totalEstimosFase}`;
-            moduloReactimetro.iniciarSimulacionCompleta();
-        });
-
-        btnBrake.addEventListener('click', () => {
-            if (!moduloReactimetro || estaBloqueadoPorDistancia) return;
-            const res = moduloReactimetro.registrarFrenado();
-            if (res.tipo === 'PARCIAL') {
-                metricEstimulo.textContent = `${res.estimulo} / ${res.totalEstimulos}`;
-            } else if (res.tipo === 'ANTICIPACION') {
-                mostrarAlertaSistema("ANTICIPACIÓN DETECTADA", "Frenaste antes de la señal roja. Se reanudará el estímulo.", () => {
-                    moduloReactimetro.siguienteEstimulo();
-                });
-            }
-        });
-
-        window.addEventListener('keydown', (e) => {
-            if (e.code === 'Space' && moduloReactimetro && (moduloReactimetro.estado === 'LISTO' || moduloReactimetro.estado === 'ESTIMULO')) {
-                e.preventDefault();
-                btnBrake.click();
-            }
+        document.getElementById('btnInfo').addEventListener('click', () => {
+            mostrarModal("¿CÓMO FUNCIONA?", "Al momento de aparecer el indicador en verde ('FRENA AHORA'), debes tocar la pantalla lo más rápido posible para registrar tu latencia de respuesta en milisegundos.");
         });
 
         document.addEventListener('DOMContentLoaded', () => {
             iniciarMediaPipeFaceMesh();
-            actualizarEstadoPlanUI();
-            if (moduloReactimetro) moduloReactimetro.draw();
+            actualizarEstadoUI();
         });
     </script>
 </body>
