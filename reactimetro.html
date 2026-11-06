@@ -361,7 +361,7 @@
                 </div>
                 <div class="metric-item">
                     <span class="metric-label">ESTÍMULO</span>
-                    <span id="metricEstimulo" class="metric-value" style="color:#e5b324;">0 / 6</span>
+                    <span id="metricEstimulo" class="metric-value" style="color:#e5b324;">0 / 3</span>
                 </div>
                 <div class="metric-item">
                     <span class="metric-label">DISTANCIA</span>
@@ -421,7 +421,7 @@
         let estadoLuz = 'APAGADO'; // APAGADO, ROJO, VERDE
         let tiemposReaccion = [];
         let estimuloActual = 0;
-        const TOTAL_ESTIMULOS = 6;
+        let totalEstimulosActual = 3; // 3 para DEMO, 6 para OFICIAL
         let tiempoInicioEstimuloMs = 0;
         let timerEsperaLuz = null;
 
@@ -524,9 +524,13 @@
                 modoActual = 'BLOQUEADO';
             } else if (!demoRealizada) {
                 modoActual = 'DEMO';
+                totalEstimulosActual = 3;
             } else {
                 modoActual = 'OFICIAL';
+                totalEstimulosActual = 6;
             }
+
+            metricEstimulo.textContent = `0 / ${totalEstimulosActual}`;
 
             if (modoActual === 'BLOQUEADO') {
                 badgeText.textContent = `EVALUACIÓN REGISTRADA (1/1)`;
@@ -537,7 +541,7 @@
             } else if (modoActual === 'DEMO') {
                 badgeText.textContent = "Paso 1: Calibración Demo (1/1)";
                 badgeDot.style.backgroundColor = "#e5b324"; 
-                btnStart.textContent = "INICIAR CALIBRACIÓN DEMO (6 ESTÍMULOS)";
+                btnStart.textContent = "INICIAR CALIBRACIÓN DEMO (3 ESTÍMULOS)";
                 btnStart.style.backgroundColor = "#e5b324";
                 btnStart.style.display = 'block';
                 btnNext.style.display = 'none';
@@ -545,7 +549,7 @@
             } else {
                 badgeText.textContent = "Fase 2: Simulación Oficial B2B (1/1)";
                 badgeDot.style.backgroundColor = "#10b981"; 
-                btnStart.textContent = "INICIAR SIMULACIÓN OFICIAL B2B (1/1)";
+                btnStart.textContent = "INICIAR SIMULACIÓN OFICIAL B2B (6 ESTÍMULOS)";
                 btnStart.style.backgroundColor = "#10b981";
                 btnStart.style.display = 'block';
                 btnNext.style.display = 'none';
@@ -562,13 +566,13 @@
             btnStart.style.display = 'none';
             
             metricPromedio.textContent = '0 ms';
-            metricEstimulo.textContent = `0 / ${TOTAL_ESTIMULOS}`;
+            metricEstimulo.textContent = `0 / ${totalEstimulosActual}`;
 
             lanzarSiguienteEstimulo();
         }
 
         function lanzarSiguienteEstimulo() {
-            if (estimuloActual >= TOTAL_ESTIMULOS) {
+            if (estimuloActual >= totalEstimulosActual) {
                 finalizarPruebaReactimetro();
                 return;
             }
@@ -608,7 +612,7 @@
                 tiemposReaccion.push(latencia);
                 estimuloActual++;
 
-                metricEstimulo.textContent = `${estimuloActual} / ${TOTAL_ESTIMULOS}`;
+                metricEstimulo.textContent = `${estimuloActual} / ${totalEstimulosActual}`;
                 const suma = tiemposReaccion.reduce((a, b) => a + b, 0);
                 const prom = Math.round(suma / tiemposReaccion.length);
                 metricPromedio.textContent = `${prom} ms`;
@@ -638,7 +642,7 @@
 
                 mostrarModal(
                     "CALIBRACIÓN DEMO COMPLETADA",
-                    `Tiempo Promedio: <b>${promLatencia} ms</b><br>Estímulos: <b>6 / 6</b><br><br>Has completado la inducción libre. Presiona continuar para rendir la <b>Simulación Oficial B2B</b>.`,
+                    `Tiempo Promedio: <b>${promLatencia} ms</b><br>Estímulos: <b>3 / 3</b><br><br>Has completado la inducción libre. Presiona continuar para rendir la <b>Simulación Oficial B2B</b>.`,
                     () => {
                         actualizarEstadoUI();
                     }
