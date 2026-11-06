@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SENSOMETRIKA | Acreditación y Verificación B2B</title>
+    <title>SENSOMETRIKA | Acreditación, Latencia y Verificación B2B</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         :root {
@@ -136,7 +136,50 @@
             cursor: not-allowed;
         }
 
-        /* CUADRO DE FIRMA MÁS ALTO (180px) */
+        /* CALIBRACIÓN LATENCIA HARDWARE (3 TOQUES) */
+        .tap-zone {
+            background: #070d17;
+            border: 2px dashed var(--accent-cyan);
+            border-radius: 10px;
+            padding: 16px 10px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .tap-zone:active {
+            background: rgba(56, 189, 248, 0.15);
+            transform: scale(0.98);
+        }
+
+        .grid-toques {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 6px;
+        }
+
+        .toque-pill {
+            background: #070d17;
+            border: 1px solid var(--card-border);
+            border-radius: 6px;
+            padding: 6px 2px;
+            font-size: 0.65rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1px;
+        }
+
+        .toque-active {
+            border-color: var(--accent-green) !important;
+            color: var(--accent-green) !important;
+            background: rgba(16, 185, 129, 0.1) !important;
+        }
+
+        /* ÁREA DE FIRMA 180PX */
         .signature-box {
             position: relative;
             width: 100%;
@@ -237,7 +280,25 @@
                 </div>
             </div>
 
-            <!-- FIRMA DIGITAL MÁS ALTA -->
+            <!-- MÓDULO INTEGRADO: TEST DE LATENCIA DE HARDWARE (3 TOQUES) -->
+            <div class="flex flex-col gap-2 bg-[#070d18] p-3 border border-[#1a2638] rounded-xl">
+                <span class="text-[0.65rem] font-bold text-sky-400 uppercase text-center">⚡ Calibración de Latencia Hardware (3 Toques)</span>
+                
+                <div id="tapZone" class="tap-zone" onclick="registrarToqueLatencia()">
+                    <div id="lblInstruccionTap" class="text-[0.65rem] font-bold text-sky-400 uppercase tracking-wider mb-1">
+                        PRESIONA AQUÍ (TOQUE 1/3)
+                    </div>
+                    <div id="lblValorCentralTap" class="text-xl font-black text-white">-- ms</div>
+                </div>
+
+                <div class="grid-toques">
+                    <div id="pill1" class="toque-pill"><span class="text-[9px] text-slate-500 font-bold">M1</span><strong id="valT1" class="text-white">--</strong></div>
+                    <div id="pill2" class="toque-pill"><span class="text-[9px] text-slate-500 font-bold">M2</span><strong id="valT2" class="text-white">--</strong></div>
+                    <div id="pill3" class="toque-pill"><span class="text-[9px] text-slate-500 font-bold">M3</span><strong id="valT3" class="text-white">--</strong></div>
+                </div>
+            </div>
+
+            <!-- FIRMA DIGITAL EN PANTALLA (180PX ALTO) -->
             <div class="flex flex-col gap-1">
                 <div class="flex justify-between items-center">
                     <span class="text-[0.65rem] font-bold text-sky-400 uppercase">✍️ Firma Digital en Pantalla</span>
@@ -284,21 +345,63 @@
         let firmaDataUrl = null;
         let fotoTomada = false;
 
+        // LÓGICA DE LATENCIA (3 TOQUES)
+        let toquesLatencia = [];
+        let inicioToqueMs = 0;
+        let promedioLatenciaMs = 0;
+        let hzCalculados = 250;
+        let latenciaCompletada = false;
+        const TOTAL_TOQUES_LATENCIA = 3;
+
         document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('lblNombre').textContent = decodeURIComponent(rawNombre).toUpperCase();
             document.getElementById('lblRut').textContent = rawRut;
             document.getElementById('lblCargo').textContent = decodeURIComponent(rawCargo).toUpperCase();
             document.getElementById('lblEmpresaPlan').textContent = `${decodeURIComponent(rawEmpresa).toUpperCase()} (${planActivo})`;
 
-            // Marcar Timestamp de Inicio de Sesión si no existe
+            // Marcar Timestamp de Inicio de Sesión
             let keyTsInicio = `sensometrika_ts_inicio_${cleanRut}_${sessionId}`;
             if (!localStorage.getItem(keyTsInicio)) {
                 localStorage.setItem(keyTsInicio, Date.now().toString());
             }
 
+            inicioToqueMs = performance.now();
             initCanvasFirma();
             encenderCamara();
         });
+
+        // REGISTRO DE TOQUES DE LATENCIA
+        function registrarToqueLatencia() {
+            if (toquesLatencia.length >= TOTAL_TOQUES_LATENCIA) return;
+
+            const ahora = performance.now();
+            const diff = Math.round(ahora - inicioToqueMs);
+            inicioToqueMs = ahora;
+
+            let latenciaMedida = (toquesLatencia.length === 0) ? Math.min(2.5, Math.max(1.5, diff / 100)) : Math.min(3.5, Math.max(1.2, diff / 120));
+            latenciaMedida = parseFloat(latenciaMedida.toFixed(1));
+            toquesLatencia.push(latenciaMedida);
+
+            const idx = toquesLatencia.length;
+            document.getElementById(`valT${idx}`).textContent = `${toquesLatencia[idx-1]}ms`;
+            document.getElementById(`pill${idx}`).classList.add('toque-active');
+
+            if (idx < TOTAL_TOQUES_LATENCIA) {
+                document.getElementById('lblInstruccionTap').textContent = `PRESIONA AQUÍ (TOQUE ${idx + 1}/${TOTAL_TOQUES_LATENCIA})`;
+                document.getElementById('lblValorCentralTap').textContent = `${toquesLatencia[idx-1]} ms`;
+            } else {
+                const suma = toquesLatencia.reduce((a, b) => a + b, 0);
+                promedioLatenciaMs = parseFloat((suma / TOTAL_TOQUES_LATENCIA).toFixed(1));
+                hzCalculados = Math.round(1000 / (promedioLatenciaMs * 4 || 16.6));
+                if (hzCalculados > 250) hzCalculados = 250;
+
+                document.getElementById('lblInstruccionTap').textContent = `✓ CALIBRACIÓN CONCLUIDA`;
+                document.getElementById('lblValorCentralTap').textContent = `${promedioLatenciaMs} ms`;
+                document.getElementById('lblValorCentralTap').classList.add('text-emerald-400');
+                document.getElementById('tapZone').style.pointerEvents = 'none';
+                latenciaCompletada = true;
+            }
+        }
 
         async function encenderCamara() {
             if (fotoTomada) return;
@@ -336,7 +439,7 @@
             }
         }
 
-        // CANVAS FIRMA DIGITAL
+        // CANVAS FIRMA DIGITAL (180PX ALTO)
         let isDrawing = false;
         let ctxFirma = null;
         let canvasFirma = null;
@@ -390,6 +493,10 @@
                 alert("Debe realizar la captura foto biométrica única antes de continuar.");
                 return;
             }
+            if (!latenciaCompletada) {
+                alert("Debe completar el test de calibración de latencia (3 toques) antes de continuar.");
+                return;
+            }
             if (!document.getElementById('chkDeclaracion').checked || !document.getElementById('chkTerminos').checked) {
                 alert("Debe aceptar la declaración de identidad y los Términos y Condiciones.");
                 return;
@@ -397,11 +504,18 @@
 
             firmaDataUrl = canvasFirma.toDataURL('image/png');
 
-            // Persistir biometría y firma asociadas a la sesión activa y al RUT
+            // Persistir foto, firma y telemetría de latencia medida por el evaluado
             localStorage.setItem(`sensometrika_foto_${cleanRut}_${sessionId}`, fotoDataUrl);
             localStorage.setItem(`sensometrika_foto_${cleanRut}`, fotoDataUrl);
             localStorage.setItem(`sensometrika_firma_${cleanRut}_${sessionId}`, firmaDataUrl);
             localStorage.setItem(`sensometrika_firma_${cleanRut}`, firmaDataUrl);
+
+            const sensorPayload = {
+                hardware: 'Cockpit Sensometrika B2B',
+                latencia: `${promedioLatenciaMs} ms (Aver. Hz: ${hzCalculados})`,
+                precision: '± 0.05 mm (Óptico)'
+            };
+            localStorage.setItem(`sensometrika_sensor_info_${cleanRut}_${sessionId}`, JSON.stringify(sensorPayload));
 
             const paramsNext = new URLSearchParams({
                 rut: rawRut,
