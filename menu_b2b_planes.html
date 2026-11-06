@@ -1,427 +1,454 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>SENSOMETRIKA | Seleccionar Plan & Registro B2B</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <style>
-    :root {
-      --bg-color: #040810;
-      --card-bg: #091120;
-      --card-border: #132238;
-      --inner-bg: #050a14;
-      --accent-cyan: #00bfff;
-      --accent-cyan-glow: rgba(0, 191, 255, 0.35);
-      --accent-green: #10b981;
-      --accent-gold: #e5b324;
-      --text-main: #f8fafc;
-      --text-muted: #94a3b8;
-    }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>SENSOMETRIKA | Consola Central B2B por Planes</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        :root {
+            --bg-principal: #060b13;
+            --bg-card: #0b1320;
+            --border-color: #1a2638;
+            --verde-destacado: #10b981;
+            --azul-destacado: #38bdf8;
+            --azul-btn: #0284c7;
+            --texto-blanco: #f1f5f9;
+            --texto-gris: #94a3b8;
+            --accent-gold: #e5b324;
+            --accent-red: #ef4444;
+        }
 
-    * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+        * { 
+            box-sizing: border-box; 
+            margin: 0; 
+            padding: 0; 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
+            user-select: none; 
+            -webkit-user-select: none; 
+        }
 
-    body {
-      background-color: var(--bg-color);
-      color: var(--text-main);
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      min-height: 100vh;
-      padding: 20px 10px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-    }
+        body { 
+            background-color: var(--bg-principal); 
+            color: var(--texto-blanco); 
+            min-height: 100vh; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            padding: 16px 12px 32px; 
+        }
 
-    .main-container { width: 100%; max-width: 580px; display: flex; flex-direction: column; gap: 16px; }
+        .main-container { 
+            width: 100%; 
+            max-width: 480px; 
+            display: flex; 
+            flex-direction: column; 
+            gap: 14px; 
+        }
 
-    .brand-header { text-align: center; display: flex; flex-direction: column; align-items: center; gap: 6px; }
-    
-    .logo-container {
-      background: #060d1d;
-      border: 1px solid var(--card-border);
-      border-radius: 12px;
-      padding: 8px 20px;
-      box-shadow: 0 0 20px rgba(0, 191, 255, 0.2);
-    }
+        .brand-header { 
+            text-align: center; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            gap: 4px; 
+        }
 
-    .brand-logo-img { width: 190px; height: auto; mix-blend-mode: lighten; filter: drop-shadow(0 0 10px var(--accent-cyan-glow)); }
+        .brand-logo-img { 
+            width: 185px; 
+            height: auto; 
+            display: block; 
+            mix-blend-mode: lighten; 
+            filter: drop-shadow(0 0 12px rgba(56, 189, 248, 0.45)); 
+        }
 
-    /* Switcher Selector de Perfil */
-    .switcher-container {
-      background: var(--card-bg);
-      border: 1px solid var(--card-border);
-      border-radius: 12px;
-      padding: 4px;
-      display: flex;
-      gap: 4px;
-    }
+        .profile-card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 18px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            gap: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            position: relative;
+        }
 
-    .tab-perfil {
-      flex: 1;
-      padding: 10px;
-      text-align: center;
-      font-size: 0.78rem;
-      font-weight: 900;
-      border-radius: 8px;
-      cursor: pointer;
-      color: var(--text-muted);
-      transition: all 0.2s ease;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
+        .avatar-frame {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            border: 2px solid var(--azul-destacado);
+            overflow: hidden;
+            background: #030712;
+            box-shadow: 0 0 15px rgba(56, 189, 248, 0.3);
+        }
 
-    .tab-perfil.activo-b2c {
-      background: #0284c7;
-      color: #fff;
-      box-shadow: 0 0 12px rgba(2, 132, 199, 0.4);
-    }
+        .avatar-frame img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
 
-    .tab-perfil.activo-b2b {
-      background: var(--accent-green);
-      color: #000;
-      box-shadow: 0 0 12px rgba(16, 185, 129, 0.4);
-    }
+        .plan-badge {
+            background: rgba(56, 189, 248, 0.1);
+            border: 1px solid var(--azul-destacado);
+            color: var(--azul-destacado);
+            padding: 4px 14px;
+            border-radius: 20px;
+            font-size: 0.72rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
 
-    /* Contador B2B */
-    .panel-contador-b2b {
-      background: var(--card-bg);
-      border: 1px solid var(--card-border);
-      border-radius: 12px;
-      padding: 14px;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
+        .parrilla-card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
 
-    .contador-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      font-size: 0.78rem;
-      font-weight: 800;
-      color: var(--accent-green);
-      text-transform: uppercase;
-    }
+        .parrilla-header {
+            font-size: 0.8rem;
+            font-weight: 800;
+            color: var(--texto-gris);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
 
-    .contador-control-row {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 12px;
-    }
+        .modulo-item {
+            background-color: #070d18;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 14px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            transition: border-color 0.2s;
+        }
 
-    .btn-contador {
-      background: var(--inner-bg);
-      border: 1px solid var(--accent-green);
-      color: var(--accent-green);
-      width: 36px;
-      height: 36px;
-      border-radius: 8px;
-      font-size: 1.2rem;
-      font-weight: 900;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
+        .modulo-item.lock {
+            opacity: 0.45;
+            filter: grayscale(0.6);
+        }
 
-    .input-contador {
-      background: var(--inner-bg);
-      border: 1px solid var(--card-border);
-      color: #fff;
-      font-size: 1.1rem;
-      font-weight: 900;
-      width: 80px;
-      text-align: center;
-      padding: 6px;
-      border-radius: 8px;
-      outline: none;
-    }
+        .modulo-info {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
 
-    /* Tarjetas de Plan */
-    .card-plan {
-      background: var(--card-bg);
-      border: 1px solid var(--card-border);
-      border-radius: 14px;
-      padding: 16px;
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-      box-shadow: 0 8px 25px rgba(0,0,0,0.5);
-    }
+        .modulo-titulo {
+            font-size: 0.92rem;
+            font-weight: 800;
+            color: #ffffff;
+        }
 
-    .card-plan.destacado { border-color: var(--accent-cyan); }
-    .card-plan.destacado-b2b { border-color: var(--accent-green); }
+        .modulo-desc {
+            font-size: 0.72rem;
+            color: var(--texto-gris);
+        }
 
-    .plan-top-row { display: flex; justify-content: space-between; align-items: center; }
-    .plan-titulo { font-size: 0.95rem; font-weight: 900; color: #fff; }
-    .plan-badge { padding: 3px 8px; border-radius: 6px; font-size: 0.65rem; font-weight: 800; text-transform: uppercase; }
-    .plan-badge.b2c { background: rgba(0, 191, 255, 0.15); color: var(--accent-cyan); border: 1px solid var(--accent-cyan); }
-    .plan-badge.b2b { background: rgba(16, 185, 129, 0.15); color: var(--accent-green); border: 1px solid var(--accent-green); }
+        .btn-status-iniciar {
+            background-color: var(--azul-btn);
+            color: #ffffff;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 0.78rem;
+            font-weight: 800;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: background 0.15s;
+        }
 
-    .plan-features { list-style: none; display: flex; flex-direction: column; gap: 6px; font-size: 0.74rem; color: var(--text-muted); }
-    .plan-features li::before { content: "✓ "; color: var(--accent-cyan); font-weight: 800; }
-    .modo-b2b .plan-features li::before { color: var(--accent-green); }
+        .btn-status-iniciar:hover {
+            background-color: #0369a1;
+        }
 
-    .plan-precio-box { text-align: center; margin-top: 4px; }
-    .plan-precio-linea-principal { font-size: 1.4rem; font-weight: 900; color: #fff; }
-    .plan-precio-sub { font-size: 0.68rem; color: var(--text-muted); }
+        .btn-status-ejecutado {
+            background-color: rgba(16, 185, 129, 0.15);
+            border: 1px solid var(--verde-destacado);
+            color: #34d399;
+            padding: 8px 14px;
+            border-radius: 8px;
+            font-size: 0.78rem;
+            font-weight: 800;
+            white-space: nowrap;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
 
-    .btn-elegir-plan {
-      width: 100%;
-      padding: 11px;
-      border-radius: 10px;
-      font-weight: 900;
-      font-size: 0.80rem;
-      text-transform: uppercase;
-      border: none;
-      cursor: pointer;
-      text-align: center;
-    }
-    .btn-elegir-plan.b2c { background: #0284c7; color: #fff; }
-    .btn-elegir-plan.b2b { background: var(--accent-green); color: #000; }
+        .btn-status-lock {
+            background-color: #0f172a;
+            border: 1px solid #1e293b;
+            color: #64748b;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 0.72rem;
+            font-weight: 800;
+            white-space: nowrap;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
 
-    /* Formulario Registro B2B */
-    .form-registro-b2b-card {
-      background: var(--card-bg);
-      border: 1px solid var(--accent-green);
-      border-radius: 14px;
-      padding: 18px;
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.7);
-    }
+        .btn-informe-main {
+            background-color: var(--verde-destacado);
+            color: #000000;
+            border: none;
+            border-radius: 12px;
+            padding: 16px;
+            font-weight: 900;
+            font-size: 0.95rem;
+            cursor: pointer;
+            width: 100%;
+            text-align: center;
+            text-transform: uppercase;
+            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.35);
+            transition: transform 0.1s;
+        }
 
-    .form-group { display: flex; flex-direction: column; gap: 3px; }
-    .form-group label { font-size: 0.64rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700; }
-    .form-group input {
-      background: var(--inner-bg);
-      border: 1px solid var(--card-border);
-      color: #fff;
-      padding: 9px 12px;
-      border-radius: 8px;
-      font-size: 0.80rem;
-      outline: none;
-    }
-    .form-group input:focus { border-color: var(--accent-green); }
-  </style>
+        .btn-informe-main:active {
+            transform: scale(0.99);
+        }
+    </style>
 </head>
 <body>
 
-  <div class="main-container">
-    <header class="brand-header">
-      <div class="logo-container">
-        <img src="sensometrica.jpg" alt="SENSOMETRIKA" class="brand-logo-img">
-      </div>
-      <span style="color: var(--accent-cyan); font-size: 0.72rem; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase;">
-        PORTAL OFICIAL DE EVALUACIÓN PSICOSENSOMÉTRICA
-      </span>
-      <span style="font-size: 0.64rem; color: var(--text-muted);">Acreditación de Conductores • D.S. N° 170 / Minería & Forestal</span>
-    </header>
+    <div class="main-container">
+        <header class="brand-header">
+            <img src="sensometrica.jpg" alt="SENSOMETRIKA" class="brand-logo-img">
+        </header>
 
-    <!-- SELECTOR DE PERFIL: PARTICULAR (B2C) vs EMPRESAS (B2B) -->
-    <div class="switcher-container">
-      <div id="tabBtnB2C" class="tab-perfil" onclick="mostrarSeccionPlanes('b2c')">👤 PARTICULAR (B2C)</div>
-      <div id="tabBtnB2B" class="tab-perfil activo-b2b" onclick="mostrarSeccionPlanes('b2b')">🏢 EMPRESAS (B2B)</div>
+        <!-- TARJETA DE PERFIL DE TRABAJADOR EVALUADO -->
+        <section class="profile-card">
+            <div class="avatar-frame">
+                <img id="imgAvatar" src="https://via.placeholder.com/150/091120/38bdf8?text=BIOMETRIA" alt="Validación Facial">
+            </div>
+
+            <div class="plan-badge" id="lblPlanBadge">EVALUACIÓN B2B • PLAN PLUS</div>
+
+            <div>
+                <h2 id="lblNombreTrabajador" style="font-size: 1.15rem; font-weight: 900; color: #ffffff;">CARGANDO TRABAJADOR...</h2>
+                <p id="lblRutCargo" style="font-size: 0.78rem; color: var(--texto-gris); font-weight: 600; margin-top: 2px;">RUT: -- | Cargo: --</p>
+            </div>
+        </section>
+
+        <!-- PARRILLA DE MÓDULOS DE EVALUACIÓN -->
+        <section class="parrilla-card">
+            <div class="parrilla-header">
+                📋 PARRILLA DE MÓDULOS DEL PLAN (8 EVALUACIONES BASE)
+            </div>
+
+            <!-- 1. REACTÍMETRO SIMPLE -->
+            <div class="modulo-item" id="card_reactimetro">
+                <div class="modulo-info">
+                    <span class="modulo-titulo">1. Reactímetro Simple ⚡</span>
+                    <span class="modulo-desc" id="desc_reactimetro">Tiempo de respuesta lumínica y acústica en frenado.</span>
+                </div>
+                <div id="slot_reactimetro">
+                    <button class="btn-status-iniciar" onclick="navegarAModulo('reactimetro.html')">INICIAR →</button>
+                </div>
+            </div>
+
+            <!-- 2. TEST DE PALANCAS BIMANUAL -->
+            <div class="modulo-item" id="card_palancas">
+                <div class="modulo-info">
+                    <span class="modulo-titulo">2. Test de Palancas Bimanual 🕹️</span>
+                    <span class="modulo-desc" id="desc_palancas">Coordinación visomotora bipmanual y seguimiento de traza.</span>
+                </div>
+                <div id="slot_palancas">
+                    <button class="btn-status-iniciar" onclick="navegarAModulo('palancas.html')">INICIAR →</button>
+                </div>
+            </div>
+
+            <!-- 3. PUNTEO VISO-MOTRIZ -->
+            <div class="modulo-item" id="card_punteo">
+                <div class="modulo-info">
+                    <span class="modulo-titulo">3. Punteo Viso-Motriz 🎯</span>
+                    <span class="modulo-desc" id="desc_punteo">Punteo rítmico y precisión de impacto temporal.</span>
+                </div>
+                <div id="slot_punteo">
+                    <button class="btn-status-iniciar" onclick="navegarAModulo('punteo.html')">INICIAR →</button>
+                </div>
+            </div>
+
+            <!-- 4. TAMIZAJE AUDITIVO OCUPACIONAL -->
+            <div class="modulo-item" id="card_audicion">
+                <div class="modulo-info">
+                    <span class="modulo-titulo">4. Tamizaje Auditivo Ocupacional 📢</span>
+                    <span class="modulo-desc" id="desc_audicion">Audiometría tonal en frecuencias conversacionales.</span>
+                </div>
+                <div id="slot_audicion">
+                    <button class="btn-status-iniciar" onclick="navegarAModulo('audicion.html')">INICIAR →</button>
+                </div>
+            </div>
+
+            <!-- 5. TAMIZAJE VISUAL INTEGRAL -->
+            <div class="modulo-item" id="card_visual">
+                <div class="modulo-info">
+                    <span class="modulo-titulo">5. Tamizaje Visual Integral 👁️</span>
+                    <span class="modulo-desc" id="desc_visual">Agudeza visual lejana/cercana y Test Ishihara.</span>
+                </div>
+                <div id="slot_visual">
+                    <button class="btn-status-iniciar" onclick="navegarAModulo('visual.html')">INICIAR →</button>
+                </div>
+            </div>
+
+            <!-- 6. VELOCIDAD DE ANTICIPACIÓN (LOCK EN PLAN BASE) -->
+            <div class="modulo-item lock">
+                <div class="modulo-info">
+                    <span class="modulo-titulo">6. Velocidad de Anticipación ⏱️</span>
+                    <span class="modulo-desc">Cálculo de trayectorias en zonas ciegas.</span>
+                </div>
+                <div>
+                    <span class="btn-status-lock">🔒 NO INCLUIDO EN PLAN</span>
+                </div>
+            </div>
+
+            <!-- 7. ESTEREOPSIS 3D (LOCK EN PLAN BASE) -->
+            <div class="modulo-item lock">
+                <div class="modulo-info">
+                    <span class="modulo-titulo">7. Estereopsis & Profundidad 3D 📐</span>
+                    <span class="modulo-desc">Percepción espacial binocular.</span>
+                </div>
+                <div>
+                    <span class="btn-status-lock">🔒 NO INCLUIDO EN PLAN</span>
+                </div>
+            </div>
+
+            <!-- 8. CONTROL FATIGA & VIGILANCIA (LOCK EN PLAN BASE) -->
+            <div class="modulo-item lock">
+                <div class="modulo-info">
+                    <span class="modulo-titulo">8. Control Fatiga & Vigilancia (PVT) 🥱</span>
+                    <span class="modulo-desc">Detección de somnolencia y micro-sueños.</span>
+                </div>
+                <div>
+                    <span class="btn-status-lock">🔒 NO INCLUIDO EN PLAN</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- BOTÓN PRINCIPAL PARA VER INFORME PERICIAL -->
+        <button class="btn-informe-main" onclick="navegarAInforme()">
+            📊 VER INFORME PERICIAL B2B →
+        </button>
     </div>
 
-    <!-- ================================================================= -->
-    <!-- 1. BLOQUE DE PLANES B2C (PARTICULARES) -->
-    <!-- ================================================================= -->
-    <section class="contenedor-planes modo-b2c" id="planesB2C" style="display: none; flex-direction: column; gap: 14px;">
-      <!-- B2C PLAN BÁSICO -->
-      <article class="card-plan">
-        <div class="plan-top-row">
-          <h2 class="plan-titulo">Pase Básico (B2C)</h2>
-          <span class="plan-badge b2c">3 Simulaciones</span>
-        </div>
-        <ul class="plan-features">
-          <li>1 Demo de inducción por cada prueba</li>
-          <li>3 Simulaciones en Reactímetro, Palancas y Punteo</li>
-          <li>Informe de resultados en pantalla</li>
-        </ul>
-        <div class="plan-precio-box">
-          <div class="plan-precio-linea-principal">$9.900</div>
-          <span class="plan-precio-sub">Acceso personal por 48 hrs</span>
-        </div>
-        <button type="button" class="btn-elegir-plan b2c" onclick="alert('Redirigiendo a Pasarela B2C...')">
-          Elegir Pase Básico (3 Sim) →
-        </button>
-      </article>
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
 
-      <!-- B2C PLAN PLUS -->
-      <article class="card-plan destacado">
-        <div class="plan-top-row">
-          <h2 class="plan-titulo">Pase Plus (B2C)</h2>
-          <span class="plan-badge b2c">5 Sim + Visual</span>
-        </div>
-        <ul class="plan-features">
-          <li>1 Demo de inducción por cada prueba</li>
-          <li>5 Simulaciones en Reactímetro, Palancas y Punteo</li>
-          <li><strong>+ 2 Simulaciones de Tamizaje Visual (Agudeza / Ishihara)</strong></li>
-          <li>Informe consolidado con 4 módulos rendidos</li>
-        </ul>
-        <div class="plan-precio-box">
-          <div class="plan-precio-linea-principal">$14.900</div>
-          <span class="plan-precio-sub">Acceso personal por 5 días</span>
-        </div>
-        <button type="button" class="btn-elegir-plan b2c" onclick="alert('Redirigiendo a Pasarela B2C...')">
-          Elegir Pase Plus (5 Sim) →
-        </button>
-      </article>
-    </section>
+        // 1. CARGA Y AISLAMIENTO DE DATOS DEL TRABAJADOR
+        let datosUsuario = {};
+        try {
+            datosUsuario = JSON.parse(localStorage.getItem('sensometrika_datos_usuario')) || {};
+        } catch(e){}
 
-    <!-- ================================================================= -->
-    <!-- 2. BLOQUE DE PLANES B2B (EMPRESAS / FAENAS) -->
-    <!-- ================================================================= -->
-    <section class="contenedor-planes modo-b2b" id="planesB2B" style="display: flex; flex-direction: column; gap: 14px;">
-      
-      <!-- PANEL SELECTOR DE CUPOS (MÍNIMO 10) -->
-      <div class="panel-contador-b2b">
-        <div class="contador-header">
-          <span>📦 Seleccione tamaño de la bolsa (mínimo 10 evaluaciones)</span>
-        </div>
-        <div class="contador-control-row">
-          <button type="button" class="btn-contador" onclick="ajustarCantidadB2B(-1)">−</button>
-          <input type="number" id="inputCantidadB2B" class="input-contador" value="10" min="10" onchange="validarYActualizarB2B()" oninput="validarYActualizarB2B()">
-          <button type="button" class="btn-contador" onclick="ajustarCantidadB2B(1)">+</button>
-        </div>
-        <div style="font-size: 0.65rem; color: #94a3b8; text-align: center;">
-          Sin fecha de expiración · Reintento automático a las 72 hrs
-        </div>
-      </div>
+        const rawNombre = urlParams.get('nombre') || datosUsuario.nombre || localStorage.getItem('sensometrika_nombre') || 'NUEVO TRABAJADOR';
+        const rawCargo = urlParams.get('cargo') || datosUsuario.cargo || localStorage.getItem('sensometrika_cargo') || 'OPERADOR';
+        const rawEmpresa = urlParams.get('empresa') || datosUsuario.empresa || localStorage.getItem('sensometrika_b2b_empresa') || 'EMPRESA MANDANTE';
+        const planActivo = (urlParams.get('plan') || localStorage.getItem('sensometrika_b2b_plan') || 'PLUS').toUpperCase();
+        const rutEvaluado = urlParams.get('rut') || datosUsuario.rut || localStorage.getItem('sensometrika_rut') || '12345678-K';
+        const cleanRut = rutEvaluado.replace(/[^0-9Kk]/g, '');
 
-      <!-- B2B PLAN BÁSICO -->
-      <article class="card-plan destacado-b2b">
-        <div class="plan-top-row">
-          <h2 class="plan-titulo">Plan Básico Laboral (B2B)</h2>
-          <span class="plan-badge b2b">3 Módulos Base</span>
-        </div>
-        <ul class="plan-features">
-          <li>1 Demo de calibración + 1 Simulación Oficial</li>
-          <li>Módulos: Reactímetro, Palancas y Punteo Viso-Motriz</li>
-          <li>Despacho desatendido de informes al supervisor APR</li>
-        </ul>
-        <div class="plan-precio-box">
-          <div class="plan-precio-linea-principal" style="color: var(--accent-green);" id="precioTotalBasicoB2B">$79.900</div>
-          <span class="plan-precio-sub" id="precioUnitarioBasicoB2B">VALOR TOTAL BOLSA (10 EVALUACIONES) + IVA</span>
-        </div>
-      </article>
+        // Generación / Persistencia del ID de Sesión Único por RUT
+        let sessionId = urlParams.get('session') || localStorage.getItem(`sensometrika_active_session_${cleanRut}`);
+        if (!sessionId || sessionId.trim() === '') {
+            sessionId = `SESION_B2B_${cleanRut}_${Date.now()}`;
+            localStorage.setItem(`sensometrika_active_session_${cleanRut}`, sessionId);
+        }
+        localStorage.setItem('sensometrika_session_activa', sessionId);
 
-      <!-- REGISTRO CORPORATIVO B2B -->
-      <div class="form-registro-b2b-card">
-        <div style="border-bottom: 1px solid var(--card-border); padding-bottom: 6px;">
-          <span style="font-size: 0.80rem; font-weight: 900; color: var(--accent-green); text-transform: uppercase;">
-            📋 REGISTRO CORPORATIVO & ACCESO A DASHBOARD APR
-          </span>
-        </div>
-        
-        <form id="formRegistroB2B" onsubmit="ingresarDashboardB2B(event)">
-          <div style="display: flex; flex-direction: column; gap: 10px;">
-            <div class="form-group">
-              <label>Razón Social Empresa *</label>
-              <input type="text" id="inputRazonSocial" value="Sensometrica SpA" placeholder="Ej: SOCADEP CHILLAN SPA" required>
-            </div>
+        // Guardar estructura activa en LocalStorage para garantizar consistencia
+        const usuarioActualizado = {
+            rut: rutEvaluado,
+            nombre: rawNombre,
+            cargo: rawCargo,
+            empresa: rawEmpresa,
+            plan: planActivo,
+            session: sessionId
+        };
+        localStorage.setItem('sensometrika_datos_usuario', JSON.stringify(usuarioActualizado));
+        localStorage.setItem('sensometrika_rut', rutEvaluado);
 
-            <div class="form-group">
-              <label>RUT Empresa *</label>
-              <input type="text" id="inputRutEmpresa" value="73.151.761-3" placeholder="Ej: 77.123.456-7" required oninput="formatearRutInput(this)">
-            </div>
+        // 2. ACTUALIZAR INTERFAZ DE PERFIL
+        document.getElementById('lblNombreTrabajador').textContent = rawNombre.toUpperCase();
+        document.getElementById('lblRutCargo').textContent = `RUT: ${rutEvaluado} | Cargo: ${rawCargo}`;
+        document.getElementById('lblPlanBadge').textContent = `EVALUACIÓN B2B • PLAN ${planActivo}`;
 
-            <div class="form-group">
-              <label>Nombre Encargado / APR *</label>
-              <input type="text" id="inputNombreEncargado" value="Francisco Osses" placeholder="Ej: Tomas Aguayo" required>
-            </div>
+        // 3. VERIFICACIÓN INDEPENDIENTE POR RUT Y SESIÓN
+        function moduloFueEjecutadoEnSesion(nombreModulo) {
+            if (!cleanRut || !sessionId) return false;
+            const claveSesion = `sensometrika_${nombreModulo}_${cleanRut}_${sessionId}`;
+            const claveUltimo = `sensometrika_last_${nombreModulo}_${cleanRut}_${sessionId}`;
+            return (localStorage.getItem(claveSesion) !== null || localStorage.getItem(claveUltimo) !== null);
+        }
 
-            <div class="form-group">
-              <label>Correo Electrónico Notificaciones *</label>
-              <input type="email" id="inputCorreoNotif" value="felix.osses@gmail.com" placeholder="Ej: apr@empresa.cl" required>
-            </div>
-          </div>
+        // 4. RENDERS DE LA PARRILLA DE MÓDULOS
+        function actualizarEstadoParrilla() {
+            const modulos = ['reactimetro', 'palancas', 'punteo', 'audicion', 'visual'];
 
-          <button type="submit" class="btn-elegir-plan b2b" style="margin-top: 14px; font-size: 0.85rem;">
-            INGRESAR A DASHBOARD APR ...
-          </button>
-        </form>
-      </div>
+            modulos.forEach(mod => {
+                const ejecutado = moduloFueEjecutadoEnSesion(mod);
+                const slotElem = document.getElementById(`slot_${mod}`);
+                const descElem = document.getElementById(`desc_${mod}`);
 
-    </section>
-  </div>
+                if (slotElem) {
+                    if (ejecutado) {
+                        slotElem.innerHTML = `<div class="btn-status-ejecutado">✓ EJECUTADO (1/1)</div>`;
+                        if (descElem) descElem.textContent = "Evaluación B2B finalizada correctamente.";
+                    } else {
+                        slotElem.innerHTML = `<button class="btn-status-iniciar" onclick="navegarAModulo('${mod}.html')">INICIAR →</button>`;
+                    }
+                }
+            });
+        }
 
-  <script>
-    function mostrarSeccionPlanes(modo) {
-      const tabB2C = document.getElementById('tabBtnB2C');
-      const tabB2B = document.getElementById('tabBtnB2B');
-      const secB2C = document.getElementById('planesB2C');
-      const secB2B = document.getElementById('planesB2B');
+        // 5. NAVEGACIÓN SEGURA DE MÓDULOS PROPAGANDO PARÁMETROS
+        function navegarAModulo(archivoModulo) {
+            const params = new URLSearchParams({
+                rut: rutEvaluado,
+                nombre: rawNombre,
+                cargo: rawCargo,
+                empresa: rawEmpresa,
+                plan: planActivo,
+                session: sessionId,
+                mode: 'b2b'
+            });
+            window.location.href = `${archivoModulo}?${params.toString()}`;
+        }
 
-      if (modo === 'b2b') {
-        tabB2C.className = 'tab-perfil';
-        tabB2B.className = 'tab-perfil activo-b2b';
-        secB2C.style.display = 'none';
-        secB2B.style.display = 'flex';
-      } else {
-        tabB2B.className = 'tab-perfil';
-        tabB2C.className = 'tab-perfil activo-b2c';
-        secB2B.style.display = 'none';
-        secB2C.style.display = 'flex';
-      }
-    }
+        // 6. NAVEGACIÓN AL INFORME PERICIAL B2B
+        function navegarAInforme() {
+            const params = new URLSearchParams({
+                rut: rutEvaluado,
+                nombre: rawNombre,
+                cargo: rawCargo,
+                empresa: rawEmpresa,
+                plan: planActivo,
+                session: sessionId,
+                mode: 'b2b'
+            });
+            window.location.href = `informe_b2b_planes.html?${params.toString()}`;
+        }
 
-    function ajustarCantidadB2B(delta) {
-      const input = document.getElementById('inputCantidadB2B');
-      let val = parseInt(input.value) || 10;
-      val = Math.max(10, val + delta);
-      input.value = val;
-      validarYActualizarB2B();
-    }
-
-    function validarYActualizarB2B() {
-      const input = document.getElementById('inputCantidadB2B');
-      let cant = parseInt(input.value) || 10;
-      if (cant < 10) cant = 10;
-      input.value = cant;
-
-      const precioUnitario = 7990;
-      const total = cant * precioUnitario;
-      document.getElementById('precioTotalBasicoB2B').innerText = '$' + total.toLocaleString('es-CL');
-      document.getElementById('precioUnitarioBasicoB2B').innerText = `VALOR TOTAL BOLSA (${cant} EVALUACIONES) + IVA`;
-    }
-
-    /**
-     * REDIRECCIÓN DINÁMICA: Transmite los datos ingresados en el formulario
-     * directamente hacia dashboard_apr.html para aislar la nómina por empresa.
-     */
-    function ingresarDashboardB2B(e) {
-      if (e) e.preventDefault();
-
-      const razonSocial = (document.getElementById('inputRazonSocial') || {}).value || 'Sensometrica SpA';
-      const rutEmpresa = (document.getElementById('inputRutEmpresa') || {}).value || '73.151.761-3';
-      const nombreEncargado = (document.getElementById('inputNombreEncargado') || {}).value || 'Francisco Osses';
-      const correoNotif = (document.getElementById('inputCorreoNotif') || {}).value || 'felix.osses@gmail.com';
-
-      const params = new URLSearchParams({
-        empresa: razonSocial.trim(),
-        rut: rutEmpresa.trim(),
-        encargado: nombreEncargado.trim(),
-        correo: correoNotif.trim(),
-        plan: 'BASICO'
-      });
-
-      window.location.href = `dashboard_apr.html?${params.toString()}`;
-    }
-
-    function formatearRutInput(input) {
-      let valor = input.value.replace(/[^0-9kK]/g, '');
-      if (valor.length > 1) {
-        const cuerpo = valor.slice(0, -1);
-        const dv = valor.slice(-1).toUpperCase();
-        input.value = cuerpo.replace(/\B(?=(\d{3})+(?!\d))/g, ".") + "-" + dv;
-      } else {
-        input.value = valor.toUpperCase();
-      }
-    }
-  </script>
+        // Inicialización al cargar la página
+        document.addEventListener('DOMContentLoaded', () => {
+            actualizarEstadoParrilla();
+        });
+    </script>
 </body>
 </html>
