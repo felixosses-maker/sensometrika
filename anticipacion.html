@@ -65,7 +65,7 @@
       position: relative;
     }
 
-    /* ESTILOS UNIFICADOS DE BARRA SUPERIOR CON PIP BIOMÉTRICO (ALTERNATIVA 1) */
+    /* ESTILOS UNIFICADOS DE BARRA SUPERIOR CON PIP BIOMÉTRICO */
     .top-nav-bar {
       display: flex !important;
       justify-content: space-between !important;
@@ -98,7 +98,7 @@
       color: #ffffff !important;
     }
 
-    /* PIP BIOMÉTRICO FRENADO Y RESTRINGIDO A 56px X 56px */
+    /* PIP BIOMÉTRICO RESTRINGIDO A 56px X 56px */
     .cam-preview-pip-header {
       position: relative !important;
       width: 56px !important;
@@ -269,8 +269,8 @@
     }
     .btn-iniciar-test:active { transform: scale(0.98); }
     .btn-iniciar-test.frenar {
-      background-color: #10b981;
-      box-shadow: 0 4px 16px rgba(16, 185, 129, 0.4);
+      background-color: #ef4444;
+      box-shadow: 0 4px 16px rgba(239, 68, 68, 0.4);
     }
 
     .metricas-grid {
@@ -315,7 +315,7 @@
     <section class="modulo-card-container">
       <!-- NAVEGACIÓN SUPERIOR UNIFICADA CON BIOMETRÍA PIP EN HEADER -->
       <div class="top-nav-bar">
-        <button type="button" onclick="regresarAlMenu()">&larr; Menú Evaluaciones</button>
+        <button type="button" onclick="regresarAlMenu()">← Menú Evaluaciones</button>
 
         <!-- PIP BIOMÉTRICO RESTRINGIDO (56px) -->
         <div class="cam-preview-pip-header">
@@ -330,7 +330,7 @@
         <span class="badge-fase" id="badge-modo">🚀 Alta Complejidad (Sernageomin / CORMA)</span>
       </div>
 
-      <!-- CONTENEDOR DE LA PISTA (100% LIMPIO Y DESPEJADO) -->
+      <!-- CONTENEDOR DE LA PISTA -->
       <div class="contenedor-pista" id="pista">
         <div class="pista-eje-central"></div>
         <div class="linea-meta"></div>
@@ -360,7 +360,7 @@
       <div class="metricas-grid">
         <div class="col-metrica">
           <span>Margen Estándar</span>
-          <strong style="color: #38bdf8;">&le; 220 ms</strong>
+          <strong style="color: #38bdf8;">≤ 220 ms</strong>
         </div>
         <div class="col-metrica">
           <span>Promedio Oficial</span>
@@ -389,16 +389,21 @@
 
   <script>
     const urlParams = new URLSearchParams(window.location.search);
-    const modeParam = urlParams.get('mode') || (localStorage.getItem('sensometrika_b2c_mode') === 'true' ? 'b2c' : 'b2b');
-    const esB2B = (modeParam === 'b2b');
+    const modeParam = urlParams.get('mode') || 'b2b';
+    const esB2B = (modeParam === 'b2b') || urlParams.has('token') || urlParams.has('session');
 
     let datosUsuario = {};
     try {
       datosUsuario = JSON.parse(localStorage.getItem('sensometrika_datos_usuario')) || {};
     } catch(e){}
 
-    const rut = urlParams.get('rut') || datosUsuario.rut || 'GENERICO';
+    const rawNombre = urlParams.get('nombre') || datosUsuario.nombre || localStorage.getItem('sensometrika_nombre') || '';
+    const rawCargo = urlParams.get('cargo') || datosUsuario.cargo || localStorage.getItem('sensometrika_cargo') || '';
+    const rawEmpresa = urlParams.get('empresa') || datosUsuario.empresa || localStorage.getItem('sensometrika_b2b_empresa') || '';
+    const planActivo = (urlParams.get('plan') || localStorage.getItem('sensometrika_b2b_plan') || 'BASICO').toUpperCase();
+    const rut = urlParams.get('rut') || datosUsuario.rut || localStorage.getItem('sensometrika_rut') || '12345678-K';
     const cleanRut = rut.replace(/[^0-9Kk]/g, '');
+    const sessionId = urlParams.get('session') || localStorage.getItem('sensometrika_session_activa') || `SESION_B2B_${cleanRut}_${Date.now()}`;
 
     // PARÁMETROS TELEMÉTRICOS DE CÁMARA
     let distanciaMedidaCm = 55;
@@ -475,13 +480,16 @@
     function cerrarModalGuia() { document.getElementById('modalGuia').style.display = 'none'; }
 
     function regresarAlMenu() {
-      const returnUrlParam = urlParams.get('returnUrl');
-      if (returnUrlParam) {
-        window.location.href = decodeURIComponent(returnUrlParam);
-      } else {
-        const menuDestino = esB2B ? 'menu_b2b_planes.html' : 'menu_B2C.html';
-        window.location.href = `${menuDestino}?${urlParams.toString()}`;
-      }
+      const paramsRegreso = new URLSearchParams({
+        rut: rut,
+        nombre: rawNombre,
+        cargo: rawCargo,
+        empresa: rawEmpresa,
+        plan: planActivo,
+        session: sessionId,
+        mode: 'b2b'
+      });
+      window.location.href = `menu_b2b_planes.html?${paramsRegreso.toString()}`;
     }
 
     function mostrarModalInterno(titulo, mensaje, callback) {
@@ -509,23 +517,30 @@
     let faseActual = 0; 
     let erroresOficiales = [];
 
+    // VERIFICACIÓN ESTRICTA POR RUT Y SESIÓN B2B
+    function verificarModuloEjecutado() {
+      if (urlParams.has('reeval')) return false;
+      const dataStr = localStorage.getItem(`sensometrika_anticipacion_${cleanRut}_${sessionId}`);
+      return dataStr !== null;
+    }
+
     document.addEventListener('DOMContentLoaded', () => {
       iniciarMediaPipeFaceMesh();
       actualizarEstadoUI();
     });
 
     function actualizarEstadoUI() {
-      const historial = JSON.parse(localStorage.getItem(`sensometrika_historial_anticipacion_${cleanRut}`)) || [];
-      const numEnsayosRealizados = historial.length;
+      const ejecutado = verificarModuloEjecutado();
 
-      const planStorage = (localStorage.getItem('sensometrika_plan_contratado') || urlParams.get('plan') || 'FULL').toUpperCase();
-      let maxIntentosPlan = esB2B ? (planStorage.includes('ALTO') ? 3 : 1) : 5;
-
-      if (numEnsayosRealizados >= maxIntentosPlan) {
-        document.getElementById('titulo-fase').innerText = esB2B ? `EVALUACIÓN REGISTRADA (${numEnsayosRealizados}/${maxIntentosPlan})` : `PLAN COMPLETADO (${numEnsayosRealizados}/${maxIntentosPlan})`;
-        document.getElementById('panel-estado').innerText = esB2B ? 'Evaluación corporativa B2B registrada exitosamente.' : 'Has completado la cuota de simulaciones contratadas.';
+      if (ejecutado) {
+        document.getElementById('titulo-fase').innerText = `✓ EVALUACIÓN REGISTRADA (1/1)`;
+        document.getElementById('badge-modo').innerText = `✓ REGISTRADO EN INFORME B2B`;
+        document.getElementById('badge-modo').style.borderColor = '#10b981';
+        document.getElementById('badge-modo').style.color = '#10b981';
+        document.getElementById('panel-estado').innerText = 'Evaluación corporativa B2B registrada exitosamente.';
         const btn = document.getElementById('btn-accion');
-        btn.innerText = '← RETORNAR AL MENÚ DE EVALUACIONES';
+        btn.innerText = 'VOLVER AL MENÚ DE EVALUACIONES →';
+        btn.style.backgroundColor = '#10b981';
         btn.onclick = regresarAlMenu;
       }
     }
@@ -533,11 +548,7 @@
     function manejarAccion() {
       if (estaBloqueadoPorDistancia) return;
 
-      const historial = JSON.parse(localStorage.getItem(`sensometrika_historial_anticipacion_${cleanRut}`)) || [];
-      const planStorage = (localStorage.getItem('sensometrika_plan_contratado') || urlParams.get('plan') || 'FULL').toUpperCase();
-      let maxIntentosPlan = esB2B ? (planStorage.includes('ALTO') ? 3 : 1) : 5;
-
-      if (historial.length >= maxIntentosPlan) {
+      if (verificarModuloEjecutado()) {
         regresarAlMenu();
         return;
       }
@@ -578,6 +589,9 @@
       simulando = false;
 
       if (faseActual === 0) {
+        // "QUEMAR" EL DEMO Y PASAR DIRECTAMENTE A LA FASE OFICIAL
+        localStorage.setItem(`anticipacion_demo_completada_${cleanRut}_${sessionId}`, 'true');
+
         mostrarModalInterno(
           "¡Prueba Demo Completada!",
           `Margen estimado en práctica: <strong>${errorMs} ms</strong>.<br><br>A continuación, iniciarán las 3 Rondas Oficiales evaluadas por el sistema.`,
@@ -610,17 +624,30 @@
 
     function finalizarPruebaTotal(promedioFinal) {
       const aprobado = promedioFinal <= 220;
+      let efectividadCalc = Math.max(10, Math.round(100 - (promedioFinal / 12)));
 
-      let histAnt = JSON.parse(localStorage.getItem(`sensometrika_historial_anticipacion_${cleanRut}`)) || [];
-      histAnt.push({
-        errorMs: promedioFinal,
+      const registroData = {
+        efectividad: efectividadCalc,
+        score: efectividadCalc,
+        precision: efectividadCalc,
+        tiempoReaccion: promedioFinal,
+        desvioMs: promedioFinal,
         rondas: erroresOficiales,
         aprobado: aprobado,
         dictamen: aprobado ? 'APROBADO' : 'OBSERVADO',
         distanciaAvgCm: distanciaMedidaCm,
         fecha: new Date().toISOString()
-      });
-      localStorage.setItem(`sensometrika_historial_anticipacion_${cleanRut}`, JSON.stringify(histAnt));
+      };
+
+      // REGISTRO DE CLAVES PARA LECTURA DIRECTA EN INFORME B2B
+      localStorage.setItem(`sensometrika_anticipacion_${cleanRut}_${sessionId}`, JSON.stringify(registroData));
+      localStorage.setItem(`sensometrika_last_anticipacion_${cleanRut}_${sessionId}`, JSON.stringify(registroData));
+      localStorage.setItem('sensometrika_anticipacion', JSON.stringify(registroData));
+
+      let modulosRendidos = {};
+      try { modulosRendidos = JSON.parse(localStorage.getItem('sensometrika_modulos_rendidos')) || {}; } catch(e){}
+      modulosRendidos.anticipacion = true;
+      localStorage.setItem('sensometrika_modulos_rendidos', JSON.stringify(modulosRendidos));
 
       regresarAlMenu();
     }
