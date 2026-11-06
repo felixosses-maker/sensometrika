@@ -163,7 +163,7 @@
             grid-template-columns: 1fr 1fr;
             border-radius: 6px;
             overflow: hidden;
-            font-size: 0.60rem;
+            font-size: 0.58rem;
             font-weight: 800;
             text-transform: uppercase;
             text-align: center;
@@ -177,9 +177,10 @@
             border-radius: 8px;
             padding: 10px;
             text-align: center;
-            font-size: 0.75rem;
+            font-size: 0.72rem;
             font-weight: 900;
             text-transform: uppercase;
+            line-height: 1.3;
         }
 
         .dictamen-aprobado { background-color: #dcfce7; border: 1px solid #86efac; color: #15803d; }
@@ -379,7 +380,7 @@
 
         const rawNombre = urlParams.get('nombre') || datosUsuario.nombre || localStorage.getItem('sensometrika_nombre') || 'TRABAJADOR EVALUADO';
         const rawRut = urlParams.get('rut') || datosUsuario.rut || localStorage.getItem('sensometrika_rut') || '12.345.678-K';
-        const rawCargo = urlParams.get('cargo') || datosUsuario.cargo || localStorage.getItem('sensometrika_cargo') || 'Operador de Maquinaria';
+        const rawCargo = urlParams.get('cargo') || datosUsuario.cargo || localStorage.getItem('sensometrika_cargo') || 'OPERADOR DE MAQUINARIA';
         const rawEmpresa = urlParams.get('empresa') || datosUsuario.empresa || 'SOCADEP LTDA.';
         const sessionId = urlParams.get('session') || localStorage.getItem('sensometrika_session_activa') || `SESION_B2B_${rawRut.replace(/[^0-9Kk]/g, '')}_${Date.now()}`;
         const cleanRut = rawRut.replace(/[^0-9Kk]/g, '');
@@ -402,8 +403,7 @@
         function obtenerTelemetriaModulo(key) {
             const dataStr = localStorage.getItem(`sensometrika_${key}_${cleanRut}_${sessionId}`) ||
                             localStorage.getItem(`sensometrika_last_${key}_${cleanRut}_${sessionId}`) ||
-                            localStorage.getItem(`sensometrika_historial_${key}_${cleanRut}_${sessionId}`) ||
-                            localStorage.getItem(`sensometrika_${key}`);
+                            localStorage.getItem(`sensometrika_historial_${key}_${cleanRut}_${sessionId}`);
             try {
                 return JSON.parse(dataStr) || null;
             } catch(e) {
@@ -460,7 +460,7 @@
             const svgFirmaRespaldo = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="60" viewBox="0 0 200 60"><path d="M 15 35 Q 35 15, 65 30 T 105 18 T 155 38 Q 175 48, 185 25" fill="none" stroke="%230f172a" stroke-width="2" stroke-linecap="round"/></svg>`;
             document.getElementById('imgFirmaTrabajador').src = (firmaGuardada && firmaGuardada.startsWith('data:image')) ? firmaGuardada : svgFirmaRespaldo;
 
-            // MATRIZ OFICIAL DE LOS 8 MÓDULOS (HOMOLOGADO A AUDICION)
+            // MATRIZ OFICIAL DE LOS 8 MÓDULOS
             const modulosParrilla = [
                 { key: 'reactimetro', title: '1. Reactímetro Simple ⚡', est: 'Reacción ≤ 400ms', minPlan: 'BASICO' },
                 { key: 'palancas', title: '2. Test Palancas Bimanual 🕹️', est: 'Efectividad ≥ 75%', minPlan: 'BASICO' },
@@ -506,8 +506,8 @@
                     evaluadosObligatorios++;
                     let detalleTelemetria = "";
                     if (telData) {
-                        if (telData.tiempo || telData.tiempoReaccion || telData.tiempoReaccionMs || telData.promedio) {
-                            detalleTelemetria += `Tiempo: <b>${telData.tiempo || telData.tiempoReaccion || telData.tiempoReaccionMs || telData.promedio}ms</b><br>`;
+                        if (telData.tiempo || telData.tiempoReaccion || telData.tiempoReaccionMs || telData.tiempoTotal) {
+                            detalleTelemetria += `Tiempo: <b>${telData.tiempo || telData.tiempoReaccion || telData.tiempoReaccionMs || telData.tiempoTotal}ms</b><br>`;
                         }
                         if (telData.efectividad || telData.score) {
                             detalleTelemetria += `Score: <b>${telData.efectividad || telData.score}%</b><br>`;
@@ -546,6 +546,7 @@
             const boxDictamen = document.getElementById('boxDictamen');
             const lblEstadoVigencia = document.getElementById('lblEstadoVigencia');
             const lblDictamenSub = document.getElementById('lblDictamenSub');
+            const cargoFormateado = decodeURIComponent(rawCargo).toUpperCase();
 
             if (evaluadosObligatorios < totalObligatoriosPlan) {
                 const faltantes = totalObligatoriosPlan - evaluadosObligatorios;
@@ -556,9 +557,11 @@
                 lblEstadoVigencia.className = "vigencia-orange";
             } else {
                 boxDictamen.className = "banner-dictamen dictamen-aprobado";
-                boxDictamen.innerHTML = `✔ DICTAMEN PERICIAL: CERTIFICADO APTO (PLAN ${planActivo})`;
-                if(lblDictamenSub) lblDictamenSub.textContent = `Aptitud psicomotriz y sensorial verificada bajo D.S. N° 170 para ${rawCargo.toUpperCase()}.`;
-                lblEstadoVigencia.textContent = `VÁLIDO POR 2 AÑOS`;
+                boxDictamen.innerHTML = `✔ DICTAMEN PERICIAL: CERTIFICADO APTO PARA OPERACIÓN Y CONDUCCIÓN (${cargoFormateado})`;
+                if(lblDictamenSub) lblDictamenSub.textContent = `Aptitud psicomotriz y sensorial verificada bajo D.S. N° 170 para el cargo de ${cargoFormateado}.`;
+                
+                // VIGENCIA NORMATIVA DE 6 MESES A 1 AÑO
+                lblEstadoVigencia.textContent = `VÁLIDO POR 1 AÑO (RECALIBRACIÓN A 6 MESES)`;
                 lblEstadoVigencia.className = "vigencia-green";
             }
 
