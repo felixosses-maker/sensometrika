@@ -429,24 +429,29 @@
                 } catch(e) {}
             }
 
-            // Tiempos de Sesión
-            let timestampInicioKey = `sensometrika_ts_inicio_${cleanRut}_${sessionId}`;
-            let timestampTerminoKey = `sensometrika_ts_termino_${cleanRut}_${sessionId}`;
-            let tsInicio = localStorage.getItem(timestampInicioKey) || (Date.now() - (15 * 60 * 1000));
-            let tsTermino = localStorage.getItem(timestampTerminoKey) || Date.now();
+            // GESTIÓN Y CONGELAMIENTO DE TIEMPOS DE SESIÓN
+            const keyTsInicio = `sensometrika_ts_inicio_${cleanRut}_${sessionId}`;
+            const keyTsTermino = `sensometrika_ts_termino_${cleanRut}_${sessionId}`;
+
+            let tsInicio = localStorage.getItem(keyTsInicio);
+            if (!tsInicio) {
+                tsInicio = Date.now().toString();
+                localStorage.setItem(keyTsInicio, tsInicio);
+            }
+            let tsTermino = localStorage.getItem(keyTsTermino);
 
             const formatFecha = (ts) => {
+                if (!ts) return '--';
                 const d = new Date(parseInt(ts));
                 return `${d.getDate().toString().padStart(2, '0')}-${(d.getMonth()+1).toString().padStart(2, '0')}-${d.getFullYear()} ${d.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })}`;
             };
 
             document.getElementById('lblFechaInicio').textContent = formatFecha(tsInicio);
-            document.getElementById('lblFechaTermino').textContent = formatFecha(tsTermino);
 
             // Folio de Certificación
             let folioCert = `SMK-B2B-${planActivo}-${cleanRut.substring(0, 6)}-${Math.floor(Math.random()*899+100)}`;
 
-            // Foto Biométrica
+            // Foto Biométrica Única
             const fotoGuardada = localStorage.getItem(`sensometrika_foto_${cleanRut}_${sessionId}`) || 
                                  localStorage.getItem(`sensometrika_foto_${cleanRut}`) || 
                                  localStorage.getItem('sensometrika_foto_identidad');
@@ -542,7 +547,7 @@
                 tbody.appendChild(tr);
             });
 
-            // Dictamen final consolidado según plan
+            // Dictamen final y Congelamiento del Término de Sesión
             const boxDictamen = document.getElementById('boxDictamen');
             const lblEstadoVigencia = document.getElementById('lblEstadoVigencia');
             const lblDictamenSub = document.getElementById('lblDictamenSub');
@@ -555,12 +560,19 @@
                 if(lblDictamenSub) lblDictamenSub.textContent = `Faltan ${faltantes} de ${totalObligatoriosPlan} módulos contratados por consolidar.`;
                 lblEstadoVigencia.textContent = "INCOMPLETO";
                 lblEstadoVigencia.className = "vigencia-orange";
+                document.getElementById('lblFechaTermino').textContent = "--";
             } else {
+                // CONGELAR TÉRMINO DE SESIÓN AL COMPLETAR 100% DE MÓDULOS EXIGIDOS
+                if (!tsTermino) {
+                    tsTermino = Date.now().toString();
+                    localStorage.setItem(keyTsTermino, tsTermino);
+                }
+                document.getElementById('lblFechaTermino').textContent = formatFecha(tsTermino);
+
                 boxDictamen.className = "banner-dictamen dictamen-aprobado";
                 boxDictamen.innerHTML = `✔ DICTAMEN PERICIAL: CERTIFICADO APTO PARA OPERACIÓN Y CONDUCCIÓN (${cargoFormateado})`;
                 if(lblDictamenSub) lblDictamenSub.textContent = `Aptitud psicomotriz y sensorial verificada bajo D.S. N° 170 para el cargo de ${cargoFormateado}.`;
                 
-                // VIGENCIA NORMATIVA DE 6 MESES A 1 AÑO
                 lblEstadoVigencia.textContent = `VÁLIDO POR 1 AÑO (RECALIBRACIÓN A 6 MESES)`;
                 lblEstadoVigencia.className = "vigencia-green";
             }

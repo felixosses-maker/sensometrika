@@ -84,12 +84,16 @@
             overflow: hidden;
             background: #030712;
             box-shadow: 0 0 15px rgba(56, 189, 248, 0.3);
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
 
         .avatar-frame img {
             width: 100%;
             height: 100%;
             object-fit: cover;
+            transform: scaleX(-1);
         }
 
         .plan-badge {
@@ -236,7 +240,7 @@
         <!-- TARJETA DE PERFIL DE TRABAJADOR EVALUADO -->
         <section class="profile-card">
             <div class="avatar-frame">
-                <img id="imgAvatar" src="https://via.placeholder.com/150/091120/38bdf8?text=BIOMETRIA" alt="Validación Facial">
+                <img id="imgAvatar" src="sensometrica.jpg" alt="Validación Facial">
             </div>
 
             <div class="plan-badge" id="lblPlanBadge">EVALUACIÓN B2B • PLAN PLUS</div>
@@ -253,92 +257,8 @@
                 📋 PARRILLA DE MÓDULOS DEL PLAN (8 EVALUACIONES BASE)
             </div>
 
-            <!-- 1. REACTÍMETRO SIMPLE -->
-            <div class="modulo-item" id="card_reactimetro">
-                <div class="modulo-info">
-                    <span class="modulo-titulo">1. Reactímetro Simple ⚡</span>
-                    <span class="modulo-desc" id="desc_reactimetro">Tiempo de respuesta lumínica y acústica en frenado.</span>
-                </div>
-                <div id="slot_reactimetro">
-                    <button class="btn-status-iniciar" onclick="navegarAModulo('reactimetro.html')">INICIAR →</button>
-                </div>
-            </div>
-
-            <!-- 2. TEST DE PALANCAS BIMANUAL -->
-            <div class="modulo-item" id="card_palancas">
-                <div class="modulo-info">
-                    <span class="modulo-titulo">2. Test de Palancas Bimanual 🕹️</span>
-                    <span class="modulo-desc" id="desc_palancas">Coordinación visomotora bipmanual y seguimiento de traza.</span>
-                </div>
-                <div id="slot_palancas">
-                    <button class="btn-status-iniciar" onclick="navegarAModulo('palancas.html')">INICIAR →</button>
-                </div>
-            </div>
-
-            <!-- 3. PUNTEO VISO-MOTRIZ -->
-            <div class="modulo-item" id="card_punteo">
-                <div class="modulo-info">
-                    <span class="modulo-titulo">3. Punteo Viso-Motriz 🎯</span>
-                    <span class="modulo-desc" id="desc_punteo">Punteo rítmico y precisión de impacto temporal.</span>
-                </div>
-                <div id="slot_punteo">
-                    <button class="btn-status-iniciar" onclick="navegarAModulo('punteo.html')">INICIAR →</button>
-                </div>
-            </div>
-
-            <!-- 4. TAMIZAJE AUDITIVO OCUPACIONAL -->
-            <div class="modulo-item" id="card_audicion">
-                <div class="modulo-info">
-                    <span class="modulo-titulo">4. Tamizaje Auditivo Ocupacional 📢</span>
-                    <span class="modulo-desc" id="desc_audicion">Audiometría tonal en frecuencias conversacionales.</span>
-                </div>
-                <div id="slot_audicion">
-                    <button class="btn-status-iniciar" onclick="navegarAModulo('audicion.html')">INICIAR →</button>
-                </div>
-            </div>
-
-            <!-- 5. TAMIZAJE VISUAL INTEGRAL -->
-            <div class="modulo-item" id="card_visual">
-                <div class="modulo-info">
-                    <span class="modulo-titulo">5. Tamizaje Visual Integral 👁️</span>
-                    <span class="modulo-desc" id="desc_visual">Agudeza visual lejana/cercana y Test Ishihara.</span>
-                </div>
-                <div id="slot_visual">
-                    <button class="btn-status-iniciar" onclick="navegarAModulo('visual.html')">INICIAR →</button>
-                </div>
-            </div>
-
-            <!-- 6. VELOCIDAD DE ANTICIPACIÓN (LOCK EN PLAN BASE) -->
-            <div class="modulo-item lock">
-                <div class="modulo-info">
-                    <span class="modulo-titulo">6. Velocidad de Anticipación ⏱️</span>
-                    <span class="modulo-desc">Cálculo de trayectorias en zonas ciegas.</span>
-                </div>
-                <div>
-                    <span class="btn-status-lock">🔒 NO INCLUIDO EN PLAN</span>
-                </div>
-            </div>
-
-            <!-- 7. ESTEREOPSIS 3D (LOCK EN PLAN BASE) -->
-            <div class="modulo-item lock">
-                <div class="modulo-info">
-                    <span class="modulo-titulo">7. Estereopsis & Profundidad 3D 📐</span>
-                    <span class="modulo-desc">Percepción espacial binocular.</span>
-                </div>
-                <div>
-                    <span class="btn-status-lock">🔒 NO INCLUIDO EN PLAN</span>
-                </div>
-            </div>
-
-            <!-- 8. CONTROL FATIGA & VIGILANCIA (LOCK EN PLAN BASE) -->
-            <div class="modulo-item lock">
-                <div class="modulo-info">
-                    <span class="modulo-titulo">8. Control Fatiga & Vigilancia (PVT) 🥱</span>
-                    <span class="modulo-desc">Detección de somnolencia y micro-sueños.</span>
-                </div>
-                <div>
-                    <span class="btn-status-lock">🔒 NO INCLUIDO EN PLAN</span>
-                </div>
+            <div id="containerModulosParrilla" class="flex flex-col gap-3">
+                <!-- Se inyectan dinámicamente los 8 módulos -->
             </div>
         </section>
 
@@ -365,14 +285,14 @@
         const cleanRut = rutEvaluado.replace(/[^0-9Kk]/g, '');
 
         // Generación / Persistencia del ID de Sesión Único por RUT
-        let sessionId = urlParams.get('session') || localStorage.getItem(`sensometrika_active_session_${cleanRut}`);
+        let sessionId = urlParams.get('session') || localStorage.getItem(`sensometrika_active_session_${cleanRut}`) || localStorage.getItem('sensometrika_session_activa');
         if (!sessionId || sessionId.trim() === '') {
             sessionId = `SESION_B2B_${cleanRut}_${Date.now()}`;
             localStorage.setItem(`sensometrika_active_session_${cleanRut}`, sessionId);
         }
         localStorage.setItem('sensometrika_session_activa', sessionId);
 
-        // Guardar estructura activa en LocalStorage para garantizar consistencia
+        // Guardar estructura activa en LocalStorage
         const usuarioActualizado = {
             rut: rutEvaluado,
             nombre: rawNombre,
@@ -384,12 +304,26 @@
         localStorage.setItem('sensometrika_datos_usuario', JSON.stringify(usuarioActualizado));
         localStorage.setItem('sensometrika_rut', rutEvaluado);
 
-        // 2. ACTUALIZAR INTERFAZ DE PERFIL
-        document.getElementById('lblNombreTrabajador').textContent = rawNombre.toUpperCase();
-        document.getElementById('lblRutCargo').textContent = `RUT: ${rutEvaluado} | Cargo: ${rawCargo}`;
-        document.getElementById('lblPlanBadge').textContent = `EVALUACIÓN B2B • PLAN ${planActivo}`;
+        // CONFIGURACIÓN DE LOS 8 MÓDULOS DEL SISTEMA
+        const modulosParrilla = [
+            { key: 'reactimetro', title: '1. Reactímetro Simple ⚡', desc: 'Tiempo de respuesta lumínica y acústica en frenado.', file: 'reactimetro.html', minPlan: 'BASICO' },
+            { key: 'palancas', title: '2. Test de Palancas Bimanual 🕹️', desc: 'Coordinación visomotora bimanual y seguimiento de traza.', file: 'palancas.html', minPlan: 'BASICO' },
+            { key: 'punteo', title: '3. Punteo Viso-Motriz 🎯', desc: 'Punteo rítmico y precisión de impacto temporal.', file: 'punteo.html', minPlan: 'BASICO' },
+            { key: 'audicion', title: '4. Tamizaje Auditivo Ocupacional 📢', desc: 'Audiometría tonal en frecuencias conversacionales.', file: 'audicion.html', minPlan: 'PLUS' },
+            { key: 'visual', title: '5. Tamizaje Visual Integral 👁️', desc: 'Agudeza visual lejana/cercana y Test Ishihara.', file: 'visual.html', minPlan: 'PLUS' },
+            { key: 'anticipacion', title: '6. Velocidad de Anticipación ⏱️', desc: 'Cálculo de trayectorias en zonas ciegas.', file: 'anticipacion.html', minPlan: 'FULL' },
+            { key: 'estereopsis', title: '7. Estereopsis & Profundidad 3D 📐', desc: 'Percepción espacial binocular.', file: 'estereopsis.html', minPlan: 'FULL' },
+            { key: 'fatiga', title: '8. Control Fatiga & Vigilancia (PVT) 🥱', desc: 'Detección de somnolencia y micro-sueños.', file: 'fatiga.html', minPlan: 'FULL' }
+        ];
 
-        // 3. VERIFICACIÓN INDEPENDIENTE POR RUT Y SESIÓN
+        function esPermitido(minPlanModulo) {
+            if (planActivo === 'FULL' || planActivo.includes('COMPLEJIDAD') || planActivo.includes('ALTO')) return true;
+            if (planActivo === 'PLUS' && (minPlanModulo === 'BASICO' || minPlanModulo === 'PLUS')) return true;
+            if (planActivo === 'BASICO' && minPlanModulo === 'BASICO') return true;
+            return false;
+        }
+
+        // VERIFICACIÓN INDEPENDIENTE POR RUT Y SESIÓN
         function moduloFueEjecutadoEnSesion(nombreModulo) {
             if (!cleanRut || !sessionId) return false;
             const claveSesion = `sensometrika_${nombreModulo}_${cleanRut}_${sessionId}`;
@@ -397,27 +331,68 @@
             return (localStorage.getItem(claveSesion) !== null || localStorage.getItem(claveUltimo) !== null);
         }
 
-        // 4. RENDERS DE LA PARRILLA DE MÓDULOS
-        function actualizarEstadoParrilla() {
-            const modulos = ['reactimetro', 'palancas', 'punteo', 'audicion', 'visual'];
+        // CARGA Y RENDERIZADO AL INICIALIZAR LA CONSOLA
+        document.addEventListener('DOMContentLoaded', () => {
+            // 2. ACTUALIZAR INTERFAZ DE PERFIL
+            document.getElementById('lblNombreTrabajador').textContent = decodeURIComponent(rawNombre).toUpperCase();
+            document.getElementById('lblRutCargo').textContent = `RUT: ${rutEvaluado} | Cargo: ${decodeURIComponent(rawCargo)}`;
+            document.getElementById('lblPlanBadge').textContent = `EVALUACIÓN B2B • PLAN ${planActivo}`;
 
-            modulos.forEach(mod => {
-                const ejecutado = moduloFueEjecutadoEnSesion(mod);
-                const slotElem = document.getElementById(`slot_${mod}`);
-                const descElem = document.getElementById(`desc_${mod}`);
+            // Cargar Foto Biométrica Real en el Avatar
+            const fotoGuardada = localStorage.getItem(`sensometrika_foto_${cleanRut}_${sessionId}`) ||
+                                 localStorage.getItem(`sensometrika_foto_${cleanRut}`);
+            if (fotoGuardada && fotoGuardada.length > 50) {
+                document.getElementById('imgAvatar').src = fotoGuardada;
+            }
 
-                if (slotElem) {
-                    if (ejecutado) {
-                        slotElem.innerHTML = `<div class="btn-status-ejecutado">✓ EJECUTADO (1/1)</div>`;
-                        if (descElem) descElem.textContent = "Evaluación B2B finalizada correctamente.";
-                    } else {
-                        slotElem.innerHTML = `<button class="btn-status-iniciar" onclick="navegarAModulo('${mod}.html')">INICIAR →</button>`;
-                    }
+            renderizarParrillaModulos();
+        });
+
+        // RENDERIZADO DINÁMICO DE LA PARRILLA DE MÓDULOS SEGÚN PLAN
+        function renderizarParrillaModulos() {
+            const container = document.getElementById('containerModulosParrilla');
+            container.innerHTML = '';
+
+            modulosParrilla.forEach(m => {
+                const permitido = esPermitido(m.minPlan);
+                const ejecutado = moduloFueEjecutadoEnSesion(m.key);
+
+                const divCard = document.createElement('div');
+                divCard.className = `modulo-item ${!permitido ? 'lock' : ''}`;
+
+                if (!permitido) {
+                    divCard.innerHTML = `
+                        <div class="modulo-info">
+                            <span class="modulo-titulo">${m.title}</span>
+                            <span class="modulo-desc">No incluido en Plan ${planActivo}.</span>
+                        </div>
+                        <div>
+                            <span class="btn-status-lock">🔒 NO INCLUIDO EN PLAN</span>
+                        </div>
+                    `;
+                } else if (ejecutado) {
+                    divCard.innerHTML = `
+                        <div class="modulo-info">
+                            <span class="modulo-titulo">${m.title}</span>
+                            <span class="modulo-desc">Evaluación B2B finalizada correctamente.</span>
+                        </div>
+                        <div class="btn-status-ejecutado">✓ EJECUTADO (1/1)</div>
+                    `;
+                } else {
+                    divCard.innerHTML = `
+                        <div class="modulo-info">
+                            <span class="modulo-titulo">${m.title}</span>
+                            <span class="modulo-desc">${m.desc}</span>
+                        </div>
+                        <button class="btn-status-iniciar" onclick="navegarAModulo('${m.file}')">INICIAR →</button>
+                    `;
                 }
+
+                container.appendChild(divCard);
             });
         }
 
-        // 5. NAVEGACIÓN SEGURA DE MÓDULOS PROPAGANDO PARÁMETROS
+        // NAVEGACIÓN SEGURA A MÓDULOS PROPAGANDO PARÁMETROS
         function navegarAModulo(archivoModulo) {
             const params = new URLSearchParams({
                 rut: rutEvaluado,
@@ -431,7 +406,7 @@
             window.location.href = `${archivoModulo}?${params.toString()}`;
         }
 
-        // 6. NAVEGACIÓN AL INFORME PERICIAL B2B
+        // NAVEGACIÓN AL INFORME PERICIAL B2B
         function navegarAInforme() {
             const params = new URLSearchParams({
                 rut: rutEvaluado,
@@ -444,11 +419,6 @@
             });
             window.location.href = `informe_b2b_planes.html?${params.toString()}`;
         }
-
-        // Inicialización al cargar la página
-        document.addEventListener('DOMContentLoaded', () => {
-            actualizarEstadoParrilla();
-        });
     </script>
 </body>
 </html>
