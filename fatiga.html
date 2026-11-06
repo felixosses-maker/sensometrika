@@ -79,7 +79,7 @@
       position: relative;
     }
 
-    /* BARRA SUPERIOR UNIFICADA CON BIOMETRÍA PIP EN HEADER (ALTERNATIVA 1) */
+    /* BARRA SUPERIOR UNIFICADA CON BIOMETRÍA PIP EN HEADER */
     .nav-top-row {
       display: flex !important;
       justify-content: space-between !important;
@@ -272,14 +272,14 @@
       <div style="background: rgba(11, 19, 36, 0.9); border: 1px solid #1e293b; padding: 8px 16px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.6);">
         <img src="sensometrica.jpg" alt="SENSOMETRIKA Calibration Technology" style="width: 170px; height: auto; display: block; border-radius: 4px; filter: drop-shadow(0 0 10px rgba(56, 189, 248, 0.6));">
       </div>
-      <span class="brand-subtitle" id="titulo-fase">Test de Fatiga y Vigilancia (PVT - Demo)</span>
+      <span class="brand-subtitle" id="titulo-fase">Test de Fatiga y Vigilancia (PVT B2B)</span>
     </header>
 
     <section class="modulo-card-container">
       
       <!-- NAV TOP ROW CON PIP BIOMÉTRICO HEADER -->
       <div class="nav-top-row">
-        <a id="btnVolverMenu" onclick="volverMenu()" class="link-volver">&larr; Menú Pruebas</a>
+        <button type="button" id="btnVolverMenu" onclick="volverMenu()">← Menú Pruebas</button>
 
         <!-- PIP BIOMÉTRICO RESTRINGIDO A 56px X 56px -->
         <div class="cam-preview-pip-header">
@@ -287,7 +287,7 @@
           <div class="cam-tag-header">Biometría</div>
         </div>
 
-        <button type="button" onclick="abrirModalGuia()">? &iquest;C&oacute;mo funciona?</button>
+        <button type="button" onclick="abrirModalGuia()">? ¿Cómo funciona?</button>
       </div>
 
       <div style="text-align: center;">
@@ -309,7 +309,7 @@
         </div>
       </div>
 
-      <p class="instruction-text" id="panel-estado">
+      <p class="instruccion-sub" id="panel-estado">
         Presiona el botón de abajo o la pantalla tan pronto como el contador comience a correr.
       </p>
 
@@ -349,20 +349,26 @@
 
   <script>
     const urlParams = new URLSearchParams(window.location.search);
-    const modeParam = urlParams.get('mode') || (localStorage.getItem('sensometrika_b2c_mode') === 'true' ? 'b2c' : 'b2b');
-    const esB2B = (modeParam === 'b2b');
+    const modeParam = urlParams.get('mode') || 'b2b';
+    const esB2B = (modeParam === 'b2b') || urlParams.has('token') || urlParams.has('session');
 
     let datosUsuario = {};
     try {
       datosUsuario = JSON.parse(localStorage.getItem('sensometrika_datos_usuario')) || {};
     } catch(e){}
 
-    const rutEvaluado = urlParams.get('rut') || datosUsuario.rut || 'GENERICO';
+    const rawNombre = urlParams.get('nombre') || datosUsuario.nombre || localStorage.getItem('sensometrika_nombre') || '';
+    const rawCargo = urlParams.get('cargo') || datosUsuario.cargo || localStorage.getItem('sensometrika_cargo') || '';
+    const rawEmpresa = urlParams.get('empresa') || datosUsuario.empresa || localStorage.getItem('sensometrika_b2b_empresa') || '';
+    const planActivo = (urlParams.get('plan') || localStorage.getItem('sensometrika_b2b_plan') || 'BASICO').toUpperCase();
+    const rutEvaluado = urlParams.get('rut') || datosUsuario.rut || localStorage.getItem('sensometrika_rut') || '12345678-K';
     const cleanRut = rutEvaluado.replace(/[^0-9Kk]/g, '');
+    const sessionId = urlParams.get('session') || localStorage.getItem('sensometrika_session_activa') || `SESION_B2B_${cleanRut}_${Date.now()}`;
 
     // TELEMETRÍA Y CONTROL DE CÁMARA BIOMÉTRICA
     let distanciaMedidaCm = 55;
     let estaBloqueadoPorDistancia = false;
+    let modoActual = 'DEMO';
 
     function iniciarMediaPipeFaceMesh() {
       const videoElement = document.getElementById('webcamVideo');
@@ -417,15 +423,15 @@
       const lblDetalle = document.getElementById('lblDistDetalleVal');
       const mDistancia = document.getElementById('m-distancia');
 
-      mDistancia.textContent = `${distanciaMedidaCm} cm`;
+      if (mDistancia) mDistancia.textContent = `${distanciaMedidaCm} cm`;
 
       if (distanciaMedidaCm >= 45 && distanciaMedidaCm <= 65) {
         estaBloqueadoPorDistancia = false;
-        mDistancia.style.color = 'var(--verde-destacado)';
+        if (mDistancia) mDistancia.style.color = 'var(--verde-destacado)';
         if (overlayBlock) overlayBlock.style.display = 'none';
       } else {
         estaBloqueadoPorDistancia = true;
-        mDistancia.style.color = 'var(--accent-red)';
+        if (mDistancia) mDistancia.style.color = 'var(--accent-red)';
         if (lblDetalle) lblDetalle.textContent = `${distanciaMedidaCm} cm`;
         if (overlayBlock) overlayBlock.style.display = 'flex';
       }
@@ -435,13 +441,16 @@
     function cerrarModalGuia() { document.getElementById('modalGuia').style.display = 'none'; }
 
     function volverMenu() {
-      const returnUrlParam = urlParams.get('returnUrl');
-      if (returnUrlParam) {
-        window.location.href = decodeURIComponent(returnUrlParam);
-      } else {
-        const menuDestino = esB2B ? 'menu_b2b_planes.html' : 'menu_B2C.html';
-        window.location.href = `${menuDestino}?${urlParams.toString()}`;
-      }
+      const paramsRegreso = new URLSearchParams({
+        rut: rutEvaluado,
+        nombre: rawNombre,
+        cargo: rawCargo,
+        empresa: rawEmpresa,
+        plan: planActivo,
+        session: sessionId,
+        mode: 'b2b'
+      });
+      window.location.href = `menu_b2b_planes.html?${paramsRegreso.toString()}`;
     }
 
     function mostrarModalInterno(titulo, mensaje, callback) {
@@ -470,35 +479,55 @@
     let tiemposOficialesNetos = [];
     let lapsosCount = 0;
 
+    // VERIFICACIÓN ESTRICTA DE EJECUCIÓN POR SESIÓN B2B
+    function verificarModuloEjecutadoEnSesion() {
+      if (urlParams.has('reeval')) return false;
+      const dataStr = localStorage.getItem(`sensometrika_fatiga_${cleanRut}_${sessionId}`);
+      return dataStr !== null;
+    }
+
     document.addEventListener('DOMContentLoaded', () => {
       iniciarMediaPipeFaceMesh();
       actualizarEstadoUI();
     });
 
     function actualizarEstadoUI() {
-      const historial = JSON.parse(localStorage.getItem(`sensometrika_historial_fatiga_${cleanRut}`)) || [];
-      const numEnsayosRealizados = historial.length;
+      const ejecutado = verificarModuloEjecutadoEnSesion();
 
-      const planStorage = (localStorage.getItem('sensometrika_plan_contratado') || urlParams.get('plan') || 'FULL').toUpperCase();
-      let maxIntentosPlan = esB2B ? (planStorage.includes('ALTO') ? 3 : 1) : 5;
-
-      if (numEnsayosRealizados >= maxIntentosPlan) {
-        document.getElementById('titulo-fase').innerText = esB2B ? `EVALUACIÓN REGISTRADA (${numEnsayosRealizados}/${maxIntentosPlan})` : `PLAN COMPLETADO (${numEnsayosRealizados}/${maxIntentosPlan})`;
-        document.getElementById('panel-estado').innerText = esB2B ? 'Evaluación corporativa B2B registrada exitosamente.' : 'Has completado la cuota de simulaciones contratadas.';
+      if (ejecutado) {
+        modoActual = 'BLOQUEADO';
+        document.getElementById('titulo-fase').innerText = `✓ EVALUACIÓN REGISTRADA (1/1)`;
+        document.getElementById('badge-modo').innerText = `✓ REGISTRADO EN INFORME B2B`;
+        document.getElementById('badge-modo').style.borderColor = '#10b981';
+        document.getElementById('badge-modo').style.color = '#10b981';
+        document.getElementById('badge-modo').style.background = 'rgba(16, 185, 129, 0.1)';
+        document.getElementById('panel-estado').innerText = 'Evaluación corporativa B2B registrada exitosamente. Retorna al menú de evaluaciones.';
         const btn = document.getElementById('btn-accion');
-        btn.innerText = '← RETORNAR AL MENÚ DE EVALUACIONES';
+        btn.innerText = 'VOLVER AL MENÚ DE EVALUACIONES →';
+        btn.style.backgroundColor = '#10b981';
         btn.onclick = volverMenu;
+      } else {
+        const demoRealizada = localStorage.getItem(`fatiga_demo_completada_${cleanRut}_${sessionId}`) === 'true';
+        if (demoRealizada) {
+          fase = 1;
+          modoActual = 'OFICIAL';
+          document.getElementById('titulo-fase').innerText = `Test de Fatiga y Vigilancia (Ensayo Oficial 1 de 3)`;
+          document.getElementById('btn-accion').innerText = `▶ INICIAR SIMULACIÓN OFICIAL B2B (3 ENSAYOS)`;
+          document.getElementById('btn-accion').style.backgroundColor = '#10b981';
+        } else {
+          fase = 0;
+          modoActual = 'DEMO';
+          document.getElementById('titulo-fase').innerText = `Test de Fatiga y Vigilancia (Demo de Práctica)`;
+          document.getElementById('btn-accion').innerText = `▶ INICIAR DEMO DE FATIGA`;
+          document.getElementById('btn-accion').style.backgroundColor = 'var(--azul-btn)';
+        }
       }
     }
 
     function manejarAccionBtn() {
       if (estaBloqueadoPorDistancia) return;
 
-      const historial = JSON.parse(localStorage.getItem(`sensometrika_historial_fatiga_${cleanRut}`)) || [];
-      const planStorage = (localStorage.getItem('sensometrika_plan_contratado') || urlParams.get('plan') || 'FULL').toUpperCase();
-      let maxIntentosPlan = esB2B ? (planStorage.includes('ALTO') ? 3 : 1) : 5;
-
-      if (historial.length >= maxIntentosPlan) {
+      if (verificarModuloEjecutadoEnSesion()) {
         volverMenu();
         return;
       }
@@ -559,7 +588,6 @@
       clearInterval(timerContador);
 
       const tBruto = Math.round(performance.now() - tInicio);
-
       const latenciaHardware = parseInt(localStorage.getItem('sensometrika_latencia_ms') || '0', 10);
       const tNeto = Math.max(100, tBruto - latenciaHardware);
 
@@ -572,13 +600,18 @@
       display.style.color = "#38bdf8";
 
       if (fase === 0) {
+        // "QUEMAR" EL DEMO E INICIALIZAR LA SIMULACIÓN OFICIAL
+        localStorage.setItem(`fatiga_demo_completada_${cleanRut}_${sessionId}`, 'true');
+
         mostrarModalInterno(
           "Demo de Fatiga Completada",
-          `Tiempo neto de práctica: <strong>${tNeto} ms</strong> (Compensado -${latenciaHardware} ms hardware).<br><br>A continuación, darán inicio las 3 Evaluaciones Oficiales de Vigilancia.`,
+          `Tiempo neto de práctica: <strong>${tNeto} ms</strong>.<br><br>A continuación, darán inicio las 3 Evaluaciones Oficiales de Vigilancia.`,
           () => {
             fase = 1;
+            modoActual = 'OFICIAL';
             document.getElementById('titulo-fase').innerText = `Test de Fatiga y Vigilancia (Ensayo Oficial 1 de 3)`;
             document.getElementById('btn-accion').innerText = `▶ Iniciar Ensayo Oficial 1 de 3`;
+            document.getElementById('btn-accion').style.backgroundColor = '#10b981';
             document.getElementById('btn-accion').style.display = 'block';
           }
         );
@@ -603,10 +636,14 @@
 
     function finalizarPruebaFatiga(promedioFinalNeto, latenciaHardware) {
       const aprobado = promedioFinalNeto <= 450 && lapsosCount <= 1;
+      let efectividadCalc = Math.max(10, Math.round(100 - (promedioFinalNeto / 6)));
 
-      let historial = JSON.parse(localStorage.getItem(`sensometrika_historial_fatiga_${cleanRut}`)) || [];
-      historial.push({
+      const registroData = {
+        tiempoReaccion: promedioFinalNeto,
         promedioTiempo: promedioFinalNeto,
+        score: efectividadCalc,
+        efectividad: efectividadCalc,
+        precision: efectividadCalc,
         tiempos: tiemposOficialesNetos,
         tiemposBrutos: tiemposOficialesBrutos,
         latenciaCompensadaMs: latenciaHardware,
@@ -615,13 +652,21 @@
         dictamen: aprobado ? 'APROBADO' : 'OBSERVADO',
         distanciaAvgCm: distanciaMedidaCm,
         fecha: new Date().toISOString()
-      });
-      localStorage.setItem(`sensometrika_historial_fatiga_${cleanRut}`, JSON.stringify(historial));
+      };
+
+      // GUARDADO RIGUROSO PARA LECTURA DIRECTA EN INFORME B2B
+      localStorage.setItem(`sensometrika_fatiga_${cleanRut}_${sessionId}`, JSON.stringify(registroData));
+      localStorage.setItem(`sensometrika_last_fatiga_${cleanRut}_${sessionId}`, JSON.stringify(registroData));
+      localStorage.setItem('sensometrika_fatiga', JSON.stringify(registroData));
+
+      let modulosRendidos = {};
+      try { modulosRendidos = JSON.parse(localStorage.getItem('sensometrika_modulos_rendidos')) || {}; } catch(e){}
+      modulosRendidos.fatiga = true;
+      localStorage.setItem('sensometrika_modulos_rendidos', JSON.stringify(modulosRendidos));
 
       mostrarModalInterno(
         "Evaluación de Fatiga Finalizada",
         `Promedio Neto de Vigilancia: <strong>${promedioFinalNeto} ms</strong>.<br>` +
-        `<span style="font-size:0.75rem; color:#94a3b8;">(Compensación telemétrica de hardware: -${latenciaHardware} ms)</span><br>` +
         `Lapsos de micro-sueño (>500ms): <strong>${lapsosCount}</strong><br><br>` +
         `Estado: <strong>${aprobado ? '✓ APROBADO' : '⚠ OBSERVADO'}</strong>`,
         () => {
