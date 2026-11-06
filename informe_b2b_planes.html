@@ -400,9 +400,9 @@
         }
 
         function obtenerTelemetriaModulo(key) {
-            const dataStr = localStorage.getItem(`sensometrika_last_${key}_${cleanRut}_${sessionId}`) ||
+            const dataStr = localStorage.getItem(`sensometrika_${key}_${cleanRut}_${sessionId}`) ||
+                            localStorage.getItem(`sensometrika_last_${key}_${cleanRut}_${sessionId}`) ||
                             localStorage.getItem(`sensometrika_historial_${key}_${cleanRut}_${sessionId}`) ||
-                            localStorage.getItem(`sensometrika_${key}_${cleanRut}_${sessionId}`) ||
                             localStorage.getItem(`sensometrika_${key}`);
             try {
                 return JSON.parse(dataStr) || null;
@@ -460,12 +460,12 @@
             const svgFirmaRespaldo = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="60" viewBox="0 0 200 60"><path d="M 15 35 Q 35 15, 65 30 T 105 18 T 155 38 Q 175 48, 185 25" fill="none" stroke="%230f172a" stroke-width="2" stroke-linecap="round"/></svg>`;
             document.getElementById('imgFirmaTrabajador').src = (firmaGuardada && firmaGuardada.startsWith('data:image')) ? firmaGuardada : svgFirmaRespaldo;
 
-            // MATRIZ OFICIAL DE LOS 8 MÓDULOS
+            // MATRIZ OFICIAL DE LOS 8 MÓDULOS (HOMOLOGADO A AUDICION)
             const modulosParrilla = [
                 { key: 'reactimetro', title: '1. Reactímetro Simple ⚡', est: 'Reacción ≤ 400ms', minPlan: 'BASICO' },
                 { key: 'palancas', title: '2. Test Palancas Bimanual 🕹️', est: 'Efectividad ≥ 75%', minPlan: 'BASICO' },
                 { key: 'punteo', title: '3. Punteo Viso-Motriz 🎯', est: 'Efectividad ≥ 80%', minPlan: 'BASICO' },
-                { key: 'auditivo', title: '4. Tamizaje Auditivo 🔊', est: 'Tonal conversacional', minPlan: 'PLUS' },
+                { key: 'audicion', title: '4. Tamizaje Auditivo 🔊', est: 'Tonal conversacional', minPlan: 'PLUS' },
                 { key: 'visual', title: '5. Tamizaje Visual 👁️', est: 'Snellen 20/20 & Ishihara', minPlan: 'PLUS' },
                 { key: 'anticipacion', title: '6. Velocidad Anticipación ⏱️', est: 'Margen ≤ 0.15s', minPlan: 'FULL' },
                 { key: 'estereopsis', title: '7. Estereopsis & 3D 📐', est: 'Profundidad binaural', minPlan: 'FULL' },
@@ -491,7 +491,7 @@
                 const telData = obtenerTelemetriaModulo(m.key);
                 const isRendido = telData !== null || 
                                   localStorage.getItem(`medico_${m.key}_${cleanRut}_${sessionId}`) === 'true' ||
-                                  localStorage.getItem(`sensometrika_${m.key}_${cleanRut}_${sessionId}`) === 'true';
+                                  localStorage.getItem(`sensometrika_${m.key}_${cleanRut}_${sessionId}`) !== null;
 
                 const tr = document.createElement('tr');
 
@@ -506,9 +506,21 @@
                     evaluadosObligatorios++;
                     let detalleTelemetria = "";
                     if (telData) {
-                        if (telData.tiempo || telData.tiempoReaccion) detalleTelemetria += `Tiempo: <b>${telData.tiempo || telData.tiempoReaccion}ms</b><br>`;
-                        if (telData.efectividad || telData.score) detalleTelemetria += `Score: <b>${telData.efectividad || telData.score}%</b><br>`;
-                        if (telData.precision) detalleTelemetria += `Precisión: <b>${telData.precision}%</b>`;
+                        if (telData.tiempo || telData.tiempoReaccion || telData.tiempoReaccionMs || telData.promedio) {
+                            detalleTelemetria += `Tiempo: <b>${telData.tiempo || telData.tiempoReaccion || telData.tiempoReaccionMs || telData.promedio}ms</b><br>`;
+                        }
+                        if (telData.efectividad || telData.score) {
+                            detalleTelemetria += `Score: <b>${telData.efectividad || telData.score}%</b><br>`;
+                        }
+                        if (telData.precision) {
+                            detalleTelemetria += `Precisión: <b>${telData.precision}%</b><br>`;
+                        }
+                        if (telData.aciertos) {
+                            detalleTelemetria += `Aciertos: <b>${telData.aciertos}/8</b><br>`;
+                        }
+                        if (telData.agudeza) {
+                            detalleTelemetria += `Agudeza: <b>${telData.agudeza}</b>`;
+                        }
                     }
                     if (!detalleTelemetria) detalleTelemetria = `Muestra sensor Hz: <b>250Hz (Conforme)</b>`;
 
@@ -536,9 +548,10 @@
             const lblDictamenSub = document.getElementById('lblDictamenSub');
 
             if (evaluadosObligatorios < totalObligatoriosPlan) {
+                const faltantes = totalObligatoriosPlan - evaluadosObligatorios;
                 boxDictamen.className = "banner-dictamen dictamen-pendiente";
                 boxDictamen.innerHTML = `⏳ ESTADO: EVALUACIÓN PLAN ${planActivo} EN PROCESO`;
-                if(lblDictamenSub) lblDictamenSub.textContent = `Faltan ${totalObligatoriosPlan - evaluadosObligatorios} de ${totalObligatoriosPlan} módulos contratados por consolidar.`;
+                if(lblDictamenSub) lblDictamenSub.textContent = `Faltan ${faltantes} de ${totalObligatoriosPlan} módulos contratados por consolidar.`;
                 lblEstadoVigencia.textContent = "INCOMPLETO";
                 lblEstadoVigencia.className = "vigencia-orange";
             } else {
