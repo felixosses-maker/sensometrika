@@ -95,7 +95,7 @@
         <button type="button" class="btn-oido-opcion" onclick="responderOido('DERECHO')">🎧 Oído Derecho</button>
       </div>
 
-      <p class="instruccion-sub" id="statusText">Debe confirmar el uso de auriculares antes de iniciar el test de 8 tonos.</p>
+      <p class="instruccion-sub" id="statusText">Debe confirmar el uso de auriculares antes de iniciar el test.</p>
 
       <button type="button" class="btn-audio-accion" id="btnIniciarAudio" disabled onclick="iniciarTamizajeAuditivo()">
         Iniciar Tamizaje Auditivo
@@ -110,7 +110,7 @@
       </button>
 
       <div class="metricas-inferiores-grid">
-        <div class="col-metrica"><span>Progreso</span><strong id="mProgreso">0 / 8</strong></div>
+        <div class="col-metrica"><span>Progreso</span><strong id="mProgreso">0 / 4</strong></div>
         <div class="col-metrica"><span>Aciertos</span><strong id="mAciertos" class="badge-verde">0</strong></div>
         <div class="col-metrica"><span>Estado</span><strong id="mEstado" style="color: var(--azul-destacado);">Bloqueado</strong></div>
       </div>
@@ -134,6 +134,7 @@
     const sessionId = urlParams.get('session') || localStorage.getItem('sensometrika_session_activa') || `SESION_B2B_${cleanRut}_${Date.now()}`;
 
     let modoActual = 'DEMO';
+    let totalTonosActual = 4; // 4 para DEMO, 8 para OFICIAL
     let audioCtx = null;
     let oscilador = null;
     let gainNode = null;
@@ -187,9 +188,13 @@
         modoActual = 'BLOQUEADO';
       } else if (!demoRealizada) {
         modoActual = 'DEMO';
+        totalTonosActual = 4;
       } else {
         modoActual = 'OFICIAL';
+        totalTonosActual = 8;
       }
+
+      mProgreso.innerText = `0 / ${totalTonosActual}`;
 
       if (modoActual === 'BLOQUEADO') {
         cajaCheck.style.display = 'none';
@@ -213,11 +218,12 @@
         badgeFase.style.borderColor = '#e5b324';
         badgeFase.style.color = '#e5b324';
         badgeFase.style.background = 'rgba(229, 179, 36, 0.1)';
-        btnIniciar.innerText = 'INICIAR CALIBRACIÓN DEMO (8 TONOS)';
+        btnIniciar.innerText = 'INICIAR CALIBRACIÓN DEMO (4 TONOS)';
         btnIniciar.style.backgroundColor = '#e5b324';
         lblOido.innerText = 'Bloqueado · Requiere Audífonos';
         lblFrecuencia.innerText = '-- Hz';
         lblUmbral.innerText = 'Marque la casilla superior para habilitar';
+        statusText.innerText = 'Debe confirmar el uso de auriculares antes de iniciar el test de 4 tonos demo.';
       } else {
         cajaCheck.style.display = 'flex';
         btnIniciar.style.display = 'block';
@@ -226,11 +232,12 @@
         badgeFase.style.borderColor = '#10b981';
         badgeFase.style.color = '#10b981';
         badgeFase.style.background = 'rgba(16, 185, 129, 0.1)';
-        btnIniciar.innerText = `INICIAR SIMULACIÓN OFICIAL B2B (1/1)`;
+        btnIniciar.innerText = `INICIAR SIMULACIÓN OFICIAL B2B (8 TONOS)`;
         btnIniciar.style.backgroundColor = '#10b981';
         lblOido.innerText = 'Bloqueado · Requiere Audífonos';
         lblFrecuencia.innerText = '-- Hz';
         lblUmbral.innerText = 'Marque la casilla superior para habilitar';
+        statusText.innerText = 'Debe confirmar el uso de auriculares antes de iniciar el test de 8 tonos oficial.';
       }
     }
 
@@ -241,7 +248,7 @@
         cajaCheck.classList.add('activo');
         btnIniciar.disabled = false;
         lblOido.innerText = 'Listo para Iniciar';
-        lblUmbral.innerText = 'Secuencia de 8 Tonos Aleatorios';
+        lblUmbral.innerText = `Secuencia de ${totalTonosActual} Tonos Aleatorios`;
         statusText.innerText = 'Audífonos confirmados. Pulse el botón para comenzar.';
         mEstado.innerText = 'Habilitado';
       } else {
@@ -249,7 +256,7 @@
         btnIniciar.disabled = true;
         lblOido.innerText = 'Bloqueado · Requiere Audífonos';
         lblUmbral.innerText = 'Marque la casilla superior para habilitar';
-        statusText.innerText = 'Debe confirmar el uso de auriculares antes de iniciar el test de 8 tonos.';
+        statusText.innerText = `Debe confirmar el uso de auriculares antes de iniciar el test de ${totalTonosActual} tonos.`;
         mEstado.innerText = 'Bloqueado';
       }
     }
@@ -259,11 +266,11 @@
         <div id="modalAyudaAudio" style="position: fixed; inset: 0; background: rgba(5, 8, 18, 0.9); backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center; z-index: 99999; padding: 16px;">
           <div style="background: #0f172a; border: 1px solid #1e293b; border-radius: 18px; width: 100%; max-width: 380px; padding: 24px 20px; text-align: center; color: #f8fafc;">
             <h3 style="color: #ffffff; margin-bottom: 6px; font-size: 1.15rem; font-weight: 800;">Tamizaje Auditivo Avanzado</h3>
-            <p style="color: #38bdf8; margin-bottom: 14px; font-size: 0.8rem; font-weight: 600;">Audiometría de 8 Tonos Aleatorios</p>
+            <p style="color: #38bdf8; margin-bottom: 14px; font-size: 0.8rem; font-weight: 600;">Audiometría de Tonos Aleatorios</p>
             <div style="font-size: 0.82rem; color: #94a3b8; line-height: 1.5; display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; text-align: left;">
               <p>1. <strong>Recuadro Obligatorio:</strong> Debe marcar la confirmación de audífonos estéreo para desbloquear el sistema.</p>
-              <p>2. <strong>Estímulos Aleatorios:</strong> El sistema emitirá 8 tonos desordenados (250 Hz a 6000 Hz) en el oído izquierdo o derecho.</p>
-              <p>3. <strong>Estándar de Exigencia:</strong> Requiere al menos 7 de 8 aciertos (87.5%) para obtener dictamen APROBADO.</p>
+              <p>2. <strong>Estímulos Aleatorios:</strong> El sistema emitirá tonos desordenados (250 Hz a 6000 Hz) en el oído izquierdo o derecho.</p>
+              <p>3. <strong>Estándar de Exigencia:</strong> En la fase oficial, requiere al menos 7 de 8 aciertos (87.5%) para obtener dictamen APROBADO.</p>
             </div>
             <button onclick="document.getElementById('modalAyudaAudio').remove()" style="width: 100%; background: #0284c7; color: #ffffff; border: none; border-radius: 10px; padding: 12px; font-weight: 700; cursor: pointer;">
               Entendido · Volver al Test
@@ -274,9 +281,9 @@
       document.body.insertAdjacentHTML('beforeend', modalHtml);
     }
 
-    function generarSecuenciaAleatoria() {
+    function generarSecuenciaAleatoria(cantidad) {
       let secuencia = [];
-      for (let i = 0; i < 8; i++) {
+      for (let i = 0; i < cantidad; i++) {
         const freq = frecuenciasBase[Math.floor(Math.random() * frecuenciasBase.length)];
         const oido = Math.random() < 0.5 ? 'IZQUIERDO' : 'DERECHO';
         secuencia.push({ freq, oido });
@@ -295,7 +302,7 @@
       if (!audioCtx) {
         audioCtx = new (window.AudioContext || window.webkitAudioContext)();
       }
-      secuenciaTest = generarSecuenciaAleatoria();
+      secuenciaTest = generarSecuenciaAleatoria(totalTonosActual);
       pasoActual = 0;
       aciertosTotales = 0;
       testActivo = true;
@@ -307,9 +314,9 @@
       statusText.innerText = 'Pulse "Reproducir Tono Acústico" y seleccione el oído donde lo perciba.';
 
       lblOido.innerText = 'Listo para emitir tono';
-      lblFrecuencia.innerText = 'Tono 1 / 8';
+      lblFrecuencia.innerText = `Tono 1 / ${totalTonosActual}`;
       mAciertos.innerText = '0';
-      mProgreso.innerText = '0 / 8';
+      mProgreso.innerText = `0 / ${totalTonosActual}`;
     }
 
     function reproducirSiguienteTono() {
@@ -323,7 +330,7 @@
       panelOidos.style.display = 'grid';
 
       const item = secuenciaTest[pasoActual];
-      mProgreso.innerText = `${pasoActual + 1} / 8`;
+      mProgreso.innerText = `${pasoActual + 1} / ${totalTonosActual}`;
       lblOido.innerText = 'Emitiendo sonido en audífonos...';
       lblFrecuencia.innerText = `${item.freq} Hz`;
       lblUmbral.innerText = 'Escuche atentamente';
@@ -379,7 +386,7 @@
         finalizarPruebaAuditiva();
       } else {
         lblOido.innerText = 'Respuesta registrada';
-        lblFrecuencia.innerText = `Paso ${pasoActual + 1} de 8`;
+        lblFrecuencia.innerText = `Paso ${pasoActual + 1} de ${totalTonosActual}`;
         lblUmbral.innerText = 'Pulse para siguiente tono';
       }
     }
@@ -391,8 +398,8 @@
       panelOidos.style.display = 'none';
       mEstado.innerText = 'Completado';
 
-      const aprobado = aciertosTotales >= 7;
-      const precisionVal = Math.round((aciertosTotales / 8) * 100);
+      const precisionVal = Math.round((aciertosTotales / totalTonosActual) * 100);
+      const aprobado = modoActual === 'DEMO' ? precisionVal >= 50 : aciertosTotales >= 7;
 
       if (modoActual === 'DEMO') {
         localStorage.setItem(`audicion_demo_completada_${cleanRut}_${sessionId}`, 'true');
@@ -400,7 +407,7 @@
       } else {
         const registroData = {
           aciertos: aciertosTotales,
-          total: 8,
+          total: totalTonosActual,
           score: precisionVal,
           precision: precisionVal,
           efectividad: precisionVal,
@@ -445,11 +452,11 @@
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; background: #070b14; border: 1px solid #1e293b; border-radius: 12px; padding: 14px 10px; margin-bottom: 20px; text-align: left;">
               <div>
                 <span style="display: block; font-size: 0.68rem; color: #94a3b8; font-weight: 600;">Aciertos Correctos</span>
-                <strong style="color: #ffffff; font-size: 1rem; font-weight: 800;">${aciertos} / 8</strong>
+                <strong style="color: #ffffff; font-size: 1rem; font-weight: 800;">${aciertos} / ${totalTonosActual}</strong>
               </div>
               <div>
                 <span style="display: block; font-size: 0.68rem; color: #94a3b8; font-weight: 600;">Efectividad</span>
-                <strong style="color: ${aprobado ? '#10b981' : '#ef4444'}; font-size: 1rem; font-weight: 800;">${Math.round((aciertos/8)*100)}%</strong>
+                <strong style="color: ${aprobado ? '#10b981' : '#ef4444'}; font-size: 1rem; font-weight: 800;">${Math.round((aciertos/totalTonosActual)*100)}%</strong>
               </div>
             </div>
 
