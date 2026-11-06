@@ -269,12 +269,6 @@
             border-color: #38bdf8;
         }
 
-        .btn-ctrl:disabled {
-            opacity: 0.3;
-            cursor: not-allowed;
-            background-color: #0f172a;
-        }
-
         .btn-start {
             background-color: var(--blue-btn);
             color: #ffffff;
@@ -478,7 +472,6 @@
 
         const urlParams = new URLSearchParams(window.location.search);
         const modeParam = urlParams.get('mode') || 'b2b';
-        const esB2B = (modeParam === 'b2b') || urlParams.has('token') || urlParams.has('session');
 
         let datosUsuario = {};
         try { datosUsuario = JSON.parse(localStorage.getItem('sensometrika_datos_usuario')) || {}; } catch(e){}
@@ -503,9 +496,9 @@
         let timerInterval = null;
         let animFrameId = null;
 
-        let pua = { x: 60, y: 220, r: 8, speed: 1.8 };
-        let posicionInicio = { x: 60, y: 220 };
-        let posicionMeta = { x: 340, y: 80 };
+        let pua = { x: 0, y: 0, r: 8, speed: 1.8 };
+        let posicionInicio = { x: 0, y: 0 };
+        let posicionMeta = { x: 0, y: 0 };
         let trackPoints = [];
         let keys = { left: false, right: false, up: false, down: false };
 
@@ -582,102 +575,61 @@
             }
         }
 
-        function generarCircuitoAntiMemorizacion(semillaUnica) {
-            const variante = Math.floor(Math.random() * 6);
-            const rndX = (Math.sin(semillaUnica) * 10000) % 25 - 12;
-            const rndY = (Math.cos(semillaUnica) * 10000) % 20 - 10;
+        // GENERACIÓN ANTI-MEMORIZACIÓN CENTRADA Y PROPORCIONAL
+        function generarCircuitoCentrado(semilla) {
+            const w = canvas.width;
+            const h = canvas.height;
+            const padX = 45;
+            const padY = 45;
 
-            switch (variante) {
-                case 0:
-                    return {
-                        pista: [
-                            {x: 45 + rndX, y: 230},
-                            {x: 140 + rndX, y: 230},
-                            {x: 140 + rndX, y: 110 + rndY},
-                            {x: 250 + rndX, y: 110 + rndY},
-                            {x: 250 + rndX, y: 230},
-                            {x: 355 + rndX, y: 230},
-                            {x: 355 + rndX, y: 70}
-                        ],
-                        inicio: {x: 45 + rndX, y: 230},
-                        meta: {x: 355 + rndX, y: 70}
-                    };
+            const variante = Math.abs(Math.floor(Math.sin(semilla) * 100)) % 4;
 
-                case 1:
-                    return {
-                        pista: [
-                            {x: 355 + rndX, y: 230},
-                            {x: 250 + rndX, y: 230},
-                            {x: 250 + rndX, y: 100 + rndY},
-                            {x: 140 + rndX, y: 100 + rndY},
-                            {x: 140 + rndX, y: 230},
-                            {x: 45 + rndX, y: 230},
-                            {x: 45 + rndX, y: 70}
-                        ],
-                        inicio: {x: 355 + rndX, y: 230},
-                        meta: {x: 45 + rndX, y: 70}
-                    };
-
-                case 2:
-                    return {
-                        pista: [
-                            {x: 50, y: 240},
-                            {x: 120 + rndX, y: 240},
-                            {x: 120 + rndX, y: 160 + rndY},
-                            {x: 210 + rndX, y: 160 + rndY},
-                            {x: 210 + rndX, y: 80 + rndY},
-                            {x: 340 + rndX, y: 80 + rndY},
-                            {x: 340 + rndX, y: 220}
-                        ],
-                        inicio: {x: 50, y: 240},
-                        meta: {x: 340 + rndX, y: 220}
-                    };
-
-                case 3:
-                    return {
-                        pista: [
-                            {x: 350, y: 230},
-                            {x: 180 + rndX, y: 230},
-                            {x: 180 + rndX, y: 65 + rndY},
-                            {x: 80 + rndX, y: 65 + rndY},
-                            {x: 80 + rndX, y: 240 + rndY},
-                            {x: 280 + rndX, y: 240 + rndY},
-                            {x: 280 + rndX, y: 130}
-                        ],
-                        inicio: {x: 350, y: 230},
-                        meta: {x: 280 + rndX, y: 130}
-                    };
-
-                case 4:
-                    return {
-                        pista: [
-                            {x: 50, y: 80},
-                            {x: 50, y: 220 + rndY},
-                            {x: 180 + rndX, y: 220 + rndY},
-                            {x: 180 + rndX, y: 130 + rndY},
-                            {x: 310 + rndX, y: 130 + rndY},
-                            {x: 310 + rndX, y: 240},
-                            {x: 360, y: 240}
-                        ],
-                        inicio: {x: 50, y: 80},
-                        meta: {x: 360, y: 240}
-                    };
-
-                default:
-                    return {
-                        pista: [
-                            {x: 60 + rndX, y: 230},
-                            {x: 200 + rndX, y: 230},
-                            {x: 200 + rndX, y: 75 + rndY},
-                            {x: 290 + rndX, y: 75 + rndY},
-                            {x: 290 + rndX, y: 210 + rndY},
-                            {x: 350 + rndX, y: 210 + rndY},
-                            {x: 350 + rndX, y: 110}
-                        ],
-                        inicio: {x: 60 + rndX, y: 230},
-                        meta: {x: 350 + rndX, y: 110}
-                    };
+            let pts = [];
+            if (variante === 0) {
+                pts = [
+                    { x: padX, y: h - padY },
+                    { x: w * 0.38, y: h - padY },
+                    { x: w * 0.38, y: padY + 30 },
+                    { x: w * 0.68, y: padY + 30 },
+                    { x: w * 0.68, y: h - padY },
+                    { x: w - padX, y: h - padY },
+                    { x: w - padX, y: padY }
+                ];
+            } else if (variante === 1) {
+                pts = [
+                    { x: w - padX, y: h - padY },
+                    { x: w * 0.62, y: h - padY },
+                    { x: w * 0.62, y: padY + 30 },
+                    { x: w * 0.32, y: padY + 30 },
+                    { x: w * 0.32, y: h - padY },
+                    { x: padX, y: h - padY },
+                    { x: padX, y: padY }
+                ];
+            } else if (variante === 2) {
+                pts = [
+                    { x: padX, y: padY },
+                    { x: padX, y: h - padY },
+                    { x: w * 0.5, y: h - padY },
+                    { x: w * 0.5, y: padY + 20 },
+                    { x: w - padX, y: padY + 20 },
+                    { x: w - padX, y: h - padY }
+                ];
+            } else {
+                pts = [
+                    { x: padX, y: h - padY },
+                    { x: w - padX, y: h - padY },
+                    { x: w - padX, y: h * 0.5 },
+                    { x: padX + 30, y: h * 0.5 },
+                    { x: padX + 30, y: padY },
+                    { x: w - padX, y: padY }
+                ];
             }
+
+            return {
+                pista: pts,
+                inicio: { x: pts[0].x, y: pts[0].y },
+                meta: { x: pts[pts.length - 1].x, y: pts[pts.length - 1].y }
+            };
         }
 
         function ejecutarRetornoMenu() {
@@ -693,13 +645,14 @@
             window.location.href = `menu_b2b_planes.html?${paramsRegreso.toString()}`;
         }
 
-        // VERIFICACIÓN ESTRICTA DE LA SESIÓN ACTUAL
         function verificarModuloEjecutado() {
             if (urlParams.has('reeval')) return false;
             const dataStr = localStorage.getItem(`sensometrika_palancas_${cleanRut}_${sessionId}`) ||
                             localStorage.getItem(`sensometrika_last_palancas_${cleanRut}_${sessionId}`);
             return dataStr !== null;
         }
+
+        let semillaCircuitoActual = Date.now();
 
         function actualizarEstadoUI() {
             const ejecucionOficialConcluida = verificarModuloEjecutado();
@@ -713,7 +666,8 @@
                 modoActual = 'OFICIAL';
             }
 
-            const circuito = generarCircuitoAntiMemorizacion(Date.now());
+            semillaCircuitoActual = Date.now();
+            const circuito = generarCircuitoCentrado(semillaCircuitoActual);
             trackPoints = circuito.pista;
             posicionInicio = circuito.inicio;
             posicionMeta = circuito.meta;
@@ -751,7 +705,7 @@
 
             if (trackPoints.length > 0) {
                 ctx.strokeStyle = '#0284c7';
-                ctx.lineWidth = 28;
+                ctx.lineWidth = 26;
                 ctx.lineCap = 'round';
                 ctx.lineJoin = 'round';
                 ctx.beginPath();
@@ -769,12 +723,12 @@
 
                 ctx.fillStyle = '#e5b324';
                 ctx.beginPath();
-                ctx.arc(posicionInicio.x, posicionInicio.y, 10, 0, Math.PI * 2);
+                ctx.arc(posicionInicio.x, posicionInicio.y, 9, 0, Math.PI * 2);
                 ctx.fill();
 
                 ctx.fillStyle = '#10b981';
                 ctx.beginPath();
-                ctx.arc(posicionMeta.x, posicionMeta.y, 14, 0, Math.PI * 2);
+                ctx.arc(posicionMeta.x, posicionMeta.y, 13, 0, Math.PI * 2);
                 ctx.fill();
             }
 
@@ -867,7 +821,7 @@
             tiempoTranscurrido = 0;
             evaluacionActiva = true;
 
-            const circuito = generarCircuitoAntiMemorizacion(Date.now() + Math.random());
+            const circuito = generarCircuitoCentrado(semillaCircuitoActual);
             trackPoints = circuito.pista;
             posicionInicio = circuito.inicio;
             posicionMeta = circuito.meta;
