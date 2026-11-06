@@ -30,8 +30,8 @@ module.exports = async (req, res) => {
   const SUPABASE_URL = process.env.SUPABASE_URL;
   const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-  let rawUrl = process.env.FRONTEND_URL || 'https://sensometrika.vercel.app';
-  let cleanDomain = 'https://sensometrika.vercel.app';
+  let rawUrl = process.env.FRONTEND_URL || 'https://sensometrika.com';
+  let cleanDomain = 'https://sensometrika.com';
   const matchUrl = rawUrl.match(/https?:\/\/[^\s\]\)\'\"\/]+/);
   if (matchUrl) {
     cleanDomain = matchUrl[0];
@@ -53,8 +53,8 @@ module.exports = async (req, res) => {
       duracion_minutos
     } = req.body || {};
 
-    // Correo del destinatario principal (Empresa Cliente o Evaluado)
-    const correoFinal = emailDestino || email || 'contacto@sensometrica.cl';
+    // Correo del destinatario principal
+    const correoFinal = emailDestino || email || 'notificaciones@sensometrika.com';
 
     const enlaceEntrante = enlace || linkAcceso;
     const destinatarioNombre = nombreTrabajador || nombre || (tipo === 'b2b' ? 'Supervisión Técnica' : 'Postulante');
@@ -113,7 +113,6 @@ module.exports = async (req, res) => {
     let asunto = '';
     let htmlContent = '';
 
-    // Determinación dinámica si corresponde al envío de un Informe Pericial Finalizado
     const esInforme = tipo === 'informe' || (planNombre && planNombre.toLowerCase().includes('informe'));
 
     if (tipo === 'b2b') {
@@ -154,7 +153,7 @@ module.exports = async (req, res) => {
               </div>
             </div>
             <div style="padding: 16px; text-align: center; border-top: 1px solid #1e293b; background: #070d18; font-size: 10px; color: #64748b;">
-              Sensometrika SpA • Plataforma de Calibración & Gestión Psicosensométrica • Chile • contacto@sensometrica.cl
+              Sensometrika SpA • Plataforma de Calibración & Gestión Psicosensométrica • Chile • contacto@sensometrika.com
             </div>
           </div>
         </body>
@@ -218,7 +217,7 @@ module.exports = async (req, res) => {
               </div>
             </div>
             <div style="padding: 16px; text-align: center; border-top: 1px solid #1e293b; background: #070d18; font-size: 10px; color: #64748b;">
-              Sensometrika SpA • Plataforma de Calibración & Gestión Psicosensométrica • Chile • contacto@sensometrica.cl
+              Sensometrika SpA • Plataforma de Calibración & Gestión Psicosensométrica • Chile • contacto@sensometrika.com
             </div>
           </div>
         </body>
@@ -226,14 +225,12 @@ module.exports = async (req, res) => {
       `;
     }
 
-    // Remitente garantizado sobre el dominio verificado
-    const remitente = process.env.EMAIL_FROM || 'Sensometrika <contacto@sensometrica.cl>';
+    const remitente = process.env.EMAIL_FROM || 'Sensometrika <notificaciones@sensometrika.com>';
 
-    // Payload de envío
     const emailPayload = {
       from: remitente,
       to: [correoFinal],
-      bcc: ['contacto@sensometrica.cl'],
+      bcc: ['contacto@sensometrika.com'],
       subject: asunto,
       html: htmlContent
     };
