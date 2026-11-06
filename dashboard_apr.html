@@ -382,11 +382,23 @@
       if (!rutRaw) return { texto: 'PENDIENTE DE INICIO', clase: 'badge-pending', evaluado: false, aprobado: false };
       const cleanRut = rutRaw.replace(/[^0-9Kk]/g, '');
 
-      // VERIFICACIÓN REDUNDANTE DE MÓDULOS DE EVALUACIÓN
-      const audicion = JSON.parse(localStorage.getItem(`sensometrika_audicion_${cleanRut}_${sessionId}`));
-      const anticipacion = JSON.parse(localStorage.getItem(`sensometrika_anticipacion_${cleanRut}_${sessionId}`));
-      const estereopsis = JSON.parse(localStorage.getItem(`sensometrika_estereopsis_${cleanRut}_${sessionId}`));
-      const fatiga = JSON.parse(localStorage.getItem(`sensometrika_fatiga_${cleanRut}_${sessionId}`));
+      // 1. Verificación directa por confirmación de informe B2B emitido en localStorage
+      const informeEmitido = localStorage.getItem(`sensometrika_informe_emitido_${cleanRut}`) ||
+                             localStorage.getItem(`informe_b2b_aprobado_${cleanRut}`);
+                             
+      if (informeEmitido === 'true' || informeEmitido === 'APROBADO') {
+        return { texto: '✓ APROBADO / VIGENTE', clase: 'badge-ok', evaluado: true, aprobado: true };
+      }
+
+      // 2. Verificación modular redundante (revisa por RUT y por SessionId)
+      const audicion = JSON.parse(localStorage.getItem(`sensometrika_audicion_${cleanRut}_${sessionId}`)) || 
+                       JSON.parse(localStorage.getItem(`sensometrika_audicion_${cleanRut}`));
+      const anticipacion = JSON.parse(localStorage.getItem(`sensometrika_anticipacion_${cleanRut}_${sessionId}`)) || 
+                           JSON.parse(localStorage.getItem(`sensometrika_anticipacion_${cleanRut}`));
+      const estereopsis = JSON.parse(localStorage.getItem(`sensometrika_estereopsis_${cleanRut}_${sessionId}`)) || 
+                          JSON.parse(localStorage.getItem(`sensometrika_estereopsis_${cleanRut}`));
+      const fatiga = JSON.parse(localStorage.getItem(`sensometrika_fatiga_${cleanRut}_${sessionId}`)) || 
+                     JSON.parse(localStorage.getItem(`sensometrika_fatiga_${cleanRut}`));
 
       const evaluado = !!(audicion || anticipacion || estereopsis || fatiga);
 
@@ -425,7 +437,7 @@
       const empresa = document.getElementById('lblEmpresa').innerText;
 
       const originUrl = window.location.origin;
-      // REDIRECCIÓN CORREGIDA: Apunta obligatoriamente a verificacion_trabajador.html
+      // REDIRECCIÓN OBLIGATORIA: Apunta a verificacion_trabajador.html
       const urlCompleta = `${originUrl}/verificacion_trabajador.html?token=${tokenB2B}&rut=${encodeURIComponent(rut)}&nombre=${encodeURIComponent(nombre)}&cargo=${encodeURIComponent(cargo)}&empresa=${encodeURIComponent(empresa)}&session=${sessionId}&mode=b2b`;
 
       const nuevoTrabajador = {
@@ -536,7 +548,7 @@
           session: sessionId,
           mode: 'b2b'
         });
-        // ENLACE CORREGIDO: Redirige a verificacion_trabajador.html
+        // ENLACE CORREGIDO: Envia a verificacion_trabajador.html
         const urlEval = `${originUrl}/verificacion_trabajador.html?${paramsEval.toString()}`;
 
         let accionHtml = '';
