@@ -33,9 +33,26 @@
     .estado-pendiente { background: #fffbe3; border: 2px solid #f59e0b; color: #b45309; }
 
     .detalles-card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px; text-align: left; display: flex; flex-direction: column; gap: 8px; font-size: 0.85rem; }
-    .detalle-item { display: flex; justify-content: space-between; border-bottom: 1px dashed #e2e8f0; padding-bottom: 6px; }
+    .detalle-item { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed #e2e8f0; padding-bottom: 6px; }
     .detalle-item span { color: var(--text-muted); font-size: 0.72rem; text-transform: uppercase; font-weight: 700; }
     .detalle-item strong { color: #0f172a; font-weight: 800; text-align: right; }
+
+    .badge-contador {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 12px;
+      font-size: 0.75rem;
+      font-weight: 800;
+      background: rgba(16, 185, 129, 0.15);
+      border: 1px solid #10b981;
+      color: #047857;
+    }
+
+    .badge-contador.expirado {
+      background: rgba(239, 68, 68, 0.15);
+      border-color: #ef4444;
+      color: #b91c1c;
+    }
 
     .footer-val { font-size: 0.65rem; color: var(--text-muted); line-height: 1.35; border-top: 1px solid #e2e8f0; padding-top: 10px; text-align: center; }
   </style>
@@ -61,7 +78,12 @@
       <div class="detalle-item"><span>Cargo Habilitado:</span> <strong id="valCargo" style="color: var(--azul-marca);">--</strong></div>
       <div class="detalle-item"><span>Empresa / Mandante:</span> <strong id="valEmpresa">--</strong></div>
       <div class="detalle-item"><span>Folio Verificación:</span> <strong id="valFolio">--</strong></div>
-      <div class="detalle-item"><span>Vencimiento Vigencia:</span> <strong id="valVence">--</strong></div>
+      <div class="detalle-item"><span>Fecha de Emisión:</span> <strong id="valFechaEmision">--/--/----</strong></div>
+      <div class="detalle-item"><span>Vencimiento Vigencia:</span> <strong id="valVence">--/--/----</strong></div>
+      <div class="detalle-item" style="border-bottom: none; margin-top: 4px;">
+        <span>Estado Vigencia:</span>
+        <span id="badgeContador" class="badge-contador">Calculando...</span>
+      </div>
     </div>
 
     <div class="footer-val">
@@ -72,6 +94,27 @@
   </main>
 
   <script>
+    function procesarFechasYVigencia(fechaEmisionRaw) {
+      // 1. Determinar Fecha de Emisión (Si no existe, se asume la fecha actual)
+      const fEmision = fechaEmisionRaw ? new Date(fechaEmisionRaw) : new Date();
+      
+      // 2. Determinar Fecha de Vencimiento (Exactamente 1 año después)
+      const fVencimiento = new Date(fEmision);
+      fVencimiento.setFullYear(fVencimiento.getFullYear() + 1);
+
+      // 3. Formatear fechas para mostrar (DD/MM/YYYY)
+      const opcionesFecha = { day: '2-digit', month: '2-digit', year: 'numeric' };
+      const strEmision = fEmision.toLocaleDateString('es-CL', opcionesFecha);
+      const strVencimiento = fVencimiento.toLocaleDateString('es-CL', opcionesFecha);
+
+      // 4. Calcular días restantes respecto a hoy
+      const hoy = new Date();
+      const diferenciaMs = fVencimiento.getTime() - hoy.getTime();
+      const diasRestantes = Math.ceil(diferenciaMs / (1000 * 60 * 60 * 24));
+
+      return { strEmision, strVencimiento, diasRestantes };
+    }
+
     document.addEventListener('DOMContentLoaded', () => {
       const urlParams = new URLSearchParams(window.location.search);
       
@@ -81,44 +124,73 @@
       const empresaUrl = urlParams.get('empresa');
       const folioUrl = urlParams.get('folio');
       const estadoUrl = (urlParams.get('estado') || '').toUpperCase();
-      const venceUrl = urlParams.get('vence');
+      const emisionUrl = urlParams.get('emision') || urlParams.get('fecha');
 
       const resultadoBox = document.getElementById('resultadoBox');
       const cardDetalles = document.getElementById('cardDetalles');
+      const badgeContador = document.getElementById('badgeContador');
 
+      // CASO 1: URL con estado APROBADO, OK o VIGENTE
       if (rutUrl && (estadoUrl === 'APROBADO' || estadoUrl === 'OK' || estadoUrl === 'VIGENTE')) {
-        resultadoBox.className = "resultado-estado-box estado-valido";
-        resultadoBox.innerHTML = "✓ ACCESO AUTORIZADO - ACREDITACIÓN VIGENTE";
+        const { strEmision, strVencimiento, diasRestantes } = procesarFechasYVigencia(emisionUrl);
+
+        if (diasRestantes > 0) {
+          resultadoBox.className = "resultado-estado-box estado-valido";
+          resultadoBox.innerHTML = "✓ ACCESO AUTORIZADO - ACREDITACIÓN VIGENTE";
+          badgeContador.className = "badge-contador";
+          badgeContador.innerText = `⏱ ${diasRestantes} DÍAS RESTANTES`;
+        } else {
+          resultadoBox.className = "resultado-estado-box estado-invalido";
+          resultadoBox.innerHTML = "✖ ACCESO DENEGADO - ACREDITACIÓN EXPIRADA";
+          badgeContador.className = "badge-contador expirado";
+          badgeContador.innerText = `⚠️ EXPIRED (${Math.abs(diasRestantes)} DÍAS)`;
+        }
 
         document.getElementById('valTrabajador').innerText = decodeURIComponent(nombreUrl || 'TRABAJADOR EVALUADO').toUpperCase();
         document.getElementById('valRut').innerText = rutUrl;
         document.getElementById('valCargo').innerText = decodeURIComponent(cargoUrl || 'OPERADOR FAENA').toUpperCase();
         document.getElementById('valEmpresa').innerText = decodeURIComponent(empresaUrl || 'EMPRESA MANDANTE').toUpperCase();
         document.getElementById('valFolio').innerText = folioUrl || 'SMK-VERIFIED';
-        document.getElementById('valVence').innerText = venceUrl || '1 AÑO DESDE EMISIÓN';
+        document.getElementById('valFechaEmision').innerText = strEmision;
+        document.getElementById('valVence').innerText = strVencimiento;
 
         cardDetalles.style.display = 'flex';
         return;
       }
 
+      // CASO 2: Certificado guardado en localStorage
       const claveAlmacenada = folioUrl ? `sensometrika_certificado_${folioUrl}` : 'sensometrika_ultimo_certificado';
       const certificadoGuardado = JSON.parse(localStorage.getItem(claveAlmacenada));
 
       if (certificadoGuardado) {
-        resultadoBox.className = "resultado-estado-box estado-valido";
-        resultadoBox.innerText = "✓ ACCESO AUTORIZADO - ACREDITACIÓN VIGENTE";
+        const fechaBase = certificadoGuardado.fechaEmision || certificadoGuardado.fecha;
+        const { strEmision, strVencimiento, diasRestantes } = procesarFechasYVigencia(fechaBase);
+
+        if (diasRestantes > 0) {
+          resultadoBox.className = "resultado-estado-box estado-valido";
+          resultadoBox.innerText = "✓ ACCESO AUTORIZADO - ACREDITACIÓN VIGENTE";
+          badgeContador.className = "badge-contador";
+          badgeContador.innerText = `⏱ ${diasRestantes} DÍAS RESTANTES`;
+        } else {
+          resultadoBox.className = "resultado-estado-box estado-invalido";
+          resultadoBox.innerText = "✖ ACCESO DENEGADO - ACREDITACIÓN EXPIRADA";
+          badgeContador.className = "badge-contador expirado";
+          badgeContador.innerText = `⚠️ EXPIRADO HACE ${Math.abs(diasRestantes)} DÍAS`;
+        }
 
         document.getElementById('valTrabajador').innerText = (certificadoGuardado.trabajador || certificadoGuardado.nombre || 'TRABAJADOR EVALUADO').toUpperCase();
         document.getElementById('valRut').innerText = certificadoGuardado.rut || rutUrl || '--';
         document.getElementById('valCargo').innerText = (certificadoGuardado.cargo || 'OPERADOR MAQUINARIA').toUpperCase();
         document.getElementById('valEmpresa').innerText = (certificadoGuardado.empresa || 'EMPRESA CONTRATISTA').toUpperCase();
         document.getElementById('valFolio').innerText = certificadoGuardado.folio || folioUrl || 'SMK-2026-CERT';
-        document.getElementById('valVence').innerText = certificadoGuardado.vence || certificadoGuardado.fecha || 'VIGENTE (D.S. N° 170)';
+        document.getElementById('valFechaEmision').innerText = strEmision;
+        document.getElementById('valVence').innerText = strVencimiento;
 
         cardDetalles.style.display = 'flex';
         return;
       }
 
+      // CASO 3: Evaluación incompleta o pendiente
       if (estadoUrl === 'INCOMPLETO' || estadoUrl === 'PENDIENTE') {
         resultadoBox.className = "resultado-estado-box estado-pendiente";
         resultadoBox.innerText = "⏳ EVALUACIÓN EN PROCESO - MÓDULOS PENDIENTES";
@@ -128,12 +200,16 @@
           document.getElementById('valCargo').innerText = decodeURIComponent(cargoUrl || 'OPERADOR FAENA').toUpperCase();
           document.getElementById('valEmpresa').innerText = decodeURIComponent(empresaUrl || 'EMPRESA MANDANTE').toUpperCase();
           document.getElementById('valFolio').innerText = folioUrl || 'SMK-PENDIENTE';
+          document.getElementById('valFechaEmision').innerText = '--/--/----';
           document.getElementById('valVence').innerText = 'PENDIENTE';
+          badgeContador.className = "badge-contador expirado";
+          badgeContador.innerText = "EN PROCESO";
           cardDetalles.style.display = 'flex';
         }
         return;
       }
 
+      // CASO 4: Certificado No Válido
       resultadoBox.className = "resultado-estado-box estado-invalido";
       resultadoBox.innerText = "✖ CERTIFICADO NO VÁLIDO O EXPIRADO";
     });
