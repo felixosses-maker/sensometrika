@@ -402,6 +402,7 @@
 
         function obtenerTelemetriaModulo(key) {
             const dataStr = localStorage.getItem(`sensometrika_${key}_${cleanRut}_${sessionId}`) ||
+                            localStorage.getItem(`sensometrika_${key}_${cleanRut}`) ||
                             localStorage.getItem(`sensometrika_last_${key}_${cleanRut}_${sessionId}`) ||
                             localStorage.getItem(`sensometrika_historial_${key}_${cleanRut}_${sessionId}`);
             try {
@@ -490,13 +491,16 @@
             let totalObligatoriosPlan = 0;
 
             modulosParrilla.forEach(m => {
-                const incluido = esPermitido(m.minPlan);
-                if (incluido) totalObligatoriosPlan++;
-
                 const telData = obtenerTelemetriaModulo(m.key);
                 const isRendido = telData !== null || 
                                   localStorage.getItem(`medico_${m.key}_${cleanRut}_${sessionId}`) === 'true' ||
-                                  localStorage.getItem(`sensometrika_${m.key}_${cleanRut}_${sessionId}`) !== null;
+                                  localStorage.getItem(`sensometrika_${m.key}_${cleanRut}_${sessionId}`) !== null ||
+                                  localStorage.getItem(`sensometrika_${m.key}_${cleanRut}`) !== null;
+
+                // REGLA DE DESBLOQUEO DINÁMICO: Incluido si pertenece al plan O SI FUE RENDIDO REALMENTE EN LA PARRILLA
+                const incluido = esPermitido(m.minPlan) || isRendido;
+                
+                if (incluido) totalObligatoriosPlan++;
 
                 const tr = document.createElement('tr');
 
@@ -524,7 +528,10 @@
                             detalleTelemetria += `Aciertos: <b>${telData.aciertos}/8</b><br>`;
                         }
                         if (telData.agudeza) {
-                            detalleTelemetria += `Agudeza: <b>${telData.agudeza}</b>`;
+                            detalleTelemetria += `Agudeza: <b>${telData.agudeza}</b><br>`;
+                        }
+                        if (telData.ishihara) {
+                            detalleTelemetria += `Cromaticidad: <b>${telData.ishihara}</b>`;
                         }
                     }
                     if (!detalleTelemetria) detalleTelemetria = `Muestra sensor Hz: <b>250Hz (Conforme)</b>`;
@@ -586,6 +593,9 @@
                 const urlValidacionSegura = `${window.location.origin}/validar.html?${paramsPublicos.toString()}`;
                 imgQr.src = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(urlValidacionSegura)}`;
             }
+
+            // Guardar flag global para actualizar badge en Dashboard APR
+            localStorage.setItem(`sensometrika_informe_emitido_${cleanRut}`, 'true');
         });
     </script>
 </body>
