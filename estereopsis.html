@@ -46,7 +46,7 @@
       position: relative;
     }
 
-    /* BARRA SUPERIOR UNIFICADA CON BIOMETRÍA PIP EN HEADER (ALTERNATIVA 1) */
+    /* BARRA SUPERIOR UNIFICADA CON BIOMETRÍA PIP EN HEADER */
     .nav-top-row { 
       display: flex !important; 
       justify-content: space-between !important; 
@@ -208,14 +208,14 @@
       <div style="background: rgba(11, 19, 36, 0.9); border: 1px solid #1e293b; padding: 8px 16px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.6);">
         <img src="sensometrica.jpg" alt="SENSOMETRIKA Calibration Technology" style="width: 160px; height: auto; display: block; border-radius: 4px; filter: drop-shadow(0 0 10px rgba(56, 189, 248, 0.6));">
       </div>
-      <span class="brand-subtitle">MÓDULO 6: ESTEREOPSIS 3D Y PERCEPCIÓN DE PROFUNDIDAD</span>
+      <span class="brand-subtitle">MÓDULO TAMIZAJE DE ESTEREOPSIS 3D</span>
     </header>
 
     <section class="modulo-card-container">
       
       <!-- NAV TOP ROW CON PIP BIOMÉTRICO HEADER -->
       <div class="nav-top-row">
-        <a onclick="volverAlMenu()" class="link-volver">&larr; Menú Pruebas</a>
+        <button type="button" onclick="volverAlMenu()">← Menú Pruebas</button>
 
         <!-- PIP BIOMÉTRICO RESTRINGIDO A 56px X 56px -->
         <div class="cam-preview-pip-header">
@@ -223,7 +223,7 @@
           <div class="cam-tag-header">Biometría</div>
         </div>
 
-        <button type="button" onclick="mostrarModalAyudaEstereo()">? &iquest;C&oacute;mo funciona?</button>
+        <button type="button" onclick="mostrarModalAyudaEstereo()">? ¿Cómo funciona?</button>
       </div>
 
       <div style="text-align: center;">
@@ -252,7 +252,7 @@
       </div>
 
       <button type="button" class="btn-calibrar" id="btnIniciarEstereo" onclick="iniciarPruebaEstereo()">
-        ▶ Iniciar Simulación Oficial (5 Rondas)
+        ▶ Iniciar Simulación Oficial B2B (5 Rondas)
       </button>
 
       <!-- METRICAS DE 4 COLUMNAS INCLUYENDO DISTANCIA -->
@@ -265,22 +265,30 @@
     </section>
   </main>
 
+  <div id="modalContainer"></div>
+
   <script>
     const urlParams = new URLSearchParams(window.location.search);
-    const modeParam = urlParams.get('mode') || (localStorage.getItem('sensometrika_b2c_mode') === 'true' ? 'b2c' : 'b2b');
-    const esB2B = (modeParam === 'b2b');
+    const modeParam = urlParams.get('mode') || 'b2b';
+    const esB2B = (modeParam === 'b2b') || urlParams.has('token') || urlParams.has('session');
 
     let datosUsuario = {};
     try {
       datosUsuario = JSON.parse(localStorage.getItem('sensometrika_datos_usuario')) || {};
     } catch(e){}
 
-    const rut = urlParams.get('rut') || datosUsuario.rut || 'GENERICO';
+    const rawNombre = urlParams.get('nombre') || datosUsuario.nombre || localStorage.getItem('sensometrika_nombre') || '';
+    const rawCargo = urlParams.get('cargo') || datosUsuario.cargo || localStorage.getItem('sensometrika_cargo') || '';
+    const rawEmpresa = urlParams.get('empresa') || datosUsuario.empresa || localStorage.getItem('sensometrika_b2b_empresa') || '';
+    const planActivo = (urlParams.get('plan') || localStorage.getItem('sensometrika_b2b_plan') || 'BASICO').toUpperCase();
+    const rut = urlParams.get('rut') || datosUsuario.rut || localStorage.getItem('sensometrika_rut') || '12345678-K';
     const cleanRut = rut.replace(/[^0-9Kk]/g, '');
+    const sessionId = urlParams.get('session') || localStorage.getItem('sensometrika_session_activa') || `SESION_B2B_${cleanRut}_${Date.now()}`;
 
     // TELEMETRÍA Y CONTROL DE CÁMARA BIOMÉTRICA
     let distanciaMedidaCm = 55;
     let estaBloqueadoPorDistancia = false;
+    let modoActual = 'OFICIAL';
 
     function iniciarMediaPipeFaceMesh() {
       const videoElement = document.getElementById('webcamVideo');
@@ -335,15 +343,15 @@
       const lblDetalle = document.getElementById('lblDistDetalleVal');
       const mDistancia = document.getElementById('m-distancia');
 
-      mDistancia.textContent = `${distanciaMedidaCm} cm`;
+      if (mDistancia) mDistancia.textContent = `${distanciaMedidaCm} cm`;
 
       if (distanciaMedidaCm >= 45 && distanciaMedidaCm <= 65) {
         estaBloqueadoPorDistancia = false;
-        mDistancia.style.color = 'var(--verde-destacado)';
+        if (mDistancia) mDistancia.style.color = 'var(--verde-destacado)';
         if (overlayBlock) overlayBlock.style.display = 'none';
       } else {
         estaBloqueadoPorDistancia = true;
-        mDistancia.style.color = 'var(--accent-red)';
+        if (mDistancia) mDistancia.style.color = 'var(--accent-red)';
         if (lblDetalle) lblDetalle.textContent = `${distanciaMedidaCm} cm`;
         if (overlayBlock) overlayBlock.style.display = 'flex';
       }
@@ -370,40 +378,46 @@
     let timerRonda = null;
     let timerBarra = null;
 
-    document.addEventListener('DOMContentLoaded', () => {
-      iniciarMediaPipeFaceMesh();
-      actualizarEstadoUI();
-      construirMatrizVisual();
-    });
-
     function volverAlMenu() {
-      const returnUrlParam = urlParams.get('returnUrl');
-      if (returnUrlParam) {
-        window.location.href = decodeURIComponent(returnUrlParam);
-      } else {
-        const menuDestino = esB2B ? 'menu_b2b_planes.html' : 'menu_B2C.html';
-        window.location.href = `${menuDestino}?${urlParams.toString()}`;
-      }
+      const paramsRegreso = new URLSearchParams({
+        rut: rut,
+        nombre: rawNombre,
+        cargo: rawCargo,
+        empresa: rawEmpresa,
+        plan: planActivo,
+        session: sessionId,
+        mode: 'b2b'
+      });
+      window.location.href = `menu_b2b_planes.html?${paramsRegreso.toString()}`;
+    }
+
+    // VALIDACIÓN ESTRICTA DE EJECUCIÓN POR SESIÓN CORRIENTE
+    function verificarModuloEjecutadoEnSesion() {
+      if (urlParams.has('reeval')) return false;
+      const dataStr = localStorage.getItem(`sensometrika_estereopsis_${cleanRut}_${sessionId}`);
+      return dataStr !== null;
     }
 
     function actualizarEstadoUI() {
-      const historial = JSON.parse(localStorage.getItem(`sensometrika_historial_estereopsis_${cleanRut}`)) || [];
-      const numEnsayosRealizados = historial.length;
+      const ejecutado = verificarModuloEjecutadoEnSesion();
 
-      const planStorage = (localStorage.getItem('sensometrika_plan_contratado') || urlParams.get('plan') || 'FULL').toUpperCase();
-      let maxIntentosPlan = esB2B ? (planStorage.includes('ALTO') ? 3 : 1) : 5;
-
-      if (numEnsayosRealizados >= maxIntentosPlan) {
-        badgeFase.innerText = esB2B ? `✓ Evaluación Registrada (${numEnsayosRealizados}/${maxIntentosPlan})` : `✓ Plan Completado (${numEnsayosRealizados}/${maxIntentosPlan})`;
+      if (ejecutado) {
+        modoActual = 'BLOQUEADO';
+        badgeFase.innerText = `✓ EVALUACIÓN REGISTRADA (1/1)`;
         badgeFase.style.color = '#10b981';
         badgeFase.style.borderColor = '#10b981';
-        btnIniciar.innerText = '← RETORNAR AL MENÚ DE EVALUACIONES';
+        badgeFase.style.background = 'rgba(16, 185, 129, 0.1)';
+        btnIniciar.innerText = 'VOLVER AL MENÚ DE EVALUACIONES →';
+        btnIniciar.style.backgroundColor = '#10b981';
         btnIniciar.onclick = volverAlMenu;
-        statusText.innerText = esB2B ? 'Evaluación B2B registrada exitosamente. Retorna al menú.' : 'Has completado las simulaciones de tu plan. Retorna al menú.';
+        statusText.innerText = 'Evaluación corporativa B2B registrada exitosamente. Retorna al menú de evaluaciones.';
       } else {
-        const siguienteSimu = numEnsayosRealizados + 1;
-        badgeFase.innerText = esB2B ? `🎯 Simulación Oficial Estereopsis B2B` : `🎯 Simulación S${siguienteSimu} de ${maxIntentosPlan}`;
-        btnIniciar.innerText = esB2B ? '▶ INICIAR SIMULACIÓN OFICIAL B2B' : `▶ INICIAR SIMULACIÓN S${siguienteSimu} (5 RONDAS)`;
+        modoActual = 'OFICIAL';
+        badgeFase.innerText = `🎯 Simulación Oficial Estereopsis B2B (1/1)`;
+        badgeFase.style.color = '#38bdf8';
+        badgeFase.style.borderColor = '#38bdf8';
+        btnIniciar.innerText = '▶ INICIAR SIMULACIÓN OFICIAL B2B (5 RONDAS)';
+        btnIniciar.style.backgroundColor = 'var(--azul-btn)';
       }
     }
 
@@ -439,7 +453,7 @@
             <h3 style="color: #ffffff; margin: 0 0 6px 0; font-size: 1.15rem; font-weight: 800; text-align: center;">Estereopsis y Latencia 3D</h3>
             <p style="color: #38bdf8; margin: 0 0 16px 0; font-size: 0.8rem; font-weight: 600; text-align: center;">Profundidad y Tiempo de Respuesta (5 Rondas)</p>
             <div style="font-size: 0.82rem; color: #94a3b8; line-height: 1.5; display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px;">
-              <p>1. <strong>Rangos Industriales:</strong> Óptimo (&le; 2.0s), Normal (2.0s - 3.5s) y Lento/Observado (3.5s - 5.0s).</p>
+              <p>1. <strong>Rangos Industriales:</strong> Óptimo (≤ 2.0s), Normal (2.0s - 3.5s) y Lento/Observado (3.5s - 5.0s).</p>
               <p>2. <strong>Tolerancia:</strong> Superar los 7 segundos genera un <em>fallo por lentitud en procesamiento espacial</em>.</p>
               <p style="color: var(--verde-destacado);">3. <strong>Biometría:</strong> Mantenga su postura entre 45 y 65 cm durante el test.</p>
             </div>
@@ -453,16 +467,7 @@
     }
 
     function iniciarPruebaEstereo() {
-      if (estaBloqueadoPorDistancia) return;
-
-      const historial = JSON.parse(localStorage.getItem(`sensometrika_historial_estereopsis_${cleanRut}`)) || [];
-      const planStorage = (localStorage.getItem('sensometrika_plan_contratado') || urlParams.get('plan') || 'FULL').toUpperCase();
-      let maxIntentosPlan = esB2B ? (planStorage.includes('ALTO') ? 3 : 1) : 5;
-
-      if (historial.length >= maxIntentosPlan) {
-        volverAlMenu();
-        return;
-      }
+      if (modoActual === 'BLOQUEADO' || estaBloqueadoPorDistancia) return;
 
       juegoActivo = true;
       rondaActual = 0;
@@ -545,7 +550,7 @@
 
       const precisionFinal = Math.round((aciertos / totalRondas) * 100);
       const sumaLatencia = latenciasTiempos.reduce((a, b) => a + b, 0);
-      const latenciaFinal = Math.round(sumaLatencia / latenciasTiempos.length);
+      const latenciaFinal = Math.round(sumaLatencia / (latenciasTiempos.length || 1));
       
       let categoriaLatencia = '';
       let aprobadoLatencia = false;
@@ -566,27 +571,39 @@
 
       const aprobado = precisionFinal >= 80 && aprobadoLatencia;
 
-      // GUARDADO AISLADO POR RUT DE TRABAJADOR
-      let historial = JSON.parse(localStorage.getItem(`sensometrika_historial_estereopsis_${cleanRut}`)) || [];
-      historial.push({
+      const registroData = {
         precision: precisionFinal,
+        score: precisionFinal,
+        efectividad: precisionFinal,
         aciertos: aciertos,
         total: totalRondas,
         latenciaPromedio: latenciaFinal,
+        tiempoReaccion: latenciaFinal,
         categoriaLatencia: categoriaLatencia,
         distanciaPromedioCm: distanciaMedidaCm,
         aprobado: aprobado,
         dictamen: aprobado ? 'APROBADO' : 'OBSERVADO',
         fecha: new Date().toISOString()
-      });
+      };
 
-      localStorage.setItem(`sensometrika_historial_estereopsis_${cleanRut}`, JSON.stringify(historial));
+      // GUARDADO COMPATIBLE CON INFORME-B2B.HTML Y MENU
+      localStorage.setItem(`sensometrika_estereopsis_${cleanRut}_${sessionId}`, JSON.stringify(registroData));
+      localStorage.setItem(`sensometrika_last_estereopsis_${cleanRut}_${sessionId}`, JSON.stringify(registroData));
+      localStorage.setItem('sensometrika_estereopsis', JSON.stringify(registroData));
+
+      let modulosRendidos = {};
+      try { modulosRendidos = JSON.parse(localStorage.getItem('sensometrika_modulos_rendidos')) || {}; } catch(e){}
+      modulosRendidos.estereopsis = true;
+      localStorage.setItem('sensometrika_modulos_rendidos', JSON.stringify(modulosRendidos));
 
       actualizarEstadoUI();
       mostrarModalResultadoEstereopsis(precisionFinal, latenciaFinal, categoriaLatencia, aprobado);
     }
 
     function mostrarModalResultadoEstereopsis(precisionFinal, latenciaFinal, categoriaLatencia, aprobado) {
+      const modalExistente = document.getElementById('modalResultadoEstereopsis');
+      if (modalExistente) modalExistente.remove();
+
       const modalHtml = `
         <div id="modalResultadoEstereopsis" style="position: fixed; inset: 0; background: rgba(5, 8, 18, 0.9); backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center; z-index: 99999; padding: 16px;">
           <div style="background: #0f172a; border: 1px solid #1e293b; border-radius: 18px; width: 100%; max-width: 380px; padding: 24px 20px; text-align: center; box-shadow: 0 20px 30px rgba(0,0,0,0.7); color: #f8fafc;">
@@ -623,6 +640,12 @@
       `;
       document.body.insertAdjacentHTML('beforeend', modalHtml);
     }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      iniciarMediaPipeFaceMesh();
+      actualizarEstadoUI();
+      construirMatrizVisual();
+    });
   </script>
 </body>
 </html>
