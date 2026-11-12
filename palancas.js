@@ -152,7 +152,7 @@ class ModuloPalancas {
 
         const distMeta = Math.hypot(this.puntero.x - this.meta.x, this.puntero.y - this.meta.y);
         if (distMeta <= this.meta.radio) {
-            this.finalizar();
+            this.finalizar(esModoDemoPalancas);
         }
     }
 
@@ -262,7 +262,7 @@ class ModuloPalancas {
         requestAnimationFrame(() => this.loop());
     }
 
-    finalizar() {
+    finalizar(esDemo = false) {
         this.activo = false;
         if (this.timerInterval) clearInterval(this.timerInterval);
 
@@ -275,35 +275,35 @@ class ModuloPalancas {
             contactos: this.contactos,
             porcentaje: porcentaje,
             aprobado: aprobado,
+            esDemo: esDemo,
             circuito: 'Trazado Dinámico (Anti-Memorización)',
-            returnUrl: returnUrlPalancas || (esModoDemoPalancas ? 'demo_b2b_apr.html' : 'menu.html')
+            returnUrl: returnUrlPalancas || 'menu_b2b_planes.html'
         };
 
-        // Guardado riguroso en el historial aislado por sesión
-        let historialActual = JSON.parse(localStorage.getItem(claveHistorialPalancas)) || [];
-        historialActual.push({
-            tiempoTotal: this.tiempoAcumulado,
-            contactos: this.contactos,
-            porcentaje: porcentaje,
-            aprobado: aprobado,
-            fecha: new Date().toISOString()
-        });
-        localStorage.setItem(claveHistorialPalancas, JSON.stringify(historialActual));
+        // Solo guardar en historial y registro oficial si NO es fase Demo
+        if (!esDemo && !esModoDemoPalancas) {
+            let historialActual = JSON.parse(localStorage.getItem(claveHistorialPalancas)) || [];
+            historialActual.push({
+                tiempoTotal: this.tiempoAcumulado,
+                contactos: this.contactos,
+                porcentaje: porcentaje,
+                aprobado: aprobado,
+                fecha: new Date().toISOString()
+            });
+            localStorage.setItem(claveHistorialPalancas, JSON.stringify(historialActual));
 
-        // Guardado del último resultado individual para trazabilidad del menú B2B y consola
-        localStorage.setItem(claveLastPalancas, JSON.stringify({
-            tiempoTotal: this.tiempoAcumulado,
-            contactos: this.contactos,
-            porcentaje: porcentaje,
-            aprobado: aprobado,
-            go_no_go_flag: aprobado,
-            fecha: new Date().toISOString()
-        }));
+            localStorage.setItem(claveLastPalancas, JSON.stringify({
+                tiempoTotal: this.tiempoAcumulado,
+                contactos: this.contactos,
+                porcentaje: porcentaje,
+                aprobado: aprobado,
+                go_no_go_flag: aprobado,
+                fecha: new Date().toISOString()
+            }));
+        }
 
         if (typeof this.onComplete === 'function') {
             this.onComplete(resultados);
-        } else {
-            window.location.href = resultados.returnUrl;
         }
     }
 }

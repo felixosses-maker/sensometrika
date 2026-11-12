@@ -258,7 +258,7 @@
             border: none;
             border-radius: 10px;
             padding: 14px;
-            font-weight: 700;
+            font-weight: 800;
             font-size: 1rem;
             cursor: pointer;
             width: 100%;
@@ -320,11 +320,11 @@
         .modal-body { font-size: 0.9rem; color: var(--text-main); line-height: 1.5; }
         .modal-btn {
             background-color: var(--accent-green);
-            color: #ffffff;
+            color: #000000;
             border: none;
             padding: 12px;
             border-radius: 8px;
-            font-weight: 700;
+            font-weight: 900;
             cursor: pointer;
         }
     </style>
@@ -335,7 +335,7 @@
 
     <div class="main-container">
         <header class="brand-header">
-            <img src="sensometrica.jpg" alt="SENSOMETRIKA" class="brand-logo-img">
+            <img src="sensometrica.jpg" alt="SENSOMETRIKA" class="brand-logo-img" onerror="this.style.display='none'">
             <span class="brand-subtitle">MÓDULO COORDINACIÓN BIMANUAL • PALANCAS</span>
         </header>
 
@@ -460,7 +460,8 @@
         const planActivo = (urlParams.get('plan') || localStorage.getItem('sensometrika_b2b_plan') || 'BASICO').toUpperCase();
         const rutEvaluado = urlParams.get('rut') || datosUsuario.rut || localStorage.getItem('sensometrika_rut') || '12345678-K';
         const cleanRut = rutEvaluado.replace(/[^0-9Kk]/g, '');
-        const sessionId = urlParams.get('session') || localStorage.getItem('sensometrika_session_activa') || `SESION_B2B_${cleanRut}_${Date.now()}`;
+        const sessionId = urlParams.get('session') || localStorage.getItem(`sensometrika_active_session_${cleanRut}`) || localStorage.getItem('sensometrika_session_activa') || `SESION_B2B_${cleanRut}_${Date.now()}`;
+        const esB2C = urlParams.get('mode') === 'b2c';
 
         let modoActual = 'DEMO';
         let tiempoLimiteSeg = 20;
@@ -485,6 +486,16 @@
         let estaBloqueadoPorDistancia = false;
 
         function ejecutarRetornoMenu() {
+            if (esB2C) {
+                const paramsB2C = new URLSearchParams({
+                    rut: rutEvaluado,
+                    nombre: rawNombre,
+                    plan: planActivo,
+                    mode: 'b2c'
+                });
+                window.location.href = `menu_b2c.html?${paramsB2C.toString()}`;
+                return;
+            }
             const paramsRegreso = new URLSearchParams({
                 rut: rutEvaluado,
                 nombre: rawNombre,
@@ -499,6 +510,11 @@
 
         function iniciarMediaPipeFaceMesh() {
             const videoElement = document.getElementById('webcamVideo');
+            if (typeof FaceMesh === 'undefined' || typeof Camera === 'undefined') {
+                distanciaMedidaCm = 50;
+                evaluarRangoDistancia();
+                return;
+            }
             const faceMesh = new FaceMesh({
                 locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`
             });
@@ -566,13 +582,14 @@
         }
 
         function verificarModuloEjecutado() {
-            if (urlParams.has('reeval')) return false;
+            if (esB2C || urlParams.has('reeval')) return false;
             return localStorage.getItem(`sensometrika_palancas_${cleanRut}_${sessionId}`) !== null;
         }
 
-        function actualizarEstadoUI() {
-            const ejecucionOficialConcluida = verificarModuloEjecutado();
-            const demoRealizada = localStorage.getItem(`palancas_demo_completada_${cleanRut}_${sessionId}`) === 'true';
+        function actualizarEstadoUI(forzarOficial = false) {
+            const ejecucionOficialConcluida = !forzarOficial && verificarModuloEjecutado();
+            const demoKey = esB2C ? `palancas_demo_completada_${cleanRut}` : `palancas_demo_completada_${cleanRut}_${sessionId}`;
+            const demoRealizada = forzarOficial || (localStorage.getItem(demoKey) === 'true');
 
             if (ejecucionOficialConcluida) {
                 modoActual = 'BLOQUEADO';
@@ -584,7 +601,16 @@
                 tiempoLimiteSeg = 45;
             }
 
-            const circuito = generarCircuitoCentrado(Date.now());
+            contactosCount = 0;
+            tiempoErrorMs = 0;
+            estaEnBorde = false;
+            tiempoTranscurrido = 0;
+            metricTiempo.textContent = `0 / ${tiempoLimiteSeg} s`;
+            metricContactos.textContent = '0';
+            metricTiempoError.textContent = '0.0 s';
+            metricPrecision.textContent = '100%';
+
+            const circuito = generarCircuitoCentrado(Date.now() + Math.random() * 1000);
             trackPoints = circuito.pista;
             posicionInicio = circuito.inicio;
             posicionMeta = circuito.meta;
@@ -602,14 +628,16 @@
                 badgeDot.style.backgroundColor = "#e5b324"; 
                 btnStart.textContent = "INICIAR CALIBRACIÓN DEMO (20 s)";
                 btnStart.style.backgroundColor = "#e5b324";
+                btnStart.style.color = "#000000";
                 btnStart.style.display = 'block';
                 btnNext.style.display = 'none';
                 instructionText.textContent = "Modo Demo: Inducción bimanual libre para habituarse a los mandos.";
             } else {
-                badgeText.textContent = "Fase 2: Simulación Oficial B2B (1/1)";
+                badgeText.textContent = esB2C ? "Fase 2: Simulación Oficial (B2C)" : "Fase 2: Simulación Oficial B2B (1/1)";
                 badgeDot.style.backgroundColor = "#10b981"; 
-                btnStart.textContent = "INICIAR SIMULACIÓN OFICIAL B2B (45 s)";
+                btnStart.textContent = "INICIAR SIMULACIÓN OFICIAL (45 s)";
                 btnStart.style.backgroundColor = "#10b981";
+                btnStart.style.color = "#000000";
                 btnStart.style.display = 'block';
                 btnNext.style.display = 'none';
                 instructionText.textContent = "Evaluación Oficial D.S. N° 170: Recorre la pista serpenteante hasta la meta verde.";
@@ -766,11 +794,16 @@
             if (esTimeout) precisionFinal = Math.max(10, precisionFinal - 25);
 
             if (modoActual === 'DEMO') {
-                localStorage.setItem(`palancas_demo_completada_${cleanRut}_${sessionId}`, 'true');
+                const demoKey = esB2C ? `palancas_demo_completada_${cleanRut}` : `palancas_demo_completada_${cleanRut}_${sessionId}`;
+                localStorage.setItem(demoKey, 'true');
 
-                mostrarModal("CALIBRACIÓN DEMO COMPLETADA", `Tiempo: <b>${tiempoTotalSecNeto} s</b><br>Toques en Borde: <b>${contactosCount}</b><br><br>Has completado la inducción libre. Presiona continuar para rendir la <b>Simulación Oficial B2B</b>.`, () => {
-                    actualizarEstadoUI();
-                });
+                mostrarModal(
+                    "CALIBRACIÓN DEMO COMPLETADA",
+                    `Tiempo: <b>${tiempoTotalSecNeto} s</b><br>Toques en Borde: <b>${contactosCount}</b><br><br>Has completado la inducción libre. Presiona continuar para avanzar de inmediato a la <b>Simulación Oficial (1 de 1)</b>.`,
+                    () => {
+                        actualizarEstadoUI(true);
+                    }
+                );
             } else {
                 const registroData = {
                     efectividad: precisionFinal,
@@ -785,12 +818,24 @@
                     fecha: new Date().toISOString()
                 };
 
-                localStorage.setItem(`sensometrika_palancas_${cleanRut}_${sessionId}`, JSON.stringify(registroData));
-                localStorage.setItem(`sensometrika_last_palancas_${cleanRut}_${sessionId}`, JSON.stringify(registroData));
+                if (esB2C) {
+                    const histKey = `sensometrika_historial_palancas_${cleanRut}`;
+                    let hist = [];
+                    try { hist = JSON.parse(localStorage.getItem(histKey)) || []; } catch(e){}
+                    hist.push(registroData);
+                    localStorage.setItem(histKey, JSON.stringify(hist));
+                } else {
+                    localStorage.setItem(`sensometrika_palancas_${cleanRut}_${sessionId}`, JSON.stringify(registroData));
+                    localStorage.setItem(`sensometrika_last_palancas_${cleanRut}_${sessionId}`, JSON.stringify(registroData));
+                }
 
-                mostrarModal("SIMULACIÓN OFICIAL B2B REGISTRADA", `Tiempo: <b>${tiempoTotalSecNeto} s</b><br>Toques en Borde: <b>${contactosCount}</b><br>Precisión Bimanual: <b>${precisionFinal}%</b><br><br><b>Resultado guardado con éxito.</b>`, () => {
-                    ejecutarRetornoMenu();
-                });
+                mostrarModal(
+                    "SIMULACIÓN OFICIAL REGISTRADA",
+                    `Tiempo: <b>${tiempoTotalSecNeto} s</b><br>Toques en Borde: <b>${contactosCount}</b><br>Precisión Bimanual: <b>${precisionFinal}%</b><br><br><b>Resultado guardado con éxito.</b>`,
+                    () => {
+                        ejecutarRetornoMenu();
+                    }
+                );
             }
         }
 
@@ -798,7 +843,8 @@
             modalTitle.textContent = titulo;
             modalBody.innerHTML = cuerpo;
             modal.style.display = 'flex';
-            modalBtnClose.onclick = () => {
+            modalBtnClose.onclick = (e) => {
+                if (e) e.stopPropagation();
                 modal.style.display = 'none';
                 if (callback) callback();
             };
@@ -811,7 +857,7 @@
 
         document.addEventListener('DOMContentLoaded', () => {
             iniciarMediaPipeFaceMesh();
-            actualizarEstadoUI();
+            actualizarEstadoUI(false);
             renderLoop();
         });
     </script>
