@@ -99,6 +99,8 @@
             padding: 12px;
             border-radius: 8px;
             font-size: 0.85rem;
+            user-select: text;
+            -webkit-user-select: text;
         }
 
         .form-group input:focus {
@@ -163,7 +165,7 @@
 
     <div class="main-container">
         <header class="brand-header">
-            <img src="sensometrica.jpg" alt="SENSOMETRIKA" class="brand-logo-img">
+            <img src="../sensometrica.jpg" alt="SENSOMETRIKA" class="brand-logo-img" onerror="this.style.display='none'">
             <span style="color: var(--accent-cyan); font-size: 0.75rem; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase;">
                 REGISTRO USUARIO PARTICULAR (B2C)
             </span>
@@ -224,8 +226,14 @@
         let planActual = 'BASICO';
 
         document.addEventListener('DOMContentLoaded', () => {
+            localStorage.setItem('sensometrika_b2c_mode', 'true');
+            localStorage.removeItem('sensometrika_b2b_token');
+
             const urlParams = new URLSearchParams(window.location.search);
-            planActual = (urlParams.get('plan') || localStorage.getItem('sensometrika_plan_contratado') || 'BASICO').toUpperCase().trim();
+            let rawPlan = (urlParams.get('plan') || localStorage.getItem('sensometrika_plan_contratado') || 'BASICO').toUpperCase().trim();
+            if (rawPlan.includes('FULL')) planActual = 'FULL';
+            else if (rawPlan.includes('PLUS')) planActual = 'PLUS';
+            else planActual = 'BASICO';
 
             document.getElementById('lblPlanNombre').textContent = `PASE ${planActual} (B2C)`;
         });
@@ -233,7 +241,7 @@
         function procesarPagoYEnvio(e) {
             e.preventDefault();
 
-            // Limpieza estricta de estado previo
+            // Limpieza estricta de estado previo B2B
             localStorage.removeItem('sensometrika_modulos_rendidos');
             localStorage.removeItem('sensometrika_session_burned');
             localStorage.removeItem('sensometrika_b2b_token');
@@ -241,6 +249,15 @@
             const nombre = document.getElementById('inputNombreParticular').value.trim();
             const rut = document.getElementById('inputRutParticular').value.trim();
             const correo = document.getElementById('inputCorreoParticular').value.trim();
+            const cleanRut = rut.replace(/[^0-9Kk]/g, '');
+
+            // Limpieza de historial previo de este RUT B2C para iniciar el nuevo pase desde cero
+            const modulosB2C = ['reactimetro', 'palancas', 'punteo', 'visual', 'audicion', 'tamizaje_visual'];
+            modulosB2C.forEach(mod => {
+                localStorage.removeItem(`${mod}_demo_completada_${cleanRut}`);
+                localStorage.removeItem(`sensometrika_historial_${mod}_${cleanRut}`);
+                localStorage.removeItem(`sensometrika_${mod}_${cleanRut}`);
+            });
 
             // Guardar datos de B2C sincronizados con menu_b2c.html
             localStorage.setItem('sensometrika_datos_usuario', JSON.stringify({
@@ -256,9 +273,14 @@
             localStorage.setItem('sensometrika_plan_contratado', planActual);
             localStorage.setItem('sensometrika_plan_seleccionado', planActual);
 
-            // Redirección directa a menu_b2c.html (sin pasar por verificacion_trabajador.html)
-            const originUrl = window.location.origin;
-            const urlAcceso = `${originUrl}/menu_b2c.html?rut=${encodeURIComponent(rut)}&nombre=${encodeURIComponent(nombre)}&plan=${planActual}&mode=b2c`;
+            // Redirección relativa dentro de la carpeta b2c/ hacia menu_b2c.html
+            const params = new URLSearchParams({
+                rut: rut,
+                nombre: nombre,
+                plan: planActual,
+                mode: 'b2c'
+            });
+            const urlAcceso = `menu_b2c.html?${params.toString()}`;
 
             // Ocultar formulario y mostrar confirmación de envío por correo
             document.getElementById('boxFormulario').style.display = 'none';

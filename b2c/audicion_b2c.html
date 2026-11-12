@@ -1,0 +1,946 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>SENSOMETRIKA | Audiometría Tonal Particular (B2C)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="session-timer.js"></script>
+    <!-- LIBRERÍAS GOOGLE MEDIAPIPE PARA TELEMETRÍA FACIAL -->
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
+
+    <style>
+        :root {
+            --bg-color: #040810;
+            --card-bg: #091120;
+            --card-border: #132238;
+            --accent-green: #10b981;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --blue-btn: #0284c7;
+            --accent-cyan: #00bfff;
+            --accent-gold: #f59e0b;
+            --accent-red: #ef4444;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: manipulation;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 16px 10px 28px;
+        }
+
+        .main-container {
+            width: 100%;
+            max-width: 480px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .brand-header {
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .brand-logo-img {
+            width: 185px;
+            height: auto;
+            display: block;
+            mix-blend-mode: lighten;
+            filter: drop-shadow(0 0 12px rgba(0, 191, 255, 0.45));
+        }
+
+        .brand-subtitle {
+            color: var(--accent-cyan);
+            font-size: 0.72rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            text-shadow: 0 0 8px rgba(0, 191, 255, 0.3);
+        }
+
+        .eval-card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            padding: 18px;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+            position: relative;
+        }
+
+        .top-nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            gap: 8px;
+        }
+
+        .top-nav button {
+            background: #0c182e;
+            border: 1px solid #1e3a6d;
+            color: var(--accent-cyan);
+            font-size: 0.72rem;
+            font-weight: 700;
+            padding: 6px 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+
+        .cam-preview-pip-header {
+            position: relative;
+            width: 56px;
+            height: 56px;
+            border: 1.5px solid var(--accent-cyan);
+            border-radius: 8px;
+            overflow: hidden;
+            background: #030712;
+            flex-shrink: 0;
+        }
+
+        .cam-preview-pip-header video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transform: scaleX(-1);
+        }
+
+        .cam-tag-header {
+            position: absolute;
+            bottom: 0; left: 0; right: 0;
+            background: rgba(0, 191, 255, 0.9);
+            color: #000;
+            font-size: 0.42rem;
+            font-weight: 900;
+            text-align: center;
+            text-transform: uppercase;
+        }
+
+        .status-badge-container { display: flex; justify-content: center; }
+
+        .status-badge {
+            background-color: #0f233d;
+            border: 1px solid #1d4ed8;
+            color: #38bdf8;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 0.78rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .dot-status { width: 8px; height: 8px; border-radius: 50%; }
+
+        .viewport-test {
+            position: relative;
+            width: 100%;
+            height: 225px;
+            background-color: #050a12;
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #canvasAudicion {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        .ear-pill {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(4, 8, 16, 0.85);
+            border: 1px solid rgba(0, 191, 255, 0.4);
+            color: var(--accent-cyan);
+            font-size: 0.62rem;
+            font-weight: 800;
+            padding: 4px 10px;
+            border-radius: 999px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .freq-pill {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(4, 8, 16, 0.85);
+            border: 1px solid rgba(245, 158, 11, 0.45);
+            color: var(--accent-gold);
+            font-size: 0.62rem;
+            font-weight: 800;
+            padding: 4px 10px;
+            border-radius: 999px;
+            text-transform: uppercase;
+        }
+
+        .distance-block-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(6px);
+            z-index: 30;
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 16px;
+            text-align: center;
+            gap: 8px;
+            border-radius: 12px;
+        }
+
+        .distance-block-title { color: var(--accent-red); font-weight: 900; font-size: 0.95rem; text-transform: uppercase; }
+        .distance-block-desc { color: var(--text-main); font-size: 0.75rem; line-height: 1.35; }
+
+        /* BOTONERA DE RESPUESTA AUDIOMÉTRICA */
+        .audio-response-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            width: 100%;
+        }
+
+        .btn-hear {
+            background: #0f172a;
+            border: 1.5px solid #334155;
+            color: #f8fafc;
+            font-weight: 900;
+            font-size: 0.84rem;
+            border-radius: 10px;
+            padding: 14px 8px;
+            cursor: pointer;
+            transition: all 0.1s ease;
+            text-align: center;
+            text-transform: uppercase;
+        }
+
+        .btn-hear.heard:not(:disabled) {
+            border-color: var(--accent-green);
+            color: #34d399;
+        }
+
+        .btn-hear.heard:active:not(:disabled) {
+            background: var(--accent-green);
+            color: #000000;
+        }
+
+        .btn-hear.not-heard:not(:disabled) {
+            border-color: #475569;
+            color: #cbd5e1;
+        }
+
+        .btn-hear.not-heard:active:not(:disabled) {
+            background: var(--accent-cyan);
+            color: #000000;
+        }
+
+        .btn-hear:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        .instruction-text {
+            text-align: center;
+            font-size: 0.80rem;
+            color: var(--text-main);
+            line-height: 1.38;
+        }
+
+        .btn-start {
+            background-color: var(--blue-btn);
+            color: #ffffff;
+            border: none;
+            border-radius: 10px;
+            padding: 13px;
+            font-weight: 800;
+            font-size: 0.90rem;
+            text-transform: uppercase;
+            cursor: pointer;
+            width: 100%;
+        }
+
+        .btn-next {
+            background-color: var(--accent-green);
+            color: #000000;
+            border: none;
+            border-radius: 10px;
+            padding: 13px;
+            font-weight: 900;
+            font-size: 0.90rem;
+            text-transform: uppercase;
+            cursor: pointer;
+            width: 100%;
+            display: none;
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            text-align: center;
+            background-color: #030712;
+            border: 1px solid var(--card-border);
+            border-radius: 10px;
+            padding: 10px 6px;
+        }
+
+        .metric-item { display: flex; flex-direction: column; gap: 3px; }
+        .metric-label { font-size: 0.56rem; color: var(--text-muted); font-weight: 700; }
+        .metric-value { font-size: 0.94rem; font-weight: 800; }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(4, 8, 16, 0.90);
+            backdrop-filter: blur(6px);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background-color: var(--card-bg);
+            border: 1.5px solid var(--accent-cyan);
+            border-radius: 16px;
+            padding: 22px;
+            width: 90%;
+            max-width: 420px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            box-shadow: 0 15px 45px rgba(0, 191, 255, 0.25);
+        }
+
+        .modal-title { color: var(--accent-cyan); font-size: 1.05rem; font-weight: 900; text-transform: uppercase; }
+        .modal-body { font-size: 0.85rem; color: var(--text-main); line-height: 1.5; }
+        .modal-btn {
+            background-color: var(--accent-green);
+            color: #000000;
+            border: none;
+            padding: 13px;
+            border-radius: 10px;
+            font-weight: 900;
+            font-size: 0.88rem;
+            text-transform: uppercase;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="main-container">
+        <header class="brand-header">
+            <img src="sensometrica.jpg" alt="SENSOMETRIKA" class="brand-logo-img" onerror="this.style.display='none'">
+            <span id="lblSubtituloModulo" class="brand-subtitle">AUDIOMETRÍA TONAL BILATERAL • PARTICULAR (B2C)</span>
+        </header>
+
+        <div class="eval-card">
+            <div class="top-nav">
+                <button type="button" onclick="volverAlMenuB2C()">← Menú B2C</button>
+
+                <div class="cam-preview-pip-header">
+                    <video id="webcamVideo" autoplay playsinline muted></video>
+                    <div class="cam-tag-header">Biometría</div>
+                </div>
+
+                <button type="button" id="btnInfo">? ¿Cómo funciona?</button>
+            </div>
+
+            <div class="status-badge-container">
+                <div class="status-badge">
+                    <span id="badgeDot" class="dot-status"></span>
+                    <span id="badgeText">Cargando estado...</span>
+                </div>
+            </div>
+
+            <div class="viewport-test">
+                <span id="lblEarBadge" class="ear-pill">CANAL ESTÉREO</span>
+                <span id="lblFreqBadge" class="freq-pill">500 - 4000 Hz</span>
+                <canvas id="canvasAudicion" width="440" height="225"></canvas>
+
+                <div id="boxBlockDistancia" class="distance-block-overlay">
+                    <span class="distance-block-title">⚠️ DISTANCIA / POSTURA FUERA DE RANGO</span>
+                    <span id="txtDistanciaDetalle" class="distance-block-desc">
+                        Ajuste su posición frente a la pantalla.<br>
+                        Distancia telemétrica actual: <b id="lblDistDetalleVal" style="color:var(--accent-red);">-- cm</b><br>
+                        (Rango normativo: 45 a 65 cm).
+                    </span>
+                </div>
+            </div>
+
+            <!-- BOTONERA DE RESPUESTA AUDIOMÉTRICA -->
+            <div class="audio-response-grid">
+                <button type="button" id="btnEscucho" class="btn-hear heard" disabled>🔊 SÍ ESCUCHO EL TONO</button>
+                <button type="button" id="btnNoEscucho" class="btn-hear not-heard" disabled>🔇 NO LO ESCUCHO</button>
+            </div>
+
+            <div class="instruction-text" id="instructionText">
+                Usa audífonos en un ambiente silencioso. Pulsa "SÍ ESCUCHO" apenas percibas el pitido tonal.
+            </div>
+
+            <div>
+                <button type="button" id="btnStart" class="btn-start">INICIAR EVALUACIÓN</button>
+                <button type="button" id="btnNext" class="btn-next" onclick="volverAlMenuB2C()">VOLVER AL MENÚ B2C →</button>
+            </div>
+
+            <div class="metrics-grid">
+                <div class="metric-item">
+                    <span class="metric-label">UMBRAL AVG</span>
+                    <span id="metricUmbral" class="metric-value" style="color:#00bfff;">25 dB</span>
+                </div>
+                <div class="metric-item">
+                    <span class="metric-label">ESTÍMULO</span>
+                    <span id="metricEstimulo" class="metric-value" style="color:#f59e0b;">0 / 4</span>
+                </div>
+                <div class="metric-item">
+                    <span class="metric-label">DISTANCIA</span>
+                    <span id="metricDistancia" class="metric-value" style="color:#10b981;">-- cm</span>
+                </div>
+                <div class="metric-item">
+                    <span class="metric-label">NORMA DS 170</span>
+                    <span class="metric-value" style="color:#10b981;">≤ 40 dB</span>
+                </div>
+            </div>
+        </div>
+
+        <div id="modalSistema" class="modal-overlay">
+            <div class="modal-content">
+                <div id="modalTitle" class="modal-title">PRUEBA FINALIZADA</div>
+                <div id="modalBody" class="modal-body">Resultados registrados.</div>
+                <button type="button" id="modalBtnClose" class="modal-btn">Continuar →</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ==========================================
+        // 🛡️ ENTORNO EXCLUSIVO PARTICULAR (B2C)
+        // ==========================================
+        localStorage.setItem('sensometrika_b2c_mode', 'true');
+        localStorage.removeItem('sensometrika_b2b_token');
+
+        const btnStart = document.getElementById('btnStart');
+        const btnNext = document.getElementById('btnNext');
+        const btnEscucho = document.getElementById('btnEscucho');
+        const btnNoEscucho = document.getElementById('btnNoEscucho');
+        const badgeDot = document.getElementById('badgeDot');
+        const badgeText = document.getElementById('badgeText');
+        const instructionText = document.getElementById('instructionText');
+        const lblEarBadge = document.getElementById('lblEarBadge');
+        const lblFreqBadge = document.getElementById('lblFreqBadge');
+
+        const metricUmbral = document.getElementById('metricUmbral');
+        const metricEstimulo = document.getElementById('metricEstimulo');
+        const metricDistancia = document.getElementById('metricDistancia');
+
+        const modal = document.getElementById('modalSistema');
+        const modalTitle = document.getElementById('modalTitle');
+        const modalBody = document.getElementById('modalBody');
+        const modalBtnClose = document.getElementById('modalBtnClose');
+
+        const canvas = document.getElementById('canvasAudicion');
+        const ctx = canvas.getContext('2d');
+
+        const urlParams = new URLSearchParams(window.location.search);
+
+        let datosUsuario = {};
+        try { datosUsuario = JSON.parse(localStorage.getItem('sensometrika_datos_usuario')) || {}; } catch(e){}
+
+        const rawNombre = urlParams.get('nombre') || datosUsuario.nombre || localStorage.getItem('sensometrika_nombre') || 'Postulante Particular';
+        const rutEvaluado = urlParams.get('rut') || datosUsuario.rut || localStorage.getItem('sensometrika_rut') || '12345678-K';
+        const cleanRut = rutEvaluado.replace(/[^0-9Kk]/g, '');
+
+        let planActivo = (urlParams.get('plan') || localStorage.getItem('sensometrika_plan_contratado') || localStorage.getItem('sensometrika_plan_seleccionado') || 'FULL').toUpperCase().trim();
+        if (planActivo.includes('FULL') || planActivo.includes('ALTO')) {
+            planActivo = 'FULL';
+        } else if (planActivo.includes('PLUS')) {
+            planActivo = 'PLUS';
+        } else {
+            planActivo = 'BASICO';
+        }
+
+        localStorage.setItem('sensometrika_plan_contratado', planActivo);
+        localStorage.setItem('sensometrika_rut', rutEvaluado);
+        localStorage.setItem('sensometrika_nombre', decodeURIComponent(rawNombre));
+
+        // En menu_b2c.html: FULL = 2 evaluaciones audiométricas
+        const maxEvaluacionesAudicion = planActivo === 'FULL' ? 2 : 0;
+        document.getElementById('lblSubtituloModulo').textContent = `AUDIOMETRÍA TONAL • PLAN ${planActivo} (${maxEvaluacionesAudicion} EVALUACIONES)`;
+
+        // Protocolo de frecuencias e intensidades (gain simulado calibrado)
+        const ESTIMULOS_DEMO = [
+            { oido: 'DERECHO', pan: 0.9, freq: 1000, db: 55, gain: 0.14, audible: true },
+            { oido: 'IZQUIERDO', pan: -0.9, freq: 1000, db: 55, gain: 0.14, audible: true },
+            { oido: 'DERECHO', pan: 0.9, freq: 2000, db: 35, gain: 0.045, audible: true },
+            { oido: 'IZQUIERDO', pan: -0.9, freq: 2000, db: 0, gain: 0.0, audible: false }
+        ];
+
+        const ESTIMULOS_OFICIAL = [
+            { oido: 'DERECHO', pan: 0.95, freq: 500, db: 45, gain: 0.09, audible: true },
+            { oido: 'DERECHO', pan: 0.95, freq: 1000, db: 30, gain: 0.032, audible: true },
+            { oido: 'DERECHO', pan: 0.95, freq: 2000, db: 25, gain: 0.018, audible: true },
+            { oido: 'DERECHO', pan: 0.95, freq: 4000, db: 30, gain: 0.032, audible: true },
+            { oido: 'DERECHO', pan: 0.95, freq: 1000, db: 0, gain: 0.0, audible: false },
+            { oido: 'IZQUIERDO', pan: -0.95, freq: 500, db: 45, gain: 0.09, audible: true },
+            { oido: 'IZQUIERDO', pan: -0.95, freq: 1000, db: 30, gain: 0.032, audible: true },
+            { oido: 'IZQUIERDO', pan: -0.95, freq: 2000, db: 25, gain: 0.018, audible: true },
+            { oido: 'IZQUIERDO', pan: -0.95, freq: 4000, db: 30, gain: 0.032, audible: true },
+            { oido: 'IZQUIERDO', pan: -0.95, freq: 2000, db: 0, gain: 0.0, audible: false }
+        ];
+
+        let audioCtx = null;
+        let modoActual = 'DEMO';
+        let evaluacionEnCurso = false;
+        let secuenciaActual = [];
+        let indiceEstimulo = 0;
+        let faseOnda = 0;
+        let animWaveId = null;
+
+        let aciertosTotales = 0;
+        let umbralesDetectadosDb = [];
+        let umbralesDerechoDb = [];
+        let umbralesIzquierdoDb = [];
+
+        let distanciaMedidaCm = 55;
+        let estaBloqueadoPorDistancia = false;
+
+        function volverAlMenuB2C() {
+            const paramsRegreso = new URLSearchParams({
+                rut: rutEvaluado,
+                nombre: decodeURIComponent(rawNombre),
+                plan: planActivo,
+                mode: 'b2c'
+            });
+            window.location.href = `menu_b2c.html?${paramsRegreso.toString()}`;
+        }
+
+        function obtenerHistorialAudicionB2C() {
+            try {
+                const hist = JSON.parse(localStorage.getItem(`sensometrika_historial_audicion_${cleanRut}`)) || [];
+                return Array.isArray(hist) ? hist : [];
+            } catch (e) {
+                return [];
+            }
+        }
+
+        function iniciarMediaPipeFaceMesh() {
+            const videoElement = document.getElementById('webcamVideo');
+            if (typeof FaceMesh === 'undefined' || typeof Camera === 'undefined') {
+                distanciaMedidaCm = 55;
+                evaluarRangoDistancia();
+                return;
+            }
+
+            const faceMesh = new FaceMesh({
+                locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`
+            });
+
+            faceMesh.setOptions({
+                maxNumFaces: 1,
+                refineLandmarks: true,
+                minDetectionConfidence: 0.5,
+                minTrackingConfidence: 0.5
+            });
+
+            faceMesh.onResults(onResultsFaceMesh);
+
+            const camera = new Camera(videoElement, {
+                onFrame: async () => {
+                    await faceMesh.send({ image: videoElement });
+                },
+                width: 320,
+                height: 240
+            });
+
+            camera.start().catch(() => {
+                distanciaMedidaCm = 55;
+                evaluarRangoDistancia();
+            });
+        }
+
+        function onResultsFaceMesh(results) {
+            if (!results.multiFaceLandmarks || results.multiFaceLandmarks.length === 0) {
+                distanciaMedidaCm = 70;
+                evaluarRangoDistancia();
+                return;
+            }
+
+            const landmarks = results.multiFaceLandmarks[0];
+            const leftEye = landmarks[33];
+            const rightEye = landmarks[263];
+
+            const dx = leftEye.x - rightEye.x;
+            const dy = leftEye.y - rightEye.y;
+            const eyeDistanceNormalized = Math.sqrt(dx * dx + dy * dy);
+
+            let distCalculada = Math.round(9.5 / eyeDistanceNormalized);
+            distanciaMedidaCm = Math.round(distanciaMedidaCm * 0.5 + distCalculada * 0.5);
+            evaluarRangoDistancia();
+        }
+
+        function evaluarRangoDistancia() {
+            const overlayBlock = document.getElementById('boxBlockDistancia');
+            const lblDetalle = document.getElementById('lblDistDetalleVal');
+
+            metricDistancia.textContent = `${distanciaMedidaCm} cm`;
+
+            if (distanciaMedidaCm >= 45 && distanciaMedidaCm <= 65) {
+                estaBloqueadoPorDistancia = false;
+                metricDistancia.style.color = 'var(--accent-green)';
+                if (overlayBlock) overlayBlock.style.display = 'none';
+            } else {
+                estaBloqueadoPorDistancia = true;
+                metricDistancia.style.color = 'var(--accent-red)';
+                if (lblDetalle) lblDetalle.textContent = `${distanciaMedidaCm} cm`;
+                if (overlayBlock) overlayBlock.style.display = 'flex';
+            }
+        }
+
+        function actualizarEstadoUI() {
+            if (maxEvaluacionesAudicion <= 0) {
+                modoActual = 'BLOQUEADO_PLAN';
+                badgeText.textContent = `MÓDULO EXCLUSIVO PLAN FULL`;
+                badgeDot.style.backgroundColor = "#ef4444";
+                btnStart.style.display = 'none';
+                btnNext.style.display = 'block';
+                instructionText.textContent = `La Audiometría Tonal Bilateral está incluida únicamente en el Plan FULL.`;
+                dibujarOndaAudiometrica(false);
+                return;
+            }
+
+            const historial = obtenerHistorialAudicionB2C();
+            const intentosRealizados = historial.length;
+            const demoRealizada = localStorage.getItem(`audicion_demo_completada_${cleanRut}`) === 'true' || intentosRealizados > 0;
+
+            if (intentosRealizados >= maxEvaluacionesAudicion) {
+                modoActual = 'BLOQUEADO';
+            } else if (!demoRealizada) {
+                modoActual = 'DEMO';
+                secuenciaActual = ESTIMULOS_DEMO;
+            } else {
+                modoActual = 'OFICIAL';
+                secuenciaActual = ESTIMULOS_OFICIAL;
+            }
+
+            metricEstimulo.textContent = `0 / ${secuenciaActual.length || 10}`;
+
+            if (modoActual === 'BLOQUEADO') {
+                badgeText.textContent = `COMPLETADO (${intentosRealizados}/${maxEvaluacionesAudicion} EVALUACIONES)`;
+                badgeDot.style.backgroundColor = "#10b981";
+                btnStart.style.display = 'none';
+                btnNext.style.display = 'block';
+                instructionText.textContent = `Has completado las ${maxEvaluacionesAudicion} evaluaciones de audiometría incluidas en tu Plan FULL.`;
+            } else if (modoActual === 'DEMO') {
+                badgeText.textContent = "Paso 1: Calibración Demo Sonora (4 Tonos)";
+                badgeDot.style.backgroundColor = "#f59e0b";
+                btnStart.textContent = "INICIAR CALIBRACIÓN DEMO DE AUDIO";
+                btnStart.style.backgroundColor = "#f59e0b";
+                btnStart.style.color = "#000000";
+                btnStart.style.display = 'block';
+                btnNext.style.display = 'none';
+                instructionText.textContent = "Modo Demo: Verifica el volumen de tus audífonos y confirma si percibes cada tono.";
+            } else {
+                const sigSimu = intentosRealizados + 1;
+                badgeText.textContent = `Fase 2: Audiometría Oficial S${sigSimu} de ${maxEvaluacionesAudicion}`;
+                badgeDot.style.backgroundColor = "#10b981";
+                btnStart.textContent = `INICIAR AUDIOMETRÍA OFICIAL S${sigSimu} DE ${maxEvaluacionesAudicion}`;
+                btnStart.style.backgroundColor = "#0284c7";
+                btnStart.style.color = "#ffffff";
+                btnStart.style.display = 'block';
+                btnNext.style.display = 'none';
+                instructionText.textContent = "Audiometría Oficial D.S. N° 170: Responde con honestidad cada estímulo emitido por oído.";
+            }
+
+            dibujarOndaAudiometrica(false);
+        }
+
+        function dibujarOndaAudiometrica(activa) {
+            const w = canvas.width;
+            const h = canvas.height;
+            const cy = h * 0.5 + 8;
+
+            ctx.clearRect(0, 0, w, h);
+            ctx.fillStyle = '#050a12';
+            ctx.fillRect(0, 0, w, h);
+
+            // Rejilla audiométrica
+            ctx.strokeStyle = 'rgba(30, 58, 109, 0.25)';
+            ctx.lineWidth = 1;
+            for (let gx = 0; gx < w; gx += 44) {
+                ctx.beginPath(); ctx.moveTo(gx, 0); ctx.lineTo(gx, h); ctx.stroke();
+            }
+            ctx.beginPath(); ctx.moveTo(0, cy); ctx.lineTo(w, cy); ctx.stroke();
+
+            // Onda sinusoidal animada
+            ctx.beginPath();
+            ctx.lineWidth = activa ? 3 : 1.5;
+            ctx.strokeStyle = activa ? '#00bfff' : 'rgba(56, 189, 248, 0.35)';
+
+            const amplitud = activa ? 38 : 6;
+            for (let x = 0; x <= w; x += 4) {
+                const envolvente = Math.sin((x / w) * Math.PI);
+                const y = cy + Math.sin((x * 0.045) + faseOnda) * amplitud * envolvente;
+                if (x === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            }
+            ctx.stroke();
+
+            if (activa) {
+                faseOnda += 0.14;
+                animWaveId = requestAnimationFrame(() => dibujarOndaAudiometrica(true));
+            }
+        }
+
+        function emitirTonoEstereo(freqHz, panValue, gainValue) {
+            try {
+                if (!audioCtx) {
+                    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+                    audioCtx = new AudioContextClass();
+                }
+                if (audioCtx.state === 'suspended') {
+                    audioCtx.resume();
+                }
+
+                if (gainValue <= 0) return;
+
+                const osc = audioCtx.createOscillator();
+                const gainNode = audioCtx.createGain();
+                const panner = audioCtx.createStereoPanner ? audioCtx.createStereoPanner() : null;
+
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(freqHz, audioCtx.currentTime);
+
+                if (panner) {
+                    panner.pan.setValueAtTime(panValue, audioCtx.currentTime);
+                }
+
+                const now = audioCtx.currentTime;
+                gainNode.gain.setValueAtTime(0.0001, now);
+                gainNode.gain.exponentialRampToValueAtTime(gainValue, now + 0.08);
+                gainNode.gain.setValueAtTime(gainValue, now + 0.85);
+                gainNode.gain.exponentialRampToValueAtTime(0.0001, now + 1.05);
+
+                if (panner) {
+                    osc.connect(gainNode);
+                    gainNode.connect(panner);
+                    panner.connect(audioCtx.destination);
+                } else {
+                    osc.connect(gainNode);
+                    gainNode.connect(audioCtx.destination);
+                }
+
+                osc.start(now);
+                osc.stop(now + 1.1);
+            } catch (e) {
+                console.warn('WebAudio fallback:', e);
+            }
+        }
+
+        function iniciarPruebaAudicion() {
+            if (modoActual === 'BLOQUEADO' || modoActual === 'BLOQUEADO_PLAN' || estaBloqueadoPorDistancia) return;
+
+            evaluacionEnCurso = true;
+            indiceEstimulo = 0;
+            aciertosTotales = 0;
+            umbralesDetectadosDb = [];
+            umbralesDerechoDb = [];
+            umbralesIzquierdoDb = [];
+
+            btnStart.style.display = 'none';
+            btnEscucho.disabled = false;
+            btnNoEscucho.disabled = false;
+            metricUmbral.textContent = '25 dB';
+
+            if (animWaveId) cancelAnimationFrame(animWaveId);
+            dibujarOndaAudiometrica(true);
+
+            ejecutarSiguienteEstimuloAudio();
+        }
+
+        function ejecutarSiguienteEstimuloAudio() {
+            if (indiceEstimulo >= secuenciaActual.length) {
+                finalizarPruebaAudicion();
+                return;
+            }
+
+            const est = secuenciaActual[indiceEstimulo];
+            lblEarBadge.textContent = `OÍDO ${est.oido}`;
+            lblFreqBadge.textContent = `${est.freq} Hz`;
+            metricEstimulo.textContent = `${indiceEstimulo + 1} / ${secuenciaActual.length}`;
+
+            // Pequeña pausa aleatoria antes del tono para evitar predicción rítmica
+            btnEscucho.disabled = true;
+            btnNoEscucho.disabled = true;
+            instructionText.textContent = `Escuchando canal ${est.oido} (${est.freq} Hz)...`;
+
+            setTimeout(() => {
+                if (!evaluacionEnCurso) return;
+                emitirTonoEstereo(est.freq, est.pan, est.gain);
+                btnEscucho.disabled = false;
+                btnNoEscucho.disabled = false;
+                instructionText.textContent = `¿Percibiste el tono en el oído ${est.oido}?`;
+            }, 450);
+        }
+
+        function registrarRespuestaAudicion(usuarioEscucho) {
+            if (!evaluacionEnCurso || estaBloqueadoPorDistancia) return;
+
+            const est = secuenciaActual[indiceEstimulo];
+            const esCorrecto = (usuarioEscucho === est.audible);
+
+            if (esCorrecto) {
+                aciertosTotales++;
+            }
+
+            // Cálculo de umbral estimado en dB HL por oído
+            if (est.audible) {
+                const umbralEst = usuarioEscucho ? est.db : 55;
+                umbralesDetectadosDb.push(umbralEst);
+                if (est.oido === 'DERECHO') umbralesDerechoDb.push(umbralEst);
+                else umbralesIzquierdoDb.push(umbralEst);
+            } else if (usuarioEscucho) {
+                // Penalización leve por falso positivo en silencio de control
+                umbralesDetectadosDb.push(45);
+            }
+
+            const avgActualDb = umbralesDetectadosDb.length > 0
+                ? Math.round(umbralesDetectadosDb.reduce((a, b) => a + b, 0) / umbralesDetectadosDb.length)
+                : 25;
+
+            metricUmbral.textContent = `${avgActualDb} dB`;
+            metricUmbral.style.color = avgActualDb <= 40 ? '#00bfff' : '#ef4444';
+
+            indiceEstimulo++;
+            ejecutarSiguienteEstimuloAudio();
+        }
+
+        function finalizarPruebaAudicion() {
+            evaluacionEnCurso = false;
+            if (animWaveId) cancelAnimationFrame(animWaveId);
+            dibujarOndaAudiometrica(false);
+
+            btnEscucho.disabled = true;
+            btnNoEscucho.disabled = true;
+            lblEarBadge.textContent = 'COMPLETADO';
+
+            const totalItems = Math.max(1, secuenciaActual.length);
+            const precisionPct = Math.round((aciertosTotales / totalItems) * 100);
+            const umbralPromedioDb = umbralesDetectadosDb.length > 0
+                ? Math.round(umbralesDetectadosDb.reduce((a, b) => a + b, 0) / umbralesDetectadosDb.length)
+                : 25;
+            const umbralDerDb = umbralesDerechoDb.length > 0
+                ? Math.round(umbralesDerechoDb.reduce((a, b) => a + b, 0) / umbralesDerechoDb.length)
+                : umbralPromedioDb;
+            const umbralIzqDb = umbralesIzquierdoDb.length > 0
+                ? Math.round(umbralesIzquierdoDb.reduce((a, b) => a + b, 0) / umbralesIzquierdoDb.length)
+                : umbralPromedioDb;
+
+            const esAprobado = (umbralPromedioDb <= 40) && (precisionPct >= 75);
+
+            if (modoActual === 'DEMO') {
+                localStorage.setItem(`audicion_demo_completada_${cleanRut}`, 'true');
+
+                mostrarModal(
+                    "CALIBRACIÓN DEMO SONORA COMPLETADA",
+                    `Umbral Estimado: <b>${umbralPromedioDb} dB</b> • Precisión: <b>${precisionPct}%</b><br><br>Has verificado correctamente ambos canales de audio. Presiona continuar para iniciar tu <b>Audiometría Oficial S1 de ${maxEvaluacionesAudicion}</b>.`,
+                    () => {
+                        actualizarEstadoUI();
+                    }
+                );
+            } else {
+                const historial = obtenerHistorialAudicionB2C();
+                const numeroSimulacion = historial.length + 1;
+
+                const registroData = {
+                    intento: numeroSimulacion,
+                    plan: planActivo,
+                    score: precisionPct,
+                    precision: precisionPct,
+                    efectividad: precisionPct,
+                    umbralDb: umbralPromedioDb,
+                    umbralDerechoDb: umbralDerDb,
+                    umbralIzquierdoDb: umbralIzqDb,
+                    distanciaAvgCm: distanciaMedidaCm,
+                    aprobado: esAprobado,
+                    dictamen: esAprobado ? 'APROBADO' : 'OBSERVADO',
+                    fecha: new Date().toISOString()
+                };
+
+                historial.push(registroData);
+                localStorage.setItem(`sensometrika_historial_audicion_${cleanRut}`, JSON.stringify(historial));
+                localStorage.setItem(`sensometrika_audicion_${cleanRut}`, JSON.stringify(registroData));
+                localStorage.setItem('sensometrika_audicion', JSON.stringify(registroData));
+
+                mostrarModal(
+                    `AUDIOMETRÍA S${numeroSimulacion} DE ${maxEvaluacionesAudicion} REGISTRADA`,
+                    `Umbral Bilateral: <b>${umbralPromedioDb} dB</b> (Der: <b>${umbralDerDb} dB</b> / Izq: <b>${umbralIzqDb} dB</b>)<br>Precisión: <b>${precisionPct}%</b> • Norma D.S. N° 170: <b>${esAprobado ? 'CONFORME (≤ 40 dB)' : 'OBSERVADO (> 40 dB)'}</b><br><br><b>Resultado guardado en tu historial particular B2C.</b>`,
+                    () => {
+                        volverAlMenuB2C();
+                    }
+                );
+            }
+        }
+
+        function mostrarModal(titulo, cuerpo, callback) {
+            modalTitle.textContent = titulo;
+            modalBody.innerHTML = cuerpo;
+            modal.style.display = 'flex';
+            modalBtnClose.onclick = () => {
+                modal.style.display = 'none';
+                if (callback) callback();
+            };
+        }
+
+        btnStart.addEventListener('click', iniciarPruebaAudicion);
+        btnEscucho.addEventListener('click', () => registrarRespuestaAudicion(true));
+        btnNoEscucho.addEventListener('click', () => registrarRespuestaAudicion(false));
+
+        document.getElementById('btnInfo').addEventListener('click', () => {
+            mostrarModal(
+                "¿CÓMO FUNCIONA?",
+                "Colócate tus audífonos en un espacio tranquilo y ajusta el volumen de tu dispositivo a un nivel medio (60%). El sistema emitirá tonos puros entre <b>500 Hz y 4000 Hz</b> alternando entre el oído derecho e izquierdo."
+            );
+        });
+
+        document.addEventListener('DOMContentLoaded', () => {
+            iniciarMediaPipeFaceMesh();
+            actualizarEstadoUI();
+        });
+    </script>
+</body>
+</html>

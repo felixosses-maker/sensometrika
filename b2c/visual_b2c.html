@@ -1,0 +1,931 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>SENSOMETRIKA | Tamizaje Visual Integral Particular (B2C)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="session-timer.js"></script>
+    <!-- LIBRERÍAS GOOGLE MEDIAPIPE PARA TELEMETRÍA FACIAL -->
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
+
+    <style>
+        :root {
+            --bg-color: #040810;
+            --card-bg: #091120;
+            --card-border: #132238;
+            --accent-green: #10b981;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --blue-btn: #0284c7;
+            --accent-cyan: #00bfff;
+            --accent-gold: #f59e0b;
+            --accent-red: #ef4444;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: manipulation;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 16px 10px 28px;
+        }
+
+        .main-container {
+            width: 100%;
+            max-width: 480px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .brand-header {
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .brand-logo-img {
+            width: 185px;
+            height: auto;
+            display: block;
+            mix-blend-mode: lighten;
+            filter: drop-shadow(0 0 12px rgba(0, 191, 255, 0.45));
+        }
+
+        .brand-subtitle {
+            color: var(--accent-cyan);
+            font-size: 0.72rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            text-shadow: 0 0 8px rgba(0, 191, 255, 0.3);
+        }
+
+        .eval-card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            padding: 18px;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+            position: relative;
+        }
+
+        .top-nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            gap: 8px;
+        }
+
+        .top-nav button {
+            background: #0c182e;
+            border: 1px solid #1e3a6d;
+            color: var(--accent-cyan);
+            font-size: 0.72rem;
+            font-weight: 700;
+            padding: 6px 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+
+        .cam-preview-pip-header {
+            position: relative;
+            width: 56px;
+            height: 56px;
+            border: 1.5px solid var(--accent-cyan);
+            border-radius: 8px;
+            overflow: hidden;
+            background: #030712;
+            flex-shrink: 0;
+        }
+
+        .cam-preview-pip-header video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transform: scaleX(-1);
+        }
+
+        .cam-tag-header {
+            position: absolute;
+            bottom: 0; left: 0; right: 0;
+            background: rgba(0, 191, 255, 0.9);
+            color: #000;
+            font-size: 0.42rem;
+            font-weight: 900;
+            text-align: center;
+            text-transform: uppercase;
+        }
+
+        .status-badge-container { display: flex; justify-content: center; }
+
+        .status-badge {
+            background-color: #0f233d;
+            border: 1px solid #1d4ed8;
+            color: #38bdf8;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 0.78rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .dot-status { width: 8px; height: 8px; border-radius: 50%; }
+
+        .viewport-test {
+            position: relative;
+            width: 100%;
+            height: 235px;
+            background-color: #050a12;
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #canvasVisual {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        .subtest-pill {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(4, 8, 16, 0.85);
+            border: 1px solid rgba(0, 191, 255, 0.4);
+            color: var(--accent-cyan);
+            font-size: 0.62rem;
+            font-weight: 800;
+            padding: 4px 10px;
+            border-radius: 999px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .distance-block-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(6px);
+            z-index: 30;
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 16px;
+            text-align: center;
+            gap: 8px;
+            border-radius: 12px;
+        }
+
+        .distance-block-title { color: var(--accent-red); font-weight: 900; font-size: 0.95rem; text-transform: uppercase; }
+        .distance-block-desc { color: var(--text-main); font-size: 0.75rem; line-height: 1.35; }
+
+        /* BOTONERA DE RESPUESTA VISUAL */
+        .options-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            width: 100%;
+        }
+
+        .btn-opt {
+            background: #0f172a;
+            border: 1.5px solid #334155;
+            color: #f8fafc;
+            font-weight: 900;
+            font-size: 0.88rem;
+            border-radius: 10px;
+            padding: 12px 6px;
+            cursor: pointer;
+            transition: all 0.1s ease;
+            text-align: center;
+        }
+
+        .btn-opt:hover:not(:disabled) {
+            border-color: var(--accent-cyan);
+            background: #132238;
+        }
+
+        .btn-opt:active:not(:disabled) {
+            background: var(--accent-cyan);
+            color: #000000;
+            transform: scale(0.97);
+        }
+
+        .btn-opt:disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
+        }
+
+        .instruction-text {
+            text-align: center;
+            font-size: 0.80rem;
+            color: var(--text-main);
+            line-height: 1.38;
+        }
+
+        .btn-start {
+            background-color: var(--blue-btn);
+            color: #ffffff;
+            border: none;
+            border-radius: 10px;
+            padding: 13px;
+            font-weight: 800;
+            font-size: 0.90rem;
+            text-transform: uppercase;
+            cursor: pointer;
+            width: 100%;
+        }
+
+        .btn-next {
+            background-color: var(--accent-green);
+            color: #000000;
+            border: none;
+            border-radius: 10px;
+            padding: 13px;
+            font-weight: 900;
+            font-size: 0.90rem;
+            text-transform: uppercase;
+            cursor: pointer;
+            width: 100%;
+            display: none;
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            text-align: center;
+            background-color: #030712;
+            border: 1px solid var(--card-border);
+            border-radius: 10px;
+            padding: 10px 6px;
+        }
+
+        .metric-item { display: flex; flex-direction: column; gap: 3px; }
+        .metric-label { font-size: 0.56rem; color: var(--text-muted); font-weight: 700; }
+        .metric-value { font-size: 0.94rem; font-weight: 800; }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(4, 8, 16, 0.90);
+            backdrop-filter: blur(6px);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background-color: var(--card-bg);
+            border: 1.5px solid var(--accent-cyan);
+            border-radius: 16px;
+            padding: 22px;
+            width: 90%;
+            max-width: 420px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            box-shadow: 0 15px 45px rgba(0, 191, 255, 0.25);
+        }
+
+        .modal-title { color: var(--accent-cyan); font-size: 1.05rem; font-weight: 900; text-transform: uppercase; }
+        .modal-body { font-size: 0.85rem; color: var(--text-main); line-height: 1.5; }
+        .modal-btn {
+            background-color: var(--accent-green);
+            color: #000000;
+            border: none;
+            padding: 13px;
+            border-radius: 10px;
+            font-weight: 900;
+            font-size: 0.88rem;
+            text-transform: uppercase;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="main-container">
+        <header class="brand-header">
+            <img src="sensometrica.jpg" alt="SENSOMETRIKA" class="brand-logo-img" onerror="this.style.display='none'">
+            <span id="lblSubtituloModulo" class="brand-subtitle">TAMIZAJE VISUAL INTEGRAL • PARTICULAR (B2C)</span>
+        </header>
+
+        <div class="eval-card">
+            <div class="top-nav">
+                <button type="button" onclick="volverAlMenuB2C()">← Menú B2C</button>
+
+                <div class="cam-preview-pip-header">
+                    <video id="webcamVideo" autoplay playsinline muted></video>
+                    <div class="cam-tag-header">Biometría</div>
+                </div>
+
+                <button type="button" id="btnInfo">? ¿Cómo funciona?</button>
+            </div>
+
+            <div class="status-badge-container">
+                <div class="status-badge">
+                    <span id="badgeDot" class="dot-status"></span>
+                    <span id="badgeText">Cargando estado...</span>
+                </div>
+            </div>
+
+            <div class="viewport-test">
+                <span id="lblSubtestBadge" class="subtest-pill">EN ESPERA</span>
+                <canvas id="canvasVisual" width="440" height="235"></canvas>
+
+                <div id="boxBlockDistancia" class="distance-block-overlay">
+                    <span class="distance-block-title">⚠️ DISTANCIA / POSTURA FUERA DE RANGO</span>
+                    <span id="txtDistanciaDetalle" class="distance-block-desc">
+                        Ajuste su posición frente a la pantalla.<br>
+                        Distancia telemétrica actual: <b id="lblDistDetalleVal" style="color:var(--accent-red);">-- cm</b><br>
+                        (Rango normativo: 45 a 65 cm).
+                    </span>
+                </div>
+            </div>
+
+            <!-- BOTONERA DINÁMICA DE RESPUESTA -->
+            <div class="options-grid" id="optionsContainer">
+                <button type="button" class="btn-opt" disabled>—</button>
+                <button type="button" class="btn-opt" disabled>—</button>
+                <button type="button" class="btn-opt" disabled>—</button>
+                <button type="button" class="btn-opt" disabled>—</button>
+            </div>
+
+            <div class="instruction-text" id="instructionText">
+                Evaluación de Agudeza Visual, Visión de Colores (Ishihara) y Contraste Nocturno.
+            </div>
+
+            <div>
+                <button type="button" id="btnStart" class="btn-start">INICIAR EVALUACIÓN</button>
+                <button type="button" id="btnNext" class="btn-next" onclick="volverAlMenuB2C()">VOLVER AL MENÚ B2C →</button>
+            </div>
+
+            <div class="metrics-grid">
+                <div class="metric-item">
+                    <span class="metric-label">RENDIMIENTO</span>
+                    <span id="metricScore" class="metric-value" style="color:#00bfff;">100%</span>
+                </div>
+                <div class="metric-item">
+                    <span class="metric-label">ÍTEM</span>
+                    <span id="metricItem" class="metric-value" style="color:#f59e0b;">0 / 4</span>
+                </div>
+                <div class="metric-item">
+                    <span class="metric-label">DISTANCIA</span>
+                    <span id="metricDistancia" class="metric-value" style="color:#10b981;">-- cm</span>
+                </div>
+                <div class="metric-item">
+                    <span class="metric-label">NORMA DS 170</span>
+                    <span class="metric-value" style="color:#10b981;">≥ 75%</span>
+                </div>
+            </div>
+        </div>
+
+        <div id="modalSistema" class="modal-overlay">
+            <div class="modal-content">
+                <div id="modalTitle" class="modal-title">PRUEBA FINALIZADA</div>
+                <div id="modalBody" class="modal-body">Resultados registrados.</div>
+                <button type="button" id="modalBtnClose" class="modal-btn">Continuar →</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ==========================================
+        // 🛡️ ENTORNO EXCLUSIVO PARTICULAR (B2C)
+        // ==========================================
+        localStorage.setItem('sensometrika_b2c_mode', 'true');
+        localStorage.removeItem('sensometrika_b2b_token');
+
+        const btnStart = document.getElementById('btnStart');
+        const btnNext = document.getElementById('btnNext');
+        const badgeDot = document.getElementById('badgeDot');
+        const badgeText = document.getElementById('badgeText');
+        const instructionText = document.getElementById('instructionText');
+        const optionsContainer = document.getElementById('optionsContainer');
+        const lblSubtestBadge = document.getElementById('lblSubtestBadge');
+
+        const metricScore = document.getElementById('metricScore');
+        const metricItem = document.getElementById('metricItem');
+        const metricDistancia = document.getElementById('metricDistancia');
+
+        const modal = document.getElementById('modalSistema');
+        const modalTitle = document.getElementById('modalTitle');
+        const modalBody = document.getElementById('modalBody');
+        const modalBtnClose = document.getElementById('modalBtnClose');
+
+        const canvas = document.getElementById('canvasVisual');
+        const ctx = canvas.getContext('2d');
+
+        const urlParams = new URLSearchParams(window.location.search);
+
+        let datosUsuario = {};
+        try { datosUsuario = JSON.parse(localStorage.getItem('sensometrika_datos_usuario')) || {}; } catch(e){}
+
+        const rawNombre = urlParams.get('nombre') || datosUsuario.nombre || localStorage.getItem('sensometrika_nombre') || 'Postulante Particular';
+        const rutEvaluado = urlParams.get('rut') || datosUsuario.rut || localStorage.getItem('sensometrika_rut') || '12345678-K';
+        const cleanRut = rutEvaluado.replace(/[^0-9Kk]/g, '');
+
+        let planActivo = (urlParams.get('plan') || localStorage.getItem('sensometrika_plan_contratado') || localStorage.getItem('sensometrika_plan_seleccionado') || 'PLUS').toUpperCase().trim();
+        if (planActivo.includes('FULL') || planActivo.includes('ALTO')) {
+            planActivo = 'FULL';
+        } else if (planActivo.includes('PLUS')) {
+            planActivo = 'PLUS';
+        } else {
+            planActivo = 'BASICO';
+        }
+
+        localStorage.setItem('sensometrika_plan_contratado', planActivo);
+        localStorage.setItem('sensometrika_rut', rutEvaluado);
+        localStorage.setItem('sensometrika_nombre', decodeURIComponent(rawNombre));
+
+        // En menu_b2c.html: PLUS = 2 evaluaciones visuales, FULL = 4 evaluaciones visuales
+        const maxEvaluacionesVisuales = planActivo === 'FULL' ? 4 : 2;
+        document.getElementById('lblSubtituloModulo').textContent = `TAMIZAJE VISUAL • PLAN ${planActivo} (${maxEvaluacionesVisuales} EVALUACIONES)`;
+
+        // Banco de ítems clínicos (Agudeza, Cromática Ishihara, Contraste Nocturno)
+        const ITEMS_DEMO = [
+            { tipo: 'AGUDEZA', subtitulo: '1/3 • AGUDEZA VISUAL', tamano: 46, direccion: 'DERECHA', opciones: ['▲ ARRIBA', '▼ ABAJO', '◀ IZQ', '▶ DER'], correcta: '▶ DER' },
+            { tipo: 'AGUDEZA', subtitulo: '1/3 • AGUDEZA VISUAL', tamano: 26, direccion: 'ARRIBA', opciones: ['▲ ARRIBA', '▼ ABAJO', '◀ IZQ', '▶ DER'], correcta: '▲ ARRIBA' },
+            { tipo: 'ISHIHARA', subtitulo: '2/3 • VISIÓN CROMÁTICA', numero: '12', opciones: ['12', '74', '29', 'NINGUNO'], correcta: '12' },
+            { tipo: 'NOCTURNA', subtitulo: '3/3 • CONTRASTE NOCTURNO', contraste: 0.35, direccion: 'IZQUIERDA', opciones: ['▲ ARRIBA', '▼ ABAJO', '◀ IZQ', '▶ DER'], correcta: '◀ IZQ' }
+        ];
+
+        const ITEMS_OFICIAL = [
+            { tipo: 'AGUDEZA', subtitulo: '1/3 • AGUDEZA VISUAL (20/40)', tamano: 42, direccion: 'IZQUIERDA', opciones: ['▲ ARRIBA', '▼ ABAJO', '◀ IZQ', '▶ DER'], correcta: '◀ IZQ' },
+            { tipo: 'AGUDEZA', subtitulo: '1/3 • AGUDEZA VISUAL (20/30)', tamano: 28, direccion: 'ABAJO', opciones: ['▲ ARRIBA', '▼ ABAJO', '◀ IZQ', '▶ DER'], correcta: '▼ ABAJO' },
+            { tipo: 'AGUDEZA', subtitulo: '1/3 • AGUDEZA VISUAL (20/20)', tamano: 17, direccion: 'DERECHA', opciones: ['▲ ARRIBA', '▼ ABAJO', '◀ IZQ', '▶ DER'], correcta: '▶ DER' },
+            { tipo: 'ISHIHARA', subtitulo: '2/3 • LÁMINA ISHIHARA #1', numero: '74', opciones: ['21', '74', '45', 'NINGUNO'], correcta: '74' },
+            { tipo: 'ISHIHARA', subtitulo: '2/3 • LÁMINA ISHIHARA #2', numero: '29', opciones: ['29', '70', '16', 'NINGUNO'], correcta: '29' },
+            { tipo: 'ISHIHARA', subtitulo: '2/3 • LÁMINA ISHIHARA #3', numero: '45', opciones: ['12', '83', '45', 'NINGUNO'], correcta: '45' },
+            { tipo: 'NOCTURNA', subtitulo: '3/3 • CONTRASTE MESÓPICO #1', contraste: 0.32, direccion: 'ARRIBA', opciones: ['▲ ARRIBA', '▼ ABAJO', '◀ IZQ', '▶ DER'], correcta: '▲ ARRIBA' },
+            { tipo: 'NOCTURNA', subtitulo: '3/3 • CONTRASTE MESÓPICO #2', contraste: 0.22, direccion: 'DERECHA', opciones: ['▲ ARRIBA', '▼ ABAJO', '◀ IZQ', '▶ DER'], correcta: '▶ DER' },
+            { tipo: 'NOCTURNA', subtitulo: '3/3 • CONTRASTE MESÓPICO #3', contraste: 0.16, direccion: 'ABAJO', opciones: ['▲ ARRIBA', '▼ ABAJO', '◀ IZQ', '▶ DER'], correcta: '▼ ABAJO' }
+        ];
+
+        let modoActual = 'DEMO';
+        let evaluacionEnCurso = false;
+        let secuenciaActual = [];
+        let indiceItem = 0;
+        let aciertosAgudeza = 0, totalAgudeza = 0;
+        let aciertosColor = 0, totalColor = 0;
+        let aciertosNocturna = 0, totalNocturna = 0;
+
+        let distanciaMedidaCm = 55;
+        let estaBloqueadoPorDistancia = false;
+
+        function volverAlMenuB2C() {
+            const paramsRegreso = new URLSearchParams({
+                rut: rutEvaluado,
+                nombre: decodeURIComponent(rawNombre),
+                plan: planActivo,
+                mode: 'b2c'
+            });
+            window.location.href = `menu_b2c.html?${paramsRegreso.toString()}`;
+        }
+
+        function obtenerHistorialVisualB2C() {
+            try {
+                const h1 = JSON.parse(localStorage.getItem(`sensometrika_historial_visual_${cleanRut}`)) || [];
+                if (Array.isArray(h1) && h1.length > 0) return h1;
+                const h2 = JSON.parse(localStorage.getItem(`sensometrika_historial_tamizaje_visual_${cleanRut}`)) || [];
+                return Array.isArray(h2) ? h2 : [];
+            } catch (e) {
+                return [];
+            }
+        }
+
+        function iniciarMediaPipeFaceMesh() {
+            const videoElement = document.getElementById('webcamVideo');
+            if (typeof FaceMesh === 'undefined' || typeof Camera === 'undefined') {
+                distanciaMedidaCm = 55;
+                evaluarRangoDistancia();
+                return;
+            }
+
+            const faceMesh = new FaceMesh({
+                locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`
+            });
+
+            faceMesh.setOptions({
+                maxNumFaces: 1,
+                refineLandmarks: true,
+                minDetectionConfidence: 0.5,
+                minTrackingConfidence: 0.5
+            });
+
+            faceMesh.onResults(onResultsFaceMesh);
+
+            const camera = new Camera(videoElement, {
+                onFrame: async () => {
+                    await faceMesh.send({ image: videoElement });
+                },
+                width: 320,
+                height: 240
+            });
+
+            camera.start().catch(() => {
+                distanciaMedidaCm = 55;
+                evaluarRangoDistancia();
+            });
+        }
+
+        function onResultsFaceMesh(results) {
+            if (!results.multiFaceLandmarks || results.multiFaceLandmarks.length === 0) {
+                distanciaMedidaCm = 70;
+                evaluarRangoDistancia();
+                return;
+            }
+
+            const landmarks = results.multiFaceLandmarks[0];
+            const leftEye = landmarks[33];
+            const rightEye = landmarks[263];
+
+            const dx = leftEye.x - rightEye.x;
+            const dy = leftEye.y - rightEye.y;
+            const eyeDistanceNormalized = Math.sqrt(dx * dx + dy * dy);
+
+            let distCalculada = Math.round(9.5 / eyeDistanceNormalized);
+            distanciaMedidaCm = Math.round(distanciaMedidaCm * 0.5 + distCalculada * 0.5);
+            evaluarRangoDistancia();
+        }
+
+        function evaluarRangoDistancia() {
+            const overlayBlock = document.getElementById('boxBlockDistancia');
+            const lblDetalle = document.getElementById('lblDistDetalleVal');
+
+            metricDistancia.textContent = `${distanciaMedidaCm} cm`;
+
+            if (distanciaMedidaCm >= 45 && distanciaMedidaCm <= 65) {
+                estaBloqueadoPorDistancia = false;
+                metricDistancia.style.color = 'var(--accent-green)';
+                if (overlayBlock) overlayBlock.style.display = 'none';
+            } else {
+                estaBloqueadoPorDistancia = true;
+                metricDistancia.style.color = 'var(--accent-red)';
+                if (lblDetalle) lblDetalle.textContent = `${distanciaMedidaCm} cm`;
+                if (overlayBlock) overlayBlock.style.display = 'flex';
+            }
+        }
+
+        function actualizarEstadoUI() {
+            const historial = obtenerHistorialVisualB2C();
+            const intentosRealizados = historial.length;
+            const demoRealizada = localStorage.getItem(`visual_demo_completada_${cleanRut}`) === 'true' || intentosRealizados > 0;
+
+            if (intentosRealizados >= maxEvaluacionesVisuales) {
+                modoActual = 'BLOQUEADO';
+            } else if (!demoRealizada) {
+                modoActual = 'DEMO';
+                secuenciaActual = ITEMS_DEMO;
+            } else {
+                modoActual = 'OFICIAL';
+                secuenciaActual = ITEMS_OFICIAL;
+            }
+
+            metricItem.textContent = `0 / ${secuenciaActual.length || 9}`;
+
+            if (modoActual === 'BLOQUEADO') {
+                badgeText.textContent = `COMPLETADO (${intentosRealizados}/${maxEvaluacionesVisuales} EVALUACIONES)`;
+                badgeDot.style.backgroundColor = "#10b981";
+                btnStart.style.display = 'none';
+                btnNext.style.display = 'block';
+                instructionText.textContent = `Has completado las ${maxEvaluacionesVisuales} evaluaciones visuales incluidas en tu Plan ${planActivo}.`;
+            } else if (modoActual === 'DEMO') {
+                badgeText.textContent = "Paso 1: Calibración Demo (4 Ítems)";
+                badgeDot.style.backgroundColor = "#f59e0b";
+                btnStart.textContent = "INICIAR CALIBRACIÓN DEMO VISUAL";
+                btnStart.style.backgroundColor = "#f59e0b";
+                btnStart.style.color = "#000000";
+                btnStart.style.display = 'block';
+                btnNext.style.display = 'none';
+                instructionText.textContent = "Modo Demo: Familiarízate con los optotipos de agudeza, láminas de color y contraste nocturno.";
+            } else {
+                const sigSimu = intentosRealizados + 1;
+                badgeText.textContent = `Fase 2: Evaluación Oficial S${sigSimu} de ${maxEvaluacionesVisuales}`;
+                badgeDot.style.backgroundColor = "#10b981";
+                btnStart.textContent = `INICIAR TAMIZAJE VISUAL S${sigSimu} DE ${maxEvaluacionesVisuales}`;
+                btnStart.style.backgroundColor = "#0284c7";
+                btnStart.style.color = "#ffffff";
+                btnStart.style.display = 'block';
+                btnNext.style.display = 'none';
+                instructionText.textContent = "Tamizaje Oficial D.S. N° 170: Responde con precisión cada lámina sin acercarte a la pantalla.";
+            }
+
+            dibujarPantallaReposo();
+        }
+
+        function dibujarPantallaReposo() {
+            const w = canvas.width;
+            const h = canvas.height;
+            ctx.clearRect(0, 0, w, h);
+            ctx.fillStyle = '#050a12';
+            ctx.fillRect(0, 0, w, h);
+
+            ctx.strokeStyle = 'rgba(0, 191, 255, 0.25)';
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.arc(w / 2, h / 2, 54, 0, Math.PI * 2);
+            ctx.stroke();
+
+            ctx.fillStyle = '#94a3b8';
+            ctx.font = 'bold 13px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('OPTOTIPO CALIBRADO D.S. 170', w / 2, h / 2);
+        }
+
+        function iniciarPruebaVisual() {
+            if (modoActual === 'BLOQUEADO' || estaBloqueadoPorDistancia) return;
+
+            evaluacionEnCurso = true;
+            indiceItem = 0;
+            aciertosAgudeza = 0; totalAgudeza = 0;
+            aciertosColor = 0; totalColor = 0;
+            aciertosNocturna = 0; totalNocturna = 0;
+
+            btnStart.style.display = 'none';
+            metricScore.textContent = '100%';
+            renderizarItemActual();
+        }
+
+        function renderizarItemActual() {
+            if (indiceItem >= secuenciaActual.length) {
+                finalizarPruebaVisual();
+                return;
+            }
+
+            const item = secuenciaActual[indiceItem];
+            lblSubtestBadge.textContent = item.subtitulo;
+            metricItem.textContent = `${indiceItem + 1} / ${secuenciaActual.length}`;
+
+            const w = canvas.width;
+            const h = canvas.height;
+            ctx.clearRect(0, 0, w, h);
+
+            if (item.tipo === 'AGUDEZA') {
+                // Fondo clínico iluminado suave para optotipo
+                ctx.fillStyle = '#f8fafc';
+                ctx.fillRect(0, 0, w, h);
+
+                dibujarEDireccional(w / 2, h / 2 + 8, item.tamano, item.direccion, '#091120');
+                instructionText.textContent = "¿Hacia qué dirección apuntan las patas de la letra E?";
+            } else if (item.tipo === 'ISHIHARA') {
+                ctx.fillStyle = '#070d18';
+                ctx.fillRect(0, 0, w, h);
+
+                dibujarLaminaIshihara(w / 2, h / 2 + 10, 82, item.numero);
+                instructionText.textContent = "¿Qué número distingues dentro del círculo cromático?";
+            } else if (item.tipo === 'NOCTURNA') {
+                // Simulación mesópica nocturna
+                ctx.fillStyle = '#030508';
+                ctx.fillRect(0, 0, w, h);
+
+                const gris = Math.round(255 * item.contraste);
+                const colorBajoContraste = `rgb(${gris}, ${gris}, ${gris + 8})`;
+                dibujarEDireccional(w / 2, h / 2 + 8, 36, item.direccion, colorBajoContraste);
+                instructionText.textContent = "Visión Nocturna: Indica hacia dónde apunta la figura tenue.";
+            }
+
+            // Renderizar opciones de respuesta
+            optionsContainer.innerHTML = '';
+            item.opciones.forEach(op => {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'btn-opt';
+                btn.textContent = op;
+                btn.onclick = () => registrarRespuestaVisual(op);
+                optionsContainer.appendChild(btn);
+            });
+        }
+
+        function dibujarEDireccional(cx, cy, size, direccion, color) {
+            ctx.save();
+            ctx.translate(cx, cy);
+
+            let rotacion = 0;
+            if (direccion === 'ABAJO') rotacion = Math.PI / 2;
+            if (direccion === 'IZQUIERDA') rotacion = Math.PI;
+            if (direccion === 'ARRIBA') rotacion = -Math.PI / 2;
+            ctx.rotate(rotacion);
+
+            const half = size / 2;
+            const bar = size / 5;
+            ctx.fillStyle = color;
+
+            // Barra vertical izquierda
+            ctx.fillRect(-half, -half, bar, size);
+            // Tres barras horizontales hacia la derecha
+            ctx.fillRect(-half, -half, size, bar);
+            ctx.fillRect(-half, -bar / 2, size * 0.85, bar);
+            ctx.fillRect(-half, half - bar, size, bar);
+
+            ctx.restore();
+        }
+
+        function dibujarLaminaIshihara(cx, cy, radio, numeroTexto) {
+            // Máscara temporal con el número objetivo para discriminar puntos de figura vs fondo
+            const offCanvas = document.createElement('canvas');
+            offCanvas.width = radio * 2;
+            offCanvas.height = radio * 2;
+            const offCtx = offCanvas.getContext('2d');
+            offCtx.fillStyle = '#000000';
+            offCtx.fillRect(0, 0, offCanvas.width, offCanvas.height);
+            offCtx.fillStyle = '#ffffff';
+            offCtx.font = '900 84px sans-serif';
+            offCtx.textAlign = 'center';
+            offCtx.textBaseline = 'middle';
+            offCtx.fillText(numeroTexto, radio, radio + 4);
+            const imgData = offCtx.getImageData(0, 0, offCanvas.width, offCanvas.height).data;
+
+            const coloresFondo = ['#4d7c0f', '#65a30d', '#3f6212', '#84cc16', '#57534e'];
+            const coloresFigura = ['#ea580c', '#dc2626', '#f97316', '#e11d48', '#d97706'];
+
+            // Semilla determinista por número para lámina limpia y reproducible
+            let seed = Number(numeroTexto) * 137 + 19;
+            const rand = () => {
+                seed = (seed * 9301 + 49297) % 233280;
+                return seed / 233280;
+            };
+
+            const puntos = [];
+            for (let i = 0; i < 420; i++) {
+                const ang = rand() * Math.PI * 2;
+                const dist = Math.sqrt(rand()) * (radio - 6);
+                const px = Math.cos(ang) * dist;
+                const py = Math.sin(ang) * dist;
+                const rDot = 3.2 + rand() * 3.8;
+
+                const solapa = puntos.some(p => Math.hypot(p.x - px, p.y - py) < (p.r + rDot + 1.2));
+                if (solapa) continue;
+                puntos.push({ x: px, y: py, r: rDot });
+
+                const mx = Math.floor(px + radio);
+                const my = Math.floor(py + radio);
+                const idx = (my * offCanvas.width + mx) * 4;
+                const esFigura = imgData[idx] > 128;
+
+                const paleta = esFigura ? coloresFigura : coloresFondo;
+                ctx.beginPath();
+                ctx.arc(cx + px, cy + py, rDot, 0, Math.PI * 2);
+                ctx.fillStyle = paleta[Math.floor(rand() * paleta.length)];
+                ctx.fill();
+            }
+        }
+
+        function registrarRespuestaVisual(opcionElegida) {
+            if (!evaluacionEnCurso || estaBloqueadoPorDistancia) return;
+
+            const item = secuenciaActual[indiceItem];
+            const esCorrecta = opcionElegida === item.correcta;
+
+            if (item.tipo === 'AGUDEZA') {
+                totalAgudeza++;
+                if (esCorrecta) aciertosAgudeza++;
+            } else if (item.tipo === 'ISHIHARA') {
+                totalColor++;
+                if (esCorrecta) aciertosColor++;
+            } else if (item.tipo === 'NOCTURNA') {
+                totalNocturna++;
+                if (esCorrecta) aciertosNocturna++;
+            }
+
+            const totalResp = totalAgudeza + totalColor + totalNocturna;
+            const totalAciertos = aciertosAgudeza + aciertosColor + aciertosNocturna;
+            const pctVivo = totalResp > 0 ? Math.round((totalAciertos / totalResp) * 100) : 100;
+
+            metricScore.textContent = `${pctVivo}%`;
+            metricScore.style.color = pctVivo >= 75 ? '#00bfff' : '#ef4444';
+
+            indiceItem++;
+            renderizarItemActual();
+        }
+
+        function finalizarPruebaVisual() {
+            evaluacionEnCurso = false;
+            lblSubtestBadge.textContent = 'TAMIZAJE COMPLETADO';
+
+            optionsContainer.innerHTML = `
+                <button type="button" class="btn-opt" disabled>—</button>
+                <button type="button" class="btn-opt" disabled>—</button>
+                <button type="button" class="btn-opt" disabled>—</button>
+                <button type="button" class="btn-opt" disabled>—</button>
+            `;
+
+            const totalPreguntas = Math.max(1, totalAgudeza + totalColor + totalNocturna);
+            const totalAciertos = aciertosAgudeza + aciertosColor + aciertosNocturna;
+            const scoreGlobal = Math.round((totalAciertos / totalPreguntas) * 100);
+
+            const pctAgudeza = totalAgudeza > 0 ? Math.round((aciertosAgudeza / totalAgudeza) * 100) : 100;
+            const pctColor = totalColor > 0 ? Math.round((aciertosColor / totalColor) * 100) : 100;
+            const pctNocturna = totalNocturna > 0 ? Math.round((aciertosNocturna / totalNocturna) * 100) : 100;
+            const esAprobado = scoreGlobal >= 75;
+
+            dibujarPantallaReposo();
+
+            if (modoActual === 'DEMO') {
+                localStorage.setItem(`visual_demo_completada_${cleanRut}`, 'true');
+
+                mostrarModal(
+                    "CALIBRACIÓN DEMO VISUAL COMPLETADA",
+                    `Rendimiento Demo: <b>${scoreGlobal}%</b> (${totalAciertos}/${totalPreguntas} ítems)<br><br>Has completado la inducción visual. Presiona continuar para iniciar tu <b>Evaluación Oficial S1 de ${maxEvaluacionesVisuales}</b>.`,
+                    () => {
+                        actualizarEstadoUI();
+                    }
+                );
+            } else {
+                const historial = obtenerHistorialVisualB2C();
+                const numeroSimulacion = historial.length + 1;
+
+                const registroData = {
+                    intento: numeroSimulacion,
+                    plan: planActivo,
+                    score: scoreGlobal,
+                    precision: scoreGlobal,
+                    efectividad: scoreGlobal,
+                    agudezaPct: pctAgudeza,
+                    cromaticaPct: pctColor,
+                    nocturnaPct: pctNocturna,
+                    discriminacionColor: pctColor >= 67 ? 'NORMAL (TRICROMÁTICO)' : 'OBSERVACIÓN CROMÁTICA',
+                    distanciaAvgCm: distanciaMedidaCm,
+                    aprobado: esAprobado,
+                    dictamen: esAprobado ? 'APROBADO' : 'OBSERVADO',
+                    fecha: new Date().toISOString()
+                };
+
+                historial.push(registroData);
+                localStorage.setItem(`sensometrika_historial_visual_${cleanRut}`, JSON.stringify(historial));
+                localStorage.setItem(`sensometrika_historial_tamizaje_visual_${cleanRut}`, JSON.stringify(historial));
+                localStorage.setItem(`sensometrika_visual_${cleanRut}`, JSON.stringify(registroData));
+                localStorage.setItem('sensometrika_visual', JSON.stringify(registroData));
+
+                mostrarModal(
+                    `TAMIZAJE VISUAL S${numeroSimulacion} DE ${maxEvaluacionesVisuales} REGISTRADO`,
+                    `Rendimiento Global: <b>${scoreGlobal}%</b><br>Agudeza: <b>${pctAgudeza}%</b> • Colores: <b>${pctColor}%</b> • Nocturna: <b>${pctNocturna}%</b><br>Estándar D.S. N° 170: <b>${esAprobado ? 'CONFORME (≥ 75%)' : 'OBSERVADO (< 75%)'}</b><br><br><b>Resultado guardado en tu historial particular B2C.</b>`,
+                    () => {
+                        volverAlMenuB2C();
+                    }
+                );
+            }
+        }
+
+        function mostrarModal(titulo, cuerpo, callback) {
+            modalTitle.textContent = titulo;
+            modalBody.innerHTML = cuerpo;
+            modal.style.display = 'flex';
+            modalBtnClose.onclick = () => {
+                modal.style.display = 'none';
+                if (callback) callback();
+            };
+        }
+
+        btnStart.addEventListener('click', iniciarPruebaVisual);
+
+        document.getElementById('btnInfo').addEventListener('click', () => {
+            mostrarModal(
+                "¿CÓMO FUNCIONA?",
+                "Mantén una distancia de 50 cm frente a la pantalla. El tamizaje evalúa en tres etapas tu <b>Agudeza Visual</b> (orientación de optotipos E), tu <b>Visión de Colores</b> (láminas Ishihara) y tu <b>Visión Nocturna</b> de bajo contraste."
+            );
+        });
+
+        document.addEventListener('DOMContentLoaded', () => {
+            iniciarMediaPipeFaceMesh();
+            actualizarEstadoUI();
+        });
+    </script>
+</body>
+</html>
