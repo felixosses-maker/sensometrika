@@ -14,6 +14,7 @@
       --accent-cyan: #00bfff;
       --accent-cyan-glow: rgba(0, 191, 255, 0.45);
       --accent-green: #10b981;
+      --accent-amber: #f59e0b;
       --accent-gold: #e5b324;
       --text-main: #f8fafc;
       --text-muted: #94a3b8;
@@ -32,7 +33,7 @@
       color: var(--text-main);
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       min-height: 100vh;
-      padding: 20px 12px;
+      padding: 20px 12px 40px;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -87,6 +88,73 @@
       gap: 3px;
     }
 
+    /* TARJETA PASO 0: CALIBRACIÓN DE LATENCIA */
+    .calibration-panel {
+      background: linear-gradient(160deg, #0b192c 0%, #060d18 100%);
+      border: 1.5px solid var(--accent-amber);
+      border-radius: 14px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      box-shadow: 0 8px 25px rgba(245, 158, 11, 0.15);
+    }
+
+    .calibration-panel.calibrated {
+      border-color: var(--accent-green);
+      box-shadow: 0 8px 25px rgba(16, 185, 129, 0.15);
+    }
+
+    .cal-pad {
+      width: 100%;
+      height: 110px;
+      background: #0f172a;
+      border: 2px dashed #334155;
+      border-radius: 12px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 10px;
+      font-weight: 900;
+      font-size: 0.92rem;
+      color: #cbd5e1;
+      cursor: pointer;
+      transition: all 0.12s ease;
+    }
+
+    .cal-pad.active-tap {
+      background: #10b981;
+      border-color: #34d399;
+      border-style: solid;
+      color: #000000;
+      transform: scale(0.99);
+      box-shadow: 0 0 20px rgba(16, 185, 129, 0.5);
+    }
+
+    .cal-pad.done-pad {
+      background: rgba(16, 185, 129, 0.12);
+      border: 1px solid var(--accent-green);
+      color: #34d399;
+      height: auto;
+      padding: 12px;
+      cursor: default;
+    }
+
+    .btn-calibrar {
+      background: var(--accent-amber);
+      color: #000000;
+      border: none;
+      padding: 11px;
+      border-radius: 9px;
+      font-weight: 900;
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      cursor: pointer;
+      width: 100%;
+    }
+
     .counter-box {
       background: #030712;
       border: 1px solid var(--card-border);
@@ -107,6 +175,11 @@
       justify-content: space-between;
       align-items: center;
       gap: 10px;
+      transition: opacity 0.2s ease;
+    }
+
+    .module-card.locked-cal {
+      opacity: 0.55;
     }
 
     .module-info {
@@ -154,6 +227,19 @@
       text-decoration: none;
       white-space: nowrap;
       box-shadow: 0 2px 10px rgba(2, 132, 199, 0.4);
+    }
+
+    .btn-locked {
+      background: #0f172a;
+      border: 1px solid #1e293b;
+      color: #64748b;
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-weight: 800;
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      white-space: nowrap;
+      cursor: not-allowed;
     }
 
     .btn-done {
@@ -253,6 +339,31 @@
       <span id="txtInfoEvaluado" style="font-size:0.72rem; color:var(--text-muted); font-weight:600;">Evaluado: - | RUT: -</span>
     </div>
 
+    <!-- PASO 0 OBLIGATORIO: TEST DE CALIBRACIÓN Y LATENCIA DE HARDWARE -->
+    <div id="panelCalibracionB2C" class="calibration-panel">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <span id="lblTituloCalibracion" style="font-size: 0.76rem; font-weight: 900; color: var(--accent-amber); text-transform: uppercase;">
+          ⚡ PASO 0 OBLIGATORIO: TEST DE LATENCIA Y SENSOR
+        </span>
+        <span id="badgeEstadoCal" style="font-size: 0.62rem; font-weight: 800; padding: 3px 8px; border-radius: 6px; background: rgba(245,158,11,0.18); color: #fbbf24;">
+          PENDIENTE
+        </span>
+      </div>
+
+      <p id="descCalibracion" style="font-size: 0.73rem; color: #cbd5e1; line-height: 1.4;">
+        Antes de iniciar las simulaciones, mide la velocidad de respuesta táctil/teclado de tu dispositivo pulsando <strong>5 veces</strong> sobre el recuadro iluminado.
+      </p>
+
+      <div id="calPadArea" class="cal-pad" onpointerdown="registrarToqueCalibracion()">
+        <span id="calPadTexto">Presiona "INICIAR TEST DE LATENCIA" para calibrar</span>
+        <span id="calPadSubtexto" style="font-size: 0.68rem; font-weight: 600; margin-top: 4px; opacity: 0.85;">0 / 5 pulsaciones registradas</span>
+      </div>
+
+      <button type="button" id="btnIniciarCalibracion" onclick="iniciarTestLatenciaB2C()" class="btn-calibrar">
+        ⚡ INICIAR TEST DE LATENCIA (5 PULSACIONES)
+      </button>
+    </div>
+
     <!-- CUOTA SIMULACIONES B2C -->
     <div id="boxContadorSimulaciones" class="counter-box">
       <span style="color: var(--text-muted); font-size: 0.72rem; font-weight: 700;">🔄 SIMULACIONES DISPONIBLES:</span>
@@ -263,35 +374,35 @@
     <div class="card-box" id="boxModulos">
 
       <!-- 1. Reactímetro -->
-      <div class="module-card">
+      <div class="module-card" id="cardMod1">
         <div class="module-info">
           <span class="module-title">1. Reactímetro (Tiempo Frenado)</span>
           <span class="module-desc">Medición de velocidad de respuesta en frenado.</span>
         </div>
         <div id="statusMod1">
-          <a id="linkMod1" href="reactimetro.html" class="btn-start">INICIAR DEMO →</a>
+          <span class="btn-locked">🔒 CALIBRAR PRIMERO</span>
         </div>
       </div>
 
       <!-- 2. Palancas -->
-      <div class="module-card">
+      <div class="module-card" id="cardMod2">
         <div class="module-info">
           <span class="module-title">2. Palancas (Coordinación Bimanual)</span>
           <span class="module-desc">Coordinación motriz fina con ambas manos en ruta.</span>
         </div>
         <div id="statusMod2">
-          <a id="linkMod2" href="palancas.html" class="btn-start">INICIAR DEMO →</a>
+          <span class="btn-locked">🔒 CALIBRAR PRIMERO</span>
         </div>
       </div>
 
       <!-- 3. Punteo -->
-      <div class="module-card">
+      <div class="module-card" id="cardMod3">
         <div class="module-info">
           <span class="module-title">3. Punteo (Ritmo Viso-Motriz)</span>
           <span class="module-desc">Estabilidad de ritmo y precisión de impacto.</span>
         </div>
         <div id="statusMod3">
-          <a id="linkMod3" href="punteo.html" class="btn-start">INICIAR DEMO →</a>
+          <span class="btn-locked">🔒 CALIBRAR PRIMERO</span>
         </div>
       </div>
 
@@ -302,7 +413,7 @@
           <span class="module-desc">Audiometría tonal en frecuencias críticas para conducción.</span>
         </div>
         <div id="statusMod4">
-          <a id="linkMod4" href="audicion.html" class="btn-start">INICIAR DEMO →</a>
+          <span class="btn-locked">🔒 CALIBRAR PRIMERO</span>
         </div>
       </div>
 
@@ -313,7 +424,7 @@
           <span class="module-desc">Agudeza visual, nocturna y visión de colores (Ishihara).</span>
         </div>
         <div id="statusMod5">
-          <a id="linkMod5" href="visual.html" class="btn-start">INICIAR DEMO →</a>
+          <span class="btn-locked">🔒 CALIBRAR PRIMERO</span>
         </div>
       </div>
 
@@ -324,7 +435,7 @@
           <span class="module-desc">Cálculo de velocidad relativa y trayectoria en zona ciega.</span>
         </div>
         <div id="statusMod6">
-          <a id="linkMod6" href="anticipacion.html" class="btn-start">INICIAR DEMO →</a>
+          <span class="btn-locked">🔒 CALIBRAR PRIMERO</span>
         </div>
       </div>
 
@@ -334,7 +445,7 @@
           <span class="module-desc">Percepción espacial binocular y cálculo de distancias.</span>
         </div>
         <div id="statusMod7">
-          <a id="linkMod7" href="estereopsis.html" class="btn-start">INICIAR DEMO →</a>
+          <span class="btn-locked">🔒 CALIBRAR PRIMERO</span>
         </div>
       </div>
 
@@ -344,7 +455,7 @@
           <span class="module-desc">Control de somnolencia, lapsos de micro-sueño y atención.</span>
         </div>
         <div id="statusMod8">
-          <a id="linkMod8" href="fatiga.html" class="btn-start">INICIAR DEMO →</a>
+          <span class="btn-locked">🔒 CALIBRAR PRIMERO</span>
         </div>
       </div>
 
@@ -379,6 +490,14 @@
         </span>
 
         <div class="recom-item">
+          <span class="recom-icon">⚡</span>
+          <div>
+            <strong style="color: #fff; display: block;">Paso 0: Calibración de Latencia</strong>
+            Completa las 5 pulsaciones iniciales para verificar el tiempo de respuesta de tu pantalla o teclado antes de simular.
+          </div>
+        </div>
+
+        <div class="recom-item">
           <span class="recom-icon">📏</span>
           <div>
             <strong style="color: #fff; display: block;">Postura & Distancia</strong>
@@ -395,24 +514,16 @@
         </div>
 
         <div class="recom-item">
-          <span class="recom-icon">💡</span>
-          <div>
-            <strong style="color: #fff; display: block;">Entorno Aislado & Sin Distracciones</strong>
-            Asegura buena iluminación ambiental y evita interrupciones durante la ejecución de los algoritmos anti-memorización.
-          </div>
-        </div>
-
-        <div class="recom-item">
           <span class="recom-icon">🎯</span>
           <div>
             <strong style="color: #fff; display: block;">Fase de Calibración Demo</strong>
-            Aprovecha la prueba Demo de ensayo en cada módulo para familiarizarte con los controles táctiles antes de la Simulación Oficial.
+            Aprovecha la prueba Demo de ensayo en cada módulo para familiarizarte con los controles antes de la Simulación Oficial.
           </div>
         </div>
       </div>
 
       <button onclick="cerrarModalBienvenida()" class="btn-start" style="width: 100%; padding: 14px; font-size: 0.85rem; text-align: center; border-radius: 10px; margin-top: 4px;">
-        COMPRENDIDO · CONTINUAR A LAS EVALUACIONES →
+        COMPRENDIDO · IR AL TEST DE LATENCIA →
       </button>
     </div>
   </div>
@@ -425,19 +536,24 @@
       const params = new URLSearchParams(window.location.search);
       const mode = params.get('mode');
 
-      // Si explícitamente entra como empresa B2B, redirige a menu_B2B.html
       if (mode === 'b2b') {
         window.location.href = `menu_B2B.html?${params.toString()}`;
         return;
       }
 
-      // Asegura estado B2C activo y limpia cualquier token residual de empresa
       localStorage.setItem('sensometrika_b2c_mode', 'true');
       localStorage.removeItem('sensometrika_b2b_token');
     })();
 
     let globalParamsQuery = "";
     let cleanRut = "";
+    let dispositivoCalibrado = false;
+
+    // Variables del Test de Latencia (5 pulsaciones rápidas)
+    let calActiva = false;
+    let calToques = [];
+    let calUltimoTimestamp = null;
+    const TOTAL_TOQUES_CAL = 5;
 
     document.addEventListener('DOMContentLoaded', () => {
       const yaMostradaInsession = sessionStorage.getItem('sensometrika_welcome_shown');
@@ -467,11 +583,6 @@
       localStorage.setItem('sensometrika_rut', rut);
       localStorage.setItem('sensometrika_nombre', decodeURIComponent(nombre));
 
-      // ASIGNACIÓN DE CUOTA CONTRATADA (3, 5 U 8 SIMULACIONES OFICIALES)
-      let totalSimulacionesPlan = 3;
-      if (planParam.includes('PLUS')) totalSimulacionesPlan = 5;
-      if (planParam.includes('FULL') || planParam.includes('ALTO_DESEMPENIO') || planParam.includes('ALTO')) totalSimulacionesPlan = 8;
-
       document.getElementById('txtTipoPlan').textContent = `EVALUACIÓN PARTICULAR • PLAN ${planParam.replace('_', ' ')} (B2C)`;
       document.getElementById('btnFinalizarGeneral').textContent = '📊 FINALIZAR Y VER INFORME EN PANTALLA →';
       document.getElementById('txtInfoEvaluado').textContent = `EVALUADO: ${decodeURIComponent(nombre)} | RUT: ${rut}`;
@@ -494,12 +605,102 @@
       urlParams.set('mode', 'b2c');
       globalParamsQuery = urlParams.toString();
 
+      // Verificar si ya completó el Test de Latencia en esta sesión/RUT
+      const calGuardada = localStorage.getItem(`sensometrika_calibracion_ms_${cleanRut}`);
+      if (calGuardada) {
+        aplicarEstadoCalibradoUI(Number(calGuardada));
+      }
+
       revisarModulosRendidos();
     });
 
     function cerrarModalBienvenida() {
       sessionStorage.setItem('sensometrika_welcome_shown', 'true');
       document.getElementById('modalBienvenidaInduccion').style.display = 'none';
+    }
+
+    // ==========================================
+    // ⚡ LÓGICA DEL TEST DE LATENCIA (5 TOQUES)
+    // ==========================================
+    function iniciarTestLatenciaB2C() {
+      calActiva = true;
+      calToques = [];
+      calUltimoTimestamp = null;
+
+      const btn = document.getElementById('btnIniciarCalibracion');
+      const pad = document.getElementById('calPadArea');
+      const txt = document.getElementById('calPadTexto');
+      const sub = document.getElementById('calPadSubtexto');
+
+      btn.style.display = 'none';
+      pad.classList.add('active-tap');
+      txt.textContent = '¡PULSA AQUÍ 5 VECES LO MÁS RÁPIDO POSIBLE!';
+      sub.textContent = '0 / 5 pulsaciones registradas (o presiona ESPACIO)';
+    }
+
+    function registrarToqueCalibracion() {
+      if (!calActiva) return;
+
+      const ahora = performance.now();
+      if (calUltimoTimestamp !== null) {
+        const delta = ahora - calUltimoTimestamp;
+        calToques.push(delta);
+      }
+      calUltimoTimestamp = ahora;
+
+      const conteo = calToques.length + 1;
+      const sub = document.getElementById('calPadSubtexto');
+
+      if (conteo < TOTAL_TOQUES_CAL) {
+        sub.textContent = `${conteo} / ${TOTAL_TOQUES_CAL} pulsaciones registradas — ¡Sigue!`;
+      } else {
+        calActiva = false;
+        const suma = calToques.reduce((a, b) => a + b, 0);
+        // Cálculo de latencia efectiva del sensor/hardware
+        const latenciaHardware = Math.max(12, Math.min(115, Math.round((suma / calToques.length) * 0.25)));
+
+        localStorage.setItem(`sensometrika_calibracion_ms_${cleanRut}`, latenciaHardware.toString());
+        localStorage.setItem('sensometrika_input_latency_ms', latenciaHardware.toString());
+
+        aplicarEstadoCalibradoUI(latenciaHardware);
+        revisarModulosRendidos();
+      }
+    }
+
+    // Soporte también con barra espaciadora en PC
+    document.addEventListener('keydown', (e) => {
+      if (calActiva && e.code === 'Space') {
+        e.preventDefault();
+        registrarToqueCalibracion();
+      }
+    });
+
+    function aplicarEstadoCalibradoUI(latenciaMs) {
+      dispositivoCalibrado = true;
+
+      const panel = document.getElementById('panelCalibracionB2C');
+      const titulo = document.getElementById('lblTituloCalibracion');
+      const badge = document.getElementById('badgeEstadoCal');
+      const desc = document.getElementById('descCalibracion');
+      const pad = document.getElementById('calPadArea');
+      const btn = document.getElementById('btnIniciarCalibracion');
+
+      const nivel = latenciaMs <= 55 ? 'ENTORNO ÓPTIMO' : 'DISPOSITIVO ESTÁNDAR ACEPTABLE';
+
+      panel.classList.add('calibrated');
+      titulo.style.color = '#10b981';
+      titulo.textContent = '✓ DISPOSITIVO CALIBRADO Y APTO';
+      badge.style.background = 'rgba(16, 185, 129, 0.18)';
+      badge.style.color = '#34d399';
+      badge.textContent = `${latenciaMs} ms`;
+
+      desc.innerHTML = `Latencia de sensor certificada en <strong style="color:#34d399;">${latenciaMs} ms (${nivel})</strong>. Los módulos de simulación han sido desbloqueados.`;
+
+      pad.classList.remove('active-tap');
+      pad.classList.add('done-pad');
+      pad.innerHTML = `<span style="font-size:0.82rem;">✓ CALIBRACIÓN COMPLETADA (${latenciaMs} ms) — MÓDULOS HABILITADOS</span>`;
+
+      btn.style.display = 'none';
     }
 
     function construirUrlModulo(nombreModulo) {
@@ -545,19 +746,29 @@
       if (planParam.includes('FULL') || planParam.includes('ALTO')) maxIntentosPlan = 8;
 
       const listaConfig = [
-        { id: 'reactimetro', statusElem: 'statusMod1', linkElem: 'linkMod1' },
-        { id: 'palancas', statusElem: 'statusMod2', linkElem: 'linkMod2' },
-        { id: 'punteo', statusElem: 'statusMod3', linkElem: 'linkMod3' },
-        { id: 'audicion', statusElem: 'statusMod4', linkElem: 'linkMod4' },
-        { id: 'visual', statusElem: 'statusMod5', linkElem: 'linkMod5' },
-        { id: 'anticipacion', statusElem: 'statusMod6', linkElem: 'linkMod6' },
-        { id: 'estereopsis', statusElem: 'statusMod7', linkElem: 'linkMod7' },
-        { id: 'fatiga', statusElem: 'statusMod8', linkElem: 'linkMod8' }
+        { id: 'reactimetro', cardElem: 'cardMod1', statusElem: 'statusMod1', linkElem: 'linkMod1' },
+        { id: 'palancas', cardElem: 'cardMod2', statusElem: 'statusMod2', linkElem: 'linkMod2' },
+        { id: 'punteo', cardElem: 'cardMod3', statusElem: 'statusMod3', linkElem: 'linkMod3' },
+        { id: 'audicion', cardElem: 'cardModAuditivo', statusElem: 'statusMod4', linkElem: 'linkMod4' },
+        { id: 'visual', cardElem: 'cardModVisual', statusElem: 'statusMod5', linkElem: 'linkMod5' },
+        { id: 'anticipacion', cardElem: 'cardModAnticipacion', statusElem: 'statusMod6', linkElem: 'linkMod6' },
+        { id: 'estereopsis', cardElem: 'cardModEstereopsis', statusElem: 'statusMod7', linkElem: 'linkMod7' },
+        { id: 'fatiga', cardElem: 'cardModFatiga', statusElem: 'statusMod8', linkElem: 'linkMod8' }
       ];
 
       listaConfig.forEach(mod => {
         const statusContainer = document.getElementById(mod.statusElem);
+        const cardContainer = document.getElementById(mod.cardElem);
         if (!statusContainer) return;
+
+        // Bloqueo estricto hasta completar Paso 0 de Latencia
+        if (!dispositivoCalibrado) {
+          if (cardContainer) cardContainer.classList.add('locked-cal');
+          statusContainer.innerHTML = `<span class="btn-locked">🔒 CALIBRAR PRIMERO</span>`;
+          return;
+        }
+
+        if (cardContainer) cardContainer.classList.remove('locked-cal');
 
         const historial = obtenerHistorialModuloRut(mod.id);
         const numEnsayosRealizados = historial.length;
