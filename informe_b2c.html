@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>SENSOMETRIKA | Informe Consolidado y Curva de Aprendizaje</title>
+  <title>SENSOMETRIKA | Informe Consolidado y Curva de Aprendizaje (B2C)</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="session-timer.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -397,7 +397,7 @@
     </div>
 
     <!-- ÚNICO BOTÓN DE ACCIÓN EN B2C (SIN IMPRESIÓN) -->
-    <a href="menu_B2C.html" class="btn-back-menu">
+    <a id="btnVolverMenuB2C" href="menu_B2C.html" class="btn-back-menu">
       ← VOLVER AL MENÚ DE SIMULACIONES (B2C)
     </a>
   </div>
@@ -411,17 +411,29 @@
       } catch (e) {}
 
       const urlParams = new URLSearchParams(window.location.search);
-      const nombre = urlParams.get('nombre') || datosUsuario.nombre || localStorage.getItem('sensometrika_nombre') || 'Postulante Particular';
+      const nombre = decodeURIComponent(urlParams.get('nombre') || datosUsuario.nombre || localStorage.getItem('sensometrika_nombre') || 'Postulante Particular');
       const rut = urlParams.get('rut') || datosUsuario.rut || localStorage.getItem('sensometrika_rut') || 'No registrado';
+      const cleanRut = rut.replace(/[^0-9Kk]/g, '');
       const correo = datosUsuario.correo || 'tu correo electrónico registrado';
       const planRaw = (urlParams.get('plan') || localStorage.getItem('sensometrika_plan_contratado') || localStorage.getItem('sensometrika_plan_seleccionado') || 'BASICO').toUpperCase().trim();
 
+      // Mantener parámetros en el botón de regreso a menu_B2C.html
+      const backParams = new URLSearchParams({
+        rut: rut,
+        nombre: nombre,
+        plan: planRaw,
+        mode: 'b2c'
+      });
+      document.getElementById('btnVolverMenuB2C').href = `menu_B2C.html?${backParams.toString()}`;
+
       let maxSim = 3;
       let nombrePlanLabel = 'PASE BÁSICO (3 SIMULACIONES)';
+      const incluyeSensorial = planRaw.includes('PLUS') || planRaw.includes('FULL') || planRaw.includes('ALTO');
+
       if (planRaw.includes('PLUS')) {
         maxSim = 5;
-        nombrePlanLabel = 'PASE PLUS (5 SIMULACIONES + VISUAL)';
-      } else if (planRaw.includes('FULL')) {
+        nombrePlanLabel = 'PASE PLUS (5 SIMULACIONES + SENSORIAL)';
+      } else if (planRaw.includes('FULL') || planRaw.includes('ALTO')) {
         maxSim = 8;
         nombrePlanLabel = 'PASE FULL (8 SIMULACIONES + SENSORIAL)';
       }
@@ -436,7 +448,7 @@
       document.getElementById('tituloMatrizSim').textContent = `🗂️ Desglose por Simulación (S1 - S${maxSim})`;
       document.getElementById('badgeCupoPlan').textContent = `Cuota: ${maxSim} intentos por módulo`;
 
-      // 2. Extraer historiales de simulaciones desde localStorage
+      // 2. Extraer historiales sincronizados con menu_B2C.html (por RUT limpio y fallback general)
       const obtenerSeries = (clavesPosibles, extractorNumerico) => {
         for (const clave of clavesPosibles) {
           const raw = localStorage.getItem(clave);
@@ -444,7 +456,8 @@
           try {
             const parsed = JSON.parse(raw);
             if (Array.isArray(parsed) && parsed.length > 0) {
-              return parsed.slice(0, maxSim).map(extractorNumerico).filter(v => v !== null && !isNaN(v));
+              const vals = parsed.slice(0, maxSim).map(extractorNumerico).filter(v => v !== null && !isNaN(v));
+              if (vals.length > 0) return vals;
             }
           } catch (e) {}
         }
@@ -453,13 +466,23 @@
 
       // Reactímetro: latencia en ms
       const seriesReactimetro = obtenerSeries(
-        ['sensometrika_reactimetro_historial', 'reactimetro_historial', 'sensometrika_historial_reactimetro'],
+        [
+          `sensometrika_historial_reactimetro_${cleanRut}`,
+          'sensometrika_reactimetro_historial',
+          'reactimetro_historial',
+          'sensometrika_historial_reactimetro'
+        ],
         item => typeof item === 'number' ? Math.round(item) : Math.round(Number(item.promedio || item.latencia || item.ms || item.valor))
       );
 
-      // Palancas: precisión estrictamente en % (nunca en toques)
+      // Palancas: precisión estrictamente en %
       const seriesPalancas = obtenerSeries(
-        ['sensometrika_palancas_historial', 'palancas_historial', 'sensometrika_historial_palancas'],
+        [
+          `sensometrika_historial_palancas_${cleanRut}`,
+          'sensometrika_palancas_historial',
+          'palancas_historial',
+          'sensometrika_historial_palancas'
+        ],
         item => {
           if (typeof item === 'number') return Math.round(item);
           if (item.precision !== undefined) return Math.round(Number(item.precision));
@@ -471,7 +494,12 @@
 
       // Punteo: efectividad en %
       const seriesPunteo = obtenerSeries(
-        ['sensometrika_punteo_historial', 'punteo_historial', 'sensometrika_historial_punteo'],
+        [
+          `sensometrika_historial_punteo_${cleanRut}`,
+          'sensometrika_punteo_historial',
+          'punteo_historial',
+          'sensometrika_historial_punteo'
+        ],
         item => {
           if (typeof item === 'number') return Math.round(item);
           if (item.precision !== undefined) return Math.round(Number(item.precision));
@@ -481,7 +509,38 @@
         }
       );
 
-      // Fallback desde objeto consolidado si aún no hay array histórico
+      // Auditivo y Visual (Planes PLUS y FULL)
+      const seriesAuditivo = obtenerSeries(
+        [
+          `sensometrika_historial_audicion_${cleanRut}`,
+          `sensometrika_historial_auditivo_${cleanRut}`,
+          'sensometrika_audicion_historial'
+        ],
+        item => {
+          if (typeof item === 'number') return Math.round(item);
+          if (item.porcentaje !== undefined) return Math.round(Number(item.porcentaje));
+          if (item.precision !== undefined) return Math.round(Number(item.precision));
+          if (item.aciertos !== undefined && item.total) return Math.round((Number(item.aciertos) / Number(item.total)) * 100);
+          return null;
+        }
+      );
+
+      const seriesVisual = obtenerSeries(
+        [
+          `sensometrika_historial_visual_${cleanRut}`,
+          `sensometrika_historial_tamizaje_visual_${cleanRut}`,
+          'sensometrika_visual_historial'
+        ],
+        item => {
+          if (typeof item === 'number') return Math.round(item);
+          if (item.porcentaje !== undefined) return Math.round(Number(item.porcentaje));
+          if (item.precision !== undefined) return Math.round(Number(item.precision));
+          if (item.aciertos !== undefined && item.total) return Math.round((Number(item.aciertos) / Number(item.total)) * 100);
+          return null;
+        }
+      );
+
+      // Fallback desde objeto consolidado si aún no existe array histórico
       let resultadosGen = {};
       try {
         resultadosGen = JSON.parse(localStorage.getItem('sensometrika_resultados') || '{}');
@@ -515,8 +574,15 @@
       const mejorPunt = seriesPunteo.length ? Math.max(...seriesPunteo) : null;
       const cumplePunt = promPunt !== null ? promPunt >= 70 : null;
 
-      const evaluados = [cumpleReact, cumplePal, cumplePunt].filter(x => x !== null);
-      const todosAprobados = evaluados.length > 0 && evaluados.every(Boolean);
+      const promAud = calcProm(seriesAuditivo);
+      const mejorAud = seriesAuditivo.length ? Math.max(...seriesAuditivo) : null;
+      const cumpleAud = promAud !== null ? promAud >= 75 : null;
+
+      const promVis = calcProm(seriesVisual);
+      const mejorVis = seriesVisual.length ? Math.max(...seriesVisual) : null;
+      const cumpleVis = promVis !== null ? promVis >= 75 : null;
+
+      const evaluados = [cumpleReact, cumplePal, cumplePunt, cumpleAud, cumpleVis].filter(x => x !== null);
       const algunoReprobado = evaluados.some(x => x === false);
 
       const banner = document.getElementById('bannerDictamen');
@@ -556,29 +622,48 @@
         `;
       };
 
-      const tbodyConsolidado = document.getElementById('tbodyConsolidado');
-      tbodyConsolidado.innerHTML =
+      let htmlResumen =
         renderFilaResumen(
-          'Reactímetro (Frenado)',
+          '1. Reactímetro (Frenado)',
           '≤ 450 ms',
           promReact !== null ? `${promReact} ms` : '--',
           mejorReact !== null ? `${mejorReact} ms` : '--',
           cumpleReact
         ) +
         renderFilaResumen(
-          'Palancas (Coordinación)',
+          '2. Palancas (Coordinación)',
           '≥ 70% precisión',
           promPal !== null ? `${promPal}%` : '--',
           mejorPal !== null ? `${mejorPal}%` : '--',
           cumplePal
         ) +
         renderFilaResumen(
-          'Punteo Viso-Motriz',
+          '3. Punteo Viso-Motriz',
           '≥ 70% precisión',
           promPunt !== null ? `${promPunt}%` : '--',
           mejorPunt !== null ? `${mejorPunt}%` : '--',
           cumplePunt
         );
+
+      if (incluyeSensorial || seriesAuditivo.length > 0 || seriesVisual.length > 0) {
+        htmlResumen +=
+          renderFilaResumen(
+            '4. Tamizaje Auditivo',
+            '≥ 75% tonal',
+            promAud !== null ? `${promAud}%` : '--',
+            mejorAud !== null ? `${mejorAud}%` : '--',
+            cumpleAud
+          ) +
+          renderFilaResumen(
+            '5. Tamizaje Visual (Ishihara)',
+            '≥ 75% agudeza',
+            promVis !== null ? `${promVis}%` : '--',
+            mejorVis !== null ? `${mejorVis}%` : '--',
+            cumpleVis
+          );
+      }
+
+      document.getElementById('tbodyConsolidado').innerHTML = htmlResumen;
 
       // 5. Poblar Matriz Dinámica S1..Smax
       const theadMatriz = document.getElementById('theadMatriz');
@@ -599,10 +684,18 @@
         return row;
       };
 
-      document.getElementById('tbodyMatriz').innerHTML =
+      let htmlMatriz =
         renderFilaMatriz('Reactímetro', seriesReactimetro, ' ms', promReact) +
         renderFilaMatriz('Palancas', seriesPalancas, '%', promPal) +
         renderFilaMatriz('Punteo', seriesPunteo, '%', promPunt);
+
+      if (incluyeSensorial || seriesAuditivo.length > 0 || seriesVisual.length > 0) {
+        htmlMatriz +=
+          renderFilaMatriz('Auditivo', seriesAuditivo, '%', promAud) +
+          renderFilaMatriz('Visual', seriesVisual, '%', promVis);
+      }
+
+      document.getElementById('tbodyMatriz').innerHTML = htmlMatriz;
 
       // 6. Renderizar Gráfico Multiserie con Chart.js (Eje Izq: ms | Eje Der: %)
       const labelsX = Array.from({ length: maxSim }, (_, i) => `S${i + 1}`);
