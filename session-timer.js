@@ -1,12 +1,14 @@
-// ============================================================================
-// SENSOMETRIKA - INTERCEPTOR GLOBAL DE ALERTAS Y HARDWARE DEL SIMULADOR
-// Reemplaza los alert() nativos del navegador por modales propios del sistema
-// ============================================================================
+/* ==========================================================================
+   SENSOMETRIKA - CONTROL DE SESIÓN, TIEMPO Y MODALES DEL SIMULADOR
+   • Intercepta alertas nativas del navegador (cámara/hardware) en modales UI
+   • Valida la vigencia de tokens y controla el acceso en producción
+   ========================================================================== */
+
 (function () {
   if (window.__sensometrikaUIInitialized) return;
   window.__sensometrikaUIInitialized = true;
 
-  // 1. Inyectar el modal en el DOM tan pronto como esté disponible
+  // 1. Inyectar el modal global del simulador en el DOM
   function asegurarModalSimulador() {
     if (document.getElementById('smkGlobalModalOverlay')) return;
 
@@ -47,7 +49,7 @@
     });
   }
 
-  // 2. Función pública para mostrar cualquier aviso dentro del simulador
+  // 2. Función pública para mostrar avisos dentro del simulador
   window.mostrarModalSimulador = function (icono, titulo, mensajeHtml, textoBoton) {
     const render = () => {
       asegurarModalSimulador();
@@ -71,7 +73,6 @@
     const texto = String(mensaje || '').trim();
     const lower = texto.toLowerCase();
 
-    // Caso A: Error de cámara / MediaPipe / sensor óptico
     if (
       lower.includes('camera') ||
       lower.includes('notfounderror') ||
@@ -86,7 +87,6 @@
         'CONTINUAR AL SIMULADOR →'
       );
 
-      // Actualizar recuadro de biometría en el encabezado si existe
       setTimeout(() => {
         const bioBox = document.querySelector('.biometria-box, #camaraBox, [id*="biometria"]');
         if (bioBox && !bioBox.querySelector('img[src^="data:image"]')) {
@@ -96,7 +96,6 @@
       return;
     }
 
-    // Caso B: Error de micrófono o audio
     if (lower.includes('microphone') || lower.includes('audio')) {
       window.mostrarModalSimulador(
         '🎧',
@@ -107,7 +106,6 @@
       return;
     }
 
-    // Caso C: Cualquier otro alert() de validación o instrucción del módulo
     window.mostrarModalSimulador(
       'ℹ️',
       'SISTEMA SENSOMETRIKA',
@@ -116,10 +114,69 @@
     );
   };
 
-  // Pre-crear el modal en cuanto cargue el DOM
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', asegurarModalSimulador);
   } else {
     asegurarModalSimulador();
+  }
+})();
+
+/* ==========================================================================
+   CONTROL ORIGINAL DE SESIÓN Y VIGENCIA DE ACCESO
+   ========================================================================== */
+(function() {
+  // BYPASS LOCAL: Si estás en Live Server (localhost / 127.0.0.1), omite restricciones para desarrollo
+  const esLocal = window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost';
+  if (esLocal) {
+    if (!localStorage.getItem('sensometrika_demo_token')) {
+      localStorage.setItem('sensometrika_demo_token', 'local_dev_token_bypassed');
+    }
+    return;
+  }
+
+  // --- LÓGICA DE VALIDACIÓN OFICIAL PARA PRODUCCIÓN ---
+  const urlParams = new URLSearchParams(window.location.search);
+  const tieneSesionActiva =
+    localStorage.getItem('sensometrika_demo_token') ||
+    sessionStorage.getItem('smk_token') ||
+    localStorage.getItem('sensometrika_b2b_token') ||
+    localStorage.getItem('sensometrika_b2c_mode') === 'true' ||
+    urlParams.has('plan') ||
+    urlParams.has('rut');
+
+  const pathActual = window.location.pathname;
+
+  // Páginas públicas o de entrada que no exigen token previo
+  const paginasExentas = ['index', 'validar', 'terminos', 'checkout', 'registro_b2c', 'registro_B2B', 'dashboard_apr'];
+  const esExenta = pathActual === '/' || paginasExentas.some(pagina => pathActual.includes(pagina));
+
+  if (!tieneSesionActiva && !esExenta) {
+    document.addEventListener('DOMContentLoaded', () => {
+      mostrarModalAccesoRestringido();
+    });
+  }
+
+  function mostrarModalAccesoRestringido() {
+    const modalExistente = document.getElementById('modalAccesoRestringidoGlobal');
+    if (modalExistente) return;
+
+    const modalHtml = `
+      <div id="modalAccesoRestringidoGlobal" style="position: fixed; inset: 0; background: rgba(3, 7, 18, 0.95); backdrop-filter: blur(10px); display: flex; align-items: center; justify-content: center; z-index: 999999; padding: 16px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+        <div style="background: #0f172a; border: 1px solid rgba(56, 189, 248, 0.4); border-radius: 18px; width: 100%; max-width: 380px; padding: 28px 20px; text-align: center; box-shadow: 0 20px 40px rgba(0,0,0,0.8); color: #f8fafc;">
+          
+          <div style="font-size: 2rem; margin-bottom: 12px;">⏰</div>
+          <h3 style="color: #ffffff; margin: 0 0 8px 0; font-size: 1.25rem; font-weight: 800;">Acceso Restringido</h3>
+          <p style="color: #94a3b8; margin: 0 0 20px 0; font-size: 0.85rem; line-height: 1.5;">
+            Para ingresar a los módulos de evaluación se requiere un pase demo activo o una sesión corporativa válida.
+          </p>
+
+          <button onclick="window.location.href='index.html'" style="width: 100%; background: #0284c7; color: #ffffff; border: none; border-radius: 10px; padding: 12px; font-weight: 700; cursor: pointer; font-size: 0.9rem; box-shadow: 0 4px 14px rgba(2, 132, 199, 0.4);">
+            Ir al Inicio →
+          </button>
+
+        </div>
+      </div>
+    `;
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
   }
 })();
