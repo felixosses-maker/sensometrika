@@ -2,11 +2,69 @@
    SENSOMETRIKA - CONTROL DE SESIÓN, TIEMPO Y MODALES DEL SIMULADOR
    • Intercepta alertas nativas del navegador (cámara/hardware) en modales UI
    • Valida la vigencia de tokens y controla el acceso en producción
+   • Escudo de aislamiento B2C: impide que módulos B2C redirijan a rutas B2B
    ========================================================================== */
 
 (function () {
   if (window.__sensometrikaUIInitialized) return;
   window.__sensometrikaUIInitialized = true;
+
+  // 0. ESCUDO DE AISLAMIENTO B2C (Evita desvíos a menu_b2b_planes / informe_b2b_planes)
+  const paramsIniciales = new URLSearchParams(window.location.search);
+  const pathInicial = window.location.pathname.toLowerCase();
+
+  if (paramsIniciales.get('mode') === 'b2c' || pathInicial.includes('menu_b2c') || pathInicial.includes('informe_b2c') || pathInicial.includes('registro_b2c')) {
+    localStorage.setItem('sensometrika_b2c_mode', 'true');
+  } else if (paramsIniciales.get('mode') === 'b2b' || pathInicial.includes('menu_b2b') || pathInicial.includes('informe_b2b')) {
+    localStorage.removeItem('sensometrika_b2c_mode');
+  }
+
+  const esSesionB2CActiva = () => {
+    const p = new URLSearchParams(window.location.search);
+    if (p.get('mode') === 'b2b') return false;
+    return p.get('mode') === 'b2c' || localStorage.getItem('sensometrika_b2c_mode') === 'true';
+  };
+
+  function normalizarDestinoB2C(urlDestino) {
+    if (!urlDestino || typeof urlDestino !== 'string') return urlDestino;
+    if (!esSesionB2CActiva()) return urlDestino;
+
+    const lower = urlDestino.toLowerCase();
+    if (!lower.includes('menu_b2b_planes.html') && !lower.includes('informe_b2b_planes.html')) {
+      return urlDestino;
+    }
+
+    const destinoBase = lower.includes('informe_b2b_planes.html') ? 'informe_b2c.html' : 'menu_b2c.html';
+    const queryStr = urlDestino.includes('?') ? urlDestino.split('?')[1] : window.location.search.replace(/^\?/, '');
+    const p = new URLSearchParams(queryStr);
+
+    if (!p.get('rut') && localStorage.getItem('sensometrika_rut')) p.set('rut', localStorage.getItem('sensometrika_rut'));
+    if (!p.get('nombre') && localStorage.getItem('sensometrika_nombre')) p.set('nombre', localStorage.getItem('sensometrika_nombre'));
+    if (!p.get('plan')) p.set('plan', localStorage.getItem('sensometrika_plan_contratado') || 'BASICO');
+    p.set('mode', 'b2c');
+
+    return `${destinoBase}?${p.toString()}`;
+  }
+
+  // Interceptar clics en enlaces <a> hacia rutas B2B cuando el usuario es B2C
+  document.addEventListener('click', (e) => {
+    const enlace = e.target.closest('a[href]');
+    if (!enlace) return;
+    const href = enlace.getAttribute('href');
+    const corregido = normalizarDestinoB2C(href);
+    if (corregido !== href) {
+      e.preventDefault();
+      window.location.href = corregido;
+    }
+  }, true);
+
+  // Interceptar location.assign / location.replace hacia rutas B2B en modo B2C
+  try {
+    const origAssign = window.location.assign.bind(window.location);
+    const origReplace = window.location.replace.bind(window.location);
+    window.location.assign = function (url) { return origAssign(normalizarDestinoB2C(url)); };
+    window.location.replace = function (url) { return origReplace(normalizarDestinoB2C(url)); };
+  } catch (e) {}
 
   // 1. Inyectar el modal global del simulador en el DOM
   function asegurarModalSimulador() {
@@ -125,7 +183,6 @@
    CONTROL ORIGINAL DE SESIÓN Y VIGENCIA DE ACCESO
    ========================================================================== */
 (function() {
-  // BYPASS LOCAL: Si estás en Live Server (localhost / 127.0.0.1), omite restricciones para desarrollo
   const esLocal = window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost';
   if (esLocal) {
     if (!localStorage.getItem('sensometrika_demo_token')) {
@@ -134,7 +191,6 @@
     return;
   }
 
-  // --- LÓGICA DE VALIDACIÓN OFICIAL PARA PRODUCCIÓN ---
   const urlParams = new URLSearchParams(window.location.search);
   const tieneSesionActiva =
     localStorage.getItem('sensometrika_demo_token') ||
@@ -146,7 +202,6 @@
 
   const pathActual = window.location.pathname;
 
-  // Páginas públicas o de entrada que no exigen token previo
   const paginasExentas = ['index', 'validar', 'terminos', 'checkout', 'registro_b2c', 'registro_B2B', 'dashboard_apr'];
   const esExenta = pathActual === '/' || paginasExentas.some(pagina => pathActual.includes(pagina));
 
