@@ -15,7 +15,7 @@
       --accent-cyan-glow: rgba(0, 191, 255, 0.45);
       --accent-green: #10b981;
       --accent-amber: #f59e0b;
-      --accent-gold: #e5b324;
+      --accent-red: #ef4444;
       --text-main: #f8fafc;
       --text-muted: #94a3b8;
     }
@@ -85,10 +85,25 @@
       text-align: center;
       display: flex;
       flex-direction: column;
-      gap: 3px;
+      gap: 4px;
     }
 
-    /* TARJETA PASO 0: CALIBRACIÓN DE LATENCIA */
+    .vigencia-banner {
+      background: linear-gradient(145deg, #071324 0%, #040a14 100%);
+      border: 1px solid #1e3a6d;
+      border-radius: 10px;
+      padding: 10px 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .vigencia-banner.expirado {
+      border-color: var(--accent-red);
+      background: rgba(239, 68, 68, 0.12);
+    }
+
     .calibration-panel {
       background: linear-gradient(160deg, #0b192c 0%, #060d18 100%);
       border: 1.5px solid var(--accent-amber);
@@ -242,6 +257,19 @@
       cursor: not-allowed;
     }
 
+    .btn-expired {
+      background: rgba(239, 68, 68, 0.15);
+      border: 1px solid var(--accent-red);
+      color: var(--accent-red);
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-weight: 800;
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      white-space: nowrap;
+      cursor: not-allowed;
+    }
+
     .btn-done {
       background: rgba(16, 185, 129, 0.15);
       border: 1px solid var(--accent-green);
@@ -274,7 +302,6 @@
       box-shadow: 0 4px 16px rgba(16, 185, 129, 0.3);
     }
 
-    /* MODAL DE BIENVENIDA */
     .welcome-modal-overlay {
       position: fixed;
       top: 0;
@@ -339,6 +366,26 @@
       <span id="txtInfoEvaluado" style="font-size:0.72rem; color:var(--text-muted); font-weight:600;">Evaluado: - | RUT: -</span>
     </div>
 
+    <!-- VIGENCIA Y TIEMPO RESTANTE DEL ENLACE POR PLAN -->
+    <div id="boxVigenciaEnlace" class="vigencia-banner">
+      <div style="display: flex; flex-direction: column; gap: 2px;">
+        <span style="font-size: 0.65rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase;">
+          ⏳ VIGENCIA DEL ENLACE (<span id="lblDuracionPlan">48 HORAS</span>)
+        </span>
+        <span id="lblFechaVencimiento" style="font-size: 0.72rem; font-weight: 700; color: #cbd5e1;">
+          Expira: --/--/---- --:--
+        </span>
+      </div>
+      <div style="text-align: right;">
+        <span style="display: block; font-size: 0.60rem; font-weight: 800; color: var(--accent-cyan); text-transform: uppercase;">
+          TIEMPO RESTANTE
+        </span>
+        <strong id="lblCountdownEnlace" style="font-size: 0.90rem; font-weight: 900; color: #10b981; font-variant-numeric: tabular-nums;">
+          47h 59m 59s
+        </strong>
+      </div>
+    </div>
+
     <!-- PASO 0 OBLIGATORIO: TEST DE CALIBRACIÓN Y LATENCIA DE HARDWARE -->
     <div id="panelCalibracionB2C" class="calibration-panel">
       <div style="display: flex; justify-content: space-between; align-items: center;">
@@ -373,7 +420,7 @@
     <!-- MÓDULOS DE EVALUACIÓN -->
     <div class="card-box" id="boxModulos">
 
-      <!-- 1. Reactímetro -->
+      <!-- 1. Reactímetro (Todos los planes) -->
       <div class="module-card" id="cardMod1">
         <div class="module-info">
           <span class="module-title">1. Reactímetro (Tiempo Frenado)</span>
@@ -384,7 +431,7 @@
         </div>
       </div>
 
-      <!-- 2. Palancas -->
+      <!-- 2. Palancas (Todos los planes) -->
       <div class="module-card" id="cardMod2">
         <div class="module-info">
           <span class="module-title">2. Palancas (Coordinación Bimanual)</span>
@@ -395,7 +442,7 @@
         </div>
       </div>
 
-      <!-- 3. Punteo -->
+      <!-- 3. Punteo (Todos los planes) -->
       <div class="module-card" id="cardMod3">
         <div class="module-info">
           <span class="module-title">3. Punteo (Ritmo Viso-Motriz)</span>
@@ -406,21 +453,10 @@
         </div>
       </div>
 
-      <!-- 4. Auditivo (Planes PLUS y FULL) -->
-      <div class="module-card" id="cardModAuditivo" style="display: none;">
-        <div class="module-info">
-          <span class="module-title">4. Tamizaje Auditivo Ocupacional</span>
-          <span class="module-desc">Audiometría tonal en frecuencias críticas para conducción.</span>
-        </div>
-        <div id="statusMod4">
-          <span class="btn-locked">🔒 CALIBRAR PRIMERO</span>
-        </div>
-      </div>
-
-      <!-- 5. Visual (Planes PLUS y FULL) -->
+      <!-- 4. Visual (Planes PLUS y FULL) -->
       <div class="module-card" id="cardModVisual" style="display: none;">
         <div class="module-info">
-          <span class="module-title">5. Tamizaje Visual Integral</span>
+          <span class="module-title">4. Tamizaje Visual Integral</span>
           <span class="module-desc">Agudeza visual, nocturna y visión de colores (Ishihara).</span>
         </div>
         <div id="statusMod5">
@@ -428,33 +464,13 @@
         </div>
       </div>
 
-      <!-- Módulos Adicionales -->
-      <div class="module-card" id="cardModAnticipacion" style="display: none;">
+      <!-- 5. Auditivo (Solo Plan FULL) -->
+      <div class="module-card" id="cardModAuditivo" style="display: none;">
         <div class="module-info">
-          <span class="module-title">6. Velocidad de Anticipación</span>
-          <span class="module-desc">Cálculo de velocidad relativa y trayectoria en zona ciega.</span>
+          <span class="module-title">5. Tamizaje Auditivo Ocupacional</span>
+          <span class="module-desc">Audiometría tonal en frecuencias críticas para conducción.</span>
         </div>
-        <div id="statusMod6">
-          <span class="btn-locked">🔒 CALIBRAR PRIMERO</span>
-        </div>
-      </div>
-
-      <div class="module-card" id="cardModEstereopsis" style="display: none;">
-        <div class="module-info">
-          <span class="module-title">7. Estereopsis y Profundidad 3D</span>
-          <span class="module-desc">Percepción espacial binocular y cálculo de distancias.</span>
-        </div>
-        <div id="statusMod7">
-          <span class="btn-locked">🔒 CALIBRAR PRIMERO</span>
-        </div>
-      </div>
-
-      <div class="module-card" id="cardModFatiga" style="display: none;">
-        <div class="module-info">
-          <span class="module-title">8. Test de Fatiga y Vigilancia (PVT)</span>
-          <span class="module-desc">Control de somnolencia, lapsos de micro-sueño y atención.</span>
-        </div>
-        <div id="statusMod8">
+        <div id="statusMod4">
           <span class="btn-locked">🔒 CALIBRAR PRIMERO</span>
         </div>
       </div>
@@ -490,6 +506,14 @@
         </span>
 
         <div class="recom-item">
+          <span class="recom-icon">⏳</span>
+          <div>
+            <strong id="modalVigenciaTitulo" style="color: #fff; display: block;">Vigencia de tu Enlace</strong>
+            <span id="modalVigenciaDesc">Tienes 48 horas desde la activación para completar todas tus simulaciones y descargar tu informe.</span>
+          </div>
+        </div>
+
+        <div class="recom-item">
           <span class="recom-icon">⚡</span>
           <div>
             <strong style="color: #fff; display: block;">Paso 0: Calibración de Latencia</strong>
@@ -502,14 +526,6 @@
           <div>
             <strong style="color: #fff; display: block;">Postura & Distancia</strong>
             Mantén tu rostro a 50 cm de la pantalla con postura erguida para asegurar lecturas de latencia y visibilidad óptimas.
-          </div>
-        </div>
-
-        <div class="recom-item">
-          <span class="recom-icon">🎧</span>
-          <div>
-            <strong style="color: #fff; display: block;">Uso de Audífonos Estéreo</strong>
-            Para la evaluación auditiva es obligatorio usar audífonos con canal izquierdo y derecho debidamente calibrados.
           </div>
         </div>
 
@@ -537,7 +553,7 @@
       const mode = params.get('mode');
 
       if (mode === 'b2b') {
-        window.location.href = `menu_B2B.html?${params.toString()}`;
+        window.location.href = `menu_b2b_planes.html?${params.toString()}`;
         return;
       }
 
@@ -548,28 +564,65 @@
     let globalParamsQuery = "";
     let cleanRut = "";
     let dispositivoCalibrado = false;
+    let enlaceExpirado = false;
+    let intervaloVigencia = null;
 
-    // Variables del Test de Latencia (5 pulsaciones rápidas)
     let calActiva = false;
     let calToques = [];
     let calUltimoTimestamp = null;
     const TOTAL_TOQUES_CAL = 5;
 
-    document.addEventListener('DOMContentLoaded', () => {
-      const yaMostradaInsession = sessionStorage.getItem('sensometrika_welcome_shown');
-      if (!yaMostradaInsession) {
-        document.getElementById('modalBienvenidaInduccion').style.display = 'flex';
+    // CONFIGURACIÓN MAESTRA DE PLANES B2C (Simulaciones + Vigencia de Enlace)
+    const CONFIG_PLANES_B2C = {
+      BASICO: {
+        nombre: 'PASE BÁSICO',
+        simulaciones: 3,
+        horasVigencia: 48,
+        etiquetaVigencia: '48 HORAS'
+      },
+      PLUS: {
+        nombre: 'PASE PLUS',
+        simulaciones: 5,
+        horasVigencia: 72, // 3 días
+        etiquetaVigencia: '3 DÍAS (72 HRS)'
+      },
+      FULL: {
+        nombre: 'PASE FULL',
+        simulaciones: 8,
+        horasVigencia: 192, // 8 días
+        etiquetaVigencia: '8 DÍAS (192 HRS)'
       }
+    };
 
+    document.addEventListener('DOMContentLoaded', () => {
       const urlParams = new URLSearchParams(window.location.search);
 
-      // PRIORIDAD Y SINCRONIZACIÓN DEL PLAN B2C
       let planGuardado = localStorage.getItem('sensometrika_plan_contratado') || localStorage.getItem('sensometrika_plan_seleccionado');
       let planUrl = urlParams.get('plan');
       let planParam = (planUrl || planGuardado || 'BASICO').toUpperCase().trim();
 
+      if (planParam.includes('FULL') || planParam.includes('ALTO')) {
+        planParam = 'FULL';
+      } else if (planParam.includes('PLUS')) {
+        planParam = 'PLUS';
+      } else {
+        planParam = 'BASICO';
+      }
+
       localStorage.setItem('sensometrika_plan_contratado', planParam);
       localStorage.setItem('sensometrika_plan_seleccionado', planParam);
+
+      const cfgPlan = CONFIG_PLANES_B2C[planParam];
+
+      const modalVigTitulo = document.getElementById('modalVigenciaTitulo');
+      const modalVigDesc = document.getElementById('modalVigenciaDesc');
+      if (modalVigTitulo) modalVigTitulo.textContent = `Vigencia de tu Enlace: ${cfgPlan.etiquetaVigencia}`;
+      if (modalVigDesc) modalVigDesc.textContent = `Tu ${cfgPlan.nombre} tiene una validez de ${cfgPlan.etiquetaVigencia} (${cfgPlan.simulaciones} simulaciones oficiales por módulo psicomotor).`;
+
+      const yaMostradaInsession = sessionStorage.getItem('sensometrika_welcome_shown');
+      if (!yaMostradaInsession) {
+        document.getElementById('modalBienvenidaInduccion').style.display = 'flex';
+      }
 
       let datosUsuario = {};
       try {
@@ -583,20 +636,18 @@
       localStorage.setItem('sensometrika_rut', rut);
       localStorage.setItem('sensometrika_nombre', decodeURIComponent(nombre));
 
-      document.getElementById('txtTipoPlan').textContent = `EVALUACIÓN PARTICULAR • PLAN ${planParam.replace('_', ' ')} (B2C)`;
+      document.getElementById('txtTipoPlan').textContent = `EVALUACIÓN PARTICULAR • PLAN ${planParam} (${cfgPlan.etiquetaVigencia})`;
       document.getElementById('btnFinalizarGeneral').textContent = '📊 FINALIZAR Y VER INFORME EN PANTALLA →';
       document.getElementById('txtInfoEvaluado').textContent = `EVALUADO: ${decodeURIComponent(nombre)} | RUT: ${rut}`;
 
-      // HABILITACIÓN DINÁMICA DE MÓDULOS SEGÚN PLAN B2C
-      if (planParam.includes('PLUS') || planParam.includes('FULL') || planParam.includes('ALTO')) {
-        document.getElementById('cardModAuditivo').style.display = 'flex';
+      iniciarControlVigenciaEnlace(planParam, urlParams.get('exp'));
+
+      if (planParam === 'PLUS' || planParam === 'FULL') {
         document.getElementById('cardModVisual').style.display = 'flex';
       }
 
-      if (planParam.includes('ALTO')) {
-        document.getElementById('cardModAnticipacion').style.display = 'flex';
-        document.getElementById('cardModEstereopsis').style.display = 'flex';
-        document.getElementById('cardModFatiga').style.display = 'flex';
+      if (planParam === 'FULL') {
+        document.getElementById('cardModAuditivo').style.display = 'flex';
       }
 
       urlParams.set('rut', rut);
@@ -605,7 +656,6 @@
       urlParams.set('mode', 'b2c');
       globalParamsQuery = urlParams.toString();
 
-      // Verificar si ya completó el Test de Latencia en esta sesión/RUT
       const calGuardada = localStorage.getItem(`sensometrika_calibracion_ms_${cleanRut}`);
       if (calGuardada) {
         aplicarEstadoCalibradoUI(Number(calGuardada));
@@ -614,15 +664,83 @@
       revisarModulosRendidos();
     });
 
+    function iniciarControlVigenciaEnlace(planParam, expParamUrl) {
+      const cfg = CONFIG_PLANES_B2C[planParam] || CONFIG_PLANES_B2C.BASICO;
+      const storageKeyExp = `sensometrika_b2c_expiracion_${cleanRut}_${planParam}`;
+
+      let expTimestamp = null;
+      if (expParamUrl && !isNaN(Number(expParamUrl))) {
+        expTimestamp = Number(expParamUrl);
+        localStorage.setItem(storageKeyExp, expTimestamp.toString());
+      } else {
+        const guardado = localStorage.getItem(storageKeyExp);
+        if (guardado && !isNaN(Number(guardado))) {
+          expTimestamp = Number(guardado);
+        } else {
+          expTimestamp = Date.now() + (cfg.horasVigencia * 60 * 60 * 1000);
+          localStorage.setItem(storageKeyExp, expTimestamp.toString());
+        }
+      }
+
+      document.getElementById('lblDuracionPlan').textContent = cfg.etiquetaVigencia;
+
+      const fechaExp = new Date(expTimestamp);
+      const fechaFormateada = fechaExp.toLocaleDateString('es-CL', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric'
+      }) + ' ' + fechaExp.toLocaleTimeString('es-CL', {
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+      document.getElementById('lblFechaVencimiento').textContent = `Expira: ${fechaFormateada} hrs`;
+
+      const actualizarRelojVigencia = () => {
+        const ahora = Date.now();
+        const diffMs = expTimestamp - ahora;
+        const lblCountdown = document.getElementById('lblCountdownEnlace');
+        const boxVigencia = document.getElementById('boxVigenciaEnlace');
+
+        if (diffMs <= 0) {
+          enlaceExpirado = true;
+          boxVigencia.classList.add('expirado');
+          lblCountdown.textContent = 'ENLACE CADUCADO';
+          lblCountdown.style.color = '#ef4444';
+          if (intervaloVigencia) clearInterval(intervaloVigencia);
+          revisarModulosRendidos();
+          return;
+        }
+
+        const totalSeg = Math.floor(diffMs / 1000);
+        const dias = Math.floor(totalSeg / 86400);
+        const horas = Math.floor((totalSeg % 86400) / 3600);
+        const mins = Math.floor((totalSeg % 3600) / 60);
+        const segs = totalSeg % 60;
+
+        const pad = (n) => String(n).padStart(2, '0');
+        lblCountdown.textContent = dias > 0
+          ? `${dias}d ${pad(horas)}h ${pad(mins)}m ${pad(segs)}s`
+          : `${pad(horas)}h ${pad(mins)}m ${pad(segs)}s`;
+
+        if (diffMs < 6 * 3600 * 1000) {
+          lblCountdown.style.color = '#f59e0b';
+        } else {
+          lblCountdown.style.color = '#10b981';
+        }
+      };
+
+      actualizarRelojVigencia();
+      if (intervaloVigencia) clearInterval(intervaloVigencia);
+      intervaloVigencia = setInterval(actualizarRelojVigencia, 1000);
+    }
+
     function cerrarModalBienvenida() {
       sessionStorage.setItem('sensometrika_welcome_shown', 'true');
       document.getElementById('modalBienvenidaInduccion').style.display = 'none';
     }
 
-    // ==========================================
-    // ⚡ LÓGICA DEL TEST DE LATENCIA (5 TOQUES)
-    // ==========================================
     function iniciarTestLatenciaB2C() {
+      if (enlaceExpirado) return;
       calActiva = true;
       calToques = [];
       calUltimoTimestamp = null;
@@ -639,7 +757,7 @@
     }
 
     function registrarToqueCalibracion() {
-      if (!calActiva) return;
+      if (!calActiva || enlaceExpirado) return;
 
       const ahora = performance.now();
       if (calUltimoTimestamp !== null) {
@@ -656,7 +774,6 @@
       } else {
         calActiva = false;
         const suma = calToques.reduce((a, b) => a + b, 0);
-        // Cálculo de latencia efectiva del sensor/hardware
         const latenciaHardware = Math.max(12, Math.min(115, Math.round((suma / calToques.length) * 0.25)));
 
         localStorage.setItem(`sensometrika_calibracion_ms_${cleanRut}`, latenciaHardware.toString());
@@ -667,7 +784,6 @@
       }
     }
 
-    // Soporte también con barra espaciadora en PC
     document.addEventListener('keydown', (e) => {
       if (calActiva && e.code === 'Space') {
         e.preventDefault();
@@ -705,8 +821,7 @@
 
     function construirUrlModulo(nombreModulo) {
       const currentParams = new URLSearchParams(globalParamsQuery || window.location.search);
-      const fileKey = (nombreModulo === 'audicion') ? 'audicion' : ((nombreModulo === 'visual') ? 'visual' : nombreModulo);
-      const demoRealizada = localStorage.getItem(`${fileKey}_demo_completada_${cleanRut}`) === 'true';
+      const demoRealizada = localStorage.getItem(`${nombreModulo}_demo_completada_${cleanRut}`) === 'true';
 
       if (demoRealizada) {
         currentParams.set('demo', 'false');
@@ -717,8 +832,7 @@
       }
       currentParams.set('mode', 'b2c');
 
-      const fileName = (nombreModulo === 'audicion') ? 'audicion.html' : ((nombreModulo === 'visual') ? 'visual.html' : `${nombreModulo}.html`);
-      return `${fileName}?${currentParams.toString()}`;
+      return `${nombreModulo}.html?${currentParams.toString()}`;
     }
 
     function obtenerHistorialModuloRut(modId) {
@@ -741,19 +855,15 @@
 
     function revisarModulosRendidos() {
       const planParam = (localStorage.getItem('sensometrika_plan_contratado') || 'BASICO').toUpperCase();
-      let maxIntentosPlan = 3;
-      if (planParam.includes('PLUS')) maxIntentosPlan = 5;
-      if (planParam.includes('FULL') || planParam.includes('ALTO')) maxIntentosPlan = 8;
+      const cfgPlan = CONFIG_PLANES_B2C[planParam] || CONFIG_PLANES_B2C.BASICO;
+      const maxIntentosPsicomotor = cfgPlan.simulaciones;
 
       const listaConfig = [
-        { id: 'reactimetro', cardElem: 'cardMod1', statusElem: 'statusMod1', linkElem: 'linkMod1' },
-        { id: 'palancas', cardElem: 'cardMod2', statusElem: 'statusMod2', linkElem: 'linkMod2' },
-        { id: 'punteo', cardElem: 'cardMod3', statusElem: 'statusMod3', linkElem: 'linkMod3' },
-        { id: 'audicion', cardElem: 'cardModAuditivo', statusElem: 'statusMod4', linkElem: 'linkMod4' },
-        { id: 'visual', cardElem: 'cardModVisual', statusElem: 'statusMod5', linkElem: 'linkMod5' },
-        { id: 'anticipacion', cardElem: 'cardModAnticipacion', statusElem: 'statusMod6', linkElem: 'linkMod6' },
-        { id: 'estereopsis', cardElem: 'cardModEstereopsis', statusElem: 'statusMod7', linkElem: 'linkMod7' },
-        { id: 'fatiga', cardElem: 'cardModFatiga', statusElem: 'statusMod8', linkElem: 'linkMod8' }
+        { id: 'reactimetro', cardElem: 'cardMod1', statusElem: 'statusMod1', linkElem: 'linkMod1', maxIntentos: maxIntentosPsicomotor },
+        { id: 'palancas', cardElem: 'cardMod2', statusElem: 'statusMod2', linkElem: 'linkMod2', maxIntentos: maxIntentosPsicomotor },
+        { id: 'punteo', cardElem: 'cardMod3', statusElem: 'statusMod3', linkElem: 'linkMod3', maxIntentos: maxIntentosPsicomotor },
+        { id: 'visual', cardElem: 'cardModVisual', statusElem: 'statusMod5', linkElem: 'linkMod5', maxIntentos: planParam === 'FULL' ? 4 : 2 },
+        { id: 'audicion', cardElem: 'cardModAuditivo', statusElem: 'statusMod4', linkElem: 'linkMod4', maxIntentos: 4 }
       ];
 
       listaConfig.forEach(mod => {
@@ -761,7 +871,12 @@
         const cardContainer = document.getElementById(mod.cardElem);
         if (!statusContainer) return;
 
-        // Bloqueo estricto hasta completar Paso 0 de Latencia
+        if (enlaceExpirado) {
+          if (cardContainer) cardContainer.classList.add('locked-cal');
+          statusContainer.innerHTML = `<span class="btn-expired">⛔ ENLACE CADUCADO</span>`;
+          return;
+        }
+
         if (!dispositivoCalibrado) {
           if (cardContainer) cardContainer.classList.add('locked-cal');
           statusContainer.innerHTML = `<span class="btn-locked">🔒 CALIBRAR PRIMERO</span>`;
@@ -773,17 +888,15 @@
         const historial = obtenerHistorialModuloRut(mod.id);
         const numEnsayosRealizados = historial.length;
         const urlDestino = construirUrlModulo(mod.id);
+        const demoRealizada = localStorage.getItem(`${mod.id}_demo_completada_${cleanRut}`) === 'true';
 
-        const fileKey = (mod.id === 'audicion') ? 'audicion' : ((mod.id === 'visual') ? 'visual' : mod.id);
-        const demoRealizada = localStorage.getItem(`${fileKey}_demo_completada_${cleanRut}`) === 'true';
-
-        if (numEnsayosRealizados >= maxIntentosPlan) {
-          statusContainer.innerHTML = `<span class="btn-done">✓ PLAN COMPLETADO (${numEnsayosRealizados}/${maxIntentosPlan})</span>`;
+        if (numEnsayosRealizados >= mod.maxIntentos) {
+          statusContainer.innerHTML = `<span class="btn-done">✓ COMPLETADO (${numEnsayosRealizados}/${mod.maxIntentos})</span>`;
         } else if (!demoRealizada && numEnsayosRealizados === 0) {
           statusContainer.innerHTML = `<a id="${mod.linkElem}" href="${urlDestino}" class="btn-start">INICIAR DEMO →</a>`;
         } else {
           const sigSimu = numEnsayosRealizados + 1;
-          statusContainer.innerHTML = `<a id="${mod.linkElem}" href="${urlDestino}" class="btn-oficial">SIMULACIÓN S${sigSimu} DE ${maxIntentosPlan} →</a>`;
+          statusContainer.innerHTML = `<a id="${mod.linkElem}" href="${urlDestino}" class="btn-oficial">SIMULACIÓN S${sigSimu} DE ${mod.maxIntentos} →</a>`;
         }
       });
 
@@ -792,17 +905,20 @@
       const puntHist = obtenerHistorialModuloRut('punteo').length;
 
       const minPsicomotriz = Math.min(reactHist, palHist, puntHist);
-      const intentoGlobalDisplay = Math.min(maxIntentosPlan, minPsicomotriz + 1);
+      const intentoGlobalDisplay = Math.min(maxIntentosPsicomotor, minPsicomotriz + 1);
 
       localStorage.setItem(`sensometrika_intento_actual_${cleanRut}`, intentoGlobalDisplay.toString());
 
       const lblCuota = document.getElementById('lblSimulacionesCuota');
       if (lblCuota) {
-        if (minPsicomotriz >= maxIntentosPlan) {
-          lblCuota.textContent = `COMPLETADO (${maxIntentosPlan} DE ${maxIntentosPlan})`;
+        if (enlaceExpirado) {
+          lblCuota.textContent = `VIGENCIA EXPIRADA (${cfgPlan.etiquetaVigencia})`;
+          lblCuota.style.color = '#ef4444';
+        } else if (minPsicomotriz >= maxIntentosPsicomotor) {
+          lblCuota.textContent = `COMPLETADO (${maxIntentosPsicomotor} DE ${maxIntentosPsicomotor})`;
           lblCuota.style.color = '#10b981';
         } else {
-          lblCuota.textContent = `SIMULACIÓN OFICIAL ${intentoGlobalDisplay} DE ${maxIntentosPlan}`;
+          lblCuota.textContent = `SIMULACIÓN OFICIAL ${intentoGlobalDisplay} DE ${maxIntentosPsicomotor}`;
           lblCuota.style.color = '#00bfff';
         }
       }
