@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>SENSOMETRIKA | Informe Consolidado y Curva de Aprendizaje</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="session-timer.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    :root {
+      --bg-principal: #040810;
+      --bg-card: #091120;
+      --border-color: #132238;
+      --accent-cyan: #00bfff;
+      --accent-green: #10b981;
+      --accent-amber: #f59e0b;
+      --accent-red: #ef4444;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    body {
+      background-color: var(--bg-principal);
+      color: var(--text-main);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      min-height: 100vh;
+      padding: 18px 12px 44px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .report-wrapper {
+      width: 100%;
+      max-width: 720px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .header-brand {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      gap: 6px;
+    }
+
+    .brand-logo-img {
+      width: 175px;
+      height: auto;
+      mix-blend-mode: lighten;
+      filter: drop-shadow(0 0 12px rgba(0, 191, 255, 0.4));
+    }
+
+    .card-dark {
+      background-color: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      padding: 18px;
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.75);
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .dictamen-banner {
+      border-radius: 14px;
+      padding: 18px;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      border: 1.5px solid var(--accent-green);
+      background: linear-gradient(180deg, rgba(16, 185, 129, 0.16) 0%, rgba(9, 17, 32, 0.95) 100%);
+    }
+
+    .dictamen-banner.observado {
+      border-color: var(--accent-amber);
+      background: linear-gradient(180deg, rgba(245, 158, 11, 0.16) 0%, rgba(9, 17, 32, 0.95) 100%);
+    }
+
+    .dictamen-pill {
+      font-size: 0.68rem;
+      font-weight: 900;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      padding: 4px 12px;
+      border-radius: 999px;
+      background: rgba(16, 185, 129, 0.2);
+      color: #34d399;
+      border: 1px solid rgba(16, 185, 129, 0.5);
+    }
+
+    .dictamen-banner.observado .dictamen-pill {
+      background: rgba(245, 158, 11, 0.2);
+      color: #fbbf24;
+      border-color: rgba(245, 158, 11, 0.5);
+    }
+
+    .dictamen-title {
+      font-size: 1.25rem;
+      font-weight: 900;
+      letter-spacing: 0.4px;
+      color: #ffffff;
+    }
+
+    .user-meta-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 10px;
+      background: #050a14;
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 12px;
+    }
+
+    .meta-item span {
+      display: block;
+      font-size: 0.62rem;
+      font-weight: 800;
+      color: var(--text-muted);
+      text-transform: uppercase;
+    }
+
+    .meta-item strong {
+      font-size: 0.82rem;
+      color: #f1f5f9;
+      font-weight: 700;
+    }
+
+    .section-heading {
+      font-size: 0.78rem;
+      font-weight: 900;
+      color: var(--accent-cyan);
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .chart-container {
+      position: relative;
+      width: 100%;
+      height: 255px;
+      background: #050a14;
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 12px;
+    }
+
+    .table-scroll {
+      width: 100%;
+      overflow-x: auto;
+    }
+
+    table.smk-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.74rem;
+      text-align: center;
+    }
+
+    table.smk-table th {
+      background: #050a14;
+      color: var(--accent-cyan);
+      font-weight: 800;
+      text-transform: uppercase;
+      font-size: 0.64rem;
+      padding: 9px 6px;
+      border-bottom: 1px solid var(--border-color);
+      white-space: nowrap;
+    }
+
+    table.smk-table td {
+      padding: 9px 6px;
+      border-bottom: 1px solid rgba(19, 34, 56, 0.7);
+      color: #e2e8f0;
+      white-space: nowrap;
+    }
+
+    table.smk-table td:first-child,
+    table.smk-table th:first-child {
+      text-align: left;
+      padding-left: 10px;
+    }
+
+    .badge-status {
+      font-size: 0.62rem;
+      font-weight: 800;
+      padding: 3px 8px;
+      border-radius: 6px;
+      text-transform: uppercase;
+      display: inline-block;
+    }
+
+    .badge-cumple {
+      background: rgba(16, 185, 129, 0.15);
+      color: #34d399;
+      border: 1px solid rgba(16, 185, 129, 0.45);
+    }
+
+    .badge-obs {
+      background: rgba(245, 158, 11, 0.15);
+      color: #fbbf24;
+      border: 1px solid rgba(245, 158, 11, 0.45);
+    }
+
+    .badge-pend {
+      background: rgba(148, 163, 184, 0.12);
+      color: #94a3b8;
+      border: 1px solid rgba(148, 163, 184, 0.3);
+    }
+
+    .tips-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      font-size: 0.76rem;
+      color: #cbd5e1;
+      line-height: 1.45;
+    }
+
+    .tips-list li {
+      background: #050a14;
+      border-left: 3px solid var(--accent-cyan);
+      padding: 9px 12px;
+      border-radius: 0 8px 8px 0;
+    }
+
+    .email-backup-box {
+      background: rgba(0, 191, 255, 0.08);
+      border: 1px solid rgba(0, 191, 255, 0.35);
+      border-radius: 12px;
+      padding: 12px 14px;
+      font-size: 0.74rem;
+      color: #bae6fd;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .btn-back-menu {
+      width: 100%;
+      background: var(--accent-cyan);
+      color: #000000;
+      border: none;
+      border-radius: 12px;
+      padding: 14px;
+      font-size: 0.85rem;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      cursor: pointer;
+      text-align: center;
+      text-decoration: none;
+      display: block;
+      box-shadow: 0 6px 20px rgba(0, 191, 255, 0.3);
+    }
+
+    /* Bloqueo estricto de impresión física en vista B2C */
+    @media print {
+      body * { display: none !important; }
+      body::after {
+        content: "SENSOMETRIKA B2C: Informe exclusivo de visualización en pantalla. No válido como certificado corporativo de faena.";
+        display: block;
+        color: #000;
+        font-size: 14pt;
+        padding: 40px;
+        text-align: center;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="report-wrapper">
+    <!-- CABECERA -->
+    <header class="header-brand">
+      <img src="sensometrica.jpg" alt="SENSOMETRIKA" class="brand-logo-img" onerror="this.style.display='none'">
+      <span style="font-size: 0.7rem; font-weight: 800; color: var(--accent-cyan); letter-spacing: 1.4px; text-transform: uppercase;">
+        DIAGNÓSTICO PSICOSENSOMÉTRICO EN PANTALLA • MODALIDAD PARTICULAR (B2C)
+      </span>
+    </header>
+
+    <!-- DICTAMEN SEMÁFORO MUNICIPAL + DATOS DEL POSTULANTE -->
+    <section class="card-dark">
+      <div id="bannerDictamen" class="dictamen-banner">
+        <span id="pillEstadoGlobal" class="dictamen-pill">EVALUACIÓN CONSOLIDADA</span>
+        <h1 id="tituloDictamen" class="dictamen-title">APTO EXAMEN MUNICIPAL</h1>
+        <p id="subtituloDictamen" style="font-size: 0.76rem; color: #cbd5e1; max-width: 540px; line-height: 1.4;">
+          Tus tiempos de reacción y precisión viso-motriz cumplen con los parámetros exigidos por el Gabinete Psicotécnico Municipal (D.S. N° 170).
+        </p>
+      </div>
+
+      <div class="user-meta-grid">
+        <div class="meta-item">
+          <span>Postulante Evaluado</span>
+          <strong id="lblUsuarioNombre">Usuario Particular</strong>
+        </div>
+        <div class="meta-item">
+          <span>RUT / Identificación</span>
+          <strong id="lblUsuarioRut">--</strong>
+        </div>
+        <div class="meta-item">
+          <span>Pase Contratado</span>
+          <strong id="lblUsuarioPlan" style="color: var(--accent-cyan);">PASE BÁSICO (3 SIM)</strong>
+        </div>
+        <div class="meta-item">
+          <span>Fecha de Evaluación</span>
+          <strong id="lblFechaEval">--</strong>
+        </div>
+      </div>
+    </section>
+
+    <!-- CURVA DE APRENDIZAJE MULTISERIE (CHART.JS) -->
+    <section class="card-dark">
+      <div class="section-heading">
+        <span>📈 Curva de Aprendizaje por Simulación</span>
+        <span style="font-size: 0.62rem; color: var(--text-muted); font-weight: 700;">Corte Norma: ≤ 450 ms / ≥ 70%</span>
+      </div>
+      <div class="chart-container">
+        <canvas id="canvasCurvaAprendizaje"></canvas>
+      </div>
+      <div style="display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; font-size: 0.68rem; color: var(--text-muted);">
+        <span><strong style="color: #00bfff;">● Reactímetro:</strong> Latencia (ms) — menor es mejor</span>
+        <span><strong style="color: #10b981;">● Palancas:</strong> Precisión (%) — mayor es mejor</span>
+        <span><strong style="color: #f59e0b;">● Punteo:</strong> Efectividad (%) — mayor es mejor</span>
+      </div>
+    </section>
+
+    <!-- RESUMEN TÉCNICO CONSOLIDADO POR MÓDULO -->
+    <section class="card-dark">
+      <div class="section-heading">
+        <span>📊 Resumen Técnico Consolidado</span>
+        <span style="font-size: 0.62rem; color: var(--text-muted);">Parámetros D.S. N° 170</span>
+      </div>
+      <div class="table-scroll">
+        <table class="smk-table">
+          <thead>
+            <tr>
+              <th>Módulo Evaluado</th>
+              <th>Estándar Exigible</th>
+              <th>Promedio Obtenido</th>
+              <th>Mejor Marca</th>
+              <th>Estado</th>
+            </tr>
+          </thead>
+          <tbody id="tbodyConsolidado"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- MATRIZ ADAPTATIVA DE EVOLUCIÓN POR SIMULACIÓN (S1..S3 / S5 / S8) -->
+    <section class="card-dark">
+      <div class="section-heading">
+        <span id="tituloMatrizSim">🗂️ Desglose por Simulación (S1 - S3)</span>
+        <span id="badgeCupoPlan" style="font-size: 0.62rem; color: var(--accent-cyan);">Cuota Pase Básico</span>
+      </div>
+      <div class="table-scroll">
+        <table class="smk-table" id="tablaMatrizSimulaciones">
+          <thead id="theadMatriz"></thead>
+          <tbody id="tbodyMatriz"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- CONSEJOS PREVENTIVOS PARA EL EXAMEN MUNICIPAL -->
+    <section class="card-dark">
+      <div class="section-heading">
+        <span>🎯 Recomendaciones para tu Examen Municipal</span>
+      </div>
+      <ul class="tips-list" id="listaConsejosMunicipales"></ul>
+    </section>
+
+    <!-- RESPALDO AUTOMÁTICO POR CORREO -->
+    <div class="email-backup-box">
+      <span style="font-size: 1.35rem;">📩</span>
+      <div>
+        <strong style="color: #ffffff; display: block;">Respaldo transmitido automáticamente a tu correo</strong>
+        Hemos enviado una copia digital de este resumen diagnóstico a <strong id="lblCorreoRespaldo" style="color: var(--accent-cyan);">tu correo registrado</strong> para tu seguimiento personal.
+      </div>
+    </div>
+
+    <!-- ÚNICO BOTÓN DE ACCIÓN EN B2C (SIN IMPRESIÓN) -->
+    <a href="menu_B2C.html" class="btn-back-menu">
+      ← VOLVER AL MENÚ DE SIMULACIONES (B2C)
+    </a>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      // 1. Cargar perfil y plan del usuario B2C
+      let datosUsuario = {};
+      try {
+        datosUsuario = JSON.parse(localStorage.getItem('sensometrika_datos_usuario') || '{}');
+      } catch (e) {}
+
+      const urlParams = new URLSearchParams(window.location.search);
+      const nombre = urlParams.get('nombre') || datosUsuario.nombre || localStorage.getItem('sensometrika_nombre') || 'Postulante Particular';
+      const rut = urlParams.get('rut') || datosUsuario.rut || localStorage.getItem('sensometrika_rut') || 'No registrado';
+      const correo = datosUsuario.correo || 'tu correo electrónico registrado';
+      const planRaw = (urlParams.get('plan') || localStorage.getItem('sensometrika_plan_contratado') || localStorage.getItem('sensometrika_plan_seleccionado') || 'BASICO').toUpperCase().trim();
+
+      let maxSim = 3;
+      let nombrePlanLabel = 'PASE BÁSICO (3 SIMULACIONES)';
+      if (planRaw.includes('PLUS')) {
+        maxSim = 5;
+        nombrePlanLabel = 'PASE PLUS (5 SIMULACIONES + VISUAL)';
+      } else if (planRaw.includes('FULL')) {
+        maxSim = 8;
+        nombrePlanLabel = 'PASE FULL (8 SIMULACIONES + SENSORIAL)';
+      }
+
+      document.getElementById('lblUsuarioNombre').textContent = nombre;
+      document.getElementById('lblUsuarioRut').textContent = rut;
+      document.getElementById('lblUsuarioPlan').textContent = nombrePlanLabel;
+      document.getElementById('lblFechaEval').textContent = new Date().toLocaleDateString('es-CL', {
+        day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
+      });
+      document.getElementById('lblCorreoRespaldo').textContent = correo;
+      document.getElementById('tituloMatrizSim').textContent = `🗂️ Desglose por Simulación (S1 - S${maxSim})`;
+      document.getElementById('badgeCupoPlan').textContent = `Cuota: ${maxSim} intentos por módulo`;
+
+      // 2. Extraer historiales de simulaciones desde localStorage
+      const obtenerSeries = (clavesPosibles, extractorNumerico) => {
+        for (const clave of clavesPosibles) {
+          const raw = localStorage.getItem(clave);
+          if (!raw) continue;
+          try {
+            const parsed = JSON.parse(raw);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              return parsed.slice(0, maxSim).map(extractorNumerico).filter(v => v !== null && !isNaN(v));
+            }
+          } catch (e) {}
+        }
+        return [];
+      };
+
+      // Reactímetro: latencia en ms
+      const seriesReactimetro = obtenerSeries(
+        ['sensometrika_reactimetro_historial', 'reactimetro_historial', 'sensometrika_historial_reactimetro'],
+        item => typeof item === 'number' ? Math.round(item) : Math.round(Number(item.promedio || item.latencia || item.ms || item.valor))
+      );
+
+      // Palancas: precisión estrictamente en % (nunca en toques)
+      const seriesPalancas = obtenerSeries(
+        ['sensometrika_palancas_historial', 'palancas_historial', 'sensometrika_historial_palancas'],
+        item => {
+          if (typeof item === 'number') return Math.round(item);
+          if (item.precision !== undefined) return Math.round(Number(item.precision));
+          if (item.porcentaje !== undefined) return Math.round(Number(item.porcentaje));
+          if (item.toques !== undefined) return Math.max(0, Math.round(100 - (Number(item.toques) * 8)));
+          return null;
+        }
+      );
+
+      // Punteo: efectividad en %
+      const seriesPunteo = obtenerSeries(
+        ['sensometrika_punteo_historial', 'punteo_historial', 'sensometrika_historial_punteo'],
+        item => {
+          if (typeof item === 'number') return Math.round(item);
+          if (item.precision !== undefined) return Math.round(Number(item.precision));
+          if (item.porcentaje !== undefined) return Math.round(Number(item.porcentaje));
+          if (item.aciertos !== undefined) return Math.round(Number(item.aciertos));
+          return null;
+        }
+      );
+
+      // Fallback desde objeto consolidado si aún no hay array histórico
+      let resultadosGen = {};
+      try {
+        resultadosGen = JSON.parse(localStorage.getItem('sensometrika_resultados') || '{}');
+      } catch (e) {}
+
+      if (seriesReactimetro.length === 0 && resultadosGen.reactimetro) {
+        const val = Number(resultadosGen.reactimetro.promedio || resultadosGen.reactimetro.ms || resultadosGen.reactimetro);
+        if (!isNaN(val) && val > 0) seriesReactimetro.push(Math.round(val));
+      }
+      if (seriesPalancas.length === 0 && resultadosGen.palancas) {
+        const val = Number(resultadosGen.palancas.precision || resultadosGen.palancas.porcentaje || resultadosGen.palancas);
+        if (!isNaN(val) && val > 0) seriesPalancas.push(Math.round(val));
+      }
+      if (seriesPunteo.length === 0 && resultadosGen.punteo) {
+        const val = Number(resultadosGen.punteo.precision || resultadosGen.punteo.porcentaje || resultadosGen.punteo);
+        if (!isNaN(val) && val > 0) seriesPunteo.push(Math.round(val));
+      }
+
+      // 3. Calcular promedios, mejores marcas y dictamen global
+      const calcProm = arr => arr.length ? Math.round(arr.reduce((a, b) => a + b, 0) / arr.length) : null;
+
+      const promReact = calcProm(seriesReactimetro);
+      const mejorReact = seriesReactimetro.length ? Math.min(...seriesReactimetro) : null;
+      const cumpleReact = promReact !== null ? promReact <= 450 : null;
+
+      const promPal = calcProm(seriesPalancas);
+      const mejorPal = seriesPalancas.length ? Math.max(...seriesPalancas) : null;
+      const cumplePal = promPal !== null ? promPal >= 70 : null;
+
+      const promPunt = calcProm(seriesPunteo);
+      const mejorPunt = seriesPunteo.length ? Math.max(...seriesPunteo) : null;
+      const cumplePunt = promPunt !== null ? promPunt >= 70 : null;
+
+      const evaluados = [cumpleReact, cumplePal, cumplePunt].filter(x => x !== null);
+      const todosAprobados = evaluados.length > 0 && evaluados.every(Boolean);
+      const algunoReprobado = evaluados.some(x => x === false);
+
+      const banner = document.getElementById('bannerDictamen');
+      const pill = document.getElementById('pillEstadoGlobal');
+      const titulo = document.getElementById('tituloDictamen');
+      const subtitulo = document.getElementById('subtituloDictamen');
+
+      if (evaluados.length === 0) {
+        banner.classList.add('observado');
+        pill.textContent = 'SIN SIMULACIONES REGISTRADAS';
+        titulo.textContent = 'EVALUACIÓN EN CURSO';
+        subtitulo.textContent = 'Aún no has completado intentos oficiales. Regresa al menú de simulaciones para ejecutar tus pruebas y visualizar tu curva.';
+      } else if (algunoReprobado) {
+        banner.classList.add('observado');
+        pill.textContent = 'DIAGNÓSTICO PREVENTIVO • D.S. N° 170';
+        titulo.textContent = 'REQUIERE PRÁCTICA PREVIA';
+        subtitulo.textContent = 'Uno o más parámetros están fuera del umbral municipal. Aprovecha tus simulaciones disponibles para estabilizar tu tiempo de frenado y coordinación.';
+      } else {
+        pill.textContent = 'DICTAMEN PREVENTIVO FAVORABLE • D.S. N° 170';
+        titulo.textContent = 'APTO EXAMEN MUNICIPAL';
+        subtitulo.textContent = 'Tus promedios de reacción ante estímulo luminoso, coordinación bimanual y punteo cumplen con los estándares psicotécnicos municipales.';
+      }
+
+      // 4. Poblar Tabla Resumen Consolidado (Palancas 100% en porcentaje)
+      const renderFilaResumen = (nombreMod, estandar, promTexto, mejorTexto, estadoBool) => {
+        let badge = '<span class="badge-status badge-pend">PENDIENTE</span>';
+        if (estadoBool === true) badge = '<span class="badge-status badge-cumple">CUMPLE</span>';
+        if (estadoBool === false) badge = '<span class="badge-status badge-obs">NO CUMPLE</span>';
+        return `
+          <tr>
+            <td><strong>${nombreMod}</strong></td>
+            <td style="color: #94a3b8;">${estandar}</td>
+            <td><strong>${promTexto}</strong></td>
+            <td style="color: #38bdf8; font-weight: 700;">${mejorTexto}</td>
+            <td>${badge}</td>
+          </tr>
+        `;
+      };
+
+      const tbodyConsolidado = document.getElementById('tbodyConsolidado');
+      tbodyConsolidado.innerHTML =
+        renderFilaResumen(
+          'Reactímetro (Frenado)',
+          '≤ 450 ms',
+          promReact !== null ? `${promReact} ms` : '--',
+          mejorReact !== null ? `${mejorReact} ms` : '--',
+          cumpleReact
+        ) +
+        renderFilaResumen(
+          'Palancas (Coordinación)',
+          '≥ 70% precisión',
+          promPal !== null ? `${promPal}%` : '--',
+          mejorPal !== null ? `${mejorPal}%` : '--',
+          cumplePal
+        ) +
+        renderFilaResumen(
+          'Punteo Viso-Motriz',
+          '≥ 70% precisión',
+          promPunt !== null ? `${promPunt}%` : '--',
+          mejorPunt !== null ? `${mejorPunt}%` : '--',
+          cumplePunt
+        );
+
+      // 5. Poblar Matriz Dinámica S1..Smax
+      const theadMatriz = document.getElementById('theadMatriz');
+      let headHtml = '<tr><th>Módulo</th>';
+      for (let i = 1; i <= maxSim; i++) {
+        headHtml += `<th>S${i}</th>`;
+      }
+      headHtml += '<th>Promedio</th></tr>';
+      theadMatriz.innerHTML = headHtml;
+
+      const renderFilaMatriz = (label, arr, sufijo, promVal) => {
+        let row = `<tr><td><strong>${label}</strong></td>`;
+        for (let i = 0; i < maxSim; i++) {
+          const val = arr[i];
+          row += `<td>${val !== undefined ? `${val}${sufijo}` : '<span style="color:#475569;">--</span>'}</td>`;
+        }
+        row += `<td style="color:#38bdf8; font-weight:800;">${promVal !== null ? `${promVal}${sufijo}` : '--'}</td></tr>`;
+        return row;
+      };
+
+      document.getElementById('tbodyMatriz').innerHTML =
+        renderFilaMatriz('Reactímetro', seriesReactimetro, ' ms', promReact) +
+        renderFilaMatriz('Palancas', seriesPalancas, '%', promPal) +
+        renderFilaMatriz('Punteo', seriesPunteo, '%', promPunt);
+
+      // 6. Renderizar Gráfico Multiserie con Chart.js (Eje Izq: ms | Eje Der: %)
+      const labelsX = Array.from({ length: maxSim }, (_, i) => `S${i + 1}`);
+      const padSeries = (arr) => Array.from({ length: maxSim }, (_, i) => (arr[i] !== undefined ? arr[i] : null));
+
+      const ctx = document.getElementById('canvasCurvaAprendizaje').getContext('2d');
+      new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: labelsX,
+          datasets: [
+            {
+              label: 'Reactímetro (ms)',
+              data: padSeries(seriesReactimetro),
+              borderColor: '#00bfff',
+              backgroundColor: 'rgba(0, 191, 255, 0.15)',
+              borderWidth: 2.5,
+              pointRadius: 4,
+              tension: 0.3,
+              yAxisID: 'yMs'
+            },
+            {
+              label: 'Palancas (%)',
+              data: padSeries(seriesPalancas),
+              borderColor: '#10b981',
+              backgroundColor: 'rgba(16, 185, 129, 0.15)',
+              borderWidth: 2.5,
+              pointRadius: 4,
+              tension: 0.3,
+              yAxisID: 'yPct'
+            },
+            {
+              label: 'Punteo (%)',
+              data: padSeries(seriesPunteo),
+              borderColor: '#f59e0b',
+              backgroundColor: 'rgba(245, 158, 11, 0.15)',
+              borderWidth: 2.5,
+              pointRadius: 4,
+              tension: 0.3,
+              yAxisID: 'yPct'
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: { mode: 'index', intersect: false },
+          plugins: {
+            legend: {
+              labels: { color: '#cbd5e1', font: { size: 11, weight: 'bold' } }
+            }
+          },
+          scales: {
+            x: {
+              ticks: { color: '#94a3b8', font: { weight: 'bold' } },
+              grid: { color: 'rgba(19, 34, 56, 0.6)' }
+            },
+            yMs: {
+              type: 'linear',
+              position: 'left',
+              min: 150,
+              max: 700,
+              title: { display: true, text: 'Latencia (ms)', color: '#00bfff', font: { size: 10, weight: 'bold' } },
+              ticks: { color: '#00bfff' },
+              grid: { color: 'rgba(19, 34, 56, 0.6)' }
+            },
+            yPct: {
+              type: 'linear',
+              position: 'right',
+              min: 0,
+              max: 100,
+              title: { display: true, text: 'Precisión (%)', color: '#10b981', font: { size: 10, weight: 'bold' } },
+              ticks: { color: '#10b981' },
+              grid: { drawOnChartArea: false }
+            }
+          }
+        }
+      });
+
+      // 7. Generar Consejos Preventivos Dinámicos
+      const consejos = [];
+      if (cumpleReact === false) {
+        consejos.push('<strong>Reactímetro (Frenado):</strong> Mantén el talón apoyado fijo y pivota solo la punta del pie entre acelerador y freno; evita levantar toda la pierna al ver la luz roja.');
+      } else {
+        consejos.push('<strong>Reactímetro (Frenado):</strong> Tu tiempo de reacción está dentro del rango seguro (≤ 450 ms). Mantén la mirada enfocada en el centro del panel luminoso sin anticiparte antes del cambio de luz.');
+      }
+
+      if (cumplePal === false) {
+        consejos.push('<strong>Coordinación Bimanual (Palancas):</strong> Reduce la velocidad de avance en las curvas cerradas; prioriza la suavidad de ambas manos antes que terminar antes de tiempo.');
+      } else {
+        consejos.push('<strong>Coordinación Bimanual (Palancas):</strong> Excelente control viso-espacial. En la cabina municipal recuerda regular la altura de tu asiento para que tus antebrazos queden relajados.');
+      }
+
+      if (cumplePunt === false) {
+        consejos.push('<strong>Punteo Viso-Motriz:</strong> Sincroniza tu respiración con el ritmo del disco giratorio y anticipa ligeramente la trayectoria antes de presionar.');
+      } else {
+        consejos.push('<strong>Recomendación General Municipal:</strong> Descansa al menos 7 horas la noche previa, evita cafeína en exceso 2 horas antes y recuerda llevar tu cédula de identidad vigente.');
+      }
+
+      document.getElementById('listaConsejosMunicipales').innerHTML = consejos.map(c => `<li>${c}</li>`).join('');
+    });
+  </script>
+</body>
+</html>
