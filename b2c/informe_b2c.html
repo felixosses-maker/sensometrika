@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>SENSOMETRIKA | Informe Consolidado y Curva de Aprendizaje (B2C)</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="session-timer.js"></script>
+  <script src="../session-timer.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     :root {
@@ -242,6 +242,11 @@
       border-radius: 0 8px 8px 0;
     }
 
+    .tips-list li.tip-pending {
+      border-left-color: var(--accent-amber);
+      color: #94a3b8;
+    }
+
     .email-backup-box {
       background: rgba(0, 191, 255, 0.08);
       border: 1px solid rgba(0, 191, 255, 0.35);
@@ -291,7 +296,7 @@
   <div class="report-wrapper">
     <!-- CABECERA -->
     <header class="header-brand">
-      <img src="sensometrica.jpg" alt="SENSOMETRIKA" class="brand-logo-img" onerror="this.style.display='none'">
+      <img src="../sensometrica.jpg" alt="SENSOMETRIKA" class="brand-logo-img" onerror="this.style.display='none'">
       <span style="font-size: 0.7rem; font-weight: 800; color: var(--accent-cyan); letter-spacing: 1.4px; text-transform: uppercase;">
         DIAGNÓSTICO PSICOSENSOMÉTRICO EN PANTALLA • MODALIDAD PARTICULAR (B2C)
       </span>
@@ -388,9 +393,9 @@
     </section>
 
     <!-- RESPALDO AUTOMÁTICO POR CORREO -->
-    <div class="email-backup-box">
-      <span style="font-size: 1.35rem;">📩</span>
-      <div>
+    <div id="boxEmailBackup" class="email-backup-box">
+      <span id="iconEmailBackup" style="font-size: 1.35rem;">📩</span>
+      <div id="txtEmailBackup">
         <strong style="color: #ffffff; display: block;">Respaldo transmitido automáticamente a tu correo</strong>
         Hemos enviado una copia digital de este resumen diagnóstico a <strong id="lblCorreoRespaldo" style="color: var(--accent-cyan);">tu correo registrado</strong> para tu seguimiento personal.
       </div>
@@ -428,11 +433,12 @@
 
       let maxSim = 3;
       let nombrePlanLabel = 'PASE BÁSICO (3 SIMULACIONES)';
-      const incluyeSensorial = planRaw.includes('PLUS') || planRaw.includes('FULL') || planRaw.includes('ALTO');
+      const incluyeVisual = planRaw.includes('PLUS') || planRaw.includes('FULL') || planRaw.includes('ALTO');
+      const incluyeAuditivo = planRaw.includes('FULL') || planRaw.includes('ALTO');
 
       if (planRaw.includes('PLUS')) {
         maxSim = 5;
-        nombrePlanLabel = 'PASE PLUS (5 SIMULACIONES + SENSORIAL)';
+        nombrePlanLabel = 'PASE PLUS (5 SIMULACIONES + VISUAL)';
       } else if (planRaw.includes('FULL') || planRaw.includes('ALTO')) {
         maxSim = 8;
         nombrePlanLabel = 'PASE FULL (8 SIMULACIONES + SENSORIAL)';
@@ -448,7 +454,7 @@
       document.getElementById('tituloMatrizSim').textContent = `🗂️ Desglose por Simulación (S1 - S${maxSim})`;
       document.getElementById('badgeCupoPlan').textContent = `Cuota: ${maxSim} intentos por módulo`;
 
-      // 2. Extraer historiales sincronizados con menu_b2c.html (por RUT limpio y fallback general)
+      // 2. Extraer historiales sincronizados por RUT limpio
       const obtenerSeries = (clavesPosibles, extractorNumerico) => {
         for (const clave of clavesPosibles) {
           const raw = localStorage.getItem(clave);
@@ -509,22 +515,7 @@
         }
       );
 
-      // Auditivo y Visual (Planes PLUS y FULL)
-      const seriesAuditivo = obtenerSeries(
-        [
-          `sensometrika_historial_audicion_${cleanRut}`,
-          `sensometrika_historial_auditivo_${cleanRut}`,
-          'sensometrika_audicion_historial'
-        ],
-        item => {
-          if (typeof item === 'number') return Math.round(item);
-          if (item.porcentaje !== undefined) return Math.round(Number(item.porcentaje));
-          if (item.precision !== undefined) return Math.round(Number(item.precision));
-          if (item.aciertos !== undefined && item.total) return Math.round((Number(item.aciertos) / Number(item.total)) * 100);
-          return null;
-        }
-      );
-
+      // Visual (Planes PLUS y FULL)
       const seriesVisual = obtenerSeries(
         [
           `sensometrika_historial_visual_${cleanRut}`,
@@ -533,33 +524,30 @@
         ],
         item => {
           if (typeof item === 'number') return Math.round(item);
-          if (item.porcentaje !== undefined) return Math.round(Number(item.porcentaje));
+          if (item.score !== undefined) return Math.round(Number(item.score));
           if (item.precision !== undefined) return Math.round(Number(item.precision));
-          if (item.aciertos !== undefined && item.total) return Math.round((Number(item.aciertos) / Number(item.total)) * 100);
+          if (item.porcentaje !== undefined) return Math.round(Number(item.porcentaje));
           return null;
         }
       );
 
-      // Fallback desde objeto consolidado si aún no existe array histórico
-      let resultadosGen = {};
-      try {
-        resultadosGen = JSON.parse(localStorage.getItem('sensometrika_resultados') || '{}');
-      } catch (e) {}
+      // Auditivo (Plan FULL)
+      const seriesAuditivo = obtenerSeries(
+        [
+          `sensometrika_historial_audicion_${cleanRut}`,
+          `sensometrika_historial_auditivo_${cleanRut}`,
+          'sensometrika_audicion_historial'
+        ],
+        item => {
+          if (typeof item === 'number') return Math.round(item);
+          if (item.score !== undefined) return Math.round(Number(item.score));
+          if (item.precision !== undefined) return Math.round(Number(item.precision));
+          if (item.porcentaje !== undefined) return Math.round(Number(item.porcentaje));
+          return null;
+        }
+      );
 
-      if (seriesReactimetro.length === 0 && resultadosGen.reactimetro) {
-        const val = Number(resultadosGen.reactimetro.promedio || resultadosGen.reactimetro.ms || resultadosGen.reactimetro);
-        if (!isNaN(val) && val > 0) seriesReactimetro.push(Math.round(val));
-      }
-      if (seriesPalancas.length === 0 && resultadosGen.palancas) {
-        const val = Number(resultadosGen.palancas.precision || resultadosGen.palancas.porcentaje || resultadosGen.palancas);
-        if (!isNaN(val) && val > 0) seriesPalancas.push(Math.round(val));
-      }
-      if (seriesPunteo.length === 0 && resultadosGen.punteo) {
-        const val = Number(resultadosGen.punteo.precision || resultadosGen.punteo.porcentaje || resultadosGen.punteo);
-        if (!isNaN(val) && val > 0) seriesPunteo.push(Math.round(val));
-      }
-
-      // 3. Calcular promedios, mejores marcas y dictamen global
+      // 3. Calcular promedios, mejores marcas y completitud mínima de batería
       const calcProm = arr => arr.length ? Math.round(arr.reduce((a, b) => a + b, 0) / arr.length) : null;
 
       const promReact = calcProm(seriesReactimetro);
@@ -574,15 +562,25 @@
       const mejorPunt = seriesPunteo.length ? Math.max(...seriesPunteo) : null;
       const cumplePunt = promPunt !== null ? promPunt >= 70 : null;
 
-      const promAud = calcProm(seriesAuditivo);
-      const mejorAud = seriesAuditivo.length ? Math.max(...seriesAuditivo) : null;
-      const cumpleAud = promAud !== null ? promAud >= 75 : null;
-
       const promVis = calcProm(seriesVisual);
       const mejorVis = seriesVisual.length ? Math.max(...seriesVisual) : null;
       const cumpleVis = promVis !== null ? promVis >= 75 : null;
 
-      const evaluados = [cumpleReact, cumplePal, cumplePunt, cumpleAud, cumpleVis].filter(x => x !== null);
+      const promAud = calcProm(seriesAuditivo);
+      const mejorAud = seriesAuditivo.length ? Math.max(...seriesAuditivo) : null;
+      const cumpleAud = promAud !== null ? promAud >= 75 : null;
+
+      // Verificar qué módulos obligatorios del plan contratado aún no tienen al menos 1 simulación oficial
+      const modulosFaltantes = [];
+      if (seriesReactimetro.length === 0) modulosFaltantes.push('Reactímetro');
+      if (seriesPalancas.length === 0) modulosFaltantes.push('Palancas');
+      if (seriesPunteo.length === 0) modulosFaltantes.push('Punteo');
+      if (incluyeVisual && seriesVisual.length === 0) modulosFaltantes.push('Tamizaje Visual');
+      if (incluyeAuditivo && seriesAuditivo.length === 0) modulosFaltantes.push('Tamizaje Auditivo');
+
+      const bateriaMinimaCompleta = modulosFaltantes.length === 0;
+
+      const evaluados = [cumpleReact, cumplePal, cumplePunt, cumpleVis, cumpleAud].filter(x => x !== null);
       const algunoReprobado = evaluados.some(x => x === false);
 
       const banner = document.getElementById('bannerDictamen');
@@ -590,11 +588,30 @@
       const titulo = document.getElementById('tituloDictamen');
       const subtitulo = document.getElementById('subtituloDictamen');
 
+      const boxEmail = document.getElementById('boxEmailBackup');
+      const iconEmail = document.getElementById('iconEmailBackup');
+      const txtEmail = document.getElementById('txtEmailBackup');
+
       if (evaluados.length === 0) {
         banner.classList.add('observado');
         pill.textContent = 'SIN SIMULACIONES REGISTRADAS';
         titulo.textContent = 'EVALUACIÓN EN CURSO';
         subtitulo.textContent = 'Aún no has completado intentos oficiales. Regresa al menú de simulaciones para ejecutar tus pruebas y visualizar tu curva.';
+
+        boxEmail.style.borderColor = 'rgba(245, 158, 11, 0.45)';
+        boxEmail.style.background = 'rgba(245, 158, 11, 0.08)';
+        iconEmail.textContent = '⏳';
+        txtEmail.innerHTML = `<strong style="color: #fbbf24; display: block;">Respaldo en espera de evaluaciones</strong>Completa tus módulos en el menú para generar y despachar tu informe a <strong style="color: var(--accent-cyan);">${correo}</strong>.`;
+      } else if (!bateriaMinimaCompleta) {
+        banner.classList.add('observado');
+        pill.textContent = 'DIAGNÓSTICO PARCIAL · BATERÍA INCOMPLETA';
+        titulo.textContent = 'EVALUACIÓN INCOMPLETA';
+        subtitulo.innerHTML = `No es posible emitir un dictamen definitivo con módulos pendientes. Aún falta rendir al menos 1 simulación oficial en: <strong style="color:#fbbf24;">${modulosFaltantes.join(', ')}</strong>.`;
+
+        boxEmail.style.borderColor = 'rgba(245, 158, 11, 0.45)';
+        boxEmail.style.background = 'rgba(245, 158, 11, 0.08)';
+        iconEmail.textContent = '⏳';
+        txtEmail.innerHTML = `<strong style="color: #fbbf24; display: block;">Envío definitivo retenido hasta completar batería</strong>Una vez que rindas <strong>${modulosFaltantes.join(', ')}</strong>, enviaremos tu informe completo a <strong style="color: var(--accent-cyan);">${correo}</strong>.`;
       } else if (algunoReprobado) {
         banner.classList.add('observado');
         pill.textContent = 'DIAGNÓSTICO PREVENTIVO • D.S. N° 170';
@@ -603,10 +620,10 @@
       } else {
         pill.textContent = 'DICTAMEN PREVENTIVO FAVORABLE • D.S. N° 170';
         titulo.textContent = 'APTO EXAMEN MUNICIPAL';
-        subtitulo.textContent = 'Tus promedios de reacción ante estímulo luminoso, coordinación bimanual y punteo cumplen con los estándares psicotécnicos municipales.';
+        subtitulo.textContent = 'Tus promedios en todos los módulos evaluados cumplen con los estándares psicotécnicos municipales exigidos por el D.S. N° 170.';
       }
 
-      // 4. Poblar Tabla Resumen Consolidado (Palancas 100% en porcentaje)
+      // 4. Poblar Tabla Resumen Consolidado
       const renderFilaResumen = (nombreMod, estandar, promTexto, mejorTexto, estadoBool) => {
         let badge = '<span class="badge-status badge-pend">PENDIENTE</span>';
         if (estadoBool === true) badge = '<span class="badge-status badge-cumple">CUMPLE</span>';
@@ -645,22 +662,24 @@
           cumplePunt
         );
 
-      if (incluyeSensorial || seriesAuditivo.length > 0 || seriesVisual.length > 0) {
-        htmlResumen +=
-          renderFilaResumen(
-            '4. Tamizaje Auditivo',
-            '≥ 75% tonal',
-            promAud !== null ? `${promAud}%` : '--',
-            mejorAud !== null ? `${mejorAud}%` : '--',
-            cumpleAud
-          ) +
-          renderFilaResumen(
-            '5. Tamizaje Visual (Ishihara)',
-            '≥ 75% agudeza',
-            promVis !== null ? `${promVis}%` : '--',
-            mejorVis !== null ? `${mejorVis}%` : '--',
-            cumpleVis
-          );
+      if (incluyeVisual || seriesVisual.length > 0) {
+        htmlResumen += renderFilaResumen(
+          '4. Tamizaje Visual (Ishihara)',
+          '≥ 75% agudeza',
+          promVis !== null ? `${promVis}%` : '--',
+          mejorVis !== null ? `${mejorVis}%` : '--',
+          cumpleVis
+        );
+      }
+
+      if (incluyeAuditivo || seriesAuditivo.length > 0) {
+        htmlResumen += renderFilaResumen(
+          '5. Tamizaje Auditivo',
+          '≥ 75% tonal',
+          promAud !== null ? `${promAud}%` : '--',
+          mejorAud !== null ? `${mejorAud}%` : '--',
+          cumpleAud
+        );
       }
 
       document.getElementById('tbodyConsolidado').innerHTML = htmlResumen;
@@ -674,25 +693,32 @@
       headHtml += '<th>Promedio</th></tr>';
       theadMatriz.innerHTML = headHtml;
 
-      const renderFilaMatriz = (label, arr, sufijo, promVal) => {
+      const renderFilaMatriz = (label, arr, sufijo, promVal, colsLimit) => {
         let row = `<tr><td><strong>${label}</strong></td>`;
         for (let i = 0; i < maxSim; i++) {
-          const val = arr[i];
-          row += `<td>${val !== undefined ? `${val}${sufijo}` : '<span style="color:#475569;">--</span>'}</td>`;
+          if (colsLimit && i >= colsLimit) {
+            row += `<td><span style="color:#1e293b;">·</span></td>`;
+          } else {
+            const val = arr[i];
+            row += `<td>${val !== undefined ? `${val}${sufijo}` : '<span style="color:#475569;">--</span>'}</td>`;
+          }
         }
         row += `<td style="color:#38bdf8; font-weight:800;">${promVal !== null ? `${promVal}${sufijo}` : '--'}</td></tr>`;
         return row;
       };
 
       let htmlMatriz =
-        renderFilaMatriz('Reactímetro', seriesReactimetro, ' ms', promReact) +
-        renderFilaMatriz('Palancas', seriesPalancas, '%', promPal) +
-        renderFilaMatriz('Punteo', seriesPunteo, '%', promPunt);
+        renderFilaMatriz('Reactímetro', seriesReactimetro, ' ms', promReact, maxSim) +
+        renderFilaMatriz('Palancas', seriesPalancas, '%', promPal, maxSim) +
+        renderFilaMatriz('Punteo', seriesPunteo, '%', promPunt, maxSim);
 
-      if (incluyeSensorial || seriesAuditivo.length > 0 || seriesVisual.length > 0) {
-        htmlMatriz +=
-          renderFilaMatriz('Auditivo', seriesAuditivo, '%', promAud) +
-          renderFilaMatriz('Visual', seriesVisual, '%', promVis);
+      if (incluyeVisual || seriesVisual.length > 0) {
+        const maxVisCols = planRaw.includes('FULL') ? 4 : 2;
+        htmlMatriz += renderFilaMatriz('Visual', seriesVisual, '%', promVis, maxVisCols);
+      }
+
+      if (incluyeAuditivo || seriesAuditivo.length > 0) {
+        htmlMatriz += renderFilaMatriz('Auditivo', seriesAuditivo, '%', promAud, 2);
       }
 
       document.getElementById('tbodyMatriz').innerHTML = htmlMatriz;
@@ -775,27 +801,40 @@
         }
       });
 
-      // 7. Generar Consejos Preventivos Dinámicos
-      const consejos = [];
-      if (cumpleReact === false) {
-        consejos.push('<strong>Reactímetro (Frenado):</strong> Mantén el talón apoyado fijo y pivota solo la punta del pie entre acelerador y freno; evita levantar toda la pierna al ver la luz roja.');
+      // 7. Generar Consejos Preventivos Dinámicos (STRICT: solo evalúa módulos realmente rendidos)
+      const consejosHtml = [];
+
+      // Reactímetro
+      if (cumpleReact === null) {
+        consejosHtml.push(`<li class="tip-pending"><strong>Reactímetro (Frenado):</strong> <em>Pendiente de evaluación.</em> Regresa al menú y completa al menos 1 simulación oficial para medir tu tiempo de frenado.</li>`);
+      } else if (cumpleReact === false) {
+        consejosHtml.push(`<li><strong>Reactímetro (Frenado):</strong> Mantén el talón apoyado fijo y pivota solo la punta del pie entre acelerador y freno; evita levantar toda la pierna al ver la luz roja.</li>`);
       } else {
-        consejos.push('<strong>Reactímetro (Frenado):</strong> Tu tiempo de reacción está dentro del rango seguro (≤ 450 ms). Mantén la mirada enfocada en el centro del panel luminoso sin anticiparte antes del cambio de luz.');
+        consejosHtml.push(`<li><strong>Reactímetro (Frenado):</strong> Tu tiempo de reacción (${promReact} ms) está dentro del rango seguro (≤ 450 ms). Mantén la mirada enfocada en el centro del panel luminoso sin anticiparte antes del cambio de luz.</li>`);
       }
 
-      if (cumplePal === false) {
-        consejos.push('<strong>Coordinación Bimanual (Palancas):</strong> Reduce la velocidad de avance en las curvas cerradas; prioriza la suavidad de ambas manos antes que terminar antes de tiempo.');
+      // Palancas
+      if (cumplePal === null) {
+        consejosHtml.push(`<li class="tip-pending"><strong>Coordinación Bimanual (Palancas):</strong> <em>Pendiente de evaluación.</em> Rinde al menos 1 simulación oficial de Palancas para diagnosticar tu control viso-espacial.</li>`);
+      } else if (cumplePal === false) {
+        consejosHtml.push(`<li><strong>Coordinación Bimanual (Palancas):</strong> Reduce la velocidad de avance en las curvas cerradas; prioriza la suavidad de ambas manos antes que terminar antes de tiempo.</li>`);
       } else {
-        consejos.push('<strong>Coordinación Bimanual (Palancas):</strong> Excelente control viso-espacial. En la cabina municipal recuerda regular la altura de tu asiento para que tus antebrazos queden relajados.');
+        consejosHtml.push(`<li><strong>Coordinación Bimanual (Palancas):</strong> Excelente control viso-espacial (${promPal}%). En la cabina municipal recuerda regular la altura de tu asiento para que tus antebrazos queden relajados.</li>`);
       }
 
-      if (cumplePunt === false) {
-        consejos.push('<strong>Punteo Viso-Motriz:</strong> Sincroniza tu respiración con el ritmo del disco giratorio y anticipa ligeramente la trayectoria antes de presionar.');
+      // Punteo
+      if (cumplePunt === null) {
+        consejosHtml.push(`<li class="tip-pending"><strong>Punteo Viso-Motriz:</strong> <em>Pendiente de evaluación.</em> Completa al menos 1 simulación oficial de Punteo para evaluar tu estabilidad rítmica.</li>`);
+      } else if (cumplePunt === false) {
+        consejosHtml.push(`<li><strong>Punteo Viso-Motriz:</strong> Sincroniza tu respiración con el ritmo del disco giratorio y anticipa ligeramente la trayectoria antes de presionar.</li>`);
       } else {
-        consejos.push('<strong>Recomendación General Municipal:</strong> Descansa al menos 7 horas la noche previa, evita cafeína en exceso 2 horas antes y recuerda llevar tu cédula de identidad vigente.');
+        consejosHtml.push(`<li><strong>Punteo Viso-Motriz:</strong> Precisión rítmica óptima (${promPunt}%). Mantén esa misma cadencia constante durante la prueba municipal.</li>`);
       }
 
-      document.getElementById('listaConsejosMunicipales').innerHTML = consejos.map(c => `<li>${c}</li>`).join('');
+      // Recomendación general
+      consejosHtml.push(`<li><strong>Recomendación General Municipal:</strong> Descansa al menos 7 horas la noche previa, evita cafeína en exceso 2 horas antes y recuerda llevar tu cédula de identidad vigente.</li>`);
+
+      document.getElementById('listaConsejosMunicipales').innerHTML = consejosHtml.join('');
     });
   </script>
 </body>
