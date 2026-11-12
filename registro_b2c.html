@@ -21,7 +21,7 @@
             margin: 0; 
             padding: 0; 
             user-select: none; 
-            -webkit-user-select: none;
+            -webkit-user-select: none; 
         }
 
         body {
@@ -192,7 +192,7 @@
 
                     <div class="plan-badge-bar">
                         <span style="color: var(--text-muted); font-weight: 700;">PLAN ADQUIRIDO:</span>
-                        <strong id="lblPlanNombre" style="color: var(--accent-cyan);">PLAN BÁSICO LABORAL</strong>
+                        <strong id="lblPlanNombre" style="color: var(--accent-cyan);">PASE BÁSICO (B2C)</strong>
                     </div>
 
                     <button type="submit" class="btn-submit">
@@ -225,9 +225,9 @@
 
         document.addEventListener('DOMContentLoaded', () => {
             const urlParams = new URLSearchParams(window.location.search);
-            planActual = (urlParams.get('plan') || localStorage.getItem('sensometrika_plan_contratado') || 'BASICO').toUpperCase();
+            planActual = (urlParams.get('plan') || localStorage.getItem('sensometrika_plan_contratado') || 'BASICO').toUpperCase().trim();
 
-            document.getElementById('lblPlanNombre').textContent = `PLAN ${planActual}`;
+            document.getElementById('lblPlanNombre').textContent = `PASE ${planActual} (B2C)`;
         });
 
         function procesarPagoYEnvio(e) {
@@ -242,7 +242,7 @@
             const rut = document.getElementById('inputRutParticular').value.trim();
             const correo = document.getElementById('inputCorreoParticular').value.trim();
 
-            // Guardar datos mínimos de B2C
+            // Guardar datos de B2C sincronizados con menu_B2C.html
             localStorage.setItem('sensometrika_datos_usuario', JSON.stringify({
                 nombre: nombre,
                 rut: rut,
@@ -250,13 +250,15 @@
                 cargo: 'Evaluación Particular B2C'
             }));
             localStorage.setItem('sensometrika_b2c_mode', 'true');
-            localStorage.setItem('sensometrika_b2b_rut', rut);
+            localStorage.setItem('sensometrika_rut', rut);
+            localStorage.setItem('sensometrika_nombre', nombre);
             localStorage.setItem('sensometrika_b2b_empresa', 'USUARIO PARTICULAR B2C');
             localStorage.setItem('sensometrika_plan_contratado', planActual);
+            localStorage.setItem('sensometrika_plan_seleccionado', planActual);
 
-            // Construir enlace directo de acceso al test
+            // Redirección directa a menu_B2C.html (sin pasar por verificacion_trabajador.html)
             const originUrl = window.location.origin;
-            const urlAcceso = `${originUrl}/verificacion_trabajador.html?rut=${encodeURIComponent(rut)}&nombre=${encodeURIComponent(nombre)}&plan=${planActual}&mode=b2c`;
+            const urlAcceso = `${originUrl}/menu_B2C.html?rut=${encodeURIComponent(rut)}&nombre=${encodeURIComponent(nombre)}&plan=${planActual}&mode=b2c`;
 
             // Ocultar formulario y mostrar confirmación de envío por correo
             document.getElementById('boxFormulario').style.display = 'none';
