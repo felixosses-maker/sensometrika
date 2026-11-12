@@ -5,6 +5,29 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>SENSOMETRIKA | Consola Central B2B por Planes</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        // 🛡️ GUARDIÁN ANTI-DESVÍO B2C -> B2B (Ejecución inmediata antes de renderizar)
+        (function() {
+            const p = new URLSearchParams(window.location.search);
+            const cargo = (p.get('cargo') || '').toUpperCase();
+            const empresa = (p.get('empresa') || '').toUpperCase();
+            const esB2C =
+                p.get('mode') === 'b2c' ||
+                cargo.includes('B2C') ||
+                empresa.includes('B2C') ||
+                (localStorage.getItem('sensometrika_b2c_mode') === 'true' && p.get('mode') !== 'b2b');
+
+            if (esB2C) {
+                const pB2C = new URLSearchParams({
+                    rut: p.get('rut') || localStorage.getItem('sensometrika_rut') || '',
+                    nombre: p.get('nombre') || localStorage.getItem('sensometrika_nombre') || '',
+                    plan: p.get('plan') || localStorage.getItem('sensometrika_plan_contratado') || 'BASICO',
+                    mode: 'b2c'
+                });
+                window.location.replace(`menu_b2c.html?${pB2C.toString()}`);
+            }
+        })();
+    </script>
     <style>
         :root {
             --bg-principal: #060b13;
@@ -268,6 +291,11 @@
     <script>
         const urlParams = new URLSearchParams(window.location.search);
 
+        // Asegurar limpieza del flag B2C cuando se ingresa legítimamente en modo B2B
+        if (urlParams.get('mode') === 'b2b') {
+            localStorage.removeItem('sensometrika_b2c_mode');
+        }
+
         // 1. CARGA Y AISLAMIENTO DE DATOS DEL TRABAJADOR
         let datosUsuario = {};
         try {
@@ -327,11 +355,7 @@
             document.getElementById('imgAvatar').src = fotoGuardada;
         }
 
-        // 3. MATRIZ DEFINITIVA SEGÚN TARJETA DE PLANES COMERCIALES:
-        // BASICO = 1, 2, 3
-        // PLUS   = 1, 2, 3 + 4 (Auditivo)
-        // FULL   = 1, 2, 3, 4 + 5 (Visual Integral)
-        // ALTO   = Los 8 módulos completos
+        // 3. MATRIZ DEFINITIVA SEGÚN TARJETA DE PLANES COMERCIALES
         const matrizModulos = [
             { key: 'reactimetro', title: '1. Reactímetro Simple ⚡', desc: 'Tiempo de respuesta lumínica y acústica en frenado.', archivo: 'reactimetro.html', minPlan: 'BASICO' },
             { key: 'palancas', title: '2. Test de Palancas Bimanual 🕹️', desc: 'Coordinación visomotora bimanual y seguimiento de traza.', archivo: 'palancas.html', minPlan: 'BASICO' },
@@ -343,7 +367,6 @@
             { key: 'fatiga', title: '8. Control Fatiga & Vigilancia (PVT) 🥱', desc: 'Detección de somnolencia y micro-sueños.', archivo: 'fatiga.html', minPlan: 'ALTO' }
         ];
 
-        // Jerarquía numérica estricta para evitar desbloqueos cruzados
         const jerarquiaPlanes = {
             'BASICO': 1,
             'PLUS': 2,
