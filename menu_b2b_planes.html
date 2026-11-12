@@ -248,7 +248,7 @@
             </div>
         </section>
 
-        <!-- PARRILLA DE MÓDULOS DE EVALUACIÓN (RENDERIZADA DINÁMICAMENTE SEGÚN PLAN) -->
+        <!-- PARRILLA DE MÓDULOS DE EVALUACIÓN -->
         <section class="parrilla-card">
             <div class="parrilla-header">
                 📋 PARRILLA DE MÓDULOS DEL PLAN (8 EVALUACIONES BASE)
@@ -278,9 +278,11 @@
         const rawCargo = urlParams.get('cargo') || datosUsuario.cargo || localStorage.getItem('sensometrika_cargo') || 'OPERADOR';
         const rawEmpresa = urlParams.get('empresa') || datosUsuario.empresa || localStorage.getItem('sensometrika_b2b_empresa') || 'EMPRESA MANDANTE';
         
-        // NORMALIZACIÓN ESTRICTA DEL PLAN (BASICO, PLUS, FULL)
+        // NORMALIZACIÓN ESTRICTA DEL PLAN (BASICO, PLUS, FULL, ALTO)
         let planActivo = (urlParams.get('plan') || localStorage.getItem('sensometrika_b2b_plan') || 'BASICO').toUpperCase();
-        if (planActivo.includes('ALTO') || planActivo.includes('FULL') || planActivo.includes('COMPLEJIDAD')) {
+        if (planActivo.includes('ALTO') || planActivo.includes('COMPLEJIDAD')) {
+            planActivo = 'ALTO';
+        } else if (planActivo.includes('FULL')) {
             planActivo = 'FULL';
         } else if (planActivo.includes('PLUS')) {
             planActivo = 'PLUS';
@@ -325,27 +327,36 @@
             document.getElementById('imgAvatar').src = fotoGuardada;
         }
 
-        // 3. MATRIZ DEFINITIVA DE LOS 8 MÓDULOS Y SUS NIVELES DE ACCESO
+        // 3. MATRIZ DEFINITIVA SEGÚN TARJETA DE PLANES COMERCIALES:
+        // BASICO = 1, 2, 3
+        // PLUS   = 1, 2, 3 + 4 (Auditivo)
+        // FULL   = 1, 2, 3, 4 + 5 (Visual Integral)
+        // ALTO   = Los 8 módulos completos
         const matrizModulos = [
             { key: 'reactimetro', title: '1. Reactímetro Simple ⚡', desc: 'Tiempo de respuesta lumínica y acústica en frenado.', archivo: 'reactimetro.html', minPlan: 'BASICO' },
             { key: 'palancas', title: '2. Test de Palancas Bimanual 🕹️', desc: 'Coordinación visomotora bimanual y seguimiento de traza.', archivo: 'palancas.html', minPlan: 'BASICO' },
             { key: 'punteo', title: '3. Punteo Viso-Motriz 🎯', desc: 'Punteo rítmico y precisión de impacto temporal.', archivo: 'punteo.html', minPlan: 'BASICO' },
             { key: 'audicion', title: '4. Tamizaje Auditivo Ocupacional 📢', desc: 'Audiometría tonal en frecuencias conversacionales.', archivo: 'audicion.html', minPlan: 'PLUS' },
-            { key: 'visual', title: '5. Tamizaje Visual Integral 👁️', desc: 'Agudeza visual lejana/cercana y Test Ishihara.', archivo: 'visual.html', minPlan: 'PLUS' },
-            { key: 'anticipacion', title: '6. Velocidad de Anticipación ⏱️', desc: 'Cálculo de trayectorias en zonas ciegas.', archivo: 'anticipacion.html', minPlan: 'FULL' },
-            { key: 'estereopsis', title: '7. Estereopsis & Profundidad 3D 📐', desc: 'Percepción espacial binocular.', archivo: 'estereopsis.html', minPlan: 'FULL' },
-            { key: 'fatiga', title: '8. Control Fatiga & Vigilancia (PVT) 🥱', desc: 'Detección de somnolencia y micro-sueños.', archivo: 'fatiga.html', minPlan: 'FULL' }
+            { key: 'visual', title: '5. Tamizaje Visual Integral 👁️', desc: 'Agudeza visual lejana/cercana y Test Ishihara.', archivo: 'visual.html', minPlan: 'FULL' },
+            { key: 'anticipacion', title: '6. Velocidad de Anticipación ⏱️', desc: 'Cálculo de trayectorias en zonas ciegas.', archivo: 'anticipacion.html', minPlan: 'ALTO' },
+            { key: 'estereopsis', title: '7. Estereopsis & Profundidad 3D 📐', desc: 'Percepción espacial binocular.', archivo: 'estereopsis.html', minPlan: 'ALTO' },
+            { key: 'fatiga', title: '8. Control Fatiga & Vigilancia (PVT) 🥱', desc: 'Detección de somnolencia y micro-sueños.', archivo: 'fatiga.html', minPlan: 'ALTO' }
         ];
 
-        // Función para validar si el plan actual otorga permiso al módulo
+        // Jerarquía numérica estricta para evitar desbloqueos cruzados
+        const jerarquiaPlanes = {
+            'BASICO': 1,
+            'PLUS': 2,
+            'FULL': 3,
+            'ALTO': 4
+        };
+
         function tieneAccesoPlan(minPlanRequerido) {
-            if (planActivo === 'FULL') return true;
-            if (planActivo === 'PLUS' && (minPlanRequerido === 'BASICO' || minPlanRequerido === 'PLUS')) return true;
-            if (planActivo === 'BASICO' && minPlanRequerido === 'BASICO') return true;
-            return false;
+            const nivelUsuario = jerarquiaPlanes[planActivo] || 1;
+            const nivelModulo = jerarquiaPlanes[minPlanRequerido] || 1;
+            return nivelUsuario >= nivelModulo;
         }
 
-        // Función para verificar ejecución en localStorage
         function moduloFueEjecutado(nombreModulo) {
             if (!cleanRut || !sessionId) return false;
             return (
@@ -417,7 +428,6 @@
             window.location.href = `informe_b2b_planes.html?${params.toString()}`;
         }
 
-        // Inicialización al cargar la página
         document.addEventListener('DOMContentLoaded', () => {
             renderizarParrillaDinamica();
         });

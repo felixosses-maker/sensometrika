@@ -385,9 +385,11 @@
         const sessionId = urlParams.get('session') || localStorage.getItem('sensometrika_session_activa') || `SESION_B2B_${rawRut.replace(/[^0-9Kk]/g, '')}_${Date.now()}`;
         const cleanRut = rawRut.replace(/[^0-9Kk]/g, '');
 
-        // Identificación del Plan
+        // Normalización estricta del Plan (BASICO, PLUS, FULL, ALTO)
         let planActivo = (urlParams.get('plan') || localStorage.getItem('sensometrika_b2b_plan') || 'BASICO').toUpperCase();
-        if (planActivo.includes('ALTO') || planActivo.includes('FULL') || planActivo.includes('COMPLEJIDAD')) {
+        if (planActivo.includes('ALTO') || planActivo.includes('COMPLEJIDAD')) {
+            planActivo = 'ALTO';
+        } else if (planActivo.includes('FULL')) {
             planActivo = 'FULL';
         } else if (planActivo.includes('PLUS')) {
             planActivo = 'PLUS';
@@ -466,23 +468,26 @@
             const svgFirmaRespaldo = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="60" viewBox="0 0 200 60"><path d="M 15 35 Q 35 15, 65 30 T 105 18 T 155 38 Q 175 48, 185 25" fill="none" stroke="%230f172a" stroke-width="2" stroke-linecap="round"/></svg>`;
             document.getElementById('imgFirmaTrabajador').src = (firmaGuardada && firmaGuardada.startsWith('data:image')) ? firmaGuardada : svgFirmaRespaldo;
 
-            // MATRIZ OFICIAL DE LOS 8 MÓDULOS
+            // MATRIZ OFICIAL DE LOS 8 MÓDULOS SINCRONIZADA CON PLANES B2B:
+            // BASICO = 1, 2, 3
+            // PLUS   = 1, 2, 3 + 4 (Auditivo)
+            // FULL   = 1, 2, 3, 4 + 5 (Visual)
+            // ALTO   = 1 al 8
             const modulosParrilla = [
                 { key: 'reactimetro', title: '1. Reactímetro Simple ⚡', est: 'Reacción ≤ 400ms', minPlan: 'BASICO' },
                 { key: 'palancas', title: '2. Test Palancas Bimanual 🕹️', est: 'Efectividad ≥ 75%', minPlan: 'BASICO' },
                 { key: 'punteo', title: '3. Punteo Viso-Motriz 🎯', est: 'Efectividad ≥ 80%', minPlan: 'BASICO' },
                 { key: 'audicion', title: '4. Tamizaje Auditivo 🔊', est: 'Tonal conversacional', minPlan: 'PLUS' },
-                { key: 'visual', title: '5. Tamizaje Visual 👁️', est: 'Snellen 20/20 & Ishihara', minPlan: 'PLUS' },
-                { key: 'anticipacion', title: '6. Velocidad Anticipación ⏱️', est: 'Margen ≤ 0.15s', minPlan: 'FULL' },
-                { key: 'estereopsis', title: '7. Estereopsis & 3D 📐', est: 'Profundidad binaural', minPlan: 'FULL' },
-                { key: 'fatiga', title: '8. Control Fatiga (PVT) 😴', est: 'Alerta sostenida', minPlan: 'FULL' }
+                { key: 'visual', title: '5. Tamizaje Visual 👁️', est: 'Snellen 20/20 & Ishihara', minPlan: 'FULL' },
+                { key: 'anticipacion', title: '6. Velocidad Anticipación ⏱️', est: 'Margen ≤ 0.15s', minPlan: 'ALTO' },
+                { key: 'estereopsis', title: '7. Estereopsis & 3D 📐', est: 'Profundidad binaural', minPlan: 'ALTO' },
+                { key: 'fatiga', title: '8. Control Fatiga (PVT) 😴', est: 'Alerta sostenida', minPlan: 'ALTO' }
             ];
 
+            const jerarquiaPlanes = { 'BASICO': 1, 'PLUS': 2, 'FULL': 3, 'ALTO': 4 };
+
             function esPermitido(mPlan) {
-                if (planActivo === 'FULL') return true;
-                if (planActivo === 'PLUS' && (mPlan === 'BASICO' || mPlan === 'PLUS')) return true;
-                if (planActivo === 'BASICO' && mPlan === 'BASICO') return true;
-                return false;
+                return (jerarquiaPlanes[planActivo] || 1) >= (jerarquiaPlanes[mPlan] || 1);
             }
 
             const tbody = document.getElementById('tbodyModulosB2BPlanes');
@@ -491,15 +496,13 @@
             let totalObligatoriosPlan = 0;
 
             modulosParrilla.forEach(m => {
+                const incluido = esPermitido(m.minPlan);
                 const telData = obtenerTelemetriaModulo(m.key);
                 const isRendido = telData !== null || 
                                   localStorage.getItem(`medico_${m.key}_${cleanRut}_${sessionId}`) === 'true' ||
                                   localStorage.getItem(`sensometrika_${m.key}_${cleanRut}_${sessionId}`) !== null ||
                                   localStorage.getItem(`sensometrika_${m.key}_${cleanRut}`) !== null;
 
-                // REGLA DE DESBLOQUEO DINÁMICO: Incluido si pertenece al plan O SI FUE RENDIDO REALMENTE EN LA PARRILLA
-                const incluido = esPermitido(m.minPlan) || isRendido;
-                
                 if (incluido) totalObligatoriosPlan++;
 
                 const tr = document.createElement('tr');
@@ -524,8 +527,9 @@
                         if (telData.precision) {
                             detalleTelemetria += `Precisión: <b>${telData.precision}%</b><br>`;
                         }
-                        if (telData.aciertos) {
-                            detalleTelemetria += `Aciertos: <b>${telData.aciertos}/8</b><br>`;
+                        if (telData.aciertos !== undefined) {
+                            const totalPreguntas = telData.total || (m.key === 'visual' ? 6 : 8);
+                            detalleTelemetria += `Aciertos: <b>${telData.aciertos}/${totalPreguntas}</b><br>`;
                         }
                         if (telData.agudeza) {
                             detalleTelemetria += `Agudeza: <b>${telData.agudeza}</b><br>`;
