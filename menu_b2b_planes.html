@@ -6,16 +6,23 @@
     <title>SENSOMETRIKA | Consola Central B2B por Planes</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
-        // 🛡️ GUARDIÁN ANTI-DESVÍO B2C -> B2B (Ejecución inmediata antes de renderizar)
+        // 🛡️ GUARDIÁN ANTI-DESVÍO B2C -> B2B (Blindado)
         (function() {
             const p = new URLSearchParams(window.location.search);
+
+            // Si viene explícitamente en modo B2B, limpiar rastros B2C y permitir acceso inmediato
+            if (p.get('mode') === 'b2b') {
+                localStorage.removeItem('sensometrika_b2c_mode');
+                return;
+            }
+
             const cargo = (p.get('cargo') || '').toUpperCase();
             const empresa = (p.get('empresa') || '').toUpperCase();
             const esB2C =
                 p.get('mode') === 'b2c' ||
                 cargo.includes('B2C') ||
                 empresa.includes('B2C') ||
-                (localStorage.getItem('sensometrika_b2c_mode') === 'true' && p.get('mode') !== 'b2b');
+                localStorage.getItem('sensometrika_b2c_mode') === 'true';
 
             if (esB2C) {
                 const pB2C = new URLSearchParams({
@@ -24,7 +31,7 @@
                     plan: p.get('plan') || localStorage.getItem('sensometrika_plan_contratado') || 'BASICO',
                     mode: 'b2c'
                 });
-                window.location.replace(`menu_b2c.html?${pB2C.toString()}`);
+                window.location.replace(`b2c/menu_b2c.html?${pB2C.toString()}`);
             }
         })();
     </script>
@@ -42,47 +49,47 @@
             --accent-red: #ef4444;
         }
 
-        * { 
-            box-sizing: border-box; 
-            margin: 0; 
-            padding: 0; 
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
-            user-select: none; 
-            -webkit-user-select: none; 
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            user-select: none;
+            -webkit-user-select: none;
         }
 
-        body { 
-            background-color: var(--bg-principal); 
-            color: var(--texto-blanco); 
-            min-height: 100vh; 
-            display: flex; 
-            flex-direction: column; 
-            align-items: center; 
-            padding: 16px 12px 32px; 
+        body {
+            background-color: var(--bg-principal);
+            color: var(--texto-blanco);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 16px 12px 32px;
         }
 
-        .main-container { 
-            width: 100%; 
-            max-width: 480px; 
-            display: flex; 
-            flex-direction: column; 
-            gap: 14px; 
+        .main-container {
+            width: 100%;
+            max-width: 480px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
         }
 
-        .brand-header { 
-            text-align: center; 
-            display: flex; 
-            flex-direction: column; 
-            align-items: center; 
-            gap: 4px; 
+        .brand-header {
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
         }
 
-        .brand-logo-img { 
-            width: 185px; 
-            height: auto; 
-            display: block; 
-            mix-blend-mode: lighten; 
-            filter: drop-shadow(0 0 12px rgba(56, 189, 248, 0.45)); 
+        .brand-logo-img {
+            width: 185px;
+            height: auto;
+            display: block;
+            mix-blend-mode: lighten;
+            filter: drop-shadow(0 0 12px rgba(56, 189, 248, 0.45));
         }
 
         .profile-card {
@@ -291,10 +298,8 @@
     <script>
         const urlParams = new URLSearchParams(window.location.search);
 
-        // Asegurar limpieza del flag B2C cuando se ingresa legítimamente en modo B2B
-        if (urlParams.get('mode') === 'b2b') {
-            localStorage.removeItem('sensometrika_b2c_mode');
-        }
+        // Asegurar limpieza del flag B2C cuando se ingresa en modo B2B
+        localStorage.removeItem('sensometrika_b2c_mode');
 
         // 1. CARGA Y AISLAMIENTO DE DATOS DEL TRABAJADOR
         let datosUsuario = {};
@@ -303,9 +308,12 @@
         } catch(e){}
 
         const rawNombre = urlParams.get('nombre') || datosUsuario.nombre || localStorage.getItem('sensometrika_nombre') || 'NUEVO TRABAJADOR';
-        const rawCargo = urlParams.get('cargo') || datosUsuario.cargo || localStorage.getItem('sensometrika_cargo') || 'OPERADOR';
-        const rawEmpresa = urlParams.get('empresa') || datosUsuario.empresa || localStorage.getItem('sensometrika_b2b_empresa') || 'EMPRESA MANDANTE';
-        
+        let rawCargo = urlParams.get('cargo') || datosUsuario.cargo || localStorage.getItem('sensometrika_cargo') || 'OPERADOR';
+        let rawEmpresa = urlParams.get('empresa') || datosUsuario.empresa || localStorage.getItem('sensometrika_b2b_empresa') || 'EMPRESA MANDANTE';
+
+        if (rawCargo.toUpperCase().includes('B2C')) rawCargo = 'OPERADOR';
+        if (rawEmpresa.toUpperCase().includes('B2C')) rawEmpresa = 'EMPRESA MANDANTE';
+
         // NORMALIZACIÓN ESTRICTA DEL PLAN (BASICO, PLUS, FULL, ALTO)
         let planActivo = (urlParams.get('plan') || localStorage.getItem('sensometrika_b2b_plan') || 'BASICO').toUpperCase();
         if (planActivo.includes('ALTO') || planActivo.includes('COMPLEJIDAD')) {
@@ -329,7 +337,7 @@
         }
         localStorage.setItem('sensometrika_session_activa', sessionId);
 
-        // Guardar estado unificado
+        // Guardar estado unificado limpio
         const usuarioActualizado = {
             rut: rutEvaluado,
             nombre: rawNombre,
@@ -340,6 +348,8 @@
         };
         localStorage.setItem('sensometrika_datos_usuario', JSON.stringify(usuarioActualizado));
         localStorage.setItem('sensometrika_rut', rutEvaluado);
+        localStorage.setItem('sensometrika_cargo', rawCargo);
+        localStorage.setItem('sensometrika_b2b_empresa', rawEmpresa);
         localStorage.setItem('sensometrika_b2b_plan', planActivo);
 
         // 2. ACTUALIZAR INTERFAZ DE PERFIL
@@ -348,8 +358,8 @@
         document.getElementById('lblPlanBadge').textContent = `EVALUACIÓN B2B • PLAN ${planActivo}`;
 
         // Foto Biométrica si existe
-        const fotoGuardada = localStorage.getItem(`sensometrika_foto_${cleanRut}_${sessionId}`) || 
-                             localStorage.getItem(`sensometrika_foto_${cleanRut}`) || 
+        const fotoGuardada = localStorage.getItem(`sensometrika_foto_${cleanRut}_${sessionId}`) ||
+                             localStorage.getItem(`sensometrika_foto_${cleanRut}`) ||
                              localStorage.getItem('sensometrika_foto_identidad');
         if (fotoGuardada && fotoGuardada.length > 50) {
             document.getElementById('imgAvatar').src = fotoGuardada;
@@ -425,6 +435,7 @@
 
         // 5. NAVEGACIÓN SEGURA DE MÓDULOS PROPAGANDO PARÁMETROS
         function navegarAModulo(archivoModulo) {
+            localStorage.removeItem('sensometrika_b2c_mode');
             const params = new URLSearchParams({
                 rut: rutEvaluado,
                 nombre: rawNombre,
@@ -439,6 +450,7 @@
 
         // 6. NAVEGACIÓN AL INFORME PERICIAL B2B
         function navegarAInforme() {
+            localStorage.removeItem('sensometrika_b2c_mode');
             const params = new URLSearchParams({
                 rut: rutEvaluado,
                 nombre: rawNombre,
