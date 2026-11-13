@@ -1,865 +1,951 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SENSOMETRIKA | Coordinación Bimanual (Palancas Pro)</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="session-timer.js"></script>
-    <!-- LIBRERÍAS GOOGLE MEDIAPIPE PARA TELEMETRÍA Y CONTROL FACIAL B2B -->
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>SENSOMETRIKA | Módulo: Palancas Bimanuales (B2C)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    // Carga automática de session-timer.js sin importar si el archivo está en raíz o en /b2c/
+    (function() {
+      const prefix = window.location.pathname.includes('/b2c/') ? '../' : '';
+      const s = document.createElement('script');
+      s.src = prefix + 'session-timer.js';
+      document.head.appendChild(s);
+    })();
+  </script>
+  <style>
+    :root {
+      --bg-principal: #040810;
+      --bg-card: #091120;
+      --border-color: #132238;
+      --accent-cyan: #00bfff;
+      --accent-cyan-glow: rgba(0, 191, 255, 0.35);
+      --accent-green: #10b981;
+      --accent-gold: #e5b324;
+      --accent-red: #ef4444;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+    }
 
-    <style>
-        :root {
-            --bg-color: #060b13;
-            --card-bg: #0b1320;
-            --card-border: #1a2638;
-            --accent-green: #10b981;
-            --text-main: #f1f5f9;
-            --text-muted: #94a3b8;
-            --blue-btn: #0284c7;
-            --accent-cyan: #38bdf8;
-            --accent-gold: #e5b324;
-            --accent-red: #ef4444;
-        }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      user-select: none;
+      -webkit-user-select: none;
+    }
 
-        * { 
-            box-sizing: border-box; 
-            margin: 0; 
-            padding: 0; 
-            user-select: none; 
-            -webkit-user-select: none;
-            touch-action: manipulation;
-        }
+    body {
+      background-color: var(--bg-principal);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 14px 12px 26px;
+      -webkit-tap-highlight-color: transparent;
+      overflow-x: hidden;
+    }
 
-        body {
-            background-color: var(--bg-color);
-            color: var(--text-main);
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            padding: 20px 10px;
-        }
+    .app-container {
+      width: 100%;
+      max-width: 450px;
+      display: flex;
+      flex-direction: column;
+      gap: 11px;
+    }
 
-        .main-container {
-            width: 100%;
-            max-width: 480px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 12px;
-        }
+    .brand-header {
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+    }
 
-        .brand-header {
-            text-align: center;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 6px;
-        }
+    .brand-logo-img {
+      width: 180px;
+      height: auto;
+      display: block;
+      mix-blend-mode: lighten;
+      filter: drop-shadow(0 0 12px var(--accent-cyan-glow));
+    }
 
-        .brand-logo-img {
-            width: 185px;
-            height: auto;
-            display: block;
-            mix-blend-mode: lighten;
-            filter: drop-shadow(0 0 12px rgba(56, 189, 248, 0.45));
-        }
+    .brand-subtitle {
+      font-size: 0.70rem;
+      letter-spacing: 1.5px;
+      color: var(--accent-cyan);
+      text-transform: uppercase;
+      font-weight: 800;
+    }
 
-        .brand-subtitle {
-            color: var(--accent-cyan);
-            font-size: 0.72rem;
-            font-weight: 800;
-            text-transform: uppercase;
-            letter-spacing: 1.5px;
-            text-shadow: 0 0 8px rgba(56, 189, 248, 0.3);
-        }
+    .modulo-card-container {
+      background-color: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 11px;
+      box-shadow: 0 14px 36px rgba(0, 0, 0, 0.75);
+    }
 
-        .eval-card {
-            background-color: var(--card-bg);
-            border: 1px solid var(--card-border);
-            border-radius: 16px;
-            padding: 20px;
-            width: 100%;
-            display: flex;
-            flex-direction: column;
-            gap: 14px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            position: relative;
-        }
+    .nav-top-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
 
-        .top-nav {
-            display: flex !important;
-            justify-content: space-between !important;
-            align-items: center !important;
-            width: 100% !important;
-            gap: 8px !important;
-        }
+    .link-volver {
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 0.80rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      background: none;
+      border: none;
+      cursor: pointer;
+    }
 
-        .top-nav button, .top-nav a {
-            background: #0c182e !important;
-            border: 1px solid #1e3a6d !important;
-            color: var(--accent-cyan) !important;
-            font-size: 0.72rem !important;
-            font-weight: 700 !important;
-            padding: 6px 10px !important;
-            border-radius: 8px !important;
-            cursor: pointer !important;
-            white-space: nowrap !important;
-            display: inline-flex !important;
-            align-items: center !important;
-            justify-content: center !important;
-            text-decoration: none !important;
-        }
+    .link-volver:hover { color: var(--accent-cyan); }
 
-        .cam-preview-pip-header {
-            position: relative !important;
-            width: 56px !important;
-            height: 56px !important;
-            border: 1.5px solid var(--accent-cyan) !important;
-            border-radius: 8px !important;
-            overflow: hidden !important;
-            background: #030712 !important;
-            flex-shrink: 0 !important;
-        }
+    .btn-como-funciona {
+      background: #0c182e;
+      border: 1px solid #1e3a6d;
+      color: var(--accent-cyan);
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 5px 10px;
+      border-radius: 7px;
+      cursor: pointer;
+    }
 
-        .cam-preview-pip-header video {
-            width: 100% !important;
-            height: 100% !important;
-            object-fit: cover !important;
-            transform: scaleX(-1) !important;
-        }
+    .header-status-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      background: #050a14;
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 8px 12px;
+    }
 
-        .cam-tag-header {
-            position: absolute !important;
-            bottom: 0 !important; left: 0 !important; right: 0 !important;
-            background: rgba(0, 191, 255, 0.9) !important;
-            color: #000 !important;
-            font-size: 0.42rem !important;
-            font-weight: 900 !important;
-            text-align: center !important;
-            text-transform: uppercase !important;
-        }
+    .badge-fase {
+      background: rgba(0, 191, 255, 0.12);
+      border: 1px solid rgba(0, 191, 255, 0.35);
+      color: var(--accent-cyan);
+      font-size: 0.72rem;
+      font-weight: 800;
+      padding: 4px 10px;
+      border-radius: 999px;
+      text-transform: uppercase;
+    }
 
-        .status-badge-container { display: flex; justify-content: center; }
+    .telemetry-tag {
+      font-size: 0.66rem;
+      font-weight: 800;
+      color: var(--accent-green);
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
 
-        .status-badge {
-            background-color: #0f233d;
-            border: 1px solid #1d4ed8;
-            color: #38bdf8;
-            padding: 6px 16px;
-            border-radius: 20px;
-            font-size: 0.8rem;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
+    .telemetry-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background-color: var(--accent-green);
+      box-shadow: 0 0 8px var(--accent-green);
+    }
 
-        .dot-status { width: 8px; height: 8px; border-radius: 50%; }
+    .track-viewport {
+      position: relative;
+      width: 100%;
+      height: 310px;
+      background: radial-gradient(circle at 50% 45%, #0b1930 0%, #040810 100%);
+      border: 1.5px solid #1e3a6d;
+      border-radius: 14px;
+      overflow: hidden;
+      box-shadow: inset 0 0 28px rgba(0, 0, 0, 0.85);
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
 
-        .canvas-wrapper {
-            position: relative;
-            width: 100%;
-            aspect-ratio: 4/3;
-            background-color: #050a12;
-            border: 1px solid var(--card-border);
-            border-radius: 12px;
-            overflow: hidden;
-            touch-action: none;
-        }
+    .track-viewport.border-error {
+      border-color: var(--accent-red);
+      box-shadow: inset 0 0 25px rgba(239, 68, 68, 0.45), 0 0 14px rgba(239, 68, 68, 0.35);
+    }
 
-        canvas { width: 100%; height: 100%; display: block; touch-action: none; }
+    #canvasPalancas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
 
-        .distance-block-overlay {
-            position: absolute;
-            inset: 0;
-            background: rgba(15, 23, 42, 0.95);
-            backdrop-filter: blur(6px);
-            z-index: 30;
-            display: none;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            padding: 16px;
-            text-align: center;
-            gap: 8px;
-            border-radius: 12px;
-        }
+    .hud-overlay-top {
+      position: absolute;
+      top: 8px;
+      left: 10px;
+      right: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      pointer-events: none;
+      font-size: 0.66rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+    }
 
-        .distance-block-title { color: var(--accent-red); font-weight: 900; font-size: 0.92rem; text-transform: uppercase; }
-        .distance-block-desc { color: var(--text-main); font-size: 0.74rem; line-height: 1.35; }
+    .hud-pill {
+      background: rgba(4, 8, 16, 0.82);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      padding: 3px 8px;
+      border-radius: 6px;
+      color: #cbd5e1;
+      backdrop-filter: blur(4px);
+    }
 
-        .instruction-text {
-            text-align: center;
-            font-size: 0.85rem;
-            color: var(--text-main);
-            line-height: 1.4;
-        }
+    .controls-cockpit {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
 
-        .controls-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-            width: 100%;
-        }
+    .lever-pad {
+      background: linear-gradient(180deg, #0e1a30 0%, #070e1c 100%);
+      border: 1.5px solid #1e3a6d;
+      border-radius: 12px;
+      padding: 12px 10px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      cursor: pointer;
+      touch-action: manipulation;
+      transition: all 0.08s ease;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.45);
+    }
 
-        .control-pad {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 6px;
-            background: #070d17;
-            padding: 10px;
-            border-radius: 12px;
-            border: 1px solid var(--card-border);
-        }
+    .lever-pad:active, .lever-pad.pressed {
+      background: linear-gradient(180deg, #0284c7 0%, #0369a1 100%);
+      border-color: var(--accent-cyan);
+      transform: translateY(2px) scale(0.98);
+      box-shadow: 0 0 18px var(--accent-cyan-glow);
+    }
 
-        .control-label {
-            font-size: 0.65rem;
-            font-weight: 800;
-            color: var(--text-muted);
-            text-transform: uppercase;
-        }
+    .lever-direction {
+      font-size: 0.90rem;
+      font-weight: 900;
+      color: #ffffff;
+      letter-spacing: 0.5px;
+    }
 
-        .btn-ctrl-group {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 8px;
-            width: 100%;
-        }
+    .lever-key {
+      font-size: 0.62rem;
+      font-weight: 700;
+      color: var(--accent-cyan);
+      background: rgba(0, 191, 255, 0.12);
+      border: 1px solid rgba(0, 191, 255, 0.3);
+      padding: 2px 7px;
+      border-radius: 4px;
+    }
 
-        .btn-ctrl {
-            background-color: #1a2638;
-            color: #ffffff;
-            border: 1px solid #2d3f59;
-            border-radius: 8px;
-            padding: 12px 0;
-            font-weight: 800;
-            font-size: 1.1rem;
-            cursor: pointer;
-            width: 100%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
+    .lever-pad.pressed .lever-key {
+      color: #000;
+      background: #fff;
+      border-color: #fff;
+    }
 
-        .btn-ctrl:active {
-            background-color: #0284c7;
-            border-color: #38bdf8;
-        }
+    .instruccion-sub {
+      text-align: center;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      line-height: 1.35;
+      min-height: 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
 
-        .btn-start {
-            background-color: var(--blue-btn);
-            color: #ffffff;
-            border: none;
-            border-radius: 10px;
-            padding: 14px;
-            font-weight: 800;
-            font-size: 1rem;
-            cursor: pointer;
-            width: 100%;
-        }
+    .btn-accion-principal {
+      width: 100%;
+      background: var(--accent-cyan);
+      color: #000000;
+      border: none;
+      border-radius: 11px;
+      padding: 13px;
+      font-size: 0.90rem;
+      font-weight: 900;
+      cursor: pointer;
+      box-shadow: 0 4px 16px var(--accent-cyan-glow);
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      transition: all 0.15s ease;
+    }
 
-        .btn-next {
-            background-color: var(--accent-green);
-            color: #ffffff;
-            border: none;
-            border-radius: 10px;
-            padding: 14px;
-            font-weight: 800;
-            font-size: 1rem;
-            cursor: pointer;
-            width: 100%;
-            display: none;
-        }
+    .btn-accion-principal:active {
+      transform: scale(0.99);
+    }
 
-        .metrics-grid {
-            display: grid;
-            grid-template-columns: repeat(5, 1fr);
-            text-align: center;
-            background-color: #070d17;
-            border: 1px solid var(--card-border);
-            border-radius: 10px;
-            padding: 12px 4px;
-        }
+    .metricas-inferiores-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 6px;
+      background-color: #050a14;
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 9px 6px;
+      text-align: center;
+    }
 
-        .metric-item { display: flex; flex-direction: column; gap: 2px; }
-        .metric-label { font-size: 0.55rem; color: var(--text-muted); font-weight: 700; }
-        .metric-value { font-size: 0.88rem; font-weight: 800; }
+    .col-metrica span {
+      display: block;
+      font-size: 0.56rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      margin-bottom: 3px;
+      font-weight: 700;
+    }
 
-        .modal-overlay {
-            position: fixed;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            background: rgba(6, 11, 19, 0.88);
-            backdrop-filter: blur(5px);
-            display: none;
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
-        }
-
-        .modal-content {
-            background-color: var(--card-bg);
-            border: 1px solid #1e3a5f;
-            border-radius: 14px;
-            padding: 22px;
-            width: 90%;
-            max-width: 420px;
-            text-align: center;
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }
-
-        .modal-title { color: #38bdf8; font-size: 1.1rem; font-weight: 800; }
-        .modal-body { font-size: 0.9rem; color: var(--text-main); line-height: 1.5; }
-        .modal-btn {
-            background-color: var(--accent-green);
-            color: #000000;
-            border: none;
-            padding: 12px;
-            border-radius: 8px;
-            font-weight: 900;
-            cursor: pointer;
-        }
-    </style>
+    .col-metrica strong {
+      display: block;
+      font-size: 0.88rem;
+      color: var(--text-main);
+      font-weight: 900;
+      font-variant-numeric: tabular-nums;
+    }
+  </style>
 </head>
 <body>
+  <main class="app-container">
+    <header class="brand-header">
+      <img id="brandLogo" src="sensometrica.jpg" alt="SENSOMETRIKA" class="brand-logo-img" onerror="this.onerror=null; this.src='../sensometrica.jpg';">
+      <span class="brand-subtitle">MÓDULO COORDINACIÓN BIMANUAL · PALANCAS (B2C)</span>
+    </header>
 
-    <video id="webcamInput" style="display:none;" playsinline></video>
+    <section class="modulo-card-container">
+      <div class="nav-top-row">
+        <button type="button" class="link-volver" onclick="ejecutarRetornoMenu()">← Menú Pruebas</button>
+        <button type="button" class="btn-como-funciona" onclick="mostrarModalAyuda()">? ¿Cómo funciona?</button>
+      </div>
 
-    <div class="main-container">
-        <header class="brand-header">
-            <img src="sensometrica.jpg" alt="SENSOMETRIKA" class="brand-logo-img" onerror="this.style.display='none'">
-            <span class="brand-subtitle">MÓDULO COORDINACIÓN BIMANUAL • PALANCAS</span>
-        </header>
+      <div class="header-status-bar">
+        <span class="badge-fase" id="badgeFase">Paso 1: Calibración Demo</span>
+        <span class="telemetry-tag"><span class="telemetry-dot"></span> VEL. CABINA 0.80x</span>
+      </div>
 
-        <div class="eval-card">
-            <div class="top-nav">
-                <button onclick="ejecutarRetornoMenu()">← Menú Pruebas</button>
-
-                <div class="cam-preview-pip-header">
-                    <video id="webcamVideo" autoplay playsinline muted></video>
-                    <div class="cam-tag-header">Biometría</div>
-                </div>
-
-                <button id="btnInfo">? ¿Cómo funciona?</button>
-            </div>
-
-            <div class="status-badge-container">
-                <div class="status-badge">
-                    <span id="badgeDot" class="dot-status"></span>
-                    <span id="badgeText">Cargando estado...</span>
-                </div>
-            </div>
-
-            <div class="canvas-wrapper">
-                <canvas id="palancasCanvas" width="400" height="300"></canvas>
-
-                <div id="boxBlockDistancia" class="distance-block-overlay">
-                    <span class="distance-block-title">⚠️ DISTANCIA FUERA DE RANGO</span>
-                    <span class="distance-block-desc">
-                        Ajuste su posición frente a la pantalla.<br>
-                        Distancia telemétrica: <b id="lblDistDetalleVal" style="color:var(--accent-red);">-- cm</b><br>
-                        (Rango: 35 a 65 cm).
-                    </span>
-                </div>
-            </div>
-
-            <div class="instruction-text" id="instructionText">
-                Cultura de Seguridad: Recorre la pista con ambos pulgares hasta la meta.
-            </div>
-
-            <div class="metrics-grid">
-                <div class="metric-item">
-                    <span class="metric-label">TIEMPO</span>
-                    <span id="metricTiempo" class="metric-value" style="color:#38bdf8;">0 s</span>
-                </div>
-                <div class="metric-item">
-                    <span class="metric-label">TOQUES</span>
-                    <span id="metricContactos" class="metric-value" style="color:#ef4444;">0</span>
-                </div>
-                <div class="metric-item">
-                    <span class="metric-label">T. ERROR</span>
-                    <span id="metricTiempoError" class="metric-value" style="color:#e5b324;">0.0 s</span>
-                </div>
-                <div class="metric-item">
-                    <span class="metric-label">PRECISIÓN</span>
-                    <span id="metricPrecision" class="metric-value" style="color:#10b981;">100%</span>
-                </div>
-                <div class="metric-item">
-                    <span class="metric-label">DISTANCIA</span>
-                    <span id="metricDistancia" class="metric-value" style="color:#10b981;">-- cm</span>
-                </div>
-            </div>
-
-            <div class="controls-grid">
-                <div class="control-pad">
-                    <span class="control-label">IZQUIERDA (EJE X)</span>
-                    <div class="btn-ctrl-group">
-                        <button class="btn-ctrl" id="btnLeft">◄</button>
-                        <button class="btn-ctrl" id="btnRight">►</button>
-                    </div>
-                </div>
-                <div class="control-pad">
-                    <span class="control-label">DERECHA (EJE Y)</span>
-                    <div class="btn-ctrl-group">
-                        <button class="btn-ctrl" id="btnUp">▲</button>
-                        <button class="btn-ctrl" id="btnDown">▼</button>
-                    </div>
-                </div>
-            </div>
-
-            <div style="width: 100%;">
-                <button id="btnStart" class="btn-start">INICIAR EVALUACIÓN</button>
-                <button id="btnNext" class="btn-next" onclick="ejecutarRetornoMenu()">VOLVER AL MENÚ DE PRUEBAS →</button>
-            </div>
+      <!-- VISOR TELEMÉTRICO DE PISTA -->
+      <div class="track-viewport" id="trackViewport">
+        <canvas id="canvasPalancas" width="420" height="310"></canvas>
+        <div class="hud-overlay-top">
+          <span class="hud-pill" id="hudAvance">AVANCE: 0%</span>
+          <span class="hud-pill" id="hudSensor" style="color: #34d399;">SENSOR: EN EJE</span>
         </div>
+      </div>
 
-        <div id="modalSistema" class="modal-overlay">
-            <div class="modal-content">
-                <div id="modalTitle" class="modal-title">PRUEBA FINALIZADA</div>
-                <div id="modalBody" class="modal-body">Resultados registrados.</div>
-                <button id="modalBtnClose" class="modal-btn">Continuar</button>
-            </div>
+      <!-- PALANCAS BIMANUALES IZQUIERDA / DERECHA -->
+      <div class="controls-cockpit">
+        <button type="button" class="lever-pad" id="btnPalancaIzq"
+          onpointerdown="activarDireccion(-1, true)"
+          onpointerup="activarDireccion(-1, false)"
+          onpointerleave="activarDireccion(-1, false)"
+          onpointercancel="activarDireccion(-1, false)">
+          <span class="lever-direction">◀ PALANCA IZQ</span>
+          <span class="lever-key">TECLA ◄ / A</span>
+        </button>
+
+        <button type="button" class="lever-pad" id="btnPalancaDer"
+          onpointerdown="activarDireccion(1, true)"
+          onpointerup="activarDireccion(1, false)"
+          onpointerleave="activarDireccion(1, false)"
+          onpointercancel="activarDireccion(1, false)">
+          <span class="lever-direction">PALANCA DER ▶</span>
+          <span class="lever-key">TECLA ► / D</span>
+        </button>
+      </div>
+
+      <p class="instruccion-sub" id="statusText">
+        Mantén el puntero dentro del canal central usando ambas palancas o las flechas ◄ ► del teclado.
+      </p>
+
+      <button type="button" class="btn-accion-principal" id="btnIniciarPrueba" onclick="iniciarSimulacionPalancas()">
+        INICIAR CALIBRACIÓN DEMO
+      </button>
+
+      <button type="button" class="btn-accion-principal" id="btnRetornarMenu" style="display: none; background: var(--accent-green);" onclick="ejecutarRetornoMenu()">
+        VOLVER AL MENÚ DE SIMULACIONES →
+      </button>
+
+      <!-- TELEMETRÍA EN VIVO -->
+      <div class="metricas-inferiores-grid">
+        <div class="col-metrica">
+          <span>Tiempo</span>
+          <strong id="mTiempo">0.0 s</strong>
         </div>
-    </div>
+        <div class="col-metrica">
+          <span>Contactos</span>
+          <strong id="mErrores" style="color: #34d399;">0</strong>
+        </div>
+        <div class="col-metrica">
+          <span>Precisión</span>
+          <strong id="mPrecision" style="color: var(--accent-cyan);">100%</strong>
+        </div>
+        <div class="col-metrica">
+          <span>Norma</span>
+          <strong style="color: #cbd5e1;">≥ 70%</strong>
+        </div>
+      </div>
+    </section>
+  </main>
 
-    <script>
-        const canvas = document.getElementById('palancasCanvas');
-        const ctx = canvas.getContext('2d');
-        const btnStart = document.getElementById('btnStart');
-        const btnNext = document.getElementById('btnNext');
-        const badgeDot = document.getElementById('badgeDot');
-        const badgeText = document.getElementById('badgeText');
-        const instructionText = document.getElementById('instructionText');
+  <script>
+    // ==========================================
+    // GUARDIÁN DE MODO PARTICULAR (B2C) Y ORIGEN
+    // ==========================================
+    (function() {
+      localStorage.setItem('sensometrika_b2c_mode', 'true');
+      localStorage.removeItem('sensometrika_b2b_token');
 
-        const metricTiempo = document.getElementById('metricTiempo');
-        const metricContactos = document.getElementById('metricContactos');
-        const metricTiempoError = document.getElementById('metricTiempoError');
-        const metricPrecision = document.getElementById('metricPrecision');
-        const metricDistancia = document.getElementById('metricDistancia');
+      if (document.referrer) {
+        try {
+          const refUrl = new URL(document.referrer);
+          const refPath = refUrl.pathname;
+          if (refPath && refPath.endsWith('.html') && !refPath.includes('palancas')) {
+            localStorage.setItem('sensometrika_b2c_menu_path', refPath);
+          }
+        } catch (e) {}
+      }
+    })();
 
-        const modal = document.getElementById('modalSistema');
-        const modalTitle = document.getElementById('modalTitle');
-        const modalBody = document.getElementById('modalBody');
-        const modalBtnClose = document.getElementById('modalBtnClose');
+    const urlParams = new URLSearchParams(window.location.search);
+    let datosUsuario = {};
+    try { datosUsuario = JSON.parse(localStorage.getItem('sensometrika_datos_usuario')) || {}; } catch(e){}
 
-        const urlParams = new URLSearchParams(window.location.search);
-        let datosUsuario = {};
-        try { datosUsuario = JSON.parse(localStorage.getItem('sensometrika_datos_usuario')) || {}; } catch(e){}
+    const rawNombre = urlParams.get('nombre') || datosUsuario.nombre || localStorage.getItem('sensometrika_nombre') || 'Postulante Particular';
+    const rut = urlParams.get('rut') || datosUsuario.rut || localStorage.getItem('sensometrika_rut') || 'No registrado';
+    const cleanRut = rut.replace(/[^0-9Kk]/g, '');
+    const planRaw = (urlParams.get('plan') || localStorage.getItem('sensometrika_plan_contratado') || 'BASICO').toUpperCase().trim();
 
-        const rawNombre = urlParams.get('nombre') || datosUsuario.nombre || localStorage.getItem('sensometrika_nombre') || '';
-        const rawCargo = urlParams.get('cargo') || datosUsuario.cargo || localStorage.getItem('sensometrika_cargo') || '';
-        const rawEmpresa = urlParams.get('empresa') || datosUsuario.empresa || localStorage.getItem('sensometrika_b2b_empresa') || '';
-        const planActivo = (urlParams.get('plan') || localStorage.getItem('sensometrika_b2b_plan') || 'BASICO').toUpperCase();
-        const rutEvaluado = urlParams.get('rut') || datosUsuario.rut || localStorage.getItem('sensometrika_rut') || '12345678-K';
-        const cleanRut = rutEvaluado.replace(/[^0-9Kk]/g, '');
-        const sessionId = urlParams.get('session') || localStorage.getItem(`sensometrika_active_session_${cleanRut}`) || localStorage.getItem('sensometrika_session_activa') || `SESION_B2B_${cleanRut}_${Date.now()}`;
-        const esB2C = urlParams.get('mode') === 'b2c';
+    let maxSimulacionesPlan = 3;
+    if (planRaw.includes('PLUS')) maxSimulacionesPlan = 5;
+    else if (planRaw.includes('FULL') || planRaw.includes('ALTO')) maxSimulacionesPlan = 8;
 
-        let modoActual = 'DEMO';
-        let tiempoLimiteSeg = 20;
+    const canvas = document.getElementById('canvasPalancas');
+    const ctx = canvas.getContext('2d');
+    const trackViewport = document.getElementById('trackViewport');
 
-        let evaluacionActiva = false;
-        let contactosCount = 0;
-        let estaEnBorde = false;
-        let tiempoErrorMs = 0;
-        let inicioBordeMs = null;
+    const badgeFase = document.getElementById('badgeFase');
+    const statusText = document.getElementById('statusText');
+    const btnIniciar = document.getElementById('btnIniciarPrueba');
+    const btnRetornarMenu = document.getElementById('btnRetornarMenu');
+    const hudAvance = document.getElementById('hudAvance');
+    const hudSensor = document.getElementById('hudSensor');
 
-        let tiempoTranscurrido = 0;
-        let timerInterval = null;
-        let animFrameId = null;
+    const mTiempo = document.getElementById('mTiempo');
+    const mErrores = document.getElementById('mErrores');
+    const mPrecision = document.getElementById('mPrecision');
 
-        let pua = { x: 0, y: 0, r: 8, speed: 1.8 };
-        let posicionInicio = { x: 0, y: 0 };
-        let posicionMeta = { x: 0, y: 0 };
-        let trackPoints = [];
-        let keys = { left: false, right: false, up: false, down: false };
+    // ==========================================
+    // VELOCIDAD CALIBRADA AL 80% (0.80x)
+    // ==========================================
+    const VELOCIDAD_AVANCE_PX_SEG = 90;
+    const VELOCIDAD_LATERAL_PX_SEG = 144;
 
-        let distanciaMedidaCm = 50;
-        let estaBloqueadoPorDistancia = false;
+    let modoActual = 'DEMO';
+    let simulacionActiva = false;
+    let animFrameId = null;
+    let lastTimestamp = 0;
 
-        function ejecutarRetornoMenu() {
-            if (esB2C) {
-                const paramsB2C = new URLSearchParams({
-                    rut: rutEvaluado,
-                    nombre: rawNombre,
-                    plan: planActivo,
-                    mode: 'b2c'
-                });
-                window.location.href = `menu_b2c.html?${paramsB2C.toString()}`;
-                return;
-            }
-            const paramsRegreso = new URLSearchParams({
-                rut: rutEvaluado,
-                nombre: rawNombre,
-                cargo: rawCargo,
-                empresa: rawEmpresa,
-                plan: planActivo,
-                session: sessionId,
-                mode: 'b2b'
-            });
-            window.location.href = `menu_b2b_planes.html?${paramsRegreso.toString()}`;
+    let progresoPx = 0;
+    let longitudTotalPx = 1150;
+    let anchoCanalPx = 62;
+    let punteroX = canvas.width / 2;
+    const punteroY = canvas.height - 54;
+    const radioPuntero = 8;
+
+    let movIzq = false;
+    let movDer = false;
+    let tiempoTranscurridoSeg = 0;
+    let tiempoFueraEjeSeg = 0;
+    let cantidadContactos = 0;
+    let estabaFueraBorde = false;
+    let trailPuntos = [];
+    let faseSeed = 0;
+
+    let audioCtx = null;
+
+    // ==========================================
+    // RETORNO BLINDADO AL MENÚ B2C (SIN ERROR 404)
+    // ==========================================
+    async function ejecutarRetornoMenu() {
+      const params = new URLSearchParams({
+        rut: rut,
+        nombre: decodeURIComponent(rawNombre),
+        plan: planRaw,
+        mode: 'b2c'
+      });
+
+      const savedPath = localStorage.getItem('sensometrika_b2c_menu_path');
+      const enSubcarpetaB2C = window.location.pathname.includes('/b2c/');
+
+      const candidatos = [
+        savedPath,
+        enSubcarpetaB2C ? 'menu_b2c.html' : 'b2c/menu_b2c.html',
+        enSubcarpetaB2C ? 'menu.html' : 'b2c/menu.html',
+        enSubcarpetaB2C ? '../menu_b2c.html' : 'menu_b2c.html',
+        enSubcarpetaB2C ? '../index.html' : 'index.html'
+      ].filter(Boolean);
+
+      for (const ruta of candidatos) {
+        try {
+          const resp = await fetch(ruta, { method: 'HEAD' });
+          if (resp.ok) {
+            window.location.href = `${ruta}?${params.toString()}`;
+            return;
+          }
+        } catch (e) {}
+      }
+
+      const fallback = enSubcarpetaB2C ? 'menu_b2c.html' : 'b2c/menu_b2c.html';
+      window.location.href = `${fallback}?${params.toString()}`;
+    }
+
+    function obtenerHistorialPalancasB2C() {
+      try {
+        const h = JSON.parse(localStorage.getItem(`sensometrika_historial_palancas_${cleanRut}`)) || [];
+        return Array.isArray(h) ? h : [];
+      } catch (e) {
+        return [];
+      }
+    }
+
+    function actualizarEstadoUI() {
+      const historial = obtenerHistorialPalancasB2C();
+      const realizadas = historial.length;
+      const demoRealizada = localStorage.getItem(`palancas_demo_completada_${cleanRut}`) === 'true';
+
+      if (realizadas >= maxSimulacionesPlan) {
+        modoActual = 'BLOQUEADO';
+      } else if (!demoRealizada && realizadas === 0) {
+        modoActual = 'DEMO';
+      } else {
+        modoActual = 'OFICIAL';
+      }
+
+      if (modoActual === 'BLOQUEADO') {
+        btnIniciar.style.display = 'none';
+        btnRetornarMenu.style.display = 'block';
+        badgeFase.textContent = `✓ CUOTA COMPLETADA (${realizadas}/${maxSimulacionesPlan})`;
+        badgeFase.style.color = '#10b981';
+        badgeFase.style.borderColor = '#10b981';
+        badgeFase.style.background = 'rgba(16, 185, 129, 0.14)';
+        statusText.textContent = 'Has completado todas tus simulaciones oficiales de Palancas para este pase.';
+      } else if (modoActual === 'DEMO') {
+        btnIniciar.style.display = 'block';
+        btnRetornarMenu.style.display = 'none';
+        badgeFase.textContent = 'Paso 1: Calibración Demo (Ensayo)';
+        badgeFase.style.color = '#e5b324';
+        badgeFase.style.borderColor = '#e5b324';
+        badgeFase.style.background = 'rgba(229, 179, 36, 0.14)';
+        btnIniciar.textContent = 'INICIAR CALIBRACIÓN DEMO';
+        btnIniciar.style.background = '#e5b324';
+        btnIniciar.style.color = '#000';
+      } else {
+        const sigSim = realizadas + 1;
+        btnIniciar.style.display = 'block';
+        btnRetornarMenu.style.display = 'none';
+        badgeFase.textContent = `Fase Oficial: Simulación S${sigSim} de ${maxSimulacionesPlan}`;
+        badgeFase.style.color = '#00bfff';
+        badgeFase.style.borderColor = '#00bfff';
+        badgeFase.style.background = 'rgba(0, 191, 255, 0.14)';
+        btnIniciar.textContent = `INICIAR SIMULACIÓN S${sigSim} DE ${maxSimulacionesPlan}`;
+        btnIniciar.style.background = '#00bfff';
+        btnIniciar.style.color = '#000';
+      }
+
+      progresoPx = 0;
+      punteroX = obtenerCentroRutaEn(progresoPx + (canvas.height - punteroY));
+      trailPuntos = [];
+      dibujarEscenaCabina();
+    }
+
+    function emitirBeepContacto() {
+      try {
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(195, audioCtx.currentTime);
+        gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.12);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.12);
+      } catch (e) {}
+    }
+
+    function obtenerCentroRutaEn(distanciaY) {
+      const cx = canvas.width / 2;
+      const amp1 = 92;
+      const amp2 = 42;
+      const d = distanciaY + faseSeed;
+      return cx + Math.sin(d * 0.0085) * amp1 + Math.sin(d * 0.019) * amp2;
+    }
+
+    function iniciarSimulacionPalancas() {
+      if (modoActual === 'BLOQUEADO' || simulacionActiva) return;
+
+      longitudTotalPx = modoActual === 'DEMO' ? 1150 : 2150;
+      anchoCanalPx = modoActual === 'DEMO' ? 66 : 56;
+      faseSeed = Math.random() * 600;
+
+      progresoPx = 0;
+      tiempoTranscurridoSeg = 0;
+      tiempoFueraEjeSeg = 0;
+      cantidadContactos = 0;
+      estabaFueraBorde = false;
+      trailPuntos = [];
+
+      punteroX = obtenerCentroRutaEn(canvas.height - punteroY);
+
+      simulacionActiva = true;
+      btnIniciar.style.display = 'none';
+      statusText.textContent = 'Mantén el cursor cian centrado en el canal sin tocar los bordes laterales.';
+      mErrores.textContent = '0';
+      mErrores.style.color = '#34d399';
+      mPrecision.textContent = '100%';
+      mPrecision.style.color = '#00bfff';
+
+      lastTimestamp = performance.now();
+      animFrameId = requestAnimationFrame(bucleSimulacion);
+    }
+
+    function bucleSimulacion(now) {
+      if (!simulacionActiva) return;
+
+      const dt = Math.min(0.05, (now - lastTimestamp) / 1000);
+      lastTimestamp = now;
+
+      tiempoTranscurridoSeg += dt;
+      progresoPx += VELOCIDAD_AVANCE_PX_SEG * dt;
+
+      if (movIzq && !movDer) punteroX -= VELOCIDAD_LATERAL_PX_SEG * dt;
+      if (movDer && !movIzq) punteroX += VELOCIDAD_LATERAL_PX_SEG * dt;
+
+      punteroX = Math.max(24, Math.min(canvas.width - 24, punteroX));
+
+      const distEnPuntero = progresoPx + (canvas.height - punteroY);
+      const centroIdeal = obtenerCentroRutaEn(distEnPuntero);
+      const halfWidth = anchoCanalPx / 2;
+      const desviacion = Math.abs(punteroX - centroIdeal);
+      const fueraDeBorde = (desviacion + radioPuntero * 0.65) > halfWidth;
+
+      if (fueraDeBorde) {
+        tiempoFueraEjeSeg += dt;
+        trackViewport.classList.add('border-error');
+        hudSensor.textContent = 'SENSOR: CONTACTO BORDE';
+        hudSensor.style.color = '#ef4444';
+
+        if (!estabaFueraBorde) {
+          cantidadContactos++;
+          mErrores.textContent = cantidadContactos;
+          mErrores.style.color = '#ef4444';
+          emitirBeepContacto();
+          if ('vibrate' in navigator) navigator.vibrate(40);
         }
+      } else {
+        trackViewport.classList.remove('border-error');
+        hudSensor.textContent = 'SENSOR: EN EJE';
+        hudSensor.style.color = '#34d399';
+      }
+      estabaFueraBorde = fueraDeBorde;
 
-        function iniciarMediaPipeFaceMesh() {
-            const videoElement = document.getElementById('webcamVideo');
-            if (typeof FaceMesh === 'undefined' || typeof Camera === 'undefined') {
-                distanciaMedidaCm = 50;
-                evaluarRangoDistancia();
-                return;
-            }
-            const faceMesh = new FaceMesh({
-                locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`
-            });
+      trailPuntos.push({ x: punteroX, dist: distEnPuntero, error: fueraDeBorde });
+      if (trailPuntos.length > 90) trailPuntos.shift();
 
-            faceMesh.setOptions({ maxNumFaces: 1, refineLandmarks: true, minDetectionConfidence: 0.5, minTrackingConfidence: 0.5 });
-            faceMesh.onResults(onResultsFaceMesh);
+      const ratioTiempoDentro = Math.max(0, 1 - (tiempoFueraEjeSeg / Math.max(0.1, tiempoTranscurridoSeg)));
+      const penalizacionToques = cantidadContactos * 3.5;
+      const precisionActual = Math.max(0, Math.min(100, Math.round((ratioTiempoDentro * 100) - penalizacionToques)));
 
-            const camera = new Camera(videoElement, {
-                onFrame: async () => { await faceMesh.send({ image: videoElement }); },
-                width: 320, height: 240
-            });
-            camera.start().catch(() => { distanciaMedidaCm = 50; evaluarRangoDistancia(); });
+      const pctAvance = Math.min(100, Math.round((progresoPx / longitudTotalPx) * 100));
+      hudAvance.textContent = `AVANCE: ${pctAvance}%`;
+      mTiempo.textContent = `${tiempoTranscurridoSeg.toFixed(1)} s`;
+      mPrecision.textContent = `${precisionActual}%`;
+      mPrecision.style.color = precisionActual >= 70 ? '#00bfff' : '#f59e0b';
+
+      dibujarEscenaCabina(fueraDeBorde);
+
+      if (progresoPx >= longitudTotalPx) {
+        finalizarSimulacionPalancas(precisionActual);
+        return;
+      }
+
+      animFrameId = requestAnimationFrame(bucleSimulacion);
+    }
+
+    function dibujarEscenaCabina(enError = false) {
+      const W = canvas.width;
+      const H = canvas.height;
+      ctx.clearRect(0, 0, W, H);
+
+      ctx.strokeStyle = 'rgba(0, 191, 255, 0.07)';
+      ctx.lineWidth = 1;
+      const gridStep = 30;
+      const offsetY = progresoPx % gridStep;
+      for (let y = offsetY; y < H; y += gridStep) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(W, y);
+        ctx.stroke();
+      }
+      for (let x = 30; x < W; x += gridStep) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, H);
+        ctx.stroke();
+      }
+
+      const halfW = anchoCanalPx / 2;
+      ctx.beginPath();
+      for (let y = 0; y <= H; y += 4) {
+        const d = progresoPx + (H - y);
+        const cx = obtenerCentroRutaEn(d);
+        if (y === 0) ctx.moveTo(cx - halfW, y);
+        else ctx.lineTo(cx - halfW, y);
+      }
+      for (let y = H; y >= 0; y -= 4) {
+        const d = progresoPx + (H - y);
+        const cx = obtenerCentroRutaEn(d);
+        ctx.lineTo(cx + halfW, y);
+      }
+      ctx.closePath();
+      ctx.fillStyle = enError ? 'rgba(239, 68, 68, 0.14)' : 'rgba(0, 191, 255, 0.09)';
+      ctx.fill();
+
+      ctx.lineWidth = 2.5;
+      ctx.strokeStyle = enError ? '#ef4444' : '#00bfff';
+
+      ctx.beginPath();
+      for (let y = 0; y <= H; y += 4) {
+        const cx = obtenerCentroRutaEn(progresoPx + (H - y));
+        if (y === 0) ctx.moveTo(cx - halfW, y);
+        else ctx.lineTo(cx - halfW, y);
+      }
+      ctx.stroke();
+
+      ctx.beginPath();
+      for (let y = 0; y <= H; y += 4) {
+        const cx = obtenerCentroRutaEn(progresoPx + (H - y));
+        if (y === 0) ctx.moveTo(cx + halfW, y);
+        else ctx.lineTo(cx + halfW, y);
+      }
+      ctx.stroke();
+
+      ctx.save();
+      ctx.setLineDash([6, 6]);
+      ctx.lineWidth = 1.2;
+      ctx.strokeStyle = 'rgba(148, 163, 184, 0.35)';
+      ctx.beginPath();
+      for (let y = 0; y <= H; y += 6) {
+        const cx = obtenerCentroRutaEn(progresoPx + (H - y));
+        if (y === 0) ctx.moveTo(cx, y);
+        else ctx.lineTo(cx, y);
+      }
+      ctx.stroke();
+      ctx.restore();
+
+      const distMeta = longitudTotalPx - progresoPx;
+      const yMeta = punteroY - distMeta;
+      if (yMeta >= -10 && yMeta <= H) {
+        const cxMeta = obtenerCentroRutaEn(longitudTotalPx);
+        ctx.fillStyle = '#10b981';
+        ctx.fillRect(cxMeta - halfW, yMeta - 4, anchoCanalPx, 8);
+      }
+
+      if (trailPuntos.length > 1) {
+        for (let i = 1; i < trailPuntos.length; i++) {
+          const p0 = trailPuntos[i - 1];
+          const p1 = trailPuntos[i];
+          const y0 = H - (p0.dist - progresoPx);
+          const y1 = H - (p1.dist - progresoPx);
+          ctx.beginPath();
+          ctx.moveTo(p0.x, y0);
+          ctx.lineTo(p1.x, y1);
+          ctx.lineWidth = 2.5;
+          ctx.strokeStyle = p1.error ? 'rgba(239, 68, 68, 0.8)' : 'rgba(16, 185, 129, 0.75)';
+          ctx.stroke();
         }
+      }
 
-        function onResultsFaceMesh(results) {
-            if (!results.multiFaceLandmarks || results.multiFaceLandmarks.length === 0) {
-                distanciaMedidaCm = 70;
-                evaluarRangoDistancia();
-                return;
-            }
-            const landmarks = results.multiFaceLandmarks[0];
-            const dx = landmarks[33].x - landmarks[263].x;
-            const dy = landmarks[33].y - landmarks[263].y;
-            const eyeDistNorm = Math.sqrt(dx * dx + dy * dy);
-            let distCalculada = Math.round(9.5 / eyeDistNorm);
-            distanciaMedidaCm = Math.round(distanciaMedidaCm * 0.5 + distCalculada * 0.5);
-            evaluarRangoDistancia();
-        }
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(punteroX, punteroY, radioPuntero + 5, 0, Math.PI * 2);
+      ctx.fillStyle = enError ? 'rgba(239, 68, 68, 0.28)' : 'rgba(0, 191, 255, 0.22)';
+      ctx.fill();
 
-        function evaluarRangoDistancia() {
-            const overlayBlock = document.getElementById('boxBlockDistancia');
-            const lblDetalle = document.getElementById('lblDistDetalleVal');
-            metricDistancia.textContent = `${distanciaMedidaCm} cm`;
+      ctx.beginPath();
+      ctx.arc(punteroX, punteroY, radioPuntero, 0, Math.PI * 2);
+      ctx.fillStyle = enError ? '#ef4444' : '#ffffff';
+      ctx.fill();
+      ctx.lineWidth = 2.5;
+      ctx.strokeStyle = enError ? '#fca5a5' : '#00bfff';
+      ctx.stroke();
+      ctx.restore();
+    }
 
-            if (distanciaMedidaCm >= 35 && distanciaMedidaCm <= 65) {
-                estaBloqueadoPorDistancia = false;
-                metricDistancia.style.color = 'var(--accent-green)';
-                if (overlayBlock) overlayBlock.style.display = 'none';
-            } else {
-                estaBloqueadoPorDistancia = true;
-                metricDistancia.style.color = 'var(--accent-red)';
-                if (lblDetalle) lblDetalle.textContent = `${distanciaMedidaCm} cm`;
-                if (overlayBlock) overlayBlock.style.display = 'flex';
-                keys = { left: false, right: false, up: false, down: false };
-            }
-        }
+    function finalizarSimulacionPalancas(precisionFinal) {
+      simulacionActiva = false;
+      if (animFrameId) cancelAnimationFrame(animFrameId);
+      movIzq = false;
+      movDer = false;
+      trackViewport.classList.remove('border-error');
 
-        function generarCircuitoCentrado(semilla) {
-            const w = canvas.width, h = canvas.height;
-            const padX = 45, padY = 45;
-            const variante = Math.abs(Math.floor(Math.sin(semilla) * 100)) % 4;
-            let pts = [];
+      const aprobado = precisionFinal >= 70;
 
-            if (variante === 0) {
-                pts = [{ x: padX, y: h - padY }, { x: w * 0.38, y: h - padY }, { x: w * 0.38, y: padY + 30 }, { x: w * 0.68, y: padY + 30 }, { x: w * 0.68, y: h - padY }, { x: w - padX, y: h - padY }, { x: w - padX, y: padY }];
-            } else if (variante === 1) {
-                pts = [{ x: w - padX, y: h - padY }, { x: w * 0.62, y: h - padY }, { x: w * 0.62, y: padY + 30 }, { x: w * 0.32, y: padY + 30 }, { x: w * 0.32, y: h - padY }, { x: padX, y: h - padY }, { x: padX, y: padY }];
-            } else if (variante === 2) {
-                pts = [{ x: padX, y: padY }, { x: padX, y: h - padY }, { x: w * 0.5, y: h - padY }, { x: w * 0.5, y: padY + 20 }, { x: w - padX, y: padY + 20 }, { x: w - padX, y: h - padY }];
-            } else {
-                pts = [{ x: padX, y: h - padY }, { x: w - padX, y: h - padY }, { x: w - padX, y: h * 0.5 }, { x: padX + 30, y: h * 0.5 }, { x: padX + 30, y: padY }, { x: w - padX, y: padY }];
-            }
+      if (modoActual === 'DEMO') {
+        localStorage.setItem(`palancas_demo_completada_${cleanRut}`, 'true');
+        mostrarModalResultado(precisionFinal, cantidadContactos, tiempoTranscurridoSeg.toFixed(1), aprobado, true);
+      } else {
+        const historial = obtenerHistorialPalancasB2C();
+        const numSim = historial.length + 1;
 
-            return { pista: pts, inicio: { x: pts[0].x, y: pts[0].y }, meta: { x: pts[pts.length - 1].x, y: pts[pts.length - 1].y } };
-        }
-
-        function verificarModuloEjecutado() {
-            if (esB2C || urlParams.has('reeval')) return false;
-            return localStorage.getItem(`sensometrika_palancas_${cleanRut}_${sessionId}`) !== null;
-        }
-
-        function actualizarEstadoUI(forzarOficial = false) {
-            const ejecucionOficialConcluida = !forzarOficial && verificarModuloEjecutado();
-            const demoKey = esB2C ? `palancas_demo_completada_${cleanRut}` : `palancas_demo_completada_${cleanRut}_${sessionId}`;
-            const demoRealizada = forzarOficial || (localStorage.getItem(demoKey) === 'true');
-
-            if (ejecucionOficialConcluida) {
-                modoActual = 'BLOQUEADO';
-            } else if (!demoRealizada) {
-                modoActual = 'DEMO';
-                tiempoLimiteSeg = 20;
-            } else {
-                modoActual = 'OFICIAL';
-                tiempoLimiteSeg = 45;
-            }
-
-            contactosCount = 0;
-            tiempoErrorMs = 0;
-            estaEnBorde = false;
-            tiempoTranscurrido = 0;
-            metricTiempo.textContent = `0 / ${tiempoLimiteSeg} s`;
-            metricContactos.textContent = '0';
-            metricTiempoError.textContent = '0.0 s';
-            metricPrecision.textContent = '100%';
-
-            const circuito = generarCircuitoCentrado(Date.now() + Math.random() * 1000);
-            trackPoints = circuito.pista;
-            posicionInicio = circuito.inicio;
-            posicionMeta = circuito.meta;
-            pua.x = posicionInicio.x;
-            pua.y = posicionInicio.y;
-
-            if (modoActual === 'BLOQUEADO') {
-                badgeText.textContent = "EVALUACIÓN REGISTRADA (1/1)";
-                badgeDot.style.backgroundColor = "#10b981"; 
-                btnStart.style.display = 'none';
-                btnNext.style.display = 'block';
-                instructionText.textContent = 'Evaluación B2B finalizada con éxito. Retorna al menú.';
-            } else if (modoActual === 'DEMO') {
-                badgeText.textContent = "Paso 1: Calibración Demo (1/1)";
-                badgeDot.style.backgroundColor = "#e5b324"; 
-                btnStart.textContent = "INICIAR CALIBRACIÓN DEMO (20 s)";
-                btnStart.style.backgroundColor = "#e5b324";
-                btnStart.style.color = "#000000";
-                btnStart.style.display = 'block';
-                btnNext.style.display = 'none';
-                instructionText.textContent = "Modo Demo: Inducción bimanual libre para habituarse a los mandos.";
-            } else {
-                badgeText.textContent = esB2C ? "Fase 2: Simulación Oficial (B2C)" : "Fase 2: Simulación Oficial B2B (1/1)";
-                badgeDot.style.backgroundColor = "#10b981"; 
-                btnStart.textContent = "INICIAR SIMULACIÓN OFICIAL (45 s)";
-                btnStart.style.backgroundColor = "#10b981";
-                btnStart.style.color = "#000000";
-                btnStart.style.display = 'block';
-                btnNext.style.display = 'none';
-                instructionText.textContent = "Evaluación Oficial D.S. N° 170: Recorre la pista serpenteante hasta la meta verde.";
-            }
-        }
-
-        function renderLoop() {
-            ctx.fillStyle = '#050a12';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-            if (trackPoints.length > 0) {
-                ctx.strokeStyle = '#0284c7';
-                ctx.lineWidth = 26;
-                ctx.lineCap = 'round';
-                ctx.lineJoin = 'round';
-                ctx.beginPath();
-                ctx.moveTo(trackPoints[0].x, trackPoints[0].y);
-                for(let i = 1; i < trackPoints.length; i++) {
-                    ctx.lineTo(trackPoints[i].x, trackPoints[i].y);
-                }
-                ctx.stroke();
-
-                ctx.strokeStyle = 'rgba(255, 255, 255, 0.35)';
-                ctx.lineWidth = 2;
-                ctx.setLineDash([5, 5]);
-                ctx.stroke();
-                ctx.setLineDash([]);
-
-                ctx.fillStyle = '#e5b324';
-                ctx.beginPath();
-                ctx.arc(posicionInicio.x, posicionInicio.y, 9, 0, Math.PI * 2);
-                ctx.fill();
-
-                ctx.fillStyle = '#10b981';
-                ctx.beginPath();
-                ctx.arc(posicionMeta.x, posicionMeta.y, 13, 0, Math.PI * 2);
-                ctx.fill();
-            }
-
-            if (evaluacionActiva && !estaBloqueadoPorDistancia) {
-                if (keys.left) pua.x = Math.max(12, pua.x - pua.speed);
-                if (keys.right) pua.x = Math.min(canvas.width - 12, pua.x + pua.speed);
-                if (keys.up) pua.y = Math.max(12, pua.y - pua.speed);
-                if (keys.down) pua.y = Math.min(canvas.height - 12, pua.y + pua.speed);
-
-                let enPista = false;
-                for(let i = 0; i < trackPoints.length - 1; i++) {
-                    if (distToSegment(pua, trackPoints[i], trackPoints[i+1]) <= 12) {
-                        enPista = true; break;
-                    }
-                }
-
-                const ahora = Date.now();
-                if (!enPista) {
-                    if (!estaEnBorde) {
-                        contactosCount++;
-                        metricContactos.textContent = contactosCount;
-                        estaEnBorde = true;
-                        inicioBordeMs = ahora;
-                    } else {
-                        tiempoErrorMs += (ahora - inicioBordeMs);
-                        inicioBordeMs = ahora;
-                        metricTiempoError.textContent = `${(tiempoErrorMs / 1000).toFixed(1)} s`;
-                    }
-                } else {
-                    estaEnBorde = false;
-                    inicioBordeMs = null;
-                }
-
-                const precPonderada = Math.max(0, Math.round(100 - (contactosCount * 4) - ((tiempoErrorMs / 1000) * 3)));
-                metricPrecision.textContent = `${precPonderada}%`;
-
-                if (Math.hypot(pua.x - posicionMeta.x, pua.y - posicionMeta.y) <= 14) {
-                    finalizarPrueba(false);
-                    return;
-                }
-            }
-
-            ctx.fillStyle = estaEnBorde ? '#ef4444' : '#ffffff';
-            ctx.beginPath();
-            ctx.arc(pua.x, pua.y, pua.r, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.lineWidth = 2;
-            ctx.strokeStyle = estaEnBorde ? '#ffffff' : '#38bdf8';
-            ctx.stroke();
-
-            animFrameId = requestAnimationFrame(renderLoop);
-        }
-
-        function distToSegment(p, v, w) {
-            const l2 = Math.pow(v.x - w.x, 2) + Math.pow(v.y - w.y, 2);
-            if (l2 === 0) return Math.hypot(p.x - v.x, p.y - v.y);
-            let t = ((p.x - v.x) * (w.x - v.x) + (p.y - v.y) * (w.y - v.y)) / l2;
-            t = Math.max(0, Math.min(1, t));
-            return Math.hypot(p.x - (v.x + t * (w.x - v.x)), p.y - (v.y + t * (w.y - v.y)));
-        }
-
-        const setupBtn = (id, key) => {
-            const el = document.getElementById(id);
-            const on = (e) => { e.preventDefault(); if (!estaBloqueadoPorDistancia) keys[key] = true; };
-            const off = (e) => { e.preventDefault(); keys[key] = false; };
-            el.addEventListener('mousedown', on);
-            el.addEventListener('mouseup', off);
-            el.addEventListener('mouseleave', off);
-            el.addEventListener('touchstart', on, {passive: false});
-            el.addEventListener('touchend', off, {passive: false});
+        const registro = {
+          simulacion: numSim,
+          precision: precisionFinal,
+          porcentaje: precisionFinal,
+          toques: cantidadContactos,
+          tiempo: Number(tiempoTranscurridoSeg.toFixed(1)),
+          aprobado: aprobado,
+          fecha: new Date().toISOString()
         };
 
-        setupBtn('btnLeft', 'left');
-        setupBtn('btnRight', 'right');
-        setupBtn('btnUp', 'up');
-        setupBtn('btnDown', 'down');
+        historial.push(registro);
+        localStorage.setItem(`sensometrika_historial_palancas_${cleanRut}`, JSON.stringify(historial));
+        localStorage.setItem('sensometrika_palancas', JSON.stringify(registro));
 
-        function iniciarPrueba() {
-            if (modoActual === 'BLOQUEADO' || estaBloqueadoPorDistancia) return;
+        mostrarModalResultado(precisionFinal, cantidadContactos, tiempoTranscurridoSeg.toFixed(1), aprobado, false, numSim);
+      }
+    }
 
-            contactosCount = 0;
-            tiempoErrorMs = 0;
-            estaEnBorde = false;
-            tiempoTranscurrido = 0;
-            evaluacionActiva = true;
+    function mostrarModalResultado(precision, contactos, tiempoSeg, aprobado, esDemo, numSim = 1) {
+      const prev = document.getElementById('modalResultadoPalancas');
+      if (prev) prev.remove();
 
-            pua.x = posicionInicio.x;
-            pua.y = posicionInicio.y;
+      const titulo = esDemo ? 'CALIBRACIÓN DEMO COMPLETADA' : `SIMULACIÓN S${numSim} DE ${maxSimulacionesPlan} REGISTRADA`;
+      const bajada = esDemo
+        ? 'Has completado el recorrido de calibración. Presiona continuar para iniciar la Simulación Oficial.'
+        : 'Tu precisión viso-motriz ha sido incorporada a tu curva de aprendizaje B2C.';
 
-            metricContactos.textContent = '0';
-            metricTiempoError.textContent = '0.0 s';
-            metricTiempo.textContent = `0 / ${tiempoLimiteSeg} s`;
-            metricPrecision.textContent = '100%';
-            btnStart.style.display = 'none';
+      const html = `
+        <div id="modalResultadoPalancas" style="position: fixed; inset: 0; background: rgba(4, 8, 16, 0.92); backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center; z-index: 99999; padding: 16px;">
+          <div style="background: #091120; border: 1.5px solid #132238; border-radius: 18px; width: 100%; max-width: 390px; padding: 22px 18px; text-align: center; box-shadow: 0 20px 45px rgba(0,0,0,0.85); color: #f8fafc;">
+            <span style="font-size: 0.65rem; font-weight: 800; letter-spacing: 1.4px; color: #00bfff; text-transform: uppercase;">TELEMETRÍA BIMANUAL D.S. N° 170</span>
+            <h3 style="color: #ffffff; margin: 4px 0 14px; font-size: 1.12rem; font-weight: 900;">${titulo}</h3>
 
-            if (timerInterval) clearInterval(timerInterval);
+            <div style="margin-bottom: 16px;">
+              <span style="display: inline-block; padding: 5px 16px; border-radius: 999px; font-size: 0.72rem; font-weight: 900; background: ${aprobado ? 'rgba(16, 185, 129, 0.16)' : 'rgba(245, 158, 11, 0.16)'}; border: 1px solid ${aprobado ? '#10b981' : '#f59e0b'}; color: ${aprobado ? '#34d399' : '#fbbf24'};">
+                ${aprobado ? 'DENTRO DE NORMA (≥ 70%)' : 'REQUIERE MAYOR ESTABILIDAD (< 70%)'}
+              </span>
+            </div>
 
-            timerInterval = setInterval(() => {
-                if (!estaBloqueadoPorDistancia) {
-                    tiempoTranscurrido++;
-                    metricTiempo.textContent = `${tiempoTranscurrido} / ${tiempoLimiteSeg} s`;
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; background: #040810; border: 1px solid #132238; border-radius: 12px; padding: 12px 8px; margin-bottom: 16px;">
+              <div>
+                <span style="display: block; font-size: 0.62rem; color: #94a3b8; font-weight: 700;">PRECISIÓN</span>
+                <strong style="color: ${aprobado ? '#10b981' : '#f59e0b'}; font-size: 1.05rem; font-weight: 900;">${precision}%</strong>
+              </div>
+              <div>
+                <span style="display: block; font-size: 0.62rem; color: #94a3b8; font-weight: 700;">CONTACTOS</span>
+                <strong style="color: #ffffff; font-size: 1.05rem; font-weight: 900;">${contactos}</strong>
+              </div>
+              <div>
+                <span style="display: block; font-size: 0.62rem; color: #94a3b8; font-weight: 700;">TIEMPO</span>
+                <strong style="color: #00bfff; font-size: 1.05rem; font-weight: 900;">${tiempoSeg}s</strong>
+              </div>
+            </div>
 
-                    if (tiempoTranscurrido >= tiempoLimiteSeg) {
-                        finalizarPrueba(true);
-                    }
-                }
-            }, 1000);
+            <p style="font-size: 0.78rem; color: #cbd5e1; line-height: 1.4; margin-bottom: 18px;">${bajada}</p>
+
+            <button id="btnModalPalancasOk" style="width: 100%; background: #00bfff; color: #000000; border: none; border-radius: 10px; padding: 13px; font-weight: 900; cursor: pointer; font-size: 0.85rem; text-transform: uppercase;">
+              ${esDemo ? 'CONTINUAR A SIMULACIÓN OFICIAL →' : '← VOLVER AL MENÚ DE SIMULACIONES'}
+            </button>
+          </div>
+        </div>
+      `;
+      document.body.insertAdjacentHTML('beforeend', html);
+
+      document.getElementById('btnModalPalancasOk').onclick = () => {
+        document.getElementById('modalResultadoPalancas').remove();
+        if (esDemo) {
+          actualizarEstadoUI();
+        } else {
+          ejecutarRetornoMenu();
         }
+      };
+    }
 
-        function finalizarPrueba(esTimeout = false) {
-            evaluacionActiva = false;
-            clearInterval(timerInterval);
-            keys = { left: false, right: false, up: false, down: false };
+    function mostrarModalAyuda() {
+      const prev = document.getElementById('modalAyudaPalancas');
+      if (prev) prev.remove();
 
-            const tiempoTotalSecNeto = tiempoTranscurrido;
-            const tErrorSeg = (tiempoErrorMs / 1000).toFixed(1);
-            let precisionFinal = Math.max(10, Math.round(100 - (contactosCount * 4) - ((tiempoErrorMs / 1000) * 3)));
-            if (esTimeout) precisionFinal = Math.max(10, precisionFinal - 25);
+      const html = `
+        <div id="modalAyudaPalancas" style="position: fixed; inset: 0; background: rgba(4, 8, 16, 0.92); backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center; z-index: 99999; padding: 16px;">
+          <div style="background: #091120; border: 1px solid #132238; border-radius: 18px; width: 100%; max-width: 390px; padding: 22px 18px; text-align: center; color: #f8fafc;">
+            <h3 style="color: #ffffff; margin-bottom: 4px; font-size: 1.1rem; font-weight: 900;">Coordinación Bimanual (Palancas)</h3>
+            <p style="color: #00bfff; margin-bottom: 14px; font-size: 0.76rem; font-weight: 700;">Protocolo Sensometrika · D.S. N° 170</p>
+            <div style="font-size: 0.78rem; color: #cbd5e1; line-height: 1.45; display: flex; flex-direction: column; gap: 8px; margin-bottom: 18px; text-align: left;">
+              <p>1. <strong>Control Bimanual:</strong> Usa los botones táctiles inferiores o las teclas <strong>◄ / ►</strong> (o <strong>A / D</strong>) para desplazar el sensor lateralmente.</p>
+              <p>2. <strong>Velocidad Calibrada (0.80x):</strong> El avance vertical es continuo al 80% de velocidad para evaluar tu suavidad de trazado.</p>
+              <p>3. <strong>Estándar Exigible:</strong> Evita tocar los bordes laterales del canal; necesitas al menos <strong>70% de precisión</strong> para aprobar.</p>
+            </div>
+            <button onclick="document.getElementById('modalAyudaPalancas').remove()" style="width: 100%; background: #00bfff; color: #000; border: none; border-radius: 10px; padding: 12px; font-weight: 900; cursor: pointer; text-transform: uppercase; font-size: 0.82rem;">
+              ENTENDIDO · VOLVER
+            </button>
+          </div>
+        </div>
+      `;
+      document.body.insertAdjacentHTML('beforeend', html);
+    }
 
-            if (modoActual === 'DEMO') {
-                const demoKey = esB2C ? `palancas_demo_completada_${cleanRut}` : `palancas_demo_completada_${cleanRut}_${sessionId}`;
-                localStorage.setItem(demoKey, 'true');
+    function activarDireccion(dir, estado) {
+      const btnIzq = document.getElementById('btnPalancaIzq');
+      const btnDer = document.getElementById('btnPalancaDer');
+      if (dir === -1) {
+        movIzq = estado;
+        btnIzq.classList.toggle('pressed', estado);
+      } else if (dir === 1) {
+        movDer = estado;
+        btnDer.classList.toggle('pressed', estado);
+      }
+    }
 
-                mostrarModal(
-                    "CALIBRACIÓN DEMO COMPLETADA",
-                    `Tiempo: <b>${tiempoTotalSecNeto} s</b><br>Toques en Borde: <b>${contactosCount}</b><br><br>Has completado la inducción libre. Presiona continuar para avanzar de inmediato a la <b>Simulación Oficial (1 de 1)</b>.`,
-                    () => {
-                        actualizarEstadoUI(true);
-                    }
-                );
-            } else {
-                const registroData = {
-                    efectividad: precisionFinal,
-                    score: precisionFinal,
-                    precision: precisionFinal,
-                    contactos: contactosCount,
-                    toques: contactosCount,
-                    tiempoTotal: tiempoTotalSecNeto,
-                    tiempoError: tErrorSeg,
-                    aprobado: precisionFinal >= 75,
-                    dictamen: precisionFinal >= 75 ? 'APROBADO' : 'OBSERVADO',
-                    fecha: new Date().toISOString()
-                };
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') {
+        activarDireccion(-1, true);
+      } else if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') {
+        activarDireccion(1, true);
+      }
+    });
 
-                if (esB2C) {
-                    const histKey = `sensometrika_historial_palancas_${cleanRut}`;
-                    let hist = [];
-                    try { hist = JSON.parse(localStorage.getItem(histKey)) || []; } catch(e){}
-                    hist.push(registroData);
-                    localStorage.setItem(histKey, JSON.stringify(hist));
-                } else {
-                    localStorage.setItem(`sensometrika_palancas_${cleanRut}_${sessionId}`, JSON.stringify(registroData));
-                    localStorage.setItem(`sensometrika_last_palancas_${cleanRut}_${sessionId}`, JSON.stringify(registroData));
-                }
+    document.addEventListener('keyup', (e) => {
+      if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') {
+        activarDireccion(-1, false);
+      } else if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') {
+        activarDireccion(1, false);
+      }
+    });
 
-                mostrarModal(
-                    "SIMULACIÓN OFICIAL REGISTRADA",
-                    `Tiempo: <b>${tiempoTotalSecNeto} s</b><br>Toques en Borde: <b>${contactosCount}</b><br>Precisión Bimanual: <b>${precisionFinal}%</b><br><br><b>Resultado guardado con éxito.</b>`,
-                    () => {
-                        ejecutarRetornoMenu();
-                    }
-                );
-            }
-        }
-
-        function mostrarModal(titulo, cuerpo, callback) {
-            modalTitle.textContent = titulo;
-            modalBody.innerHTML = cuerpo;
-            modal.style.display = 'flex';
-            modalBtnClose.onclick = (e) => {
-                if (e) e.stopPropagation();
-                modal.style.display = 'none';
-                if (callback) callback();
-            };
-        }
-
-        btnStart.addEventListener('click', iniciarPrueba);
-        document.getElementById('btnInfo').addEventListener('click', () => {
-            mostrarModal("¿CÓMO FUNCIONA?", "Usa los botones bimanuales para desplazar la púa hasta la meta verde antes de que se agote el tiempo disponible.");
-        });
-
-        document.addEventListener('DOMContentLoaded', () => {
-            iniciarMediaPipeFaceMesh();
-            actualizarEstadoUI(false);
-            renderLoop();
-        });
-    </script>
+    document.addEventListener('DOMContentLoaded', () => {
+      actualizarEstadoUI();
+    });
+  </script>
 </body>
 </html>
