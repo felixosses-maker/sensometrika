@@ -42,7 +42,7 @@
             justify-content: center;
             align-items: center;
             min-height: 100vh;
-            padding: 16px 12px 24px;
+            padding: 14px 12px 24px;
             -webkit-tap-highlight-color: transparent;
         }
 
@@ -84,11 +84,11 @@
             background-color: var(--card-bg);
             border: 1px solid var(--card-border);
             border-radius: 18px;
-            padding: 18px 16px;
+            padding: 16px 14px;
             width: 100%;
             display: flex;
             flex-direction: column;
-            gap: 13px;
+            gap: 12px;
             box-shadow: 0 20px 50px rgba(0, 0, 0, 0.85), inset 0 1px 0 rgba(255, 255, 255, 0.04);
             position: relative;
         }
@@ -207,6 +207,41 @@
             touch-action: none;
         }
 
+        .hud-overlay-top {
+            position: absolute;
+            top: 8px;
+            left: 10px;
+            right: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .hud-pill {
+            background: rgba(4, 9, 20, 0.82);
+            border: 1px solid rgba(0, 191, 255, 0.3);
+            color: #38bdf8;
+            font-size: 0.60rem;
+            font-weight: 800;
+            letter-spacing: 0.6px;
+            padding: 3px 8px;
+            border-radius: 6px;
+            text-transform: uppercase;
+        }
+
+        .hud-pill.error {
+            border-color: rgba(239, 68, 68, 0.65);
+            color: #fca5a5;
+            background: rgba(127, 29, 29, 0.75);
+        }
+
+        .hud-pill.ok {
+            border-color: rgba(16, 185, 129, 0.55);
+            color: #6ee7b7;
+        }
+
         .distance-block-overlay {
             position: absolute;
             inset: 0;
@@ -237,10 +272,10 @@
 
         .instruction-text {
             text-align: center;
-            font-size: 0.80rem;
+            font-size: 0.78rem;
             color: #cbd5e1;
-            line-height: 1.4;
-            padding: 0 6px;
+            line-height: 1.38;
+            padding: 0 4px;
         }
 
         .controls-grid {
@@ -281,9 +316,9 @@
             color: #f8fafc;
             border: 1px solid #1e3a6d;
             border-radius: 9px;
-            padding: 11px 0;
+            padding: 12px 0;
             font-weight: 900;
-            font-size: 1.05rem;
+            font-size: 1.08rem;
             cursor: pointer;
             width: 100%;
             display: flex;
@@ -307,7 +342,7 @@
             border-radius: 11px;
             padding: 14px;
             font-weight: 900;
-            font-size: 0.90rem;
+            font-size: 0.88rem;
             letter-spacing: 0.4px;
             text-transform: uppercase;
             cursor: pointer;
@@ -327,7 +362,7 @@
             border-radius: 11px;
             padding: 14px;
             font-weight: 900;
-            font-size: 0.90rem;
+            font-size: 0.88rem;
             text-transform: uppercase;
             cursor: pointer;
             width: 100%;
@@ -341,7 +376,7 @@
             background-color: #050b17;
             border: 1px solid #13223a;
             border-radius: 12px;
-            padding: 11px 4px;
+            padding: 10px 4px;
         }
 
         .metric-item {
@@ -359,7 +394,7 @@
         }
 
         .metric-value {
-            font-size: 0.88rem;
+            font-size: 0.86rem;
             font-weight: 900;
             font-variant-numeric: tabular-nums;
         }
@@ -418,8 +453,6 @@
 </head>
 <body>
 
-    <video id="webcamInput" style="display:none;" playsinline></video>
-
     <div class="main-container">
         <header class="brand-header">
             <img src="sensometrica.jpg" alt="SENSOMETRIKA" class="brand-logo-img" onerror="this.style.display='none'">
@@ -443,12 +476,18 @@
             <div class="status-badge-container">
                 <div class="status-badge" id="statusBadgeBox">
                     <span id="badgeDot" class="dot-status"></span>
-                    <span id="badgeText">Cargando estado...</span>
+                    <span id="badgeText">Cargando cabina bimanual...</span>
                 </div>
             </div>
 
-            <!-- VISOR DE TRAYECTORIA BIMANUAL -->
+            <!-- VISOR DE TRAYECTORIA CONTINUA EN AVANCE -->
             <div class="canvas-wrapper" id="canvasWrapper">
+                <div class="hud-overlay-top">
+                    <span class="hud-pill" id="hudAvance">AVANCE: 0%</span>
+                    <span class="hud-pill ok" id="hudSensor">SENSOR: EN EJE</span>
+                    <span class="hud-pill">VEL. CABINA 0.80X</span>
+                </div>
+
                 <canvas id="palancasCanvas" width="400" height="300"></canvas>
 
                 <div id="boxBlockDistancia" class="distance-block-overlay">
@@ -463,20 +502,20 @@
 
             <!-- INSTRUCCIÓN DE FASE -->
             <div class="instruction-text" id="instructionText">
-                Modo Demo: Desplaza el sensor luminoso por el canal hasta la meta verde usando ambas palancas.
+                El canal curvilíneo avanza de forma continua: usa ambas palancas para mantener el sensor centrado dentro de la ruta.
             </div>
 
-            <!-- MANDOS BIMANUALES (EJE X + EJE Y) -->
+            <!-- MANDOS BIMANUALES (MANO IZQ EJE X + MANO DER EJE Y) -->
             <div class="controls-grid">
                 <div class="control-pad">
-                    <span class="control-label">PALANCA IZQ (EJE X)</span>
+                    <span class="control-label">MANO IZQ (EJE X)</span>
                     <div class="btn-ctrl-group">
                         <button type="button" class="btn-ctrl" id="btnLeft">◄</button>
                         <button type="button" class="btn-ctrl" id="btnRight">►</button>
                     </div>
                 </div>
                 <div class="control-pad">
-                    <span class="control-label">PALANCA DER (EJE Y)</span>
+                    <span class="control-label">MANO DER (EJE Y)</span>
                     <div class="btn-ctrl-group">
                         <button type="button" class="btn-ctrl" id="btnUp">▲</button>
                         <button type="button" class="btn-ctrl" id="btnDown">▼</button>
@@ -486,7 +525,7 @@
 
             <!-- BOTÓN DE INICIO / RETORNO -->
             <div style="width: 100%;">
-                <button type="button" id="btnStart" class="btn-start">INICIAR CALIBRACIÓN DEMO (20 S)</button>
+                <button type="button" id="btnStart" class="btn-start">INICIAR CALIBRACIÓN DEMO (15 S)</button>
                 <button type="button" id="btnNext" class="btn-next" onclick="ejecutarRetornoMenu()">VOLVER AL MENÚ DE EVALUACIONES B2B →</button>
             </div>
 
@@ -506,7 +545,7 @@
                 </div>
                 <div class="metric-item">
                     <span class="metric-label">TIEMPO</span>
-                    <span id="metricTiempo" class="metric-value" style="color:#38bdf8;">0 / 20 s</span>
+                    <span id="metricTiempo" class="metric-value" style="color:#38bdf8;">0 / 15 s</span>
                 </div>
                 <div class="metric-item">
                     <span class="metric-label">DISTANCIA</span>
@@ -545,6 +584,9 @@
         const badgeText = document.getElementById('badgeText');
         const instructionText = document.getElementById('instructionText');
 
+        const hudAvance = document.getElementById('hudAvance');
+        const hudSensor = document.getElementById('hudSensor');
+
         const metricTiempo = document.getElementById('metricTiempo');
         const metricContactos = document.getElementById('metricContactos');
         const metricTiempoError = document.getElementById('metricTiempoError');
@@ -556,6 +598,9 @@
         const modalBody = document.getElementById('modalBody');
         const modalBtnClose = document.getElementById('modalBtnClose');
 
+        // ==========================================
+        // PARÁMETROS DEL TRABAJADOR B2B
+        // ==========================================
         const urlParams = new URLSearchParams(window.location.search);
         let datosUsuario = {};
         try { datosUsuario = JSON.parse(localStorage.getItem('sensometrika_datos_usuario')) || {}; } catch(e){}
@@ -574,29 +619,59 @@
 
         document.getElementById('lblSubtituloPlan').textContent = `MÓDULO PALANCAS • PLAN ${planActivo} (B2B)`;
 
+        // ==========================================
+        // CONSTANTES FÍSICAS CALIBRADAS (0.80x)
+        // ==========================================
+        const VELOCIDAD_AVANCE_PX_S = 90;   // 112 * 0.80 = 90 px/s
+        const VELOCIDAD_LATERAL_PX_S = 144; // 180 * 0.80 = 144 px/s
+        const ANCHO_CANAL = 34;             // Radio tolerancia = 17 px
+        const RADIO_TOLERANCIA = ANCHO_CANAL / 2;
+
         let modoActual = 'DEMO';
-        let tiempoLimiteSeg = 20;
-
+        let duracionSeg = 15;
         let evaluacionActiva = false;
-        let contactosCount = 0;
-        let estaEnBorde = false;
-        let tiempoErrorMs = 0;
-        let inicioBordeMs = null;
+        let lastFrameTime = 0;
 
-        let tiempoTranscurrido = 0;
-        let timerInterval = null;
-        let animFrameId = null;
+        // Estado del camino que avanza continuamente
+        let distanciaRecorridaPx = 0;
+        let distanciaMetaPx = 15 * VELOCIDAD_AVANCE_PX_S;
+        let semillaPista = 1.37;
 
-        // Velocidad calibrada al 80% (1.44 px/frame)
-        let pua = { x: 0, y: 0, r: 8, speed: 1.44 };
-        let posicionInicio = { x: 0, y: 0 };
-        let posicionMeta = { x: 0, y: 0 };
-        let trackPoints = [];
+        // Posición del sensor del operador
+        let cursor = { x: 200, y: 215, r: 8 };
         let trailHistory = [];
         let keys = { left: false, right: false, up: false, down: false };
 
+        // Métricas telemétricas en tiempo real
+        let contactosCount = 0;
+        let estaFueraDeEje = false;
+        let tiempoErrorSeg = 0;
+        let tiempoTranscurridoSeg = 0;
+        let framesDentroEje = 0;
+        let framesTotales = 0;
+
+        // Telemetría facial MediaPipe
         let distanciaMedidaCm = 50;
         let estaBloqueadoPorDistancia = false;
+
+        // Audio feedback sutil para toque de borde
+        let audioCtx = null;
+        function sonarAlertaBorde() {
+            try {
+                if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(195, audioCtx.currentTime);
+                gain.gain.setValueAtTime(0.06, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.11);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.11);
+                if ('vibrate' in navigator) navigator.vibrate(25);
+            } catch (e) {}
+        }
 
         // ==========================================
         // RETORNO INCONDICIONAL AL MENÚ CORPORATIVO B2B
@@ -615,6 +690,9 @@
             window.location.href = `menu_b2b_planes.html?${paramsRegreso.toString()}`;
         }
 
+        // ==========================================
+        // TELEMETRÍA BIOMÉTRICA MEDIAPIPE FACEMESH
+        // ==========================================
         function iniciarMediaPipeFaceMesh() {
             const videoElement = document.getElementById('webcamVideo');
             if (typeof FaceMesh === 'undefined' || typeof Camera === 'undefined') {
@@ -669,241 +747,304 @@
             }
         }
 
-        function generarCircuitoCentrado(semilla) {
-            const w = canvas.width, h = canvas.height;
-            const padX = 48, padY = 46;
-            const variante = Math.abs(Math.floor(Math.sin(semilla) * 100)) % 4;
-            let pts = [];
-
-            if (variante === 0) {
-                pts = [{ x: padX, y: h - padY }, { x: w * 0.38, y: h - padY }, { x: w * 0.38, y: padY + 28 }, { x: w * 0.68, y: padY + 28 }, { x: w * 0.68, y: h - padY }, { x: w - padX, y: h - padY }, { x: w - padX, y: padY }];
-            } else if (variante === 1) {
-                pts = [{ x: w - padX, y: h - padY }, { x: w * 0.62, y: h - padY }, { x: w * 0.62, y: padY + 28 }, { x: w * 0.32, y: padY + 28 }, { x: w * 0.32, y: h - padY }, { x: padX, y: h - padY }, { x: padX, y: padY }];
-            } else if (variante === 2) {
-                pts = [{ x: padX, y: padY }, { x: padX, y: h - padY }, { x: w * 0.5, y: h - padY }, { x: w * 0.5, y: padY + 20 }, { x: w - padX, y: padY + 20 }, { x: w - padX, y: h - padY }];
-            } else {
-                pts = [{ x: padX, y: h - padY }, { x: w - padX, y: h - padY }, { x: w - padX, y: h * 0.5 }, { x: padX + 30, y: h * 0.5 }, { x: padX + 30, y: padY }, { x: w - padX, y: padY }];
-            }
-
-            return { pista: pts, inicio: { x: pts[0].x, y: pts[0].y }, meta: { x: pts[pts.length - 1].x, y: pts[pts.length - 1].y } };
+        // ==========================================
+        // FUNCIÓN DEL CAMINO SINUSOIDAL CONTINUO
+        // ==========================================
+        function calcularCentroXCamino(s) {
+            // S es la coordenada longitudinal absoluta del camino (en px)
+            // Tramo inicial recto (primeros 120 px) para arranque limpio en el centro
+            if (s <= 120) return canvas.width / 2;
+            const d = s - 120;
+            const onda1 = Math.sin(d * 0.011 + semillaPista) * 76;
+            const onda2 = Math.sin(d * 0.024 + semillaPista * 1.7) * 34;
+            const centro = (canvas.width / 2) + onda1 + onda2;
+            return Math.max(58, Math.min(canvas.width - 58, centro));
         }
 
+        // ==========================================
+        // ESTADO Y FASES CORPORATIVAS B2B (1/1)
+        // ==========================================
         function verificarModuloEjecutado() {
             if (urlParams.has('reeval')) return false;
             return localStorage.getItem(`sensometrika_palancas_${cleanRut}_${sessionId}`) !== null;
         }
 
-        function actualizarEstadoUI(forzarOficial = false) {
+        function prepararFaseUI(forzarOficial = false) {
             const ejecucionOficialConcluida = !forzarOficial && verificarModuloEjecutado();
             const demoKey = `palancas_demo_completada_${cleanRut}_${sessionId}`;
             const demoRealizada = forzarOficial || (localStorage.getItem(demoKey) === 'true');
 
             if (ejecucionOficialConcluida) {
                 modoActual = 'BLOQUEADO';
+                duracionSeg = 30;
             } else if (!demoRealizada) {
                 modoActual = 'DEMO';
-                tiempoLimiteSeg = 20;
+                duracionSeg = 15;
             } else {
                 modoActual = 'OFICIAL';
-                tiempoLimiteSeg = 45;
+                duracionSeg = 30;
             }
 
-            contactosCount = 0;
-            tiempoErrorMs = 0;
-            estaEnBorde = false;
-            tiempoTranscurrido = 0;
+            semillaPista = (Date.now() % 1000) * 0.013 + (modoActual === 'OFICIAL' ? 2.4 : 0.7);
+            distanciaRecorridaPx = 0;
+            distanciaMetaPx = duracionSeg * VELOCIDAD_AVANCE_PX_S;
+
+            cursor.x = canvas.width / 2;
+            cursor.y = 215;
             trailHistory = [];
-            metricTiempo.textContent = `0 / ${tiempoLimiteSeg} s`;
+
+            contactosCount = 0;
+            estaFueraDeEje = false;
+            tiempoErrorSeg = 0;
+            tiempoTranscurridoSeg = 0;
+            framesDentroEje = 0;
+            framesTotales = 0;
+
+            metricTiempo.textContent = `0 / ${duracionSeg} s`;
             metricContactos.textContent = '0';
             metricTiempoError.textContent = '0.0 s';
             metricPrecision.textContent = '100%';
-
-            const circuito = generarCircuitoCentrado(Date.now() + Math.random() * 1000);
-            trackPoints = circuito.pista;
-            posicionInicio = circuito.inicio;
-            posicionMeta = circuito.meta;
-            pua.x = posicionInicio.x;
-            pua.y = posicionInicio.y;
+            hudAvance.textContent = 'AVANCE: 0%';
+            hudSensor.textContent = 'SENSOR: EN EJE';
+            hudSensor.className = 'hud-pill ok';
+            canvasWrapper.classList.remove('border-error');
 
             if (modoActual === 'BLOQUEADO') {
-                badgeText.textContent = "Evaluación B2B Registrada (1/1)";
-                badgeDot.style.backgroundColor = "#10b981";
-                badgeDot.style.color = "#10b981";
-                statusBadgeBox.style.borderColor = "#10b981";
-                statusBadgeBox.style.color = "#34d399";
+                badgeText.textContent = 'Evaluación B2B Registrada (1/1)';
+                badgeDot.style.backgroundColor = '#10b981';
+                badgeDot.style.color = '#10b981';
+                statusBadgeBox.style.borderColor = '#10b981';
+                statusBadgeBox.style.color = '#34d399';
                 btnStart.style.display = 'none';
                 btnNext.style.display = 'block';
-                instructionText.textContent = 'Evaluación corporativa B2B finalizada con éxito. Retorna al menú.';
+                instructionText.textContent = 'Evaluación corporativa B2B finalizada con éxito. Retorna al menú de evaluaciones.';
             } else if (modoActual === 'DEMO') {
-                badgeText.textContent = "Paso 1: Calibración Demo (Inducción)";
-                badgeDot.style.backgroundColor = "#f59e0b";
-                badgeDot.style.color = "#f59e0b";
-                statusBadgeBox.style.borderColor = "#1d4ed8";
-                statusBadgeBox.style.color = "#38bdf8";
-                btnStart.textContent = "INICIAR CALIBRACIÓN DEMO (20 S)";
-                btnStart.style.backgroundColor = "#f59e0b";
-                btnStart.style.color = "#000000";
+                badgeText.textContent = 'Paso 1: Calibración Demo (Inducción)';
+                badgeDot.style.backgroundColor = '#f59e0b';
+                badgeDot.style.color = '#f59e0b';
+                statusBadgeBox.style.borderColor = '#1d4ed8';
+                statusBadgeBox.style.color = '#38bdf8';
+                btnStart.textContent = 'INICIAR CALIBRACIÓN DEMO (15 S)';
+                btnStart.style.backgroundColor = '#f59e0b';
+                btnStart.style.color = '#000000';
                 btnStart.style.display = 'block';
                 btnNext.style.display = 'none';
-                instructionText.textContent = "Modo Demo: Desplaza el sensor luminoso cian por el canal hasta la meta verde.";
+                instructionText.textContent = 'Inducción Demo: El camino avanza solo hacia abajo. Usa Mano Izq (◄ ►) y Mano Der (▲ ▼) para mantener el sensor dentro del canal.';
             } else {
-                badgeText.textContent = "Fase 2: Simulación Oficial B2B (1/1)";
-                badgeDot.style.backgroundColor = "#10b981";
-                badgeDot.style.color = "#10b981";
-                statusBadgeBox.style.borderColor = "#10b981";
-                statusBadgeBox.style.color = "#34d399";
-                btnStart.textContent = "INICIAR SIMULACIÓN OFICIAL (45 S)";
-                btnStart.style.backgroundColor = "#10b981";
-                btnStart.style.color = "#000000";
+                badgeText.textContent = 'Fase 2: Simulación Oficial B2B (1/1)';
+                badgeDot.style.backgroundColor = '#10b981';
+                badgeDot.style.color = '#10b981';
+                statusBadgeBox.style.borderColor = '#10b981';
+                statusBadgeBox.style.color = '#34d399';
+                btnStart.textContent = 'INICIAR SIMULACIÓN OFICIAL B2B (30 S)';
+                btnStart.style.backgroundColor = '#10b981';
+                btnStart.style.color = '#000000';
                 btnStart.style.display = 'block';
                 btnNext.style.display = 'none';
-                instructionText.textContent = "Evaluación Oficial D.S. N° 170: Recorre la pista sin salir del canal hasta la meta verde.";
+                instructionText.textContent = 'Evaluación Oficial D.S. N° 170: Mantén el sensor dentro del canal curvilíneo hasta cruzar la línea de meta.';
             }
         }
 
-        function renderLoop() {
-            ctx.fillStyle = '#040914';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
+        // ==========================================
+        // MOTOR GRÁFICO Y FÍSICO DE AVANCE CONTINUO
+        // ==========================================
+        function actualizarFisica(dt) {
+            if (!evaluacionActiva || estaBloqueadoPorDistancia) return;
 
-            ctx.save();
-            ctx.strokeStyle = 'rgba(0, 191, 255, 0.08)';
+            tiempoTranscurridoSeg += dt;
+            distanciaRecorridaPx += VELOCIDAD_AVANCE_PX_S * dt;
+
+            // Movimiento bimanual del sensor (Mano Izq = X, Mano Der = Y)
+            if (keys.left) cursor.x -= VELOCIDAD_LATERAL_PX_S * dt;
+            if (keys.right) cursor.x += VELOCIDAD_LATERAL_PX_S * dt;
+            if (keys.up) cursor.y -= VELOCIDAD_LATERAL_PX_S * dt;
+            if (keys.down) cursor.y += VELOCIDAD_LATERAL_PX_S * dt;
+
+            // Límites físicos de cabina
+            cursor.x = Math.max(20, Math.min(canvas.width - 20, cursor.x));
+            cursor.y = Math.max(42, Math.min(canvas.height - 20, cursor.y));
+
+            // Coordenada longitudinal S del camino en la altura Y actual del sensor
+            const sEnCursor = distanciaRecorridaPx + (215 - cursor.y);
+            const centroCaminoX = calcularCentroXCamino(sEnCursor);
+            const desviacionPx = Math.abs(cursor.x - centroCaminoX);
+            const dentroDelCanal = desviacionPx <= RADIO_TOLERANCIA;
+
+            framesTotales++;
+            if (dentroDelCanal) {
+                framesDentroEje++;
+                if (estaFueraDeEje) {
+                    estaFueraDeEje = false;
+                    canvasWrapper.classList.remove('border-error');
+                    hudSensor.textContent = 'SENSOR: EN EJE';
+                    hudSensor.className = 'hud-pill ok';
+                }
+            } else {
+                tiempoErrorSeg += dt;
+                if (!estaFueraDeEje) {
+                    estaFueraDeEje = true;
+                    contactosCount++;
+                    metricContactos.textContent = contactosCount;
+                    canvasWrapper.classList.add('border-error');
+                    hudSensor.textContent = 'ALERTA: FUERA DE CANAL';
+                    hudSensor.className = 'hud-pill error';
+                    sonarAlertaBorde();
+                }
+                metricTiempoError.textContent = `${tiempoErrorSeg.toFixed(1)} s`;
+            }
+
+            // Registrar estela desplazándose junto con el avance del camino
+            trailHistory.push({ x: cursor.x, y: cursor.y, error: !dentroDelCanal });
+            for (let i = 0; i < trailHistory.length; i++) {
+                trailHistory[i].y += VELOCIDAD_AVANCE_PX_S * dt;
+            }
+            trailHistory = trailHistory.filter(pt => pt.y <= canvas.height + 10);
+
+            // Actualizar HUD y métricas en pantalla
+            const pctAvance = Math.min(100, Math.round((distanciaRecorridaPx / distanciaMetaPx) * 100));
+            hudAvance.textContent = `AVANCE: ${pctAvance}%`;
+
+            const segMostrar = Math.min(duracionSeg, Math.floor(tiempoTranscurridoSeg));
+            metricTiempo.textContent = `${segMostrar} / ${duracionSeg} s`;
+
+            const ratioPermanencia = framesTotales > 0 ? (framesDentroEje / framesTotales) : 1;
+            const precisionActual = Math.max(0, Math.min(100, Math.round((ratioPermanencia * 100) - (contactosCount * 1.5))));
+            metricPrecision.textContent = `${precisionActual}%`;
+
+            // Comprobar llegada a meta o cumplimiento del tiempo
+            if (distanciaRecorridaPx >= distanciaMetaPx || tiempoTranscurridoSeg >= duracionSeg) {
+                finalizarPrueba();
+            }
+        }
+
+        function dibujarCabina() {
+            const w = canvas.width;
+            const h = canvas.height;
+
+            ctx.fillStyle = '#040914';
+            ctx.fillRect(0, 0, w, h);
+
+            // Rejilla telemétrica sutil en movimiento
+            const offsetGrid = distanciaRecorridaPx % 36;
+            ctx.strokeStyle = 'rgba(0, 191, 255, 0.06)';
             ctx.lineWidth = 1;
+            for (let y = offsetGrid; y < h; y += 36) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(w, y);
+                ctx.stroke();
+            }
+            for (let x = 40; x < w; x += 40) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, h);
+                ctx.stroke();
+            }
+
+            // Construir puntos del camino visible en pantalla (de abajo hacia arriba)
+            const puntosCamino = [];
+            for (let y = h + 16; y >= -16; y -= 6) {
+                const s = distanciaRecorridaPx + (215 - y);
+                puntosCamino.push({ x: calcularCentroXCamino(s), y: y, s: s });
+            }
+
+            // Halo exterior del canal
+            ctx.save();
             ctx.beginPath();
-            ctx.arc(canvas.width / 2, canvas.height / 2, 128, 0, Math.PI * 2);
+            ctx.moveTo(puntosCamino[0].x, puntosCamino[0].y);
+            for (let i = 1; i < puntosCamino.length; i++) {
+                ctx.lineTo(puntosCamino[i].x, puntosCamino[i].y);
+            }
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            ctx.strokeStyle = estaFueraDeEje ? 'rgba(239, 68, 68, 0.25)' : 'rgba(0, 191, 255, 0.16)';
+            ctx.lineWidth = ANCHO_CANAL + 12;
             ctx.stroke();
+
+            // Interior del canal
+            ctx.strokeStyle = '#0b1e3d';
+            ctx.lineWidth = ANCHO_CANAL;
+            ctx.stroke();
+
+            // Bordes laterales luminosos
+            ctx.strokeStyle = estaFueraDeEje ? '#ef4444' : '#00bfff';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            // Eje central punteado
+            ctx.strokeStyle = 'rgba(248, 250, 252, 0.35)';
+            ctx.lineWidth = 1.5;
+            ctx.setLineDash([6, 7]);
+            ctx.stroke();
+            ctx.setLineDash([]);
             ctx.restore();
 
-            if (trackPoints.length > 0) {
-                ctx.strokeStyle = 'rgba(0, 191, 255, 0.16)';
-                ctx.lineWidth = 32;
-                ctx.lineCap = 'round';
-                ctx.lineJoin = 'round';
-                ctx.beginPath();
-                ctx.moveTo(trackPoints[0].x, trackPoints[0].y);
-                for (let i = 1; i < trackPoints.length; i++) {
-                    ctx.lineTo(trackPoints[i].x, trackPoints[i].y);
-                }
-                ctx.stroke();
-
-                ctx.strokeStyle = '#0b2244';
-                ctx.lineWidth = 24;
-                ctx.stroke();
-
-                ctx.strokeStyle = estaEnBorde ? '#ef4444' : '#00bfff';
-                ctx.lineWidth = 2;
-                ctx.stroke();
-
-                ctx.strokeStyle = 'rgba(148, 163, 184, 0.35)';
-                ctx.lineWidth = 1.5;
-                ctx.setLineDash([4, 6]);
-                ctx.stroke();
-                ctx.setLineDash([]);
-
-                for (let i = 1; i < trackPoints.length - 1; i++) {
-                    ctx.fillStyle = '#0f1c33';
-                    ctx.beginPath();
-                    ctx.arc(trackPoints[i].x, trackPoints[i].y, 6, 0, Math.PI * 2);
-                    ctx.fill();
-                    ctx.strokeStyle = 'rgba(0, 191, 255, 0.45)';
-                    ctx.lineWidth = 1.2;
-                    ctx.stroke();
-                }
-
-                ctx.fillStyle = '#f59e0b';
-                ctx.beginPath();
-                ctx.arc(posicionInicio.x, posicionInicio.y, 9, 0, Math.PI * 2);
-                ctx.fill();
-
-                ctx.fillStyle = 'rgba(16, 185, 129, 0.25)';
-                ctx.beginPath();
-                ctx.arc(posicionMeta.x, posicionMeta.y, 18, 0, Math.PI * 2);
-                ctx.fill();
-
-                ctx.fillStyle = '#10b981';
-                ctx.beginPath();
-                ctx.arc(posicionMeta.x, posicionMeta.y, 12, 0, Math.PI * 2);
-                ctx.fill();
+            // Línea de Meta Verde cuando se aproxima al 100%
+            const yMeta = 215 - (distanciaMetaPx - distanciaRecorridaPx);
+            if (yMeta >= -20 && yMeta <= h + 20) {
+                const xMeta = calcularCentroXCamino(distanciaMetaPx);
+                ctx.save();
+                ctx.fillStyle = 'rgba(16, 185, 129, 0.28)';
+                ctx.fillRect(xMeta - 28, yMeta - 8, 56, 16);
+                ctx.strokeStyle = '#10b981';
+                ctx.lineWidth = 2.5;
+                ctx.strokeRect(xMeta - 28, yMeta - 8, 56, 16);
+                ctx.fillStyle = '#6ee7b7';
+                ctx.font = 'bold 9px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText('META B2B', xMeta, yMeta + 3);
+                ctx.restore();
             }
 
-            if (evaluacionActiva && !estaBloqueadoPorDistancia) {
-                if (keys.left) pua.x = Math.max(12, pua.x - pua.speed);
-                if (keys.right) pua.x = Math.min(canvas.width - 12, pua.x + pua.speed);
-                if (keys.up) pua.y = Math.max(12, pua.y - pua.speed);
-                if (keys.down) pua.y = Math.min(canvas.height - 12, pua.y + pua.speed);
-
-                let enPista = false;
-                for (let i = 0; i < trackPoints.length - 1; i++) {
-                    if (distToSegment(pua, trackPoints[i], trackPoints[i + 1]) <= 12) {
-                        enPista = true; break;
-                    }
-                }
-
-                trailHistory.push({ x: pua.x, y: pua.y, error: !enPista });
-                if (trailHistory.length > 75) trailHistory.shift();
-
-                const ahora = Date.now();
-                if (!enPista) {
-                    canvasWrapper.classList.add('border-error');
-                    if (!estaEnBorde) {
-                        contactosCount++;
-                        metricContactos.textContent = contactosCount;
-                        estaEnBorde = true;
-                        inicioBordeMs = ahora;
-                    } else {
-                        tiempoErrorMs += (ahora - inicioBordeMs);
-                        inicioBordeMs = ahora;
-                        metricTiempoError.textContent = `${(tiempoErrorMs / 1000).toFixed(1)} s`;
-                    }
-                } else {
-                    canvasWrapper.classList.remove('border-error');
-                    estaEnBorde = false;
-                    inicioBordeMs = null;
-                }
-
-                const precPonderada = Math.max(0, Math.round(100 - (contactosCount * 4) - ((tiempoErrorMs / 1000) * 3)));
-                metricPrecision.textContent = `${precPonderada}%`;
-
-                if (Math.hypot(pua.x - posicionMeta.x, pua.y - posicionMeta.y) <= 14) {
-                    finalizarPrueba(false);
-                    return;
-                }
-            }
-
+            // Estela de trayectoria del sensor
             if (trailHistory.length > 1) {
                 for (let i = 1; i < trailHistory.length; i++) {
                     ctx.beginPath();
                     ctx.moveTo(trailHistory[i - 1].x, trailHistory[i - 1].y);
                     ctx.lineTo(trailHistory[i].x, trailHistory[i].y);
                     ctx.lineWidth = 2.5;
-                    ctx.strokeStyle = trailHistory[i].error ? 'rgba(239, 68, 68, 0.75)' : 'rgba(16, 185, 129, 0.75)';
+                    ctx.strokeStyle = trailHistory[i].error ? 'rgba(239, 68, 68, 0.8)' : 'rgba(16, 185, 129, 0.8)';
                     ctx.stroke();
                 }
             }
 
-            ctx.fillStyle = estaEnBorde ? 'rgba(239, 68, 68, 0.30)' : 'rgba(0, 191, 255, 0.25)';
+            // Mira de referencia horizontal del sensor
+            ctx.strokeStyle = 'rgba(0, 191, 255, 0.18)';
+            ctx.lineWidth = 1;
             ctx.beginPath();
-            ctx.arc(pua.x, pua.y, pua.r + 5, 0, Math.PI * 2);
-            ctx.fill();
-
-            ctx.fillStyle = estaEnBorde ? '#ef4444' : '#ffffff';
-            ctx.beginPath();
-            ctx.arc(pua.x, pua.y, pua.r, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.lineWidth = 2.5;
-            ctx.strokeStyle = estaEnBorde ? '#fca5a5' : '#00bfff';
+            ctx.moveTo(cursor.x - 18, cursor.y);
+            ctx.lineTo(cursor.x + 18, cursor.y);
             ctx.stroke();
 
-            animFrameId = requestAnimationFrame(renderLoop);
+            // Halo y esfera del sensor bimanual
+            ctx.fillStyle = estaFueraDeEje ? 'rgba(239, 68, 68, 0.32)' : 'rgba(0, 191, 255, 0.25)';
+            ctx.beginPath();
+            ctx.arc(cursor.x, cursor.y, cursor.r + 6, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.fillStyle = estaFueraDeEje ? '#ef4444' : '#ffffff';
+            ctx.beginPath();
+            ctx.arc(cursor.x, cursor.y, cursor.r, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.lineWidth = 2.5;
+            ctx.strokeStyle = estaFueraDeEje ? '#fca5a5' : '#00bfff';
+            ctx.stroke();
         }
 
-        function distToSegment(p, v, w) {
-            const l2 = Math.pow(v.x - w.x, 2) + Math.pow(v.y - w.y, 2);
-            if (l2 === 0) return Math.hypot(p.x - v.x, p.y - v.y);
-            let t = ((p.x - v.x) * (w.x - v.x) + (p.y - v.y) * (w.y - v.y)) / l2;
-            t = Math.max(0, Math.min(1, t));
-            return Math.hypot(p.x - (v.x + t * (w.x - v.x)), p.y - (v.y + t * (w.y - v.y)));
+        function loopPrincipal(timestamp) {
+            if (!lastFrameTime) lastFrameTime = timestamp;
+            const dt = Math.min(0.05, (timestamp - lastFrameTime) / 1000);
+            lastFrameTime = timestamp;
+
+            actualizarFisica(dt);
+            dibujarCabina();
+
+            requestAnimationFrame(loopPrincipal);
         }
 
+        // ==========================================
+        // CONTROLES TÁCTILES Y DE TECLADO BIMANUALES
+        // ==========================================
         const setupBtn = (id, key) => {
             const el = document.getElementById(id);
             const on = (e) => {
@@ -923,6 +1064,7 @@
             el.addEventListener('mouseleave', off);
             el.addEventListener('touchstart', on, { passive: false });
             el.addEventListener('touchend', off, { passive: false });
+            el.addEventListener('touchcancel', off, { passive: false });
         };
 
         setupBtn('btnLeft', 'left');
@@ -945,63 +1087,61 @@
             if (e.key === 'ArrowDown' || e.key === 's' || e.key === 'S') { keys.down = false; document.getElementById('btnDown').classList.remove('pressed'); }
         });
 
+        // ==========================================
+        // INICIO Y CIERRE DE FASES (DEMO -> OFICIAL B2B)
+        // ==========================================
         function iniciarPrueba() {
             if (modoActual === 'BLOQUEADO' || estaBloqueadoPorDistancia) return;
 
-            contactosCount = 0;
-            tiempoErrorMs = 0;
-            estaEnBorde = false;
-            tiempoTranscurrido = 0;
+            distanciaRecorridaPx = 0;
+            distanciaMetaPx = duracionSeg * VELOCIDAD_AVANCE_PX_S;
+            cursor.x = canvas.width / 2;
+            cursor.y = 215;
             trailHistory = [];
-            evaluacionActiva = true;
-            canvasWrapper.classList.remove('border-error');
 
-            pua.x = posicionInicio.x;
-            pua.y = posicionInicio.y;
+            contactosCount = 0;
+            estaFueraDeEje = false;
+            tiempoErrorSeg = 0;
+            tiempoTranscurridoSeg = 0;
+            framesDentroEje = 0;
+            framesTotales = 0;
 
             metricContactos.textContent = '0';
             metricTiempoError.textContent = '0.0 s';
-            metricTiempo.textContent = `0 / ${tiempoLimiteSeg} s`;
+            metricTiempo.textContent = `0 / ${duracionSeg} s`;
             metricPrecision.textContent = '100%';
-            btnStart.style.display = 'none';
-
-            if (timerInterval) clearInterval(timerInterval);
-
-            timerInterval = setInterval(() => {
-                if (!estaBloqueadoPorDistancia) {
-                    tiempoTranscurrido++;
-                    metricTiempo.textContent = `${tiempoTranscurrido} / ${tiempoLimiteSeg} s`;
-
-                    if (tiempoTranscurrido >= tiempoLimiteSeg) {
-                        finalizarPrueba(true);
-                    }
-                }
-            }, 1000);
-        }
-
-        function finalizarPrueba(esTimeout = false) {
-            evaluacionActiva = false;
-            clearInterval(timerInterval);
-            keys = { left: false, right: false, up: false, down: false };
+            hudAvance.textContent = 'AVANCE: 0%';
             canvasWrapper.classList.remove('border-error');
 
-            const tiempoTotalSecNeto = tiempoTranscurrido;
-            const tErrorSeg = (tiempoErrorMs / 1000).toFixed(1);
-            let precisionFinal = Math.max(10, Math.round(100 - (contactosCount * 4) - ((tiempoErrorMs / 1000) * 3)));
-            if (esTimeout) precisionFinal = Math.max(10, precisionFinal - 25);
+            btnStart.style.display = 'none';
+            lastFrameTime = performance.now();
+            evaluacionActiva = true;
+        }
+
+        function finalizarPrueba() {
+            evaluacionActiva = false;
+            keys = { left: false, right: false, up: false, down: false };
+            canvasWrapper.classList.remove('border-error');
+            hudAvance.textContent = 'AVANCE: 100%';
+
+            const tiempoTotalSecNeto = Math.round(tiempoTranscurridoSeg);
+            const tErrorSeg = tiempoErrorSeg.toFixed(1);
+            const ratioPermanencia = framesTotales > 0 ? (framesDentroEje / framesTotales) : 1;
+            const precisionFinal = Math.max(10, Math.min(100, Math.round((ratioPermanencia * 100) - (contactosCount * 1.5))));
 
             if (modoActual === 'DEMO') {
                 const demoKey = `palancas_demo_completada_${cleanRut}_${sessionId}`;
                 localStorage.setItem(demoKey, 'true');
 
                 mostrarModal(
-                    "CALIBRACIÓN DEMO COMPLETADA",
-                    `Tiempo: <b>${tiempoTotalSecNeto} s</b><br>Toques en Borde: <b>${contactosCount}</b><br><br>Has completado la inducción libre. Presiona continuar para avanzar de inmediato a la <b>Simulación Oficial B2B (1 de 1)</b>.`,
+                    'CALIBRACIÓN DEMO COMPLETADA',
+                    `Precisión de Seguimiento: <b>${precisionFinal}%</b><br>Toques de Borde: <b>${contactosCount}</b> (${tErrorSeg} s fuera de eje)<br><br>Has completado la inducción libre. Presiona continuar para avanzar de inmediato a la <b>Simulación Oficial B2B (1 de 1)</b>.`,
                     () => {
-                        actualizarEstadoUI(true);
+                        prepararFaseUI(true);
                     }
                 );
             } else {
+                const aprobado = precisionFinal >= 75 && contactosCount <= 5;
                 const registroData = {
                     efectividad: precisionFinal,
                     score: precisionFinal,
@@ -1011,8 +1151,8 @@
                     tiempoTotal: tiempoTotalSecNeto,
                     tiempoError: tErrorSeg,
                     distanciaAvgCm: distanciaMedidaCm,
-                    aprobado: precisionFinal >= 75,
-                    dictamen: precisionFinal >= 75 ? 'APROBADO' : 'OBSERVADO',
+                    aprobado: aprobado,
+                    dictamen: aprobado ? 'APROBADO' : 'OBSERVADO',
                     fecha: new Date().toISOString()
                 };
 
@@ -1026,8 +1166,8 @@
                 localStorage.setItem('sensometrika_modulos_rendidos', JSON.stringify(modulosRendidos));
 
                 mostrarModal(
-                    "SIMULACIÓN OFICIAL B2B REGISTRADA",
-                    `Tiempo: <b>${tiempoTotalSecNeto} s</b><br>Toques en Borde: <b>${contactosCount}</b><br>Precisión Bimanual: <b>${precisionFinal}%</b><br><br><b>Resultado guardado con éxito en el expediente corporativo.</b>`,
+                    'SIMULACIÓN OFICIAL B2B REGISTRADA',
+                    `Precisión Bimanual: <b>${precisionFinal}%</b><br>Toques de Borde: <b>${contactosCount}</b><br>Tiempo Fuera de Canal: <b>${tErrorSeg} s</b><br><br><b>Resultado guardado con éxito en el expediente corporativo.</b>`,
                     () => {
                         ejecutarRetornoMenu();
                     }
@@ -1048,13 +1188,16 @@
 
         btnStart.addEventListener('click', iniciarPrueba);
         document.getElementById('btnInfo').addEventListener('click', () => {
-            mostrarModal("¿CÓMO FUNCIONA?", "Usa las palancas bimanuales (Eje X ◄ ► y Eje Y ▲ ▼) para desplazar el sensor luminoso hasta la meta verde antes de que se agote el tiempo disponible, manteniendo tu distancia entre 35 y 65 cm frente a la cámara.");
+            mostrarModal(
+                '¿CÓMO FUNCIONA?',
+                'El canal curvilíneo avanza de forma continua a velocidad constante (0.80x). Usa la <b>Mano Izquierda (◄ ►)</b> para corregir el eje horizontal y la <b>Mano Derecha (▲ ▼)</b> para ajustar la altura vertical, manteniendo el sensor centrado sin tocar los bordes y conservando tu distancia facial entre 35 y 65 cm.'
+            );
         });
 
         document.addEventListener('DOMContentLoaded', () => {
             iniciarMediaPipeFaceMesh();
-            actualizarEstadoUI(false);
-            renderLoop();
+            prepararFaseUI(false);
+            requestAnimationFrame(loopPrincipal);
         });
     </script>
 </body>
