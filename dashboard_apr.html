@@ -33,10 +33,10 @@
       align-items: center;
     }
 
-    .main-container { width: 100%; max-width: 950px; display: flex; flex-direction: column; gap: 16px; }
+    .main-container { width: 100%; max-width: 980px; display: flex; flex-direction: column; gap: 16px; }
 
     .brand-header { text-align: center; display: flex; flex-direction: column; align-items: center; gap: 6px; }
-    
+
     .logo-container {
       background: #060d1d;
       border: 1px solid var(--card-border);
@@ -97,6 +97,8 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
+      flex-wrap: wrap;
+      gap: 6px;
     }
 
     .form-grid {
@@ -115,6 +117,7 @@
       border-radius: 8px;
       font-size: 0.78rem;
       outline: none;
+      user-select: text;
     }
     .form-group input:focus { border-color: var(--accent-cyan); }
 
@@ -130,6 +133,42 @@
       text-transform: uppercase;
       text-align: center;
       box-shadow: 0 4px 14px var(--accent-cyan-glow);
+      transition: opacity 0.15s ease;
+    }
+
+    .btn-action-cyan:disabled {
+      opacity: 0.6;
+      cursor: wait;
+    }
+
+    /* Botones compactos de despacho en tabla y modal */
+    .btn-mini {
+      border: none;
+      padding: 5px 8px;
+      border-radius: 5px;
+      font-weight: 800;
+      font-size: 0.66rem;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      white-space: nowrap;
+      text-decoration: none;
+      transition: filter 0.15s ease;
+    }
+    .btn-mini:hover { filter: brightness(1.12); }
+    .btn-mini:disabled { opacity: 0.55; cursor: wait; }
+
+    .btn-mail { background: #6366f1; color: #ffffff; }
+    .btn-wa   { background: #10b981; color: #03150e; }
+    .btn-copy { background: #0284c7; color: #ffffff; }
+
+    .actions-stack {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 4px;
     }
 
     /* Tablas de Nómina */
@@ -154,7 +193,7 @@
     }
     .modal-card {
       background-color: var(--card-bg); border: 1px solid var(--accent-cyan); border-radius: 16px;
-      padding: 20px; width: 100%; max-width: 440px; display: flex; flex-direction: column; gap: 12px;
+      padding: 20px; width: 100%; max-width: 460px; display: flex; flex-direction: column; gap: 12px;
       box-shadow: 0 20px 50px rgba(0, 0, 0, 0.9), 0 0 15px var(--accent-cyan-glow);
     }
   </style>
@@ -201,7 +240,7 @@
     <!-- PANEL 1: REGISTRO DE TRABAJADOR Y DESPACHO INDIVIDUAL -->
     <div class="panel-card">
       <div class="card-title">
-        <span>➕ Generar Enlace de Evaluación Individual / WhatsApp</span>
+        <span>➕ Generar Enlace de Evaluación Individual (Correo / WhatsApp)</span>
         <span id="badgePlanContratado" class="badge-status badge-ok">PLAN BÁSICO LABORAL (B2B)</span>
       </div>
 
@@ -224,7 +263,7 @@
             <input type="text" id="inputCargo" placeholder="Ej: Conductor Camión Articulado" required>
           </div>
         </div>
-        <button type="submit" id="btnGenerarLink" class="btn-action-cyan" style="width: 100%; margin-top: 6px;">
+        <button type="submit" id="btnGenerarLink" class="btn-action-cyan" style="width: 100%; margin-top: 8px;">
           🚀 GENERAR ENLACE DE ACREDITACIÓN & DESPACHAR CORREO →
         </button>
       </form>
@@ -243,7 +282,7 @@
               <th>Trabajador / RUT</th>
               <th>Cargo & Faena</th>
               <th style="text-align: center;">Estado Acreditación</th>
-              <th style="text-align: center;">Acción Enlace</th>
+              <th style="text-align: center;">Despacho / Enlace</th>
               <th style="text-align: center;">Credencial QR (Garita)</th>
               <th style="text-align: center;">Informe Consolidado B2B</th>
             </tr>
@@ -256,18 +295,21 @@
     </div>
   </div>
 
-  <!-- MODAL INTEGRADO: COPIAR ENLACE / NOTIFICACIÓN -->
+  <!-- MODAL INTEGRADO: COPIAR ENLACE / WHATSAPP / REENVÍO CORREO -->
   <div id="modalNotificacion" class="modal-overlay">
     <div class="modal-card">
       <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--card-border); padding-bottom: 6px;">
         <span style="font-size: 0.78rem; font-weight: 900; color: var(--accent-cyan);" id="modalNotiTitulo">ENLACE GENERADO</span>
         <button onclick="cerrarModalNotificacion()" style="color: var(--text-muted); font-weight: 900; border: none; background: none; cursor: pointer;">✕</button>
       </div>
-      <p style="font-size: 0.72rem; color: var(--text-muted); line-height: 1.4;" id="modalNotiMensaje"></p>
-      
-      <div id="boxLinkCopia" style="display: none; flex-direction: column; gap: 6px; background: var(--inner-bg); border: 1px solid var(--card-border); padding: 8px; border-radius: 8px;">
-        <input type="text" id="txtLinkUrl" style="background: transparent; border: none; color: var(--accent-cyan); font-size: 0.72rem; width: 100%; font-family: monospace;" readonly>
-        <button class="btn-action-cyan" onclick="copiarLinkModal()" style="font-size: 0.70rem; padding: 6px;">📋 COPIAR PARA WHATSAPP</button>
+      <p style="font-size: 0.74rem; color: #cbd5e1; line-height: 1.45;" id="modalNotiMensaje"></p>
+
+      <div id="boxLinkCopia" style="display: none; flex-direction: column; gap: 8px; background: var(--inner-bg); border: 1px solid var(--card-border); padding: 10px; border-radius: 8px;">
+        <input type="text" id="txtLinkUrl" style="background: transparent; border: none; color: var(--accent-cyan); font-size: 0.72rem; width: 100%; font-family: monospace; user-select: text;" readonly>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
+          <button type="button" class="btn-mini btn-copy" onclick="copiarLinkModal()" style="padding: 8px;">📋 COPIAR LINK</button>
+          <a id="btnWhatsAppModal" href="#" target="_blank" class="btn-mini btn-wa" style="padding: 8px;">💬 ENVIAR WHATSAPP</a>
+        </div>
       </div>
 
       <button class="btn-action-cyan" style="background: #1e293b; color: #fff; box-shadow: none;" onclick="cerrarModalNotificacion()">ENTENDIDO</button>
@@ -282,7 +324,7 @@
         <button onclick="cerrarModalRecarga()" style="color: var(--text-muted); font-weight: 900; border: none; background: none; cursor: pointer;">✕</button>
       </div>
       <p style="font-size: 0.72rem; color: var(--text-muted);">Seleccione la cantidad de evaluaciones unitarias a incorporar a su saldo corporativo:</p>
-      
+
       <div class="form-group">
         <label>Cantidad de Folios a Comprar</label>
         <input type="number" id="numRecargaFolios" value="10" min="1" max="500">
@@ -298,7 +340,7 @@
 
     document.addEventListener('DOMContentLoaded', () => {
       const urlParams = new URLSearchParams(window.location.search);
-      
+
       // Capturar los parámetros enviados por el formulario B2B
       const empresaUrl = urlParams.get('empresa');
       const encargadoUrl = urlParams.get('encargado') || urlParams.get('apr');
@@ -356,13 +398,25 @@
       renderizarNomina();
     }
 
-    function abrirModalNotificacion(titulo, mensaje, link = null) {
+    function construirUrlWhatsApp(trabajador, urlEval) {
+      const mensajeWA = `Hola *${trabajador.nombre}*, la empresa *${trabajador.empresa}* te ha asignado tu evaluación psicosensométrica laboral (D.S. N° 170) para el cargo de *${trabajador.cargo}*.\n\nIngresa desde un dispositivo con cámara frontal activa en el siguiente enlace único (vigencia 72 hrs):\n${urlEval}`;
+      return `https://wa.me/?text=${encodeURIComponent(mensajeWA)}`;
+    }
+
+    function abrirModalNotificacion(titulo, mensaje, link = null, whatsappHref = null) {
       document.getElementById('modalNotiTitulo').innerText = titulo;
       document.getElementById('modalNotiMensaje').innerHTML = mensaje;
-      
+
       const boxLink = document.getElementById('boxLinkCopia');
+      const btnWA = document.getElementById('btnWhatsAppModal');
       if (link) {
         document.getElementById('txtLinkUrl').value = link;
+        if (whatsappHref) {
+          btnWA.href = whatsappHref;
+          btnWA.style.display = 'inline-flex';
+        } else {
+          btnWA.style.display = 'none';
+        }
         boxLink.style.display = 'flex';
       } else {
         boxLink.style.display = 'none';
@@ -390,6 +444,89 @@
       abrirModalNotificacion('¡ENLACE COPIADO!', 'El link de evaluación individual ha sido copiado al portapapeles.');
     }
 
+    // =========================================================
+    // CONEXIÓN DIRECTA CON /api/enviar-correo
+    // =========================================================
+    async function enviarCorreoCitacionTrabajador(trabajador, urlEval) {
+      if (!trabajador.email) {
+        return { ok: false, error: 'El trabajador no tiene correo registrado.' };
+      }
+
+      try {
+        const resp = await fetch('/api/enviar-correo', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            tipo: 'b2b_trabajador_link',
+            emailDestino: trabajador.email,
+            nombreTrabajador: trabajador.nombre,
+            rutTrabajador: trabajador.rut,
+            cargo: trabajador.cargo,
+            empresa: trabajador.empresa,
+            planNombre: (localStorage.getItem('sensometrika_b2b_plan') || 'BASICO').toUpperCase(),
+            linkAcceso: urlEval
+          })
+        });
+
+        const data = await resp.json();
+        if (!resp.ok || data.success === false) {
+          return { ok: false, error: data.error || 'Error al despachar correo.' };
+        }
+        return { ok: true, data };
+      } catch (err) {
+        return { ok: false, error: err.message || 'Error de conexión con servidor de correo.' };
+      }
+    }
+
+    async function reenviarCorreoFila(index, btnEl) {
+      const trabajadores = obtenerTrabajadores();
+      const t = trabajadores[index];
+      if (!t) return;
+
+      const cleanRut = t.rut.replace(/[^0-9Kk]/g, '');
+      const sessionId = t.session || `SESION_B2B_${cleanRut}`;
+      const planActual = (localStorage.getItem('sensometrika_b2b_plan') || 'BASICO').toUpperCase();
+      const correoEncargado = localStorage.getItem('sensometrika_b2b_correo') || '';
+
+      const paramsEval = new URLSearchParams({
+        token: t.token || `B2B-SMK-${cleanRut.substring(0, 4)}`,
+        rut: t.rut,
+        nombre: t.nombre,
+        cargo: t.cargo,
+        empresa: t.empresa,
+        plan: planActual,
+        correo_apr: correoEncargado,
+        session: sessionId,
+        mode: 'b2b'
+      });
+      const urlEval = `${window.location.origin}/verificacion_trabajador.html?${paramsEval.toString()}`;
+
+      const textoOriginal = btnEl.innerHTML;
+      btnEl.disabled = true;
+      btnEl.innerHTML = '⏳ Enviando...';
+
+      const resCorreo = await enviarCorreoCitacionTrabajador(t, urlEval);
+
+      btnEl.disabled = false;
+      btnEl.innerHTML = textoOriginal;
+
+      if (resCorreo.ok) {
+        abrirModalNotificacion(
+          'CORREO DESPACHADO CON ÉXITO 📧',
+          `La citación con enlace único de verificación biométrica fue enviada a <strong>${t.email}</strong> (${t.nombre}).`,
+          urlEval,
+          construirUrlWhatsApp(t, urlEval)
+        );
+      } else {
+        abrirModalNotificacion(
+          'AVISO DE DESPACHO DE CORREO ⚠️',
+          `No se pudo confirmar el envío automático a <strong>${t.email}</strong> (${resCorreo.error}).<br><br>Puedes compartir el enlace directamente por WhatsApp o copiarlo:`,
+          urlEval,
+          construirUrlWhatsApp(t, urlEval)
+        );
+      }
+    }
+
     function evaluarEstadoNomina(rutRaw, sessionId) {
       if (!rutRaw) return { texto: 'PENDIENTE DE INICIO', clase: 'badge-pending', evaluado: false, aprobado: false };
       const cleanRut = rutRaw.replace(/[^0-9Kk]/g, '');
@@ -397,28 +534,26 @@
       // 1. Verificación por emisión de informe pericial
       const informeEmitido = localStorage.getItem(`sensometrika_informe_emitido_${cleanRut}`) ||
                              localStorage.getItem(`informe_b2b_aprobado_${cleanRut}`);
-                             
+
       if (informeEmitido === 'true' || informeEmitido === 'APROBADO') {
         return { texto: '✓ APROBADO / VIGENTE', clase: 'badge-ok', evaluado: true, aprobado: true };
       }
 
-      // 2. Verificación modular redundante (por RUT y por SessionId)
-      const audicion = JSON.parse(localStorage.getItem(`sensometrika_audicion_${cleanRut}_${sessionId}`)) || 
-                       JSON.parse(localStorage.getItem(`sensometrika_audicion_${cleanRut}`));
-      const anticipacion = JSON.parse(localStorage.getItem(`sensometrika_anticipacion_${cleanRut}_${sessionId}`)) || 
-                           JSON.parse(localStorage.getItem(`sensometrika_anticipacion_${cleanRut}`));
-      const estereopsis = JSON.parse(localStorage.getItem(`sensometrika_estereopsis_${cleanRut}_${sessionId}`)) || 
-                          JSON.parse(localStorage.getItem(`sensometrika_estereopsis_${cleanRut}`));
-      const fatiga = JSON.parse(localStorage.getItem(`sensometrika_fatiga_${cleanRut}_${sessionId}`)) || 
-                     JSON.parse(localStorage.getItem(`sensometrika_fatiga_${cleanRut}`));
+      // 2. Verificación modular redundante (módulos base + avanzados)
+      const clavesModulos = ['reactimetro', 'palancas', 'punteo', 'visual', 'audicion', 'anticipacion', 'estereopsis', 'fatiga'];
+      const resultados = clavesModulos
+        .map(m =>
+          JSON.parse(localStorage.getItem(`sensometrika_${m}_${cleanRut}_${sessionId}`)) ||
+          JSON.parse(localStorage.getItem(`sensometrika_${m}_${cleanRut}`))
+        )
+        .filter(Boolean);
 
-      const evaluado = !!(audicion || anticipacion || estereopsis || fatiga);
-
-      if (evaluado) {
-        const aprobado = (audicion ? audicion.aprobado : true) &&
-                         (anticipacion ? anticipacion.aprobado : true) &&
-                         (estereopsis ? estereopsis.aprobado : true) &&
-                         (fatiga ? fatiga.aprobado : true);
+      if (resultados.length > 0) {
+        const aprobado = resultados.every(r => {
+          if (typeof r.aprobado === 'boolean') return r.aprobado;
+          if (typeof r.dictamen === 'string') return r.dictamen.toUpperCase().includes('APROBADO');
+          return true;
+        });
 
         if (aprobado) {
           return { texto: '✓ APROBADO / VIGENTE', clase: 'badge-ok', evaluado: true, aprobado: true };
@@ -438,6 +573,11 @@
         return;
       }
 
+      const btnSubmit = document.getElementById('btnGenerarLink');
+      const textoBtnOriginal = btnSubmit.innerHTML;
+      btnSubmit.disabled = true;
+      btnSubmit.innerHTML = '⏳ GENERANDO FOLIO & ENVIANDO CORREO...';
+
       const rut = document.getElementById('inputRut').value.trim();
       const nombre = document.getElementById('inputNombre').value.trim();
       const email = document.getElementById('inputEmail').value.trim();
@@ -447,10 +587,22 @@
       const cleanRut = rut.replace(/[^0-9Kk]/g, '');
       const sessionId = `SESION_B2B_${cleanRut}_${Date.now()}`;
       const empresa = document.getElementById('lblEmpresa').innerText;
+      const planActual = (localStorage.getItem('sensometrika_b2b_plan') || 'BASICO').toUpperCase();
+      const correoEncargado = localStorage.getItem('sensometrika_b2b_correo') || '';
 
       const originUrl = window.location.origin;
-      // REDIRECCIÓN OBLIGATORIA: Enlace hacia verificacion_trabajador.html
-      const urlCompleta = `${originUrl}/verificacion_trabajador.html?token=${tokenB2B}&rut=${encodeURIComponent(rut)}&nombre=${encodeURIComponent(nombre)}&cargo=${encodeURIComponent(cargo)}&empresa=${encodeURIComponent(empresa)}&session=${sessionId}&mode=b2b`;
+      const paramsEval = new URLSearchParams({
+        token: tokenB2B,
+        rut: rut,
+        nombre: nombre,
+        cargo: cargo,
+        empresa: empresa,
+        plan: planActual,
+        correo_apr: correoEncargado,
+        session: sessionId,
+        mode: 'b2b'
+      });
+      const urlCompleta = `${originUrl}/verificacion_trabajador.html?${paramsEval.toString()}`;
 
       const nuevoTrabajador = {
         rut: rut,
@@ -458,6 +610,7 @@
         email: email,
         cargo: cargo,
         empresa: empresa,
+        plan: planActual,
         token: tokenB2B,
         session: sessionId,
         url: urlCompleta,
@@ -473,13 +626,30 @@
       actualizarContadorFolios();
       renderizarNomina();
 
+      // Despacho automático vía Resend (/api/enviar-correo)
+      const resCorreo = await enviarCorreoCitacionTrabajador(nuevoTrabajador, urlCompleta);
+
+      btnSubmit.disabled = false;
+      btnSubmit.innerHTML = textoBtnOriginal;
       document.getElementById('formRegistrarTrabajador').reset();
 
-      abrirModalNotificacion(
-        'ENLACE DE ACREDITACIÓN GENERADO 📧🔗',
-        `Se ha generado la evaluación para <strong>${nombre}</strong>.<br><br>Copia el link a continuación para despacharlo vía WhatsApp:`,
-        urlCompleta
-      );
+      const waHref = construirUrlWhatsApp(nuevoTrabajador, urlCompleta);
+
+      if (resCorreo.ok) {
+        abrirModalNotificacion(
+          'ENLACE GENERADO & CORREO ENVIADO 📧✅',
+          `Se ha despachado la citación oficial al correo <strong>${email}</strong> para <strong>${nombre}</strong>.<br><br>También puedes copiar el link o enviarlo directamente por WhatsApp:`,
+          urlCompleta,
+          waHref
+        );
+      } else {
+        abrirModalNotificacion(
+          'ENLACE GENERADO (REVISAR CORREO) 🔗⚠️',
+          `Se registró el folio para <strong>${nombre}</strong>, pero el servidor de correo reportó: <em>${resCorreo.error}</em>.<br><br>Usa los botones inferiores para enviarlo por WhatsApp o copiar el enlace:`,
+          urlCompleta,
+          waHref
+        );
+      }
     }
 
     function copiarLinkFila(url) {
@@ -503,8 +673,10 @@
       }
 
       const originUrl = window.location.origin;
+      const planActual = (localStorage.getItem('sensometrika_b2b_plan') || 'BASICO').toUpperCase();
+      const correoEncargado = localStorage.getItem('sensometrika_b2b_correo') || '';
 
-      trabajadores.forEach((t) => {
+      trabajadores.forEach((t, index) => {
         const cleanRut = t.rut.replace(/[^0-9Kk]/g, '');
         const sessionId = t.session || `SESION_B2B_${cleanRut}`;
         const estadoReal = evaluarEstadoNomina(t.rut, sessionId);
@@ -524,6 +696,7 @@
           nombre: t.nombre,
           cargo: t.cargo,
           empresa: t.empresa,
+          plan: t.plan || planActual,
           session: sessionId,
           mode: 'b2b'
         });
@@ -535,10 +708,13 @@
           nombre: t.nombre,
           cargo: t.cargo,
           empresa: t.empresa,
+          plan: t.plan || planActual,
+          correo_apr: correoEncargado,
           session: sessionId,
           mode: 'b2b'
         });
         const urlEval = `${originUrl}/verificacion_trabajador.html?${paramsEval.toString()}`;
+        const waHref = construirUrlWhatsApp(t, urlEval);
 
         let accionHtml = '';
         let informeHtml = '';
@@ -552,9 +728,17 @@
           `;
         } else {
           accionHtml = `
-            <button onclick="copiarLinkFila('${urlEval}')" style="background:#0284c7; color:#fff; border:none; padding:4px 8px; border-radius:4px; font-weight:700; cursor:pointer;">
-              🔗 Copiar Link
-            </button>
+            <div class="actions-stack">
+              <button type="button" onclick="reenviarCorreoFila(${index}, this)" class="btn-mini btn-mail" title="Enviar citación a ${t.email || 'correo'}">
+                📧 Correo
+              </button>
+              <a href="${waHref}" target="_blank" class="btn-mini btn-wa" title="Enviar enlace por WhatsApp">
+                💬 WhatsApp
+              </a>
+              <button type="button" onclick="copiarLinkFila('${urlEval}')" class="btn-mini btn-copy" title="Copiar link único">
+                🔗 Copiar
+              </button>
+            </div>
           `;
           informeHtml = `<span style="font-size:0.65rem; color:var(--text-muted);">PENDIENTE</span>`;
         }
@@ -563,7 +747,8 @@
         tr.innerHTML = `
           <td>
             <strong style="color:#fff; display:block;">${t.nombre}</strong>
-            <span style="font-size:0.65rem; color:var(--text-muted);">RUT: ${t.rut}</span>
+            <span style="font-size:0.65rem; color:var(--text-muted); display:block;">RUT: ${t.rut}</span>
+            ${t.email ? `<span style="font-size:0.62rem; color:#38bdf8;">${t.email}</span>` : ''}
           </td>
           <td>
             <strong style="color:var(--accent-cyan); display:block;">${t.cargo}</strong>

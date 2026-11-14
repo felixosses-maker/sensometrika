@@ -89,6 +89,19 @@
             padding: 6px 10px;
             border-radius: 6px;
             text-align: center;
+            transition: all 0.2s ease;
+        }
+
+        .notice-banner.sent-ok {
+            background-color: #ecfdf5;
+            border-color: #6ee7b7;
+            color: #047857;
+        }
+
+        .notice-banner.sent-warn {
+            background-color: #fffbeb;
+            border-color: #fde68a;
+            color: #b45309;
         }
 
         .ficha-layout {
@@ -273,7 +286,7 @@
         </header>
 
         <div class="notice-banner" id="lblBannerDespacho">
-            ⚡ Certificación B2B: Notificación pericial enviada a la prevención de riesgos y trazabilidad telemétrica D.S. N° 170.
+            ⚡ Certificación B2B: Notificación pericial automática a Prevención de Riesgos y trazabilidad telemétrica D.S. N° 170.
         </div>
 
         <div class="ficha-layout">
@@ -380,14 +393,30 @@
     <script>
         const urlParams = new URLSearchParams(window.location.search);
         let datosUsuario = {};
+        let planEmpresaObj = {};
         try { datosUsuario = JSON.parse(localStorage.getItem('sensometrika_datos_usuario')) || {}; } catch(e){}
+        try { planEmpresaObj = JSON.parse(localStorage.getItem('sensometrika_plan_empresa')) || {}; } catch(e){}
 
         const rawNombre = urlParams.get('nombre') || datosUsuario.nombre || localStorage.getItem('sensometrika_nombre') || 'TRABAJADOR EVALUADO';
         const rawRut = urlParams.get('rut') || datosUsuario.rut || localStorage.getItem('sensometrika_rut') || '12.345.678-K';
         const rawCargo = urlParams.get('cargo') || datosUsuario.cargo || localStorage.getItem('sensometrika_cargo') || 'OPERADOR DE MAQUINARIA';
-        const rawEmpresa = urlParams.get('empresa') || datosUsuario.empresa || 'SOCADEP LTDA.';
+        const rawEmpresa = urlParams.get('empresa') || datosUsuario.empresa || localStorage.getItem('sensometrika_b2b_empresa') || 'EMPRESA MANDANTE';
         const sessionId = urlParams.get('session') || localStorage.getItem('sensometrika_session_activa') || `SESION_B2B_${rawRut.replace(/[^0-9Kk]/g, '')}_${Date.now()}`;
         const cleanRut = rawRut.replace(/[^0-9Kk]/g, '');
+
+        // Resolución del correo del Encargado APR / HSEQ (URL > LocalStorage B2B > Checkout Empresa > Fallback)
+        const correoEncargadoAPR = (
+            urlParams.get('correo_apr') ||
+            urlParams.get('correoEncargado') ||
+            localStorage.getItem('sensometrika_b2b_correo') ||
+            (planEmpresaObj.responsable && (planEmpresaObj.responsable.correo || planEmpresaObj.responsable.email)) ||
+            datosUsuario.correoEncargado ||
+            'contacto@sensometrika.com'
+        ).trim();
+
+        if (urlParams.get('correo_apr')) {
+            localStorage.setItem('sensometrika_b2b_correo', correoEncargadoAPR);
+        }
 
         // Normalización estricta del Plan (BASICO, PLUS, FULL, ALTO)
         let planActivo = (urlParams.get('plan') || localStorage.getItem('sensometrika_b2b_plan') || 'BASICO').toUpperCase();
@@ -402,7 +431,15 @@
         }
 
         function volverMenuB2BPlanes() {
-            const paramsMenu = new URLSearchParams({ rut: rawRut, nombre: rawNombre, cargo: rawCargo, session: sessionId, plan: planActivo, empresa: rawEmpresa });
+            const paramsMenu = new URLSearchParams({
+                rut: rawRut,
+                nombre: rawNombre,
+                cargo: rawCargo,
+                session: sessionId,
+                plan: planActivo,
+                empresa: rawEmpresa,
+                correo_apr: correoEncargadoAPR
+            });
             window.location.href = `menu_b2b_planes.html?${paramsMenu.toString()}`;
         }
 
@@ -420,9 +457,8 @@
 
         // MOTOR ESTRICTO DE CUMPLIMIENTO PERICIAL B2B (D.S. N° 170)
         function evaluarCumplimientoModulo(key, telData) {
-            if (!telData) return true; // Si solo existe flag booleano legado sin objeto detallado
+            if (!telData) return true;
 
-            // Si el módulo guardó explícitamente aprobado === false, rechazar de inmediato
             if (telData.aprobado === false || telData.estado === 'NO APTO' || telData.estado === 'REPROBADO') {
                 return false;
             }
@@ -435,25 +471,21 @@
 
             switch (key) {
                 case 'reactimetro': {
-                    // Estándar: Reacción <= 400ms
                     const ms = numVal(telData.tiempoReaccionMs ?? telData.tiempoReaccion ?? telData.tiempo ?? telData.promedioMs);
                     if (ms !== null) return ms > 0 && ms <= 400;
                     return telData.aprobado === true;
                 }
                 case 'palancas': {
-                    // Estándar: Efectividad >= 75%
                     const ef = numVal(telData.efectividad ?? telData.score ?? telData.precision);
                     if (ef !== null) return ef >= 75;
                     return telData.aprobado === true;
                 }
                 case 'punteo': {
-                    // Estándar: Efectividad >= 80%
                     const ef = numVal(telData.efectividad ?? telData.score ?? telData.precision);
                     if (ef !== null) return ef >= 80;
                     return telData.aprobado === true;
                 }
                 case 'audicion': {
-                    // Estándar: Tonal conversacional (>= 75% aciertos o aprobado === true)
                     if (telData.aprobado !== undefined) return Boolean(telData.aprobado);
                     if (telData.aciertos !== undefined) {
                         const tot = numVal(telData.total) || 8;
@@ -464,7 +496,6 @@
                     return true;
                 }
                 case 'visual': {
-                    // Estándar: Snellen 20/20 & Ishihara
                     if (telData.aprobado !== undefined) return Boolean(telData.aprobado);
                     if (telData.ishihara && String(telData.ishihara).toUpperCase().includes('ALTERAD')) return false;
                     if (telData.aciertos !== undefined) {
@@ -474,10 +505,8 @@
                     return true;
                 }
                 case 'anticipacion': {
-                    // Estándar: Margen <= 0.15s (150ms) o Efectividad >= 80%
                     const margen = numVal(telData.margenError ?? telData.errorPromedio ?? telData.tiempo);
                     if (margen !== null) {
-                        // Soporta si el módulo guarda en segundos (0.12) o milisegundos (120)
                         return margen > 5 ? margen <= 150 : margen <= 0.15;
                     }
                     const ef = numVal(telData.efectividad ?? telData.score);
@@ -485,14 +514,12 @@
                     return telData.aprobado === true;
                 }
                 case 'estereopsis': {
-                    // Estándar: Profundidad binaural
                     if (telData.aprobado !== undefined) return Boolean(telData.aprobado);
                     const ef = numVal(telData.efectividad ?? telData.score);
                     if (ef !== null) return ef >= 80;
                     return true;
                 }
                 case 'fatiga': {
-                    // Estándar: Alerta sostenida (Lapses <= 2 y promedio <= 350ms, o score >= 80%)
                     if (telData.aprobado !== undefined) return Boolean(telData.aprobado);
                     const lapses = numVal(telData.lapses ?? telData.lapsos);
                     if (lapses !== null && lapses > 2) return false;
@@ -504,6 +531,69 @@
                 }
                 default:
                     return telData.aprobado !== false;
+            }
+        }
+
+        // =========================================================================
+        // DISPARO AUTOMÁTICO DESATENDIDO DEL INFORME PERICIAL AL ENCARGADO APR/HSEQ
+        // =========================================================================
+        async function despacharInformeAutomaticoAPR({ dictamenTexto, folioCert, urlInformeDirecto }) {
+            const banner = document.getElementById('lblBannerDespacho');
+            const claveAntiDuplicado = `sensometrika_correo_apr_enviado_${cleanRut}_${sessionId}`;
+
+            // Evitar reenvíos duplicados si se recarga el informe
+            if (localStorage.getItem(claveAntiDuplicado) === 'true') {
+                if (banner) {
+                    banner.classList.add('sent-ok');
+                    banner.innerHTML = `✅ Informe pericial emitido y notificado automáticamente a Prevención de Riesgos (<strong>${correoEncargadoAPR}</strong>).`;
+                }
+                return;
+            }
+
+            if (banner) {
+                banner.innerHTML = `⏳ Emitiendo certificado digital y despachando notificación automática a <strong>${correoEncargadoAPR}</strong>...`;
+            }
+
+            const payload = {
+                tipo: 'b2b_dictamen',
+                emailDestino: correoEncargadoAPR,
+                nombreTrabajador: decodeURIComponent(rawNombre).toUpperCase(),
+                rutTrabajador: rawRut,
+                cargo: decodeURIComponent(rawCargo).toUpperCase(),
+                empresa: decodeURIComponent(rawEmpresa).toUpperCase(),
+                planNombre: `PLAN ${planActivo} B2B`,
+                dictamen: dictamenTexto,
+                folio: folioCert,
+                linkInforme: urlInformeDirecto,
+                linkAcceso: urlInformeDirecto
+            };
+
+            try {
+                const resp = await fetch('/api/enviar-correo', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const data = await resp.json();
+
+                if (resp.ok && data.success !== false) {
+                    localStorage.setItem(claveAntiDuplicado, 'true');
+                    if (banner) {
+                        banner.classList.add('sent-ok');
+                        banner.innerHTML = `✅ Informe pericial emitido y enviado automáticamente a la casilla de Prevención de Riesgos (<strong>${correoEncargadoAPR}</strong>).`;
+                    }
+                } else {
+                    if (banner) {
+                        banner.classList.add('sent-warn');
+                        banner.innerHTML = `⚠️ Certificado consolidado en Consola APR. Aviso de correo (${correoEncargadoAPR}): ${data.error || 'pendiente de confirmación'}.`;
+                    }
+                }
+            } catch (err) {
+                console.error('Error en disparo automático de correo B2B:', err);
+                if (banner) {
+                    banner.classList.add('sent-warn');
+                    banner.innerHTML = `⚠️ Certificado consolidado en Consola APR. No se pudo contactar el servidor de correo (${correoEncargadoAPR}).`;
+                }
             }
         }
 
@@ -544,24 +634,29 @@
 
             document.getElementById('lblFechaInicio').textContent = formatFecha(tsInicio);
 
-            // Folio de Certificación
-            let folioCert = `SMK-B2B-${planActivo}-${cleanRut.substring(0, 6)}-${Math.floor(Math.random()*899+100)}`;
+            // Folio de Certificación persistente por sesión
+            const keyFolio = `sensometrika_folio_${cleanRut}_${sessionId}`;
+            let folioCert = localStorage.getItem(keyFolio);
+            if (!folioCert) {
+                folioCert = `SMK-B2B-${planActivo}-${cleanRut.substring(0, 6)}-${Math.floor(Math.random()*899+100)}`;
+                localStorage.setItem(keyFolio, folioCert);
+            }
 
             // Foto Biométrica Única
-            const fotoGuardada = localStorage.getItem(`sensometrika_foto_${cleanRut}_${sessionId}`) || 
-                                 localStorage.getItem(`sensometrika_foto_${cleanRut}`) || 
+            const fotoGuardada = localStorage.getItem(`sensometrika_foto_${cleanRut}_${sessionId}`) ||
+                                 localStorage.getItem(`sensometrika_foto_${cleanRut}`) ||
                                  localStorage.getItem('sensometrika_foto_identidad');
             if (fotoGuardada && fotoGuardada.length > 50) {
                 document.getElementById('imgBiometrica').src = fotoGuardada;
             }
 
             // Firma Digital
-            const firmaGuardada = localStorage.getItem(`sensometrika_firma_${cleanRut}_${sessionId}`) || 
+            const firmaGuardada = localStorage.getItem(`sensometrika_firma_${cleanRut}_${sessionId}`) ||
                                   localStorage.getItem(`sensometrika_firma_${cleanRut}`);
             const svgFirmaRespaldo = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="60" viewBox="0 0 200 60"><path d="M 15 35 Q 35 15, 65 30 T 105 18 T 155 38 Q 175 48, 185 25" fill="none" stroke="%230f172a" stroke-width="2" stroke-linecap="round"/></svg>`;
             document.getElementById('imgFirmaTrabajador').src = (firmaGuardada && firmaGuardada.startsWith('data:image')) ? firmaGuardada : svgFirmaRespaldo;
 
-            // MATRIZ OFICIAL DE LOS 8 MÓDULOS SINCRONIZADA CON PLANES B2B:
+            // MATRIZ OFICIAL DE LOS 8 MÓDULOS SINCRONIZADA CON PLANES B2B
             const modulosParrilla = [
                 { key: 'reactimetro', title: '1. Reactímetro Simple ⚡', est: 'Reacción ≤ 400ms', minPlan: 'BASICO' },
                 { key: 'palancas', title: '2. Test Palancas Bimanual 🕹️', est: 'Efectividad ≥ 75%', minPlan: 'BASICO' },
@@ -588,7 +683,7 @@
             modulosParrilla.forEach(m => {
                 const incluido = esPermitido(m.minPlan);
                 const telData = obtenerTelemetriaModulo(m.key);
-                const isRendido = telData !== null || 
+                const isRendido = telData !== null ||
                                   localStorage.getItem(`medico_${m.key}_${cleanRut}_${sessionId}`) === 'true' ||
                                   localStorage.getItem(`sensometrika_${m.key}_${cleanRut}_${sessionId}`) !== null ||
                                   localStorage.getItem(`sensometrika_${m.key}_${cleanRut}`) !== null;
@@ -617,7 +712,6 @@
                             const valMs = telData.tiempo ?? telData.tiempoReaccion ?? telData.tiempoReaccionMs;
                             detalleTelemetria += `Tiempo: <b>${valMs}ms</b><br>`;
                         } else if (telData.tiempoTotal !== undefined) {
-                            // Palancas/Punteo guardan duración de prueba en segundos
                             detalleTelemetria += `Duración: <b>${telData.tiempoTotal}s</b><br>`;
                         }
 
@@ -670,9 +764,10 @@
             const lblEstadoVigencia = document.getElementById('lblEstadoVigencia');
             const cargoFormateado = decodeURIComponent(rawCargo).toUpperCase();
             let estadoGlobalQr = 'INCOMPLETO';
+            let dictamenCorreo = 'INCOMPLETO';
+            const sesionCompleta = evaluadosObligatorios >= totalObligatoriosPlan;
 
-            if (modulosReprobados.length > 0 && evaluadosObligatorios >= totalObligatoriosPlan) {
-                // Sesión completa pero CON MÓDULO(S) REPROBADO(S) -> NO APTO
+            if (modulosReprobados.length > 0 && sesionCompleta) {
                 if (!tsTermino) {
                     tsTermino = Date.now().toString();
                     localStorage.setItem(keyTsTermino, tsTermino);
@@ -680,6 +775,7 @@
                 document.getElementById('lblFechaTermino').textContent = formatFecha(tsTermino);
 
                 estadoGlobalQr = 'NO_APTO';
+                dictamenCorreo = `NO APTO (${modulosReprobados.join(', ')})`;
                 boxDictamen.className = "banner-dictamen dictamen-rechazado";
                 boxDictamen.innerHTML = `
                     ✖ DICTAMEN PERICIAL: NO APTO PARA OPERACIÓN (${cargoFormateado})
@@ -690,10 +786,10 @@
                 lblEstadoVigencia.textContent = "NO HABILITADO / OBSERVADO";
                 lblEstadoVigencia.className = "vigencia-red";
 
-            } else if (modulosReprobados.length > 0 && evaluadosObligatorios < totalObligatoriosPlan) {
-                // Sesión en curso pero YA EXISTE un módulo bajo estándar
+            } else if (modulosReprobados.length > 0 && !sesionCompleta) {
                 const faltantes = totalObligatoriosPlan - evaluadosObligatorios;
                 estadoGlobalQr = 'OBSERVADO';
+                dictamenCorreo = 'OBSERVADO / EN PROCESO';
                 boxDictamen.className = "banner-dictamen dictamen-rechazado";
                 boxDictamen.innerHTML = `
                     ⚠️ ALERTA PERICIAL: ESTÁNDAR NO CUMPLIDO EN ${modulosReprobados.join(', ')}
@@ -705,8 +801,7 @@
                 lblEstadoVigencia.className = "vigencia-red";
                 document.getElementById('lblFechaTermino').textContent = "--";
 
-            } else if (evaluadosObligatorios < totalObligatoriosPlan) {
-                // Todo lo rendido hasta ahora está APTO, pero faltan módulos
+            } else if (!sesionCompleta) {
                 const faltantes = totalObligatoriosPlan - evaluadosObligatorios;
                 estadoGlobalQr = 'INCOMPLETO';
                 boxDictamen.className = "banner-dictamen dictamen-pendiente";
@@ -721,7 +816,6 @@
                 document.getElementById('lblFechaTermino').textContent = "--";
 
             } else {
-                // 100% de módulos rendidos y 100% APTO
                 if (!tsTermino) {
                     tsTermino = Date.now().toString();
                     localStorage.setItem(keyTsTermino, tsTermino);
@@ -729,6 +823,7 @@
                 document.getElementById('lblFechaTermino').textContent = formatFecha(tsTermino);
 
                 estadoGlobalQr = 'APROBADO';
+                dictamenCorreo = 'APTO PARA OPERACIÓN Y CONDUCCIÓN';
                 boxDictamen.className = "banner-dictamen dictamen-aprobado";
                 boxDictamen.innerHTML = `
                     ✔ DICTAMEN PERICIAL: CERTIFICADO APTO PARA OPERACIÓN Y CONDUCCIÓN (${cargoFormateado})
@@ -750,9 +845,28 @@
                 imgQr.src = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(urlValidacionSegura)}`;
             }
 
-            // Guardar flag global para actualizar badge en Dashboard APR
-            localStorage.setItem(`sensometrika_informe_emitido_${cleanRut}`, 'true');
-            localStorage.setItem(`sensometrika_dictamen_estado_${cleanRut}`, estadoGlobalQr);
+            // Sincronización con Dashboard APR y disparo automático de correo al completar el 100% del plan
+            if (sesionCompleta) {
+                localStorage.setItem(`sensometrika_informe_emitido_${cleanRut}`, 'true');
+                localStorage.setItem(`sensometrika_dictamen_estado_${cleanRut}`, estadoGlobalQr);
+
+                const paramsInformeUrl = new URLSearchParams({
+                    rut: rawRut,
+                    nombre: decodeURIComponent(rawNombre),
+                    cargo: decodeURIComponent(rawCargo),
+                    empresa: decodeURIComponent(rawEmpresa),
+                    plan: planActivo,
+                    session: sessionId,
+                    mode: 'b2b'
+                });
+                const urlInformeDirecto = `${window.location.origin}/informe_b2b_planes.html?${paramsInformeUrl.toString()}`;
+
+                despacharInformeAutomaticoAPR({
+                    dictamenTexto: dictamenCorreo,
+                    folioCert,
+                    urlInformeDirecto
+                });
+            }
         });
     </script>
 </body>
