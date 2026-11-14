@@ -130,6 +130,7 @@
             letter-spacing: 0.5px;
             display: flex;
             align-items: center;
+            justify-content: space-between;
             gap: 6px;
         }
 
@@ -226,7 +227,13 @@
             text-align: center;
             text-transform: uppercase;
             box-shadow: 0 4px 15px rgba(16, 185, 129, 0.35);
-            transition: transform 0.1s;
+            transition: all 0.15s ease;
+        }
+
+        .btn-informe-main.incompleto {
+            background-color: #1e293b;
+            color: #94a3b8;
+            box-shadow: none;
         }
 
         .btn-informe-main:active {
@@ -258,7 +265,8 @@
         <!-- PARRILLA DE MÓDULOS DE EVALUACIÓN -->
         <section class="parrilla-card">
             <div class="parrilla-header">
-                📋 PARRILLA DE MÓDULOS DEL PLAN (8 EVALUACIONES BASE)
+                <span>📋 PARRILLA DE MÓDULOS DEL PLAN</span>
+                <span id="lblProgresoPlan" style="color: var(--azul-destacado); font-size: 0.72rem;">0 / 3</span>
             </div>
 
             <div id="contenedorParrillaModulos" style="display: flex; flex-direction: column; gap: 10px;">
@@ -267,8 +275,8 @@
         </section>
 
         <!-- BOTÓN PRINCIPAL PARA VER INFORME PERICIAL -->
-        <button class="btn-informe-main" onclick="navegarAInforme()">
-            📊 VER INFORME PERICIAL B2B →
+        <button id="btnVerInformeB2B" class="btn-informe-main incompleto" onclick="navegarAInforme()">
+            ⏳ COMPLETE LOS MÓDULOS PARA EMITIR INFORME
         </button>
     </div>
 
@@ -287,6 +295,8 @@
         const rawNombre = urlParams.get('nombre') || datosUsuario.nombre || localStorage.getItem('sensometrika_nombre') || 'NUEVO TRABAJADOR';
         let rawCargo = urlParams.get('cargo') || datosUsuario.cargo || localStorage.getItem('sensometrika_cargo') || 'OPERADOR';
         let rawEmpresa = urlParams.get('empresa') || datosUsuario.empresa || localStorage.getItem('sensometrika_b2b_empresa') || 'EMPRESA MANDANTE';
+        const correoApr = (urlParams.get('correo_apr') || urlParams.get('correoEncargado') || datosUsuario.correoEncargado || localStorage.getItem('sensometrika_b2b_correo') || '').trim();
+        const tokenB2B = urlParams.get('token') || '';
 
         if (rawCargo.toUpperCase().includes('B2C')) rawCargo = 'OPERADOR';
         if (rawEmpresa.toUpperCase().includes('B2C')) rawEmpresa = 'EMPRESA MANDANTE';
@@ -320,6 +330,7 @@
             nombre: rawNombre,
             cargo: rawCargo,
             empresa: rawEmpresa,
+            correoEncargado: correoApr,
             plan: planActivo,
             session: sessionId
         };
@@ -328,6 +339,7 @@
         localStorage.setItem('sensometrika_cargo', rawCargo);
         localStorage.setItem('sensometrika_b2b_empresa', rawEmpresa);
         localStorage.setItem('sensometrika_b2b_plan', planActivo);
+        if (correoApr) localStorage.setItem('sensometrika_b2b_correo', correoApr);
 
         // 2. ACTUALIZAR INTERFAZ DE PERFIL
         document.getElementById('lblNombreTrabajador').textContent = decodeURIComponent(rawNombre).toUpperCase();
@@ -376,14 +388,24 @@
             );
         }
 
+        let obligatoriosTotal = 0;
+        let obligatoriosCompletados = 0;
+
         // 4. RENDERS DE LA PARRILLA DE MÓDULOS SEGÚN PERMISOS
         function renderizarParrillaDinamica() {
             const contenedor = document.getElementById('contenedorParrillaModulos');
             contenedor.innerHTML = '';
+            obligatoriosTotal = 0;
+            obligatoriosCompletados = 0;
 
             matrizModulos.forEach(mod => {
                 const permitido = tieneAccesoPlan(mod.minPlan);
                 const ejecutado = moduloFueEjecutado(mod.key);
+
+                if (permitido) {
+                    obligatoriosTotal++;
+                    if (ejecutado) obligatoriosCompletados++;
+                }
 
                 const itemDiv = document.createElement('div');
                 itemDiv.className = `modulo-item ${permitido ? '' : 'lock'}`;
@@ -408,36 +430,49 @@
 
                 contenedor.appendChild(itemDiv);
             });
+
+            document.getElementById('lblProgresoPlan').textContent = `${obligatoriosCompletados} / ${obligatoriosTotal} COMPLETADOS`;
+
+            const btnInforme = document.getElementById('btnVerInformeB2B');
+            if (obligatoriosCompletados >= obligatoriosTotal && obligatoriosTotal > 0) {
+                btnInforme.classList.remove('incompleto');
+                btnInforme.textContent = '📊 VER Y EMITIR INFORME PERICIAL B2B →';
+            } else {
+                btnInforme.classList.add('incompleto');
+                const restantes = obligatoriosTotal - obligatoriosCompletados;
+                btnInforme.textContent = `⏳ FALTAN ${restantes} MÓDULO(S) PARA EMITIR INFORME`;
+            }
+        }
+
+        function construirParamsSesion() {
+            const params = new URLSearchParams({
+                rut: rutEvaluado,
+                nombre: decodeURIComponent(rawNombre),
+                cargo: decodeURIComponent(rawCargo),
+                empresa: decodeURIComponent(rawEmpresa),
+                plan: planActivo,
+                session: sessionId,
+                mode: 'b2b'
+            });
+            if (tokenB2B) params.set('token', tokenB2B);
+            if (correoApr) params.set('correo_apr', correoApr);
+            return params;
         }
 
         // 5. NAVEGACIÓN SEGURA DE MÓDULOS PROPAGANDO PARÁMETROS
         function navegarAModulo(archivoModulo) {
             localStorage.removeItem('sensometrika_b2c_mode');
-            const params = new URLSearchParams({
-                rut: rutEvaluado,
-                nombre: rawNombre,
-                cargo: rawCargo,
-                empresa: rawEmpresa,
-                plan: planActivo,
-                session: sessionId,
-                mode: 'b2b'
-            });
-            window.location.href = `${archivoModulo}?${params.toString()}`;
+            window.location.href = `${archivoModulo}?${construirParamsSesion().toString()}`;
         }
 
         // 6. NAVEGACIÓN AL INFORME PERICIAL B2B
         function navegarAInforme() {
+            if (obligatoriosCompletados < obligatoriosTotal) {
+                alert(`Aún faltan ${obligatoriosTotal - obligatoriosCompletados} módulo(s) obligatorio(s) del Plan ${planActivo} por completar antes de emitir el certificado pericial.`);
+                return;
+            }
             localStorage.removeItem('sensometrika_b2c_mode');
-            const params = new URLSearchParams({
-                rut: rutEvaluado,
-                nombre: rawNombre,
-                cargo: rawCargo,
-                empresa: rawEmpresa,
-                plan: planActivo,
-                session: sessionId,
-                mode: 'b2b'
-            });
-            window.location.href = `informe_b2b_planes.html?${params.toString()}`;
+            window.location.href = `informe_b2b_planes.html?${construirParamsSesion().toString()}`;
         }
 
         document.addEventListener('DOMContentLoaded', () => {

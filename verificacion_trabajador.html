@@ -332,11 +332,13 @@
         let datosUsuario = {};
         try { datosUsuario = JSON.parse(localStorage.getItem('sensometrika_datos_usuario')) || {}; } catch(e){}
 
-        const rawNombre = urlParams.get('nombre') || datosUsuario.nombre || 'JOSE CUYUL BARRÍA';
-        const rawRut = urlParams.get('rut') || datosUsuario.rut || '6.543.111-1';
-        const rawCargo = urlParams.get('cargo') || datosUsuario.cargo || 'OPERADOR HARVESTER';
-        const rawEmpresa = urlParams.get('empresa') || datosUsuario.empresa || 'SOCADEP CHILLAN SPA';
-        const planActivo = (urlParams.get('plan') || localStorage.getItem('sensometrika_b2b_plan') || 'PLUS').toUpperCase();
+        const rawNombre = urlParams.get('nombre') || datosUsuario.nombre || 'TRABAJADOR EVALUADO';
+        const rawRut = urlParams.get('rut') || datosUsuario.rut || '12.345.678-K';
+        const rawCargo = urlParams.get('cargo') || datosUsuario.cargo || 'OPERADOR DE MAQUINARIA';
+        const rawEmpresa = urlParams.get('empresa') || datosUsuario.empresa || 'EMPRESA MANDANTE';
+        const planActivo = (urlParams.get('plan') || localStorage.getItem('sensometrika_b2b_plan') || 'BASICO').toUpperCase();
+        const tokenB2B = urlParams.get('token') || '';
+        const correoApr = (urlParams.get('correo_apr') || urlParams.get('correoEncargado') || localStorage.getItem('sensometrika_b2b_correo') || '').trim();
         const cleanRut = rawRut.replace(/[^0-9Kk]/g, '');
         const sessionId = urlParams.get('session') || `SESION_B2B_${cleanRut}_${Date.now()}`;
 
@@ -344,6 +346,7 @@
         let fotoDataUrl = null;
         let firmaDataUrl = null;
         let fotoTomada = false;
+        let firmaTrazada = false;
 
         // LÓGICA DE LATENCIA (3 TOQUES)
         let toquesLatencia = [];
@@ -358,6 +361,14 @@
             document.getElementById('lblRut').textContent = rawRut;
             document.getElementById('lblCargo').textContent = decodeURIComponent(rawCargo).toUpperCase();
             document.getElementById('lblEmpresaPlan').textContent = `${decodeURIComponent(rawEmpresa).toUpperCase()} (${planActivo})`;
+
+            // Persistir contexto corporativo en el dispositivo del trabajador
+            localStorage.setItem('sensometrika_b2b_empresa', decodeURIComponent(rawEmpresa));
+            localStorage.setItem('sensometrika_b2b_plan', planActivo);
+            localStorage.setItem('sensometrika_session_activa', sessionId);
+            if (correoApr) {
+                localStorage.setItem('sensometrika_b2b_correo', correoApr);
+            }
 
             // Marcar Timestamp de Inicio de Sesión
             let keyTsInicio = `sensometrika_ts_inicio_${cleanRut}_${sessionId}`;
@@ -456,13 +467,16 @@
             ctxFirma.lineCap = 'round';
 
             const startDraw = (e) => {
+                if (e.cancelable) e.preventDefault();
                 isDrawing = true;
+                firmaTrazada = true;
                 ctxFirma.beginPath();
                 const pos = getPos(e);
                 ctxFirma.moveTo(pos.x, pos.y);
             };
             const draw = (e) => {
                 if (!isDrawing) return;
+                if (e.cancelable) e.preventDefault();
                 const pos = getPos(e);
                 ctxFirma.lineTo(pos.x, pos.y);
                 ctxFirma.stroke();
@@ -485,7 +499,10 @@
         }
 
         function limpiarFirma() {
-            if (ctxFirma) ctxFirma.clearRect(0, 0, canvasFirma.width, canvasFirma.height);
+            if (ctxFirma) {
+                ctxFirma.clearRect(0, 0, canvasFirma.width, canvasFirma.height);
+                firmaTrazada = false;
+            }
         }
 
         function confirmarAcreditacion() {
@@ -497,6 +514,10 @@
                 alert("Debe completar el test de calibración de latencia (3 toques) antes de continuar.");
                 return;
             }
+            if (!firmaTrazada) {
+                alert("Debe trazar su firma digital en el recuadro antes de continuar.");
+                return;
+            }
             if (!document.getElementById('chkDeclaracion').checked || !document.getElementById('chkTerminos').checked) {
                 alert("Debe aceptar la declaración de identidad y los Términos y Condiciones.");
                 return;
@@ -504,7 +525,14 @@
 
             firmaDataUrl = canvasFirma.toDataURL('image/png');
 
-            // Persistir foto, firma y telemetría de latencia medida por el evaluado
+            // Persistir datos del evaluado, foto, firma y telemetría de latencia
+            localStorage.setItem('sensometrika_datos_usuario', JSON.stringify({
+                nombre: decodeURIComponent(rawNombre),
+                rut: rawRut,
+                cargo: decodeURIComponent(rawCargo),
+                empresa: decodeURIComponent(rawEmpresa),
+                correoEncargado: correoApr
+            }));
             localStorage.setItem(`sensometrika_foto_${cleanRut}_${sessionId}`, fotoDataUrl);
             localStorage.setItem(`sensometrika_foto_${cleanRut}`, fotoDataUrl);
             localStorage.setItem(`sensometrika_firma_${cleanRut}_${sessionId}`, firmaDataUrl);
@@ -519,12 +547,15 @@
 
             const paramsNext = new URLSearchParams({
                 rut: rawRut,
-                nombre: rawNombre,
-                cargo: rawCargo,
-                empresa: rawEmpresa,
+                nombre: decodeURIComponent(rawNombre),
+                cargo: decodeURIComponent(rawCargo),
+                empresa: decodeURIComponent(rawEmpresa),
                 plan: planActivo,
-                session: sessionId
+                session: sessionId,
+                mode: 'b2b'
             });
+            if (tokenB2B) paramsNext.set('token', tokenB2B);
+            if (correoApr) paramsNext.set('correo_apr', correoApr);
 
             window.location.href = `menu_b2b_planes.html?${paramsNext.toString()}`;
         }
