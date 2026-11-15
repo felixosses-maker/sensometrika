@@ -6,7 +6,7 @@
   <title>Sensometrika SpA • Finalización de Compra</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <style>
     :root {
       --bg-dark: #090d16;
@@ -16,6 +16,7 @@
       --text-main: #f1f5f9;
       --text-muted: #94a3b8;
       --primary: #0284c7;
+      --mp-blue: #009ee3;
       --cyan-accent: #38bdf8;
       --radius: 12px;
     }
@@ -30,7 +31,7 @@
     }
     .tarjeta-checkout {
       width: 100%;
-      max-width: 440px;
+      max-width: 460px;
       background-color: var(--card-bg);
       border: 1.5px solid var(--card-border);
       border-radius: 14px;
@@ -40,13 +41,6 @@
       flex-direction: column;
       gap: 16px;
     }
-    .encabezado-checkout {
-      text-align: center;
-      border-bottom: 1px solid var(--card-border);
-      padding-bottom: 12px;
-    }
-    .encabezado-checkout h2 { font-size: 1.25rem; font-weight: 800; color: #fff; }
-    .encabezado-checkout p { font-size: 0.78rem; color: var(--text-muted); margin-top: 4px; }
 
     .resumen-cobro {
       background-color: #070d17;
@@ -63,7 +57,7 @@
       font-size: 0.82rem;
       color: var(--text-muted);
     }
-    .fila-resumen strong { color: #fff; }
+    .fila-resumen strong { color: #fff; text-align: right; }
     .fila-precio {
       display: flex;
       justify-content: space-between;
@@ -75,16 +69,52 @@
     .fila-precio span { font-size: 0.88rem; font-weight: 700; color: #fff; }
     .fila-precio .monto { font-size: 1.35rem; font-weight: 900; color: var(--cyan-accent); }
 
-    .banner-mock {
-      background: rgba(245, 158, 11, 0.1);
-      border: 1px solid #f59e0b;
-      border-radius: 8px;
-      padding: 8px 10px;
-      font-size: 0.72rem;
-      color: #fbbf24;
-      font-weight: 600;
-      text-align: center;
+    /* Selector Tributario SII */
+    .selector-sii-box {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
     }
+    .selector-sii-titulo {
+      font-size: 0.72rem;
+      font-weight: 800;
+      color: var(--cyan-accent);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .opciones-dte {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+    .opcion-dte {
+      background-color: #070d17;
+      border: 1.5px solid #334155;
+      border-radius: 10px;
+      padding: 10px 8px;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      gap: 4px;
+      transition: all 0.2s;
+    }
+    .opcion-dte input { display: none; }
+    .opcion-dte .dte-titulo {
+      font-size: 0.82rem;
+      font-weight: 800;
+      color: #e2e8f0;
+    }
+    .opcion-dte .dte-sub {
+      font-size: 0.68rem;
+      color: var(--text-muted);
+    }
+    .opcion-dte.activa {
+      border-color: var(--cyan-accent);
+      background: rgba(56, 189, 248, 0.12);
+    }
+    .opcion-dte.activa .dte-titulo { color: #ffffff; }
 
     .formulario-pago {
       display: flex;
@@ -113,7 +143,7 @@
       font-size: 0.88rem;
       outline: none;
     }
-    .campo-form input:focus { border-color: var(--primary); }
+    .campo-form input:focus { border-color: var(--cyan-accent); }
 
     .seccion-b2b {
       display: none;
@@ -122,6 +152,13 @@
       border-top: 1px dashed #334155;
       padding-top: 12px;
       margin-top: 4px;
+    }
+    .seccion-b2b-header {
+      font-size: 0.74rem;
+      font-weight: 800;
+      color: var(--cyan-accent);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
     }
 
     .bloque-legal {
@@ -134,11 +171,10 @@
       line-height: 1.35;
     }
     .bloque-legal input { margin-top: 2px; }
-    .bloque-legal a { color: var(--cyan-accent); text-decoration: underline; }
 
     .btn-pagar {
-      height: 48px;
-      background-color: var(--primary);
+      height: 50px;
+      background-color: var(--mp-blue);
       border: none;
       border-radius: 8px;
       color: #ffffff;
@@ -150,10 +186,18 @@
       justify-content: center;
       gap: 8px;
       margin-top: 6px;
-      transition: background-color 0.2s;
+      transition: background-color 0.2s, transform 0.1s;
     }
-    .btn-pagar:hover { background-color: #0369a1; }
+    .btn-pagar:hover { background-color: #0082bd; }
     .btn-pagar:active { transform: scale(0.98); }
+    .btn-pagar:disabled { opacity: 0.6; cursor: not-allowed; }
+
+    .nota-sii {
+      font-size: 0.69rem;
+      color: #64748b;
+      text-align: center;
+      line-height: 1.35;
+    }
 
     .link-volver {
       display: block;
@@ -169,14 +213,14 @@
 <body>
 
   <main class="tarjeta-checkout">
-   <header class="brand-header" style="text-align: center; padding: 12px 0; display: flex; flex-direction: column; align-items: center; gap: 4px;">
+    <header class="brand-header" style="text-align: center; padding: 6px 0; display: flex; flex-direction: column; align-items: center; gap: 4px;">
       <div style="background: rgba(11, 19, 36, 0.9); border: 1px solid #1e293b; padding: 8px 16px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.6);">
         <img src="sensometrica.jpg" alt="SENSOMETRIKA Calibration Technology" style="width: 170px; height: auto; display: block; border-radius: 4px; filter: drop-shadow(0 0 10px rgba(56, 189, 248, 0.6));">
       </div>
-      <span class="brand-subtitle" style="margin-top: 4px; color: var(--texto-gris); font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;">
-    
+      <span style="margin-top: 4px; color: #94a3b8; font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px;">
+        Checkout Seguro • Sensometrika SpA
       </span>
-</header>
+    </header>
 
     <!-- Resumen Comercial -->
     <section class="resumen-cobro">
@@ -185,7 +229,7 @@
         <strong id="txt-servicio">Cargando...</strong>
       </div>
       <div class="fila-resumen">
-        <span>Régimen:</span>
+        <span>Modalidad:</span>
         <strong id="txt-regimen">--</strong>
       </div>
       <div class="fila-resumen" id="fila-cant-evals" style="display: none;">
@@ -193,7 +237,7 @@
         <strong id="txt-cantidad-evals">--</strong>
       </div>
       <div class="fila-resumen" id="fila-desglose-iva" style="display: none;">
-        <span>Neto + IVA (19%):</span>
+        <span>Desglose Tributario:</span>
         <strong id="txt-desglose">--</strong>
       </div>
       <div class="fila-precio">
@@ -205,13 +249,26 @@
       </div>
     </section>
 
-    <div class="banner-mock">
-      ⚡ MODO PRUEBAS ACTIVO: ACCESO DIRECTO SIN TARJETAS
-    </div>
+    <!-- Selector Documento Tributario SII -->
+    <section class="selector-sii-box">
+      <span class="selector-sii-titulo">Documento Tributario (SII Chile) *</span>
+      <div class="opciones-dte">
+        <label class="opcion-dte activa" id="opt-boleta" onclick="cambiarDocumentoTributario('BOLETA')">
+          <input type="radio" name="tipo_dte" value="BOLETA" checked>
+          <span class="dte-titulo">🧾 Boleta Electrónica</span>
+          <span class="dte-sub">Persona Natural (IVA inc.)</span>
+        </label>
+        <label class="opcion-dte" id="opt-factura" onclick="cambiarDocumentoTributario('FACTURA')">
+          <input type="radio" name="tipo_dte" value="FACTURA">
+          <span class="dte-titulo">🏢 Factura Electrónica</span>
+          <span class="dte-sub">Empresa DTE 33 (+19% IVA)</span>
+        </label>
+      </div>
+    </section>
 
     <!-- Formulario de Checkout -->
-    <form class="formulario-pago" onsubmit="procesarPagoSeguro(event)">
-      <!-- Datos Titular (B2C Particular o Supervisor B2B) -->
+    <form class="formulario-pago" onsubmit="procesarPagoMercadoPago(event)">
+      <!-- Datos Titular -->
       <div class="campo-form">
         <label id="lbl-nombre">Nombre Completo *</label>
         <input type="text" id="in-nombre" required placeholder="Ej: Alejandro Pérez">
@@ -223,22 +280,31 @@
       </div>
 
       <div class="campo-form">
-        <label id="lbl-email">Correo Electrónico para Resultados *</label>
+        <label id="lbl-email">Correo Electrónico (Comprobante y Resultados) *</label>
         <input type="email" id="in-email" required placeholder="Ej: contacto@correo.cl">
       </div>
 
-      <!-- Campos Corporativos Exclusivos B2B -->
-      <div class="seccion-b2b" id="bloque-empresa">
+      <!-- Campos Obligatorios SII para Factura Electrónica (DTE 33) -->
+      <div class="seccion-b2b" id="bloque-factura">
+        <div class="seccion-b2b-header">Datos Obligatorios Factura Electrónica (SII DTE 33)</div>
         <div class="campo-form">
-          <label style="color: #38bdf8;">Razón Social Empresa (Para Factura) *</label>
+          <label style="color: #38bdf8;">Razón Social Empresa *</label>
           <input type="text" id="in-empresa-nombre" placeholder="Ej: Transportes del Norte SpA">
         </div>
         <div class="campo-form">
-          <label style="color: #38bdf8;">RUT Empresa (DTE 33) *</label>
+          <label style="color: #38bdf8;">RUT Empresa *</label>
           <input type="text" id="in-empresa-rut" placeholder="Ej: 76.123.456-7">
         </div>
         <div class="campo-form">
-          <label style="color: #38bdf8;">Cargo en la Empresa *</label>
+          <label style="color: #38bdf8;">Giro Comercial *</label>
+          <input type="text" id="in-empresa-giro" placeholder="Ej: Transporte de carga por carretera">
+        </div>
+        <div class="campo-form">
+          <label style="color: #38bdf8;">Dirección Tributaria y Comuna *</label>
+          <input type="text" id="in-empresa-direccion" placeholder="Ej: Av. O'Higgins 450, Chillán">
+        </div>
+        <div class="campo-form" id="campo-cargo-b2b">
+          <label style="color: #38bdf8;">Cargo Responsable / APR *</label>
           <input type="text" id="in-empresa-cargo" placeholder="Ej: Supervisión Técnica / APR">
         </div>
       </div>
@@ -252,18 +318,25 @@
       </div>
 
       <button type="submit" class="btn-pagar" id="btn-submit-pago">
-        ⚡ Iniciar Evaluación Inmediata (Modo Pruebas) →
+        🔒 Pagar con Mercado Pago (Débito / Crédito) →
       </button>
 
-      <a href="planes.html" class="link-volver">← Cambiar de Plan</a>
+      <div class="nota-sii">
+        Pago procesado por Mercado Pago Chile para <strong>Sensometrika SpA (RUT 78.553.139-6)</strong>. En ventas con Boleta, el comprobante electrónico equivale a Boleta Electrónica (Res. Ex. N° 176 SII).
+      </div>
+
+      <a href="index.html" class="link-volver">← Volver al Catálogo de Planes</a>
     </form>
   </main>
 
   <script>
     let pedido = null;
+    let tipoDocumentoActual = 'BOLETA';
+    let montoBrutoFinal = 4990;
+    let montoNetoCalculado = 4193;
+    let montoIvaCalculado = 797;
 
     document.addEventListener('DOMContentLoaded', () => {
-      // Leer pedido desde catálogo o cargar Pase Básico B2C por defecto
       pedido = JSON.parse(localStorage.getItem('sensometrika_plan_pedido')) || {
         rol: 'particular',
         planId: 'part_basico',
@@ -272,44 +345,98 @@
         modulosPermitidos: ['reactimetro', 'palancas', 'punteo']
       };
 
-      document.getElementById('txt-servicio').innerText = pedido.nombrePlan;
-      document.getElementById('txt-total').innerText = `$${(pedido.precioTotal || 4990).toLocaleString('es-CL')} CLP`;
+      const esB2B = (pedido.rol === 'empresa' || (pedido.planId && String(pedido.planId).toLowerCase().includes('b2b')));
 
-      const esB2B = (pedido.rol === 'empresa' || (pedido.planId && String(pedido.planId).startsWith('b2b')));
+      document.getElementById('txt-servicio').innerText = pedido.nombrePlan || 'Evaluación Psicomotriz';
+      document.getElementById('txt-regimen').innerText = esB2B ? 'Convenio Corporativo (B2B)' : 'Evaluación Individual (B2C)';
 
       if (esB2B) {
-        // Interfaz Corporativa B2B
-        document.getElementById('txt-regimen').innerText = 'Convenio Corporativo (B2B)';
         document.getElementById('fila-cant-evals').style.display = 'flex';
         document.getElementById('txt-cantidad-evals').innerText = `${pedido.cantidad || 10} trabajadores`;
-        document.getElementById('fila-desglose-iva').style.display = 'flex';
-        
-        const neto = pedido.precioNeto || Math.round((pedido.precioTotal || 79900) / 1.19);
-        const iva = (pedido.precioTotal || 79900) - neto;
-        document.getElementById('txt-desglose').innerText = `Neto: $${neto.toLocaleString('es-CL')} | IVA: $${iva.toLocaleString('es-CL')}`;
-        document.getElementById('txt-pie-iva').innerText = 'Factura Electrónica DTE 33 (+19% IVA)';
+        // En B2B los precios publicados son Netos (+ IVA)
+        montoNetoCalculado = Number(pedido.precioNeto || pedido.precio || pedido.precioTotal || 79900);
+        montoIvaCalculado = Math.round(montoNetoCalculado * 0.19);
+        montoBrutoFinal = montoNetoCalculado + montoIvaCalculado;
 
-        // Habilitar campos de empresa
-        document.getElementById('bloque-empresa').style.display = 'flex';
-        document.getElementById('lbl-nombre').innerText = 'Nombre del Supervisor APR / Responsable *';
-        document.getElementById('lbl-rut').innerText = 'RUT del Responsable *';
-        document.getElementById('in-empresa-nombre').required = true;
-        document.getElementById('in-empresa-rut').required = true;
-        document.getElementById('in-empresa-cargo').required = true;
+        cambiarDocumentoTributario('FACTURA');
       } else {
-        // Interfaz Particular B2C
-        document.getElementById('txt-regimen').innerText = 'Evaluación Individual (B2C)';
-        document.getElementById('bloque-empresa').style.display = 'none';
-        document.getElementById('lbl-nombre').innerText = 'Nombre Completo *';
-        document.getElementById('lbl-rut').innerText = 'RUT *';
-        document.getElementById('txt-pie-iva').innerText = 'Boleta Electrónica IVA Incluido';
-        document.getElementById('in-empresa-nombre').required = false;
-        document.getElementById('in-empresa-rut').required = false;
-        document.getElementById('in-empresa-cargo').required = false;
+        // En B2C los precios publicados son Brutos (IVA incluido)
+        montoBrutoFinal = Number(pedido.precioTotal || pedido.precio || 4990);
+        montoNetoCalculado = Math.round(montoBrutoFinal / 1.19);
+        montoIvaCalculado = montoBrutoFinal - montoNetoCalculado;
+
+        cambiarDocumentoTributario('BOLETA');
+      }
+
+      // Precargar datos previos si existen
+      const prevUser = JSON.parse(localStorage.getItem('sensometrika_datos_usuario'));
+      if (prevUser) {
+        if (prevUser.nombre) document.getElementById('in-nombre').value = prevUser.nombre;
+        if (prevUser.rut) document.getElementById('in-rut').value = prevUser.rut;
+        if (prevUser.correo || prevUser.email) document.getElementById('in-email').value = prevUser.correo || prevUser.email;
       }
     });
 
-    function procesarPagoSeguro(e) {
+    function cambiarDocumentoTributario(tipo) {
+      tipoDocumentoActual = tipo;
+      const optBoleta = document.getElementById('opt-boleta');
+      const optFactura = document.getElementById('opt-factura');
+      const bloqueFactura = document.getElementById('bloque-factura');
+      const filaDesglose = document.getElementById('fila-desglose-iva');
+      const txtDesglose = document.getElementById('txt-desglose');
+      const txtTotal = document.getElementById('txt-total');
+      const txtPieIva = document.getElementById('txt-pie-iva');
+
+      const inEmpNombre = document.getElementById('in-empresa-nombre');
+      const inEmpRut = document.getElementById('in-empresa-rut');
+      const inEmpGiro = document.getElementById('in-empresa-giro');
+      const inEmpDir = document.getElementById('in-empresa-direccion');
+      const inEmpCargo = document.getElementById('in-empresa-cargo');
+
+      const esB2B = (pedido.rol === 'empresa' || (pedido.planId && String(pedido.planId).toLowerCase().includes('b2b')));
+
+      txtTotal.innerText = `$${montoBrutoFinal.toLocaleString('es-CL')} CLP`;
+
+      if (tipo === 'FACTURA') {
+        optFactura.classList.add('activa');
+        optBoleta.classList.remove('activa');
+        optFactura.querySelector('input').checked = true;
+
+        bloqueFactura.style.display = 'flex';
+        filaDesglose.style.display = 'flex';
+        txtDesglose.innerText = `Neto $${montoNetoCalculado.toLocaleString('es-CL')} + IVA $${montoIvaCalculado.toLocaleString('es-CL')}`;
+        txtPieIva.innerText = 'Factura Electrónica Afecta (DTE 33) • IVA 19% incluido';
+
+        document.getElementById('lbl-nombre').innerText = esB2B ? 'Nombre Supervisor APR / Encargado *' : 'Nombre Solicitante / Contacto *';
+        document.getElementById('lbl-rut').innerText = 'RUT Contacto *';
+
+        inEmpNombre.required = true;
+        inEmpRut.required = true;
+        inEmpGiro.required = true;
+        inEmpDir.required = true;
+        inEmpCargo.required = esB2B;
+        document.getElementById('campo-cargo-b2b').style.display = esB2B ? 'flex' : 'none';
+      } else {
+        optBoleta.classList.add('activa');
+        optFactura.classList.remove('activa');
+        optBoleta.querySelector('input').checked = true;
+
+        bloqueFactura.style.display = 'none';
+        filaDesglose.style.display = 'none';
+        txtPieIva.innerText = 'Boleta Electrónica (DTE 39) • IVA Incluido';
+
+        document.getElementById('lbl-nombre').innerText = 'Nombre Completo *';
+        document.getElementById('lbl-rut').innerText = 'RUT *';
+
+        inEmpNombre.required = false;
+        inEmpRut.required = false;
+        inEmpGiro.required = false;
+        inEmpDir.required = false;
+        inEmpCargo.required = false;
+      }
+    }
+
+    async function procesarPagoMercadoPago(e) {
       e.preventDefault();
 
       const check = document.getElementById('check-terminos');
@@ -318,71 +445,118 @@
         return;
       }
 
+      const btn = document.getElementById('btn-submit-pago');
+      btn.disabled = true;
+      btn.innerText = '⏳ Conectando con Mercado Pago...';
+
       const nombre = document.getElementById('in-nombre').value.trim();
       const rut = document.getElementById('in-rut').value.trim();
       const email = document.getElementById('in-email').value.trim();
-      const esB2B = (pedido.rol === 'empresa' || (pedido.planId && String(pedido.planId).startsWith('b2b')));
+      const esB2B = (pedido.rol === 'empresa' || (pedido.planId && String(pedido.planId).toLowerCase().includes('b2b')));
 
-      // Limpiar mediciones anteriores
+      const datosTributarios = tipoDocumentoActual === 'FACTURA' ? {
+        razonSocial: document.getElementById('in-empresa-nombre').value.trim(),
+        rut: document.getElementById('in-empresa-rut').value.trim(),
+        giro: document.getElementById('in-empresa-giro').value.trim(),
+        direccion: document.getElementById('in-empresa-direccion').value.trim(),
+        cargo: document.getElementById('in-empresa-cargo').value.trim() || 'Supervisión APR'
+      } : {
+        razonSocial: nombre,
+        rut: rut,
+        giro: 'Persona Natural',
+        direccion: ''
+      };
+
+      // Limpiar mediciones anteriores antes de iniciar una nueva compra
       localStorage.removeItem('sensometrika_reactimetro');
       localStorage.removeItem('sensometrika_palancas');
       localStorage.removeItem('sensometrika_punteo');
       localStorage.removeItem('sensometrika_visual');
       localStorage.removeItem('sensometrika_auditivo');
 
-      if (esB2B) {
-        // ENRUTAMIENTO B2B: Guarda supervisor y empresa, limpia usuario previo
-        const razonSocial = document.getElementById('in-empresa-nombre').value.trim() || 'Empresa Faena';
-        const rutEmpresa = document.getElementById('in-empresa-rut').value.trim();
-        const cargo = document.getElementById('in-empresa-cargo').value.trim() || 'Supervisión APR';
+      // Preparar sesión pendiente que pago-resultado.html activará al volver aprobado
+      let sesionPendiente = {};
 
+      if (esB2B) {
         localStorage.setItem('sensometrika_plan_empresa', JSON.stringify({
           responsable: nombre,
           rutResponsable: rut,
-          cargo: cargo,
-          razonSocial: razonSocial,
-          rutEmpresa: rutEmpresa,
-          correoInformes: email
-        }));
-
-        localStorage.setItem('sensometrika_sesion', JSON.stringify({
-          rol: 'empresa',
-          planId: pedido.planId || 'b2b_basico',
-          nombrePlan: pedido.nombrePlan || 'Plan Empresa Básico',
-          modulosPermitidos: pedido.modulosPermitidos || ['reactimetro', 'palancas', 'punteo'],
-          creditosRestantes: pedido.cantidad || 10,
-          razonSocial: razonSocial,
+          cargo: datosTributarios.cargo || 'Supervisión APR',
+          razonSocial: datosTributarios.razonSocial,
+          rutEmpresa: datosTributarios.rut,
+          giro: datosTributarios.giro,
+          direccion: datosTributarios.direccion,
           correoInformes: email,
-          pagoAprobado: true
+          tipoDocumento: tipoDocumentoActual
         }));
 
-        // Limpiar usuario para que el chofer/trabajador se registre en menu-b2b.html
         localStorage.removeItem('sensometrika_datos_usuario');
 
-        // Redirige al Menú B2B blindado
-        window.location.href = 'menu-b2b.html';
+        sesionPendiente = {
+          rol: 'empresa',
+          planId: pedido.planId || 'b2b_basico',
+          nombrePlan: pedido.nombrePlan || 'Plan Empresa',
+          modulosPermitidos: pedido.modulosPermitidos || ['reactimetro', 'palancas', 'punteo'],
+          creditosRestantes: pedido.cantidad || 10,
+          razonSocial: datosTributarios.razonSocial,
+          correoInformes: email,
+          tipoDocumento: tipoDocumentoActual,
+          montoPagado: montoBrutoFinal
+        };
       } else {
-        // ENRUTAMIENTO B2C: El comprador es quien rinde las pruebas
         localStorage.setItem('sensometrika_datos_usuario', JSON.stringify({
           tipo: 'particular',
           nombre: nombre,
           rut: rut,
           correo: email,
-          empresa: 'Particular'
+          empresa: tipoDocumentoActual === 'FACTURA' ? datosTributarios.razonSocial : 'Particular'
         }));
 
-        localStorage.setItem('sensometrika_sesion', JSON.stringify({
+        sesionPendiente = {
           rol: 'particular',
           planId: pedido.planId || 'part_basico',
           nombrePlan: pedido.nombrePlan || 'Pase Básico Psicomotriz',
           modulosPermitidos: pedido.modulosPermitidos || ['reactimetro', 'palancas', 'punteo'],
           correoInforme: email,
-          pagoAprobado: true,
+          tipoDocumento: tipoDocumentoActual,
+          montoPagado: montoBrutoFinal,
           simulacionesConsumidas: { reactimetro: 0, palancas: 0, punteo: 0 }
-        }));
+        };
+      }
 
-        // Redirige al Menú B2C particular
-        window.location.href = 'menu.html';
+      localStorage.setItem('sensometrika_sesion_pendiente', JSON.stringify(sesionPendiente));
+
+      try {
+        const response = await fetch('/api/crear-orden-mp', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            planId: pedido.planId,
+            nombrePlan: pedido.nombrePlan,
+            monto: montoBrutoFinal,
+            email: email,
+            rut: rut,
+            nombre: nombre,
+            rol: esB2B ? 'empresa' : 'particular',
+            tipoDocumento: tipoDocumentoActual,
+            datosTributarios: datosTributarios
+          })
+        });
+
+        const data = await response.json();
+
+        if (data.url) {
+          window.location.href = data.url;
+        } else {
+          alert('No se pudo iniciar el pago en Mercado Pago: ' + (data.error || 'Error desconocido'));
+          btn.disabled = false;
+          btn.innerText = '🔒 Pagar con Mercado Pago (Débito / Crédito) →';
+        }
+      } catch (err) {
+        console.error('Error conectando con /api/crear-orden-mp:', err);
+        alert('Error de conexión con la pasarela de pagos. Verifica tu conexión a internet.');
+        btn.disabled = false;
+        btn.innerText = '🔒 Pagar con Mercado Pago (Débito / Crédito) →';
       }
     }
   </script>
