@@ -628,7 +628,7 @@
         </button>
 
         <div style="font-size: 0.58rem; color: var(--text-muted); text-align: center; line-height: 1.3;">
-          Al confirmar, enviaremos el <strong>enlace directo de acceso a su Consola APR</strong> al correo registrado para reingresar cuando lo necesite.
+          Serás redirigido a <strong>Checkout y Mercado Pago</strong>. Una vez acreditado el pago, se habilitará tu Consola APR y despacharemos el respaldo al correo registrado.
         </div>
       </div>
 
@@ -783,24 +783,7 @@
       recalcularPreciosB2B();
     }
 
-    async function enviarCorreoAccesoConTimeout(payload) {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 3500);
-      try {
-        await fetch('/api/enviar-correo', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-          signal: controller.signal
-        });
-      } catch (e) {
-        console.warn('Aviso no bloqueante al despachar correo de acceso APR:', e);
-      } finally {
-        clearTimeout(timeoutId);
-      }
-    }
-
-    async function procesarPagoYAccesoAPR() {
+    function procesarPagoYAccesoAPR() {
       const razon = document.getElementById('inputRazonSocial').value.trim();
       const rutEmp = document.getElementById('inputRutEmpresa').value.trim();
       const giroEmp = document.getElementById('inputGiroEmpresa').value.trim();
@@ -821,14 +804,15 @@
 
       const btnPagar = document.getElementById('btnPagarB2B');
       btnPagar.disabled = true;
-      btnPagar.textContent = '⏳ ENVIANDO ACCESO Y ABRIENDO CONSOLA...';
+      btnPagar.textContent = '⏳ PREPARANDO CHECKOUT MERCADO PAGO...';
 
       localStorage.setItem('sensometrika_b2c_mode', 'false');
       const tokenEmpresa = `SENSE-B2B-${Math.floor(1000 + Math.random() * 9000)}`;
-      const { neto, iva, total } = obtenerCalculoTributario();
+      const { unitarioNeto, neto, iva, total } = obtenerCalculoTributario();
 
       const datosTributarios = {
         tipoDocumento: tipoDocumentoSII,
+        tipoDte: tipoDocumentoSII.toLowerCase(),
         razonSocial: razon,
         rut: rutEmp,
         giro: tipoDocumentoSII === 'FACTURA' ? giroEmp : 'Consumidor Final',
@@ -850,6 +834,7 @@
         tributacion: datosTributarios
       };
 
+      // Guardar sesión corporativa pendiente de confirmación de pago
       localStorage.setItem('sensometrika_datos_empresa', JSON.stringify(datosB2B));
       localStorage.setItem('sensometrika_plan_empresa', JSON.stringify({
         plan: planSeleccionadoB2B,
@@ -861,36 +846,52 @@
       localStorage.setItem('sensometrika_b2b_token', tokenEmpresa);
       localStorage.setItem('sensometrika_b2b_correo', aprCorreo);
 
-      const paramsDashboard = new URLSearchParams({
-        empresa: razon,
-        rut: rutEmp,
-        apr: aprNombre,
+      // Guardar pedido unificado para checkout.html y /api/crear-orden-mp
+      const pedidoCheckout = {
+        rol: 'empresa',
+        tipo: 'b2b',
+        planId: `b2b_${planSeleccionadoB2B.toLowerCase()}`,
+        planCodigo: planSeleccionadoB2B,
+        nombrePlan: `${NOMBRES_PLANES[planSeleccionadoB2B]} (${cantidadBolsa} evaluaciones)`,
+        cantidad: cantidadBolsa,
+        precioUnitarioNeto: unitarioNeto,
+        precioNeto: neto,
+        precioIva: iva,
+        precioTotal: total,
+        tipoDte: tipoDocumentoSII.toLowerCase(),
+        razonSocial: razon,
+        rutEmpresa: rutEmp,
+        giro: datosTributarios.giro,
+        direccion: datosTributarios.direccion,
+        comuna: datosTributarios.comuna,
+        responsable: aprNombre,
         correo: aprCorreo,
+        codigoEmpresa: tokenEmpresa
+      };
+
+      localStorage.setItem('sensometrika_plan_pedido', JSON.stringify(pedidoCheckout));
+      localStorage.setItem('sensometrika_datos_usuario', JSON.stringify({
+        tipo: 'empresa',
+        nombre: aprNombre,
+        rut: rutEmp,
+        correo: aprCorreo,
+        empresa: razon,
+        giro: datosTributarios.giro,
+        direccion: datosTributarios.direccion,
+        comuna: datosTributarios.comuna,
+        tipoDte: tipoDocumentoSII.toLowerCase()
+      }));
+
+      // Redirigir a checkout.html para cobrar mediante Mercado Pago
+      const paramsCheckout = new URLSearchParams({
+        mode: 'b2b',
         plan: planSeleccionadoB2B,
         bolsa: cantidadBolsa,
-        codigo: tokenEmpresa,
-        doc_sii: tipoDocumentoSII,
-        total_clp: total,
-        mode: 'b2b'
+        doc_sii: tipoDocumentoSII.toLowerCase(),
+        total_clp: total
       });
 
-      const urlOficialDashboard = `${DOMINIO_OFICIAL}/dashboard_apr.html?${paramsDashboard.toString()}`;
-
-      await enviarCorreoAccesoConTimeout({
-        tipo: 'b2b_apr_acceso',
-        emailDestino: aprCorreo,
-        empresa: razon,
-        rutEmpresa: rutEmp,
-        nombreApr: aprNombre,
-        planNombre: `${NOMBRES_PLANES[planSeleccionadoB2B]} (${cantidadBolsa} evaluaciones)`,
-        cupos: cantidadBolsa,
-        codigoEmpresa: tokenEmpresa,
-        tipoDocumento: tipoDocumentoSII,
-        montoTotal: formatCLP(total),
-        linkAcceso: urlOficialDashboard
-      });
-
-      window.location.href = `dashboard_apr.html?${paramsDashboard.toString()}`;
+      window.location.href = `checkout.html?${paramsCheckout.toString()}`;
     }
 
     // MODAL DE REINGRESO APR
