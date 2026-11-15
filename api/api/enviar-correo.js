@@ -1,5 +1,11 @@
-// api/enviar-correo.js
-export default async function handler(req, res) {
+/**
+ * Sensometrika - Servicio Serverless de Despacho de Correos (Resend API)
+ * Archivo: api/enviar-correo.js
+ */
+const crypto = require('crypto');
+
+module.exports = async (req, res) => {
+  // Configuración de cabeceras CORS
   res.setHeader('Access-Control-Allow-Credentials', true);
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
@@ -13,214 +19,373 @@ export default async function handler(req, res) {
   }
 
   if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Método no permitido. Utilizar POST.' });
+    return res.status(405).json({ error: 'Método no permitido. Utilice POST.' });
   }
 
-  const body = req.body || {};
-  const {
-    tipo = 'b2b_dictamen',
-    emailDestino,
-    email,
-    nombre,
-    nombreEncargado,
-    nombreTrabajador,
-    rutTrabajador,
-    cargo,
-    empresa,
-    planNombre,
-    folios,
-    monto,
-    dictamen,
-    dictamenGlobal,
-    linkAcceso,
-    linkInforme,
-    enlace
-  } = body;
-
-  const correoFinal = (emailDestino || email || '').trim();
-  if (!correoFinal) {
-    return res.status(400).json({ error: 'Falta el correo de destino obligatorio (emailDestino).' });
+  const RESEND_API_KEY = process.env.RESEND_API_KEY;
+  if (!RESEND_API_KEY) {
+    return res.status(500).json({ error: 'Falta configurar RESEND_API_KEY en el servidor.' });
   }
 
-  const baseUrl = (process.env.FRONTEND_URL || 'https://sensometrika.com').replace(/\/$/, '');
-  const urlFinal = (linkAcceso || linkInforme || enlace || baseUrl).trim();
-  const veredictoTexto = (dictamenGlobal || dictamen || 'EVALUACIÓN REGISTRADA').toUpperCase();
-  const esAprobado =
-    (veredictoTexto.includes('APROBADO') || veredictoTexto.includes('APTO')) &&
-    !veredictoTexto.includes('NO ') &&
-    !veredictoTexto.includes('REPROBADO') &&
-    !veredictoTexto.includes('OBSERVADO');
+  const SUPABASE_URL = process.env.SUPABASE_URL;
+  const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-  // Helper de layout corporativo unificado Sensometrika
-  const renderLayout = ({ subtitulo, introHtml, filasHtml, ctaTexto, ctaColor, notaPie }) => `
-    <!DOCTYPE html>
-    <html lang="es">
-    <head>
-      <meta charset="UTF-8">
-      <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    </head>
-    <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #030712; color: #f8fafc; margin: 0; padding: 24px 12px;">
-      <div style="background-color: #091122; border: 1px solid #1e293b; border-radius: 16px; padding: 26px; max-width: 540px; margin: 0 auto; box-shadow: 0 18px 40px rgba(0,0,0,0.65);">
-        <div style="text-align: center; border-bottom: 1px solid #1e293b; padding-bottom: 16px; margin-bottom: 20px;">
-          <h2 style="color: #00e5ff; margin: 0; font-size: 1.25rem; letter-spacing: 0.12em;">SENSOMETRIKA</h2>
-          <p style="font-size: 0.72rem; color: #94a3b8; margin: 5px 0 0 0; letter-spacing: 0.06em; text-transform: uppercase;">${subtitulo}</p>
-        </div>
-
-        <div style="font-size: 0.9rem; line-height: 1.55; color: #e2e8f0; margin-bottom: 18px;">
-          ${introHtml}
-        </div>
-
-        <table style="width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 0.85rem;">
-          ${filasHtml}
-        </table>
-
-        <div style="margin-top: 22px; text-align: center;">
-          <a href="${urlFinal}" target="_blank" style="display: inline-block; width: 100%; box-sizing: border-box; background-color: ${ctaColor}; color: #ffffff !important; text-align: center; padding: 14px 18px; border-radius: 10px; font-weight: 800; text-decoration: none; text-transform: uppercase; font-size: 0.86rem; letter-spacing: 0.04em;">
-            ${ctaTexto}
-          </a>
-          <p style="font-size: 0.72rem; color: #64748b; margin-top: 12px; word-break: break-all;">
-            Enlace directo:<br>
-            <a href="${urlFinal}" target="_blank" style="color: #38bdf8; text-decoration: underline;">${urlFinal}</a>
-          </p>
-        </div>
-
-        <div style="font-size: 0.72rem; color: #64748b; text-align: center; margin-top: 22px; padding-top: 14px; border-top: 1px solid #1e293b;">
-          <p style="margin: 0 0 4px 0;">${notaPie}</p>
-          <p style="margin: 0;">© SENSOMETRIKA SpA • Chile • contacto@sensometrika.com</p>
-        </div>
-      </div>
-    </body>
-    </html>
-  `;
-
-  const row = (label, valueHtml) => `
-    <tr>
-      <td style="padding: 9px 4px; border-bottom: 1px solid #1a2638; color: #94a3b8; font-weight: 600; width: 42%;">${label}</td>
-      <td style="padding: 9px 4px; border-bottom: 1px solid #1a2638; color: #f8fafc;">${valueHtml}</td>
-    </tr>
-  `;
-
-  let asunto = '';
-  let htmlBody = '';
-
-  // -------------------------------------------------------------
-  // 1. PLANTILLA B2C: CONFIRMACIÓN DE PAGO Y ENLACE DE PRÁCTICA
-  // -------------------------------------------------------------
-  if (tipo === 'b2c_pago' || tipo === 'b2c') {
-    asunto = `[SENSOMETRIKA] Confirmación de Acceso - ${planNombre || 'Plan Psicotécnico B2C'}`;
-    htmlBody = renderLayout({
-      subtitulo: 'COMPROBANTE DE COMPRA Y ACCESO A SIMULACIONES',
-      introHtml: `Hola <strong>${nombreTrabajador || nombre || 'Postulante'}</strong>, tu acceso a la plataforma de entrenamiento psicosensométrico ya está activo.`,
-      filasHtml: [
-        row('Plan Contratado:', `<strong style="color:#38bdf8;">${planNombre || 'Evaluación Psicomotriz D.S. 170'}</strong>`),
-        row('Monto Pagado:', `<strong>$${monto || '9.900'} CLP</strong>`),
-        row('Estado:', `<span style="display:inline-block;padding:4px 10px;border-radius:5px;font-weight:800;font-size:0.75rem;background:rgba(16,185,129,0.15);color:#10b981;border:1px solid #10b981;">ACTIVO / APROBADO</span>`),
-        row('RUT Registrado:', `<strong>${rutTrabajador || 'S/RUT'}</strong>`)
-      ].join(''),
-      ctaTexto: '🚀 INICIAR SIMULACIONES PSICOTÉCNICAS',
-      ctaColor: '#10b981',
-      notaPie: 'Conserva este correo para retomar tus simulaciones disponibles en cualquier momento.'
-    });
-  }
-  // -------------------------------------------------------------
-  // 2. PLANTILLA B2B (A): ALTA EMPRESA Y ACCESO A CONSOLA APR
-  // -------------------------------------------------------------
-  else if (tipo === 'b2b_apr_acceso' || tipo === 'b2b_empresa') {
-    asunto = `[SENSOMETRIKA B2B] Acceso Consola APR • ${empresa || 'Empresa Mandante'}`;
-    htmlBody = renderLayout({
-      subtitulo: 'CONSOLA CORPORATIVA DE GESTIÓN & CONTROL APR',
-      introHtml: `Estimado/a <strong>${nombreEncargado || nombre || 'Encargado APR / HSEQ'}</strong>, tu cuenta corporativa ha sido habilitada para gestionar evaluaciones psicosensométricas en faena.`,
-      filasHtml: [
-        row('Empresa Mandante:', `<strong>${empresa || 'Empresa Registrada'}</strong>`),
-        row('Administrador APR:', `<strong>${nombreEncargado || nombre || 'Responsable HSEQ'}</strong>`),
-        row('Plan Corporativo:', `<strong style="color:#38bdf8;">${planNombre || 'Plan Laboral B2B'}</strong>`),
-        row('Folios Habilitados:', `<strong>${folios || 'Según Bolsa Contratada'}</strong>`)
-      ].join(''),
-      ctaTexto: '🛡️ INGRESAR A CONSOLA APR B2B',
-      ctaColor: '#0284c7',
-      notaPie: 'Desde tu Consola APR podrás emitir enlaces únicos con validación biométrica para cada trabajador.'
-    });
-  }
-  // -------------------------------------------------------------
-  // 3. PLANTILLA B2B (B): CITACIÓN Y LINK ÚNICO AL TRABAJADOR
-  // -------------------------------------------------------------
-  else if (tipo === 'b2b_trabajador_link' || tipo === 'b2b_citacion') {
-    asunto = `[SENSOMETRIKA] Citación Evaluación Psicosensométrica • ${empresa || 'Faena'}`;
-    htmlBody = renderLayout({
-      subtitulo: 'VERIFICACIÓN BIOMÉTRICA Y EVALUACIÓN LABORAL D.S. N° 170',
-      introHtml: `Estimado/a <strong>${nombreTrabajador || 'Trabajador/a'}</strong>, la empresa <strong>${empresa || 'Mandante'}</strong> te ha asignado una evaluación psicosensométrica obligatoria. Ingresa desde un dispositivo con cámara frontal activa.`,
-      filasHtml: [
-        row('Trabajador:', `<strong>${nombreTrabajador || 'Evaluado'}</strong>`),
-        row('RUT:', `<strong>${rutTrabajador || 'S/RUT'}</strong>`),
-        row('Cargo / Función:', `<strong>${cargo || 'Operador / Conductor'}</strong>`),
-        row('Vigencia Enlace:', `<strong style="color:#fbbf24;">72 Horas (Uso Único)</strong>`)
-      ].join(''),
-      ctaTexto: '🎥 INICIAR VERIFICACIÓN Y EVALUACIÓN',
-      ctaColor: '#0284c7',
-      notaPie: 'Asegúrate de contar con buena iluminación frontal y mantener una distancia de 35 a 65 cm de la cámara.'
-    });
-  }
-  // -------------------------------------------------------------
-  // 4. PLANTILLA B2B (C): INFORME PERICIAL CONSOLIDADO AL APR
-  // -------------------------------------------------------------
-  else {
-    asunto = `[Certificado Pericial] ${nombreTrabajador || 'Evaluado'} • RUT ${rutTrabajador || 'S/RUT'}`;
-    const badgeStyle = esAprobado
-      ? 'background:rgba(16,185,129,0.15);color:#10b981;border:1px solid #10b981;'
-      : 'background:rgba(239,68,68,0.15);color:#ef4444;border:1px solid #ef4444;';
-
-    htmlBody = renderLayout({
-      subtitulo: 'SISTEMA DE EVALUACIÓN PSICOSENSOMÉTRICA PERICIAL',
-      introHtml: `Se ha emitido un nuevo informe de evaluación psicosensométrica telemétrica bajo estándar <strong>D.S. N° 170 MTT</strong>.`,
-      filasHtml: [
-        row('Trabajador Evaluado:', `<strong>${nombreTrabajador || 'S/N'}</strong>`),
-        row('RUT / ID:', `<strong>${rutTrabajador || 'S/RUT'}</strong>`),
-        row('Cargo / Función:', `<strong>${cargo || 'Operador'}</strong>`),
-        row('Empresa / Faena:', `<strong>${empresa || 'Corporativa'}</strong>`),
-        row('Dictamen Pericial:', `<span style="display:inline-block;padding:5px 12px;border-radius:6px;font-weight:800;font-size:0.78rem;letter-spacing:0.5px;${badgeStyle}">${veredictoTexto}</span>`)
-      ].join(''),
-      ctaTexto: '📄 VER Y DESCARGAR CERTIFICADO DIGITAL',
-      ctaColor: '#0284c7',
-      notaPie: 'Validez legal telemétrica comprobada mediante trazabilidad biométrica y firma digital.'
-    });
+  let rawUrl = process.env.FRONTEND_URL || 'https://www.sensometrika.com';
+  let cleanDomain = 'https://www.sensometrika.com';
+  const matchUrl = rawUrl.match(/https?:\/\/[^\s\]\)\'\"\/]+/);
+  if (matchUrl) {
+    cleanDomain = matchUrl[0];
   }
 
   try {
-    const RESEND_API_KEY = process.env.RESEND_API_KEY;
-    const remitente = process.env.EMAIL_FROM || 'Sensometrika <notificaciones@sensometrika.com>';
+    let {
+      tipo,
+      email,
+      emailDestino,
+      nombre,
+      nombreApr,
+      nombreTrabajador,
+      cargo,
+      cargoTrabajador,
+      rut,
+      rutTrabajador,
+      rutEmpresa,
+      empresa,
+      planNombre,
+      cupos,
+      codigoEmpresa,
+      tipoDocumento,
+      montoTotal,
+      monto,
+      vigencia,
+      enlace,
+      linkAcceso,
+      detalles,
+      duracion_minutos
+    } = req.body || {};
 
-    if (!RESEND_API_KEY) {
-      console.log('Simulación de envío de correo (sin RESEND_API_KEY):', { tipo, correoFinal, asunto, urlFinal });
-      return res.status(200).json({
-        success: true,
-        simulated: true,
-        destinatario: correoFinal,
-        message: 'Correo simulado (falta configurar RESEND_API_KEY en Vercel).'
-      });
+    // Correo del destinatario principal
+    const correoFinal = emailDestino || email || 'notificaciones@sensometrika.com';
+
+    const enlaceEntrante = enlace || linkAcceso;
+    const trabajadorNombre = nombreTrabajador || (detalles && detalles.nombreTrabajador) || nombre || 'Trabajador Evaluado';
+    const destinatarioNombre =
+      nombreApr ||
+      nombreTrabajador ||
+      nombre ||
+      (tipo === 'b2b' ? 'Supervisión Técnica' : 'Postulante');
+    const rutFinal = rutTrabajador || rut || (detalles && detalles.rutTrabajador) || 'N/A';
+    const cargoFinal = cargoTrabajador || cargo || (detalles && detalles.cargo) || '';
+
+    const tipoToken = (tipo === 'demo' || tipo === 'b2b' || tipo === 'b2b_apr_acceso') ? tipo : 'b2c';
+
+    // Duración de vigencias por defecto (minutos)
+    let minutosVigencia = 2880; // 48 horas B2C
+    if (tipoToken === 'demo') {
+      minutosVigencia = 6;
+    } else if (tipoToken === 'b2b' || tipoToken === 'b2b_apr_acceso') {
+      minutosVigencia = 4320; // 72 horas B2B
     }
 
-    const response = await fetch('https://api.resend.com/emails', {
+    if (duracion_minutos && Number(duracion_minutos) > 0) {
+      minutosVigencia = Number(duracion_minutos);
+    }
+
+    let enlaceFinal = '';
+
+    // Sanitización o generación de enlace con token
+    if (typeof enlaceEntrante === 'string' && enlaceEntrante.length > 5) {
+      const matchCustom = enlaceEntrante.match(/https?:\/\/[^\s\]\)\'\"]+/);
+      enlaceFinal = matchCustom ? matchCustom[0] : enlaceEntrante.trim();
+    } else {
+      const generatedToken = crypto.randomUUID();
+      const expiresAt = new Date(Date.now() + minutosVigencia * 60 * 1000).toISOString();
+
+      if (SUPABASE_URL && SUPABASE_KEY) {
+        try {
+          await fetch(`${SUPABASE_URL}/rest/v1/access_tokens`, {
+            method: 'POST',
+            headers: {
+              'apikey': SUPABASE_KEY,
+              'Authorization': `Bearer ${SUPABASE_KEY}`,
+              'Content-Type': 'application/json',
+              'Prefer': 'return=representation'
+            },
+            body: JSON.stringify({
+              token: generatedToken,
+              type: tipoToken,
+              email: correoFinal,
+              metadata: detalles || {},
+              expires_at: expiresAt
+            })
+          });
+        } catch (tokenErr) {
+          console.error('Error insertando token en Supabase:', tokenErr);
+        }
+      }
+
+      enlaceFinal = `${cleanDomain}/demo_b2b_full.html?token=${generatedToken}`;
+    }
+
+    let asunto = '';
+    let htmlContent = '';
+
+    // Detección inteligente: si el tipo es 'informe', si el plan menciona informe/dictamen,
+    // o si el enlace apunta directamente a informe_b2b_planes.html / informe_
+    const esInforme =
+      tipo === 'informe' ||
+      (typeof planNombre === 'string' && /informe|dictamen|certificado/i.test(planNombre)) ||
+      (typeof enlaceFinal === 'string' && /informe_b2b|informe_/i.test(enlaceFinal));
+
+    if (esInforme) {
+      // PLANTILLA DEDICADA: INFORME PERICIAL DEL TRABAJADOR ENVIADO A LA EMPRESA / APR
+      const razonSocial = empresa || (detalles && detalles.razonSocial) || 'Empresa Acreditada';
+      const nombrePlan = planNombre || (detalles && detalles.nombrePlan) || 'Evaluación Psicosensométrica D.S. N° 170';
+
+      asunto = `Informe Pericial Disponible: ${trabajadorNombre} (${rutFinal}) — Sensometrika`;
+      htmlContent = `
+        <!DOCTYPE html>
+        <html>
+        <head><meta charset="utf-8"></head>
+        <body style="background-color: #0b0f19; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #ffffff; padding: 30px 15px; margin:0;">
+          <div style="max-width: 580px; margin: 0 auto; background-color: #0f172a; border: 1px solid rgba(56, 189, 248, 0.35); border-radius: 16px; overflow: hidden; box-shadow: 0 15px 35px rgba(0,0,0,0.6);">
+            <div style="padding: 24px; text-align: center; border-bottom: 1px solid #1e293b; background-color: #070d18;">
+              <h1 style="margin: 0; font-size: 20px; font-weight: 900; letter-spacing: 2px; color: #ffffff;">SENSOMETRIKA <span style="color: #38bdf8; font-size: 14px;">SpA</span></h1>
+              <p style="margin: 4px 0 0 0; font-size: 10px; color: #94a3b8; letter-spacing: 1.5px; text-transform: uppercase;">Gabinete Sensotécnico Laboral • D.S. Nº 170 MTT</p>
+            </div>
+            <div style="padding: 28px 24px; background-color: #0f172a;">
+              <span style="display: inline-block; padding: 4px 12px; background-color: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.4); border-radius: 20px; color: #38bdf8; font-size: 11px; font-weight: 700; text-transform: uppercase; margin-bottom: 14px;">
+                📄 Informe Pericial del Trabajador
+              </span>
+              <h2 style="font-size: 18px; margin: 0 0 12px 0; color: #ffffff;">Estimado(a) Supervisor(a) / Encargado APR:</h2>
+              <p style="font-size: 13px; line-height: 1.6; color: #cbd5e1; margin: 0 0 18px 0;">
+                Informamos que el trabajador <strong style="color: #ffffff;">${trabajadorNombre}</strong> ha finalizado su evaluación psicosensométrica para <strong style="color: #ffffff;">${razonSocial}</strong>. El <strong style="color: #38bdf8;">Informe Pericial y Dictamen Oficial</strong> ya se encuentra emitido y disponible para descarga:
+              </p>
+
+              <div style="background-color: #0b1320; border: 1px solid #1e293b; border-radius: 10px; padding: 15px; margin-bottom: 20px; text-align: left;">
+                <div style="font-size: 11px; color: #94a3b8; text-transform: uppercase; font-weight: 700; margin-bottom: 2px;">Trabajador Evaluado:</div>
+                <div style="font-size: 14px; font-weight: 800; color: #ffffff; margin-bottom: 10px;">${trabajadorNombre}</div>
+
+                <div style="font-size: 11px; color: #94a3b8; text-transform: uppercase; font-weight: 700; margin-bottom: 2px;">RUT Evaluado:</div>
+                <div style="font-size: 13px; font-weight: 800; color: #34d399; margin-bottom: 10px;">${rutFinal}</div>
+
+                ${cargoFinal ? `
+                  <div style="font-size: 11px; color: #94a3b8; text-transform: uppercase; font-weight: 700; margin-bottom: 2px;">Cargo / Maquinaria:</div>
+                  <div style="font-size: 13px; font-weight: 700; color: #ffffff; margin-bottom: 10px;">${cargoFinal}</div>
+                ` : ''}
+
+                <div style="font-size: 11px; color: #94a3b8; text-transform: uppercase; font-weight: 700; margin-bottom: 2px;">Batería Evaluada:</div>
+                <div style="font-size: 13px; font-weight: 700; color: #38bdf8;">${nombrePlan}</div>
+              </div>
+
+              <div style="background-color: #131b2e; border: 1px solid #1e293b; border-radius: 12px; padding: 22px; text-align: center; margin-bottom: 20px;">
+                <p style="font-size: 12px; color: #cbd5e1; margin: 0 0 14px 0; font-weight: 600;">
+                  Acceda al informe pericial completo y dictamen con código QR:
+                </p>
+                <a href="${enlaceFinal}" target="_blank" style="display: inline-block; background-color: #10b981; color: #000000; text-decoration: none; font-weight: 900; font-size: 14px; padding: 13px 28px; border-radius: 10px; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.35);">
+                  📄 Ver Informe del Trabajador →
+                </a>
+                <p style="font-size: 11px; color: #94a3b8; margin: 14px 0 0 0; word-break: break-all;">
+                  Si el botón no abre, haz clic directo en este enlace seguro:<br>
+                  <a href="${enlaceFinal}" target="_blank" style="color: #38bdf8; text-decoration: underline;">${enlaceFinal}</a>
+                </p>
+              </div>
+            </div>
+            <div style="padding: 16px; text-align: center; border-top: 1px solid #1e293b; background-color: #070d18; font-size: 10px; color: #64748b;">
+              Sensometrika SpA • Plataforma de Calibración & Gestión Psicosensométrica • Chile • contacto@sensometrika.com
+            </div>
+          </div>
+        </body>
+        </html>
+      `;
+    } else if (tipo === 'b2b_apr_acceso') {
+      // ALTA CORPORATIVA Y LINK DE REINGRESO PARA ENCARGADO APR
+      const razonSocial = empresa || (detalles && detalles.razonSocial) || 'Empresa Acreditada';
+      const rutEmpFinal = rutEmpresa || (detalles && detalles.rutEmpresa) || '--';
+      const planTexto = planNombre || 'Bolsa Corporativa B2B';
+      const codigoFinal = codigoEmpresa || 'SENSE-B2B-ACTIVO';
+      const docSiiTexto = tipoDocumento === 'BOLETA' ? 'Boleta Electrónica' : 'Factura Electrónica (DTE 33)';
+      const totalTexto = montoTotal || monto || 'Confirmado';
+
+      asunto = `Consola APR Activada: ${razonSocial} (${codigoFinal}) — Sensometrika`;
+      htmlContent = `
+        <!DOCTYPE html>
+        <html>
+        <head><meta charset="utf-8"></head>
+        <body style="background-color: #0b0f19; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #ffffff; padding: 30px 15px; margin:0;">
+          <div style="max-width: 580px; margin: 0 auto; background-color: #0f172a; border: 1px solid rgba(16, 185, 129, 0.4); border-radius: 16px; overflow: hidden; box-shadow: 0 15px 35px rgba(0,0,0,0.6);">
+            <div style="padding: 24px; text-align: center; border-bottom: 1px solid #1e293b; background-color: #070d18;">
+              <h1 style="margin: 0; font-size: 20px; font-weight: 900; letter-spacing: 2px; color: #ffffff;">SENSOMETRIKA <span style="color: #10b981; font-size: 14px;">B2B</span></h1>
+              <p style="margin: 4px 0 0 0; font-size: 10px; color: #94a3b8; letter-spacing: 1.5px; text-transform: uppercase;">Consola de Gestión APR • D.S. Nº 170 MTT</p>
+            </div>
+            <div style="padding: 28px 24px; background-color: #0f172a;">
+              <span style="display: inline-block; padding: 4px 12px; background-color: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.4); border-radius: 20px; color: #34d399; font-size: 11px; font-weight: 700; text-transform: uppercase; margin-bottom: 14px;">
+                Credenciales Corporativas Activas
+              </span>
+              <h2 style="font-size: 18px; margin: 0 0 12px 0; color: #ffffff;">Estimado(a) ${destinatarioNombre}:</h2>
+              <p style="font-size: 13px; line-height: 1.6; color: #cbd5e1; margin: 0 0 18px 0;">
+                Hemos habilitado su <strong style="color: #ffffff;">Consola de Administración APR</strong> para <strong style="color: #ffffff;">${razonSocial}</strong>. Guarde este correo para reingresar cuando lo necesite desde cualquier computador o teléfono móvil.
+              </p>
+
+              <div style="background-color: #0b1320; border: 1px solid #1e293b; border-radius: 12px; padding: 16px; margin-bottom: 22px; text-align: left;">
+                <div style="font-size: 11px; color: #94a3b8; text-transform: uppercase; font-weight: 700;">Código de Acceso Empresa:</div>
+                <div style="font-size: 16px; font-weight: 900; color: #34d399; letter-spacing: 1px; margin: 2px 0 10px 0;">${codigoFinal}</div>
+
+                <div style="font-size: 11px; color: #94a3b8; text-transform: uppercase; font-weight: 700;">Empresa / RUT:</div>
+                <div style="font-size: 13px; font-weight: 700; color: #ffffff; margin: 2px 0 10px 0;">${razonSocial} • ${rutEmpFinal}</div>
+
+                <div style="font-size: 11px; color: #94a3b8; text-transform: uppercase; font-weight: 700;">Plan Contratado:</div>
+                <div style="font-size: 13px; font-weight: 700; color: #ffffff; margin: 2px 0 10px 0;">${planTexto}</div>
+
+                <div style="font-size: 11px; color: #94a3b8; text-transform: uppercase; font-weight: 700;">Respaldo Tributario SII & Total:</div>
+                <div style="font-size: 13px; font-weight: 700; color: #38bdf8; margin-top: 2px;">${docSiiTexto} • ${totalTexto} (IVA Inc.)</div>
+              </div>
+
+              <div style="background-color: #131b2e; border: 1px solid #1e293b; border-radius: 12px; padding: 22px; text-align: center; margin-bottom: 18px;">
+                <p style="font-size: 12px; color: #cbd5e1; margin: 0 0 14px 0; font-weight: 600;">
+                  Acceso directo a su Consola APR (despacho de citaciones e informes):
+                </p>
+                <a href="${enlaceFinal}" target="_blank" style="display: inline-block; background-color: #10b981; color: #000000; text-decoration: none; font-weight: 900; font-size: 14px; padding: 13px 28px; border-radius: 10px; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.35);">
+                  Ir a Consola APR →
+                </a>
+                <p style="font-size: 11px; color: #94a3b8; margin: 14px 0 0 0; word-break: break-all;">
+                  Enlace directo de respaldo:<br>
+                  <a href="${enlaceFinal}" target="_blank" style="color: #34d399; text-decoration: underline;">${enlaceFinal}</a>
+                </p>
+              </div>
+            </div>
+            <div style="padding: 16px; text-align: center; border-top: 1px solid #1e293b; background-color: #070d18; font-size: 10px; color: #64748b;">
+              Sensometrika SpA • Plataforma de Calibración & Gestión Psicosensométrica • Chile • contacto@sensometrika.com
+            </div>
+          </div>
+        </body>
+        </html>
+      `;
+    } else if (tipo === 'b2b') {
+      const razonSocial = empresa || (detalles && detalles.razonSocial) || 'Empresa Cliente';
+      const rutEmpFinal = rutEmpresa || (detalles && detalles.rutEmpresa) || '--';
+      const cuposFinal = cupos || (detalles && detalles.cupos) || '1';
+
+      asunto = `Acceso Corporativo Activo: Evaluaciones Sensométricas — ${razonSocial}`;
+      htmlContent = `
+        <!DOCTYPE html>
+        <html>
+        <head><meta charset="utf-8"></head>
+        <body style="background-color: #0b0f19; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #ffffff; padding: 30px 15px; margin:0;">
+          <div style="max-width: 580px; margin: 0 auto; background-color: #0f172a; border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 16px; overflow: hidden; box-shadow: 0 15px 35px rgba(0,0,0,0.6);">
+            <div style="padding: 24px; text-align: center; border-bottom: 1px solid #1e293b; background-color: #070d18;">
+              <h1 style="margin: 0; font-size: 20px; font-weight: 900; letter-spacing: 2px; color: #ffffff;">SENSOMETRIKA <span style="color: #38bdf8; font-size: 14px;">SpA</span></h1>
+              <p style="margin: 4px 0 0 0; font-size: 10px; color: #94a3b8; letter-spacing: 1.5px; text-transform: uppercase;">Gabinete Sensotécnico Laboral • D.S. Nº 170 MTT</p>
+            </div>
+            <div style="padding: 28px 24px; background-color: #0f172a;">
+              <span style="display: inline-block; padding: 4px 12px; background-color: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.4); border-radius: 20px; color: #38bdf8; font-size: 11px; font-weight: 700; text-transform: uppercase; margin-bottom: 14px;">
+                Evaluación Laboral Habilitada
+              </span>
+              <h2 style="font-size: 18px; margin: 0 0 12px 0; color: #ffffff;">Estimado(a) ${destinatarioNombre}:</h2>
+              <p style="font-size: 13px; line-height: 1.6; color: #cbd5e1; margin: 0 0 20px 0;">
+                Confirmamos la habilitación de evaluación psicosensométrica solicitada por <strong style="color: #ffffff;">${razonSocial}</strong> (RUT: ${rutEmpFinal}) con un total de <strong>${cuposFinal} evaluación(es)</strong> asignada(s).
+              </p>
+              <div style="background-color: #131b2e; border: 1px solid #1e293b; border-radius: 12px; padding: 20px; text-align: center; margin-bottom: 24px;">
+                <p style="font-size: 12px; color: #cbd5e1; margin: 0 0 14px 0; font-weight: 600;">
+                  Enlace directo para rendir la evaluación en línea:
+                </p>
+                <a href="${enlaceFinal}" target="_blank" style="display: inline-block; background-color: #0284c7; color: #ffffff; text-decoration: none; font-weight: 800; font-size: 14px; padding: 13px 26px; border-radius: 10px; box-shadow: 0 4px 15px rgba(2, 132, 199, 0.4);">
+                  Acceder a la Evaluación Faena →
+                </a>
+                <p style="font-size: 11px; color: #94a3b8; margin: 14px 0 0 0; word-break: break-all;">
+                  Si el botón no abre, copia y pega este enlace directo:<br>
+                  <a href="${enlaceFinal}" target="_blank" style="color: #38bdf8; text-decoration: underline;">${enlaceFinal}</a>
+                </p>
+              </div>
+            </div>
+            <div style="padding: 16px; text-align: center; border-top: 1px solid #1e293b; background-color: #070d18; font-size: 10px; color: #64748b;">
+              Sensometrika SpA • Plataforma de Calibración & Gestión Psicosensométrica • Chile • contacto@sensometrika.com
+            </div>
+          </div>
+        </body>
+        </html>
+      `;
+    } else {
+      const nombrePlan = planNombre || (detalles && detalles.nombrePlan) || (tipoToken === 'demo' ? 'Pase de Demostración' : 'Pase Psicomotriz (3 Sim)');
+      const vigenciaTexto = vigencia || (detalles && detalles.vigencia) || (tipoToken === 'demo' ? '6 minutos' : '48 horas');
+
+      asunto = (tipo === 'b2c_pago' || tipo === 'b2c_acceso')
+        ? `Acceso Habilitado: ${nombrePlan} — Sensometrika`
+        : `Tu Enlace de Acceso: Evaluación Psicotécnica — Sensometrika`;
+
+      htmlContent = `
+        <!DOCTYPE html>
+        <html>
+        <head><meta charset="utf-8"></head>
+        <body style="background-color: #0b0f19; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #ffffff; padding: 30px 15px; margin:0;">
+          <div style="max-width: 580px; margin: 0 auto; background-color: #0f172a; border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 16px; overflow: hidden; box-shadow: 0 15px 35px rgba(0,0,0,0.6);">
+            <div style="padding: 24px; text-align: center; border-bottom: 1px solid #1e293b; background-color: #070d18;">
+              <h1 style="margin: 0; font-size: 20px; font-weight: 900; letter-spacing: 2px; color: #ffffff;">SENSOMETRIKA <span style="color: #38bdf8; font-size: 14px;">SpA</span></h1>
+              <p style="margin: 4px 0 0 0; font-size: 10px; color: #94a3b8; letter-spacing: 1.5px; text-transform: uppercase;">Gabinete Sensotécnico Laboral • D.S. Nº 170 MTT</p>
+            </div>
+            <div style="padding: 28px 24px; background-color: #0f172a;">
+              <span style="display: inline-block; padding: 4px 12px; background-color: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.4); border-radius: 20px; color: #34d399; font-size: 11px; font-weight: 700; text-transform: uppercase; margin-bottom: 14px;">
+                Acceso Habilitado
+              </span>
+              <h2 style="font-size: 18px; margin: 0 0 12px 0; color: #ffffff;">¡Hola, ${destinatarioNombre}!</h2>
+              <p style="font-size: 13px; line-height: 1.6; color: #cbd5e1; margin: 0 0 16px 0;">
+                Tu acceso para <strong style="color: #ffffff;">${nombrePlan}</strong> ha sido activado exitosamente (vigencia: ${vigenciaTexto}). Ya puedes ingresar al simulador para preparar tu examen psicotécnico de licencia de conducir o faena laboral.
+              </p>
+
+              <div style="background-color: #0b1320; border: 1px solid #1e293b; border-radius: 10px; padding: 14px; margin-bottom: 20px; text-align: left;">
+                <div style="font-size: 11px; color: #94a3b8; text-transform: uppercase; font-weight: 700; margin-bottom: 4px;">RUT Evaluado:</div>
+                <div style="font-size: 13px; font-weight: 800; color: #ffffff; margin-bottom: 8px;">${rutFinal}</div>
+                ${(montoTotal || monto) ? `
+                  <div style="font-size: 11px; color: #94a3b8; text-transform: uppercase; font-weight: 700; margin-bottom: 4px;">Detalle / Estado:</div>
+                  <div style="font-size: 13px; font-weight: 800; color: #34d399;">${montoTotal || monto}</div>
+                ` : ''}
+              </div>
+
+              <div style="background-color: #131b2e; border: 1px solid #1e293b; border-radius: 12px; padding: 22px; text-align: center; margin-bottom: 24px;">
+                <a href="${enlaceFinal}" target="_blank" style="display: inline-block; background-color: #0284c7; color: #ffffff; text-decoration: none; font-weight: 800; font-size: 14px; padding: 13px 28px; border-radius: 10px; box-shadow: 0 4px 15px rgba(2, 132, 199, 0.4);">
+                  Comenzar Evaluación Ahora →
+                </a>
+                <p style="font-size: 11px; color: #94a3b8; margin: 14px 0 0 0; word-break: break-all;">
+                  Si el botón no abre, haz clic directo en este enlace seguro:<br>
+                  <a href="${enlaceFinal}" target="_blank" style="color: #38bdf8; text-decoration: underline;">${enlaceFinal}</a>
+                </p>
+              </div>
+            </div>
+            <div style="padding: 16px; text-align: center; border-top: 1px solid #1e293b; background-color: #070d18; font-size: 10px; color: #64748b;">
+              Sensometrika SpA • Plataforma de Calibración & Gestión Psicosensométrica • Chile • contacto@sensometrika.com
+            </div>
+          </div>
+        </body>
+        </html>
+      `;
+    }
+
+    const remitente = process.env.EMAIL_FROM || 'Sensometrika <notificaciones@sensometrika.com>';
+
+    const emailPayload = {
+      from: remitente,
+      to: [correoFinal],
+      bcc: ['contacto@sensometrika.com'],
+      subject: asunto,
+      html: htmlContent
+    };
+
+    const resendResponse = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${RESEND_API_KEY}`
+        'Authorization': `Bearer ${RESEND_API_KEY}`,
+        'Content-Type': 'application/json'
       },
-      body: JSON.stringify({
-        from: remitente,
-        to: [correoFinal],
-        bcc: ['contacto@sensometrika.com'],
-        subject: asunto,
-        html: htmlBody
-      })
+      body: JSON.stringify(emailPayload)
     });
 
-    const data = await response.json();
+    const data = await resendResponse.json();
 
-    if (!response.ok) {
-      console.error('Error desde Resend API:', data);
-      return res.status(response.status).json({
+    if (!resendResponse.ok) {
+      console.error('Error desde Resend:', data);
+      return res.status(resendResponse.status).json({
         success: false,
-        error: data.message || 'Resend rechazó el envío del correo.',
+        error: data.message || 'Error al enviar correo mediante Resend.',
         details: data
       });
     }
@@ -228,14 +393,12 @@ export default async function handler(req, res) {
     return res.status(200).json({
       success: true,
       id: data.id,
-      destinatario: correoFinal
+      destinatario: correoFinal,
+      enlaceGenerado: enlaceFinal
     });
+
   } catch (error) {
-    console.error('Excepción en /api/enviar-correo:', error);
-    return res.status(500).json({
-      success: false,
-      error: 'Error interno en el servidor de correo',
-      details: error.message
-    });
+    console.error('Excepción al despachar correo:', error);
+    return res.status(500).json({ success: false, error: error.message || 'Error interno del servidor.' });
   }
-}
+};
