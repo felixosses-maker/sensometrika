@@ -123,6 +123,11 @@
             box-shadow: 0 4px 15px rgba(16, 185, 129, 0.25);
         }
 
+        .btn-submit:disabled {
+            opacity: 0.65;
+            cursor: wait;
+        }
+
         .confirm-box {
             display: none;
             background: rgba(16, 185, 129, 0.1);
@@ -147,6 +152,18 @@
             text-decoration: none;
             display: block;
             margin-top: 8px;
+        }
+
+        .btn-reenviar {
+            background: transparent;
+            color: var(--accent-green);
+            border: 1px solid rgba(16, 185, 129, 0.5);
+            padding: 9px;
+            border-radius: 8px;
+            font-weight: 800;
+            font-size: 0.72rem;
+            cursor: pointer;
+            text-transform: uppercase;
         }
 
         .plan-badge-bar {
@@ -197,7 +214,7 @@
                         <strong id="lblPlanNombre" style="color: var(--accent-cyan);">PASE BÁSICO (B2C)</strong>
                     </div>
 
-                    <button type="submit" class="btn-submit">
+                    <button type="submit" id="btnSubmitB2C" class="btn-submit">
                         💳 PROCEDER AL PAGO Y SOLICITAR LINK →
                     </button>
                 </div>
@@ -206,24 +223,35 @@
 
         <!-- Confirmación de Despacho del Correo con Link de Acceso -->
         <div class="confirm-box" id="boxConfirmacion">
-            <div style="font-size: 1rem; font-weight: 800; color: var(--accent-green);">
+            <div id="lblTituloConfirmacion" style="font-size: 1rem; font-weight: 800; color: var(--accent-green);">
                 ✓ PAGO CONFIRMADO & ENLACE DE ACCESO ENVIADO
             </div>
             <div style="font-size: 0.82rem; color: var(--text-main); line-height: 1.4;">
                 Hemos transmitido tu enlace único de evaluación al correo:<br>
                 <strong id="txtCorreoConfirmado" style="color: var(--accent-cyan); display: block; margin-top: 4px;"></strong>
             </div>
-            <div style="font-size: 0.75rem; color: var(--text-muted);">
-                Revisa tu bandeja de entrada o haz clic en el botón inferior para rendir la evaluación ahora mismo:
+            <div id="lblEstadoEnvioCorreo" style="font-size: 0.72rem; color: var(--text-muted); line-height: 1.4;">
+                Revisa tu bandeja de entrada (o carpeta de spam) o haz clic en el botón inferior para rendir la evaluación ahora mismo:
             </div>
             <a id="btnIniciarDirecto" href="#" class="btn-link-start">
                 🚀 INICIAR EVALUACIÓN DESDE AQUÍ
             </a>
+            <button type="button" id="btnReenviarCorreoB2C" onclick="reenviarCorreoB2C()" class="btn-reenviar">
+                🔄 REENVIAR LINK AL CORREO
+            </button>
         </div>
     </div>
 
     <script>
         let planActual = 'BASICO';
+        let ultimoPayloadCorreoB2C = null;
+        const DOMINIO_OFICIAL = 'https://www.sensometrika.com';
+
+        const DETALLE_PLANES_B2C = {
+            BASICO: { nombre: 'Pase Básico Particular (3 Simulaciones)', vigencia: '48 horas' },
+            PLUS: { nombre: 'Pase Plus Particular (5 Simulaciones + Visual)', vigencia: '5 días' },
+            FULL: { nombre: 'Pase Full Particular (8 Simulaciones + Sensorial)', vigencia: '10 días' }
+        };
 
         document.addEventListener('DOMContentLoaded', () => {
             localStorage.setItem('sensometrika_b2c_mode', 'true');
@@ -238,8 +266,31 @@
             document.getElementById('lblPlanNombre').textContent = `PASE ${planActual} (B2C)`;
         });
 
-        function procesarPagoYEnvio(e) {
+        async function despacharCorreoB2C(payload) {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 6000);
+            try {
+                const resp = await fetch('/api/enviar-correo', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload),
+                    signal: controller.signal
+                });
+                const data = await resp.json().catch(() => ({}));
+                return { ok: resp.ok, error: data.error || '' };
+            } catch (err) {
+                return { ok: false, error: err.message || 'Sin conexión con servidor de correo' };
+            } finally {
+                clearTimeout(timeoutId);
+            }
+        }
+
+        async function procesarPagoYEnvio(e) {
             e.preventDefault();
+
+            const btnSubmit = document.getElementById('btnSubmitB2C');
+            btnSubmit.disabled = true;
+            btnSubmit.textContent = '⏳ PROCESANDO PAGO Y ENVIANDO LINK...';
 
             // Limpieza estricta de estado previo B2B
             localStorage.removeItem('sensometrika_modulos_rendidos');
@@ -273,20 +324,56 @@
             localStorage.setItem('sensometrika_plan_contratado', planActual);
             localStorage.setItem('sensometrika_plan_seleccionado', planActual);
 
-            // Redirección relativa dentro de la carpeta b2c/ hacia menu_b2c.html
             const params = new URLSearchParams({
                 rut: rut,
                 nombre: nombre,
                 plan: planActual,
                 mode: 'b2c'
             });
-            const urlAcceso = `menu_b2c.html?${params.toString()}`;
 
-            // Ocultar formulario y mostrar confirmación de envío por correo
+            const urlRelativa = `menu_b2c.html?${params.toString()}`;
+            const urlOficialCorreo = `${DOMINIO_OFICIAL}/b2c/menu_b2c.html?${params.toString()}`;
+            const infoPlan = DETALLE_PLANES_B2C[planActual] || DETALLE_PLANES_B2C.BASICO;
+
+            ultimoPayloadCorreoB2C = {
+                tipo: 'b2c_acceso',
+                emailDestino: correo,
+                nombre: nombre,
+                rut: rut,
+                planNombre: infoPlan.nombre,
+                vigencia: infoPlan.vigencia,
+                linkAcceso: urlOficialCorreo
+            };
+
+            const resultado = await despacharCorreoB2C(ultimoPayloadCorreoB2C);
+
+            // Mostrar pantalla de confirmación
             document.getElementById('boxFormulario').style.display = 'none';
             document.getElementById('txtCorreoConfirmado').textContent = correo;
-            document.getElementById('btnIniciarDirecto').href = urlAcceso;
+            document.getElementById('btnIniciarDirecto').href = urlRelativa;
             document.getElementById('boxConfirmacion').style.display = 'flex';
+
+            const lblEstado = document.getElementById('lblEstadoEnvioCorreo');
+            if (resultado.ok) {
+                lblEstado.innerHTML = '✅ <strong>Correo despachado correctamente.</strong> Revisa tu bandeja de entrada o haz clic abajo para iniciar ahora mismo:';
+                lblEstado.style.color = '#10b981';
+            } else {
+                const esLocal = window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost';
+                lblEstado.innerHTML = esLocal
+                    ? '⚠️ <strong>Modo prueba local (127.0.0.1):</strong> El envío real de correo solo se ejecuta en <em>www.sensometrika.com</em>. Puedes iniciar tu evaluación abajo:'
+                    : `⚠️ No se pudo confirmar el envío automático (${resultado.error}). Puedes usar el botón de reenvío o iniciar directamente abajo:`;
+                lblEstado.style.color = '#f59e0b';
+            }
+        }
+
+        async function reenviarCorreoB2C() {
+            if (!ultimoPayloadCorreoB2C) return;
+            const btn = document.getElementById('btnReenviarCorreoB2C');
+            btn.disabled = true;
+            btn.textContent = '⏳ REENVIANDO...';
+            const res = await despacharCorreoB2C(ultimoPayloadCorreoB2C);
+            btn.disabled = false;
+            btn.textContent = res.ok ? '✅ ENLACE REENVIADO' : '🔄 REINTENTAR ENVÍO';
         }
     </script>
 </body>

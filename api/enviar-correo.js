@@ -30,8 +30,8 @@ module.exports = async (req, res) => {
   const SUPABASE_URL = process.env.SUPABASE_URL;
   const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-  let rawUrl = process.env.FRONTEND_URL || 'https://sensometrika.com';
-  let cleanDomain = 'https://sensometrika.com';
+  let rawUrl = process.env.FRONTEND_URL || 'https://www.sensometrika.com';
+  let cleanDomain = 'https://www.sensometrika.com';
   const matchUrl = rawUrl.match(/https?:\/\/[^\s\]\)\'\"\/]+/);
   if (matchUrl) {
     cleanDomain = matchUrl[0];
@@ -43,10 +43,19 @@ module.exports = async (req, res) => {
       email,
       emailDestino,
       nombre,
+      nombreApr,
       nombreTrabajador,
+      rut,
       rutTrabajador,
+      rutEmpresa,
+      empresa,
       planNombre,
+      cupos,
+      codigoEmpresa,
+      tipoDocumento,
+      montoTotal,
       monto,
+      vigencia,
       enlace,
       linkAcceso,
       detalles,
@@ -57,16 +66,20 @@ module.exports = async (req, res) => {
     const correoFinal = emailDestino || email || 'notificaciones@sensometrika.com';
 
     const enlaceEntrante = enlace || linkAcceso;
-    const destinatarioNombre = nombreTrabajador || nombre || (tipo === 'b2b' ? 'Supervisión Técnica' : 'Postulante');
-    const rutFinal = rutTrabajador || (detalles && detalles.rutTrabajador) || 'N/A';
+    const destinatarioNombre =
+      nombreApr ||
+      nombreTrabajador ||
+      nombre ||
+      (tipo === 'b2b' ? 'Supervisión Técnica' : 'Postulante');
+    const rutFinal = rutTrabajador || rut || (detalles && detalles.rutTrabajador) || 'N/A';
 
-    const tipoToken = (tipo === 'demo' || tipo === 'b2b') ? tipo : 'b2c';
+    const tipoToken = (tipo === 'demo' || tipo === 'b2b' || tipo === 'b2b_apr_acceso') ? tipo : 'b2c';
 
     // Duración de vigencias por defecto (minutos)
     let minutosVigencia = 2880; // 48 horas B2C
     if (tipoToken === 'demo') {
-      minutosVigencia = 6; // 6 minutos para demos
-    } else if (tipoToken === 'b2b') {
+      minutosVigencia = 6;
+    } else if (tipoToken === 'b2b' || tipoToken === 'b2b_apr_acceso') {
       minutosVigencia = 4320; // 72 horas B2B
     }
 
@@ -115,10 +128,73 @@ module.exports = async (req, res) => {
 
     const esInforme = tipo === 'informe' || (planNombre && planNombre.toLowerCase().includes('informe'));
 
-    if (tipo === 'b2b') {
-      const razonSocial = (detalles && detalles.razonSocial) ? detalles.razonSocial : 'Empresa Cliente';
-      const rutEmpresa = (detalles && detalles.rutEmpresa) ? detalles.rutEmpresa : '--';
-      const cupos = (detalles && detalles.cupos) ? detalles.cupos : '1';
+    if (tipo === 'b2b_apr_acceso') {
+      // ALTA CORPORATIVA Y LINK DE REINGRESO PARA ENCARGADO APR
+      const razonSocial = empresa || (detalles && detalles.razonSocial) || 'Empresa Acreditada';
+      const rutEmpFinal = rutEmpresa || (detalles && detalles.rutEmpresa) || '--';
+      const planTexto = planNombre || 'Bolsa Corporativa B2B';
+      const codigoFinal = codigoEmpresa || 'SENSE-B2B-ACTIVO';
+      const docSiiTexto = tipoDocumento === 'BOLETA' ? 'Boleta Electrónica' : 'Factura Electrónica (DTE 33)';
+      const totalTexto = montoTotal || monto || 'Confirmado';
+
+      asunto = `Consola APR Activada: ${razonSocial} (${codigoFinal}) — Sensometrika`;
+      htmlContent = `
+        <!DOCTYPE html>
+        <html>
+        <head><meta charset="utf-8"></head>
+        <body style="background-color: #0b0f19; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #ffffff; padding: 30px 15px; margin:0;">
+          <div style="max-width: 580px; margin: 0 auto; background: #0f172a; border: 1px solid rgba(16, 185, 129, 0.4); border-radius: 16px; overflow: hidden; box-shadow: 0 15px 35px rgba(0,0,0,0.6);">
+            <div style="padding: 24px; text-align: center; border-bottom: 1px solid #1e293b; background: #070d18;">
+              <h1 style="margin: 0; font-size: 20px; font-weight: 900; letter-spacing: 2px; color: #ffffff;">SENSOMETRIKA <span style="color: #10b981; font-size: 14px;">B2B</span></h1>
+              <p style="margin: 4px 0 0 0; font-size: 10px; color: #94a3b8; letter-spacing: 1.5px; text-transform: uppercase;">Consola de Gestión APR • D.S. Nº 170 MTT</p>
+            </div>
+            <div style="padding: 28px 24px;">
+              <span style="display: inline-block; padding: 4px 12px; background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.4); border-radius: 20px; color: #34d399; font-size: 11px; font-weight: 700; text-transform: uppercase; margin-bottom: 14px;">
+                Credenciales Corporativas Activas
+              </span>
+              <h2 style="font-size: 18px; margin: 0 0 12px 0; color: #ffffff;">Estimado(a) ${destinatarioNombre}:</h2>
+              <p style="font-size: 13px; line-height: 1.6; color: #94a3b8; margin: 0 0 18px 0;">
+                Hemos habilitado su <strong style="color: #ffffff;">Consola de Administración APR</strong> para <strong style="color: #ffffff;">${razonSocial}</strong>. Guarde este correo para reingresar cuando lo necesite desde cualquier computador o teléfono móvil.
+              </p>
+
+              <div style="background: #0b1320; border: 1px solid #1e293b; border-radius: 12px; padding: 16px; margin-bottom: 22px; text-align: left;">
+                <div style="font-size: 11px; color: #94a3b8; text-transform: uppercase; font-weight: 700;">Código de Acceso Empresa:</div>
+                <div style="font-size: 16px; font-weight: 900; color: #34d399; letter-spacing: 1px; margin: 2px 0 10px 0;">${codigoFinal}</div>
+
+                <div style="font-size: 11px; color: #94a3b8; text-transform: uppercase; font-weight: 700;">Empresa / RUT:</div>
+                <div style="font-size: 13px; font-weight: 700; color: #ffffff; margin: 2px 0 10px 0;">${razonSocial} • ${rutEmpFinal}</div>
+
+                <div style="font-size: 11px; color: #94a3b8; text-transform: uppercase; font-weight: 700;">Plan Contratado:</div>
+                <div style="font-size: 13px; font-weight: 700; color: #ffffff; margin: 2px 0 10px 0;">${planTexto}</div>
+
+                <div style="font-size: 11px; color: #94a3b8; text-transform: uppercase; font-weight: 700;">Respaldo Tributario SII & Total:</div>
+                <div style="font-size: 13px; font-weight: 700; color: #38bdf8; margin-top: 2px;">${docSiiTexto} • ${totalTexto} (IVA Inc.)</div>
+              </div>
+
+              <div style="background: #131b2e; border: 1px solid #1e293b; border-radius: 12px; padding: 22px; text-align: center; margin-bottom: 18px;">
+                <p style="font-size: 12px; color: #cbd5e1; margin: 0 0 14px 0; font-weight: 600;">
+                  Acceso directo a su Consola APR (despacho de citaciones e informes):
+                </p>
+                <a href="${enlaceFinal}" target="_blank" style="display: inline-block; background: #10b981; color: #000000; text-decoration: none; font-weight: 900; font-size: 14px; padding: 13px 28px; border-radius: 10px; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.35);">
+                  Ir a Consola APR →
+                </a>
+                <p style="font-size: 11px; color: #64748b; margin: 14px 0 0 0; word-break: break-all;">
+                  Enlace directo de respaldo:<br>
+                  <a href="${enlaceFinal}" target="_blank" style="color: #34d399; text-decoration: underline;">${enlaceFinal}</a>
+                </p>
+              </div>
+            </div>
+            <div style="padding: 16px; text-align: center; border-top: 1px solid #1e293b; background: #070d18; font-size: 10px; color: #64748b;">
+              Sensometrika SpA • Plataforma de Calibración & Gestión Psicosensométrica • Chile • contacto@sensometrika.com
+            </div>
+          </div>
+        </body>
+        </html>
+      `;
+    } else if (tipo === 'b2b') {
+      const razonSocial = empresa || (detalles && detalles.razonSocial) || 'Empresa Cliente';
+      const rutEmpFinal = rutEmpresa || (detalles && detalles.rutEmpresa) || '--';
+      const cuposFinal = cupos || (detalles && detalles.cupos) || '1';
 
       asunto = `Acceso Corporativo Activo: Evaluaciones Sensométricas — ${razonSocial}`;
       htmlContent = `
@@ -133,15 +209,15 @@ module.exports = async (req, res) => {
             </div>
             <div style="padding: 28px 24px;">
               <span style="display: inline-block; padding: 4px 12px; background: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.4); border-radius: 20px; color: #38bdf8; font-size: 11px; font-weight: 700; text-transform: uppercase; margin-bottom: 14px;">
-                Plan Corporativo Activado
+                Evaluación Laboral Habilitada
               </span>
               <h2 style="font-size: 18px; margin: 0 0 12px 0; color: #ffffff;">Estimado(a) ${destinatarioNombre}:</h2>
               <p style="font-size: 13px; line-height: 1.6; color: #94a3b8; margin: 0 0 20px 0;">
-                Confirmamos la habilitación del pack de evaluaciones para <strong style="color: #ffffff;">${razonSocial}</strong> (RUT: ${rutEmpresa}) con un total de <strong>${cupos} evaluación(es)</strong> asignada(s).
+                Confirmamos la habilitación de evaluación psicosensométrica solicitada por <strong style="color: #ffffff;">${razonSocial}</strong> (RUT: ${rutEmpFinal}) con un total de <strong>${cuposFinal} evaluación(es)</strong> asignada(s).
               </p>
               <div style="background: #131b2e; border: 1px solid #1e293b; border-radius: 12px; padding: 20px; text-align: center; margin-bottom: 24px;">
                 <p style="font-size: 12px; color: #cbd5e1; margin: 0 0 14px 0; font-weight: 600;">
-                  Enlace directo para distribución a trabajadores (WhatsApp / Correo):
+                  Enlace directo para rendir la evaluación en línea:
                 </p>
                 <a href="${enlaceFinal}" target="_blank" style="display: inline-block; background: #0284c7; color: #ffffff; text-decoration: none; font-weight: 800; font-size: 14px; padding: 13px 26px; border-radius: 10px; box-shadow: 0 4px 15px rgba(2, 132, 199, 0.4);">
                   Acceder a la Evaluación Faena →
@@ -161,11 +237,11 @@ module.exports = async (req, res) => {
       `;
     } else {
       const nombrePlan = planNombre || (detalles && detalles.nombrePlan) || (tipoToken === 'demo' ? 'Pase de Demostración' : 'Pase Psicomotriz (3 Sim)');
-      const vigenciaTexto = (detalles && detalles.vigencia) ? detalles.vigencia : (tipoToken === 'demo' ? '6 minutos' : '48 horas');
+      const vigenciaTexto = vigencia || (detalles && detalles.vigencia) || (tipoToken === 'demo' ? '6 minutos' : '48 horas');
 
       asunto = esInforme
         ? `Informe Pericial Disponible: ${nombrePlan} — Sensometrika`
-        : (tipo === 'b2c_pago' ? `Acceso Habilitado: ${nombrePlan} — Sensometrika` : `Tu Enlace de Acceso: Evaluación Psicotécnica — Sensometrika`);
+        : (tipo === 'b2c_pago' || tipo === 'b2c_acceso' ? `Acceso Habilitado: ${nombrePlan} — Sensometrika` : `Tu Enlace de Acceso: Evaluación Psicotécnica — Sensometrika`);
 
       const textoInsignia = esInforme ? 'Informe Pericial Emitido' : 'Acceso Habilitado';
       const colorInsignia = esInforme ? '#38bdf8' : '#34d399';
@@ -174,7 +250,7 @@ module.exports = async (req, res) => {
 
       const textoMensaje = esInforme
         ? `Tu informe pericial psicosensométrico oficial para <strong style="color: #ffffff;">${nombrePlan}</strong> ha sido generado y certificado exitosamente. Puedes revisar el detalle de tus resultados telemétricos y el dictamen oficial en el siguiente enlace:`
-        : `Tu acceso para <strong style="color: #ffffff;">${nombrePlan}</strong> ha sido activado exitosamente (${vigenciaTexto}). Ya puedes ingresar al simulador para preparar tu examen psicotécnico de licencia de conducir o faena laboral.`;
+        : `Tu acceso para <strong style="color: #ffffff;">${nombrePlan}</strong> ha sido activado exitosamente (vigencia: ${vigenciaTexto}). Ya puedes ingresar al simulador para preparar tu examen psicotécnico de licencia de conducir o faena laboral.`;
 
       const textoBoton = esInforme ? 'Revisar Informe Pericial →' : 'Comenzar Evaluación Ahora →';
 
@@ -200,9 +276,9 @@ module.exports = async (req, res) => {
               <div style="background: #0b1320; border: 1px solid #1e293b; border-radius: 10px; padding: 14px; margin-bottom: 20px; text-align: left;">
                 <div style="font-size: 11px; color: #94a3b8; text-transform: uppercase; font-weight: 700; margin-bottom: 4px;">RUT Evaluado:</div>
                 <div style="font-size: 13px; font-weight: 800; color: #ffffff; margin-bottom: 8px;">${rutFinal}</div>
-                ${monto ? `
+                ${(montoTotal || monto) ? `
                   <div style="font-size: 11px; color: #94a3b8; text-transform: uppercase; font-weight: 700; margin-bottom: 4px;">Detalle / Estado:</div>
-                  <div style="font-size: 13px; font-weight: 800; color: #34d399;">${monto}</div>
+                  <div style="font-size: 13px; font-weight: 800; color: #34d399;">${montoTotal || monto}</div>
                 ` : ''}
               </div>
 

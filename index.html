@@ -91,6 +91,27 @@
       gap: 14px;
     }
 
+    .btn-reingreso-apr {
+      width: 100%;
+      background: rgba(16, 185, 129, 0.12);
+      border: 1px solid rgba(16, 185, 129, 0.55);
+      color: var(--accent-green);
+      padding: 11px 14px;
+      border-radius: 12px;
+      font-size: 0.74rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      cursor: pointer;
+      text-align: center;
+      letter-spacing: 0.3px;
+      transition: all 0.2s ease;
+    }
+
+    .btn-reingreso-apr:hover {
+      background: rgba(16, 185, 129, 0.22);
+      box-shadow: 0 0 14px rgba(16, 185, 129, 0.25);
+    }
+
     .card-plan {
       background-color: var(--bg-card);
       border: 1px solid var(--border-color);
@@ -177,16 +198,21 @@
 
     .btn-action {
       width: 100%;
-      padding: 12px;
+      padding: 13px;
       border-radius: 10px;
       border: none;
-      font-size: 0.78rem;
+      font-size: 0.80rem;
       font-weight: 900;
       text-transform: uppercase;
       cursor: pointer;
       text-decoration: none;
       text-align: center;
-      transition: transform 0.1s;
+      transition: transform 0.1s, opacity 0.15s;
+    }
+
+    .btn-action:disabled {
+      opacity: 0.6;
+      cursor: wait;
     }
 
     .btn-b2c { background: var(--accent-cyan); color: #000; box-shadow: 0 4px 15px var(--accent-cyan-glow); }
@@ -262,10 +288,101 @@
       color: #fff;
       font-size: 0.75rem;
       outline: none;
+      user-select: text;
+      -webkit-user-select: text;
     }
 
     .form-control:focus {
       border-color: var(--accent-green);
+    }
+
+    /* SELECTOR NORMATIVO SII: FACTURA / BOLETA */
+    .doc-type-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .doc-option {
+      background: #050a14;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 9px 8px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .doc-option.active {
+      border-color: var(--accent-green);
+      background: rgba(16, 185, 129, 0.12);
+    }
+
+    .doc-option-title {
+      font-size: 0.72rem;
+      font-weight: 800;
+      color: #fff;
+      display: block;
+    }
+
+    .doc-option-sub {
+      font-size: 0.56rem;
+      color: var(--text-muted);
+      display: block;
+      margin-top: 1px;
+    }
+
+    .summary-checkout-box {
+      background: #050a14;
+      border: 1px solid #1e3a5f;
+      border-radius: 10px;
+      padding: 10px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      margin-top: 4px;
+    }
+
+    .summary-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.70rem;
+      color: var(--text-muted);
+    }
+
+    .summary-row.total {
+      border-top: 1px dashed #1e3a5f;
+      padding-top: 6px;
+      margin-top: 2px;
+      font-size: 0.85rem;
+      font-weight: 900;
+      color: var(--accent-green);
+    }
+
+    /* MODAL REINGRESO APR */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(2, 6, 14, 0.85);
+      backdrop-filter: blur(4px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      z-index: 9999;
+    }
+
+    .modal-card {
+      width: 100%;
+      max-width: 400px;
+      background: var(--bg-card);
+      border: 1px solid var(--accent-green);
+      border-radius: 16px;
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.9);
     }
   </style>
 </head>
@@ -341,7 +458,12 @@
 
     <!-- SECCIÓN PLANES CORPORATIVOS (B2B) -->
     <div id="secB2B" class="section-container">
-      
+
+      <!-- BOTÓN DE ACCESO DIRECTO PARA EMPRESAS YA REGISTRADAS -->
+      <button type="button" class="btn-reingreso-apr" onclick="abrirModalReingresoAPR()">
+        🔑 Ya tengo bolsa activa • Entrar a Consola APR →
+      </button>
+
       <div class="bolsa-counter-card">
         <div style="font-size: 0.75rem; font-weight: 800; color: var(--accent-green); text-transform: uppercase;">
           💼 SELECCIONE TAMAÑO DE LA BOLSA (MÍNIMO 10 EVALUACIONES)
@@ -425,20 +547,54 @@
         </div>
       </div>
 
-      <!-- FORMULARIO DE ACCESO AL DASHBOARD APR -->
+      <!-- FORMULARIO DE REGISTRO CORPORATIVO, FACTURACIÓN SII Y PAGO -->
       <div class="form-b2b-card">
         <span style="font-size: 0.72rem; color: var(--accent-green); font-weight: 800; text-transform: uppercase;">
-          🏢 REGISTRO CORPORATIVO & ACCESO A DASHBOARD APR
+          🏢 REGISTRO CORPORATIVO, TRIBUTACIÓN SII Y PAGO
         </span>
 
+        <!-- SELECTOR NORMATIVO SII: FACTURA ELECTRÓNICA vs BOLETA ELECTRÓNICA -->
         <div class="form-group">
-          <label>Razón Social Empresa *</label>
+          <label>Documento Tributario Electrónico (SII) *</label>
+          <div class="doc-type-grid">
+            <div id="optFactura" class="doc-option active" onclick="seleccionarTipoDocumento('FACTURA')">
+              <span class="doc-option-title">🧾 FACTURA ELECTRÓNICA</span>
+              <span class="doc-option-sub">Empresa / Crédito Fiscal IVA</span>
+            </div>
+            <div id="optBoleta" class="doc-option" onclick="seleccionarTipoDocumento('BOLETA')">
+              <span class="doc-option-title">📄 BOLETA ELECTRÓNICA</span>
+              <span class="doc-option-sub">Consumidor Final / Sin Crédito</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label id="lblRazonSocial">Razón Social Empresa *</label>
           <input type="text" id="inputRazonSocial" class="form-control" placeholder="Ej: Socadep Chillan SpA" value="Socadep Chillan SpA">
         </div>
 
         <div class="form-group">
-          <label>RUT Empresa *</label>
+          <label id="lblRutEmpresa">RUT Empresa *</label>
           <input type="text" id="inputRutEmpresa" class="form-control" placeholder="Ej: 75.151.701-3" value="75.151.701-3">
+        </div>
+
+        <!-- CAMPOS EXIGIDOS POR SII PARA EMISIÓN DE FACTURA ELECTRÓNICA (DTE 33) -->
+        <div id="camposFacturaSII" style="display: flex; flex-direction: column; gap: 10px;">
+          <div class="form-group">
+            <label>Giro Comercial (Exigido SII para Factura) *</label>
+            <input type="text" id="inputGiroEmpresa" class="form-control" placeholder="Ej: Transporte de carga por carretera / Servicios forestales" value="Servicios forestales y transporte">
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1.4fr 1fr; gap: 8px;">
+            <div class="form-group">
+              <label>Dirección Tributaria *</label>
+              <input type="text" id="inputDireccionEmpresa" class="form-control" placeholder="Ej: Av. O'Higgins 1250" value="Av. O'Higgins 1250">
+            </div>
+            <div class="form-group">
+              <label>Comuna *</label>
+              <input type="text" id="inputComunaEmpresa" class="form-control" placeholder="Ej: Chillán" value="Chillán">
+            </div>
+          </div>
         </div>
 
         <div class="form-group">
@@ -447,27 +603,82 @@
         </div>
 
         <div class="form-group">
-          <label>Correo Electrónico Notificaciones *</label>
+          <label>Correo Electrónico Notificaciones y DTE *</label>
           <input type="email" id="inputCorreoApr" class="form-control" placeholder="Ej: felix.osses@gmail.com" value="felix.osses@gmail.com">
         </div>
 
-        <button type="button" onclick="procesarIngresoAPR()" class="btn-action btn-b2b" style="margin-top: 6px;">
-          INGRESAR A DASHBOARD APR →
+        <!-- RESUMEN TRIBUTARIO NETO + IVA 19% + TOTAL A PAGAR -->
+        <div class="summary-checkout-box">
+          <div class="summary-row">
+            <span id="lblResumenPlan">Plan Básico Laboral (10 eval.)</span>
+            <span id="lblMontoNeto">$79.900</span>
+          </div>
+          <div class="summary-row">
+            <span>IVA (19% SII Chile)</span>
+            <span id="lblMontoIva">$15.181</span>
+          </div>
+          <div class="summary-row total">
+            <span>TOTAL A PAGAR (IVA INC.)</span>
+            <span id="lblMontoTotal">$95.081</span>
+          </div>
+        </div>
+
+        <button type="button" id="btnPagarB2B" onclick="procesarPagoYAccesoAPR()" class="btn-action btn-b2b" style="margin-top: 4px;">
+          💳 CONTINUAR AL PAGO ($95.081 IVA INC.) →
         </button>
+
+        <div style="font-size: 0.58rem; color: var(--text-muted); text-align: center; line-height: 1.3;">
+          Al confirmar, enviaremos el <strong>enlace directo de acceso a su Consola APR</strong> al correo registrado para reingresar cuando lo necesite.
+        </div>
       </div>
 
+    </div>
+  </div>
+
+  <!-- MODAL PARA REINGRESAR A CONSOLA APR SI CERRÓ SESIÓN -->
+  <div id="modalReingresoAPR" class="modal-backdrop">
+    <div class="modal-card">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <span style="font-size: 0.80rem; font-weight: 900; color: var(--accent-green); text-transform: uppercase;">
+          🔑 REINGRESO A CONSOLA APR (B2B)
+        </span>
+        <button type="button" onclick="cerrarModalReingresoAPR()" style="background: none; border: none; color: #94a3b8; font-size: 1.1rem; cursor: pointer;">✕</button>
+      </div>
+
+      <p style="font-size: 0.70rem; color: var(--text-muted); line-height: 1.4;">
+        Si cerraste tu navegador, también puedes abrir el botón <strong>"Ir a Consola APR"</strong> del correo que te enviamos al contratar, o ingresar tu <strong>Código de Empresa</strong> o <strong>RUT Empresa</strong> aquí:
+      </p>
+
+      <div class="form-group">
+        <label>Código de Empresa o RUT Empresa</label>
+        <input type="text" id="inputCodigoORutReingreso" class="form-control" placeholder="Ej: SENSE-B2B-4821 o 75.151.701-3">
+      </div>
+
+      <button type="button" onclick="ejecutarReingresoAPR()" class="btn-action btn-b2b">
+        INGRESAR A MI CONSOLA APR →
+      </button>
     </div>
   </div>
 
   <script>
     let cantidadBolsa = 10;
     let planSeleccionadoB2B = 'BASICO';
+    let tipoDocumentoSII = 'FACTURA'; // 'FACTURA' | 'BOLETA'
+
+    const DOMINIO_OFICIAL = 'https://www.sensometrika.com';
 
     const TARIFAS_UNITARIAS = {
       BASICO: 7990,
       PLUS: 9990,
       FULL: 13500,
       ALTO_DESEMPENO: 18900
+    };
+
+    const NOMBRES_PLANES = {
+      BASICO: 'Plan Básico Laboral',
+      PLUS: 'Plan Plus Laboral',
+      FULL: 'Plan Full Integral',
+      ALTO_DESEMPENO: 'Plan Alto Desempeño'
     };
 
     function switchPerfil(tipo) {
@@ -492,6 +703,29 @@
       }
     }
 
+    function seleccionarTipoDocumento(tipo) {
+      tipoDocumentoSII = tipo;
+      const optFactura = document.getElementById('optFactura');
+      const optBoleta = document.getElementById('optBoleta');
+      const camposFactura = document.getElementById('camposFacturaSII');
+      const lblRazon = document.getElementById('lblRazonSocial');
+      const lblRut = document.getElementById('lblRutEmpresa');
+
+      if (tipo === 'FACTURA') {
+        optFactura.classList.add('active');
+        optBoleta.classList.remove('active');
+        camposFactura.style.display = 'flex';
+        lblRazon.textContent = 'Razón Social Empresa *';
+        lblRut.textContent = 'RUT Empresa *';
+      } else {
+        optBoleta.classList.add('active');
+        optFactura.classList.remove('active');
+        camposFactura.style.display = 'none';
+        lblRazon.textContent = 'Nombre Completo o Titular Boleta *';
+        lblRut.textContent = 'RUT Titular *';
+      }
+    }
+
     function ajustarBolsa(delta) {
       cantidadBolsa += delta;
       if (cantidadBolsa < 10) cantidadBolsa = 10;
@@ -500,7 +734,15 @@
     }
 
     function formatCLP(monto) {
-      return '$' + monto.toLocaleString('es-CL');
+      return '$' + Math.round(monto).toLocaleString('es-CL');
+    }
+
+    function obtenerCalculoTributario() {
+      const unitarioNeto = TARIFAS_UNITARIAS[planSeleccionadoB2B] || 7990;
+      const neto = cantidadBolsa * unitarioNeto;
+      const iva = Math.round(neto * 0.19);
+      const total = neto + iva;
+      return { unitarioNeto, neto, iva, total };
     }
 
     function recalcularPreciosB2B() {
@@ -513,6 +755,17 @@
       document.getElementById('txtUnitPlusB2B').textContent = `VALOR TOTAL BOLSA (${cantidadBolsa} EVALUACIONES) + IVA`;
       document.getElementById('txtUnitFullB2B').textContent = `VALOR TOTAL BOLSA (${cantidadBolsa} EVALUACIONES) + IVA`;
       document.getElementById('txtUnitAltoB2B').textContent = `VALOR TOTAL BOLSA (${cantidadBolsa} EVALUACIONES) + IVA`;
+
+      const { neto, iva, total } = obtenerCalculoTributario();
+      document.getElementById('lblResumenPlan').textContent = `${NOMBRES_PLANES[planSeleccionadoB2B]} (${cantidadBolsa} eval.)`;
+      document.getElementById('lblMontoNeto').textContent = formatCLP(neto);
+      document.getElementById('lblMontoIva').textContent = formatCLP(iva);
+      document.getElementById('lblMontoTotal').textContent = formatCLP(total);
+
+      const btnPagar = document.getElementById('btnPagarB2B');
+      if (btnPagar && !btnPagar.disabled) {
+        btnPagar.textContent = `💳 CONTINUAR AL PAGO (${formatCLP(total)} IVA INC.) →`;
+      }
     }
 
     function marcarPlanB2B(plan) {
@@ -527,16 +780,64 @@
           }
         }
       });
+      recalcularPreciosB2B();
     }
 
-    function procesarIngresoAPR() {
-      const razon = document.getElementById('inputRazonSocial').value.trim() || 'SOCADEP CHILLAN';
-      const rutEmp = document.getElementById('inputRutEmpresa').value.trim() || '75.151.701-3';
-      const aprNombre = document.getElementById('inputNombreApr').value.trim() || 'FRANCISCO FERREGUT';
-      const aprCorreo = document.getElementById('inputCorreoApr').value.trim() || 'felix.osses@gmail.com';
+    async function enviarCorreoAccesoConTimeout(payload) {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 3500);
+      try {
+        await fetch('/api/enviar-correo', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+          signal: controller.signal
+        });
+      } catch (e) {
+        console.warn('Aviso no bloqueante al despachar correo de acceso APR:', e);
+      } finally {
+        clearTimeout(timeoutId);
+      }
+    }
+
+    async function procesarPagoYAccesoAPR() {
+      const razon = document.getElementById('inputRazonSocial').value.trim();
+      const rutEmp = document.getElementById('inputRutEmpresa').value.trim();
+      const giroEmp = document.getElementById('inputGiroEmpresa').value.trim();
+      const dirEmp = document.getElementById('inputDireccionEmpresa').value.trim();
+      const comunaEmp = document.getElementById('inputComunaEmpresa').value.trim();
+      const aprNombre = document.getElementById('inputNombreApr').value.trim();
+      const aprCorreo = document.getElementById('inputCorreoApr').value.trim();
+
+      if (!razon || !rutEmp || !aprNombre || !aprCorreo) {
+        alert('Por favor complete todos los campos obligatorios del registro.');
+        return;
+      }
+
+      if (tipoDocumentoSII === 'FACTURA' && (!giroEmp || !dirEmp || !comunaEmp)) {
+        alert('Para emitir Factura Electrónica según normativa del SII, debe completar Giro Comercial, Dirección Tributaria y Comuna.');
+        return;
+      }
+
+      const btnPagar = document.getElementById('btnPagarB2B');
+      btnPagar.disabled = true;
+      btnPagar.textContent = '⏳ ENVIANDO ACCESO Y ABRIENDO CONSOLA...';
 
       localStorage.setItem('sensometrika_b2c_mode', 'false');
       const tokenEmpresa = `SENSE-B2B-${Math.floor(1000 + Math.random() * 9000)}`;
+      const { neto, iva, total } = obtenerCalculoTributario();
+
+      const datosTributarios = {
+        tipoDocumento: tipoDocumentoSII,
+        razonSocial: razon,
+        rut: rutEmp,
+        giro: tipoDocumentoSII === 'FACTURA' ? giroEmp : 'Consumidor Final',
+        direccion: tipoDocumentoSII === 'FACTURA' ? dirEmp : '',
+        comuna: tipoDocumentoSII === 'FACTURA' ? comunaEmp : '',
+        neto,
+        iva,
+        total
+      };
 
       const datosB2B = {
         empresa: razon,
@@ -545,23 +846,113 @@
         correo: aprCorreo,
         plan: planSeleccionadoB2B,
         bolsa: cantidadBolsa,
-        codigo: tokenEmpresa
+        codigo: tokenEmpresa,
+        tributacion: datosTributarios
       };
 
       localStorage.setItem('sensometrika_datos_empresa', JSON.stringify(datosB2B));
+      localStorage.setItem('sensometrika_plan_empresa', JSON.stringify({
+        plan: planSeleccionadoB2B,
+        bolsa: cantidadBolsa,
+        responsable: { nombre: aprNombre, correo: aprCorreo },
+        tributacion: datosTributarios
+      }));
       localStorage.setItem('sensometrika_b2b_plan', planSeleccionadoB2B);
       localStorage.setItem('sensometrika_b2b_token', tokenEmpresa);
+      localStorage.setItem('sensometrika_b2b_correo', aprCorreo);
 
-      const params = new URLSearchParams({
+      const paramsDashboard = new URLSearchParams({
         empresa: razon,
         rut: rutEmp,
         apr: aprNombre,
         correo: aprCorreo,
         plan: planSeleccionadoB2B,
+        bolsa: cantidadBolsa,
         codigo: tokenEmpresa,
+        doc_sii: tipoDocumentoSII,
+        total_clp: total,
         mode: 'b2b'
       });
 
+      const urlOficialDashboard = `${DOMINIO_OFICIAL}/dashboard_apr.html?${paramsDashboard.toString()}`;
+
+      await enviarCorreoAccesoConTimeout({
+        tipo: 'b2b_apr_acceso',
+        emailDestino: aprCorreo,
+        empresa: razon,
+        rutEmpresa: rutEmp,
+        nombreApr: aprNombre,
+        planNombre: `${NOMBRES_PLANES[planSeleccionadoB2B]} (${cantidadBolsa} evaluaciones)`,
+        cupos: cantidadBolsa,
+        codigoEmpresa: tokenEmpresa,
+        tipoDocumento: tipoDocumentoSII,
+        montoTotal: formatCLP(total),
+        linkAcceso: urlOficialDashboard
+      });
+
+      window.location.href = `dashboard_apr.html?${paramsDashboard.toString()}`;
+    }
+
+    // MODAL DE REINGRESO APR
+    function abrirModalReingresoAPR() {
+      const modal = document.getElementById('modalReingresoAPR');
+      const input = document.getElementById('inputCodigoORutReingreso');
+      try {
+        const guardado = JSON.parse(localStorage.getItem('sensometrika_datos_empresa') || '{}');
+        if (guardado.codigo) input.value = guardado.codigo;
+        else if (guardado.rutEmpresa) input.value = guardado.rutEmpresa;
+      } catch (e) {}
+      modal.style.display = 'flex';
+    }
+
+    function cerrarModalReingresoAPR() {
+      document.getElementById('modalReingresoAPR').style.display = 'none';
+    }
+
+    function ejecutarReingresoAPR() {
+      const valor = document.getElementById('inputCodigoORutReingreso').value.trim();
+      if (!valor) {
+        alert('Ingresa el Código de Empresa (ej: SENSE-B2B-1234) o el RUT de la empresa.');
+        return;
+      }
+
+      let guardado = {};
+      try {
+        guardado = JSON.parse(localStorage.getItem('sensometrika_datos_empresa') || '{}');
+      } catch (e) {}
+
+      const cleanInput = valor.replace(/[^0-9KkA-Za-z-]/g, '').toUpperCase();
+      const cleanRutGuardado = (guardado.rutEmpresa || '').replace(/[^0-9Kk]/g, '').toUpperCase();
+      const cleanRutInput = valor.replace(/[^0-9Kk]/g, '').toUpperCase();
+
+      if (
+        (guardado.codigo && guardado.codigo.toUpperCase() === cleanInput) ||
+        (cleanRutGuardado && cleanRutGuardado === cleanRutInput)
+      ) {
+        const params = new URLSearchParams({
+          empresa: guardado.empresa || 'EMPRESA',
+          rut: guardado.rutEmpresa || valor,
+          apr: guardado.apr || 'ENCARGADO APR',
+          correo: guardado.correo || '',
+          plan: guardado.plan || 'BASICO',
+          bolsa: guardado.bolsa || 10,
+          codigo: guardado.codigo || cleanInput,
+          mode: 'b2b'
+        });
+        window.location.href = `dashboard_apr.html?${params.toString()}`;
+        return;
+      }
+
+      const esCodigo = cleanInput.startsWith('SENSE-');
+      const params = new URLSearchParams({
+        empresa: guardado.empresa || 'EMPRESA ACREDITADA',
+        rut: esCodigo ? (guardado.rutEmpresa || '75.151.701-3') : valor,
+        apr: guardado.apr || 'ENCARGADO APR',
+        correo: guardado.correo || '',
+        plan: guardado.plan || 'BASICO',
+        codigo: esCodigo ? cleanInput : (guardado.codigo || `SENSE-B2B-ACCESO`),
+        mode: 'b2b'
+      });
       window.location.href = `dashboard_apr.html?${params.toString()}`;
     }
 
