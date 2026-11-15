@@ -110,12 +110,12 @@
         .dot-ok { background-color: var(--success-color); box-shadow: 0 0 8px rgba(34, 197, 94, 0.4); }
         .dot-warn { background-color: var(--warning-color); box-shadow: 0 0 8px rgba(245, 158, 11, 0.4); }
 
-        /* KPIs Globales de Auditoría */
+        /* KPIs Globales Interactivos */
         .global-kpi-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(195px, 1fr));
             gap: 14px;
-            margin-bottom: 20px;
+            margin-bottom: 16px;
         }
 
         .kpi-card {
@@ -128,6 +128,20 @@
             gap: 4px;
             position: relative;
             overflow: hidden;
+            cursor: pointer;
+            transition: transform 0.15s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .kpi-card:hover {
+            transform: translateY(-2px);
+            border-color: var(--accent, var(--primary-color));
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
+        }
+
+        .kpi-card.kpi-selected {
+            border-color: var(--accent, var(--primary-color));
+            background: #243247;
+            box-shadow: 0 0 0 1px var(--accent, var(--primary-color));
         }
 
         .kpi-card::before {
@@ -138,12 +152,27 @@
             background: var(--accent, var(--primary-color));
         }
 
+        .kpi-header-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
         .kpi-title {
             font-size: 11px;
             font-weight: 700;
             color: var(--text-muted);
             text-transform: uppercase;
             letter-spacing: 0.6px;
+        }
+
+        .kpi-action-hint {
+            font-size: 10px;
+            font-weight: 800;
+            color: var(--accent, var(--demo-color));
+            background: rgba(15, 23, 42, 0.7);
+            padding: 2px 6px;
+            border-radius: 4px;
         }
 
         .kpi-num {
@@ -155,6 +184,60 @@
         .kpi-sub {
             font-size: 11px;
             color: var(--text-muted);
+        }
+
+        /* Panel Desplegable de Detalle KPI */
+        .kpi-drawer {
+            background: #162033;
+            border: 1px solid var(--b2b-color);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            display: none;
+            box-shadow: 0 10px 28px rgba(0, 0, 0, 0.45);
+            animation: fadeInDown 0.2s ease;
+        }
+
+        .kpi-drawer.open {
+            display: block;
+        }
+
+        @keyframes fadeInDown {
+            from { opacity: 0; transform: translateY(-6px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .kpi-drawer-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 10px;
+            margin-bottom: 14px;
+            gap: 10px;
+        }
+
+        .kpi-drawer-title {
+            font-size: 15px;
+            font-weight: 800;
+            color: var(--text-main);
+            margin: 0;
+        }
+
+        .btn-close-drawer {
+            background: #0f172a;
+            border: 1px solid var(--border-color);
+            color: var(--text-muted);
+            padding: 5px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .btn-close-drawer:hover {
+            color: #fff;
+            border-color: var(--danger-color);
         }
 
         /* Sistema de Pestañas y Barra de Acciones */
@@ -314,6 +397,25 @@
         .badge-progress { background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid #38bdf8; }
         .badge-bad { background: rgba(239, 68, 68, 0.15); color: #ef4444; border: 1px solid #ef4444; }
 
+        .btn-mini-action {
+            background: rgba(56, 189, 248, 0.12);
+            border: 1px solid #38bdf8;
+            color: #38bdf8;
+            padding: 4px 10px;
+            border-radius: 5px;
+            font-size: 11px;
+            font-weight: 700;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            margin-right: 4px;
+        }
+
+        .btn-mini-action:hover {
+            background: #0284c7;
+            color: #fff;
+        }
+
         /* Resultado Link Generado */
         .resultado-link-box { background: #0f172a; border: 1px dashed var(--demo-color); padding: 12px; border-radius: 6px; margin-top: 12px; display: none; }
         .resultado-link-box p { font-size: 12px; color: var(--text-muted); margin-bottom: 6px; }
@@ -351,33 +453,61 @@
             </div>
         </div>
 
-        <!-- KPIs Globales de Actividad en la Plataforma -->
+        <!-- KPIs Globales Interactivos (Clicables para abrir detalle) -->
         <div class="global-kpi-grid">
-            <div class="kpi-card" style="--accent: #3b82f6;">
-                <span class="kpi-title">👁️ Visitas a la Plataforma</span>
+            <div class="kpi-card" id="cardKpiVisitas" style="--accent: #3b82f6;" onclick="abrirDetalleKPI('VISITAS')">
+                <div class="kpi-header-row">
+                    <span class="kpi-title">👁️ Visitas a la Plataforma</span>
+                    <span class="kpi-action-hint">VER DETALLE ▾</span>
+                </div>
                 <span class="kpi-num" id="kpiVisitas">0</span>
                 <span class="kpi-sub">Ingresos registrados a portada y módulos</span>
             </div>
-            <div class="kpi-card" style="--accent: #38bdf8;">
-                <span class="kpi-title">⚡ Simulaciones Ejecutadas</span>
+
+            <div class="kpi-card" id="cardKpiSimulaciones" style="--accent: #38bdf8;" onclick="abrirDetalleKPI('SIMULACIONES')">
+                <div class="kpi-header-row">
+                    <span class="kpi-title">⚡ Simulaciones Ejecutadas</span>
+                    <span class="kpi-action-hint">VER DETALLE ▾</span>
+                </div>
                 <span class="kpi-num" id="kpiSimulaciones">0</span>
                 <span class="kpi-sub">Pruebas psicométricas y sensoriales</span>
             </div>
-            <div class="kpi-card" style="--accent: #22c55e;">
-                <span class="kpi-title">📄 Certificados / Informes</span>
+
+            <div class="kpi-card" id="cardKpiCertificados" style="--accent: #22c55e;" onclick="abrirDetalleKPI('CERTIFICADOS')">
+                <div class="kpi-header-row">
+                    <span class="kpi-title">📄 Certificados / Informes</span>
+                    <span class="kpi-action-hint">VER DETALLE ▾</span>
+                </div>
                 <span class="kpi-num" id="kpiCertificados">0</span>
                 <span class="kpi-sub">Dictámenes B2B y B2C emitidos</span>
             </div>
-            <div class="kpi-card" style="--accent: #8b5cf6;">
-                <span class="kpi-title">🏢 Bolsas B2B Activas</span>
+
+            <div class="kpi-card" id="cardKpiBolsas" style="--accent: #8b5cf6;" onclick="abrirDetalleKPI('BOLSAS')">
+                <div class="kpi-header-row">
+                    <span class="kpi-title">🏢 Bolsas B2B Activas</span>
+                    <span class="kpi-action-hint">VER BOLSAS ▾</span>
+                </div>
                 <span class="kpi-num" id="kpiBolsasB2B">0</span>
                 <span class="kpi-sub" id="kpiCuposSub">0 cupos asignados</span>
             </div>
-            <div class="kpi-card" style="--accent: #f59e0b;">
-                <span class="kpi-title">🎁 Pruebas Demo B2B/B2C</span>
+
+            <div class="kpi-card" id="cardKpiDemos" style="--accent: #f59e0b;" onclick="abrirDetalleKPI('DEMOS')">
+                <div class="kpi-header-row">
+                    <span class="kpi-title">🎁 Pruebas Demo B2B/B2C</span>
+                    <span class="kpi-action-hint">VER DEMOS ▾</span>
+                </div>
                 <span class="kpi-num" id="kpiDemos">0</span>
                 <span class="kpi-sub">Links comerciales enviados a prospectos</span>
             </div>
+        </div>
+
+        <!-- PANEL DESPLEGABLE DE DETALLE AL CLICKEAR UN KPI -->
+        <div id="kpiDetailDrawer" class="kpi-drawer">
+            <div class="kpi-drawer-header">
+                <h3 class="kpi-drawer-title" id="kpiDrawerTitle">Detalle del Indicador</h3>
+                <button type="button" class="btn-close-drawer" onclick="cerrarDetalleKPI()">✕ Cerrar Vista</button>
+            </div>
+            <div id="kpiDrawerBody" class="table-container"></div>
         </div>
 
         <!-- Gráfico de Telemetría Network con Ping Etiquetado -->
@@ -567,15 +697,15 @@
         </div>
 
         <!-- Historial Unificado Integrado -->
-        <div class="card" style="margin-top: 10px;">
+        <div class="card" id="seccionHistorialGlobal" style="margin-top: 10px;">
             <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; border-bottom: 2px solid var(--border-color); padding-bottom: 10px; margin-bottom: 16px;">
                 <h2 style="border:none; margin:0; padding:0;">📋 Historial General Unificado (Bolsas B2B, B2C, Demos y Certificados)</h2>
                 <div class="filter-bar" style="margin:0;">
-                    <button class="filter-pill active" onclick="filtrarHistorial('TODOS', this)">Todos</button>
-                    <button class="filter-pill" onclick="filtrarHistorial('B2B', this)">Empresas / Bolsas B2B</button>
-                    <button class="filter-pill" onclick="filtrarHistorial('DEMO', this)">Pruebas Demo</button>
-                    <button class="filter-pill" onclick="filtrarHistorial('B2C', this)">Particulares B2C</button>
-                    <button class="filter-pill" onclick="filtrarHistorial('CERTIFICADO', this)">Certificados</button>
+                    <button class="filter-pill active" id="pill_TODOS" onclick="filtrarHistorial('TODOS', this)">Todos</button>
+                    <button class="filter-pill" id="pill_B2B" onclick="filtrarHistorial('B2B', this)">Empresas / Bolsas B2B</button>
+                    <button class="filter-pill" id="pill_DEMO" onclick="filtrarHistorial('DEMO', this)">Pruebas Demo</button>
+                    <button class="filter-pill" id="pill_B2C" onclick="filtrarHistorial('B2C', this)">Particulares B2C</button>
+                    <button class="filter-pill" id="pill_CERTIFICADO" onclick="filtrarHistorial('CERTIFICADO', this)">Certificados</button>
                 </div>
             </div>
             <div class="table-container">
@@ -601,11 +731,238 @@
         let filtroActual = 'TODOS';
         let registrosGlobalesCloud = [];
         let eventosAuditoriaCloud = [];
+        let kpiActivoSeleccionado = null;
 
         document.addEventListener('DOMContentLoaded', () => {
             capturarRegistroEmpresaB2B();
             sincronizarTodoCloud();
         });
+
+        function obtenerDatosConsolidados() {
+            const historialAdmin = JSON.parse(localStorage.getItem('sensometrika_historial_admin')) || [];
+            const nominaAPR = JSON.parse(localStorage.getItem('sensometrika_apr_nomina')) || [];
+
+            const lista = [...registrosGlobalesCloud];
+
+            historialAdmin.forEach(item => {
+                const yaExiste = lista.some(r =>
+                    (r.url && item.url && r.url === item.url) ||
+                    (r.entidad === item.entidad && r.detalle === item.detalle && r.fecha === item.fecha)
+                );
+                if (!yaExiste) lista.push(item);
+            });
+
+            nominaAPR.forEach(t => {
+                const existe = lista.some(item => item.rut && t.rut && item.rut === t.rut);
+                if (!existe) {
+                    lista.push({
+                        fecha: t.fecha || 'Reciente',
+                        segmento: 'B2B',
+                        entidad: t.nombre || t.empresa || 'Trabajador B2B',
+                        detalle: `${t.cargo || 'Evaluado'} - ${t.empresa || 'Empresa'}`,
+                        url: t.url || '',
+                        rut: t.rut || '',
+                        plan: t.plan || 'PLUS',
+                        estado: t.estado || ''
+                    });
+                }
+            });
+
+            return lista;
+        }
+
+        function abrirDetalleKPI(tipo) {
+            const drawer = document.getElementById('kpiDetailDrawer');
+            const titleEl = document.getElementById('kpiDrawerTitle');
+            const bodyEl = document.getElementById('kpiDrawerBody');
+
+            // Alternar cierre si se vuelve a hacer clic sobre la misma tarjeta
+            if (kpiActivoSeleccionado === tipo && drawer.classList.contains('open')) {
+                cerrarDetalleKPI();
+                return;
+            }
+            kpiActivoSeleccionado = tipo;
+
+            document.querySelectorAll('.kpi-card').forEach(c => c.classList.remove('kpi-selected'));
+
+            const consolidados = obtenerDatosConsolidados();
+            let filasHtml = '';
+
+            if (tipo === 'BOLSAS') {
+                document.getElementById('cardKpiBolsas').classList.add('kpi-selected');
+                drawer.style.borderColor = '#8b5cf6';
+                const bolsas = consolidados.filter(r => (r.segmento || '').toUpperCase() === 'B2B');
+                titleEl.innerHTML = `🏢 Detalle de Bolsas B2B Activas & Empresas Registradas (${bolsas.length})`;
+
+                if (bolsas.length === 0) {
+                    bodyEl.innerHTML = `<p style="color:var(--text-muted); font-size:13px; margin:0;">No hay bolsas B2B registradas todavía. Puedes generar un acceso en la pestaña <strong>Bolsas & Empresas (B2B)</strong>.</p>`;
+                } else {
+                    filasHtml = bolsas.map(b => {
+                        const codigoMatch = (b.detalle || '').match(/SENSE-B2B-[A-Z0-9]+/i);
+                        const codigo = codigoMatch ? codigoMatch[0] : 'ACTIVA';
+                        const enlace = b.url || '#';
+                        return `
+                            <tr>
+                                <td>${b.fecha || '--'}</td>
+                                <td><strong>${b.entidad || 'Empresa Mandante'}</strong></td>
+                                <td><span class="badge-status badge-ok">${b.plan || 'PLUS'}</span></td>
+                                <td><code>${codigo}</code> — ${b.detalle || ''}</td>
+                                <td>
+                                    ${enlace !== '#' ? `<a href="${enlace}" target="_blank" class="btn-mini-action">🔗 Abrir Consola</a>` : ''}
+                                    ${enlace !== '#' ? `<button type="button" class="btn-mini-action" onclick="copiarTextoDirecto('${enlace.replace(/'/g, "\\'")}')">📋 Copiar Link</button>` : ''}
+                                </td>
+                            </tr>
+                        `;
+                    }).join('');
+
+                    bodyEl.innerHTML = `
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Fecha Alta</th>
+                                    <th>Empresa Mandante</th>
+                                    <th>Plan Contratado</th>
+                                    <th>Código / Detalle de Bolsa</th>
+                                    <th>Acciones Rápidas</th>
+                                </tr>
+                            </thead>
+                            <tbody>${filasHtml}</tbody>
+                        </table>
+                    `;
+                }
+                filtrarHistorial('B2B', document.getElementById('pill_B2B'));
+
+            } else if (tipo === 'DEMOS') {
+                document.getElementById('cardKpiDemos').classList.add('kpi-selected');
+                drawer.style.borderColor = '#f59e0b';
+                const demos = consolidados.filter(r => (r.segmento || '').toUpperCase() === 'DEMO');
+                titleEl.innerHTML = `🎁 Pruebas Demo B2B / B2C Enviadas a Prospectos (${demos.length})`;
+
+                if (demos.length === 0) {
+                    bodyEl.innerHTML = `<p style="color:var(--text-muted); font-size:13px; margin:0;">Aún no se han generado pruebas demo comerciales. Usa el formulario de abajo para crear una.</p>`;
+                } else {
+                    filasHtml = demos.map(d => `
+                        <tr>
+                            <td>${d.fecha || '--'}</td>
+                            <td><strong>${d.entidad || 'Prospecto'}</strong></td>
+                            <td><span class="badge-status badge-progress">${d.plan || 'PLUS'}</span></td>
+                            <td>${d.detalle || ''}</td>
+                            <td>
+                                ${d.url ? `<a href="${d.url}" target="_blank" class="btn-mini-action">▶ Probar Link</a>` : ''}
+                                ${d.url ? `<button type="button" class="btn-mini-action" onclick="copiarTextoDirecto('${d.url.replace(/'/g, "\\'")}')">📋 Copiar</button>` : ''}
+                            </td>
+                        </tr>
+                    `).join('');
+
+                    bodyEl.innerHTML = `
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Fecha Envío</th>
+                                    <th>Prospecto / Empresa</th>
+                                    <th>Batería Demo</th>
+                                    <th>Vigencia / Detalle</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>${filasHtml}</tbody>
+                        </table>
+                    `;
+                }
+                filtrarHistorial('DEMO', document.getElementById('pill_DEMO'));
+
+            } else if (tipo === 'CERTIFICADOS') {
+                document.getElementById('cardKpiCertificados').classList.add('kpi-selected');
+                drawer.style.borderColor = '#22c55e';
+                const certs = consolidados.filter(r => (r.segmento || '').toUpperCase() === 'CERTIFICADO');
+                titleEl.innerHTML = `📄 Certificados & Dictámenes Periciales Emitidos (${certs.length})`;
+
+                if (certs.length === 0) {
+                    bodyEl.innerHTML = `<p style="color:var(--text-muted); font-size:13px; margin:0;">Aún no hay certificados emitidos en el registro global.</p>`;
+                } else {
+                    filasHtml = certs.map(c => `
+                        <tr>
+                            <td>${c.fecha || '--'}</td>
+                            <td><strong>${c.entidad || 'Evaluado'}</strong></td>
+                            <td><span class="badge-status badge-ok">${c.plan || 'B2B'}</span></td>
+                            <td>${c.detalle || ''}</td>
+                            <td>${c.url ? `<a href="${c.url}" target="_blank" class="btn-mini-action">📄 Ver Certificado</a>` : '--'}</td>
+                        </tr>
+                    `).join('');
+                    bodyEl.innerHTML = `
+                        <table>
+                            <thead><tr><th>Fecha Emisión</th><th>Evaluado / Empresa</th><th>Plan</th><th>Resultado</th><th>Documento</th></tr></thead>
+                            <tbody>${filasHtml}</tbody>
+                        </table>
+                    `;
+                }
+                filtrarHistorial('CERTIFICADO', document.getElementById('pill_CERTIFICADO'));
+
+            } else if (tipo === 'SIMULACIONES') {
+                document.getElementById('cardKpiSimulaciones').classList.add('kpi-selected');
+                drawer.style.borderColor = '#38bdf8';
+                const sims = eventosAuditoriaCloud.filter(e => (e.evento || '').includes('SIMULACION') || (e.evento || '').includes('MODULO'));
+                titleEl.innerHTML = `⚡ Simulaciones Psicométricas y Sensoriales Ejecutadas (${sims.length})`;
+
+                if (sims.length === 0) {
+                    bodyEl.innerHTML = `<p style="color:var(--text-muted); font-size:13px; margin:0;">No hay simulaciones remotas registradas aún en la bitácora cloud.</p>`;
+                } else {
+                    filasHtml = sims.map(s => `
+                        <tr>
+                            <td>${s.fecha || '--'}</td>
+                            <td><strong>${s.entidad || 'Usuario'}</strong></td>
+                            <td>${s.pagina || '--'}</td>
+                            <td>${s.detalle || '--'}</td>
+                        </tr>
+                    `).join('');
+                    bodyEl.innerHTML = `
+                        <table>
+                            <thead><tr><th>Fecha / Hora</th><th>Usuario / RUT</th><th>Módulo</th><th>Resultado / Detalle</th></tr></thead>
+                            <tbody>${filasHtml}</tbody>
+                        </table>
+                    `;
+                }
+
+            } else if (tipo === 'VISITAS') {
+                document.getElementById('cardKpiVisitas').classList.add('kpi-selected');
+                drawer.style.borderColor = '#3b82f6';
+                const visitas = eventosAuditoriaCloud.filter(e => (e.evento || '').includes('VISITA'));
+                titleEl.innerHTML = `👁️ Registro de Visitas a la Plataforma (${visitas.length})`;
+
+                if (visitas.length === 0) {
+                    bodyEl.innerHTML = `<p style="color:var(--text-muted); font-size:13px; margin:0;">Aún no se registran visitas remotas desde Supabase. Asegúrate de tener el script de auditoría activo en <code>index.html</code>.</p>`;
+                } else {
+                    filasHtml = visitas.map(v => `
+                        <tr>
+                            <td>${v.fecha || '--'}</td>
+                            <td><strong>${v.entidad || 'Visitante Web'}</strong></td>
+                            <td>${v.pagina || '/'}</td>
+                            <td>${v.detalle || 'Ingreso a plataforma'}</td>
+                        </tr>
+                    `).join('');
+                    bodyEl.innerHTML = `
+                        <table>
+                            <thead><tr><th>Fecha / Hora</th><th>Visitante</th><th>Página Visitada</th><th>Detalle</th></tr></thead>
+                            <tbody>${filasHtml}</tbody>
+                        </table>
+                    `;
+                }
+            }
+
+            drawer.classList.add('open');
+        }
+
+        function cerrarDetalleKPI() {
+            const drawer = document.getElementById('kpiDetailDrawer');
+            drawer.classList.remove('open');
+            kpiActivoSeleccionado = null;
+            document.querySelectorAll('.kpi-card').forEach(c => c.classList.remove('kpi-selected'));
+        }
+
+        function copiarTextoDirecto(texto) {
+            navigator.clipboard.writeText(texto);
+            alert('📋 Enlace copiado al portapapeles.');
+        }
 
         async function sincronizarTodoCloud() {
             const lblSync = document.getElementById('lblUltimaSync');
@@ -618,7 +975,6 @@
                     registrosGlobalesCloud = data.registros || [];
                     eventosAuditoriaCloud = data.eventos || [];
 
-                    // Actualizar KPIs globales desde servidor
                     if (data.kpis) {
                         document.getElementById('kpiVisitas').textContent = data.kpis.visitas ?? 0;
                         document.getElementById('kpiSimulaciones').textContent = data.kpis.simulaciones ?? 0;
@@ -628,11 +984,15 @@
                         document.getElementById('kpiDemos').textContent = data.kpis.demos ?? 0;
                     }
 
+                    if (data.modo === 'sin_supabase') {
+                        throw new Error('Variables Supabase no configuradas');
+                    }
+
                     document.getElementById('dotSupabase').className = 'dot dot-ok';
                     document.getElementById('lblSupabaseStatus').textContent = 'CONECTADO';
                     document.getElementById('lblSupabaseStatus').style.color = 'var(--success-color)';
                 } else {
-                    throw new Error('Endpoint auditoría no disponible aún');
+                    throw new Error('Endpoint auditoría no disponible');
                 }
             } catch (err) {
                 document.getElementById('dotSupabase').className = 'dot dot-warn';
@@ -645,6 +1005,12 @@
             actualizarMetricasYRendimiento();
             cargarHistorialGuardado();
             renderizarTablaAuditoria();
+
+            if (kpiActivoSeleccionado) {
+                const actual = kpiActivoSeleccionado;
+                kpiActivoSeleccionado = null;
+                abrirDetalleKPI(actual);
+            }
         }
 
         function capturarRegistroEmpresaB2B() {
@@ -663,7 +1029,7 @@
                 const plan = planUrl || planStorage;
 
                 let historial = JSON.parse(localStorage.getItem('sensometrika_historial_admin')) || [];
-                const yaExiste = historial.some(item => item.entidad.includes(entidad) && item.detalle.includes(codigo));
+                const yaExiste = historial.some(item => item.entidad === entidad && item.detalle.includes(codigo));
 
                 if (!yaExiste) {
                     agregarFilaHistorial(
@@ -720,6 +1086,7 @@
             keysToRemove.forEach(k => localStorage.removeItem(k));
 
             document.querySelectorAll('.resultado-link-box').forEach(box => box.style.display = 'none');
+            cerrarDetalleKPI();
             alert("✅ Almacenamiento local limpiado correctamente.");
             sincronizarTodoCloud();
         }
@@ -765,34 +1132,27 @@
 
         function actualizarMetricasYRendimiento() {
             const nominaAPR = JSON.parse(localStorage.getItem('sensometrika_apr_nomina')) || [];
-            const historialAdmin = JSON.parse(localStorage.getItem('sensometrika_historial_admin')) || [];
-            const combinados = [...registrosGlobalesCloud, ...historialAdmin];
+            const combinados = obtenerDatosConsolidados();
 
             const empresasSet = new Set();
             nominaAPR.forEach(t => { if (t.empresa) empresasSet.add(t.empresa.toUpperCase()); });
             combinados.forEach(h => { if (h.segmento === 'B2B' && h.entidad) empresasSet.add(h.entidad.toUpperCase()); });
 
-            const b2bCount = combinados.filter(h => h.segmento === 'B2B').length;
-            const b2cCount = combinados.filter(h => h.segmento === 'B2C').length;
-            const demoItems = combinados.filter(h => h.segmento === 'DEMO');
-            const certCount = combinados.filter(h => h.segmento === 'CERTIFICADO').length;
+            const b2bItems = combinados.filter(h => (h.segmento || '').toUpperCase() === 'B2B');
+            const b2cCount = combinados.filter(h => (h.segmento || '').toUpperCase() === 'B2C').length;
+            const demoItems = combinados.filter(h => (h.segmento || '').toUpperCase() === 'DEMO');
+            const certCount = combinados.filter(h => (h.segmento || '').toUpperCase() === 'CERTIFICADO').length;
 
-            document.getElementById('metricaEmpresas').textContent = empresasSet.size || b2bCount;
-            document.getElementById('metricaLinksB2B').textContent = Math.max(nominaAPR.length, b2bCount);
+            document.getElementById('metricaEmpresas').textContent = empresasSet.size || b2bItems.length;
+            document.getElementById('metricaLinksB2B').textContent = Math.max(nominaAPR.length, b2bItems.length);
             document.getElementById('metricaAccesosB2C').textContent = b2cCount;
             document.getElementById('contadorDemosEmitidas').textContent = demoItems.length;
             document.getElementById('contadorDemosCompletadas').textContent = demoItems.filter(d => d.estado === 'COMPLETADO').length;
 
-            // Respaldo de KPIs si aún no hay datos remotos
-            if (Number(document.getElementById('kpiBolsasB2B').textContent) === 0 && b2bCount > 0) {
-                document.getElementById('kpiBolsasB2B').textContent = b2bCount;
-            }
-            if (Number(document.getElementById('kpiDemos').textContent) === 0 && demoItems.length > 0) {
-                document.getElementById('kpiDemos').textContent = demoItems.length;
-            }
-            if (Number(document.getElementById('kpiCertificados').textContent) === 0 && certCount > 0) {
-                document.getElementById('kpiCertificados').textContent = certCount;
-            }
+            // Sincronizar KPIs superiores con los datos reales consolidados
+            document.getElementById('kpiBolsasB2B').textContent = b2bItems.length;
+            document.getElementById('kpiDemos').textContent = demoItems.length;
+            document.getElementById('kpiCertificados').textContent = certCount;
         }
 
         async function registrarEventoEnNube(payload) {
@@ -985,36 +1345,14 @@
             historial.unshift(nuevoRegistro);
             localStorage.setItem('sensometrika_historial_admin', JSON.stringify(historial));
             cargarHistorialGuardado();
+            actualizarMetricasYRendimiento();
         }
 
         function cargarHistorialGuardado() {
             const tbody = document.getElementById('tablaHistorialUnificado');
             tbody.innerHTML = '';
 
-            const historialAdmin = JSON.parse(localStorage.getItem('sensometrika_historial_admin')) || [];
-            const nominaAPR = JSON.parse(localStorage.getItem('sensometrika_apr_nomina')) || [];
-
-            const listaConsolidada = [...registrosGlobalesCloud];
-
-            historialAdmin.forEach(item => {
-                const yaExiste = listaConsolidada.some(r => r.url && item.url && r.url === item.url);
-                if (!yaExiste) listaConsolidada.push(item);
-            });
-
-            nominaAPR.forEach(t => {
-                const existe = listaConsolidada.some(item => item.rut === t.rut);
-                if (!existe) {
-                    listaConsolidada.push({
-                        fecha: t.fecha || 'Reciente',
-                        segmento: 'B2B',
-                        entidad: t.nombre,
-                        detalle: `${t.cargo} - ${t.empresa}`,
-                        url: t.url,
-                        rut: t.rut,
-                        plan: t.plan || 'PLUS'
-                    });
-                }
-            });
+            const listaConsolidada = obtenerDatosConsolidados();
 
             const filtrada = filtroActual === 'TODOS'
                 ? listaConsolidada
