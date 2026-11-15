@@ -248,9 +248,9 @@
         const DOMINIO_OFICIAL = 'https://www.sensometrika.com';
 
         const DETALLE_PLANES_B2C = {
-            BASICO: { nombre: 'Pase Básico Particular (3 Simulaciones)', vigencia: '48 horas' },
-            PLUS: { nombre: 'Pase Plus Particular (5 Simulaciones + Visual)', vigencia: '5 días' },
-            FULL: { nombre: 'Pase Full Particular (8 Simulaciones + Sensorial)', vigencia: '10 días' }
+            BASICO: { nombre: 'Pase Básico Particular (3 Simulaciones)', vigencia: '48 horas', horas: 48 },
+            PLUS: { nombre: 'Pase Plus Particular (5 Simulaciones + Visual)', vigencia: '5 días', horas: 120 },
+            FULL: { nombre: 'Pase Full Particular (8 Simulaciones + Sensorial)', vigencia: '10 días', horas: 240 }
         };
 
         document.addEventListener('DOMContentLoaded', () => {
@@ -285,6 +285,30 @@
             }
         }
 
+        function limpiarEstadoAnteriorRUT(cleanRut) {
+            // Limpieza estricta de estado previo B2B y sesiones expiradas anteriores
+            localStorage.removeItem('sensometrika_modulos_rendidos');
+            localStorage.removeItem('sensometrika_session_burned');
+            localStorage.removeItem('sensometrika_b2b_token');
+
+            // Borrar cualquier marca de expiración/inicio anterior asociada a este RUT
+            const clavesABorrar = [];
+            for (let i = 0; i < localStorage.length; i++) {
+                const k = localStorage.key(i);
+                if (!k) continue;
+                if (
+                    k.includes(cleanRut) ||
+                    k.startsWith('sensometrika_b2c_inicio') ||
+                    k.startsWith('sensometrika_b2c_expira') ||
+                    k.startsWith('sensometrika_b2c_pase') ||
+                    k.startsWith('sensometrika_vigencia_')
+                ) {
+                    clavesABorrar.push(k);
+                }
+            }
+            clavesABorrar.forEach(k => localStorage.removeItem(k));
+        }
+
         async function procesarPagoYEnvio(e) {
             e.preventDefault();
 
@@ -292,30 +316,27 @@
             btnSubmit.disabled = true;
             btnSubmit.textContent = '⏳ PROCESANDO PAGO Y ENVIANDO LINK...';
 
-            // Limpieza estricta de estado previo B2B
-            localStorage.removeItem('sensometrika_modulos_rendidos');
-            localStorage.removeItem('sensometrika_session_burned');
-            localStorage.removeItem('sensometrika_b2b_token');
-
             const nombre = document.getElementById('inputNombreParticular').value.trim();
             const rut = document.getElementById('inputRutParticular').value.trim();
             const correo = document.getElementById('inputCorreoParticular').value.trim();
-            const cleanRut = rut.replace(/[^0-9Kk]/g, '');
+            const cleanRut = rut.replace(/[^0-9Kk]/g, '').toUpperCase();
 
-            // Limpieza de historial previo de este RUT B2C para iniciar el nuevo pase desde cero
-            const modulosB2C = ['reactimetro', 'palancas', 'punteo', 'visual', 'audicion', 'tamizaje_visual'];
-            modulosB2C.forEach(mod => {
-                localStorage.removeItem(`${mod}_demo_completada_${cleanRut}`);
-                localStorage.removeItem(`sensometrika_historial_${mod}_${cleanRut}`);
-                localStorage.removeItem(`sensometrika_${mod}_${cleanRut}`);
-            });
+            // 1. Limpiar historial y expiraciones antiguas del RUT para esta nueva compra
+            limpiarEstadoAnteriorRUT(cleanRut);
 
-            // Guardar datos de B2C sincronizados con menu_b2c.html
+            // 2. Generar identificador único de compra (paseId) y timestamp de emisión
+            const emitidoTs = Date.now();
+            const paseId = `B2C-${emitidoTs}-${Math.floor(100 + Math.random() * 900)}`;
+            const infoPlan = DETALLE_PLANES_B2C[planActual] || DETALLE_PLANES_B2C.BASICO;
+            const expiraTs = emitidoTs + (infoPlan.horas * 60 * 60 * 1000);
+
+            // 3. Guardar datos de B2C sincronizados con menu_b2c.html
             localStorage.setItem('sensometrika_datos_usuario', JSON.stringify({
                 nombre: nombre,
                 rut: rut,
                 correo: correo,
-                cargo: 'Evaluación Particular B2C'
+                cargo: 'Evaluación Particular B2C',
+                paseId: paseId
             }));
             localStorage.setItem('sensometrika_b2c_mode', 'true');
             localStorage.setItem('sensometrika_rut', rut);
@@ -324,16 +345,31 @@
             localStorage.setItem('sensometrika_plan_contratado', planActual);
             localStorage.setItem('sensometrika_plan_seleccionado', planActual);
 
+            // Registro de vigencia del nuevo pase
+            localStorage.setItem('sensometrika_b2c_pase_activo', paseId);
+            localStorage.setItem(`sensometrika_b2c_inicio_${cleanRut}`, String(emitidoTs));
+            localStorage.setItem(`sensometrika_b2c_expira_${cleanRut}`, String(expiraTs));
+            localStorage.setItem(`sensometrika_b2c_pase_${paseId}`, JSON.stringify({
+                paseId,
+                rut: cleanRut,
+                plan: planActual,
+                emitidoTs,
+                expiraTs
+            }));
+
+            // 4. Incluir paseId y ts en la URL para diferenciar compras nuevas de links antiguos
             const params = new URLSearchParams({
                 rut: rut,
                 nombre: nombre,
                 plan: planActual,
+                pase: paseId,
+                ts: String(emitidoTs),
+                nuevo: '1',
                 mode: 'b2c'
             });
 
             const urlRelativa = `menu_b2c.html?${params.toString()}`;
             const urlOficialCorreo = `${DOMINIO_OFICIAL}/b2c/menu_b2c.html?${params.toString()}`;
-            const infoPlan = DETALLE_PLANES_B2C[planActual] || DETALLE_PLANES_B2C.BASICO;
 
             ultimoPayloadCorreoB2C = {
                 tipo: 'b2c_acceso',
