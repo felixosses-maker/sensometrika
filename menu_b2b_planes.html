@@ -314,15 +314,22 @@
         }
 
         const rutEvaluado = urlParams.get('rut') || datosUsuario.rut || localStorage.getItem('sensometrika_rut') || '12345678-K';
-        const cleanRut = rutEvaluado.replace(/[^0-9Kk]/g, '');
+        const cleanRut = rutEvaluado.replace(/[^0-9Kk]/g, '').toUpperCase();
 
         // Generación / Persistencia del ID de Sesión Único por RUT
         let sessionId = urlParams.get('session') || localStorage.getItem(`sensometrika_active_session_${cleanRut}`);
         if (!sessionId || sessionId.trim() === '') {
             sessionId = `SESION_B2B_${cleanRut}_${Date.now()}`;
-            localStorage.setItem(`sensometrika_active_session_${cleanRut}`, sessionId);
         }
+        localStorage.setItem(`sensometrika_active_session_${cleanRut}`, sessionId);
         localStorage.setItem('sensometrika_session_activa', sessionId);
+
+        // Asegurar marca de acreditación y timestamp inicial si entró directo
+        localStorage.setItem(`sensometrika_acreditado_${cleanRut}_${sessionId}`, 'true');
+        const keyTsInicio = `sensometrika_ts_inicio_${cleanRut}_${sessionId}`;
+        if (!localStorage.getItem(keyTsInicio)) {
+            localStorage.setItem(keyTsInicio, Date.now().toString());
+        }
 
         // Guardar estado unificado limpio
         const usuarioActualizado = {
@@ -381,11 +388,24 @@
 
         function moduloFueEjecutado(nombreModulo) {
             if (!cleanRut || !sessionId) return false;
-            return (
+            // Verificar primero las llaves asociadas a la sesión activa
+            const porSesion = (
                 localStorage.getItem(`sensometrika_${nombreModulo}_${cleanRut}_${sessionId}`) !== null ||
-                localStorage.getItem(`sensometrika_${nombreModulo}_${cleanRut}`) !== null ||
                 localStorage.getItem(`sensometrika_last_${nombreModulo}_${cleanRut}_${sessionId}`) !== null
             );
+            if (porSesion) return true;
+
+            // Respaldo si el módulo guardó solo por RUT durante esta misma sesión
+            const rawGenerico = localStorage.getItem(`sensometrika_${nombreModulo}_${cleanRut}`);
+            if (rawGenerico !== null) {
+                try {
+                    const parsed = JSON.parse(rawGenerico);
+                    if (!parsed.session || parsed.session === sessionId) return true;
+                } catch (e) {
+                    return true;
+                }
+            }
+            return false;
         }
 
         let obligatoriosTotal = 0;
@@ -435,6 +455,12 @@
 
             const btnInforme = document.getElementById('btnVerInformeB2B');
             if (obligatoriosCompletados >= obligatoriosTotal && obligatoriosTotal > 0) {
+                // Congelar la fecha/hora exacta en que completó los módulos (solo si no existía)
+                const keyTsFin = `sensometrika_ts_fin_${cleanRut}_${sessionId}`;
+                if (!localStorage.getItem(keyTsFin)) {
+                    localStorage.setItem(keyTsFin, Date.now().toString());
+                }
+
                 btnInforme.classList.remove('incompleto');
                 btnInforme.textContent = '📊 VER Y EMITIR INFORME PERICIAL B2B →';
             } else {

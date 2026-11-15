@@ -240,7 +240,7 @@
 </head>
 <body>
 
-    <div class="main-container">
+    <div class="main-container" id="mainContainer">
         <header class="brand-header">
             <img src="sensometrica.jpg" alt="SENSOMETRIKA" class="brand-logo-img">
         </header>
@@ -339,8 +339,37 @@
         const planActivo = (urlParams.get('plan') || localStorage.getItem('sensometrika_b2b_plan') || 'BASICO').toUpperCase();
         const tokenB2B = urlParams.get('token') || '';
         const correoApr = (urlParams.get('correo_apr') || urlParams.get('correoEncargado') || localStorage.getItem('sensometrika_b2b_correo') || '').trim();
-        const cleanRut = rawRut.replace(/[^0-9Kk]/g, '');
-        const sessionId = urlParams.get('session') || `SESION_B2B_${cleanRut}_${Date.now()}`;
+        const cleanRut = rawRut.replace(/[^0-9Kk]/g, '').toUpperCase();
+        const sessionId = urlParams.get('session') || localStorage.getItem(`sensometrika_ultima_sesion_${cleanRut}`) || `SESION_B2B_${cleanRut}_${Date.now()}`;
+
+        function construirUrlMenuModulos() {
+            const paramsNext = new URLSearchParams({
+                rut: rawRut,
+                nombre: decodeURIComponent(rawNombre),
+                cargo: decodeURIComponent(rawCargo),
+                empresa: decodeURIComponent(rawEmpresa),
+                plan: planActivo,
+                session: sessionId,
+                mode: 'b2b'
+            });
+            if (tokenB2B) paramsNext.set('token', tokenB2B);
+            if (correoApr) paramsNext.set('correo_apr', correoApr);
+            return `menu_b2b_planes.html?${paramsNext.toString()}`;
+        }
+
+        // REDIRECCIÓN AUTOMÁTICA SI ESTA SESIÓN YA FUE ACREDITADA ANTERIORMENTE
+        // Evita re-registrar al trabajador y preserva intacta la hora original del informe
+        (function verificarSiYaAcreditado() {
+            const keyAcreditado = `sensometrika_acreditado_${cleanRut}_${sessionId}`;
+            const yaAcreditado = localStorage.getItem(keyAcreditado) === 'true';
+            const tieneFoto = Boolean(localStorage.getItem(`sensometrika_foto_${cleanRut}_${sessionId}`));
+            const tieneFirma = Boolean(localStorage.getItem(`sensometrika_firma_${cleanRut}_${sessionId}`));
+
+            if (yaAcreditado && (tieneFoto || tieneFirma)) {
+                localStorage.setItem('sensometrika_session_activa', sessionId);
+                window.location.replace(construirUrlMenuModulos());
+            }
+        })();
 
         let streamCam = null;
         let fotoDataUrl = null;
@@ -366,11 +395,12 @@
             localStorage.setItem('sensometrika_b2b_empresa', decodeURIComponent(rawEmpresa));
             localStorage.setItem('sensometrika_b2b_plan', planActivo);
             localStorage.setItem('sensometrika_session_activa', sessionId);
+            localStorage.setItem(`sensometrika_ultima_sesion_${cleanRut}`, sessionId);
             if (correoApr) {
                 localStorage.setItem('sensometrika_b2b_correo', correoApr);
             }
 
-            // Marcar Timestamp de Inicio de Sesión
+            // Marcar Timestamp de Inicio de Sesión (solo si no existe previamente)
             let keyTsInicio = `sensometrika_ts_inicio_${cleanRut}_${sessionId}`;
             if (!localStorage.getItem(keyTsInicio)) {
                 localStorage.setItem(keyTsInicio, Date.now().toString());
@@ -538,6 +568,15 @@
             localStorage.setItem(`sensometrika_firma_${cleanRut}_${sessionId}`, firmaDataUrl);
             localStorage.setItem(`sensometrika_firma_${cleanRut}`, firmaDataUrl);
 
+            // Marcar esta sesión como ya acreditada para que si reabre el link del correo pase directo al menú de módulos
+            localStorage.setItem(`sensometrika_acreditado_${cleanRut}_${sessionId}`, 'true');
+
+            // Congelar la fecha y hora exacta de acreditación inicial (solo si no existía)
+            const keyFechaAcreditacion = `sensometrika_fecha_acreditacion_${cleanRut}_${sessionId}`;
+            if (!localStorage.getItem(keyFechaAcreditacion)) {
+                localStorage.setItem(keyFechaAcreditacion, new Date().toISOString());
+            }
+
             const sensorPayload = {
                 hardware: 'Cockpit Sensometrika B2B',
                 latencia: `${promedioLatenciaMs} ms (Aver. Hz: ${hzCalculados})`,
@@ -545,19 +584,7 @@
             };
             localStorage.setItem(`sensometrika_sensor_info_${cleanRut}_${sessionId}`, JSON.stringify(sensorPayload));
 
-            const paramsNext = new URLSearchParams({
-                rut: rawRut,
-                nombre: decodeURIComponent(rawNombre),
-                cargo: decodeURIComponent(rawCargo),
-                empresa: decodeURIComponent(rawEmpresa),
-                plan: planActivo,
-                session: sessionId,
-                mode: 'b2b'
-            });
-            if (tokenB2B) paramsNext.set('token', tokenB2B);
-            if (correoApr) paramsNext.set('correo_apr', correoApr);
-
-            window.location.href = `menu_b2b_planes.html?${paramsNext.toString()}`;
+            window.location.href = construirUrlMenuModulos();
         }
     </script>
 </body>
