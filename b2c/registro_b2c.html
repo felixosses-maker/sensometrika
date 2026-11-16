@@ -128,55 +128,6 @@
             cursor: wait;
         }
 
-        .confirm-box {
-            display: none;
-            background: rgba(16, 185, 129, 0.1);
-            border: 1px solid var(--accent-green);
-            border-radius: 12px;
-            padding: 18px;
-            flex-direction: column;
-            gap: 12px;
-            text-align: center;
-        }
-
-        .alert-pago-error {
-            display: none;
-            background: rgba(239, 68, 68, 0.12);
-            border: 1px solid #ef4444;
-            color: #fca5a5;
-            border-radius: 10px;
-            padding: 12px;
-            font-size: 0.78rem;
-            line-height: 1.4;
-        }
-
-        .btn-link-start {
-            background: var(--accent-cyan);
-            color: #000;
-            border: none;
-            padding: 12px;
-            border-radius: 8px;
-            font-weight: 800;
-            font-size: 0.85rem;
-            cursor: pointer;
-            text-transform: uppercase;
-            text-decoration: none;
-            display: block;
-            margin-top: 8px;
-        }
-
-        .btn-reenviar {
-            background: transparent;
-            color: var(--accent-green);
-            border: 1px solid rgba(16, 185, 129, 0.5);
-            padding: 9px;
-            border-radius: 8px;
-            font-weight: 800;
-            font-size: 0.72rem;
-            cursor: pointer;
-            text-transform: uppercase;
-        }
-
         .plan-badge-bar {
             background: #080d17;
             border: 1px solid var(--card-border);
@@ -199,13 +150,10 @@
             </span>
         </header>
 
-        <!-- Mensaje de alerta si el pago falla o se cancela -->
-        <div id="boxAlertaPago" class="alert-pago-error"></div>
-
-        <!-- Formulario de 3 Datos Obligatorios + Redirección a Pasarela -->
+        <!-- Formulario de 3 Datos Obligatorios + Redirección a checkout.html -->
         <div class="card-box" id="boxFormulario">
             <div class="card-title">👤 Datos de Identificación y Despacho</div>
-            <form id="formB2C" onsubmit="iniciarPasarelaPagoB2C(event)">
+            <form id="formB2C" onsubmit="redirigirACheckoutB2C(event)">
                 <div style="display: flex; flex-direction: column; gap: 12px;">
                     
                     <div class="form-group">
@@ -229,63 +177,47 @@
                     </div>
 
                     <button type="submit" id="btnSubmitB2C" class="btn-submit">
-                        💳 PROCEDER AL PAGO Y SOLICITAR LINK →
+                        💳 PROCEDER AL PAGO EN MERCADO PAGO →
                     </button>
                 </div>
             </form>
-        </div>
-
-        <!-- Confirmación de Despacho del Correo con Link de Acceso (Solo tras pago aprobado) -->
-        <div class="confirm-box" id="boxConfirmacion">
-            <div id="lblTituloConfirmacion" style="font-size: 1rem; font-weight: 800; color: var(--accent-green);">
-                ✓ PAGO CONFIRMADO & ENLACE DE ACCESO ENVIADO
-            </div>
-            <div style="font-size: 0.82rem; color: var(--text-main); line-height: 1.4;">
-                Hemos transmitido tu enlace único de evaluación al correo:<br>
-                <strong id="txtCorreoConfirmado" style="color: var(--accent-cyan); display: block; margin-top: 4px;"></strong>
-            </div>
-            <div id="lblEstadoEnvioCorreo" style="font-size: 0.72rem; color: var(--text-muted); line-height: 1.4;">
-                Revisa tu bandeja de entrada (o carpeta de spam) o haz clic en el botón inferior para rendir la evaluación ahora mismo:
-            </div>
-            <a id="btnIniciarDirecto" href="#" class="btn-link-start">
-                🚀 INICIAR EVALUACIÓN DESDE AQUÍ
-            </a>
-            <button type="button" id="btnReenviarCorreoB2C" onclick="reenviarCorreoB2C()" class="btn-reenviar">
-                🔄 REENVIAR LINK AL CORREO
-            </button>
         </div>
     </div>
 
     <script>
         let planActual = 'BASICO';
-        let ultimoPayloadCorreoB2C = null;
-        const DOMINIO_OFICIAL = 'https://www.sensometrika.com';
 
         const DETALLE_PLANES_B2C = {
             BASICO: {
-                nombre: 'Pase Básico Particular (3 Simulaciones)',
+                planId: 'part_basico',
+                nombrePlan: 'Pase Básico Particular (3 Simulaciones)',
                 etiqueta: 'PASE BÁSICO (B2C) — $4.990',
                 precio: 4990,
                 vigencia: '48 horas',
-                horas: 48
+                horas: 48,
+                modulosPermitidos: ['reactimetro', 'palancas', 'punteo']
             },
             PLUS: {
-                nombre: 'Pase Plus Particular (5 Simulaciones + Visual)',
+                planId: 'part_plus',
+                nombrePlan: 'Pase Plus Particular (5 Simulaciones + Visual)',
                 etiqueta: 'PASE PLUS (B2C) — $8.990',
                 precio: 8990,
                 vigencia: '5 días',
-                horas: 120
+                horas: 120,
+                modulosPermitidos: ['reactimetro', 'palancas', 'punteo', 'visual']
             },
             FULL: {
-                nombre: 'Pase Full Particular (8 Simulaciones + Sensorial)',
+                planId: 'part_full',
+                nombrePlan: 'Pase Full Particular (8 Simulaciones + Sensorial)',
                 etiqueta: 'PASE FULL (B2C) — $12.990',
                 precio: 12990,
                 vigencia: '10 días',
-                horas: 240
+                horas: 240,
+                modulosPermitidos: ['reactimetro', 'palancas', 'punteo', 'audicion', 'visual', 'anticipacion', 'estereopsis', 'fatiga']
             }
         };
 
-        document.addEventListener('DOMContentLoaded', async () => {
+        document.addEventListener('DOMContentLoaded', () => {
             localStorage.setItem('sensometrika_b2c_mode', 'true');
             localStorage.removeItem('sensometrika_b2b_token');
 
@@ -297,250 +229,72 @@
 
             const infoPlan = DETALLE_PLANES_B2C[planActual] || DETALLE_PLANES_B2C.BASICO;
             document.getElementById('lblPlanNombre').textContent = infoPlan.etiqueta;
-
-            // Verificar si regresa desde la pasarela de pago (Mercado Pago / Flow)
-            const statusPago = (urlParams.get('status') || urlParams.get('collection_status') || '').toLowerCase();
-            const compraPendiente = JSON.parse(localStorage.getItem('sensometrika_b2c_compra_pendiente') || 'null');
-
-            if (statusPago === 'approved' && compraPendiente) {
-                await finalizarCompraAprobadaB2C(compraPendiente);
-                localStorage.removeItem('sensometrika_b2c_compra_pendiente');
-            } else if (statusPago === 'rejected' || statusPago === 'failure' || statusPago === 'cancelled') {
-                const alerta = document.getElementById('boxAlertaPago');
-                alerta.style.display = 'block';
-                alerta.innerHTML = '❌ <strong>El pago no fue completado o fue rechazado.</strong> Verifica tus datos e intenta nuevamente.';
-                if (compraPendiente) {
-                    document.getElementById('inputNombreParticular').value = compraPendiente.nombre || '';
-                    document.getElementById('inputRutParticular').value = compraPendiente.rut || '';
-                    document.getElementById('inputCorreoParticular').value = compraPendiente.correo || '';
-                }
-            } else if (statusPago === 'pending' || statusPago === 'in_process') {
-                const alerta = document.getElementById('boxAlertaPago');
-                alerta.style.display = 'block';
-                alerta.style.borderColor = '#f59e0b';
-                alerta.style.background = 'rgba(245, 158, 11, 0.12)';
-                alerta.style.color = '#fcd34d';
-                alerta.innerHTML = '⏳ <strong>Tu pago está en proceso de validación.</strong> Una vez acreditado recibirás tu enlace en el correo registrado.';
-            }
         });
 
-        async function iniciarPasarelaPagoB2C(e) {
+        function redirigirACheckoutB2C(e) {
             e.preventDefault();
 
             const btnSubmit = document.getElementById('btnSubmitB2C');
-            const alerta = document.getElementById('boxAlertaPago');
-            alerta.style.display = 'none';
+            btnSubmit.disabled = true;
+            btnSubmit.textContent = '⏳ REDIRIGIENDO A PASARELA DE PAGO...';
 
             const nombre = document.getElementById('inputNombreParticular').value.trim();
             const rut = document.getElementById('inputRutParticular').value.trim();
             const correo = document.getElementById('inputCorreoParticular').value.trim();
             const infoPlan = DETALLE_PLANES_B2C[planActual] || DETALLE_PLANES_B2C.BASICO;
+            const ordenId = `SMK-B2C-${Date.now()}`;
 
-            btnSubmit.disabled = true;
-            btnSubmit.textContent = '⏳ CONECTANDO CON PASARELA DE PAGO...';
-
-            const compraPendiente = {
-                nombre,
-                rut,
-                correo,
-                plan: planActual,
-                precio: infoPlan.precio,
-                tituloPlan: infoPlan.nombre,
-                vigencia: infoPlan.vigencia,
-                horas: infoPlan.horas
-            };
-
-            localStorage.setItem('sensometrika_b2c_compra_pendiente', JSON.stringify(compraPendiente));
-
-            const baseUrlRetorno = `${window.location.origin}${window.location.pathname}`;
-            const payloadPago = {
-                tipo: 'b2c',
-                plan: planActual,
-                titulo: infoPlan.nombre,
-                precio: infoPlan.precio,
-                monto: infoPlan.precio,
-                cantidad: 1,
-                nombre: nombre,
-                rut: rut,
-                email: correo,
-                correo: correo,
-                back_urls: {
-                    success: `${baseUrlRetorno}?plan=${planActual}&status=approved`,
-                    failure: `${baseUrlRetorno}?plan=${planActual}&status=failure`,
-                    pending: `${baseUrlRetorno}?plan=${planActual}&status=pending`
-                }
-            };
-
-            // Intentar endpoints habituales de pasarela en Vercel (/api/crear-pago o /api/mercadopago)
-            const endpointsPago = ['/api/crear-pago', '/api/mercadopago'];
-            let urlCheckout = null;
-            let ultimoError = '';
-
-            for (const endpoint of endpointsPago) {
-                try {
-                    const resp = await fetch(endpoint, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(payloadPago)
-                    });
-                    const data = await resp.json().catch(() => ({}));
-                    const posibleUrl = data.init_point || data.sandbox_init_point || data.url || data.payment_url || data.checkoutUrl;
-                    if (resp.ok && posibleUrl) {
-                        urlCheckout = posibleUrl;
-                        break;
-                    } else if (data.error) {
-                        ultimoError = data.error;
-                    }
-                } catch (err) {
-                    ultimoError = err.message;
-                }
-            }
-
-            if (urlCheckout) {
-                window.location.href = urlCheckout;
-                return;
-            }
-
-            // Si no responde la pasarela, mostrar aviso claro y rehabilitar botón
-            btnSubmit.disabled = false;
-            btnSubmit.textContent = '💳 PROCEDER AL PAGO Y SOLICITAR LINK →';
-            alerta.style.display = 'block';
-            alerta.innerHTML = `⚠️ <strong>No se pudo iniciar la pasarela de pago.</strong> ${ultimoError ? `Detalle: ${ultimoError}.` : 'Verifica la configuración de Mercado Pago en el servidor e intenta nuevamente.'}`;
-        }
-
-        async function despacharCorreoB2C(payload) {
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 6000);
-            try {
-                const resp = await fetch('/api/enviar-correo', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload),
-                    signal: controller.signal
-                });
-                const data = await resp.json().catch(() => ({}));
-                return { ok: resp.ok, error: data.error || '' };
-            } catch (err) {
-                return { ok: false, error: err.message || 'Sin conexión con servidor de correo' };
-            } finally {
-                clearTimeout(timeoutId);
-            }
-        }
-
-        function limpiarEstadoAnteriorRUT(cleanRut) {
-            localStorage.removeItem('sensometrika_modulos_rendidos');
-            localStorage.removeItem('sensometrika_session_burned');
-            localStorage.removeItem('sensometrika_b2b_token');
-
-            const clavesABorrar = [];
-            for (let i = 0; i < localStorage.length; i++) {
-                const k = localStorage.key(i);
-                if (!k) continue;
-                if (
-                    k.includes(cleanRut) ||
-                    k.startsWith('sensometrika_b2c_inicio') ||
-                    k.startsWith('sensometrika_b2c_expira') ||
-                    k.startsWith('sensometrika_b2c_pase') ||
-                    k.startsWith('sensometrika_vigencia_')
-                ) {
-                    clavesABorrar.push(k);
-                }
-            }
-            clavesABorrar.forEach(k => localStorage.removeItem(k));
-        }
-
-        async function finalizarCompraAprobadaB2C(datos) {
-            const { nombre, rut, correo, plan, tituloPlan, vigencia, horas } = datos;
-            const cleanRut = rut.replace(/[^0-9Kk]/g, '').toUpperCase();
-
-            // 1. Limpiar historial y expiraciones antiguas del RUT para esta nueva compra
-            limpiarEstadoAnteriorRUT(cleanRut);
-
-            // 2. Generar identificador único de compra (paseId) y timestamp de emisión
-            const emitidoTs = Date.now();
-            const paseId = `B2C-${emitidoTs}-${Math.floor(100 + Math.random() * 900)}`;
-            const expiraTs = emitidoTs + (horas * 60 * 60 * 1000);
-
-            // 3. Guardar datos de B2C sincronizados con menu_b2c.html
+            // 1. Guardar datos del usuario B2C para pago-resultado.html y menu_b2c.html
             localStorage.setItem('sensometrika_datos_usuario', JSON.stringify({
                 nombre: nombre,
                 rut: rut,
                 correo: correo,
-                cargo: 'Evaluación Particular B2C',
-                paseId: paseId
+                cargo: 'Evaluación Particular B2C'
             }));
             localStorage.setItem('sensometrika_b2c_mode', 'true');
             localStorage.setItem('sensometrika_rut', rut);
             localStorage.setItem('sensometrika_nombre', nombre);
             localStorage.setItem('sensometrika_b2b_empresa', 'USUARIO PARTICULAR B2C');
-            localStorage.setItem('sensometrika_plan_contratado', plan);
-            localStorage.setItem('sensometrika_plan_seleccionado', plan);
+            localStorage.setItem('sensometrika_plan_contratado', planActual);
+            localStorage.setItem('sensometrika_plan_seleccionado', planActual);
 
-            // Registro de vigencia del nuevo pase
-            localStorage.setItem('sensometrika_b2c_pase_activo', paseId);
-            localStorage.setItem(`sensometrika_b2c_inicio_${cleanRut}`, String(emitidoTs));
-            localStorage.setItem(`sensometrika_b2c_expira_${cleanRut}`, String(expiraTs));
-            localStorage.setItem(`sensometrika_b2c_pase_${paseId}`, JSON.stringify({
-                paseId,
-                rut: cleanRut,
-                plan: plan,
-                emitidoTs,
-                expiraTs
-            }));
-
-            // 4. Incluir paseId y ts en la URL para diferenciar compras nuevas de links antiguos
-            const params = new URLSearchParams({
-                rut: rut,
+            // 2. Guardar la sesión pendiente en el formato exacto que consume checkout.html y pago-resultado.html
+            const sesionPendiente = {
+                rol: 'particular',
+                segmento: 'b2c',
+                planId: infoPlan.planId,
+                planCorto: planActual,
+                nombrePlan: infoPlan.nombrePlan,
+                precio: infoPlan.precio,
+                monto: infoPlan.precio,
+                cantidad: 1,
                 nombre: nombre,
-                plan: plan,
-                pase: paseId,
-                ts: String(emitidoTs),
-                nuevo: '1',
-                mode: 'b2c'
+                rut: rut,
+                correo: correo,
+                email: correo,
+                ordenId: ordenId,
+                tipoDocumento: 'BOLETA',
+                modulosPermitidos: infoPlan.modulosPermitidos,
+                horasVigencia: infoPlan.horas
+            };
+            localStorage.setItem('sensometrika_sesion_pendiente', JSON.stringify(sesionPendiente));
+
+            // 3. Redirigir a checkout.html en la raíz
+            const paramsCheckout = new URLSearchParams({
+                seg: 'b2c',
+                rol: 'particular',
+                plan: infoPlan.planId,
+                planCorto: planActual,
+                nombrePlan: infoPlan.nombrePlan,
+                monto: String(infoPlan.precio),
+                precio: String(infoPlan.precio),
+                nombre: nombre,
+                rut: rut,
+                correo: correo,
+                orden: ordenId
             });
 
-            const urlRelativa = `menu_b2c.html?${params.toString()}`;
-            const urlOficialCorreo = `${DOMINIO_OFICIAL}/b2c/menu_b2c.html?${params.toString()}`;
-
-            ultimoPayloadCorreoB2C = {
-                tipo: 'b2c_acceso',
-                emailDestino: correo,
-                nombre: nombre,
-                rut: rut,
-                planNombre: tituloPlan,
-                vigencia: vigencia,
-                linkAcceso: urlOficialCorreo
-            };
-
-            const resultado = await despacharCorreoB2C(ultimoPayloadCorreoB2C);
-
-            // Mostrar pantalla de confirmación solo tras pago confirmado
-            document.getElementById('boxFormulario').style.display = 'none';
-            document.getElementById('txtCorreoConfirmado').textContent = correo;
-            document.getElementById('btnIniciarDirecto').href = urlRelativa;
-            document.getElementById('boxConfirmacion').style.display = 'flex';
-
-            const lblEstado = document.getElementById('lblEstadoEnvioCorreo');
-            if (resultado.ok) {
-                lblEstado.innerHTML = '✅ <strong>Correo despachado correctamente.</strong> Revisa tu bandeja de entrada o haz clic abajo para iniciar ahora mismo:';
-                lblEstado.style.color = '#10b981';
-            } else {
-                const esLocal = window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost';
-                lblEstado.innerHTML = esLocal
-                    ? '⚠️ <strong>Modo prueba local (127.0.0.1):</strong> El envío real de correo solo se ejecuta en <em>www.sensometrika.com</em>. Puedes iniciar tu evaluación abajo:'
-                    : `⚠️ No se pudo confirmar el envío automático (${resultado.error}). Puedes usar el botón de reenvío o iniciar directamente abajo:`;
-                lblEstado.style.color = '#f59e0b';
-            }
-        }
-
-        async function reenviarCorreoB2C() {
-            if (!ultimoPayloadCorreoB2C) return;
-            const btn = document.getElementById('btnReenviarCorreoB2C');
-            btn.disabled = true;
-            btn.textContent = '⏳ REENVIANDO...';
-            const res = await despacharCorreoB2C(ultimoPayloadCorreoB2C);
-            btn.disabled = false;
-            btn.textContent = res.ok ? '✅ ENLACE REENVIADO' : '🔄 REINTENTAR ENVÍO';
+            window.location.href = `../checkout.html?${paramsCheckout.toString()}`;
         }
     </script>
 </body>
