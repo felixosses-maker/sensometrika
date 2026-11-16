@@ -28,7 +28,13 @@ module.exports = async (req, res) => {
       rut,
       nombre,
       rol,
+      tipoDte,
       tipoDocumento,
+      razonSocial,
+      rutEmpresa,
+      giro,
+      direccion,
+      cargo,
       datosTributarios
     } = req.body || {};
 
@@ -39,21 +45,29 @@ module.exports = async (req, res) => {
     // Identificador único de orden para trazabilidad comercial y SII
     const ordenId = `SMK-${Date.now()}`;
 
-    // Dominio base dinámico (funciona en sensometrika.vercel.app y dominio propio)
-    const host = req.headers.host || 'sensometrika.vercel.app';
-    const protocolo = host.includes('localhost') || host.includes('127.0.0.1') ? 'http' : 'https';
-    const baseUrl = `${protocolo}://${host}`;
+    // Dominio base oficial en producción (fallback dinámico en local)
+    const host = req.headers.host || 'www.sensometrika.com';
+    const esLocal = host.includes('localhost') || host.includes('127.0.0.1');
+    const baseUrl = esLocal ? `http://${host}` : 'https://www.sensometrika.com';
 
     const segmento = (rol === 'empresa' || (planId && planId.toLowerCase().includes('b2b'))) ? 'b2b' : 'b2c';
-    const docTrib = (tipoDocumento || (segmento === 'b2b' ? 'FACTURA' : 'BOLETA')).toUpperCase();
+    const rawDoc = tipoDocumento || tipoDte || (segmento === 'b2b' ? 'FACTURA' : 'BOLETA');
+    const docTrib = String(rawDoc).toUpperCase();
 
-    // Construcción de la Preferencia oficial Checkout Pro de Mercado Pago
+    // Consolidación de datos tributarios SII (compatibles con checkout.html y checkout_b2c.html)
+    const tribRut = datosTributarios?.rut || rutEmpresa || rut || '';
+    const tribRazon = datosTributarios?.razonSocial || razonSocial || nombre || '';
+    const tribGiro = datosTributarios?.giro || giro || (docTrib === 'FACTURA' ? '' : 'Consumidor Final');
+    const tribDireccion = datosTributarios?.direccion || direccion || '';
+    const tribComuna = datosTributarios?.comuna || '';
+
+    // Construcción de la Preferencia oficial Checkout Pro de Mercado Pago (Producción)
     const preferencia = {
       items: [
         {
           id: ordenId,
           title: `Sensometrika: ${nombrePlan || 'Evaluación Psicomotriz'}`,
-          description: `Modalidad ${segmento.toUpperCase()} • Documento: ${docTrib}`,
+          description: `Modalidad ${segmento.toUpperCase()} • Documento SII: ${docTrib}`,
           quantity: 1,
           currency_id: 'CLP',
           unit_price: Math.round(Number(monto))
@@ -74,11 +88,12 @@ module.exports = async (req, res) => {
         plan_id: planId || '',
         nombre_plan: nombrePlan || '',
         tipo_documento: docTrib,
-        receptor_rut: datosTributarios?.rut || rut || '',
-        receptor_razon_social: datosTributarios?.razonSocial || nombre || '',
-        receptor_giro: datosTributarios?.giro || '',
-        receptor_direccion: datosTributarios?.direccion || '',
-        receptor_comuna: datosTributarios?.comuna || '',
+        receptor_rut: tribRut,
+        receptor_razon_social: tribRazon,
+        receptor_giro: tribGiro,
+        receptor_direccion: tribDireccion,
+        receptor_comuna: tribComuna,
+        cargo_responsable: cargo || '',
         receptor_correo: email
       },
       back_urls: {
@@ -112,6 +127,7 @@ module.exports = async (req, res) => {
     // Retorna la URL de pago en producción (init_point)
     return res.status(200).json({
       url: data.init_point,
+      init_point: data.init_point,
       preferenceId: data.id,
       ordenId: ordenId
     });
