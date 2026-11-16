@@ -29,7 +29,7 @@
             color: var(--text-main);
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             min-height: 100vh;
-            padding: 20px 12px;
+            padding: 20px 12px 36px;
             display: flex;
             justify-content: center;
             align-items: flex-start;
@@ -82,7 +82,7 @@
         .form-group {
             display: flex;
             flex-direction: column;
-            gap: 4px;
+            gap: 5px;
         }
 
         .form-group label {
@@ -92,7 +92,7 @@
             font-weight: 700;
         }
 
-        .form-group input, .form-group select {
+        .form-group input {
             background: #080d17;
             border: 1px solid var(--card-border);
             color: #fff;
@@ -103,9 +103,106 @@
             -webkit-user-select: text;
         }
 
-        .form-group input:focus, .form-group select:focus {
+        .form-group input:focus {
             outline: none;
             border-color: var(--accent-cyan);
+        }
+
+        /* Selector Nativo Integrado del Simulador (Reemplaza el popup blanco del navegador) */
+        .planes-grid-b2c {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .plan-opcion-card {
+            background: #080d17;
+            border: 1.5px solid var(--card-border);
+            border-radius: 10px;
+            padding: 11px 13px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.18s ease;
+        }
+
+        .plan-opcion-card:hover {
+            border-color: rgba(56, 189, 248, 0.5);
+        }
+
+        .plan-opcion-card.active {
+            border-color: var(--accent-cyan);
+            background: rgba(56, 189, 248, 0.10);
+            box-shadow: 0 0 14px rgba(56, 189, 248, 0.16);
+        }
+
+        .plan-opcion-info {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .plan-opcion-titulo {
+            font-size: 0.82rem;
+            font-weight: 800;
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .plan-opcion-card.active .plan-opcion-titulo {
+            color: var(--accent-cyan);
+        }
+
+        .plan-opcion-detalle {
+            font-size: 0.70rem;
+            color: var(--text-muted);
+        }
+
+        .plan-opcion-derecha {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .plan-opcion-precio {
+            font-size: 0.88rem;
+            font-weight: 900;
+            color: var(--accent-green);
+            white-space: nowrap;
+        }
+
+        .radio-indicador {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            border: 2px solid #475569;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .plan-opcion-card.active .radio-indicador {
+            border-color: var(--accent-cyan);
+        }
+
+        .radio-indicador::after {
+            content: '';
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--accent-cyan);
+            opacity: 0;
+            transform: scale(0.5);
+            transition: all 0.15s ease;
+        }
+
+        .plan-opcion-card.active .radio-indicador::after {
+            opacity: 1;
+            transform: scale(1);
         }
 
         .btn-submit {
@@ -182,13 +279,45 @@
                         <input type="email" id="inputCorreoParticular" placeholder="Ej: juan@correo.com" required>
                     </div>
 
+                    <!-- Selector Visual Nativo del Simulador (Sin popup blanco del navegador) -->
                     <div class="form-group">
                         <label>Pase Particular Seleccionado *</label>
-                        <select id="selectPlanB2C" onchange="actualizarResumenPlanB2C()">
-                            <option value="BASICO">Pase Básico (B2C) — $4.990 CLP (3 Simulaciones / 48h)</option>
-                            <option value="PLUS">Pase Plus (B2C) — $8.990 CLP (5 Simulaciones + Visual / 5 días)</option>
-                            <option value="FULL">Pase Full (B2C) — $14.990 CLP (8 Simulaciones + Sensorial / 10 días)</option>
-                        </select>
+                        <input type="hidden" id="selectPlanB2C" value="BASICO">
+
+                        <div class="planes-grid-b2c" role="radiogroup" aria-label="Seleccionar Pase Particular">
+                            <div class="plan-opcion-card active" data-plan="BASICO" onclick="seleccionarPlanB2C('BASICO')">
+                                <div class="plan-opcion-info">
+                                    <span class="plan-opcion-titulo">Pase Básico (B2C)</span>
+                                    <span class="plan-opcion-detalle">3 Simulaciones • Vigencia 48 horas</span>
+                                </div>
+                                <div class="plan-opcion-derecha">
+                                    <span class="plan-opcion-precio">$4.990</span>
+                                    <span class="radio-indicador"></span>
+                                </div>
+                            </div>
+
+                            <div class="plan-opcion-card" data-plan="PLUS" onclick="seleccionarPlanB2C('PLUS')">
+                                <div class="plan-opcion-info">
+                                    <span class="plan-opcion-titulo">Pase Plus (B2C)</span>
+                                    <span class="plan-opcion-detalle">5 Simulaciones + Visual • Vigencia 5 días</span>
+                                </div>
+                                <div class="plan-opcion-derecha">
+                                    <span class="plan-opcion-precio">$8.990</span>
+                                    <span class="radio-indicador"></span>
+                                </div>
+                            </div>
+
+                            <div class="plan-opcion-card" data-plan="FULL" onclick="seleccionarPlanB2C('FULL')">
+                                <div class="plan-opcion-info">
+                                    <span class="plan-opcion-titulo">Pase Full (B2C)</span>
+                                    <span class="plan-opcion-detalle">8 Simulaciones + Sensorial • Vigencia 10 días</span>
+                                </div>
+                                <div class="plan-opcion-derecha">
+                                    <span class="plan-opcion-precio">$14.990</span>
+                                    <span class="radio-indicador"></span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                     <div class="plan-badge-bar">
@@ -237,14 +366,23 @@
             }
         };
 
-        function actualizarResumenPlanB2C() {
-            const planSel = document.getElementById('selectPlanB2C').value;
-            const info = DETALLE_PLANES_B2C[planSel] || DETALLE_PLANES_B2C.BASICO;
+        function seleccionarPlanB2C(planKey) {
+            const key = DETALLE_PLANES_B2C[planKey] ? planKey : 'BASICO';
+            document.getElementById('selectPlanB2C').value = key;
+
+            document.querySelectorAll('.plan-opcion-card').forEach(card => {
+                if (card.dataset.plan === key) {
+                    card.classList.add('active');
+                } else {
+                    card.classList.remove('active');
+                }
+            });
+
+            const info = DETALLE_PLANES_B2C[key];
             document.getElementById('lblPlanNombre').textContent = `$${info.precio.toLocaleString('es-CL')} CLP`;
         }
 
         document.addEventListener('DOMContentLoaded', () => {
-            // Limpiar cualquier bandera B2B residual
             localStorage.setItem('sensometrika_b2c_mode', 'true');
             localStorage.removeItem('sensometrika_b2b_token');
             localStorage.removeItem('sensometrika_plan_pedido');
@@ -255,10 +393,8 @@
             if (rawPlan.includes('FULL')) planDetectado = 'FULL';
             else if (rawPlan.includes('PLUS')) planDetectado = 'PLUS';
 
-            document.getElementById('selectPlanB2C').value = planDetectado;
-            actualizarResumenPlanB2C();
+            seleccionarPlanB2C(planDetectado);
 
-            // Precargar datos si el usuario ya los había escrito
             const userPrev = JSON.parse(localStorage.getItem('sensometrika_datos_usuario') || '{}');
             if (userPrev.nombre) document.getElementById('inputNombreParticular').value = userPrev.nombre;
             if (userPrev.rut) document.getElementById('inputRutParticular').value = userPrev.rut;
@@ -278,7 +414,6 @@
             const planCorto = document.getElementById('selectPlanB2C').value;
             const infoPlan = DETALLE_PLANES_B2C[planCorto] || DETALLE_PLANES_B2C.BASICO;
 
-            // Guardar datos del particular en localStorage
             localStorage.setItem('sensometrika_b2c_mode', 'true');
             localStorage.setItem('sensometrika_rut', rut);
             localStorage.setItem('sensometrika_nombre', nombre);
@@ -311,7 +446,6 @@
             };
             localStorage.setItem('sensometrika_pedido_b2c', JSON.stringify(pedidoB2C));
 
-            // Redirigir al checkout exclusivo B2C en la misma carpeta /b2c/
             const params = new URLSearchParams({
                 plan: planCorto,
                 nombre: nombre,
