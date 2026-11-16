@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SENSOMETRIKA | Adquisición Particular (B2C)</title>
+    <title>SENSOMETRIKA | Registro Usuario Particular (B2C)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         :root {
@@ -92,7 +92,7 @@
             font-weight: 700;
         }
 
-        .form-group input {
+        .form-group input, .form-group select {
             background: #080d17;
             border: 1px solid var(--card-border);
             color: #fff;
@@ -103,7 +103,7 @@
             -webkit-user-select: text;
         }
 
-        .form-group input:focus {
+        .form-group input:focus, .form-group select:focus {
             outline: none;
             border-color: var(--accent-cyan);
         }
@@ -138,6 +138,17 @@
             justify-content: space-between;
             align-items: center;
         }
+
+        .link-volver {
+            display: block;
+            text-align: center;
+            font-size: 0.74rem;
+            color: var(--text-muted);
+            text-decoration: none;
+            margin-top: 4px;
+        }
+
+        .link-volver:hover { color: #ffffff; }
     </style>
 </head>
 <body>
@@ -150,15 +161,15 @@
             </span>
         </header>
 
-        <!-- Formulario de 3 Datos Obligatorios + Redirección a checkout.html -->
-        <div class="card-box" id="boxFormulario">
+        <!-- Formulario Exclusivo Usuario Particular -->
+        <div class="card-box">
             <div class="card-title">👤 Datos de Identificación y Despacho</div>
-            <form id="formB2C" onsubmit="redirigirACheckoutB2C(event)">
+            <form id="formB2C" onsubmit="continuarACheckoutB2C(event)">
                 <div style="display: flex; flex-direction: column; gap: 12px;">
                     
                     <div class="form-group">
                         <label>Nombre Completo *</label>
-                        <input type="text" id="inputNombreParticular" placeholder="Ej: Félix Osses" required>
+                        <input type="text" id="inputNombreParticular" placeholder="Ej: Juan Emilio Sáez" required>
                     </div>
 
                     <div class="form-group">
@@ -168,133 +179,147 @@
 
                     <div class="form-group">
                         <label>Correo Electrónico (Para envío del link de acceso) *</label>
-                        <input type="email" id="inputCorreoParticular" placeholder="Ej: felix@correo.com" required>
+                        <input type="email" id="inputCorreoParticular" placeholder="Ej: juan@correo.com" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Pase Particular Seleccionado *</label>
+                        <select id="selectPlanB2C" onchange="actualizarResumenPlanB2C()">
+                            <option value="BASICO">Pase Básico (B2C) — $4.990 CLP (3 Simulaciones / 48h)</option>
+                            <option value="PLUS">Pase Plus (B2C) — $8.990 CLP (5 Simulaciones + Visual / 5 días)</option>
+                            <option value="FULL">Pase Full (B2C) — $14.990 CLP (8 Simulaciones + Sensorial / 10 días)</option>
+                        </select>
                     </div>
 
                     <div class="plan-badge-bar">
-                        <span style="color: var(--text-muted); font-weight: 700;">PLAN A PAGAR:</span>
-                        <strong id="lblPlanNombre" style="color: var(--accent-cyan);">PASE BÁSICO (B2C) — $4.990</strong>
+                        <span style="color: var(--text-muted); font-weight: 700;">TOTAL (IVA INCLUIDO):</span>
+                        <strong id="lblPlanNombre" style="color: var(--accent-cyan);">$4.990 CLP</strong>
                     </div>
 
                     <button type="submit" id="btnSubmitB2C" class="btn-submit">
-                        💳 PROCEDER AL PAGO EN MERCADO PAGO →
+                        CONTINUAR AL CHECKOUT B2C →
                     </button>
+
+                    <a href="../index.html" class="link-volver">← Volver al Inicio</a>
                 </div>
             </form>
         </div>
     </div>
 
     <script>
-        let planActual = 'BASICO';
-
         const DETALLE_PLANES_B2C = {
             BASICO: {
-                planId: 'part_basico',
+                planId: 'b2c_basico',
                 nombrePlan: 'Pase Básico Particular (3 Simulaciones)',
-                etiqueta: 'PASE BÁSICO (B2C) — $4.990',
                 precio: 4990,
+                simulaciones: 3,
                 vigencia: '48 horas',
                 horas: 48,
                 modulosPermitidos: ['reactimetro', 'palancas', 'punteo']
             },
             PLUS: {
-                planId: 'part_plus',
+                planId: 'b2c_plus',
                 nombrePlan: 'Pase Plus Particular (5 Simulaciones + Visual)',
-                etiqueta: 'PASE PLUS (B2C) — $8.990',
                 precio: 8990,
+                simulaciones: 5,
                 vigencia: '5 días',
                 horas: 120,
                 modulosPermitidos: ['reactimetro', 'palancas', 'punteo', 'visual']
             },
             FULL: {
-                planId: 'part_full',
+                planId: 'b2c_full',
                 nombrePlan: 'Pase Full Particular (8 Simulaciones + Sensorial)',
-                etiqueta: 'PASE FULL (B2C) — $12.990',
-                precio: 12990,
+                precio: 14990,
+                simulaciones: 8,
                 vigencia: '10 días',
                 horas: 240,
-                modulosPermitidos: ['reactimetro', 'palancas', 'punteo', 'audicion', 'visual', 'anticipacion', 'estereopsis', 'fatiga']
+                modulosPermitidos: ['reactimetro', 'palancas', 'punteo', 'visual', 'auditivo']
             }
         };
 
+        function actualizarResumenPlanB2C() {
+            const planSel = document.getElementById('selectPlanB2C').value;
+            const info = DETALLE_PLANES_B2C[planSel] || DETALLE_PLANES_B2C.BASICO;
+            document.getElementById('lblPlanNombre').textContent = `$${info.precio.toLocaleString('es-CL')} CLP`;
+        }
+
         document.addEventListener('DOMContentLoaded', () => {
+            // Limpiar cualquier bandera B2B residual
             localStorage.setItem('sensometrika_b2c_mode', 'true');
             localStorage.removeItem('sensometrika_b2b_token');
+            localStorage.removeItem('sensometrika_plan_pedido');
 
             const urlParams = new URLSearchParams(window.location.search);
             let rawPlan = (urlParams.get('plan') || localStorage.getItem('sensometrika_plan_contratado') || 'BASICO').toUpperCase().trim();
-            if (rawPlan.includes('FULL')) planActual = 'FULL';
-            else if (rawPlan.includes('PLUS')) planActual = 'PLUS';
-            else planActual = 'BASICO';
+            let planDetectado = 'BASICO';
+            if (rawPlan.includes('FULL')) planDetectado = 'FULL';
+            else if (rawPlan.includes('PLUS')) planDetectado = 'PLUS';
 
-            const infoPlan = DETALLE_PLANES_B2C[planActual] || DETALLE_PLANES_B2C.BASICO;
-            document.getElementById('lblPlanNombre').textContent = infoPlan.etiqueta;
+            document.getElementById('selectPlanB2C').value = planDetectado;
+            actualizarResumenPlanB2C();
+
+            // Precargar datos si el usuario ya los había escrito
+            const userPrev = JSON.parse(localStorage.getItem('sensometrika_datos_usuario') || '{}');
+            if (userPrev.nombre) document.getElementById('inputNombreParticular').value = userPrev.nombre;
+            if (userPrev.rut) document.getElementById('inputRutParticular').value = userPrev.rut;
+            if (userPrev.correo) document.getElementById('inputCorreoParticular').value = userPrev.correo;
         });
 
-        function redirigirACheckoutB2C(e) {
+        function continuarACheckoutB2C(e) {
             e.preventDefault();
 
-            const btnSubmit = document.getElementById('btnSubmitB2C');
-            btnSubmit.disabled = true;
-            btnSubmit.textContent = '⏳ REDIRIGIENDO A PASARELA DE PAGO...';
+            const btn = document.getElementById('btnSubmitB2C');
+            btn.disabled = true;
+            btn.textContent = '⏳ CARGANDO CHECKOUT B2C...';
 
             const nombre = document.getElementById('inputNombreParticular').value.trim();
             const rut = document.getElementById('inputRutParticular').value.trim();
             const correo = document.getElementById('inputCorreoParticular').value.trim();
-            const infoPlan = DETALLE_PLANES_B2C[planActual] || DETALLE_PLANES_B2C.BASICO;
-            const ordenId = `SMK-B2C-${Date.now()}`;
+            const planCorto = document.getElementById('selectPlanB2C').value;
+            const infoPlan = DETALLE_PLANES_B2C[planCorto] || DETALLE_PLANES_B2C.BASICO;
 
-            // 1. Guardar datos del usuario B2C para pago-resultado.html y menu_b2c.html
-            localStorage.setItem('sensometrika_datos_usuario', JSON.stringify({
-                nombre: nombre,
-                rut: rut,
-                correo: correo,
-                cargo: 'Evaluación Particular B2C'
-            }));
+            // Guardar datos del particular en localStorage
             localStorage.setItem('sensometrika_b2c_mode', 'true');
             localStorage.setItem('sensometrika_rut', rut);
             localStorage.setItem('sensometrika_nombre', nombre);
-            localStorage.setItem('sensometrika_b2b_empresa', 'USUARIO PARTICULAR B2C');
-            localStorage.setItem('sensometrika_plan_contratado', planActual);
-            localStorage.setItem('sensometrika_plan_seleccionado', planActual);
+            localStorage.setItem('sensometrika_plan_contratado', planCorto);
+            localStorage.setItem('sensometrika_plan_seleccionado', planCorto);
 
-            // 2. Guardar la sesión pendiente en el formato exacto que consume checkout.html y pago-resultado.html
-            const sesionPendiente = {
+            localStorage.setItem('sensometrika_datos_usuario', JSON.stringify({
+                tipo: 'particular',
+                nombre: nombre,
+                rut: rut,
+                correo: correo,
+                empresa: 'Particular',
+                cargo: 'Evaluación Particular B2C'
+            }));
+
+            const pedidoB2C = {
                 rol: 'particular',
-                segmento: 'b2c',
+                tipo: 'b2c',
                 planId: infoPlan.planId,
-                planCorto: planActual,
+                planCorto: planCorto,
                 nombrePlan: infoPlan.nombrePlan,
-                precio: infoPlan.precio,
-                monto: infoPlan.precio,
-                cantidad: 1,
-                nombre: nombre,
-                rut: rut,
-                correo: correo,
-                email: correo,
-                ordenId: ordenId,
-                tipoDocumento: 'BOLETA',
+                precioTotal: infoPlan.precio,
+                limiteSimulaciones: infoPlan.simulaciones,
+                horasVigencia: infoPlan.horas,
+                vigenciaTexto: infoPlan.vigencia,
                 modulosPermitidos: infoPlan.modulosPermitidos,
-                horasVigencia: infoPlan.horas
-            };
-            localStorage.setItem('sensometrika_sesion_pendiente', JSON.stringify(sesionPendiente));
-
-            // 3. Redirigir a checkout.html en la raíz
-            const paramsCheckout = new URLSearchParams({
-                seg: 'b2c',
-                rol: 'particular',
-                plan: infoPlan.planId,
-                planCorto: planActual,
-                nombrePlan: infoPlan.nombrePlan,
-                monto: String(infoPlan.precio),
-                precio: String(infoPlan.precio),
                 nombre: nombre,
                 rut: rut,
-                correo: correo,
-                orden: ordenId
+                correo: correo
+            };
+            localStorage.setItem('sensometrika_pedido_b2c', JSON.stringify(pedidoB2C));
+
+            // Redirigir al checkout exclusivo B2C en la misma carpeta /b2c/
+            const params = new URLSearchParams({
+                plan: planCorto,
+                nombre: nombre,
+                rut: rut,
+                correo: correo
             });
 
-            window.location.href = `../checkout.html?${paramsCheckout.toString()}`;
+            window.location.href = `checkout_b2c.html?${params.toString()}`;
         }
     </script>
 </body>

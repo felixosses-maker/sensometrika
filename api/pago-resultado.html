@@ -83,6 +83,17 @@
       color: #64748b;
       line-height: 1.35;
     }
+    .aviso-correo-b2c {
+      width: 100%;
+      background: rgba(16, 185, 129, 0.1);
+      border: 1px solid rgba(16, 185, 129, 0.35);
+      color: #6ee7b7;
+      border-radius: 8px;
+      padding: 9px 12px;
+      font-size: 0.74rem;
+      line-height: 1.35;
+      display: none;
+    }
   </style>
 </head>
 <body>
@@ -108,6 +119,8 @@
       <p class="detalle-texto" id="txt-exito-desc">
         Tu acreditación ha sido procesada con éxito. Los módulos psicométricos ya están habilitados.
       </p>
+
+      <div id="box-aviso-correo" class="aviso-correo-b2c"></div>
 
       <div class="resumen-comprobante">
         <div class="fila-comp">
@@ -156,13 +169,36 @@
       <p class="detalle-texto" id="txt-error-motivo">
         La operación fue cancelada o rechazada por el medio de pago. No se realizó ningún cargo.
       </p>
-      <a href="checkout.html" class="btn-principal" style="background-color: #334155;">
+      <a href="checkout.html" id="btn-reintentar-pago" class="btn-principal" style="background-color: #334155;">
         Volver a Intentar Pago
       </a>
     </section>
   </main>
 
   <script>
+    function limpiarEstadoAnteriorRUT(cleanRut) {
+      if (!cleanRut) return;
+      localStorage.removeItem('sensometrika_modulos_rendidos');
+      localStorage.removeItem('sensometrika_session_burned');
+      localStorage.removeItem('sensometrika_b2b_token');
+
+      const clavesABorrar = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (!k) continue;
+        if (
+          k.includes(cleanRut) ||
+          k.startsWith('sensometrika_b2c_inicio') ||
+          k.startsWith('sensometrika_b2c_expira') ||
+          k.startsWith('sensometrika_b2c_pase') ||
+          k.startsWith('sensometrika_vigencia_')
+        ) {
+          clavesABorrar.push(k);
+        }
+      }
+      clavesABorrar.forEach(k => localStorage.removeItem(k));
+    }
+
     document.addEventListener('DOMContentLoaded', () => {
       const urlParams = new URLSearchParams(window.location.search);
 
@@ -185,15 +221,21 @@
       }
 
       if (status !== 'approved') {
+        const sesionPrev = JSON.parse(localStorage.getItem('sensometrika_sesion_pendiente') || '{}');
+        const btnReintentar = document.getElementById('btn-reintentar-pago');
+        const esFlujoB2C = segParam === 'b2c' || sesionPrev.rol === 'particular' || localStorage.getItem('sensometrika_b2c_mode') === 'true';
+        if (btnReintentar && esFlujoB2C) {
+          btnReintentar.href = 'b2c/checkout_b2c.html';
+        }
         cajaCargando.style.display = 'none';
         cajaFracaso.style.display = 'flex';
         return;
       }
 
-      // Recuperar sesión pendiente guardada en checkout.html
+      // Recuperar sesión pendiente guardada en checkout.html o b2c/checkout_b2c.html
       const sesionPendiente = JSON.parse(localStorage.getItem('sensometrika_sesion_pendiente')) || {
         rol: segParam === 'b2b' ? 'empresa' : 'particular',
-        planId: 'part_basico',
+        planId: 'b2c_basico',
         nombrePlan: 'Evaluación Psicomotriz DS 170',
         modulosPermitidos: ['reactimetro', 'palancas', 'punteo'],
         tipoDocumento: docParam || 'BOLETA'
@@ -243,25 +285,89 @@
         localStorage.removeItem('sensometrika_b2b_token');
 
         const userB2C = JSON.parse(localStorage.getItem('sensometrika_datos_usuario')) || {};
+        const rutB2C = sesionPendiente.rut || userB2C.rut || '';
+        const nombreB2C = sesionPendiente.nombre || userB2C.nombre || '';
+        const correoB2C = sesionPendiente.correo || sesionPendiente.correoInforme || sesionPendiente.email || userB2C.correo || '';
+        const cleanRut = rutB2C.replace(/[^0-9Kk]/g, '').toUpperCase();
+
         let planCorto = 'BASICO';
-        const pStr = String(sesionPendiente.planId || sesionPendiente.nombrePlan || '').toUpperCase();
-        if (pStr.includes('FULL') || pStr.includes('8')) planCorto = 'FULL';
-        else if (pStr.includes('PLUS') || pStr.includes('5')) planCorto = 'PLUS';
+        let horasVigencia = 48;
+        let textoVigencia = '48 horas';
+        const pStr = String(sesionPendiente.planCorto || sesionPendiente.planId || sesionPendiente.nombrePlan || '').toUpperCase();
+        if (pStr.includes('FULL') || pStr.includes('8')) {
+          planCorto = 'FULL';
+          horasVigencia = 240;
+          textoVigencia = '10 días';
+        } else if (pStr.includes('PLUS') || pStr.includes('5')) {
+          planCorto = 'PLUS';
+          horasVigencia = 120;
+          textoVigencia = '5 días';
+        }
+
+        // Activar nueva vigencia B2C y limpiar historial antiguo del RUT
+        limpiarEstadoAnteriorRUT(cleanRut);
+        const emitidoTs = Date.now();
+        const paseId = `B2C-${emitidoTs}-${Math.floor(100 + Math.random() * 900)}`;
+        const expiraTs = emitidoTs + (horasVigencia * 60 * 60 * 1000);
 
         localStorage.setItem('sensometrika_plan_contratado', planCorto);
+        localStorage.setItem('sensometrika_plan_seleccionado', planCorto);
+        localStorage.setItem('sensometrika_b2c_pase_activo', paseId);
+        if (cleanRut) {
+          localStorage.setItem(`sensometrika_b2c_inicio_${cleanRut}`, String(emitidoTs));
+          localStorage.setItem(`sensometrika_b2c_expira_${cleanRut}`, String(expiraTs));
+        }
+        localStorage.setItem(`sensometrika_b2c_pase_${paseId}`, JSON.stringify({
+          paseId,
+          rut: cleanRut,
+          plan: planCorto,
+          emitidoTs,
+          expiraTs
+        }));
 
         const paramsB2C = new URLSearchParams({
-          rut: userB2C.rut || '',
-          nombre: userB2C.nombre || '',
+          rut: rutB2C,
+          nombre: nombreB2C,
           plan: planCorto,
+          pase: paseId,
+          ts: String(emitidoTs),
+          nuevo: '1',
           mode: 'b2c'
         });
 
-        btnContinuar.href = `b2c/menu_b2c.html?${paramsB2C.toString()}`;
+        const urlMenuRelativa = `b2c/menu_b2c.html?${paramsB2C.toString()}`;
+        const urlMenuOficial = `https://www.sensometrika.com/b2c/menu_b2c.html?${paramsB2C.toString()}`;
+
+        btnContinuar.href = urlMenuRelativa;
         btnContinuar.innerText = 'Ingresar a mis Simulaciones B2C →';
         txtNotaSii.innerText = tipoDoc === 'FACTURA'
           ? 'Tu Factura Electrónica Afecta (DTE 33) será enviada por Sensometrika SpA a tu correo.'
           : 'Comprobante de pago Mercado Pago válido como Boleta Electrónica (Res. Ex. N° 176 SII).';
+
+        // Despachar correo oficial con el enlace de acceso B2C (evitando duplicados por ordenId)
+        const boxAvisoCorreo = document.getElementById('box-aviso-correo');
+        if (correoB2C && boxAvisoCorreo) {
+          boxAvisoCorreo.style.display = 'block';
+          boxAvisoCorreo.innerHTML = `📧 Enlace de evaluación respaldado y enviado a <strong>${correoB2C}</strong> (Vigencia: ${textoVigencia}).`;
+
+          const flagCorreoEnviado = `sensometrika_mail_b2c_sent_${ordenId}`;
+          if (!localStorage.getItem(flagCorreoEnviado)) {
+            localStorage.setItem(flagCorreoEnviado, '1');
+            fetch('/api/enviar-correo', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                tipo: 'b2c_acceso',
+                emailDestino: correoB2C,
+                nombre: nombreB2C,
+                rut: rutB2C,
+                planNombre: sesionPendiente.nombrePlan || `Pase ${planCorto} Particular`,
+                vigencia: textoVigencia,
+                linkAcceso: urlMenuOficial
+              })
+            }).catch(() => {});
+          }
+        }
       }
 
       setTimeout(() => {
