@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Sensometrika • Resultado de Transacción</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    :root {
+      --bg-color: #060b13;
+      --card-bg: #0b1320;
+      --card-border: #1a2638;
+      --accent-green: #10b981;
+      --accent-cyan: #38bdf8;
+      --text-main: #f1f5f9;
+      --text-muted: #94a3b8;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      min-height: 100vh;
+      padding: 20px 16px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    .card {
+      width: 100%;
+      max-width: 440px;
+      background-color: var(--card-bg);
+      border: 1.5px solid var(--card-border);
+      border-radius: 16px;
+      padding: 24px;
+      text-align: center;
+      box-shadow: 0 15px 35px rgba(0,0,0,0.7);
+    }
+    .logo { width: 140px; height: auto; margin: 0 auto 16px; display: block; mix-blend-mode: lighten; }
+    .titulo { font-size: 1.1rem; font-weight: 800; color: var(--text-main); margin-bottom: 8px; }
+    .subtitulo { font-size: 0.8rem; color: var(--text-muted); margin-bottom: 20px; line-height: 1.4; }
+    .badge-estado {
+      display: inline-block;
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      margin-bottom: 20px;
+    }
+    .badge-approved { background: rgba(16, 185, 129, 0.15); color: var(--accent-green); border: 1px solid var(--accent-green); }
+    .badge-error { background: rgba(239, 68, 68, 0.15); color: #ef4444; border: 1px solid #ef4444; }
+    .btn-accion {
+      display: block;
+      width: 100%;
+      background: var(--accent-cyan);
+      color: #000;
+      padding: 14px;
+      border-radius: 10px;
+      font-weight: 800;
+      font-size: 0.88rem;
+      text-decoration: none;
+      text-transform: uppercase;
+      margin-top: 16px;
+      box-shadow: 0 4px 15px rgba(56, 189, 248, 0.3);
+      transition: opacity 0.2s;
+    }
+    .btn-accion:hover { opacity: 0.9; }
+  </style>
+</head>
+<body>
+
+  <div class="card">
+    <img src="sensometrica.jpg" alt="Sensometrika" class="logo" onerror="this.style.display='none'">
+    
+    <div id="contenedor-resultado">
+      <div class="titulo">Procesando Resultado...</div>
+      <div class="subtitulo">Verificando el estado de tu pago en Mercado Pago. Un momento por favor.</div>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const params = new URLSearchParams(window.location.search);
+      const status = params.get('status');
+      const orden = params.get('orden') || 'SMK-' + Date.now();
+      const seg = params.get('seg') || 'b2c';
+
+      const contenedor = document.getElementById('contenedor-resultado');
+      const sesionPendiente = JSON.parse(localStorage.getItem('sensometrika_sesion_pendiente') || '{}');
+
+      if (status === 'approved') {
+        // Guardar sesión activa definitiva según segmento
+        if (seg === 'b2b' || sesionPendiente.rol === 'empresa') {
+          localStorage.setItem('sensometrika_b2b_token', orden);
+          localStorage.setItem('sensometrika_sesion_activa', JSON.stringify(sesionPendiente));
+        } else {
+          localStorage.setItem('sensometrika_b2c_token', orden);
+          localStorage.setItem('sensometrika_sesion_activa', JSON.stringify(sesionPendiente));
+        }
+
+        contenedor.innerHTML = `
+          <div class="badge-estado badge-approved">¡Pago Aprobado con Éxito!</div>
+          <div class="titulo">Orden ${orden}</div>
+          <div class="subtitulo">Tu pago ha sido acreditado correctamente por Mercado Pago. Hemos habilitado tus accesos y enviado el comprobante a tu correo.</div>
+          <a href="${seg === 'b2b' ? 'dashboard_apr.html' : 'b2c/menu_b2c.html'}" class="btn-accion">
+            Ingresar a mis Simulaciones →
+          </a>
+        `;
+      } else {
+        contenedor.innerHTML = `
+          <div class="badge-estado badge-error">Pago No Aprobado / Cancelado</div>
+          <div class="titulo">Estado: ${status || 'Desconocido'}</div>
+          <div class="subtitulo">No se pudo completar la transacción en Mercado Pago o fue cancelada por el usuario.</div>
+          <a href="index.html" class="btn-accion" style="background: #475569; color: #fff;">
+            ← Volver al Inicio y Reintentar
+          </a>
+        `;
+      }
+    });
+  </script>
+</body>
+</html>
