@@ -496,7 +496,6 @@
                 <span>Supabase (DB Global)</span>
                 <span class="service-indicator"><span id="dotSupabase" class="dot dot-ok"></span> <strong id="lblSupabaseStatus" style="color:var(--success-color)">CONECTADO</strong></span>
             </div>
-            <!-- Tarjeta compacta de Telemetría de Red integrada entre los servicios -->
             <div class="service-badge service-badge-telemetry" title="Telemetría de Red & Latencia Cloud en Tiempo Real">
                 <div class="telemetry-meta">
                     <span class="telemetry-label">Red / Ping</span>
@@ -594,10 +593,9 @@
             </div>
         </div>
 
-        <!-- VISTA DE GESTIÓN DE EMPRESAS Y CAMPAÑAS B2B (EXCLUSIVAMENTE DEMO_EMPRESA) -->
+        <!-- VISTA DE GESTIÓN DE EMPRESAS Y CAMPAÑAS B2B -->
         <div id="contentEmpresas" class="tab-content active">
             <div class="grid-dashboard">
-                <!-- Formulario de Ingreso y Generación de Link conectado a demo_empresa.html -->
                 <div class="card" style="border-top: 4px solid var(--b2b-color); margin-bottom:0;">
                     <h2>🏢 Registro de Empresa & Generación de Link (demo_empresa.html)</h2>
                     <div class="form-group">
@@ -631,7 +629,6 @@
                     <button class="btn-b2b" onclick="registrarYGenerarEmpresa()">💾 Guardar y Generar Enlace demo_empresa.html</button>
                 </div>
 
-                <!-- Panel de Redacción de Correo Tipo & Envío Masivo -->
                 <div class="card" style="margin-bottom:0; display: flex; flex-direction: column; justify-content: space-between;">
                     <div>
                         <h2>✉️ Vista Previa Correo Tipo & Campañas</h2>
@@ -1158,6 +1155,7 @@ Centro de Mando Unificado - Sensometrika SpA</textarea>
             localStorage.removeItem('sensometrika_latencia_ms');
             localStorage.removeItem('sensometrika_b2b_empresa');
             localStorage.removeItem('sensometrika_b2b_codigo');
+            localStorage.removeItem('sensometrika_empresas_b2b');
 
             const keysToRemove = [];
             for (let i = 0; i < localStorage.length; i++) {
@@ -1172,13 +1170,14 @@ Centro de Mando Unificado - Sensometrika SpA</textarea>
             cerrarDetalleKPI();
             alert("✅ Almacenamiento local limpiado correctamente.");
             sincronizarTodoCloud();
+            renderizarTablaEmpresas();
         }
 
         function calcularEstadoEvaluado(rutRaw, planTrabajador, estadoCloud) {
             if (estadoCloud) {
                 if (estadoCloud === 'EMITIDO' || estadoCloud === 'APROBADO') return { texto: 'CERTIFICADO EMITIDO', clase: 'badge-ok' };
-                if (estadoCloud === 'BOLSA_ACTIVA') return { texto: 'BOLSA B2B ACTIVA', clase: 'badge-ok' };
-                if (estadoCloud === 'DEMO_ACTIVA') return { texto: 'PRUEBA DEMO ACTIVA', clase: 'badge-progress' };
+                if (estadoCloud === 'BOLSA_ACTIVA' || estadoCloud === 'EN_SERVICIO') return { texto: 'EN SERVICIO', clase: 'badge-ok' };
+                if (estadoCloud === 'DEMO_ACTIVA' || estadoCloud === 'LINK_ENVIADO') return { texto: 'LINK ENVIADO', clase: 'badge-progress' };
             }
             if (!rutRaw || rutRaw === 'B2B-RUT') return { texto: 'REGISTRO CORPORATIVO', clase: 'badge-progress' };
             if (rutRaw === 'DEMO-RUT') return { texto: 'PRUEBA DEMO ACTIVA', clase: 'badge-progress' };
@@ -1228,14 +1227,18 @@ Centro de Mando Unificado - Sensometrika SpA</textarea>
             const demoItems = combinados.filter(h => (h.segmento || '').toUpperCase() === 'DEMO');
             const certCount = combinados.filter(h => (h.segmento || '').toUpperCase() === 'CERTIFICADO').length;
 
-            document.getElementById('metricaEmpresas').textContent = empresasSet.size || b2bItems.length;
+            const totalBolsasActivas = Math.max(b2bItems.length, empresasB2BStorage.filter(e => e.estado === 'EN_SERVICIO').length, empresasSet.size);
+            const totalDemosEnviadas = Math.max(demoItems.length, empresasB2BStorage.length);
+
+            document.getElementById('metricaEmpresas').textContent = totalBolsasActivas;
             document.getElementById('metricaLinksB2B').textContent = Math.max(nominaAPR.length, b2bItems.length);
             document.getElementById('metricaAccesosB2C').textContent = b2cCount;
-            document.getElementById('contadorDemosEmitidas').textContent = demoItems.length;
+            document.getElementById('contadorDemosEmitidas').textContent = totalDemosEnviadas;
             document.getElementById('contadorDemosCompletadas').textContent = demoItems.filter(d => d.estado === 'COMPLETADO').length;
 
-            document.getElementById('kpiBolsasB2B').textContent = Math.max(b2bItems.length, empresasB2BStorage.length);
-            document.getElementById('kpiDemos').textContent = Math.max(demoItems.length, empresasB2BStorage.length);
+            // Sincronizar contadores superiores exactos
+            document.getElementById('kpiBolsasB2B').textContent = totalBolsasActivas;
+            document.getElementById('kpiDemos').textContent = totalDemosEnviadas;
             document.getElementById('kpiCertificados').textContent = certCount;
         }
 
@@ -1328,6 +1331,7 @@ Centro de Mando Unificado - Sensometrika SpA</textarea>
 
         function cargarHistorialGuardado() {
             const tbody = document.getElementById('tablaHistorialUnificado');
+            if (!tbody) return;
             tbody.innerHTML = '';
 
             const listaConsolidada = obtenerDatosConsolidados();
@@ -1393,26 +1397,7 @@ Centro de Mando Unificado - Sensometrika SpA</textarea>
         let filtroEmpresasActual = 'TODOS';
 
         function obtenerListaEmpresasB2B() {
-            return JSON.parse(localStorage.getItem('sensometrika_empresas_b2b')) || [
-                {
-                    id: 'EMP-001',
-                    nombre: 'Minera & Transportes del Norte SpA',
-                    contacto: 'Carlos Soto',
-                    correo: 'csoto@mineranorte.cl',
-                    plan: 'PLUS',
-                    estado: 'EN_SERVICIO',
-                    url: window.location.origin + '/demo_empresa.html'
-                },
-                {
-                    id: 'EMP-002',
-                    nombre: 'Sociedad Constructora Andina Ltda.',
-                    contacto: 'María Paz Valenzuela',
-                    correo: 'mvalenzuela@andinaltda.cl',
-                    plan: 'FULL',
-                    estado: 'LINK_ENVIADO',
-                    url: window.location.origin + '/demo_empresa.html'
-                }
-            ];
+            return JSON.parse(localStorage.getItem('sensometrika_empresas_b2b')) || [];
         }
 
         function registrarYGenerarEmpresa() {
@@ -1430,13 +1415,15 @@ Centro de Mando Unificado - Sensometrika SpA</textarea>
             const empresas = obtenerListaEmpresasB2B();
             const idUnico = 'EMP-' + Math.floor(100 + Math.random() * 900);
             
-            // Enlace directo a demo_empresa.html parametrizado con los datos de la empresa
             const originUrl = window.location.origin.includes('127.0.0.1') ? 'http://127.0.0.1:5500' : window.location.origin;
             const url = `${originUrl}/demo_empresa.html?empresa=${encodeURIComponent(nombre)}&plan=${plan}`;
 
             const nuevaEmpresa = { id: idUnico, nombre, contacto, correo, plan, estado, url };
             empresas.unshift(nuevaEmpresa);
             localStorage.setItem('sensometrika_empresas_b2b', JSON.stringify(empresas));
+
+            // Agregar también al historial unificado para que cuente en los KPIs y pestañas
+            agregarFilaHistorial('DEMO', nombre, `Contacto: ${contacto} | Plan ${plan}`, url, 'DEMO-RUT', plan);
 
             actualizarPreviewRedaccion(contacto, nombre, url);
 
@@ -1529,7 +1516,7 @@ Centro de Mando Unificado - Sensometrika SpA`;
             alert(`✅ Correo formal despachado con éxito a:\nDestinatario: ${emp.contacto} <${emp.correo}>\nAsunto: Invitación Oficial SENSOMETRIKA D.S. N° 170`);
             
             if (emp.estado === 'LINK_ENVIADO' || emp.estado === 'PENDIENTE') {
-                emp.estado = 'EN_SERVICIO'; // Pasa a activo al confirmar envío/servicio
+                emp.estado = 'EN_SERVICIO';
             }
             localStorage.setItem('sensometrika_empresas_b2b', JSON.stringify(empresas));
             renderizarTablaEmpresas();
@@ -1574,7 +1561,7 @@ Centro de Mando Unificado - Sensometrika SpA`;
             actualizarMetricasYRendimiento();
         }
 
-        // Gráfico Sparkline Latencia Cloud integrado en la barra superior
+        // Gráfico Sparkline Latencia Cloud
         const ctx = document.getElementById('networkChart').getContext('2d');
         const networkChart = new Chart(ctx, {
             type: 'line',
