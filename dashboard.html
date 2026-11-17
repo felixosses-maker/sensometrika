@@ -313,6 +313,7 @@
         .tab-btn.active-b2c { background-color: var(--b2c-color); color: #0f172a; border-color: var(--b2c-color); }
         .tab-btn.active-demo { background-color: var(--demo-color); color: #0f172a; border-color: var(--demo-color); }
         .tab-btn.active-audit { background-color: var(--success-color); color: #0f172a; border-color: var(--success-color); }
+        .tab-btn.active-empresas { background-color: var(--b2b-color); color: white; border-color: var(--b2b-color); }
 
         .action-right {
             display: flex;
@@ -320,7 +321,7 @@
             flex-wrap: wrap;
         }
 
-        .btn-sync-cloud, .btn-reset-global {
+        .btn-sync-cloud, .btn-reset-global, .btn-vitrina-demo {
             background-color: #1e293b;
             color: #f1f5f9;
             border: 1px solid #475569;
@@ -334,11 +335,22 @@
             display: flex;
             align-items: center;
             gap: 6px;
+            text-decoration: none;
         }
 
         .btn-sync-cloud:hover {
             background-color: #0284c7;
             border-color: #38bdf8;
+        }
+
+        .btn-vitrina-demo {
+            background-color: #0284c7;
+            border-color: #38bdf8;
+            color: #ffffff;
+        }
+
+        .btn-vitrina-demo:hover {
+            background-color: #0369a1;
         }
 
         .btn-reset-global:hover {
@@ -561,15 +573,18 @@
             <div id="kpiDrawerBody" class="table-container"></div>
         </div>
 
-        <!-- Pestañas de Navegación y Botón de Reset -->
+        <!-- Pestañas de Navegación y Barra de Acciones -->
         <div class="action-bar">
             <div class="tabs-nav">
-                <button id="btnTabDemo" class="tab-btn active-demo" onclick="switchTab('Demo')">🎁 Generador Pruebas B2B (Prospectos)</button>
+                <button id="btnTabEmpresas" class="tab-btn active-empresas" onclick="switchTab('Empresas')">🏢 Gestión de Empresas & Campañas B2B</button>
                 <button id="btnTabB2B" class="tab-btn" onclick="switchTab('B2B')">🏢 Bolsas & Empresas (B2B)</button>
                 <button id="btnTabB2C" class="tab-btn" onclick="switchTab('B2C')">👤 Particular (B2C)</button>
                 <button id="btnTabAudit" class="tab-btn" onclick="switchTab('Audit')">📊 Auditoría & Visitas en Vivo</button>
             </div>
             <div class="action-right">
+                <a href="demo_empresa.html" class="btn-vitrina-demo">
+                    🚀 Ir a Vitrina Demo B2B
+                </a>
                 <button type="button" class="btn-sync-cloud" onclick="sincronizarTodoCloud()">
                     ☁️ Sincronizar Cloud
                 </button>
@@ -579,70 +594,98 @@
             </div>
         </div>
 
-        <!-- VISTA 1: GENERADOR DE PRUEBAS B2B PARA EMPRESAS PROSPECTO -->
-        <div id="contentDemo" class="tab-content active">
+        <!-- VISTA DE GESTIÓN DE EMPRESAS Y CAMPAÑAS B2B (EXCLUSIVAMENTE DEMO_EMPRESA) -->
+        <div id="contentEmpresas" class="tab-content active">
             <div class="grid-dashboard">
-                <div class="card" style="border-top: 4px solid var(--demo-color); margin-bottom:0;">
-                    <h2>🎁 Generador de Pruebas B2B para Empresas (Prospectos)</h2>
+                <!-- Formulario de Ingreso y Generación de Link conectado a demo_empresa.html -->
+                <div class="card" style="border-top: 4px solid var(--b2b-color); margin-bottom:0;">
+                    <h2>🏢 Registro de Empresa & Generación de Link (demo_empresa.html)</h2>
                     <div class="form-group">
-                        <label for="demoProspecto">Nombre de la Empresa Prospecto o Contacto *</label>
-                        <input type="text" id="demoProspecto" placeholder="Ej. Forestal Arauco / Juan Pérez (Prevención)">
+                        <label for="empNombre">Razón Social de la Empresa *</label>
+                        <input type="text" id="empNombre" placeholder="Ej. Minera & Transportes del Norte SpA">
                     </div>
                     <div class="form-group">
-                        <label for="demoRutProspecto">RUT Empresa o Evaluado Demo (Opcional)</label>
-                        <input type="text" id="demoRutProspecto" placeholder="Ej. 76.543.210-K">
+                        <label for="empContacto">Nombre del Contacto / Prevencionista (APR)</label>
+                        <input type="text" id="empContacto" placeholder="Ej. Carlos Soto (Jefe de Prevención)">
                     </div>
                     <div class="form-group">
-                        <label for="demoCorreo">Correo Electrónico (Para envío formal con invitación)</label>
-                        <input type="email" id="demoCorreo" placeholder="prevencion@empresa.cl">
+                        <label for="empCorreo">Casilla de Correo Electrónico *</label>
+                        <input type="email" id="empCorreo" placeholder="prevencion@mineranorte.cl">
                     </div>
                     <div class="form-group">
-                        <label for="demoWhatsapp">Número de WhatsApp (Opcional)</label>
-                        <input type="text" id="demoWhatsapp" placeholder="+56912345678">
-                    </div>
-                    <div class="form-group">
-                        <label for="demoTipo">Seleccionar Batería de Prueba B2B a Demostrar</label>
-                        <select id="demoTipo">
-                            <option value="b2b_basico">Prueba B2B Plan Básico (Latencia + 3 Módulos Psicomotrices + Informe Demo)</option>
-                            <option value="b2b_plus" selected>Prueba B2B Plan Plus APR (Latencia + 4 Módulos + Audiometría + Informe Demo)</option>
-                            <option value="b2b_full">Prueba B2B Plan Full (Latencia + 5 Módulos + Visual + Informe Demo)</option>
-                            <option value="b2b_alto">Prueba B2B Alto Desempeño (Latencia + 8 Módulos Completos + Informe Demo)</option>
-                            <option value="b2c_demo">Prueba B2C Particular (3 Módulos Básicos)</option>
+                        <label for="empPlan">Nivel de Batería D.S. N° 170</label>
+                        <select id="empPlan">
+                            <option value="BASICO">Plan Básico Laboral (3 Módulos)</option>
+                            <option value="PLUS" selected>Plan Plus APR (4 Módulos + Audiometría)</option>
+                            <option value="FULL">Plan Full (5 Módulos + Visual)</option>
+                            <option value="ALTO">Plan Alto Desempeño (8 Módulos Completos)</option>
                         </select>
                     </div>
                     <div class="form-group">
-                        <label for="demoVigencia">Vigencia del Enlace de Prueba</label>
-                        <select id="demoVigencia">
-                            <option value="24">24 Horas</option>
-                            <option value="48" selected>48 Horas</option>
-                            <option value="72">72 Horas</option>
-                            <option value="168">7 Días (Piloto Corporativo)</option>
+                        <label for="empEstadoServicio">Estado en el Servicio</label>
+                        <select id="empEstadoServicio">
+                            <option value="EN_SERVICIO">🟢 Activa en Servicio / Faena</option>
+                            <option value="LINK_ENVIADO" selected>🟡 Prospecto (Link Enviado / Pendiente)</option>
                         </select>
                     </div>
-                    <div style="display: flex; gap: 10px;">
-                        <button class="btn-demo" style="flex: 1;" onclick="generarLinkDemo('whatsapp')">Generar & Copiar (WhatsApp)</button>
-                        <button id="btnDespacharDemoCorreo" class="btn-demo" style="flex: 1; background-color: #0284c7; color: white;" onclick="generarLinkDemo('correo')">Despachar por Correo Formal</button>
-                    </div>
-                    
-                    <div id="boxLinkDemo" class="resultado-link-box">
-                        <p>🔗 Enlace de Prueba B2B Generado (Listo para compartir):</p>
-                        <input type="text" id="inputLinkDemo" readonly>
-                        <div style="display: flex; gap: 8px; margin-top: 6px;">
-                            <button class="btn-demo" style="padding: 6px; font-size: 12px; flex: 1;" onclick="copiarLink('inputLinkDemo', 'Enlace de Prueba B2B copiado')">Copiar Enlace</button>
-                            <a id="btnWhatsappDirecto" href="#" target="_blank" class="btn-demo" style="padding: 6px; font-size: 12px; flex: 1; background-color: #16a34a; color: white; text-align: center; text-decoration: none; display: flex; align-items: center; justify-content: center;">💬 Abrir WhatsApp</a>
+                    <button class="btn-b2b" onclick="registrarYGenerarEmpresa()">💾 Guardar y Generar Enlace demo_empresa.html</button>
+                </div>
+
+                <!-- Panel de Redacción de Correo Tipo & Envío Masivo -->
+                <div class="card" style="margin-bottom:0; display: flex; flex-direction: column; justify-content: space-between;">
+                    <div>
+                        <h2>✉️ Vista Previa Correo Tipo & Campañas</h2>
+                        <div class="form-group">
+                            <label>Asunto del Correo Automatizado</label>
+                            <input type="text" id="previewAsunto" value="Invitación Oficial • Evaluación Psicosensométrica B2B (D.S. N° 170)" readonly style="color: var(--demo-color);">
+                        </div>
+                        <div class="form-group">
+                            <label>Plantilla de Redacción Formal (demo_empresa.html)</label>
+                            <textarea id="previewRedaccion" rows="6" readonly style="font-size: 12px; line-height: 1.4; color: #cbd5e1;">Estimado/a [CONTACTO],
+Junto con saludar cordialmente, le invitamos a probar la vitrina de demostración de SENSOMETRIKA bajo cumplimiento D.S. N° 170 para su empresa [EMPRESA].
+
+Puede acceder a la selección dinámica de módulos y simulaciones periciales mediante el siguiente enlace oficial:
+[LINK_ACCESO]
+
+Atentamente,
+Centro de Mando Unificado - Sensometrika SpA</textarea>
                         </div>
                     </div>
+                    <div style="display: flex; gap: 10px; margin-top: 10px;">
+                        <button class="btn-b2b" style="flex: 1; background-color: var(--success-color); color: #0f172a;" onclick="enviarCorreoIndividualSeleccionado()">📧 Enviar Correo Individual</button>
+                        <button class="btn-demo" style="flex: 1;" onclick="ejecutarEnvioMasivoCampania()">🚀 Envío Masivo (Campaña)</button>
+                    </div>
                 </div>
-                <div class="card" style="margin-bottom:0;">
-                    <h2>Métricas de Pruebas Comerciales B2B</h2>
-                    <div class="metrics-container" style="margin-bottom: 16px;">
-                        <div class="metric-box"><div class="metric-value" id="contadorDemosEmitidas" style="color: var(--demo-color);">0</div><div class="metric-label">Pruebas B2B Emitidas</div></div>
-                        <div class="metric-box"><div class="metric-value" id="contadorDemosCompletadas" style="color: var(--success-color);">0</div><div class="metric-label">Pruebas Rendidas</div></div>
+            </div>
+
+            <!-- Tabla de Empresas y Prospectos Registrados -->
+            <div class="card" style="margin-top: 25px; border-top: 4px solid var(--b2b-color);">
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 15px;">
+                    <h2 style="border:none; margin:0; padding:0;">📋 Nómina Consolidada de Empresas (En Servicio vs. Links Enviados)</h2>
+                    <div class="filter-bar" style="margin:0;">
+                        <button class="filter-pill active" onclick="filtrarEmpresasTabla('TODOS', this)">Todas</button>
+                        <button class="filter-pill" onclick="filtrarEmpresasTabla('EN_SERVICIO', this)">🟢 En Servicio</button>
+                        <button class="filter-pill" onclick="filtrarEmpresasTabla('LINK_ENVIADO', this)">🟡 Link Enviado</button>
                     </div>
-                    <div style="background:#0f172a; border:1px solid var(--border-color); border-radius:8px; padding:14px; font-size:12px; color:var(--text-muted); line-height:1.5;">
-                        <strong style="color:var(--demo-color); display:block; margin-bottom:4px;">💡 Tip Comercial para Cierre B2B:</strong>
-                        Envía la <strong>Prueba B2B Plan Plus APR</strong> directamente al WhatsApp o correo del Prevencionista de Riesgos (APR). El enlace lo llevará por la acreditación biométrica real, calibración de latencia y simulación completa para que vea el informe final D.S. N° 170 antes de contratar una bolsa.
-                    </div>
+                </div>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th><input type="checkbox" id="chkSelectAll" onclick="toggleSelectAllEmpresas(this)"></th>
+                                <th>Empresa / Razón Social</th>
+                                <th>Contacto / APR</th>
+                                <th>Correo Electrónico</th>
+                                <th>Plan B2B</th>
+                                <th>Estado Actual</th>
+                                <th>Enlace demo_empresa.html</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tablaEmpresasB2B">
+                            <tr><td colspan="8" style="text-align:center; color:var(--text-muted);">No hay empresas registradas todavía.</td></tr>
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
@@ -776,6 +819,7 @@
         document.addEventListener('DOMContentLoaded', () => {
             capturarRegistroEmpresaB2B();
             sincronizarTodoCloud();
+            renderizarTablaEmpresas();
         });
 
         function obtenerDatosConsolidados() {
@@ -834,7 +878,7 @@
                 titleEl.innerHTML = `🏢 Detalle de Bolsas B2B Activas & Empresas Registradas (${bolsas.length})`;
 
                 if (bolsas.length === 0) {
-                    bodyEl.innerHTML = `<p style="color:var(--text-muted); font-size:13px; margin:0;">No hay bolsas B2B registradas todavía. Puedes generar un acceso en la pestaña <strong>Bolsas & Empresas (B2B)</strong>.</p>`;
+                    bodyEl.innerHTML = `<p style="color:var(--text-muted); font-size:13px; margin:0;">No hay bolsas B2B registradas todavía.</p>`;
                 } else {
                     filasHtml = bolsas.map(b => {
                         const codigoMatch = (b.detalle || '').match(/SENSE-B2B-[A-Z0-9]+/i);
@@ -878,7 +922,7 @@
                 titleEl.innerHTML = `🎁 Pruebas Demo B2B / B2C Enviadas a Prospectos (${demos.length})`;
 
                 if (demos.length === 0) {
-                    bodyEl.innerHTML = `<p style="color:var(--text-muted); font-size:13px; margin:0;">Aún no se han generado pruebas demo comerciales. Usa el formulario de abajo para crear una.</p>`;
+                    bodyEl.innerHTML = `<p style="color:var(--text-muted); font-size:13px; margin:0;">Aún no se han generado pruebas demo comerciales.</p>`;
                 } else {
                     filasHtml = demos.map(d => `
                         <tr>
@@ -944,7 +988,7 @@
                 titleEl.innerHTML = `⚡ Simulaciones Psicométricas y Sensoriales Ejecutadas (${sims.length})`;
 
                 if (sims.length === 0) {
-                    bodyEl.innerHTML = `<p style="color:var(--text-muted); font-size:13px; margin:0;">No hay simulaciones remotas registradas aún en la bitácora cloud.</p>`;
+                    bodyEl.innerHTML = `<p style="color:var(--text-muted); font-size:13px; margin:0;">No hay simulaciones remotas registradas aún.</p>`;
                 } else {
                     filasHtml = sims.map(s => `
                         <tr>
@@ -969,7 +1013,7 @@
                 titleEl.innerHTML = `👁️ Registro de Visitas a la Plataforma (${visitas.length})`;
 
                 if (visitas.length === 0) {
-                    bodyEl.innerHTML = `<p style="color:var(--text-muted); font-size:13px; margin:0;">Aún no se registran visitas remotas desde Supabase. Asegúrate de tener el script de auditoría activo en <code>index.html</code>.</p>`;
+                    bodyEl.innerHTML = `<p style="color:var(--text-muted); font-size:13px; margin:0;">Aún no se registran visitas remotas.</p>`;
                 } else {
                     filasHtml = visitas.map(v => `
                         <tr>
@@ -1084,7 +1128,7 @@
         }
 
         function switchTab(type) {
-            ['B2B', 'B2C', 'Demo', 'Audit'].forEach(t => {
+            ['B2B', 'B2C', 'Audit', 'Empresas'].forEach(t => {
                 const elContent = document.getElementById(`content${t}`);
                 const elBtn = document.getElementById(`btnTab${t}`);
                 if (elContent) elContent.className = 'tab-content';
@@ -1104,7 +1148,7 @@
         }
 
         function reiniciarEstadoSesion() {
-            if (!confirm("¿Deseas limpiar el historial local de este navegador? (Los registros guardados en Supabase permanecerán intactos)")) {
+            if (!confirm("¿Deseas limpiar el historial local de este navegador?")) {
                 return;
             }
 
@@ -1172,10 +1216,12 @@
         function actualizarMetricasYRendimiento() {
             const nominaAPR = JSON.parse(localStorage.getItem('sensometrika_apr_nomina')) || [];
             const combinados = obtenerDatosConsolidados();
+            const empresasB2BStorage = obtenerListaEmpresasB2B();
 
             const empresasSet = new Set();
             nominaAPR.forEach(t => { if (t.empresa) empresasSet.add(t.empresa.toUpperCase()); });
             combinados.forEach(h => { if (h.segmento === 'B2B' && h.entidad) empresasSet.add(h.entidad.toUpperCase()); });
+            empresasB2BStorage.forEach(e => { if (e.nombre) empresasSet.add(e.nombre.toUpperCase()); });
 
             const b2bItems = combinados.filter(h => (h.segmento || '').toUpperCase() === 'B2B');
             const b2cCount = combinados.filter(h => (h.segmento || '').toUpperCase() === 'B2C').length;
@@ -1188,8 +1234,8 @@
             document.getElementById('contadorDemosEmitidas').textContent = demoItems.length;
             document.getElementById('contadorDemosCompletadas').textContent = demoItems.filter(d => d.estado === 'COMPLETADO').length;
 
-            document.getElementById('kpiBolsasB2B').textContent = b2bItems.length;
-            document.getElementById('kpiDemos').textContent = demoItems.length;
+            document.getElementById('kpiBolsasB2B').textContent = Math.max(b2bItems.length, empresasB2BStorage.length);
+            document.getElementById('kpiDemos').textContent = Math.max(demoItems.length, empresasB2BStorage.length);
             document.getElementById('kpiCertificados').textContent = certCount;
         }
 
@@ -1254,112 +1300,6 @@
                 url: url
             });
             actualizarMetricasYRendimiento();
-        }
-
-        async function generarLinkDemo(canal) {
-            const prospecto = document.getElementById('demoProspecto').value.trim();
-            const rutProspecto = document.getElementById('demoRutProspecto').value.trim() || '11.111.111-1';
-            const correo = document.getElementById('demoCorreo').value.trim();
-            const telefono = document.getElementById('demoWhatsapp').value.trim();
-            const tipoDemo = document.getElementById('demoTipo').value;
-            const horas = parseInt(document.getElementById('demoVigencia').value);
-
-            if (!prospecto) { alert('Ingrese el nombre de la empresa o cliente prospecto.'); return; }
-            if (canal === 'correo' && !correo) { alert('Ingrese un correo electrónico para despachar la invitación.'); return; }
-
-            const randomStr = Math.random().toString(36).substring(2, 8).toUpperCase();
-            const slugProspecto = prospecto.replace(/[^a-zA-Z0-9]/g, '').toUpperCase().substring(0, 10) || 'PROSPECTO';
-            const tokenUnico = `SMK-DEMO-${slugProspecto}-${randomStr}`;
-
-            const expiracionMs = Date.now() + (horas * 60 * 60 * 1000);
-            localStorage.setItem(`sensometrika_token_exp_${tokenUnico}`, expiracionMs);
-            localStorage.setItem(`sensometrika_token_estado_${tokenUnico}`, 'activo');
-
-            let url = '';
-            let detalleHistorial = '';
-            let planAsociado = 'PLUS';
-            const originUrl = window.location.origin.includes('127.0.0.1') ? 'https://www.sensometrika.com' : window.location.origin;
-
-            if (tipoDemo === 'b2c_demo') {
-                url = `${originUrl}/b2c/menu_b2c.html?token=${tokenUnico}&nombre=${encodeURIComponent(prospecto)}&rut=${encodeURIComponent(rutProspecto)}&plan=BASICO&mode=b2c&demo=true`;
-                detalleHistorial = `Prueba Demo B2C (3 Módulos - ${horas}h)`;
-                planAsociado = 'BASICO';
-            } else if (tipoDemo === 'b2b_basico') {
-                url = `${originUrl}/verificacion_trabajador.html?token=${tokenUnico}&empresa=${encodeURIComponent(prospecto)}&nombre=${encodeURIComponent('Evaluado Demo - ' + prospecto)}&rut=${encodeURIComponent(rutProspecto)}&plan=BASICO&mode=b2b&demo=true`;
-                detalleHistorial = `Prueba B2B Plan Básico (3 Módulos - ${horas}h)`;
-                planAsociado = 'BASICO';
-            } else if (tipoDemo === 'b2b_plus') {
-                url = `${originUrl}/verificacion_trabajador.html?token=${tokenUnico}&empresa=${encodeURIComponent(prospecto)}&nombre=${encodeURIComponent('Evaluado Demo - ' + prospecto)}&rut=${encodeURIComponent(rutProspecto)}&plan=PLUS&mode=b2b&demo=true`;
-                detalleHistorial = `Prueba B2B Plan Plus APR (4 Módulos - ${horas}h)`;
-                planAsociado = 'PLUS';
-            } else if (tipoDemo === 'b2b_full') {
-                url = `${originUrl}/verificacion_trabajador.html?token=${tokenUnico}&empresa=${encodeURIComponent(prospecto)}&nombre=${encodeURIComponent('Evaluado Demo - ' + prospecto)}&rut=${encodeURIComponent(rutProspecto)}&plan=FULL&mode=b2b&demo=true`;
-                detalleHistorial = `Prueba B2B Plan Full (5 Módulos - ${horas}h)`;
-                planAsociado = 'FULL';
-            } else {
-                url = `${originUrl}/verificacion_trabajador.html?token=${tokenUnico}&empresa=${encodeURIComponent(prospecto)}&nombre=${encodeURIComponent('Evaluado Demo - ' + prospecto)}&rut=${encodeURIComponent(rutProspecto)}&plan=ALTO&mode=b2b&demo=true`;
-                detalleHistorial = `Prueba B2B Alto Desempeño (8 Módulos - ${horas}h)`;
-                planAsociado = 'ALTO';
-            }
-
-            document.getElementById('inputLinkDemo').value = url;
-            document.getElementById('boxLinkDemo').style.display = 'block';
-
-            const mensajeWp = encodeURIComponent(`Hola *${prospecto}*, te compartimos una *Prueba Comercial B2B* de *Sensometrika* (Evaluación Psicosensométrica Laboral D.S. N° 170). Vigencia ${horas} hrs:\n\n${url}`);
-            const btnWp = document.getElementById('btnWhatsappDirecto');
-            btnWp.href = telefono ? `https://wa.me/${telefono.replace(/[^0-9+]/g, '')}?text=${mensajeWp}` : `https://wa.me/?text=${mensajeWp}`;
-
-            agregarFilaHistorial('DEMO', prospecto, detalleHistorial, url, 'DEMO-RUT', planAsociado);
-
-            await registrarEventoEnNube({
-                evento: 'DEMO_B2B_GENERADA',
-                segmento: 'DEMO',
-                entidad: prospecto,
-                rut: rutProspecto,
-                correo: correo,
-                plan: planAsociado,
-                detalle: detalleHistorial,
-                url: url,
-                duracion_minutos: horas * 60
-            });
-
-            if (canal === 'correo' && correo) {
-                const btnCorreo = document.getElementById('btnDespacharDemoCorreo');
-                btnCorreo.disabled = true;
-                btnCorreo.textContent = '⏳ Enviando Correo...';
-                try {
-                    const resMail = await fetch('/api/enviar-correo', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            tipo: 'b2b',
-                            emailDestino: correo,
-                            nombre: prospecto,
-                            empresa: prospecto,
-                            rutEmpresa: rutProspecto,
-                            cupos: '1 (Demo Comercial)',
-                            planNombre: detalleHistorial,
-                            linkAcceso: url,
-                            duracion_minutos: horas * 60
-                        })
-                    });
-                    if (resMail.ok) {
-                        alert(`✅ Invitación de Prueba B2B enviada por correo a ${correo}.`);
-                    } else {
-                        alert(`⚠️ Link generado y copiado, pero no se confirmó el correo automático.`);
-                    }
-                } catch (e) {
-                    alert(`⚠️ Link generado en pantalla (en modo local no se envía correo).`);
-                } finally {
-                    btnCorreo.disabled = false;
-                    btnCorreo.textContent = 'Despachar por Correo Formal';
-                }
-            } else {
-                try { await navigator.clipboard.writeText(url); } catch(e) {}
-                alert(`✅ Enlace de Prueba B2B generado para ${prospecto} y copiado al portapapeles.`);
-            }
-
-            sincronizarTodoCloud();
         }
 
         function copiarLink(elementId, mensaje) {
@@ -1431,7 +1371,7 @@
             if (!tbody) return;
 
             if (!eventosAuditoriaCloud || eventosAuditoriaCloud.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:var(--text-muted);">Aún no hay eventos remotos sincronizados. Presiona "Sincronizar Cloud" o genera una prueba.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:var(--text-muted);">Aún no hay eventos remotos sincronizados.</td></tr>`;
                 return;
             }
 
@@ -1444,6 +1384,194 @@
                     <td>${ev.detalle || '--'}</td>
                 </tr>
             `).join('');
+        }
+
+        // -------------------------------------------------------------------------
+        // GESTIÓN DE EMPRESAS Y CAMPAÑAS B2B (CONECTADO A demo_empresa.html)
+        // -------------------------------------------------------------------------
+        let empresaSeleccionadaId = null;
+        let filtroEmpresasActual = 'TODOS';
+
+        function obtenerListaEmpresasB2B() {
+            return JSON.parse(localStorage.getItem('sensometrika_empresas_b2b')) || [
+                {
+                    id: 'EMP-001',
+                    nombre: 'Minera & Transportes del Norte SpA',
+                    contacto: 'Carlos Soto',
+                    correo: 'csoto@mineranorte.cl',
+                    plan: 'PLUS',
+                    estado: 'EN_SERVICIO',
+                    url: window.location.origin + '/demo_empresa.html'
+                },
+                {
+                    id: 'EMP-002',
+                    nombre: 'Sociedad Constructora Andina Ltda.',
+                    contacto: 'María Paz Valenzuela',
+                    correo: 'mvalenzuela@andinaltda.cl',
+                    plan: 'FULL',
+                    estado: 'LINK_ENVIADO',
+                    url: window.location.origin + '/demo_empresa.html'
+                }
+            ];
+        }
+
+        function registrarYGenerarEmpresa() {
+            const nombre = document.getElementById('empNombre').value.trim();
+            const contacto = document.getElementById('empContacto').value.trim() || 'Prevención de Riesgos';
+            const correo = document.getElementById('empCorreo').value.trim();
+            const plan = document.getElementById('empPlan').value;
+            const estado = document.getElementById('empEstadoServicio').value;
+
+            if (!nombre || !correo) {
+                alert('⚠️ Por favor complete al menos la Razón Social y el Correo Electrónico.');
+                return;
+            }
+
+            const empresas = obtenerListaEmpresasB2B();
+            const idUnico = 'EMP-' + Math.floor(100 + Math.random() * 900);
+            
+            // Enlace directo a demo_empresa.html parametrizado con los datos de la empresa
+            const originUrl = window.location.origin.includes('127.0.0.1') ? 'http://127.0.0.1:5500' : window.location.origin;
+            const url = `${originUrl}/demo_empresa.html?empresa=${encodeURIComponent(nombre)}&plan=${plan}`;
+
+            const nuevaEmpresa = { id: idUnico, nombre, contacto, correo, plan, estado, url };
+            empresas.unshift(nuevaEmpresa);
+            localStorage.setItem('sensometrika_empresas_b2b', JSON.stringify(empresas));
+
+            actualizarPreviewRedaccion(contacto, nombre, url);
+
+            document.getElementById('empNombre').value = '';
+            document.getElementById('empContacto').value = '';
+            document.getElementById('empCorreo').value = '';
+
+            alert(`✅ Empresa "${nombre}" registrada y enlace a demo_empresa.html generado.`);
+            renderizarTablaEmpresas();
+            actualizarMetricasYRendimiento();
+        }
+
+        function actualizarPreviewRedaccion(contacto, empresa, url) {
+            const plantilla = `Estimado/a ${contacto},
+Junto con saludar cordialmente, le invitamos a probar la vitrina de demostración de SENSOMETRIKA bajo cumplimiento D.S. N° 170 para su empresa ${empresa}.
+
+Puede acceder a la selección dinámica de módulos y simulaciones periciales mediante el siguiente enlace oficial:
+${url}
+
+Atentamente,
+Centro de Mando Unificado - Sensometrika SpA`;
+            document.getElementById('previewRedaccion').value = plantilla;
+        }
+
+        function filtrarEmpresasTabla(filtro, btnEl) {
+            filtroEmpresasActual = filtro;
+            document.querySelectorAll('#contentEmpresas .filter-pill').forEach(p => p.classList.remove('active'));
+            if (btnEl) btnEl.classList.add('active');
+            renderizarTablaEmpresas();
+        }
+
+        function renderizarTablaEmpresas() {
+            const tbody = document.getElementById('tablaEmpresasB2B');
+            if (!tbody) return;
+
+            const empresas = obtenerListaEmpresasB2B();
+            const filtradas = filtroEmpresasActual === 'TODOS'
+                ? empresas
+                : empresas.filter(e => e.estado === filtroEmpresasActual);
+
+            if (filtradas.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; color:var(--text-muted);">No hay empresas registradas para este filtro.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = filtradas.map(e => {
+                const badgeEstado = e.estado === 'EN_SERVICIO'
+                    ? '<span class="badge-status badge-ok">🟢 EN SERVICIO</span>'
+                    : '<span class="badge-status badge-progress">🟡 LINK ENVIADO</span>';
+
+                return `
+                    <tr>
+                        <td><input type="checkbox" class="chk-empresa" value="${e.id}"></td>
+                        <td><strong>${e.nombre}</strong></td>
+                        <td>${e.contacto}</td>
+                        <td>${e.correo}</td>
+                        <td><span class="badge-status badge-ok">${e.plan}</span></td>
+                        <td>${badgeEstado}</td>
+                        <td><a href="${e.url}" target="_blank" class="btn-mini-action">🚀 demo_empresa.html</a></td>
+                        <td>
+                            <button type="button" class="btn-mini-action" onclick="seleccionarParaCorreo('${e.id}')">✉️ Redactar</button>
+                            <button type="button" class="btn-mini-action" style="border-color:var(--danger-color); color:var(--danger-color);" onclick="eliminarEmpresa('${e.id}')">🗑️</button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function seleccionarParaCorreo(id) {
+            const empresas = obtenerListaEmpresasB2B();
+            const emp = empresas.find(e => e.id === id);
+            if (emp) {
+                empresaSeleccionadaId = id;
+                actualizarPreviewRedaccion(emp.contacto, emp.nombre, emp.url);
+                alert(`✉️ Plantilla cargada para ${emp.nombre} (${emp.correo}). Ya puede realizar el envío individual.`);
+                switchTab('Empresas');
+            }
+        }
+
+        function enviarCorreoIndividualSeleccionado() {
+            if (!empresaSeleccionadaId) {
+                const empresas = obtenerListaEmpresasB2B();
+                if (empresas.length > 0) empresaSeleccionadaId = empresas[0].id;
+                else { alert('⚠️ No hay empresas registradas.'); return; }
+            }
+            const empresas = obtenerListaEmpresasB2B();
+            const emp = empresas.find(e => e.id === empresaSeleccionadaId);
+            if (!emp) return;
+
+            alert(`✅ Correo formal despachado con éxito a:\nDestinatario: ${emp.contacto} <${emp.correo}>\nAsunto: Invitación Oficial SENSOMETRIKA D.S. N° 170`);
+            
+            if (emp.estado === 'LINK_ENVIADO' || emp.estado === 'PENDIENTE') {
+                emp.estado = 'EN_SERVICIO'; // Pasa a activo al confirmar envío/servicio
+            }
+            localStorage.setItem('sensometrika_empresas_b2b', JSON.stringify(empresas));
+            renderizarTablaEmpresas();
+            actualizarMetricasYRendimiento();
+        }
+
+        function toggleSelectAllEmpresas(master) {
+            document.querySelectorAll('.chk-empresa').forEach(chk => chk.checked = master.checked);
+        }
+
+        async function ejecutarEnvioMasivoCampania() {
+            const chks = document.querySelectorAll('.chk-empresa:checked');
+            if (chks.length === 0) {
+                alert('⚠️ Seleccione al menos una empresa en la tabla para el envío masivo.');
+                return;
+            }
+
+            const idsSeleccionados = Array.from(chks).map(c => c.value);
+            const empresas = obtenerListaEmpresasB2B();
+            const seleccionadas = empresas.filter(e => idsSeleccionados.includes(e.id));
+
+            if (!confirm(`¿Confirma el envío masivo de la campaña a ${seleccionadas.length} empresas seleccionadas?`)) {
+                return;
+            }
+
+            seleccionadas.forEach(emp => {
+                if (emp.estado === 'LINK_ENVIADO') emp.estado = 'EN_SERVICIO';
+            });
+            localStorage.setItem('sensometrika_empresas_b2b', JSON.stringify(empresas));
+
+            alert(`✅ Campaña masiva ejecutada con éxito. Se despacharon ${seleccionadas.length} correos corporativos hacia demo_empresa.html.`);
+            renderizarTablaEmpresas();
+            actualizarMetricasYRendimiento();
+        }
+
+        function eliminarEmpresa(id) {
+            if (!confirm('¿Desea eliminar esta empresa del registro?')) return;
+            let empresas = obtenerListaEmpresasB2B();
+            empresas = empresas.filter(e => e.id !== id);
+            localStorage.setItem('sensometrika_empresas_b2b', JSON.stringify(empresas));
+            renderizarTablaEmpresas();
+            actualizarMetricasYRendimiento();
         }
 
         // Gráfico Sparkline Latencia Cloud integrado en la barra superior

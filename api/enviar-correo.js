@@ -70,7 +70,7 @@ module.exports = async (req, res) => {
       nombreApr ||
       nombreTrabajador ||
       nombre ||
-      (tipo === 'b2b' ? 'Supervisión Técnica' : 'Postulante');
+      (tipo === 'b2b' || tipo === 'b2b_apr_acceso' ? 'Supervisión Técnica' : 'Postulante');
     const rutFinal = rutTrabajador || rut || (detalles && detalles.rutTrabajador) || 'N/A';
 
     const tipoToken = (tipo === 'demo' || tipo === 'b2b' || tipo === 'b2b_apr_acceso') ? tipo : 'b2c';
@@ -120,7 +120,14 @@ module.exports = async (req, res) => {
         }
       }
 
-      enlaceFinal = `${cleanDomain}/demo_b2b_full.html?token=${generatedToken}`;
+      // Enrutamiento dinámico según el tipo de token/segmento
+      if (tipoToken === 'b2b_apr_acceso') {
+        enlaceFinal = `${cleanDomain}/dashboard_apr.html?token=${generatedToken}`;
+      } else if (tipoToken === 'b2b') {
+        enlaceFinal = `${cleanDomain}/demo_b2b_full.html?token=${generatedToken}`;
+      } else {
+        enlaceFinal = `${cleanDomain}/b2c/menu_b2c.html?token=${generatedToken}&rut=${rutFinal}`;
+      }
     }
 
     let asunto = '';
@@ -162,13 +169,13 @@ module.exports = async (req, res) => {
                 <div style="font-size: 16px; font-weight: 900; color: #34d399; letter-spacing: 1px; margin: 2px 0 10px 0;">${codigoFinal}</div>
 
                 <div style="font-size: 11px; color: #94a3b8; text-transform: uppercase; font-weight: 700;">Empresa / RUT:</div>
-                <div style="font-size: 13px; font-weight: 700; color: #ffffff; margin: 2px 0 10px 0;">${razonSocial} • ${rutEmpFinal}</div>
+                <div style="font-size: 13px; font-weight: 700; color: #ffffff; margin: 2px 0 10px 0;">${razonSocial} (${rutEmpFinal})</div>
 
                 <div style="font-size: 11px; color: #94a3b8; text-transform: uppercase; font-weight: 700;">Plan Contratado:</div>
                 <div style="font-size: 13px; font-weight: 700; color: #ffffff; margin: 2px 0 10px 0;">${planTexto}</div>
 
                 <div style="font-size: 11px; color: #94a3b8; text-transform: uppercase; font-weight: 700;">Respaldo Tributario SII & Total:</div>
-                <div style="font-size: 13px; font-weight: 700; color: #38bdf8; margin-top: 2px;">${docSiiTexto} • ${totalTexto} (IVA Inc.)</div>
+                <div style="font-size: 13px; font-weight: 700; color: #38bdf8; margin-top: 2px;">${docSiiTexto} — ${totalTexto} (IVA Inc.)</div>
               </div>
 
               <div style="background: #131b2e; border: 1px solid #1e293b; border-radius: 12px; padding: 22px; text-align: center; margin-bottom: 18px;">
@@ -191,69 +198,12 @@ module.exports = async (req, res) => {
         </body>
         </html>
       `;
-    } else if (tipo === 'b2b') {
-      const razonSocial = empresa || (detalles && detalles.razonSocial) || 'Empresa Cliente';
-      const rutEmpFinal = rutEmpresa || (detalles && detalles.rutEmpresa) || '--';
-      const cuposFinal = cupos || (detalles && detalles.cupos) || '1';
-
-      asunto = `Acceso Corporativo Activo: Evaluaciones Sensométricas — ${razonSocial}`;
-      htmlContent = `
-        <!DOCTYPE html>
-        <html>
-        <head><meta charset="utf-8"></head>
-        <body style="background-color: #0b0f19; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #ffffff; padding: 30px 15px; margin:0;">
-          <div style="max-width: 580px; margin: 0 auto; background: #0f172a; border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 16px; overflow: hidden; box-shadow: 0 15px 35px rgba(0,0,0,0.6);">
-            <div style="padding: 24px; text-align: center; border-bottom: 1px solid #1e293b; background: #070d18;">
-              <h1 style="margin: 0; font-size: 20px; font-weight: 900; letter-spacing: 2px; color: #ffffff;">SENSOMETRIKA <span style="color: #38bdf8; font-size: 14px;">SpA</span></h1>
-              <p style="margin: 4px 0 0 0; font-size: 10px; color: #94a3b8; letter-spacing: 1.5px; text-transform: uppercase;">Gabinete Sensotécnico Laboral • D.S. Nº 170 MTT</p>
-            </div>
-            <div style="padding: 28px 24px;">
-              <span style="display: inline-block; padding: 4px 12px; background: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.4); border-radius: 20px; color: #38bdf8; font-size: 11px; font-weight: 700; text-transform: uppercase; margin-bottom: 14px;">
-                Evaluación Laboral Habilitada
-              </span>
-              <h2 style="font-size: 18px; margin: 0 0 12px 0; color: #ffffff;">Estimado(a) ${destinatarioNombre}:</h2>
-              <p style="font-size: 13px; line-height: 1.6; color: #94a3b8; margin: 0 0 20px 0;">
-                Confirmamos la habilitación de evaluación psicosensométrica solicitada por <strong style="color: #ffffff;">${razonSocial}</strong> (RUT: ${rutEmpFinal}) con un total de <strong>${cuposFinal} evaluación(es)</strong> asignada(s).
-              </p>
-              <div style="background: #131b2e; border: 1px solid #1e293b; border-radius: 12px; padding: 20px; text-align: center; margin-bottom: 24px;">
-                <p style="font-size: 12px; color: #cbd5e1; margin: 0 0 14px 0; font-weight: 600;">
-                  Enlace directo para rendir la evaluación en línea:
-                </p>
-                <a href="${enlaceFinal}" target="_blank" style="display: inline-block; background: #0284c7; color: #ffffff; text-decoration: none; font-weight: 800; font-size: 14px; padding: 13px 26px; border-radius: 10px; box-shadow: 0 4px 15px rgba(2, 132, 199, 0.4);">
-                  Acceder a la Evaluación Faena →
-                </a>
-                <p style="font-size: 11px; color: #64748b; margin: 14px 0 0 0; word-break: break-all;">
-                  Si el botón no abre, copia y pega este enlace directo:<br>
-                  <a href="${enlaceFinal}" target="_blank" style="color: #38bdf8; text-decoration: underline;">${enlaceFinal}</a>
-                </p>
-              </div>
-            </div>
-            <div style="padding: 16px; text-align: center; border-top: 1px solid #1e293b; background: #070d18; font-size: 10px; color: #64748b;">
-              Sensometrika SpA • Plataforma de Calibración & Gestión Psicosensométrica • Chile • contacto@sensometrika.com
-            </div>
-          </div>
-        </body>
-        </html>
-      `;
     } else {
-      const nombrePlan = planNombre || (detalles && detalles.nombrePlan) || (tipoToken === 'demo' ? 'Pase de Demostración' : 'Pase Psicomotriz (3 Sim)');
-      const vigenciaTexto = vigencia || (detalles && detalles.vigencia) || (tipoToken === 'demo' ? '6 minutos' : '48 horas');
+      // B2C / PAGO PARTICULAR O ACCESO GENERAL
+      const nombrePlan = planNombre || (detalles && detalles.nombrePlan) || 'Pase Psicomotriz B2C';
+      const vigenciaTexto = vigencia || (detalles && detalles.vigencia) || '48 horas';
 
-      asunto = esInforme
-        ? `Informe Pericial Disponible: ${nombrePlan} — Sensometrika`
-        : (tipo === 'b2c_pago' || tipo === 'b2c_acceso' ? `Acceso Habilitado: ${nombrePlan} — Sensometrika` : `Tu Enlace de Acceso: Evaluación Psicotécnica — Sensometrika`);
-
-      const textoInsignia = esInforme ? 'Informe Pericial Emitido' : 'Acceso Habilitado';
-      const colorInsignia = esInforme ? '#38bdf8' : '#34d399';
-      const bgInsignia = esInforme ? 'rgba(56, 189, 248, 0.15)' : 'rgba(16, 185, 129, 0.15)';
-      const borderInsignia = esInforme ? 'rgba(56, 189, 248, 0.4)' : 'rgba(16, 185, 129, 0.4)';
-
-      const textoMensaje = esInforme
-        ? `Tu informe pericial psicosensométrico oficial para <strong style="color: #ffffff;">${nombrePlan}</strong> ha sido generado y certificado exitosamente. Puedes revisar el detalle de tus resultados telemétricos y el dictamen oficial en el siguiente enlace:`
-        : `Tu acceso para <strong style="color: #ffffff;">${nombrePlan}</strong> ha sido activado exitosamente (vigencia: ${vigenciaTexto}). Ya puedes ingresar al simulador para preparar tu examen psicotécnico de licencia de conducir o faena laboral.`;
-
-      const textoBoton = esInforme ? 'Revisar Informe Pericial →' : 'Comenzar Evaluación Ahora →';
-
+      asunto = `Acceso Habilitado: ${nombrePlan} — Sensometrika`;
       htmlContent = `
         <!DOCTYPE html>
         <html>
@@ -265,26 +215,22 @@ module.exports = async (req, res) => {
               <p style="margin: 4px 0 0 0; font-size: 10px; color: #94a3b8; letter-spacing: 1.5px; text-transform: uppercase;">Gabinete Sensotécnico Laboral • D.S. Nº 170 MTT</p>
             </div>
             <div style="padding: 28px 24px;">
-              <span style="display: inline-block; padding: 4px 12px; background: ${bgInsignia}; border: 1px solid ${borderInsignia}; border-radius: 20px; color: ${colorInsignia}; font-size: 11px; font-weight: 700; text-transform: uppercase; margin-bottom: 14px;">
-                ${textoInsignia}
+              <span style="display: inline-block; padding: 4px 12px; background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.4); border-radius: 20px; color: #34d399; font-size: 11px; font-weight: 700; text-transform: uppercase; margin-bottom: 14px;">
+                Acceso Habilitado
               </span>
               <h2 style="font-size: 18px; margin: 0 0 12px 0; color: #ffffff;">¡Hola, ${destinatarioNombre}!</h2>
               <p style="font-size: 13px; line-height: 1.6; color: #94a3b8; margin: 0 0 16px 0;">
-                ${textoMensaje}
+                Tu acceso para <strong style="color: #ffffff;">${nombrePlan}</strong> ha sido activado exitosamente (vigencia: ${vigenciaTexto}). Ya puedes ingresar al simulador para realizar tus evaluaciones o retomar tu sesión en cualquier momento.
               </p>
 
               <div style="background: #0b1320; border: 1px solid #1e293b; border-radius: 10px; padding: 14px; margin-bottom: 20px; text-align: left;">
                 <div style="font-size: 11px; color: #94a3b8; text-transform: uppercase; font-weight: 700; margin-bottom: 4px;">RUT Evaluado:</div>
-                <div style="font-size: 13px; font-weight: 800; color: #ffffff; margin-bottom: 8px;">${rutFinal}</div>
-                ${(montoTotal || monto) ? `
-                  <div style="font-size: 11px; color: #94a3b8; text-transform: uppercase; font-weight: 700; margin-bottom: 4px;">Detalle / Estado:</div>
-                  <div style="font-size: 13px; font-weight: 800; color: #34d399;">${montoTotal || monto}</div>
-                ` : ''}
+                <div style="font-size: 13px; font-weight: 800; color: #ffffff;">${rutFinal}</div>
               </div>
 
               <div style="background: #131b2e; border: 1px solid #1e293b; border-radius: 12px; padding: 22px; text-align: center; margin-bottom: 24px;">
-                <a href="${enlaceFinal}" target="_blank" style="display: inline-block; background: #0284c7; color: #ffffff; text-decoration: none; font-weight: 800; font-size: 14px; padding: 13px 28px; border-radius: 10px; box-shadow: 0 4px 15px rgba(2, 132, 199, 0.4);">
-                  ${textoBoton}
+                <a href="${enlaceFinal}" target="_blank" style="display: inline-block; background: #10b981; color: #000000; text-decoration: none; font-weight: 900; font-size: 14px; padding: 13px 28px; border-radius: 10px; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.35);">
+                  Ingresar a mis Simulaciones →
                 </a>
                 <p style="font-size: 11px; color: #64748b; margin: 14px 0 0 0; word-break: break-all;">
                   Si el botón no abre, haz clic directo en este enlace seguro:<br>
