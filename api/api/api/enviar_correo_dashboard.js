@@ -1,104 +1,237 @@
 /**
- * Sensometrika - Servicio Serverless Exclusivo para Dashboard (Campaña y Correos B2B)
- * Archivo: api/enviar_correo_dashboard.js
+ * Sensometrika - Servicio Serverless de Despacho de Correos (Resend API)
+ * Archivo: api/enviar-correo.js
  */
+const crypto = require('crypto');
+
 module.exports = async (req, res) => {
-    // Configuración de cabeceras CORS
-    res.setHeader('Access-Control-Allow-Credentials', true);
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,POST');
-    res.setHeader('Access-Control-Allow-Headers', 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Type, Date, X-Api-Version');
+  // Configuración de cabeceras CORS
+  res.setHeader('Access-Control-Allow-Credentials', true);
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
+  res.setHeader(
+    'Access-Control-Allow-Headers',
+    'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version'
+  );
 
-    if (req.method === 'OPTIONS') {
-        return res.status(200).end();
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Método no permitido. Utilice POST.' });
+  }
+
+  const RESEND_API_KEY = process.env.RESEND_API_KEY;
+  if (!RESEND_API_KEY) {
+    return res.status(500).json({ error: 'Falta configurar RESEND_API_KEY en el servidor.' });
+  }
+
+  const SUPABASE_URL = process.env.SUPABASE_URL;
+  const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  let rawUrl = process.env.FRONTEND_URL || 'https://www.sensometrika.com';
+  let cleanDomain = 'https://www.sensometrika.com';
+  const matchUrl = rawUrl.match(/https?:\/\/[^\s\]\)\'\"\/]+/);
+  if (matchUrl) {
+    cleanDomain = matchUrl[0];
+  }
+
+  try {
+    let {
+      tipo,
+      email,
+      emailDestino,
+      nombre,
+      nombreApr,
+      nombreTrabajador,
+      rut,
+      rutTrabajador,
+      rutEmpresa,
+      empresa,
+      planNombre,
+      cupos,
+      codigoEmpresa,
+      tipoDocumento,
+      montoTotal,
+      monto,
+      vigencia,
+      enlace,
+      linkAcceso,
+      detalles,
+      duracion_minutos
+    } = req.body || {};
+
+    // Correo del destinatario principal
+    const correoFinal = emailDestino || email || 'notificaciones@sensometrika.com';
+
+    const enlaceEntrante = enlace || linkAcceso;
+    const destinatarioNombre =
+      nombreApr ||
+      nombreTrabajador ||
+      nombre ||
+      (tipo === 'b2b' || tipo === 'b2b_apr_acceso' ? 'Supervisión Técnica' : 'Postulante');
+    const rutFinal = rutTrabajador || rut || (detalles && detalles.rutTrabajador) || 'N/A';
+
+    const tipoToken = (tipo === 'demo' || tipo === 'b2b' || tipo === 'b2b_apr_acceso') ? tipo : 'b2c';
+
+    // Duración de vigencias por defecto (minutos)
+    let minutosVigencia = 2880; // 48 horas B2C
+    if (tipoToken === 'demo') {
+      minutosVigencia = 6;
+    } else if (tipoToken === 'b2b' || tipoToken === 'b2b_apr_acceso') {
+      minutosVigencia = 4320; // 72 horas B2B
     }
 
-    if (req.method !== 'POST') {
-        return res.status(405).json({ error: 'Método no permitido. Utilice POST.' });
+    if (duracion_minutos && Number(duracion_minutos) > 0) {
+      minutosVigencia = Number(duracion_minutos);
     }
 
-    const RESEND_API_KEY = process.env.RESEND_API_KEY;
-    if (!RESEND_API_KEY) {
-        return res.status(500).json({ error: 'Falta configurar RESEND_API_KEY en el servidor.' });
-    }
+    let enlaceFinal = '';
 
-    try {
-        const { emailDestino, nombreApr, empresa, enlace, plan } = req.body || {};
+    // Sanitización o generación de enlace con token
+    if (typeof enlaceEntrante === 'string' && enlaceEntrante.length > 5) {
+      const matchCustom = enlaceEntrante.match(/https?:\/\/[^\s\]\)\'\"]+/);
+      enlaceFinal = matchCustom ? matchCustom[0] : enlaceEntrante.trim();
+    } else {
+      const generatedToken = crypto.randomUUID();
+      const expiresAt = new Date(Date.now() + minutosVigencia * 60 * 1000).toISOString();
 
-        if (!emailDestino || !empresa) {
-            return res.status(400).json({ error: 'Faltan datos obligatorios (email o empresa).' });
-        }
-
-        const asunto = `Invitación Oficial • Evaluación Psicosensométrica B2B (D.S. N° 170) - ${empresa}`;
-        const htmlContent = `
-            <!DOCTYPE html>
-            <html>
-            <head><meta charset="utf-8"></head>
-            <body style="background-color: #0b0f19; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #ffffff; padding: 30px 15px; margin:0;">
-              <div style="max-width: 580px; margin: 0 auto; background: #0f172a; border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 16px; overflow: hidden; box-shadow: 0 15px 35px rgba(0,0,0,0.6);">
-                <div style="padding: 24px; text-align: center; border-bottom: 1px solid #1e293b; background: #070d18;">
-                  <h1 style="margin: 0; font-size: 20px; font-weight: 900; letter-spacing: 2px; color: #ffffff;">SENSOMETRIKA <span style="color: #38bdf8; font-size: 14px;">B2B</span></h1>
-                  <p style="margin: 4px 0 0 0; font-size: 10px; color: #94a3b8; letter-spacing: 1.5px; text-transform: uppercase;">Gabinete Sensotécnico Laboral • D.S. Nº 170 MTT</p>
-                </div>
-                <div style="padding: 28px 24px;">
-                  <span style="display: inline-block; padding: 4px 12px; background: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.4); border-radius: 20px; color: #38bdf8; font-size: 11px; font-weight: 700; text-transform: uppercase; margin-bottom: 14px;">
-                    Invitación Comercial & Demostración
-                  </span>
-
-                  <h2 style="font-size: 18px; margin: 0 0 12px 0; color: #ffffff;">Estimado/a ${nombreApr || 'Prevencionista'},</h2>
-                  <p style="font-size: 13px; line-height: 1.6; color: #94a3b8; margin: 0 0 16px 0;">
-                    Junto con saludar cordialmente, le invitamos a probar la vitrina de demostración y evaluación bajo cumplimiento <strong style="color: #ffffff;">D.S. N° 170</strong> para su empresa <strong style="color: #ffffff;">${empresa}</strong> (Plan asignado: <em>${plan || 'PLUS'}</em>).
-                  </p>
-
-                  <div style="background: #131b2e; border: 1px solid #1e293b; border-radius: 12px; padding: 22px; text-align: center; margin-bottom: 24px;">
-                    <a href="${enlace}" target="_blank" style="display: inline-block; background: #3b82f6; color: #ffffff; text-decoration: none; font-weight: 900; font-size: 14px; padding: 13px 28px; border-radius: 10px; box-shadow: 0 4px 15px rgba(59, 130, 246, 0.35);">
-                      🚀 Acceder a la Vitrina Demo B2B →
-                    </a>
-                    <p style="font-size: 11px; color: #64748b; margin: 14px 0 0 0; word-break: break-all;">
-                      Enlace directo:<br>
-                      <a href="${enlace}" target="_blank" style="color: #38bdf8; text-decoration: underline;">${enlace}</a>
-                    </p>
-                  </div>
-                </div>
-                <div style="padding: 16px; text-align: center; border-top: 1px solid #1e293b; background: #070d18; font-size: 10px; color: #64748b;">
-                  Sensometrika SpA • Centro de Mando Unificado • contacto@sensometrika.com
-                </div>
-              </div>
-            </body>
-            </html>
-        `;
-
-        const resendResponse = await fetch('https://api.resend.com/emails', {
+      if (SUPABASE_URL && SUPABASE_KEY) {
+        try {
+          await fetch(`${SUPABASE_URL}/rest/v1/access_tokens`, {
             method: 'POST',
             headers: {
-                'Authorization': `Bearer ${RESEND_API_KEY}`,
-                'Content-Type': 'application/json'
+              'apikey': SUPABASE_KEY,
+              'Authorization': `Bearer ${SUPABASE_KEY}`,
+              'Content-Type': 'application/json',
+              'Prefer': 'return=representation'
             },
             body: JSON.stringify({
-                from: process.env.EMAIL_FROM || 'Sensometrika <notificaciones@sensometrika.com>',
-                to: [emailDestino],
-                bcc: ['contacto@sensometrika.com'],
-                subject: asunto,
-                html: htmlContent
+              token: generatedToken,
+              type: tipoToken,
+              email: correoFinal,
+              metadata: detalles || {},
+              expires_at: expiresAt
             })
-        });
-
-        const data = await resendResponse.json();
-
-        if (!resendResponse.ok) {
-            return res.status(resendResponse.status).json({
-                success: false,
-                error: data.message || 'Error al enviar correo mediante Resend.'
-            });
+          });
+        } catch (tokenErr) {
+          console.error('Error insertando token en Supabase:', tokenErr);
         }
+      }
 
-        return res.status(200).json({
-            success: true,
-            id: data.id,
-            destinatario: emailDestino
-        });
-
-    } catch (error) {
-        return res.status(500).json({ success: false, error: error.message || 'Error interno del servidor.' });
+      // Enrutamiento dinámico según el tipo de token/segmento
+      if (tipoToken === 'b2b_apr_acceso') {
+        enlaceFinal = `${cleanDomain}/dashboard_apr.html?token=${generatedToken}`;
+      } else if (tipoToken === 'b2b') {
+        enlaceFinal = `${cleanDomain}/demo_b2b_full.html?token=${generatedToken}`;
+      } else {
+        enlaceFinal = `${cleanDomain}/b2c/menu_b2c.html?token=${generatedToken}&rut=${rutFinal}`;
+      }
     }
+
+    let asunto = '';
+    let htmlContent = '';
+
+    const esInforme = tipo === 'informe' || (planNombre && planNombre.toLowerCase().includes('informe'));
+
+    if (tipo === 'b2b_apr_acceso') {
+      const razonSocial = empresa || (detalles && detalles.razonSocial) || 'Empresa Acreditada';
+      const rutEmpFinal = rutEmpresa || (detalles && detalles.rutEmpresa) || '--';
+      const planTexto = planNombre || 'Bolsa Corporativa B2B';
+      const codigoFinal = codigoEmpresa || 'SENSE-B2B-ACTIVO';
+      const docSiiTexto = tipoDocumento === 'BOLETA' ? 'Boleta Electrónica' : 'Factura Electrónica (DTE 33)';
+      const totalTexto = montoTotal || monto || 'Confirmado';
+
+      asunto = `Consola APR Activada: ${razonSocial} (${codigoFinal}) — Sensometrika`;
+      htmlContent = `
+        <!DOCTYPE html>
+        <html>
+        <head><meta charset="utf-8"></head>
+        <body style="background-color: #0b0f19; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #ffffff; padding: 30px 15px; margin:0;">
+          <div style="max-width: 580px; margin: 0 auto; background: #0f172a; border: 1px solid rgba(16, 185, 129, 0.4); border-radius: 16px; overflow: hidden; box-shadow: 0 15px 35px rgba(0,0,0,0.6);">
+            <div style="padding: 24px; text-align: center; border-bottom: 1px solid #1e293b; background: #070d18;">
+              <h1 style="margin: 0; font-size: 20px; font-weight: 900; letter-spacing: 2px; color: #ffffff;">SENSOMETRIKA <span style="color: #10b981; font-size: 14px;">B2B</span></h1>
+              <p style="margin: 4px 0 0 0; font-size: 10px; color: #94a3b8; letter-spacing: 1.5px; text-transform: uppercase;">Consola de Gestión APR • D.S. Nº 170 MTT</p>
+            </div>
+            <div style="padding: 28px 24px;">
+              <span style="display: inline-block; padding: 4px 12px; background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.4); border-radius: 20px; color: #34d399; font-size: 11px; font-weight: 700; text-transform: uppercase; margin-bottom: 14px;">
+                Credenciales Corporativas Activas
+              </span>
+              <h2 style="font-size: 18px; margin: 0 0 12px 0; color: #ffffff;">Estimado(a) ${destinatarioNombre}:</h2>
+              <p style="font-size: 13px; line-height: 1.6; color: #94a3b8; margin: 0 0 18px 0;">
+                Hemos habilitado su <strong style="color: #ffffff;">Consola de Administración APR</strong> para <strong style="color: #ffffff;">${razonSocial}</strong>.
+              </p>
+              <div style="background: #0b1320; border: 1px solid #1e293b; border-radius: 12px; padding: 16px; margin-bottom: 22px; text-align: left;">
+                <div style="font-size: 11px; color: #94a3b8; text-transform: uppercase; font-weight: 700;">Código de Acceso Empresa:</div>
+                <div style="font-size: 16px; font-weight: 900; color: #34d399; letter-spacing: 1px; margin: 2px 0 10px 0;">${codigoFinal}</div>
+              </div>
+              <div style="background: #131b2e; border: 1px solid #1e293b; border-radius: 12px; padding: 22px; text-align: center; margin-bottom: 18px;">
+                <a href="${enlaceFinal}" target="_blank" style="display: inline-block; background: #10b981; color: #000000; text-decoration: none; font-weight: 900; font-size: 14px; padding: 13px 28px; border-radius: 10px;">
+                  Ir a Consola APR →
+                </a>
+              </div>
+            </div>
+          </div>
+        </body>
+        </html>
+      `;
+    } else {
+      const nombrePlan = planNombre || (detalles && detalles.nombrePlan) || 'Pase Psicomotriz B2C';
+      const vigenciaTexto = vigencia || (detalles && detalles.vigencia) || '48 horas';
+
+      asunto = `Acceso Habilitado: ${nombrePlan} — Sensometrika`;
+      htmlContent = `
+        <!DOCTYPE html>
+        <html>
+        <head><meta charset="utf-8"></head>
+        <body style="background-color: #0b0f19; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #ffffff; padding: 30px 15px; margin:0;">
+          <div style="max-width: 580px; margin: 0 auto; background: #0f172a; border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 16px; overflow: hidden; box-shadow: 0 15px 35px rgba(0,0,0,0.6);">
+            <div style="padding: 24px; text-align: center; border-bottom: 1px solid #1e293b; background: #070d18;">
+              <h1 style="margin: 0; font-size: 20px; font-weight: 900; letter-spacing: 2px; color: #ffffff;">SENSOMETRIKA <span style="color: #38bdf8; font-size: 14px;">SpA</span></h1>
+            </div>
+            <div style="padding: 28px 24px;">
+              <h2 style="font-size: 18px; margin: 0 0 12px 0; color: #ffffff;">¡Hola, ${destinatarioNombre}!</h2>
+              <p style="font-size: 13px; line-height: 1.6; color: #94a3b8; margin: 0 0 16px 0;">
+                Tu acceso para <strong style="color: #ffffff;">${nombrePlan}</strong> ha sido activado exitosamente.
+              </p>
+              <div style="background: #131b2e; border: 1px solid #1e293b; border-radius: 12px; padding: 22px; text-align: center; margin-bottom: 24px;">
+                <a href="${enlaceFinal}" target="_blank" style="display: inline-block; background: #10b981; color: #000000; text-decoration: none; font-weight: 900; font-size: 14px; padding: 13px 28px; border-radius: 10px;">
+                  Ingresar a mis Simulaciones →
+                </a>
+              </div>
+            </div>
+          </div>
+        </body>
+        </html>
+      `;
+    }
+
+    const remitente = process.env.EMAIL_FROM || 'Sensometrika <notificaciones@sensometrika.com>';
+
+    const resendResponse = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${RESEND_API_KEY}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        from: remitente,
+        to: [correoFinal],
+        bcc: ['contacto@sensometrika.com'],
+        subject: asunto,
+        html: htmlContent
+      })
+    });
+
+    const data = await resendResponse.json();
+
+    if (!resendResponse.ok) {
+      return res.status(resendResponse.status).json({ success: false, error: data.message || 'Error al enviar correo.' });
+    }
+
+    return res.status(200).json({ success: true, id: data.id, destinatario: correoFinal, enlaceGenerado: enlaceFinal });
+  } catch (error) {
+    return res.status(500).json({ success: false, error: error.message });
+  }
 };
