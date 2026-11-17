@@ -715,7 +715,6 @@
         </div>
     </div>
 
-    <!-- Script principal integrado con control completo de correos y botones -->
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             sincronizarTodoCloud();
@@ -770,7 +769,6 @@
             }, 5000);
         }
 
-        // --- FUNCIÓN DE PREVIEW EN VIVO CON CUERPO Y ENLACE ASEGURADOS ---
         function actualizarPreviewEnVivo() {
             try {
                 const inputNombre = document.getElementById('empNombre');
@@ -785,7 +783,7 @@
                 const originUrl = window.location.origin.includes('127.0.0.1') ? 'http://127.0.0.1:5500' : window.location.origin;
                 const linkDemo = `${originUrl}/demo_empresa.html?empresa=${encodeURIComponent(nombreEmpresa)}`;
 
-                const plantilla = `Estimado/a ${contacto},\n\nJunto con saludarle cordialmente, le escribimos desde Sensometrika SpA. Sabemos lo crucial y exigente que es mantener los estándares de seguridad y cumplimiento normativo (D.S. N° 170) en las operaciones de su empresa ${nombreEmpresa}.\n\nPor eso, hemos desarrollado una plataforma moderna, rápida y 100% digital que simplifica por completo la evaluación sensométrica y psicotécnica de sus trabajadores y conductores.\n\n¿Qué nos hace diferentes?\n- Resultados en tiempo real: Cero esperas, informes listos de inmediato.\n- Acceso desde cualquier dispositivo: Ágil, intuitivo y sin instalaciones complejas.\n- Cumplimiento normativo estricto: Diseñado a la medida de la exigencia industrial.\n\nLo invitamos a explorar nuestra vitrina interactiva y probar la dinámica de nuestros módulos periciales haciendo clic en el siguiente enlace de acceso seguro:\n\n${linkDemo}\n\nQuedamos a su entera disposición para coordinar una breve demostración personalizada o resolver cualquier duda.\n\nAtentamente,\n\nEquipo Sensometrika\nPlataforma de Calibración & Evaluación Psicosométrica\nwww.sensometrika.com`;
+                const plantilla = `Estimado/a ${contacto},\n\nJunto con saludarle cordialmente, le escribimos desde Sensometrika SpA. Sabemos lo crucial y exigente que es mantener los estándares de seguridad y cumplimiento normativo (D.S. N° 170) en las operaciones de su empresa ${nombreEmpresa}.\n\nPor eso, hemos desarrollado una plataforma moderna, rápida y 100% digital que simplifica por completo la evaluación sensométrica y psicotécnica de sus trabajadores y conductores.\n\n¿Qué nos hace diferentes?\n- Resultados en tiempo real: Cero esperas, informes listos de inmediato.\n- Acceso desde cualquier dispositivo: Ágil, intuitive y sin instalaciones complejas.\n- Cumplimiento normativo estricto: Diseñado a la medida de la exigencia industrial.\n\nLo invitamos a explorar nuestra vitrina interactiva y probar la dinámica de nuestros módulos periciales haciendo clic en el siguiente enlace de acceso seguro:\n\n${linkDemo}\n\nQuedamos a su entera disposición para coordinar una breve demostración personalizada o resolver cualquier duda.\n\nAtentamente,\n\nEquipo Sensometrika\nPlataforma de Calibración & Evaluación Psicosométrica\nwww.sensometrika.com`;
 
                 txtArea.value = plantilla;
             } catch (error) {
@@ -793,15 +791,13 @@
             }
         }
 
-        // --- BOTÓN ENVIAR CORREO CONECTADO A MAILTO (ABRE CLIENTE CON CUERPO Y LINK) ---
+        // Copia directa al portapapeles sin abrir programas externos de Windows
         function enviarCorreoIndividualSeleccionado() {
             try {
                 const correoInput = document.getElementById('empCorreo');
-                const asuntoInput = document.getElementById('previewAsunto');
                 const redaccionInput = document.getElementById('previewRedaccion');
                 
                 const correo = correoInput ? correoInput.value.trim() : '';
-                const asunto = asuntoInput ? asuntoInput.value : 'Evaluación psicotécnica D.S. N° 170';
                 const cuerpo = redaccionInput ? redaccionInput.value : '';
 
                 if (!correo) {
@@ -809,12 +805,17 @@
                     return;
                 }
 
-                const mailtoLink = `mailto:${encodeURIComponent(correo)}?subject=${encodeURIComponent(asunto)}&body=${encodeURIComponent(cuerpo)}`;
-                window.location.href = mailtoLink;
+                navigator.clipboard.writeText(cuerpo).then(() => {
+                    mostrarAlertaSimulador(`¡Plantilla y enlace para ${correo} copiados al portapapeles con éxito!`, 'exito');
+                }).catch(() => {
+                    redaccionInput.select();
+                    document.execCommand('copy');
+                    mostrarAlertaSimulador(`¡Plantilla lista para ${correo}!`, 'exito');
+                });
 
-                mostrarAlertaSimulador(`Abriendo cliente de correo para enviar a ${correo}...`, 'exito');
             } catch (error) {
-                console.error("Error al enviar correo individual:", error);
+                console.error("Error al procesar el correo:", error);
+                mostrarAlertaSimulador("Ocurrió un error al preparar el correo.", "error");
             }
         }
 
