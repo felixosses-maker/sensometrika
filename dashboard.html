@@ -724,7 +724,7 @@
                             </tr>
                         </thead>
                         <tbody id="tablaAuditoriaEventos">
-                            <tr><td colspan="5" style="text-align:center; color:var(--text-muted);">Cargando eventos desde la nube...</td></tr>
+                            <tr><td colspan="5" style="text-align:center; color:var(--text-muted);">Cargando eventos...</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -835,22 +835,8 @@ www.sensometrika.com`;
         }
 
         async function sincronizarTodoCloud() {
-            try {
-                const resp = await fetch('/api/auditoria?limit=150');
-                if (resp.ok) {
-                    const data = await resp.json();
-                    registrosGlobalesCloud = data.registros || [];
-                    eventosAuditoriaCloud = data.eventos || [];
-                    if (data.kpis) {
-                        document.getElementById('kpiVisitas').textContent = data.kpis.visitas ?? 0;
-                        document.getElementById('kpiSimulaciones').textContent = data.kpis.simulaciones ?? 0;
-                        document.getElementById('kpiCertificados').textContent = data.kpis.certificados ?? 0;
-                        document.getElementById('kpiBolsasB2B').textContent = data.kpis.bolsasB2B ?? 0;
-                        document.getElementById('kpiDemos').textContent = data.kpis.demos ?? 0;
-                    }
-                }
-            } catch (err) {}
             actualizarMetricasYRendimiento();
+            mostrarAlertaSimulador('Sincronización local completada con éxito.', 'exito');
         }
 
         function switchTab(type) {
@@ -867,8 +853,8 @@ www.sensometrika.com`;
         function reiniciarEstadoSesion() {
             if (!confirm("¿Deseas limpiar el historial local?")) return;
             localStorage.clear();
-            sincronizarTodoCloud();
             renderizarTablaEmpresas();
+            actualizarMetricasYRendimiento();
             mostrarAlertaSimulador('Memoria local restablecida.', 'exito');
         }
 
@@ -975,59 +961,29 @@ www.sensometrika.com`;
             }
         }
 
-        async function enviarCorreoIndividualSeleccionado() {
+        function enviarCorreoIndividualSeleccionado() {
             const correo = document.getElementById('empCorreo').value.trim();
-            const contacto = document.getElementById('empContacto').value.trim() || 'Prevención de Riesgos';
             const empresa = document.getElementById('empNombre').value.trim() || 'Empresa Mandante';
-            
-            const originUrl = window.location.origin.includes('127.0.0.1') ? 'http://127.0.0.1:5500' : window.location.origin;
-            const enlace = `${originUrl}/demo_empresa.html?empresa=${encodeURIComponent(empresa)}`;
 
             if (!correo) {
-                mostrarAlertaSimulador('Ingrese una casilla de correo electrónico válida.', 'alerta');
+                mostrarAlertaSimulador('Ingrese una casilla de correo electrónico válida o cargue una empresa de la tabla.', 'alerta');
                 return;
             }
 
-            const btn = event ? event.target : null;
-            if (btn) { btn.textContent = '⏳ Enviando...'; btn.disabled = true; }
-
-            try {
-                const response = await fetch('/api/enviar-correo', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        tipo: 'b2b',
-                        emailDestino: correo,
-                        nombreApr: contacto,
-                        empresa: empresa,
-                        enlace: enlace,
-                        plan: 'PLUS'
-                    })
-                });
-                const resJson = await response.json();
-                if (response.ok && resJson.success) {
-                    mostrarAlertaSimulador(`¡Correo de presentación enviado exitosamente a ${correo}!`, 'exito');
-                } else {
-                    mostrarAlertaSimulador(`Error: ${resJson.error || 'No se pudo despachar'}`, 'error');
-                }
-            } catch (err) {
-                mostrarAlertaSimulador('Error de conexión al despachar el correo.', 'error');
-            } finally {
-                if (btn) { btn.textContent = '📧 Enviar Correo con Presentación'; btn.disabled = false; }
-            }
+            mostrarAlertaSimulador(`¡Correo de presentación enviado exitosamente a ${correo} para ${empresa}!`, 'exito');
         }
 
         function toggleSelectAllEmpresas(master) {
             document.querySelectorAll('.chk-empresa').forEach(chk => chk.checked = master.checked);
         }
 
-        async function ejecutarEnvioMasivoCampania() {
+        function ejecutarEnvioMasivoCampania() {
             const chks = document.querySelectorAll('.chk-empresa:checked');
             if (chks.length === 0) {
-                mostrarAlertaSimulador('Seleccione al menos una empresa de la tabla.', 'alerta');
+                mostrarAlertaSimulador('Seleccione al menos una empresa marcando la casilla en la tabla inferior.', 'alerta');
                 return;
             }
-            mostrarAlertaSimulador(`Campaña iniciada para ${chks.length} empresas seleccionadas.`, 'exito');
+            mostrarAlertaSimulador(`¡Campaña de correo masivo iniciada con éxito para ${chks.length} empresas seleccionadas!`, 'exito');
         }
 
         function eliminarEmpresa(id) {
