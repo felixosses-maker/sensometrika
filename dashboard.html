@@ -715,11 +715,16 @@
         </div>
     </div>
 
+    <!-- Enlace al script modular externo en la carpeta api -->
+    <script src="api/enviar_correo_dashboard.js"></script>
+
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             sincronizarTodoCloud();
             renderizarTablaEmpresas();
-            actualizarPreviewEnVivo();
+            if (typeof actualizarPreviewEnVivo === 'function') {
+                actualizarPreviewEnVivo();
+            }
         });
 
         function mostrarAlertaSimulador(mensaje, tipo = 'info') {
@@ -769,28 +774,6 @@
             }, 5000);
         }
 
-        function actualizarPreviewEnVivo() {
-            try {
-                const inputNombre = document.getElementById('empNombre');
-                const inputContacto = document.getElementById('empContacto');
-                const txtArea = document.getElementById('previewRedaccion');
-
-                if (!txtArea) return;
-
-                const nombreEmpresa = inputNombre && inputNombre.value.trim() ? inputNombre.value.trim() : '[NOMBRE DE LA EMPRESA]';
-                const contacto = inputContacto && inputContacto.value.trim() ? inputContacto.value.trim() : '[Nombre del Contacto / Prevencionista]';
-                
-                const originUrl = window.location.origin.includes('127.0.0.1') ? 'http://127.0.0.1:5500' : window.location.origin;
-                const linkDemo = `${originUrl}/demo_empresa.html?empresa=${encodeURIComponent(nombreEmpresa)}`;
-
-                const plantilla = `Estimado/a ${contacto},\n\nJunto con saludarle cordialmente, le escribimos desde Sensometrika SpA. Sabemos lo crucial y exigente que es mantener los estándares de seguridad y cumplimiento normativo (D.S. N° 170) en las operaciones de su empresa ${nombreEmpresa}.\n\nPor eso, hemos desarrollado una plataforma moderna, rápida y 100% digital que simplifica por completo la evaluación sensométrica y psicotécnica de sus trabajadores y conductores.\n\n¿Qué nos hace diferentes?\n- Resultados en tiempo real: Cero esperas, informes listos de inmediato.\n- Acceso desde cualquier dispositivo: Ágil, intuitivo y sin instalaciones complejas.\n- Cumplimiento normativo estricto: Diseñado a la medida de la exigencia industrial.\n\nLo invitamos a explorar nuestra vitrina interactiva y probar la dinámica de nuestros módulos periciales haciendo clic en el siguiente enlace de acceso seguro:\n\n${linkDemo}\n\nQuedamos a su entera disposición para coordinar una breve demostración personalizada o resolver cualquier duda.\n\nAtentamente,\n\nEquipo Sensometrika\nPlataforma de Calibración & Evaluación Psicosométrica\nwww.sensometrika.com`;
-
-                txtArea.value = plantilla;
-            } catch (error) {
-                console.error("Error al actualizar la vista previa en vivo:", error);
-            }
-        }
-
         function abrirDetalleKPI(tipo) {
             const drawer = document.getElementById('kpiDetailDrawer');
             if (drawer) drawer.classList.toggle('open');
@@ -821,7 +804,7 @@
             localStorage.clear();
             renderizarTablaEmpresas();
             actualizarMetricasYRendimiento();
-            actualizarPreviewEnVivo();
+            if (typeof actualizarPreviewEnVivo === 'function') actualizarPreviewEnVivo();
             mostrarAlertaSimulador('Memoria local restablecida.', 'exito');
         }
 
@@ -894,7 +877,7 @@
                 mostrarAlertaSimulador(`Empresa "${nombre}" guardada y enlace listo.`, 'exito');
                 renderizarTablaEmpresas();
                 actualizarMetricasYRendimiento();
-                actualizarPreviewEnVivo();
+                if (typeof actualizarPreviewEnVivo === 'function') actualizarPreviewEnVivo();
             } catch (error) {
                 console.error("Error al registrar empresa:", error);
                 mostrarAlertaSimulador("Ocurrió un error al procesar el registro.", "error");
@@ -936,7 +919,7 @@
                 document.getElementById('empContacto').value = emp.contacto;
                 document.getElementById('empCorreo').value = emp.correo;
                 
-                actualizarPreviewEnVivo();
+                if (typeof actualizarPreviewEnVivo === 'function') actualizarPreviewEnVivo();
                 mostrarAlertaSimulador(`Datos de ${emp.nombre} cargados en el panel.`, 'exito');
             }
         }
@@ -952,26 +935,8 @@
             localStorage.setItem('sensometrika_empresas_b2b', JSON.stringify(empresas));
             renderizarTablaEmpresas();
             actualizarMetricasYRendimiento();
-            actualizarPreviewEnVivo();
+            if (typeof actualizarPreviewEnVivo === 'function') actualizarPreviewEnVivo();
             mostrarAlertaSimulador('Empresa eliminada.', 'exito');
-        }
-
-        function enviarCorreoIndividualSeleccionado() {
-            const correo = document.getElementById('empCorreo').value.trim();
-            if (!correo) {
-                mostrarAlertaSimulador('Ingrese una casilla de correo.', 'alerta');
-                return;
-            }
-            mostrarAlertaSimulador(`¡Correo de presentación enviado a ${correo} exitosamente!`, 'exito');
-        }
-
-        function ejecutarEnvioMasivoCampania() {
-            const chks = document.querySelectorAll('.chk-empresa:checked');
-            if (chks.length === 0) {
-                mostrarAlertaSimulador('Seleccione al menos una empresa en la tabla.', 'alerta');
-                return;
-            }
-            mostrarAlertaSimulador(`¡Campaña masiva iniciada para ${chks.length} empresas!`, 'exito');
         }
 
         const ctx = document.getElementById('networkChart').getContext('2d');

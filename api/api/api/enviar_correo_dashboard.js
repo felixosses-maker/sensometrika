@@ -14,29 +14,10 @@ function actualizarPreviewEnVivo() {
         const originUrl = window.location.origin.includes('127.0.0.1') ? 'http://127.0.0.1:5500' : window.location.origin;
         const linkDemo = `${originUrl}/demo_empresa.html?empresa=${encodeURIComponent(nombreEmpresa)}`;
 
-        const plantilla = `Estimado/a ${contacto},
+        // Plantilla redactada garantizando saltos de línea explícitos para el cuerpo del correo
+        const plantilla = `Estimado/a ${contacto},\n\nJunto con saludarle cordialmente, le escribimos desde Sensometrika SpA. Sabemos lo crucial y exigente que es mantener los estándares de seguridad y cumplimiento normativo (D.S. N° 170) en las operaciones de su empresa ${nombreEmpresa}.\n\nPor eso, hemos desarrollado una plataforma moderna, rápida y 100% digital que simplifica por completo la evaluación sensométrica y psicotécnica de sus trabajadores y conductores.\n\n¿Qué nos hace diferentes?\n- Resultados en tiempo real: Cero esperas, informes listos de inmediato.\n- Acceso desde cualquier dispositivo: Ágil, intuitivo y sin instalaciones complejas.\n- Cumplimiento normativo estricto: Diseñado a la medida de la exigencia industrial.\n\nLo invitamos a explorar nuestra vitrina interactiva y probar la dinámica de nuestros módulos periciales haciendo clic en el siguiente enlace de acceso seguro:\n\n${linkDemo}\n\nQuedamos a su entera disposición para coordinar una breve demostración personalizada o resolver cualquier duda.\n\nAtentamente,\n\nEquipo Sensometrika\nPlataforma de Calibración & Evaluación Psicosométrica\nwww.sensometrika.com`;
 
-Junto con saludarle cordialmente, le escribimos desde Sensometrika SpA. Sabemos lo crucial y exigente que es mantener los estándares de seguridad y cumplimiento normativo (D.S. N° 170) en las operaciones de su empresa ${nombreEmpresa}.
-
-Por eso, hemos desarrollado una plataforma moderna, rápida y 100% digital que simplifica por completo la evaluación sensométrica y psicotécnica de sus trabajadores y conductores.
-
-¿Qué nos hace diferentes?
-- Resultados en tiempo real: Cero esperas, informes listos de inmediato.
-- Acceso desde cualquier dispositivo: Ágil, intuitivo y sin instalaciones complejas.
-- Cumplimiento normativo estricto: Diseñado a la medida de la exigencia industrial.
-
-Lo invitamos a explorar nuestra vitrina interactiva y probar la dinámica de nuestros módulos periciales haciendo clic en el siguiente enlace de acceso seguro:
-
-${linkDemo}
-
-Quedamos a su entera disposición para coordinar una breve demostración personalizada o resolver cualquier duda.
-
-Atentamente,
-
-Equipo Sensometrika
-Plataforma de Calibración & Evaluación Psicosométrica
-www.sensometrika.com`;
-
+        // Asignamos explícitamente el cuerpo al textarea
         txtArea.value = plantilla;
     } catch (error) {
         console.error("Error al actualizar la vista previa en vivo:", error);
@@ -46,17 +27,29 @@ www.sensometrika.com`;
 function enviarCorreoIndividualSeleccionado() {
     try {
         const correoInput = document.getElementById('empCorreo');
-        const empresaInput = document.getElementById('empNombre');
+        const asuntoInput = document.getElementById('previewAsunto');
+        const redaccionInput = document.getElementById('previewRedaccion');
         
         const correo = correoInput ? correoInput.value.trim() : '';
-        const empresa = empresaInput ? empresaInput.value.trim() : 'Empresa Mandante';
+        const asunto = asuntoInput ? asuntoInput.value : 'Evaluación psicotécnica D.S. N° 170';
+        const cuerpo = redaccionInput ? redaccionInput.value : '';
 
         if (!correo) {
-            mostrarAlertaSimulador('Ingrese o seleccione una casilla de correo electrónico válida.', 'alerta');
+            if (typeof mostrarAlertaSimulador === 'function') {
+                mostrarAlertaSimulador('Ingrese o seleccione una casilla de correo electrónico válida.', 'alerta');
+            } else {
+                alert('Ingrese o seleccione una casilla de correo electrónico válida.');
+            }
             return;
         }
 
-        mostrarAlertaSimulador(`¡Correo de presentación enviado exitosamente a ${correo} (${empresa})!`, 'exito');
+        // Abre el cliente de correo predeterminado asegurando que el cuerpo y link viajen integrados
+        const mailtoLink = `mailto:${encodeURIComponent(correo)}?subject=${encodeURIComponent(asunto)}&body=${encodeURIComponent(cuerpo)}`;
+        window.location.href = mailtoLink;
+
+        if (typeof mostrarAlertaSimulador === 'function') {
+            mostrarAlertaSimulador(`Abriendo cliente de correo para enviar a ${correo}...`, 'exito');
+        }
     } catch (error) {
         console.error("Error al enviar correo individual:", error);
     }
@@ -66,10 +59,18 @@ function ejecutarEnvioMasivoCampania() {
     try {
         const chks = document.querySelectorAll('.chk-empresa:checked');
         if (chks.length === 0) {
-            mostrarAlertaSimulador('Seleccione al menos una empresa marcando la casilla de la tabla.', 'alerta');
+            if (typeof mostrarAlertaSimulador === 'function') {
+                mostrarAlertaSimulador('Seleccione al menos una empresa marcando la casilla de la tabla.', 'alerta');
+            } else {
+                alert('Seleccione al menos una empresa marcando la casilla de la tabla.');
+            }
             return;
         }
-        mostrarAlertaSimulador(`¡Campaña de correo masivo iniciada correctamente para ${chks.length} empresas!`, 'exito');
+        if (typeof mostrarAlertaSimulador === 'function') {
+            mostrarAlertaSimulador(`¡Campaña de correo masivo iniciada correctamente para ${chks.length} empresas!`, 'exito');
+        } else {
+            alert(`¡Campaña de correo masivo iniciada correctamente para ${chks.length} empresas!`);
+        }
     } catch (error) {
         console.error("Error en envío masivo:", error);
     }
