@@ -130,15 +130,13 @@ module.exports = async (req, res) => {
     let asunto = '';
     let htmlContent = '';
 
-    // Detección inteligente: si el tipo es 'informe', si el plan menciona informe/dictamen,
-    // o si el enlace apunta directamente a informe_b2b_planes.html / informe_
     const esInforme =
       tipo === 'informe' ||
       (typeof planNombre === 'string' && /informe|dictamen|certificado/i.test(planNombre)) ||
       (typeof enlaceFinal === 'string' && /informe_b2b|informe_/i.test(enlaceFinal));
 
     if (esInforme) {
-      // PLANTILLA DEDICADA: INFORME PERICIAL DEL TRABAJADOR ENVIADO A LA EMPRESA / APR
+      // PLANTILLA DEDICADA: INFORME PERICIAL DEL TRABAJADOR
       const razonSocial = empresa || (detalles && detalles.razonSocial) || 'Empresa Acreditada';
       const nombrePlan = planNombre || (detalles && detalles.nombrePlan) || 'Evaluación Psicosensométrica D.S. N° 170';
 
@@ -199,7 +197,7 @@ module.exports = async (req, res) => {
         </html>
       `;
     } else if (tipo === 'b2b_apr_acceso') {
-      // ALTA CORPORATIVA Y LINK DE REINGRESO PARA ENCARGADO APR
+      // CONSOLA APR
       const razonSocial = empresa || (detalles && detalles.razonSocial) || 'Empresa Acreditada';
       const rutEmpFinal = rutEmpresa || (detalles && detalles.rutEmpresa) || '--';
       const planTexto = planNombre || 'Bolsa Corporativa B2B';
@@ -224,7 +222,7 @@ module.exports = async (req, res) => {
               </span>
               <h2 style="font-size: 18px; margin: 0 0 12px 0; color: #ffffff;">Estimado(a) ${destinatarioNombre}:</h2>
               <p style="font-size: 13px; line-height: 1.6; color: #cbd5e1; margin: 0 0 18px 0;">
-                Hemos habilitado su <strong style="color: #ffffff;">Consola de Administración APR</strong> para <strong style="color: #ffffff;">${razonSocial}</strong>. Guarde este correo para reingresar cuando lo necesite desde cualquier computador o teléfono móvil.
+                Hemos habilitado su <strong style="color: #ffffff;">Consola de Administración APR</strong> para <strong style="color: #ffffff;">${razonSocial}</strong>.
               </p>
 
               <div style="background-color: #0b1320; border: 1px solid #1e293b; border-radius: 12px; padding: 16px; margin-bottom: 22px; text-align: left;">
@@ -242,70 +240,87 @@ module.exports = async (req, res) => {
               </div>
 
               <div style="background-color: #131b2e; border: 1px solid #1e293b; border-radius: 12px; padding: 22px; text-align: center; margin-bottom: 18px;">
-                <p style="font-size: 12px; color: #cbd5e1; margin: 0 0 14px 0; font-weight: 600;">
-                  Acceso directo a su Consola APR (despacho de citaciones e informes):
-                </p>
                 <a href="${enlaceFinal}" target="_blank" style="display: inline-block; background-color: #10b981; color: #000000; text-decoration: none; font-weight: 900; font-size: 14px; padding: 13px 28px; border-radius: 10px; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.35);">
                   Ir a Consola APR →
                 </a>
-                <p style="font-size: 11px; color: #94a3b8; margin: 14px 0 0 0; word-break: break-all;">
-                  Enlace directo de respaldo:<br>
-                  <a href="${enlaceFinal}" target="_blank" style="color: #34d399; text-decoration: underline;">${enlaceFinal}</a>
-                </p>
               </div>
             </div>
             <div style="padding: 16px; text-align: center; border-top: 1px solid #1e293b; background-color: #070d18; font-size: 10px; color: #64748b;">
-              Sensometrika SpA • Plataforma de Calibración & Gestión Psicosensométrica • Chile • contacto@sensometrika.com
+              Sensometrika SpA • Chile • contacto@sensometrika.com
             </div>
           </div>
         </body>
         </html>
       `;
     } else if (tipo === 'b2b') {
-      const razonSocial = empresa || (detalles && detalles.razonSocial) || 'Empresa Cliente';
-      const rutEmpFinal = rutEmpresa || (detalles && detalles.rutEmpresa) || '--';
-      const cuposFinal = cupos || (detalles && detalles.cupos) || '1';
+      // NUEVA PLANTILLA B2B: CORREO DE PRESENTACIÓN COMERCIAL A EMPRESAS / APR (D.S. N° 170)
+      const razonSocial = empresa || (detalles && detalles.razonSocial) || 'Empresa Mandante';
+      const nombreAprPersona = nombreApr || destinatarioNombre || 'Prevencionista / APR';
 
-      asunto = `Acceso Corporativo Activo: Evaluaciones Sensométricas — ${razonSocial}`;
+      asunto = `Evaluación psicotécnica D.S. N° 170 ágil y 100% digital — ${razonSocial}`;
       htmlContent = `
         <!DOCTYPE html>
         <html>
         <head><meta charset="utf-8"></head>
         <body style="background-color: #0b0f19; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #ffffff; padding: 30px 15px; margin:0;">
-          <div style="max-width: 580px; margin: 0 auto; background-color: #0f172a; border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 16px; overflow: hidden; box-shadow: 0 15px 35px rgba(0,0,0,0.6);">
+          <div style="max-width: 580px; margin: 0 auto; background-color: #0f172a; border: 1px solid rgba(139, 92, 246, 0.4); border-radius: 16px; overflow: hidden; box-shadow: 0 15px 35px rgba(0,0,0,0.6);">
             <div style="padding: 24px; text-align: center; border-bottom: 1px solid #1e293b; background-color: #070d18;">
-              <h1 style="margin: 0; font-size: 20px; font-weight: 900; letter-spacing: 2px; color: #ffffff;">SENSOMETRIKA <span style="color: #38bdf8; font-size: 14px;">SpA</span></h1>
-              <p style="margin: 4px 0 0 0; font-size: 10px; color: #94a3b8; letter-spacing: 1.5px; text-transform: uppercase;">Gabinete Sensotécnico Laboral • D.S. Nº 170 MTT</p>
+              <h1 style="margin: 0; font-size: 20px; font-weight: 900; letter-spacing: 2px; color: #ffffff;">SENSOMETRIKA <span style="color: #8b5cf6; font-size: 14px;">SpA</span></h1>
+              <p style="margin: 4px 0 0 0; font-size: 10px; color: #94a3b8; letter-spacing: 1.5px; text-transform: uppercase;">Plataforma de Calibración & Evaluación Psicosométrica • D.S. Nº 170 MTT</p>
             </div>
             <div style="padding: 28px 24px; background-color: #0f172a;">
-              <span style="display: inline-block; padding: 4px 12px; background-color: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.4); border-radius: 20px; color: #38bdf8; font-size: 11px; font-weight: 700; text-transform: uppercase; margin-bottom: 14px;">
-                Evaluación Laboral Habilitada
+              <span style="display: inline-block; padding: 4px 12px; background-color: rgba(139, 92, 246, 0.15); border: 1px solid rgba(139, 92, 246, 0.4); border-radius: 20px; color: #a78bfa; font-size: 11px; font-weight: 700; text-transform: uppercase; margin-bottom: 14px;">
+                Presentación Comercial B2B
               </span>
-              <h2 style="font-size: 18px; margin: 0 0 12px 0; color: #ffffff;">Estimado(a) ${destinatarioNombre}:</h2>
-              <p style="font-size: 13px; line-height: 1.6; color: #cbd5e1; margin: 0 0 20px 0;">
-                Confirmamos la habilitación de evaluación psicosensométrica solicitada por <strong style="color: #ffffff;">${razonSocial}</strong> (RUT: ${rutEmpFinal}) con un total de <strong>${cuposFinal} evaluación(es)</strong> asignada(s).
+              
+              <h2 style="font-size: 18px; margin: 0 0 12px 0; color: #ffffff;">Estimado/a ${nombreAprPersona},</h2>
+              
+              <p style="font-size: 13px; line-height: 1.6; color: #cbd5e1; margin: 0 0 14px 0;">
+                Junto con saludarle cordialmente, le escribimos desde <strong>Sensometrika SpA</strong>. Sabemos lo crucial y exigente que es mantener los estándares de seguridad y cumplimiento normativo (D.S. N° 170) en las operaciones de su empresa <strong style="color: #ffffff;">${razonSocial}</strong>.
               </p>
-              <div style="background-color: #131b2e; border: 1px solid #1e293b; border-radius: 12px; padding: 20px; text-align: center; margin-bottom: 24px;">
+
+              <p style="font-size: 13px; line-height: 1.6; color: #cbd5e1; margin: 0 0 16px 0;">
+                Por eso, hemos desarrollado una plataforma moderna, rápida y 100% digital que simplifica por completo la evaluación sensométrica y psicotécnica de sus trabajadores y conductores.
+              </p>
+
+              <div style="background-color: #0b1320; border: 1px solid #1e293b; border-radius: 10px; padding: 14px; margin-bottom: 20px; text-align: left;">
+                <div style="font-size: 12px; font-weight: 800; color: #38bdf8; margin-bottom: 8px;">¿Qué nos hace diferentes?</div>
+                <div style="font-size: 12px; color: #cbd5e1; line-height: 1.5; margin-bottom: 4px;">• <strong>Resultados en tiempo real:</strong> Cero esperas, informes listos de inmediato.</div>
+                <div style="font-size: 12px; color: #cbd5e1; line-height: 1.5; margin-bottom: 4px;">• <strong>Acceso multidispositivo:</strong> Ágil, intuitivo y sin instalaciones complejas.</div>
+                <div style="font-size: 12px; color: #cbd5e1; line-height: 1.5;">• <strong>Cumplimiento normativo:</strong> Diseñado a la medida de la exigencia industrial.</div>
+              </div>
+
+              <div style="background-color: #131b2e; border: 1px solid #1e293b; border-radius: 12px; padding: 22px; text-align: center; margin-bottom: 20px;">
                 <p style="font-size: 12px; color: #cbd5e1; margin: 0 0 14px 0; font-weight: 600;">
-                  Enlace directo para rendir la evaluación en línea:
+                  Lo invitamos a explorar nuestra vitrina interactiva y probar la dinámica de nuestros módulos periciales:
                 </p>
-                <a href="${enlaceFinal}" target="_blank" style="display: inline-block; background-color: #0284c7; color: #ffffff; text-decoration: none; font-weight: 800; font-size: 14px; padding: 13px 26px; border-radius: 10px; box-shadow: 0 4px 15px rgba(2, 132, 199, 0.4);">
-                  Acceder a la Evaluación Faena →
+                <a href="${enlaceFinal}" target="_blank" style="display: inline-block; background-color: #8b5cf6; color: #ffffff; text-decoration: none; font-weight: 800; font-size: 14px; padding: 13px 26px; border-radius: 10px; box-shadow: 0 4px 15px rgba(139, 92, 246, 0.4);">
+                  Explorar Vitrina Demo B2B →
                 </a>
                 <p style="font-size: 11px; color: #94a3b8; margin: 14px 0 0 0; word-break: break-all;">
-                  Si el botón no abre, copia y pega este enlace directo:<br>
+                  Si el botón no abre, haz clic directo en este enlace seguro:<br>
                   <a href="${enlaceFinal}" target="_blank" style="color: #38bdf8; text-decoration: underline;">${enlaceFinal}</a>
                 </p>
               </div>
+
+              <p style="font-size: 13px; color: #cbd5e1; margin: 0 0 10px 0;">
+                Quedamos a su entera disposición para coordinar una breve demostración personalizada o resolver cualquier duda.
+              </p>
+              <p style="font-size: 13px; color: #ffffff; font-weight: bold; margin: 0;">
+                Atentamente,<br>
+                Equipo Sensometrika<br>
+                <span style="font-weight: normal; color: #94a3b8; font-size: 11px;">Plataforma de Calibración & Evaluación Psicosométrica • www.sensometrika.com</span>
+              </p>
             </div>
             <div style="padding: 16px; text-align: center; border-top: 1px solid #1e293b; background-color: #070d18; font-size: 10px; color: #64748b;">
-              Sensometrika SpA • Plataforma de Calibración & Gestión Psicosensométrica • Chile • contacto@sensometrika.com
+              Sensometrika SpA • Chile • contacto@sensometrika.com
             </div>
           </div>
         </body>
         </html>
       `;
     } else {
+      // PLANTILLA B2C / PARTICULARES
       const nombrePlan = planNombre || (detalles && detalles.nombrePlan) || (tipoToken === 'demo' ? 'Pase de Demostración' : 'Pase Psicomotriz (3 Sim)');
       const vigenciaTexto = vigencia || (detalles && detalles.vigencia) || (tipoToken === 'demo' ? '6 minutos' : '48 horas');
 
