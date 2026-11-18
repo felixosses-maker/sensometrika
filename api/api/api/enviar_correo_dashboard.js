@@ -25,17 +25,19 @@ function actualizarPreviewEnVivo() {
     }
 }
 
-function enviarCorreoIndividualSeleccionado() {
+async function enviarCorreoIndividualSeleccionado() {
     try {
         const correoInput = document.getElementById('empCorreo');
         const asuntoInput = document.getElementById('previewAsunto');
         const redaccionInput = document.getElementById('previewRedaccion');
         const inputNombre = document.getElementById('empNombre');
+        const inputContacto = document.getElementById('empContacto');
         
         const correo = correoInput ? correoInput.value.trim() : '';
         const asunto = asuntoInput ? asuntoInput.value : 'Evaluación psicotécnica D.S. N° 170';
         const cuerpo = redaccionInput ? redaccionInput.value : '';
         const empresa = inputNombre ? inputNombre.value.trim() : 'Empresa';
+        const contacto = inputContacto ? inputContacto.value.trim() : 'Prevención';
 
         if (!correo) {
             if (typeof mostrarAlertaSimulador === 'function') {
@@ -47,17 +49,37 @@ function enviarCorreoIndividualSeleccionado() {
         }
 
         if (typeof mostrarAlertaSimulador === 'function') {
-            mostrarAlertaSimulador(`Despachando correo oficial a ${correo}...`, 'info');
+            mostrarAlertaSimulador(`Despachando correo oficial B2B a ${correo}...`, 'info');
         }
 
-        // Simulación de envío directo por API (Resend / Backend) sin abrir programas de terceros
-        setTimeout(() => {
+        const originUrl = window.location.origin.includes('127.0.0.1') ? 'http://127.0.0.1:5500' : window.location.origin;
+        const enlaceDemo = `${originUrl}/demo_empresas.html?empresa=${encodeURIComponent(empresa)}`;
+
+        // Petición real al servidor para que el correo salga por la API de despacho
+        const response = await fetch('/api/enviar-correo', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                tipo: 'b2b',
+                emailDestino: correo,
+                nombreApr: contacto,
+                empresa: empresa,
+                enlace: enlaceDemo,
+                plan: 'PLUS'
+            })
+        });
+
+        const resJson = await response.json();
+
+        if (response.ok && resJson.success) {
             if (typeof mostrarAlertaSimulador === 'function') {
-                mostrarAlertaSimulador(`¡Correo enviado con éxito a ${empresa} (${correo}) desde Sensometrika!`, 'exito');
-            } else {
-                alert(`¡Correo enviado con éxito a ${empresa} (${correo}) desde Sensometrika!`);
+                mostrarAlertaSimulador(`¡Correo corporativo enviado con éxito a ${empresa} (${correo})!`, 'exito');
             }
-        }, 1000);
+        } else {
+            if (typeof mostrarAlertaSimulador === 'function') {
+                mostrarAlertaSimulador(`Error en despacho: ${resJson.error || 'No se pudo enviar'}`, 'error');
+            }
+        }
 
     } catch (error) {
         console.error("Error al enviar correo individual:", error);
