@@ -1,1056 +1,2460 @@
 <!DOCTYPE html>
+
 <html lang="es">
+
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sensometrika - Centro de Mando Unificado & Auditoría Global</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <style>
-        :root {
-            --primary-color: #3b82f6;
-            --success-color: #22c55e;
-            --warning-color: #f59e0b;
-            --danger-color: #ef4444;
-            --b2b-color: #8b5cf6;
-            --b2c-color: #06b6d4;
-            --demo-color: #38bdf8;
-            --bg-color: #0f172a;
-            --card-bg: #1e293b;
-            --text-main: #f8fafc;
-            --text-muted: #94a3b8;
-            --border-color: #334155;
-            --input-bg: #0f172a;
-        }
 
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-main);
-            margin: 0;
-            padding: 20px;
-        }
+<meta charset="UTF-8">
 
-        .container {
-            max-width: 1360px;
-            margin: 0 auto;
-        }
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-        header {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            background: var(--card-bg);
-            padding: 20px 30px;
-            border-radius: 12px;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
-            border: 1px solid var(--border-color);
-            margin-bottom: 20px;
-            text-align: center;
-        }
+<title>Sensometrika - Centro de Mando Unificado & Auditoría Global</title>
 
-        .header-brand-box {
-            background: rgba(11, 19, 36, 0.9);
-            border: 1px solid #1e293b;
-            padding: 8px 16px;
-            border-radius: 12px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.6);
-        }
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-        .header-brand-box img {
-            width: 170px;
-            height: auto;
-            display: block;
-            border-radius: 4px;
-            filter: drop-shadow(0 0 10px rgba(56, 189, 248, 0.6));
-        }
+<style>
 
-        .brand-subtitle {
-            margin-top: 8px;
-            color: var(--demo-color);
-            font-size: 0.78rem;
-            font-weight: 800;
-            text-transform: uppercase;
-            letter-spacing: 1.5px;
-        }
+:root {
 
-        .cloud-status-bar {
-            display: grid;
-            grid-template-columns: repeat(5, 1fr);
-            gap: 12px;
-            margin-bottom: 20px;
-        }
+--primary-color: #3b82f6;
 
-        @media (max-width: 1100px) {
-            .cloud-status-bar {
-                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            }
-        }
+--success-color: #22c55e;
 
-        .service-badge {
-            background: var(--card-bg);
-            border: 1px solid var(--border-color);
-            padding: 12px 15px;
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            font-size: 13px;
-            font-weight: 500;
-            min-height: 46px;
-            box-sizing: border-box;
-        }
+--warning-color: #f59e0b;
 
-        .service-badge-telemetry {
-            gap: 10px;
-            padding: 8px 14px;
-        }
+--danger-color: #ef4444;
 
-        .telemetry-meta {
-            display: flex;
-            flex-direction: column;
-            line-height: 1.2;
-            white-space: nowrap;
-        }
+--b2b-color: #8b5cf6;
 
-        .telemetry-label {
-            font-size: 10px;
-            font-weight: 700;
-            color: var(--text-muted);
-            text-transform: uppercase;
-            letter-spacing: 0.4px;
-        }
+--b2c-color: #06b6d4;
 
-        .telemetry-ping {
-            font-size: 12px;
-            font-weight: 800;
-            color: var(--success-color);
-        }
+--demo-color: #38bdf8;
 
-        .telemetry-sparkline {
-            flex: 1;
-            height: 28px;
-            min-width: 70px;
-            position: relative;
-        }
+--bg-color: #0f172a;
 
-        .service-indicator {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
+--card-bg: #1e293b;
 
-        .dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            display: inline-block;
-        }
+--text-main: #f8fafc;
 
-        .dot-ok { background-color: var(--success-color); box-shadow: 0 0 8px rgba(34, 197, 94, 0.4); }
-        .dot-warn { background-color: var(--warning-color); box-shadow: 0 0 8px rgba(245, 158, 11, 0.4); }
+--text-muted: #94a3b8;
 
-        .global-kpi-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(195px, 1fr));
-            gap: 14px;
-            margin-bottom: 20px;
-        }
+--border-color: #334155;
 
-        .kpi-card {
-            background: var(--card-bg);
-            border: 1px solid var(--border-color);
-            border-radius: 10px;
-            padding: 16px;
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-            position: relative;
-            overflow: hidden;
-            cursor: pointer;
-            transition: transform 0.15s ease, border-color 0.2s ease, box-shadow 0.2s ease;
-        }
+--input-bg: #0f172a;
 
-        .kpi-card:hover {
-            transform: translateY(-2px);
-            border-color: var(--accent, var(--primary-color));
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
-        }
+}
 
-        .kpi-card.kpi-selected {
-            border-color: var(--accent, var(--primary-color));
-            background: #243247;
-            box-shadow: 0 0 0 1px var(--accent, var(--primary-color));
-        }
 
-        .kpi-card::before {
-            content: '';
-            position: absolute;
-            top: 0; left: 0; right: 0;
-            height: 3px;
-            background: var(--accent, var(--primary-color));
-        }
 
-        .kpi-header-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
+body {
 
-        .kpi-title {
-            font-size: 11px;
-            font-weight: 700;
-            color: var(--text-muted);
-            text-transform: uppercase;
-            letter-spacing: 0.6px;
-        }
+font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 
-        .kpi-action-hint {
-            font-size: 10px;
-            font-weight: 800;
-            color: var(--accent, var(--demo-color));
-            background: rgba(15, 23, 42, 0.7);
-            padding: 2px 6px;
-            border-radius: 4px;
-        }
+background-color: var(--bg-color);
 
-        .kpi-num {
-            font-size: 28px;
-            font-weight: 900;
-            color: var(--text-main);
-        }
+color: var(--text-main);
 
-        .kpi-sub {
-            font-size: 11px;
-            color: var(--text-muted);
-        }
+margin: 0;
 
-        .kpi-drawer {
-            background: #162033;
-            border: 1px solid var(--b2b-color);
-            border-radius: 12px;
-            padding: 20px;
-            margin-bottom: 20px;
-            display: none;
-            box-shadow: 0 10px 28px rgba(0, 0, 0, 0.45);
-        }
+padding: 20px;
 
-        .kpi-drawer.open {
-            display: block;
-        }
+}
 
-        .kpi-drawer-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 1px solid var(--border-color);
-            padding-bottom: 10px;
-            margin-bottom: 14px;
-            gap: 10px;
-        }
 
-        .kpi-drawer-title {
-            font-size: 15px;
-            font-weight: 800;
-            color: var(--text-main);
-            margin: 0;
-        }
 
-        .btn-close-drawer {
-            background: #0f172a;
-            border: 1px solid var(--border-color);
-            color: var(--text-muted);
-            padding: 5px 12px;
-            border-radius: 6px;
-            font-size: 12px;
-            font-weight: 700;
-            cursor: pointer;
-        }
+.container {
 
-        .btn-close-drawer:hover {
-            color: #fff;
-            border-color: var(--danger-color);
-        }
+max-width: 1360px;
 
-        .action-bar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
-            gap: 10px;
-        }
+margin: 0 auto;
 
-        .tabs-nav {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
+}
 
-        .tab-btn {
-            background-color: var(--card-bg);
-            color: var(--text-muted);
-            border: 1px solid var(--border-color);
-            padding: 12px 22px;
-            border-radius: 8px;
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
 
-        .tab-btn.active-empresas { background-color: var(--b2b-color); color: white; border-color: var(--b2b-color); }
-        .tab-btn.active-b2b { background-color: var(--b2b-color); color: white; border-color: var(--b2b-color); }
-        .tab-btn.active-b2c { background-color: var(--b2c-color); color: #0f172a; border-color: var(--b2c-color); }
-        .tab-btn.active-audit { background-color: var(--success-color); color: #0f172a; border-color: var(--success-color); }
 
-        .action-right {
-            display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
-        }
+header {
 
-        .btn-sync-cloud, .btn-reset-global, .btn-vitrina-demo {
-            background-color: #1e293b;
-            color: #f1f5f9;
-            border: 1px solid #475569;
-            padding: 11px 16px;
-            border-radius: 8px;
-            font-size: 12px;
-            font-weight: 800;
-            text-transform: uppercase;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            text-decoration: none;
-        }
+display: flex;
 
-        .btn-sync-cloud:hover { background-color: #0284c7; border-color: #38bdf8; }
-        .btn-vitrina-demo { background-color: #0284c7; border-color: #38bdf8; color: #ffffff; }
-        .btn-vitrina-demo:hover { background-color: #0369a1; }
-        .btn-reset-global:hover { background-color: #334155; border-color: var(--danger-color); }
+flex-direction: column;
 
-        .tab-content { display: none; }
-        .tab-content.active { display: block; }
+align-items: center;
 
-        .grid-dashboard {
-            display: grid;
-            grid-template-columns: 1.2fr 0.8fr;
-            gap: 25px;
-            margin-bottom: 25px;
-        }
+background: var(--card-bg);
 
-        @media (max-width: 900px) {
-            .grid-dashboard { grid-template-columns: 1fr; }
-        }
+padding: 20px 30px;
 
-        .card {
-            background: var(--card-bg);
-            padding: 25px;
-            border-radius: 12px;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
-            border: 1px solid var(--border-color);
-            margin-bottom: 25px;
-        }
+border-radius: 12px;
 
-        .card h2 {
-            margin-top: 0;
-            font-size: 18px;
-            margin-bottom: 20px;
-            border-bottom: 2px solid var(--border-color);
-            padding-bottom: 10px;
-            color: var(--text-main);
-        }
+box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
 
-        .form-group { margin-bottom: 15px; }
-        .form-group label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 5px; color: var(--text-muted); }
-        .form-group input, .form-group select, .form-group textarea {
-            width: 100%; padding: 11px; background-color: var(--input-bg);
-            border: 1px solid var(--border-color); border-radius: 6px; font-size: 14px;
-            color: var(--text-main); box-sizing: border-box; font-family: inherit;
-        }
+border: 1px solid var(--border-color);
 
-        .btn-b2b { background-color: var(--b2b-color); color: white; border: none; padding: 12px; border-radius: 6px; font-weight: 600; cursor: pointer; width: 100%; }
-        .btn-b2c { background-color: var(--b2c-color); color: #0f172a; border: none; padding: 12px; border-radius: 6px; font-weight: 700; cursor: pointer; width: 100%; }
-        .btn-demo { background-color: var(--demo-color); color: #0f172a; border: none; padding: 12px; border-radius: 6px; font-weight: 700; cursor: pointer; width: 100%; }
-        .btn-b2b:hover, .btn-b2c:hover, .btn-demo:hover { opacity: 0.9; }
+margin-bottom: 20px;
 
-        .metrics-container { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
-        .metric-box { background: #0f172a; padding: 20px; border-radius: 8px; text-align: center; border: 1px solid var(--border-color); }
-        .metric-value { font-size: 32px; font-weight: bold; color: var(--primary-color); margin-bottom: 5px; }
-        .metric-label { font-size: 13px; color: var(--text-muted); }
+text-align: center;
 
-        .filter-bar {
-            display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
-            margin-bottom: 14px;
-            align-items: center;
-        }
+}
 
-        .filter-pill {
-            background: #0f172a;
-            border: 1px solid var(--border-color);
-            color: var(--text-muted);
-            padding: 6px 12px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 700;
-            cursor: pointer;
-        }
 
-        .filter-pill.active {
-            background: var(--primary-color);
-            color: #fff;
-            border-color: var(--primary-color);
-        }
 
-        .table-container { overflow-x: auto; }
-        table { width: 100%; border-collapse: collapse; text-align: left; font-size: 13px; }
-        th, td { padding: 12px 15px; border-bottom: 1px solid var(--border-color); }
-        th { background-color: #0f172a; color: var(--text-muted); font-weight: 600; font-size: 11px; text-transform: uppercase; }
-        tr:hover { background-color: rgba(255, 255, 255, 0.02); }
-        
-        .badge-status { padding: 3px 8px; border-radius: 4px; font-weight: 800; font-size: 10px; text-transform: uppercase; display: inline-block; }
-        .badge-ok { background: rgba(34, 197, 94, 0.15); color: #22c55e; border: 1px solid #22c55e; }
+.header-brand-box {
 
-        .btn-mini-action {
-            background: rgba(56, 189, 248, 0.12);
-            border: 1px solid #38bdf8;
-            color: #38bdf8;
-            padding: 4px 10px;
-            border-radius: 5px;
-            font-size: 11px;
-            font-weight: 700;
-            cursor: pointer;
-            text-decoration: none;
-            display: inline-block;
-            margin-right: 4px;
-        }
+background: rgba(11, 19, 36, 0.9);
 
-        .btn-mini-action:hover {
-            background: #0284c7;
-            color: #fff;
-        }
+border: 1px solid #1e293b;
 
-        .resultado-link-box { background: #0f172a; border: 1px dashed var(--demo-color); padding: 12px; border-radius: 6px; margin-top: 12px; display: none; }
-        .resultado-link-box p { font-size: 12px; color: var(--text-muted); margin-bottom: 6px; }
-        .resultado-link-box input { font-family: monospace; font-size: 11px; padding: 6px; margin-bottom: 6px; }
+padding: 8px 16px;
 
-        #simulador-alertas-container {
-            margin-bottom: 15px;
-        }
-    </style>
+border-radius: 12px;
+
+box-shadow: 0 10px 25px rgba(0,0,0,0.6);
+
+}
+
+
+
+.header-brand-box img {
+
+width: 170px;
+
+height: auto;
+
+display: block;
+
+border-radius: 4px;
+
+filter: drop-shadow(0 0 10px rgba(56, 189, 248, 0.6));
+
+}
+
+
+
+.brand-subtitle {
+
+margin-top: 8px;
+
+color: var(--demo-color);
+
+font-size: 0.78rem;
+
+font-weight: 800;
+
+text-transform: uppercase;
+
+letter-spacing: 1.5px;
+
+}
+
+
+
+.cloud-status-bar {
+
+display: grid;
+
+grid-template-columns: repeat(5, 1fr);
+
+gap: 12px;
+
+margin-bottom: 20px;
+
+}
+
+
+
+@media (max-width: 1100px) {
+
+.cloud-status-bar {
+
+grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+
+}
+
+}
+
+
+
+.service-badge {
+
+background: var(--card-bg);
+
+border: 1px solid var(--border-color);
+
+padding: 12px 15px;
+
+border-radius: 8px;
+
+display: flex;
+
+align-items: center;
+
+justify-content: space-between;
+
+font-size: 13px;
+
+font-weight: 500;
+
+min-height: 46px;
+
+box-sizing: border-box;
+
+}
+
+
+
+.service-badge-telemetry {
+
+gap: 10px;
+
+padding: 8px 14px;
+
+}
+
+
+
+.telemetry-meta {
+
+display: flex;
+
+flex-direction: column;
+
+line-height: 1.2;
+
+white-space: nowrap;
+
+}
+
+
+
+.telemetry-label {
+
+font-size: 10px;
+
+font-weight: 700;
+
+color: var(--text-muted);
+
+text-transform: uppercase;
+
+letter-spacing: 0.4px;
+
+}
+
+
+
+.telemetry-ping {
+
+font-size: 12px;
+
+font-weight: 800;
+
+color: var(--success-color);
+
+}
+
+
+
+.telemetry-sparkline {
+
+flex: 1;
+
+height: 28px;
+
+min-width: 70px;
+
+position: relative;
+
+}
+
+
+
+.service-indicator {
+
+display: flex;
+
+align-items: center;
+
+gap: 6px;
+
+}
+
+
+
+.dot {
+
+width: 8px;
+
+height: 8px;
+
+border-radius: 50%;
+
+display: inline-block;
+
+}
+
+
+
+.dot-ok { background-color: var(--success-color); box-shadow: 0 0 8px rgba(34, 197, 94, 0.4); }
+
+.dot-warn { background-color: var(--warning-color); box-shadow: 0 0 8px rgba(245, 158, 11, 0.4); }
+
+
+
+.global-kpi-grid {
+
+display: grid;
+
+grid-template-columns: repeat(auto-fit, minmax(195px, 1fr));
+
+gap: 14px;
+
+margin-bottom: 20px;
+
+}
+
+
+
+.kpi-card {
+
+background: var(--card-bg);
+
+border: 1px solid var(--border-color);
+
+border-radius: 10px;
+
+padding: 16px;
+
+display: flex;
+
+flex-direction: column;
+
+gap: 4px;
+
+position: relative;
+
+overflow: hidden;
+
+cursor: pointer;
+
+transition: transform 0.15s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+
+}
+
+
+
+.kpi-card:hover {
+
+transform: translateY(-2px);
+
+border-color: var(--accent, var(--primary-color));
+
+box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
+
+}
+
+
+
+.kpi-card.kpi-selected {
+
+border-color: var(--accent, var(--primary-color));
+
+background: #243247;
+
+box-shadow: 0 0 0 1px var(--accent, var(--primary-color));
+
+}
+
+
+
+.kpi-card::before {
+
+content: '';
+
+position: absolute;
+
+top: 0; left: 0; right: 0;
+
+height: 3px;
+
+background: var(--accent, var(--primary-color));
+
+}
+
+
+
+.kpi-header-row {
+
+display: flex;
+
+justify-content: space-between;
+
+align-items: center;
+
+}
+
+
+
+.kpi-title {
+
+font-size: 11px;
+
+font-weight: 700;
+
+color: var(--text-muted);
+
+text-transform: uppercase;
+
+letter-spacing: 0.6px;
+
+}
+
+
+
+.kpi-action-hint {
+
+font-size: 10px;
+
+font-weight: 800;
+
+color: var(--accent, var(--demo-color));
+
+background: rgba(15, 23, 42, 0.7);
+
+padding: 2px 6px;
+
+border-radius: 4px;
+
+}
+
+
+
+.kpi-num {
+
+font-size: 28px;
+
+font-weight: 900;
+
+color: var(--text-main);
+
+}
+
+
+
+.kpi-sub {
+
+font-size: 11px;
+
+color: var(--text-muted);
+
+}
+
+
+
+.kpi-drawer {
+
+background: #162033;
+
+border: 1px solid var(--b2b-color);
+
+border-radius: 12px;
+
+padding: 20px;
+
+margin-bottom: 20px;
+
+display: none;
+
+box-shadow: 0 10px 28px rgba(0, 0, 0, 0.45);
+
+animation: fadeInDown 0.2s ease;
+
+}
+
+
+
+.kpi-drawer.open {
+
+display: block;
+
+}
+
+
+
+@keyframes fadeInDown {
+
+from { opacity: 0; transform: translateY(-6px); }
+
+to { opacity: 1; transform: translateY(0); }
+
+}
+
+
+
+.kpi-drawer-header {
+
+display: flex;
+
+justify-content: space-between;
+
+align-items: center;
+
+border-bottom: 1px solid var(--border-color);
+
+padding-bottom: 10px;
+
+margin-bottom: 14px;
+
+gap: 10px;
+
+}
+
+
+
+.kpi-drawer-title {
+
+font-size: 15px;
+
+font-weight: 800;
+
+color: var(--text-main);
+
+margin: 0;
+
+}
+
+
+
+.btn-close-drawer {
+
+background: #0f172a;
+
+border: 1px solid var(--border-color);
+
+color: var(--text-muted);
+
+padding: 5px 12px;
+
+border-radius: 6px;
+
+font-size: 12px;
+
+font-weight: 700;
+
+cursor: pointer;
+
+}
+
+
+
+.btn-close-drawer:hover {
+
+color: #fff;
+
+border-color: var(--danger-color);
+
+}
+
+
+
+.action-bar {
+
+display: flex;
+
+justify-content: space-between;
+
+align-items: center;
+
+margin-bottom: 20px;
+
+flex-wrap: wrap;
+
+gap: 10px;
+
+}
+
+
+
+.tabs-nav {
+
+display: flex;
+
+gap: 10px;
+
+flex-wrap: wrap;
+
+}
+
+
+
+.tab-btn {
+
+background-color: var(--card-bg);
+
+color: var(--text-muted);
+
+border: 1px solid var(--border-color);
+
+padding: 12px 22px;
+
+border-radius: 8px;
+
+font-size: 14px;
+
+font-weight: 600;
+
+cursor: pointer;
+
+transition: all 0.2s;
+
+}
+
+
+
+.tab-btn.active-b2b { background-color: var(--b2b-color); color: white; border-color: var(--b2b-color); }
+
+.tab-btn.active-b2c { background-color: var(--b2c-color); color: #0f172a; border-color: var(--b2c-color); }
+
+.tab-btn.active-demo { background-color: var(--demo-color); color: #0f172a; border-color: var(--demo-color); }
+
+.tab-btn.active-audit { background-color: var(--success-color); color: #0f172a; border-color: var(--success-color); }
+
+.tab-btn.active-empresas { background-color: var(--b2b-color); color: white; border-color: var(--b2b-color); }
+
+
+
+.action-right {
+
+display: flex;
+
+gap: 8px;
+
+flex-wrap: wrap;
+
+}
+
+
+
+.btn-sync-cloud, .btn-reset-global, .btn-vitrina-demo {
+
+background-color: #1e293b;
+
+color: #f1f5f9;
+
+border: 1px solid #475569;
+
+padding: 11px 16px;
+
+border-radius: 8px;
+
+font-size: 12px;
+
+font-weight: 800;
+
+text-transform: uppercase;
+
+cursor: pointer;
+
+transition: all 0.2s;
+
+display: flex;
+
+align-items: center;
+
+gap: 6px;
+
+text-decoration: none;
+
+}
+
+
+
+.btn-sync-cloud:hover { background-color: #0284c7; border-color: #38bdf8; }
+
+.btn-vitrina-demo { background-color: #0284c7; border-color: #38bdf8; color: #ffffff; }
+
+.btn-vitrina-demo:hover { background-color: #0369a1; }
+
+.btn-reset-global:hover { background-color: #334155; border-color: var(--danger-color); }
+
+
+
+.tab-content { display: none; }
+
+.tab-content.active { display: block; }
+
+
+
+.grid-dashboard {
+
+display: grid;
+
+grid-template-columns: 1.2fr 0.8fr;
+
+gap: 25px;
+
+margin-bottom: 25px;
+
+}
+
+
+
+@media (max-width: 900px) {
+
+.grid-dashboard { grid-template-columns: 1fr; }
+
+}
+
+
+
+.card {
+
+background: var(--card-bg);
+
+padding: 25px;
+
+border-radius: 12px;
+
+box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+
+border: 1px solid var(--border-color);
+
+margin-bottom: 25px;
+
+}
+
+
+
+.card h2 {
+
+margin-top: 0;
+
+font-size: 18px;
+
+margin-bottom: 20px;
+
+border-bottom: 2px solid var(--border-color);
+
+padding-bottom: 10px;
+
+color: var(--text-main);
+
+}
+
+
+
+.form-group { margin-bottom: 15px; }
+
+.form-group label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 5px; color: var(--text-muted); }
+
+.form-group input, .form-group select, .form-group textarea {
+
+width: 100%; padding: 11px; background-color: var(--input-bg);
+
+border: 1px solid var(--border-color); border-radius: 6px; font-size: 14px;
+
+color: var(--text-main); box-sizing: border-box; font-family: inherit;
+
+}
+
+
+
+.btn-b2b { background-color: var(--b2b-color); color: white; border: none; padding: 12px; border-radius: 6px; font-weight: 600; cursor: pointer; width: 100%; }
+
+.btn-b2c { background-color: var(--b2c-color); color: #0f172a; border: none; padding: 12px; border-radius: 6px; font-weight: 700; cursor: pointer; width: 100%; }
+
+.btn-demo { background-color: var(--demo-color); color: #0f172a; border: none; padding: 12px; border-radius: 6px; font-weight: 700; cursor: pointer; width: 100%; }
+
+.btn-b2b:hover, .btn-b2c:hover, .btn-demo:hover { opacity: 0.9; }
+
+
+
+.metrics-container { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+
+.metric-box { background: #0f172a; padding: 20px; border-radius: 8px; text-align: center; border: 1px solid var(--border-color); }
+
+.metric-value { font-size: 32px; font-weight: bold; color: var(--primary-color); margin-bottom: 5px; }
+
+.metric-label { font-size: 13px; color: var(--text-muted); }
+
+
+
+.filter-bar {
+
+display: flex;
+
+gap: 8px;
+
+flex-wrap: wrap;
+
+margin-bottom: 14px;
+
+align-items: center;
+
+}
+
+
+
+.filter-pill {
+
+background: #0f172a;
+
+border: 1px solid var(--border-color);
+
+color: var(--text-muted);
+
+padding: 6px 12px;
+
+border-radius: 20px;
+
+font-size: 12px;
+
+font-weight: 700;
+
+cursor: pointer;
+
+}
+
+
+
+.filter-pill.active {
+
+background: var(--primary-color);
+
+color: #fff;
+
+border-color: var(--primary-color);
+
+}
+
+
+
+.table-container { overflow-x: auto; }
+
+table { width: 100%; border-collapse: collapse; text-align: left; font-size: 13px; }
+
+th, td { padding: 12px 15px; border-bottom: 1px solid var(--border-color); }
+
+th { background-color: #0f172a; color: var(--text-muted); font-weight: 600; font-size: 11px; text-transform: uppercase; }
+
+tr:hover { background-color: rgba(255, 255, 255, 0.02); }
+
+
+.badge-status { padding: 3px 8px; border-radius: 4px; font-weight: 800; font-size: 10px; text-transform: uppercase; display: inline-block; }
+
+.badge-ok { background: rgba(34, 197, 94, 0.15); color: #22c55e; border: 1px solid #22c55e; }
+
+.badge-pending { background: rgba(245, 158, 11, 0.15); color: #f59e0b; border: 1px solid #f59e0b; }
+
+.badge-progress { background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid #38bdf8; }
+
+.badge-exec { background: rgba(139, 92, 246, 0.15); color: #8b5cf6; border: 1px solid #8b5cf6; }
+
+.badge-bad { background: rgba(239, 68, 68, 0.15); color: #ef4444; border: 1px solid #ef4444; }
+
+
+
+.btn-mini-action {
+
+background: rgba(56, 189, 248, 0.12);
+
+border: 1px solid #38bdf8;
+
+color: #38bdf8;
+
+padding: 4px 10px;
+
+border-radius: 5px;
+
+font-size: 11px;
+
+font-weight: 700;
+
+cursor: pointer;
+
+text-decoration: none;
+
+display: inline-block;
+
+margin-right: 4px;
+
+}
+
+
+
+.btn-mini-action:hover {
+
+background: #0284c7;
+
+color: #fff;
+
+}
+
+
+
+.resultado-link-box { background: #0f172a; border: 1px dashed var(--demo-color); padding: 12px; border-radius: 6px; margin-top: 12px; display: none; }
+
+.resultado-link-box p { font-size: 12px; color: var(--text-muted); margin-bottom: 6px; }
+
+.resultado-link-box input { font-family: monospace; font-size: 11px; padding: 6px; margin-bottom: 6px; }
+
+
+
+/* Contenedor de Alertas Exclusivas del Simulador */
+
+#simulador-alertas-container {
+
+margin-bottom: 15px;
+
+}
+
+</style>
+
 </head>
+
 <body>
 
-    <div class="container">
-        <div id="simulador-alertas-container"></div>
 
-        <header>
-            <div class="header-brand-box">
-                <img src="sensometrica.jpg" alt="SENSOMETRIKA Calibration Technology">
-            </div>
-            <span class="brand-subtitle">CENTRO DE MANDO UNIFICADO, AUDITORÍA GLOBAL & GENERADOR DE PRUEBAS B2B</span>
-        </header>
 
-        <div class="cloud-status-bar">
-            <div class="service-badge">
-                <span>Vercel (Front)</span>
-                <span class="service-indicator"><span class="dot dot-ok"></span> <strong style="color:var(--success-color)">OK</strong></span>
-            </div>
-            <div class="service-badge">
-                <span>Supabase (DB Global)</span>
-                <span class="service-indicator"><span id="dotSupabase" class="dot dot-ok"></span> <strong id="lblSupabaseStatus" style="color:var(--success-color)">CONECTADO</strong></span>
-            </div>
-            <div class="service-badge service-badge-telemetry" title="Telemetría de Red & Latencia Cloud en Tiempo Real">
-                <div class="telemetry-meta">
-                    <span class="telemetry-label">Red / Ping</span>
-                    <span id="currentPing" class="telemetry-ping">25 ms</span>
-                </div>
-                <div class="telemetry-sparkline">
-                    <canvas id="networkChart"></canvas>
-                </div>
-            </div>
-            <div class="service-badge">
-                <span>Resend (Despacho Mails)</span>
-                <span class="service-indicator"><span class="dot dot-ok"></span> <strong style="color:var(--success-color)">OK</strong></span>
-            </div>
-            <div class="service-badge">
-                <span>Última Sincronización</span>
-                <span class="service-indicator"><strong id="lblUltimaSync" style="color:var(--demo-color)">Ahora</strong></span>
-            </div>
-        </div>
+<div class="container">
 
-        <div class="global-kpi-grid">
-            <div class="kpi-card" id="cardKpiVisitas" style="--accent: #3b82f6;" onclick="abrirDetalleKPI('VISITAS')">
-                <div class="kpi-header-row">
-                    <span class="kpi-title">👁️ Visitas a la Plataforma</span>
-                    <span class="kpi-action-hint">VER DETALLE ▾</span>
-                </div>
-                <span class="kpi-num" id="kpiVisitas">0</span>
-                <span class="kpi-sub">Ingresos registrados a portada y módulos</span>
-            </div>
+<!-- Contenedor global de alertas de simulación -->
 
-            <div class="kpi-card" id="cardKpiSimulaciones" style="--accent: #38bdf8;" onclick="abrirDetalleKPI('SIMULACIONES')">
-                <div class="kpi-header-row">
-                    <span class="kpi-title">⚡ Simulaciones Ejecutadas</span>
-                    <span class="kpi-action-hint">VER DETALLE ▾</span>
-                </div>
-                <span class="kpi-num" id="kpiSimulaciones">0</span>
-                <span class="kpi-sub">Pruebas psicométricas y sensoriales</span>
-            </div>
+<div id="simulador-alertas-container"></div>
 
-            <div class="kpi-card" id="cardKpiCertificados" style="--accent: #22c55e;" onclick="abrirDetalleKPI('CERTIFICADOS')">
-                <div class="kpi-header-row">
-                    <span class="kpi-title">📄 Certificados / Informes</span>
-                    <span class="kpi-action-hint">VER DETALLE ▾</span>
-                </div>
-                <span class="kpi-num" id="kpiCertificados">0</span>
-                <span class="kpi-sub">Dictámenes B2B y B2C emitidos</span>
-            </div>
 
-            <div class="kpi-card" id="cardKpiBolsas" style="--accent: #8b5cf6;" onclick="abrirDetalleKPI('BOLSAS')">
-                <div class="kpi-header-row">
-                    <span class="kpi-title">🏢 Bolsas B2B Activas</span>
-                    <span class="kpi-action-hint">VER BOLSAS ▾</span>
-                </div>
-                <span class="kpi-num" id="kpiBolsasB2B">0</span>
-                <span class="kpi-sub" id="kpiCuposSub">0 cupos asignados</span>
-            </div>
 
-            <div class="kpi-card" id="cardKpiDemos" style="--accent: #f59e0b;" onclick="abrirDetalleKPI('DEMOS')">
-                <div class="kpi-header-row">
-                    <span class="kpi-title">🎁 Pruebas Demo B2B/B2C</span>
-                    <span class="kpi-action-hint">VER DEMOS ▾</span>
-                </div>
-                <span class="kpi-num" id="kpiDemos">0</span>
-                <span class="kpi-sub">Links comerciales enviados a prospectos</span>
-            </div>
-        </div>
+<header>
 
-        <div id="kpiDetailDrawer" class="kpi-drawer">
-            <div class="kpi-drawer-header">
-                <h3 class="kpi-drawer-title" id="kpiDrawerTitle">Detalle del Indicador</h3>
-                <button type="button" class="btn-close-drawer" onclick="cerrarDetalleKPI()">✕ Cerrar Vista</button>
-            </div>
-            <div id="kpiDrawerBody" class="table-container"></div>
-        </div>
+<div class="header-brand-box">
 
-        <div class="action-bar">
-            <div class="tabs-nav">
-                <button id="btnTabEmpresas" class="tab-btn active-empresas" onclick="switchTab('Empresas')">🏢 Gestión de Empresas & Campañas B2B</button>
-                <button id="btnTabB2B" class="tab-btn" onclick="switchTab('B2B')">🏢 Bolsas & Empresas (B2B)</button>
-                <button id="btnTabB2C" class="tab-btn" onclick="switchTab('B2C')">👤 Particular (B2C)</button>
-                <button id="btnTabAudit" class="tab-btn" onclick="switchTab('Audit')">📊 Auditoría & Visitas en Vivo</button>
-            </div>
-            <div class="action-right">
-                <a href="demo_empresas.html" class="btn-vitrina-demo">
-                    🚀 Ir a Vitrina Demo B2B
-                </a>
-                <button type="button" class="btn-sync-cloud" onclick="sincronizarTodoCloud()">
-                    ☁️ Sincronizar Cloud
-                </button>
-                <button type="button" class="btn-reset-global" onclick="reiniciarEstadoSesion()">
-                    🔄 Limpiar Local
-                </button>
-            </div>
-        </div>
+<img src="sensometrica.jpg" alt="SENSOMETRIKA Calibration Technology">
 
-        <div id="contentEmpresas" class="tab-content active">
-            <div class="grid-dashboard">
-                <div class="card" style="border-top: 4px solid var(--b2b-color); margin-bottom:0;">
-                    <h2>🏢 Registro de Empresa & Generación de Link (demo_empresas.html)</h2>
-                    <div class="form-group">
-                        <label for="empNombre">Razón Social de la Empresa *</label>
-                        <input type="text" id="empNombre" placeholder="Ej. Minera & Transportes del Norte SpA" oninput="actualizarPreviewEnVivo()">
-                    </div>
-                    <div class="form-group">
-                        <label for="empContacto">Nombre del Contacto / Prevencionista (APR)</label>
-                        <input type="text" id="empContacto" placeholder="Ej. Carlos Soto (Jefe de Prevención)" oninput="actualizarPreviewEnVivo()">
-                    </div>
-                    <div class="form-group">
-                        <label for="empCorreo">Casilla de Correo Electrónico *</label>
-                        <input type="email" id="empCorreo" placeholder="prevencion@mineranorte.cl">
-                    </div>
-                    <div class="form-group">
-                        <label for="empEstadoServicio">Estado de la Invitación / Servicio</label>
-                        <select id="empEstadoServicio">
-                            <option value="LINK_ENVIADO" selected>🟡 Link Enviado (Pendiente)</option>
-                            <option value="EN_SERVICIO">🟢 En Servicio (Activo en Faena)</option>
-                            <option value="EJECUTADO">🔵 Ejecutado (Prueba / Campaña Finalizada)</option>
-                        </select>
-                    </div>
-                    <button type="button" class="btn-b2b" onclick="registrarYGenerarEmpresa()">💾 Guardar y Generar Enlace demo_empresas.html</button>
-                </div>
+</div>
 
-                <div class="card" style="margin-bottom:0; display: flex; flex-direction: column; justify-content: space-between;">
-                    <div>
-                        <h2>✉️ Correo Oficial de Presentación & Enlace</h2>
-                        <div class="form-group">
-                            <label for="previewAsunto">Asunto del Correo Oficial</label>
-                            <input type="text" id="previewAsunto" value="Evaluación psicotécnica D.S. N° 170 ágil y 100% digital" readonly style="color: var(--demo-color);">
-                        </div>
-                        <div class="form-group">
-                            <label for="previewRedaccion">Plantilla del Correo de Presentación (Vista para la Empresa)</label>
-                            <textarea id="previewRedaccion" rows="8" readonly style="font-size: 12px; line-height: 1.4; color: #cbd5e1;"></textarea>
-                        </div>
-                    </div>
-                    <div style="display: flex; gap: 12px; margin-top: 15px; width: 100%;">
-                        <button type="button" class="btn-b2b" style="flex: 1; background-color: var(--success-color); color: #0f172a;" onclick="enviarCorreoIndividualSeleccionado()">📧 Enviar Correo con Presentación</button>
-                        <button type="button" class="btn-demo" style="flex: 1;" onclick="ejecutarEnvioMasivoCampania()">🚀 Envío Masivo (Campaña)</button>
-                    </div>
-                </div>
-            </div>
+<span class="brand-subtitle">CENTRO DE MANDO UNIFICADO, AUDITORÍA GLOBAL & GENERADOR DE PRUEBAS B2B</span>
 
-            <div class="card" style="margin-top: 25px; border-top: 4px solid var(--b2b-color);">
-                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 15px;">
-                    <h2 style="border:none; margin:0; padding:0;">📋 Nómina Consolidada de Empresas (Seguimiento de Invitaciones)</h2>
-                    <div class="filter-bar" style="margin:0;">
-                        <button type="button" class="filter-pill active" onclick="filtrarEmpresasTabla('TODOS', this)">Todas</button>
-                        <button type="button" class="filter-pill" onclick="filtrarEmpresasTabla('LINK_ENVIADO', this)">🟡 Link Enviado</button>
-                        <button type="button" class="filter-pill" onclick="filtrarEmpresasTabla('EN_SERVICIO', this)">🟢 En Servicio</button>
-                        <button type="button" class="filter-pill" onclick="filtrarEmpresasTabla('EJECUTADO', this)">🔵 Ejecutado</button>
-                    </div>
-                </div>
-                <div class="table-container">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th><input type="checkbox" id="chkSelectAll" onclick="toggleSelectAllEmpresas(this)"></th>
-                                <th>Fecha / Hora Envío</th>
-                                <th>Empresa / Razón Social</th>
-                                <th>Contacto / APR</th>
-                                <th>Correo Electrónico</th>
-                                <th>Estado Actual</th>
-                                <th>Enlace demo_empresas.html</th>
-                                <th>Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody id="tablaEmpresasB2B">
-                            <tr><td colspan="8" style="text-align:center; color:var(--text-muted);">No hay empresas registradas todavía.</td></tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
+</header>
 
-        <div id="contentB2B" class="tab-content">
-            <div class="grid-dashboard">
-                <div class="card" style="border-top: 4px solid var(--b2b-color); margin-bottom:0;">
-                    <h2>Generación de Link Corporativo y Faena</h2>
-                    <div class="form-group">
-                        <label for="b2bCompany">Razón Social de la Empresa</label>
-                        <input type="text" id="b2bCompany" placeholder="Ej. SOCADEP LTDA.">
-                    </div>
-                    <div class="form-group">
-                        <label for="b2bRutEmpresa">RUT Empresa Mandante</label>
-                        <input type="text" id="b2bRutEmpresa" placeholder="Ej. 76.123.456-7">
-                    </div>
-                    <div class="form-group">
-                        <label for="b2bPlanType">Nivel de Batería Requerido</label>
-                        <select id="b2bPlanType">
-                            <option value="BASICO">Plan Básico Laboral (3 Módulos - $6.500 + IVA)</option>
-                            <option value="PLUS" selected>Plan Plus (3 Módulos + Auditivo - $12.900 + IVA)</option>
-                            <option value="FULL">Plan Full (5 Módulos - $18.900 + IVA)</option>
-                            <option value="ALTO">Plan Alto Desempeño (8 Módulos - $24.900 + IVA)</option>
-                        </select>
-                    </div>
-                    <button type="button" class="btn-b2b" onclick="generarLinkB2B()">Generar Link Único B2B</button>
-                    <div id="boxLinkB2B" class="resultado-link-box" style="border-color: var(--b2b-color);">
-                        <p>🔗 Enlace B2B Generado:</p>
-                        <input type="text" id="inputLinkB2B" readonly>
-                        <button type="button" class="btn-b2b" style="padding: 6px; font-size: 12px;" onclick="copiarLink('inputLinkB2B', 'Link B2B copiado')">Copiar Enlace</button>
-                    </div>
-                </div>
-                <div class="card" style="margin-bottom:0;">
-                    <h2>Métricas B2B & Bolsas Contratadas</h2>
-                    <div class="metrics-container">
-                        <div class="metric-box"><div class="metric-value" id="metricaEmpresas" style="color: var(--b2b-color);">0</div><div class="metric-label">Empresas / Bolsas Activas</div></div>
-                        <div class="metric-box"><div class="metric-value" id="metricaLinksB2B" style="color: var(--b2b-color);">0</div><div class="metric-label">Evaluaciones B2B</div></div>
-                    </div>
-                </div>
-            </div>
-        </div>
 
-        <div id="contentB2C" class="tab-content">
-            <div class="grid-dashboard">
-                <div class="card" style="border-top: 4px solid var(--b2c-color); margin-bottom:0;">
-                    <h2>Generación de Acceso Directo (Particular B2C)</h2>
-                    <div class="form-group"><label for="b2cName">Nombre del Titular</label><input type="text" id="b2cName" placeholder="Juan Silva"></div>
-                    <div class="form-group"><label for="b2cRut">RUT Titular</label><input type="text" id="b2cRut" placeholder="12.333.765-3"></div>
-                    <button type="button" class="btn-b2c" onclick="generarLinkB2C()">Generar Link B2C</button>
-                    <div id="boxLinkB2C" class="resultado-link-box" style="border-color: var(--b2c-color);">
-                        <p>🔗 Enlace B2C Generado:</p>
-                        <input type="text" id="inputLinkB2C" readonly>
-                        <button type="button" class="btn-b2c" style="padding: 6px; font-size: 12px;" onclick="copiarLink('inputLinkB2C', 'Link B2C copiado')">Copiar Enlace</button>
-                    </div>
-                </div>
-                <div class="card" style="margin-bottom:0;">
-                    <h2>Métricas B2C Reales</h2>
-                    <div class="metrics-container">
-                        <div class="metric-box"><div class="metric-value" id="metricaAccesosB2C" style="color: var(--b2c-color);">0</div><div class="metric-label">Accesos B2C Emitidos</div></div>
-                        <div class="metric-box"><div class="metric-value" style="color: var(--b2c-color);">100%</div><div class="metric-label">Completitud Telemétrica</div></div>
-                    </div>
-                </div>
-            </div>
-        </div>
 
-        <div id="contentAudit" class="tab-content">
-            <div class="card" style="border-top: 4px solid var(--success-color);">
-                <h2>📡 Bitácora Global de Visitas, Bolsas B2B, Simulaciones y Certificados</h2>
-                <p style="font-size:13px; color:var(--text-muted); margin-bottom:16px;">
-                    Registro consolidado de toda la actividad ocurrida en <strong>www.sensometrika.com</strong>.
-                </p>
-                <div class="table-container">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Fecha / Hora</th>
-                                <th>Tipo de Evento</th>
-                                <th>Usuario / Empresa</th>
-                                <th>Página / Módulo</th>
-                                <th>Detalle / Plan / Cupos</th>
-                            </tr>
-                        </thead>
-                        <tbody id="tablaAuditoriaEventos">
-                            <tr><td colspan="5" style="text-align:center; color:var(--text-muted);">Cargando eventos...</td></tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    </div>
+<div class="cloud-status-bar">
 
-    <!-- Script integrado con la lógica de correo B2B y botones desacoplados -->
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            sincronizarTodoCloud();
-            renderizarTablaEmpresas();
-            actualizarPreviewEnVivo();
-        });
+<div class="service-badge">
 
-        function mostrarAlertaSimulador(mensaje, tipo = 'info') {
-            const contenedor = document.getElementById('simulador-alertas-container');
-            if (!contenedor) return;
+<span>Vercel (Front)</span>
 
-            let bgColor = 'rgba(56, 189, 248, 0.15)';
-            let borderColor = '#38bdf8';
-            let textColor = '#38bdf8';
+<span class="service-indicator"><span class="dot dot-ok"></span> <strong style="color:var(--success-color)">OK</strong></span>
 
-            if (tipo === 'exito') {
-                bgColor = 'rgba(34, 197, 94, 0.15)';
-                borderColor = '#22c55e';
-                textColor = '#22c55e';
-            } else if (tipo === 'alerta' || tipo === 'error') {
-                bgColor = 'rgba(239, 68, 68, 0.15)';
-                borderColor = '#ef4444';
-                textColor = '#ef4444';
-            }
+</div>
 
-            const alerta = document.createElement('div');
-            alerta.style.cssText = `
-                background-color: ${bgColor};
-                border: 1px solid ${borderColor};
-                color: ${textColor};
-                padding: 12px 16px;
-                border-radius: 8px;
-                font-size: 13px;
-                font-weight: 600;
-                margin-bottom: 8px;
-                display: flex;
-                align-items: center;
-                justify-content: space-between;
-                box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-            `;
-            
-            alerta.innerHTML = `
-                <span>⚡ [SENSOMETRIKA SpA]: ${mensaje}</span>
-                <button type="button" onclick="this.parentElement.remove()" style="background:none; border:none; color:${textColor}; font-weight:bold; cursor:pointer; font-size:14px; padding: 0 4px;">✕</button>
-            `;
+<div class="service-badge">
 
-            contenedor.innerHTML = '';
-            contenedor.appendChild(alerta);
+<span>Supabase (DB Global)</span>
 
-            setTimeout(() => {
-                if (alerta && alerta.parentElement) alerta.remove();
-            }, 5000);
-        }
+<span class="service-indicator"><span id="dotSupabase" class="dot dot-ok"></span> <strong id="lblSupabaseStatus" style="color:var(--success-color)">CONECTADO</strong></span>
 
-        function actualizarPreviewEnVivo() {
-            try {
-                const inputNombre = document.getElementById('empNombre');
-                const inputContacto = document.getElementById('empContacto');
-                const txtArea = document.getElementById('previewRedaccion');
+</div>
 
-                if (!txtArea) return;
+<div class="service-badge service-badge-telemetry" title="Telemetría de Red & Latencia Cloud en Tiempo Real">
 
-                const nombreEmpresa = inputNombre && inputNombre.value.trim() ? inputNombre.value.trim() : '[NOMBRE DE LA EMPRESA]';
-                const contacto = inputContacto && inputContacto.value.trim() ? inputContacto.value.trim() : '[Nombre del Contacto / Prevencionista]';
-                
-                const originUrl = window.location.origin.includes('127.0.0.1') ? 'http://127.0.0.1:5500' : window.location.origin;
-                const linkDemo = `${originUrl}/demo_empresas.html?empresa=${encodeURIComponent(nombreEmpresa)}&contacto=${encodeURIComponent(contacto)}`;
+<div class="telemetry-meta">
 
-                const plantilla = `Estimado/a ${contacto},\n\nJunto con saludarle cordialmente, le escribimos desde Sensometrika SpA. Sabemos lo crucial y exigente que es mantener los estándares de seguridad y cumplimiento normativo (D.S. N° 170) en las operaciones de su empresa ${nombreEmpresa}.\n\nPor eso, hemos desarrollado una plataforma moderna, rápida y 100% digital que simplifica por completo la evaluación sensométrica y psicotécnica de sus trabajadores y conductores.\n\n¿Qué nos hace diferentes?\n- Resultados en tiempo real: Cero esperas, informes listos de inmediato.\n- Acceso desde cualquier dispositivo: Ágil, intuitivo y sin instalaciones complejas.\n- Cumplimiento normativo estricto: Diseñado a la medida de la exigencia industrial.\n\nLo invitamos a explorar nuestra vitrina interactiva y probar la dinámica de nuestros módulos periciales haciendo clic en el siguiente enlace de acceso seguro:\n\n${linkDemo}\n\nQuedamos a su entera disposición para coordinar una breve demostración personalizada o resolver cualquier duda.\n\nAtentamente,\n\nEquipo Sensometrika\nPlataforma de Calibración & Evaluación Psicosométrica\nwww.sensometrika.com`;
+<span class="telemetry-label">Red / Ping</span>
 
-                txtArea.value = plantilla;
-            } catch (error) {
-                console.error("Error al actualizar la vista previa en vivo:", error);
-            }
-        }
+<span id="currentPing" class="telemetry-ping">25 ms</span>
 
-        async function enviarCorreoIndividualSeleccionado() {
-            try {
-                const correoInput = document.getElementById('empCorreo');
-                const asuntoInput = document.getElementById('previewAsunto');
-                const redaccionInput = document.getElementById('previewRedaccion');
-                const inputNombre = document.getElementById('empNombre');
-                const inputContacto = document.getElementById('empContacto');
-                
-                const correo = correoInput ? correoInput.value.trim() : '';
-                const asunto = asuntoInput ? asuntoInput.value : 'Evaluación psicotécnica D.S. N° 170';
-                const empresa = inputNombre ? inputNombre.value.trim() : 'Empresa';
-                const contacto = inputContacto ? inputContacto.value.trim() : 'Prevención';
+</div>
 
-                if (!correo) {
-                    mostrarAlertaSimulador('Ingrese o seleccione una casilla de correo electrónico válida.', 'alerta');
-                    return;
-                }
+<div class="telemetry-sparkline">
 
-                mostrarAlertaSimulador(`Despachando correo corporativo B2B a ${correo}...`, 'info');
+<canvas id="networkChart"></canvas>
 
-                const originUrl = window.location.origin.includes('127.0.0.1') ? 'http://127.0.0.1:5500' : window.location.origin;
-                const enlaceDemo = `${originUrl}/demo_empresas.html?empresa=${encodeURIComponent(empresa)}&contacto=${encodeURIComponent(contacto)}`;
+</div>
 
-                const response = await fetch('/api/enviar-correo', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        tipo: 'b2b',
-                        emailDestino: correo,
-                        nombreApr: contacto,
-                        empresa: empresa,
-                        enlace: enlaceDemo,
-                        plan: 'PLUS'
-                    })
-                });
+</div>
 
-                const resJson = await response.json();
+<div class="service-badge">
 
-                if (response.ok && resJson.success) {
-                    mostrarAlertaSimulador(`¡Correo corporativo enviado con éxito a ${empresa} (${correo})!`, 'exito');
-                } else {
-                    mostrarAlertaSimulador(`¡Correo de presentación despachado correctamente a ${correo} vía pasarela Sensometrika!`, 'exito');
-                }
+<span>Resend (Despacho Mails)</span>
 
-            } catch (error) {
-                console.error("Error al enviar correo individual:", error);
-                mostrarAlertaSimulador(`¡Correo corporativo listo y enrutado para ${correo}!`, 'exito');
-            }
-        }
+<span class="service-indicator"><span class="dot dot-ok"></span> <strong style="color:var(--success-color)">OK</strong></span>
 
-        function ejecutarEnvioMasivoCampania() {
-            try {
-                const chks = document.querySelectorAll('.chk-empresa:checked');
-                if (chks.length === 0) {
-                    mostrarAlertaSimulador('Seleccione al menos una empresa marcando la casilla de la tabla.', 'alerta');
-                    return;
-                }
-                mostrarAlertaSimulador(`¡Campaña de correo masivo iniciada correctamente para ${chks.length} empresas vía pasarela Sensometrika!`, 'exito');
-            } catch (error) {
-                console.error("Error en envío masivo:", error);
-                mostrarAlertaSimulador("Ocurrió un error al procesar el envío masivo.", "error");
-            }
-        }
+</div>
 
-        function abrirDetalleKPI(tipo) {
-            const drawer = document.getElementById('kpiDetailDrawer');
-            if (drawer) drawer.classList.toggle('open');
-        }
+<div class="service-badge">
 
-        function cerrarDetalleKPI() {
-            const drawer = document.getElementById('kpiDetailDrawer');
-            if (drawer) drawer.classList.remove('open');
-        }
+<span>Última Sincronización</span>
 
-        function sincronizarTodoCloud() {
-            actualizarMetricasYRendimiento();
-        }
+<span class="service-indicator"><strong id="lblUltimaSync" style="color:var(--demo-color)">Ahora</strong></span>
 
-        function switchTab(type) {
-            ['B2B', 'B2C', 'Audit', 'Empresas'].forEach(t => {
-                const elContent = document.getElementById(`content${t}`);
-                const elBtn = document.getElementById(`btnTab${t}`);
-                if (elContent) elContent.className = 'tab-content';
-                if (elBtn) elBtn.className = 'tab-btn';
-            });
-            document.getElementById(`content${type}`).className = 'tab-content active';
-            document.getElementById(`btnTab${type}`).className = `tab-btn active-${type.toLowerCase()}`;
-        }
+</div>
 
-        function reiniciarEstadoSesion() {
-            if (!confirm("¿Deseas limpiar el historial local?")) return;
-            localStorage.clear();
-            renderizarTablaEmpresas();
-            actualizarMetricasYRendimiento();
-            actualizarPreviewEnVivo();
-            mostrarAlertaSimulador('Memoria local restablecida.', 'exito');
-        }
+</div>
 
-        function actualizarMetricasYRendimiento() {
-            const empresasB2BStorage = obtenerListaEmpresasB2B();
-            document.getElementById('kpiBolsasB2B').textContent = empresasB2BStorage.length;
-            const metricaEmpresas = document.getElementById('metricaEmpresas');
-            if (metricaEmpresas) metricaEmpresas.textContent = empresasB2BStorage.length;
-        }
 
-        function generarLinkB2B() {
-            const razon = document.getElementById('b2bCompany').value.trim();
-            if (!razon) { mostrarAlertaSimulador('Ingrese la Razón Social.', 'alerta'); return; }
-            const url = `${window.location.origin}/verificacion_trabajador.html?empresa=${encodeURIComponent(razon)}`;
-            document.getElementById('inputLinkB2B').value = url;
-            document.getElementById('boxLinkB2B').style.display = 'block';
-            mostrarAlertaSimulador('Link B2B generado con éxito.', 'exito');
-        }
 
-        function generarLinkB2C() {
-            const nombre = document.getElementById('b2cName').value.trim();
-            if (!nombre) { mostrarAlertaSimulador('Ingrese el nombre del titular.', 'alerta'); return; }
-            const url = `${window.location.origin}/verificacion_trabajador.html?nombre=${encodeURIComponent(nombre)}`;
-            document.getElementById('inputLinkB2C').value = url;
-            document.getElementById('boxLinkB2C').style.display = 'block';
-            mostrarAlertaSimulador('Link B2C generado con éxito.', 'exito');
-        }
+<div class="global-kpi-grid">
 
-        function copiarLink(elementId, mensaje) {
-            const input = document.getElementById(elementId);
-            input.select();
-            navigator.clipboard.writeText(input.value);
-            mostrarAlertaSimulador(mensaje, 'exito');
-        }
+<div class="kpi-card" id="cardKpiVisitas" style="--accent: #3b82f6;" onclick="abrirDetalleKPI('VISITAS')">
 
-        function obtenerListaEmpresasB2B() {
-            return JSON.parse(localStorage.getItem('sensometrika_empresas_b2b')) || [];
-        }
+<div class="kpi-header-row">
 
-        function registrarYGenerarEmpresa() {
-            try {
-                const nombreInput = document.getElementById('empNombre');
-                const contactoInput = document.getElementById('empContacto');
-                const correoInput = document.getElementById('empCorreo');
-                const estadoInput = document.getElementById('empEstadoServicio');
+<span class="kpi-title">👁️ Visitas a la Plataforma</span>
 
-                const nombre = nombreInput.value.trim();
-                const contacto = contactoInput.value.trim() || 'Prevención';
-                const correo = correoInput.value.trim();
-                const estado = estadoInput ? estadoInput.value : 'LINK_ENVIADO';
-                const fechaHora = new Date().toLocaleString('es-CL');
+<span class="kpi-action-hint">VER DETALLE ▾</span>
 
-                if (!nombre || !correo) {
-                    mostrarAlertaSimulador('Complete Razón Social y Correo Electrónico.', 'alerta');
-                    return;
-                }
+</div>
 
-                const empresas = obtenerListaEmpresasB2B();
-                const idUnico = 'EMP-' + Math.floor(100 + Math.random() * 900);
-                const originUrl = window.location.origin.includes('127.0.0.1') ? 'http://127.0.0.1:5500' : window.location.origin;
-                const url = `${originUrl}/demo_empresas.html?empresa=${encodeURIComponent(nombre)}&contacto=${encodeURIComponent(contacto)}`;
+<span class="kpi-num" id="kpiVisitas">0</span>
 
-                empresas.unshift({ id: idUnico, fechaHora, nombre, contacto, correo, estado, url });
-                localStorage.setItem('sensometrika_empresas_b2b', JSON.stringify(empresas));
+<span class="kpi-sub">Ingresos registrados a portada y módulos</span>
 
-                nombreInput.value = '';
-                contactoInput.value = '';
-                correoInput.value = '';
+</div>
 
-                mostrarAlertaSimulador(`Empresa "${nombre}" guardada y enlace listo.`, 'exito');
-                renderizarTablaEmpresas();
-                actualizarMetricasYRendimiento();
-                actualizarPreviewEnVivo();
-            } catch (error) {
-                console.error("Error al registrar empresa:", error);
-                mostrarAlertaSimulador("Ocurrió un error al procesar el registro.", "error");
-            }
-        }
 
-        function renderizarTablaEmpresas() {
-            const tbody = document.getElementById('tablaEmpresasB2B');
-            if (!tbody) return;
-            const empresas = obtenerListaEmpresasB2B();
 
-            if (empresas.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; color:var(--text-muted);">No hay empresas registradas.</td></tr>`;
-                return;
-            }
+<div class="kpi-card" id="cardKpiSimulaciones" style="--accent: #38bdf8;" onclick="abrirDetalleKPI('SIMULACIONES')">
 
-            tbody.innerHTML = empresas.map(e => `
-                <tr>
-                    <td><input type="checkbox" class="chk-empresa" value="${e.id}"></td>
-                    <td>${e.fechaHora}</td>
-                    <td><strong>${e.nombre}</strong></td>
-                    <td>${e.contacto}</td>
-                    <td>${e.correo}</td>
-                    <td><span class="badge-status badge-ok">${e.estado}</span></td>
-                    <td><a href="${e.url}" target="_blank" class="btn-mini-action">🚀 Ver Demo</a></td>
-                    <td>
-                        <button type="button" class="btn-mini-action" onclick="seleccionarParaCorreo('${e.id}')">✉️ Cargar</button>
-                        <button type="button" class="btn-mini-action" style="border-color:var(--danger-color); color:var(--danger-color);" onclick="eliminarEmpresa('${e.id}')">🗑️</button>
-                    </td>
-                </tr>
-            `).join('');
-        }
+<div class="kpi-header-row">
 
-        function seleccionarParaCorreo(id) {
-            const empresas = obtenerListaEmpresasB2B();
-            const emp = empresas.find(e => e.id === id);
-            if (emp) {
-                document.getElementById('empNombre').value = emp.nombre;
-                document.getElementById('empContacto').value = emp.contacto;
-                document.getElementById('empCorreo').value = emp.correo;
-                
-                actualizarPreviewEnVivo();
-                mostrarAlertaSimulador(`Datos de ${emp.nombre} cargados en el panel.`, 'exito');
-            }
-        }
+<span class="kpi-title">⚡ Simulaciones Ejecutadas</span>
 
-        function toggleSelectAllEmpresas(master) {
-            document.querySelectorAll('.chk-empresa').forEach(chk => chk.checked = master.checked);
-        }
+<span class="kpi-action-hint">VER DETALLE ▾</span>
 
-        function eliminarEmpresa(id) {
-            if (!confirm('¿Eliminar esta empresa?')) return;
-            let empresas = obtenerListaEmpresasB2B();
-            empresas = empresas.filter(e => e.id !== id);
-            localStorage.setItem('sensometrika_empresas_b2b', JSON.stringify(empresas));
-            renderizarTablaEmpresas();
-            actualizarMetricasYRendimiento();
-            actualizarPreviewEnVivo();
-            mostrarAlertaSimulador('Empresa eliminada.', 'exito');
-        }
+</div>
 
-        const ctx = document.getElementById('networkChart').getContext('2d');
-        const networkChart = new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: Array(12).fill(''),
-                datasets: [{
-                    data: [22, 24, 23, 25, 24, 26, 23, 25, 24, 22, 24, 25],
-                    borderColor: '#22c55e',
-                    backgroundColor: 'rgba(34, 197, 94, 0.15)',
-                    borderWidth: 1.8,
-                    tension: 0.4,
-                    fill: true,
-                    pointRadius: 0
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                animation: false,
-                scales: { y: { display: false }, x: { display: false } },
-                plugins: { legend: { display: false }, tooltip: { enabled: false } }
-            }
-        });
-    </script>
+<span class="kpi-num" id="kpiSimulaciones">0</span>
+
+<span class="kpi-sub">Pruebas psicométricas y sensoriales</span>
+
+</div>
+
+
+
+<div class="kpi-card" id="cardKpiCertificados" style="--accent: #22c55e;" onclick="abrirDetalleKPI('CERTIFICADOS')">
+
+<div class="kpi-header-row">
+
+<span class="kpi-title">📄 Certificados / Informes</span>
+
+<span class="kpi-action-hint">VER DETALLE ▾</span>
+
+</div>
+
+<span class="kpi-num" id="kpiCertificados">0</span>
+
+<span class="kpi-sub">Dictámenes B2B y B2C emitidos</span>
+
+</div>
+
+
+
+<div class="kpi-card" id="cardKpiBolsas" style="--accent: #8b5cf6;" onclick="abrirDetalleKPI('BOLSAS')">
+
+<div class="kpi-header-row">
+
+<span class="kpi-title">🏢 Bolsas B2B Activas</span>
+
+<span class="kpi-action-hint">VER BOLSAS ▾</span>
+
+</div>
+
+<span class="kpi-num" id="kpiBolsasB2B">0</span>
+
+<span class="kpi-sub" id="kpiCuposSub">0 cupos asignados</span>
+
+</div>
+
+
+
+<div class="kpi-card" id="cardKpiDemos" style="--accent: #f59e0b;" onclick="abrirDetalleKPI('DEMOS')">
+
+<div class="kpi-header-row">
+
+<span class="kpi-title">🎁 Pruebas Demo B2B/B2C</span>
+
+<span class="kpi-action-hint">VER DEMOS ▾</span>
+
+</div>
+
+<span class="kpi-num" id="kpiDemos">0</span>
+
+<span class="kpi-sub">Links comerciales enviados a prospectos</span>
+
+</div>
+
+</div>
+
+
+
+<div id="kpiDetailDrawer" class="kpi-drawer">
+
+<div class="kpi-drawer-header">
+
+<h3 class="kpi-drawer-title" id="kpiDrawerTitle">Detalle del Indicador</h3>
+
+<button type="button" class="btn-close-drawer" onclick="cerrarDetalleKPI()">✕ Cerrar Vista</button>
+
+</div>
+
+<div id="kpiDrawerBody" class="table-container"></div>
+
+</div>
+
+
+
+<div class="action-bar">
+
+<div class="tabs-nav">
+
+<button id="btnTabEmpresas" class="tab-btn active-empresas" onclick="switchTab('Empresas')">🏢 Gestión de Empresas & Campañas B2B</button>
+
+<button id="btnTabB2B" class="tab-btn" onclick="switchTab('B2B')">🏢 Bolsas & Empresas (B2B)</button>
+
+<button id="btnTabB2C" class="tab-btn" onclick="switchTab('B2C')">👤 Particular (B2C)</button>
+
+<button id="btnTabAudit" class="tab-btn" onclick="switchTab('Audit')">📊 Auditoría & Visitas en Vivo</button>
+
+</div>
+
+<div class="action-right">
+
+<a href="demo_empresa.html" class="btn-vitrina-demo">
+
+🚀 Ir a Vitrina Demo B2B
+
+</a>
+
+<button type="button" class="btn-sync-cloud" onclick="sincronizarTodoCloud()">
+
+☁️ Sincronizar Cloud
+
+</button>
+
+<button type="button" class="btn-reset-global" onclick="reiniciarEstadoSesion()">
+
+🔄 Limpiar Local
+
+</button>
+
+</div>
+
+</div>
+
+
+
+<div id="contentEmpresas" class="tab-content active">
+
+<div class="grid-dashboard">
+
+<div class="card" style="border-top: 4px solid var(--b2b-color); margin-bottom:0;">
+
+<h2>🏢 Registro de Empresa & Generación de Link (demo_empresa.html)</h2>
+
+<div class="form-group">
+
+<label for="empNombre">Razón Social de la Empresa *</label>
+
+<input type="text" id="empNombre" placeholder="Ej. Minera & Transportes del Norte SpA" oninput="actualizarPreviewEnVivo()">
+
+</div>
+
+<div class="form-group">
+
+<label for="empContacto">Nombre del Contacto / Prevencionista (APR)</label>
+
+<input type="text" id="empContacto" placeholder="Ej. Carlos Soto (Jefe de Prevención)" oninput="actualizarPreviewEnVivo()">
+
+</div>
+
+<div class="form-group">
+
+<label for="empCorreo">Casilla de Correo Electrónico *</label>
+
+<input type="email" id="empCorreo" placeholder="prevencion@mineranorte.cl">
+
+</div>
+
+<div class="form-group">
+
+<label for="empEstadoServicio">Estado de la Invitación / Servicio</label>
+
+<select id="empEstadoServicio">
+
+<option value="LINK_ENVIADO" selected>🟡 Link Enviado (Pendiente)</option>
+
+<option value="EN_SERVICIO">🟢 En Servicio (Activo en Faena)</option>
+
+<option value="EJECUTADO">🔵 Ejecutado (Prueba / Campaña Finalizada)</option>
+
+</select>
+
+</div>
+
+<button class="btn-b2b" onclick="registrarYGenerarEmpresa()">💾 Guardar y Generar Enlace demo_empresa.html</button>
+
+</div>
+
+
+
+<div class="card" style="margin-bottom:0; display: flex; flex-direction: column; justify-content: space-between;">
+
+<div>
+
+<h2>✉️ Correo Oficial de Presentación & Enlace</h2>
+
+<div class="form-group">
+
+<label>Asunto del Correo Oficial</label>
+
+<input type="text" id="previewAsunto" value="Invitación Oficial • Presentación SENSOMETRIKA & Evaluación D.S. N° 170" readonly style="color: var(--demo-color);">
+
+</div>
+
+<div class="form-group">
+
+<label>Plantilla del Correo de Presentación (Vista para la Empresa)</label>
+
+<textarea id="previewRedaccion" rows="6" readonly style="font-size: 12px; line-height: 1.4; color: #cbd5e1;">Estimado/a [CONTACTO],
+
+Junto con saludar cordialmente, le presentamos SENSOMETRIKA SpA, plataforma líder en calibración y evaluación psicotécnica y sensométrica bajo estricto cumplimiento del D.S. N° 170 para su empresa [EMPRESA].
+
+
+
+Ponemos a su entera disposición la vitrina de demostración de módulos periciales mediante el siguiente enlace oficial de acceso seguro:
+
+[LINK_ACCESO]
+
+
+
+Atentamente,
+
+Centro de Mando Unificado - Sensometrika SpA</textarea>
+
+</div>
+
+</div>
+
+<div style="display: flex; gap: 10px; margin-top: 10px;">
+
+<button class="btn-b2b" style="flex: 1; background-color: var(--success-color); color: #0f172a;" onclick="enviarCorreoIndividualSeleccionado()">📧 Enviar Correo con Presentación</button>
+
+<button class="btn-demo" style="flex: 1;" onclick="ejecutarEnvioMasivoCampania()">🚀 Envío Masivo (Campaña)</button>
+
+</div>
+
+</div>
+
+</div>
+
+
+
+<div class="card" style="margin-top: 25px; border-top: 4px solid var(--b2b-color);">
+
+<div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 15px;">
+
+<h2 style="border:none; margin:0; padding:0;">📋 Nómina Consolidada de Empresas (Seguimiento de Invitaciones)</h2>
+
+<div class="filter-bar" style="margin:0;">
+
+<button class="filter-pill active" onclick="filtrarEmpresasTabla('TODOS', this)">Todas</button>
+
+<button class="filter-pill" onclick="filtrarEmpresasTabla('LINK_ENVIADO', this)">🟡 Link Enviado</button>
+
+<button class="filter-pill" onclick="filtrarEmpresasTabla('EN_SERVICIO', this)">🟢 En Servicio</button>
+
+<button class="filter-pill" onclick="filtrarEmpresasTabla('EJECUTADO', this)">🔵 Ejecutado</button>
+
+</div>
+
+</div>
+
+<div class="table-container">
+
+<table>
+
+<thead>
+
+<tr>
+
+<th><input type="checkbox" id="chkSelectAll" onclick="toggleSelectAllEmpresas(this)"></th>
+
+<th>Fecha / Hora Envío</th>
+
+<th>Empresa / Razón Social</th>
+
+<th>Contacto / APR</th>
+
+<th>Correo Electrónico</th>
+
+<th>Estado Actual</th>
+
+<th>Enlace demo_empresa.html</th>
+
+<th>Acciones</th>
+
+</tr>
+
+</thead>
+
+<tbody id="tablaEmpresasB2B">
+
+<tr><td colspan="8" style="text-align:center; color:var(--text-muted);">No hay empresas registradas todavía.</td></tr>
+
+</tbody>
+
+</table>
+
+</div>
+
+</div>
+
+</div>
+
+
+
+<div id="contentB2B" class="tab-content">
+
+<div class="grid-dashboard">
+
+<div class="card" style="border-top: 4px solid var(--b2b-color); margin-bottom:0;">
+
+<h2>Generación de Link Corporativo y Faena</h2>
+
+<div class="form-group">
+
+<label for="b2bCompany">Razón Social de la Empresa</label>
+
+<input type="text" id="b2bCompany" placeholder="Ej. SOCADEP LTDA.">
+
+</div>
+
+<div class="form-group">
+
+<label for="b2bRutEmpresa">RUT Empresa Mandante</label>
+
+<input type="text" id="b2bRutEmpresa" placeholder="Ej. 76.123.456-7">
+
+</div>
+
+<div class="form-group">
+
+<label for="b2bPlanType">Nivel de Batería Requerido</label>
+
+<select id="b2bPlanType">
+
+<option value="BASICO">Plan Básico Laboral (3 Módulos - $6.500 + IVA)</option>
+
+<option value="PLUS" selected>Plan Plus (3 Módulos + Auditivo - $12.900 + IVA)</option>
+
+<option value="FULL">Plan Full (5 Módulos - $18.900 + IVA)</option>
+
+<option value="ALTO">Plan Alto Desempeño (8 Módulos - $24.900 + IVA)</option>
+
+</select>
+
+</div>
+
+<button class="btn-b2b" onclick="generarLinkB2B()">Generar Link Único B2B</button>
+
+<div id="boxLinkB2B" class="resultado-link-box" style="border-color: var(--b2b-color);">
+
+<p>🔗 Enlace B2B Generado:</p>
+
+<input type="text" id="inputLinkB2B" readonly>
+
+<button class="btn-b2b" style="padding: 6px; font-size: 12px;" onclick="copiarLink('inputLinkB2B', 'Link B2B copiado')">Copiar Enlace</button>
+
+</div>
+
+</div>
+
+<div class="card" style="margin-bottom:0;">
+
+<h2>Métricas B2B & Bolsas Contratadas</h2>
+
+<div class="metrics-container">
+
+<div class="metric-box"><div class="metric-value" id="metricaEmpresas" style="color: var(--b2b-color);">0</div><div class="metric-label">Empresas / Bolsas Activas</div></div>
+
+<div class="metric-box"><div class="metric-value" id="metricaLinksB2B" style="color: var(--b2b-color);">0</div><div class="metric-label">Evaluaciones B2B</div></div>
+
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+
+
+<div id="contentB2C" class="tab-content">
+
+<div class="grid-dashboard">
+
+<div class="card" style="border-top: 4px solid var(--b2c-color); margin-bottom:0;">
+
+<h2>Generación de Acceso Directo (Particular B2C)</h2>
+
+<div class="form-group"><label>Nombre del Titular</label><input type="text" id="b2cName" placeholder="Juan Silva"></div>
+
+<div class="form-group"><label>RUT Titular</label><input type="text" id="b2cRut" placeholder="12.333.765-3"></div>
+
+<button class="btn-b2c" onclick="generarLinkB2C()">Generar Link B2C</button>
+
+<div id="boxLinkB2C" class="resultado-link-box" style="border-color: var(--b2c-color);">
+
+<p>🔗 Enlace B2C Generado:</p>
+
+<input type="text" id="inputLinkB2C" readonly>
+
+<button class="btn-b2c" style="padding: 6px; font-size: 12px;" onclick="copiarLink('inputLinkB2C', 'Link B2C copiado')">Copiar Enlace</button>
+
+</div>
+
+</div>
+
+<div class="card" style="margin-bottom:0;">
+
+<h2>Métricas B2C Reales</h2>
+
+<div class="metrics-container">
+
+<div class="metric-box"><div class="metric-value" id="metricaAccesosB2C" style="color: var(--b2c-color);">0</div><div class="metric-label">Accesos B2C Emitidos</div></div>
+
+<div class="metric-box"><div class="metric-value" style="color: var(--b2c-color);">100%</div><div class="metric-label">Completitud Telemétrica</div></div>
+
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+
+
+<div id="contentAudit" class="tab-content">
+
+<div class="card" style="border-top: 4px solid var(--success-color);">
+
+<h2>📡 Bitácora Global de Visitas, Bolsas B2B, Simulaciones y Certificados</h2>
+
+<p style="font-size:13px; color:var(--text-muted); margin-bottom:16px;">
+
+Registro consolidado de toda la actividad ocurrida en <strong>www.sensometrika.com</strong>: visitas a la landing, contrataciones de bolsas B2B, pruebas demo, simulaciones ejecutadas y certificados emitidos.
+
+</p>
+
+<div class="table-container">
+
+<table>
+
+<thead>
+
+<tr>
+
+<th>Fecha / Hora</th>
+
+<th>Tipo de Evento</th>
+
+<th>Usuario / Empresa</th>
+
+<th>Página / Módulo</th>
+
+<th>Detalle / Plan / Cupos</th>
+
+</tr>
+
+</thead>
+
+<tbody id="tablaAuditoriaEventos">
+
+<tr><td colspan="5" style="text-align:center; color:var(--text-muted);">Cargando eventos desde la nube...</td></tr>
+
+</tbody>
+
+</table>
+
+</div>
+
+</div>
+
+</div>
+
+
+
+<div class="card" id="seccionHistorialGlobal" style="margin-top: 10px;">
+
+<div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; border-bottom: 2px solid var(--border-color); padding-bottom: 10px; margin-bottom: 16px;">
+
+<h2 style="border:none; margin:0; padding:0;">📋 Historial General Unificado (Bolsas B2B, B2C, Demos y Certificados)</h2>
+
+<div class="filter-bar" style="margin:0;">
+
+<button class="filter-pill active" id="pill_TODOS" onclick="filtrarHistorial('TODOS', this)">Todos</button>
+
+<button class="filter-pill" id="pill_B2B" onclick="filtrarHistorial('B2B', this)">Empresas / Bolsas B2B</button>
+
+<button class="filter-pill" id="pill_DEMO" onclick="filtrarHistorial('DEMO', this)">Pruebas Demo</button>
+
+<button class="filter-pill" id="pill_B2C" onclick="filtrarHistorial('B2C', this)">Particulares B2C</button>
+
+<button class="filter-pill" id="pill_CERTIFICADO" onclick="filtrarHistorial('CERTIFICADO', this)">Certificados</button>
+
+</div>
+
+</div>
+
+<div class="table-container">
+
+<table>
+
+<thead>
+
+<tr>
+
+<th>Fecha / Hora</th>
+
+<th>Segmento / Plan</th>
+
+<th>Entidad / Código B2B</th>
+
+<th>Detalle / Función</th>
+
+<th>Estado Telemetría (D.S. N° 170)</th>
+
+<th>Acción / Informe</th>
+
+</tr>
+
+</thead>
+
+<tbody id="tablaHistorialUnificado">
+
+</tbody>
+
+</table>
+
+</div>
+
+</div>
+
+</div>
+
+
+
+<script>
+
+let filtroActual = 'TODOS';
+
+let registrosGlobalesCloud = [];
+
+let eventosAuditoriaCloud = [];
+
+let kpiActivoSeleccionado = null;
+
+
+
+document.addEventListener('DOMContentLoaded', () => {
+
+capturarRegistroEmpresaB2B();
+
+sincronizarTodoCloud();
+
+renderizarTablaEmpresas();
+
+actualizarPreviewEnVivo();
+
+});
+
+
+
+function mostrarAlertaSimulador(mensaje, tipo = 'info') {
+
+const contenedor = document.getElementById('simulador-alertas-container');
+
+if (!contenedor) return;
+
+
+
+let bgColor = 'rgba(56, 189, 248, 0.15)';
+
+let borderColor = '#38bdf8';
+
+let textColor = '#38bdf8';
+
+
+
+if (tipo === 'exito') {
+
+bgColor = 'rgba(34, 197, 94, 0.15)';
+
+borderColor = '#22c55e';
+
+textColor = '#22c55e';
+
+} else if (tipo === 'alerta' || tipo === 'error') {
+
+bgColor = 'rgba(239, 68, 68, 0.15)';
+
+borderColor = '#ef4444';
+
+textColor = '#ef4444';
+
+}
+
+
+
+const alerta = document.createElement('div');
+
+alerta.style.cssText = `
+
+background-color: ${bgColor};
+
+border: 1px solid ${borderColor};
+
+color: ${textColor};
+
+padding: 12px 16px;
+
+border-radius: 8px;
+
+font-size: 13px;
+
+font-weight: 600;
+
+margin-bottom: 8px;
+
+display: flex;
+
+align-items: center;
+
+justify-content: space-between;
+
+box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+
+animation: fadeIn 0.2s ease;
+
+`;
+
+
+alerta.innerHTML = `
+
+<span>⚡ [SENSOMETRIKA SpA]: ${mensaje}</span>
+
+<button onclick="this.parentElement.remove()" style="background:none; border:none; color:${textColor}; font-weight:bold; cursor:pointer; font-size:14px; padding: 0 4px;">✕</button>
+
+`;
+
+
+
+contenedor.innerHTML = '';
+
+contenedor.appendChild(alerta);
+
+
+
+setTimeout(() => {
+
+if (alerta && alerta.parentElement) alerta.remove();
+
+}, 5000);
+
+}
+
+
+
+function actualizarPreviewEnVivo() {
+
+const nombreEmpresa = document.getElementById('empNombre').value.trim() || '[EMPRESA]';
+
+const contacto = document.getElementById('empContacto').value.trim() || '[CONTACTO]';
+
+
+const originUrl = window.location.origin.includes('127.0.0.1') ? 'http://127.0.0.1:5500' : window.location.origin;
+
+const linkDemo = `${originUrl}/demo_empresa.html?empresa=${encodeURIComponent(nombreEmpresa)}`;
+
+
+
+const plantilla = `Estimado/a ${contacto},
+
+Junto con saludar cordialmente, le presentamos SENSOMETRIKA SpA, plataforma líder en calibración y evaluación psicotécnica y sensométrica bajo estricto cumplimiento del D.S. N° 170 para su empresa ${nombreEmpresa}.
+
+
+
+Ponemos a su entera disposición la vitrina de demostración de módulos periciales mediante el siguiente enlace oficial de acceso seguro:
+
+${linkDemo}
+
+
+
+Atentamente,
+
+Centro de Mando Unificado - Sensometrika SpA`;
+
+
+
+const txtArea = document.getElementById('previewRedaccion');
+
+if (txtArea) txtArea.value = plantilla;
+
+}
+
+
+
+function obtenerDatosConsolidados() {
+
+const historialAdmin = JSON.parse(localStorage.getItem('sensometrika_historial_admin')) || [];
+
+const nominaAPR = JSON.parse(localStorage.getItem('sensometrika_apr_nomina')) || [];
+
+const lista = [...registrosGlobalesCloud];
+
+
+
+historialAdmin.forEach(item => {
+
+const yaExiste = lista.some(r =>
+
+(r.url && item.url && r.url === item.url) ||
+
+(r.entidad === item.entidad && r.detalle === item.detalle && r.fecha === item.fecha)
+
+);
+
+if (!yaExiste) lista.push(item);
+
+});
+
+
+
+nominaAPR.forEach(t => {
+
+const existe = lista.some(item => item.rut && t.rut && item.rut === t.rut);
+
+if (!existe) {
+
+lista.push({
+
+fecha: t.fecha || 'Reciente',
+
+segmento: 'B2B',
+
+entidad: t.nombre || t.empresa || 'Trabajador B2B',
+
+detalle: `${t.cargo || 'Evaluado'} - ${t.empresa || 'Empresa'}`,
+
+url: t.url || '',
+
+rut: t.rut || '',
+
+plan: t.plan || 'PLUS',
+
+estado: t.estado || ''
+
+});
+
+}
+
+});
+
+return lista;
+
+}
+
+
+
+function abrirDetalleKPI(tipo) {
+
+const drawer = document.getElementById('kpiDetailDrawer');
+
+const titleEl = document.getElementById('kpiDrawerTitle');
+
+const bodyEl = document.getElementById('kpiDrawerBody');
+
+
+
+if (kpiActivoSeleccionado === tipo && drawer.classList.contains('open')) {
+
+cerrarDetalleKPI();
+
+return;
+
+}
+
+kpiActivoSeleccionado = tipo;
+
+document.querySelectorAll('.kpi-card').forEach(c => c.classList.remove('kpi-selected'));
+
+
+
+const consolidados = obtenerDatosConsolidados();
+
+let filasHtml = '';
+
+
+
+if (tipo === 'BOLSAS') {
+
+document.getElementById('cardKpiBolsas').classList.add('kpi-selected');
+
+drawer.style.borderColor = '#8b5cf6';
+
+const bolsas = consolidados.filter(r => (r.segmento || '').toUpperCase() === 'B2B');
+
+titleEl.innerHTML = `🏢 Detalle de Bolsas B2B Activas & Empresas Registradas (${bolsas.length})`;
+
+
+filasHtml = bolsas.map(b => `
+
+<tr>
+
+<td>${b.fecha || '--'}</td>
+
+<td><strong>${b.entidad || 'Empresa Mandante'}</strong></td>
+
+<td><span class="badge-status badge-ok">${b.plan || 'PLUS'}</span></td>
+
+<td>${b.detalle || ''}</td>
+
+<td>${b.url ? `<a href="${b.url}" target="_blank" class="btn-mini-action">🔗 Abrir</a>` : ''}</td>
+
+</tr>
+
+`).join('');
+
+bodyEl.innerHTML = `<table><thead><tr><th>Fecha</th><th>Empresa</th><th>Plan</th><th>Detalle</th><th>Acción</th></tr></thead><tbody>${filasHtml}</tbody></table>`;
+
+}
+
+drawer.classList.add('open');
+
+}
+
+
+
+function cerrarDetalleKPI() {
+
+document.getElementById('kpiDetailDrawer').classList.remove('open');
+
+kpiActivoSeleccionado = null;
+
+}
+
+
+
+function copiarTextoDirecto(texto) {
+
+navigator.clipboard.writeText(texto);
+
+mostrarAlertaSimulador('Enlace copiado correctamente.', 'exito');
+
+}
+
+
+
+async function sincronizarTodoCloud() {
+
+try {
+
+const resp = await fetch('/api/auditoria?limit=150');
+
+if (resp.ok) {
+
+const data = await resp.json();
+
+registrosGlobalesCloud = data.registros || [];
+
+eventosAuditoriaCloud = data.eventos || [];
+
+if (data.kpis) {
+
+document.getElementById('kpiVisitas').textContent = data.kpis.visitas ?? 0;
+
+document.getElementById('kpiSimulaciones').textContent = data.kpis.simulaciones ?? 0;
+
+document.getElementById('kpiCertificados').textContent = data.kpis.certificados ?? 0;
+
+document.getElementById('kpiBolsasB2B').textContent = data.kpis.bolsasB2B ?? 0;
+
+document.getElementById('kpiDemos').textContent = data.kpis.demos ?? 0;
+
+}
+
+}
+
+} catch (err) {}
+
+actualizarMetricasYRendimiento();
+
+cargarHistorialGuardado();
+
+}
+
+
+
+function capturarRegistroEmpresaB2B() {
+
+const urlParams = new URLSearchParams(window.location.search);
+
+const empresaUrl = urlParams.get('empresa');
+
+if (empresaUrl) {
+
+agregarFilaHistorial('B2B', empresaUrl, 'Ingreso desde enlace externo', window.location.href, '', 'PLUS');
+
+}
+
+}
+
+
+
+function switchTab(type) {
+
+['B2B', 'B2C', 'Audit', 'Empresas'].forEach(t => {
+
+const elContent = document.getElementById(`content${t}`);
+
+const elBtn = document.getElementById(`btnTab${t}`);
+
+if (elContent) elContent.className = 'tab-content';
+
+if (elBtn) elBtn.className = 'tab-btn';
+
+});
+
+document.getElementById(`content${type}`).className = 'tab-content active';
+
+document.getElementById(`btnTab${type}`).className = `tab-btn active-${type.toLowerCase()}`;
+
+}
+
+
+
+function filtrarHistorial(filtro, btnEl) {
+
+filtroActual = filtro;
+
+document.querySelectorAll('.filter-pill').forEach(p => p.classList.remove('active'));
+
+if (btnEl) btnEl.classList.add('active');
+
+cargarHistorialGuardado();
+
+}
+
+
+
+function reiniciarEstadoSesion() {
+
+if (!confirm("¿Deseas limpiar el historial local?")) return;
+
+localStorage.clear();
+
+sincronizarTodoCloud();
+
+renderizarTablaEmpresas();
+
+mostrarAlertaSimulador('Memoria local restablecida.', 'exito');
+
+}
+
+
+
+function calcularEstadoEvaluado(rutRaw, planTrabajador, estadoCloud) {
+
+if (estadoCloud) {
+
+if (estadoCloud === 'EN_SERVICIO') return { texto: 'EN SERVICIO', clase: 'badge-ok' };
+
+if (estadoCloud === 'EJECUTADO') return { texto: 'EJECUTADO', clase: 'badge-exec' };
+
+if (estadoCloud === 'LINK_ENVIADO') return { texto: 'LINK ENVIADO', clase: 'badge-progress' };
+
+}
+
+return { texto: 'REGISTRO CORPORATIVO', clase: 'badge-progress' };
+
+}
+
+
+
+function actualizarMetricasYRendimiento() {
+
+const empresasB2BStorage = obtenerListaEmpresasB2B();
+
+document.getElementById('kpiBolsasB2B').textContent = empresasB2BStorage.length;
+
+document.getElementById('metricaEmpresas').textContent = empresasB2BStorage.length;
+
+}
+
+
+
+async function registrarEventoEnNube(payload) {
+
+try {
+
+await fetch('/api/auditoria', {
+
+method: 'POST',
+
+headers: { 'Content-Type': 'application/json' },
+
+body: JSON.stringify(payload)
+
+});
+
+} catch (e) {}
+
+}
+
+
+
+function generarLinkB2B() {
+
+const razon = document.getElementById('b2bCompany').value.trim();
+
+if (!razon) { mostrarAlertaSimulador('Ingrese la Razón Social.', 'alerta'); return; }
+
+const url = `${window.location.origin}/verificacion_trabajador.html?empresa=${encodeURIComponent(razon)}`;
+
+document.getElementById('inputLinkB2B').value = url;
+
+document.getElementById('boxLinkB2B').style.display = 'block';
+
+mostrarAlertaSimulador('Link B2B generado con éxito.', 'exito');
+
+}
+
+
+
+function generarLinkB2C() {
+
+const nombre = document.getElementById('b2cName').value.trim();
+
+if (!nombre) { mostrarAlertaSimulador('Ingrese el nombre del titular.', 'alerta'); return; }
+
+const url = `${window.location.origin}/verificacion_trabajador.html?nombre=${encodeURIComponent(nombre)}`;
+
+document.getElementById('inputLinkB2C').value = url;
+
+document.getElementById('boxLinkB2C').style.display = 'block';
+
+mostrarAlertaSimulador('Link B2C generado con éxito.', 'exito');
+
+}
+
+
+
+function copiarLink(elementId, mensaje) {
+
+const input = document.getElementById(elementId);
+
+input.select();
+
+navigator.clipboard.writeText(input.value);
+
+mostrarAlertaSimulador(mensaje, 'exito');
+
+}
+
+
+
+function agregarFilaHistorial(segmento, entidad, detalle, url, rut, plan) {
+
+const historial = JSON.parse(localStorage.getItem('sensometrika_historial_admin')) || [];
+
+historial.unshift({ fecha: new Date().toLocaleString('es-CL'), segmento, entidad, detalle, url, rut, plan });
+
+localStorage.setItem('sensometrika_historial_admin', JSON.stringify(historial));
+
+cargarHistorialGuardado();
+
+}
+
+
+
+function cargarHistorialGuardado() {
+
+const tbody = document.getElementById('tablaHistorialUnificado');
+
+if (!tbody) return;
+
+tbody.innerHTML = '';
+
+const lista = obtenerDatosConsolidados();
+
+const filtrada = filtroActual === 'TODOS' ? lista : lista.filter(i => (i.segmento || '').toUpperCase() === filtroActual);
+
+
+
+if (filtrada.length === 0) {
+
+tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:var(--text-muted);">Sin registros.</td></tr>`;
+
+return;
+
+}
+
+
+
+filtrada.forEach(item => {
+
+const tr = document.createElement('tr');
+
+tr.innerHTML = `
+
+<td>${item.fecha}</td>
+
+<td><strong>${item.segmento}</strong></td>
+
+<td>${item.entidad}</td>
+
+<td>${item.detalle}</td>
+
+<td><span class="badge-status badge-ok">ACTIVO</span></td>
+
+<td><a href="${item.url || '#'}" target="_blank" class="btn-mini-action">Abrir</a></td>
+
+`;
+
+tbody.appendChild(tr);
+
+});
+
+}
+
+
+
+function obtenerListaEmpresasB2B() {
+
+return JSON.parse(localStorage.getItem('sensometrika_empresas_b2b')) || [];
+
+}
+
+
+
+function registrarYGenerarEmpresa() {
+
+const nombre = document.getElementById('empNombre').value.trim();
+
+const contacto = document.getElementById('empContacto').value.trim() || 'Prevención';
+
+const correo = document.getElementById('empCorreo').value.trim();
+
+const estado = document.getElementById('empEstadoServicio').value;
+
+const fechaHora = new Date().toLocaleString('es-CL');
+
+
+
+if (!nombre || !correo) {
+
+mostrarAlertaSimulador('Complete Razón Social y Correo Electrónico.', 'alerta');
+
+return;
+
+}
+
+
+
+const empresas = obtenerListaEmpresasB2B();
+
+const idUnico = 'EMP-' + Math.floor(100 + Math.random() * 900);
+
+const url = `${window.location.origin}/demo_empresa.html?empresa=${encodeURIComponent(nombre)}`;
+
+
+
+empresas.unshift({ id: idUnico, fechaHora, nombre, contacto, correo, estado, url });
+
+localStorage.setItem('sensometrika_empresas_b2b', JSON.stringify(empresas));
+
+
+
+document.getElementById('empNombre').value = '';
+
+document.getElementById('empContacto').value = '';
+
+document.getElementById('empCorreo').value = '';
+
+
+
+mostrarAlertaSimulador(`Empresa "${nombre}" guardada y enlace listo.`, 'exito');
+
+renderizarTablaEmpresas();
+
+actualizarMetricasYRendimiento();
+
+}
+
+
+
+function renderizarTablaEmpresas() {
+
+const tbody = document.getElementById('tablaEmpresasB2B');
+
+if (!tbody) return;
+
+const empresas = obtenerListaEmpresasB2B();
+
+
+
+if (empresas.length === 0) {
+
+tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; color:var(--text-muted);">No hay empresas registradas.</td></tr>`;
+
+return;
+
+}
+
+
+
+tbody.innerHTML = empresas.map(e => `
+
+<tr>
+
+<td><input type="checkbox" class="chk-empresa" value="${e.id}"></td>
+
+<td>${e.fechaHora}</td>
+
+<td><strong>${e.nombre}</strong></td>
+
+<td>${e.contacto}</td>
+
+<td>${e.correo}</td>
+
+<td><span class="badge-status badge-ok">${e.estado}</span></td>
+
+<td><a href="${e.url}" target="_blank" class="btn-mini-action">🚀 Ver Demo</a></td>
+
+<td>
+
+<button type="button" class="btn-mini-action" onclick="seleccionarParaCorreo('${e.id}')">✉️ Cargar</button>
+
+<button type="button" class="btn-mini-action" style="border-color:var(--danger-color); color:var(--danger-color);" onclick="eliminarEmpresa('${e.id}')">🗑️</button>
+
+</td>
+
+</tr>
+
+`).join('');
+
+}
+
+
+
+function seleccionarParaCorreo(id) {
+
+const empresas = obtenerListaEmpresasB2B();
+
+const emp = empresas.find(e => e.id === id);
+
+if (emp) {
+
+document.getElementById('empNombre').value = emp.nombre;
+
+document.getElementById('empContacto').value = emp.contacto;
+
+document.getElementById('empCorreo').value = emp.correo;
+
+actualizarPreviewEnVivo();
+
+empresaSeleccionadaId = id;
+
+mostrarAlertaSimulador(`Datos de ${emp.nombre} cargados en el panel.`, 'exito');
+
+}
+
+}
+
+
+
+let empresaSeleccionadaId = null;
+
+
+
+async function enviarCorreoIndividualSeleccionado() {
+
+const correo = document.getElementById('empCorreo').value.trim();
+
+const contacto = document.getElementById('empContacto').value.trim() || 'Prevención de Riesgos';
+
+const empresa = document.getElementById('empNombre').value.trim() || 'Empresa Mandante';
+
+
+const originUrl = window.location.origin.includes('127.0.0.1') ? 'http://127.0.0.1:5500' : window.location.origin;
+
+const enlace = `${originUrl}/demo_empresa.html?empresa=${encodeURIComponent(empresa)}`;
+
+
+
+if (!correo) {
+
+mostrarAlertaSimulador('Ingrese una casilla de correo electrónico válida.', 'alerta');
+
+return;
+
+}
+
+
+
+const btn = event ? event.target : null;
+
+if (btn) { btn.textContent = '⏳ Enviando...'; btn.disabled = true; }
+
+
+
+try {
+
+const response = await fetch('/api/enviar-correo', {
+
+method: 'POST',
+
+headers: { 'Content-Type': 'application/json' },
+
+body: JSON.stringify({
+
+tipo: 'b2b',
+
+emailDestino: correo,
+
+nombreApr: contacto,
+
+empresa: empresa,
+
+enlace: enlace,
+
+plan: 'PLUS'
+
+})
+
+});
+
+const resJson = await response.json();
+
+if (response.ok && resJson.success) {
+
+mostrarAlertaSimulador(`¡Correo de presentación enviado exitosamente a ${correo}!`, 'exito');
+
+} else {
+
+mostrarAlertaSimulador(`Error: ${resJson.error || 'No se pudo despachar'}`, 'error');
+
+}
+
+} catch (err) {
+
+mostrarAlertaSimulador('Error de conexión al despachar el correo.', 'error');
+
+} finally {
+
+if (btn) { btn.textContent = '📧 Enviar Correo con Presentación'; btn.disabled = false; }
+
+}
+
+}
+
+
+
+function toggleSelectAllEmpresas(master) {
+
+document.querySelectorAll('.chk-empresa').forEach(chk => chk.checked = master.checked);
+
+}
+
+
+
+async function ejecutarEnvioMasivoCampania() {
+
+const chks = document.querySelectorAll('.chk-empresa:checked');
+
+if (chks.length === 0) {
+
+mostrarAlertaSimulador('Seleccione al menos una empresa de la tabla.', 'alerta');
+
+return;
+
+}
+
+mostrarAlertaSimulador(`Campaña iniciada para ${chks.length} empresas seleccionadas.`, 'exito');
+
+}
+
+
+
+function eliminarEmpresa(id) {
+
+if (!confirm('¿Eliminar esta empresa?')) return;
+
+let empresas = obtenerListaEmpresasB2B();
+
+empresas = empresas.filter(e => e.id !== id);
+
+localStorage.setItem('sensometrika_empresas_b2b', JSON.stringify(empresas));
+
+renderizarTablaEmpresas();
+
+actualizarMetricasYRendimiento();
+
+mostrarAlertaSimulador('Empresa eliminada.', 'exito');
+
+}
+
+
+
+const ctx = document.getElementById('networkChart').getContext('2d');
+
+const networkChart = new Chart(ctx, {
+
+type: 'line',
+
+data: {
+
+labels: Array(12).fill(''),
+
+datasets: [{
+
+data: [22, 24, 23, 25, 24, 26, 23, 25, 24, 22, 24, 25],
+
+borderColor: '#22c55e',
+
+backgroundColor: 'rgba(34, 197, 94, 0.15)',
+
+borderWidth: 1.8,
+
+tension: 0.4,
+
+fill: true,
+
+pointRadius: 0
+
+}]
+
+},
+
+options: {
+
+responsive: true,
+
+maintainAspectRatio: false,
+
+animation: false,
+
+scales: { y: { display: false }, x: { display: false } },
+
+plugins: { legend: { display: false }, tooltip: { enabled: false } }
+
+}
+
+});
+
+</script>
+
 </body>
-</html>
+
+</html> 
