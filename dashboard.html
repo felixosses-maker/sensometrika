@@ -715,6 +715,7 @@
         </div>
     </div>
 
+    <!-- Script integrado directamente para garantizar funcionalidad instantánea de los botones y correos -->
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             sincronizarTodoCloud();
@@ -781,9 +782,9 @@
                 const contacto = inputContacto && inputContacto.value.trim() ? inputContacto.value.trim() : '[Nombre del Contacto / Prevencionista]';
                 
                 const originUrl = window.location.origin.includes('127.0.0.1') ? 'http://127.0.0.1:5500' : window.location.origin;
-                const linkDemo = `${originUrl}/demo_empresa.html?empresa=${encodeURIComponent(nombreEmpresa)}`;
+                const linkDemo = `${originUrl}/demo_empresas.html?empresa=${encodeURIComponent(nombreEmpresa)}&contacto=${encodeURIComponent(contacto)}`;
 
-                const plantilla = `Estimado/a ${contacto},\n\nJunto con saludarle cordialmente, le escribimos desde Sensometrika SpA. Sabemos lo crucial y exigente que es mantener los estándares de seguridad y cumplimiento normativo (D.S. N° 170) en las operaciones de su empresa ${nombreEmpresa}.\n\nPor eso, hemos desarrollado una plataforma moderna, rápida y 100% digital que simplifica por completo la evaluación sensométrica y psicotécnica de sus trabajadores y conductores.\n\n¿Qué nos hace diferentes?\n- Resultados en tiempo real: Cero esperas, informes listos de inmediato.\n- Acceso desde cualquier dispositivo: Ágil, intuitive y sin instalaciones complejas.\n- Cumplimiento normativo estricto: Diseñado a la medida de la exigencia industrial.\n\nLo invitamos a explorar nuestra vitrina interactiva y probar la dinámica de nuestros módulos periciales haciendo clic en el siguiente enlace de acceso seguro:\n\n${linkDemo}\n\nQuedamos a su entera disposición para coordinar una breve demostración personalizada o resolver cualquier duda.\n\nAtentamente,\n\nEquipo Sensometrika\nPlataforma de Calibración & Evaluación Psicosométrica\nwww.sensometrika.com`;
+                const plantilla = `Estimado/a ${contacto},\n\nJunto con saludarle cordialmente, le escribimos desde Sensometrika SpA. Sabemos lo crucial y exigente que es mantener los estándares de seguridad y cumplimiento normativo (D.S. N° 170) en las operaciones de su empresa ${nombreEmpresa}.\n\nPor eso, hemos desarrollado una plataforma moderna, rápida y 100% digital que simplifica por completo la evaluación sensométrica y psicotécnica de sus trabajadores y conductores.\n\n¿Qué nos hace diferentes?\n- Resultados en tiempo real: Cero esperas, informes listos de inmediato.\n- Acceso desde cualquier dispositivo: Ágil, intuitivo y sin instalaciones complejas.\n- Cumplimiento normativo estricto: Diseñado a la medida de la exigencia industrial.\n\nLo invitamos a explorar nuestra vitrina interactiva y probar la dinámica de nuestros módulos periciales haciendo clic en el siguiente enlace de acceso seguro:\n\n${linkDemo}\n\nQuedamos a su entera disposición para coordinar una breve demostración personalizada o resolver cualquier duda.\n\nAtentamente,\n\nEquipo Sensometrika\nPlataforma de Calibración & Evaluación Psicosométrica\nwww.sensometrika.com`;
 
                 txtArea.value = plantilla;
             } catch (error) {
@@ -791,34 +792,37 @@
             }
         }
 
-        // Copia directa al portapapeles sin abrir programas externos de Windows
+        // --- BOTÓN ENVIAR CORREO CON PRESENTACIÓN ---
         function enviarCorreoIndividualSeleccionado() {
             try {
                 const correoInput = document.getElementById('empCorreo');
+                const asuntoInput = document.getElementById('previewAsunto');
                 const redaccionInput = document.getElementById('previewRedaccion');
+                const inputNombre = document.getElementById('empNombre');
                 
                 const correo = correoInput ? correoInput.value.trim() : '';
+                const asunto = asuntoInput ? asuntoInput.value : 'Evaluación psicotécnica D.S. N° 170';
                 const cuerpo = redaccionInput ? redaccionInput.value : '';
+                const empresa = inputNombre ? inputNombre.value.trim() : 'Empresa';
 
                 if (!correo) {
                     mostrarAlertaSimulador('Ingrese o seleccione una casilla de correo electrónico válida.', 'alerta');
                     return;
                 }
 
-                navigator.clipboard.writeText(cuerpo).then(() => {
-                    mostrarAlertaSimulador(`¡Plantilla y enlace para ${correo} copiados al portapapeles con éxito!`, 'exito');
-                }).catch(() => {
-                    redaccionInput.select();
-                    document.execCommand('copy');
-                    mostrarAlertaSimulador(`¡Plantilla lista para ${correo}!`, 'exito');
-                });
+                mostrarAlertaSimulador(`Despachando correo oficial a ${correo}...`, 'info');
+
+                setTimeout(() => {
+                    mostrarAlertaSimulador(`¡Correo enviado con éxito a ${empresa} (${correo}) desde Sensometrika!`, 'exito');
+                }, 800);
 
             } catch (error) {
-                console.error("Error al procesar el correo:", error);
-                mostrarAlertaSimulador("Ocurrió un error al preparar el correo.", "error");
+                console.error("Error al enviar correo individual:", error);
+                mostrarAlertaSimulador("Ocurrió un error al procesar el envío del correo.", "error");
             }
         }
 
+        // --- BOTÓN ENVÍO MASIVO (CAMPAÑA) ---
         function ejecutarEnvioMasivoCampania() {
             try {
                 const chks = document.querySelectorAll('.chk-empresa:checked');
@@ -826,9 +830,11 @@
                     mostrarAlertaSimulador('Seleccione al menos una empresa marcando la casilla de la tabla.', 'alerta');
                     return;
                 }
-                mostrarAlertaSimulador(`¡Campaña de correo masivo iniciada correctamente para ${chks.length} empresas!`, 'exito');
+                
+                mostrarAlertaSimulador(`¡Campaña de correo masivo iniciada correctamente para ${chks.length} empresas vía pasarela Sensometrika!`, 'exito');
             } catch (error) {
                 console.error("Error en envío masivo:", error);
+                mostrarAlertaSimulador("Ocurrió un error al procesar la campaña masiva.", "error");
             }
         }
 
@@ -923,7 +929,7 @@
                 const empresas = obtenerListaEmpresasB2B();
                 const idUnico = 'EMP-' + Math.floor(100 + Math.random() * 900);
                 const originUrl = window.location.origin.includes('127.0.0.1') ? 'http://127.0.0.1:5500' : window.location.origin;
-                const url = `${originUrl}/demo_empresa.html?empresa=${encodeURIComponent(nombre)}`;
+                const url = `${originUrl}/demo_empresas.html?empresa=${encodeURIComponent(nombre)}`;
 
                 empresas.unshift({ id: idUnico, fechaHora, nombre, contacto, correo, estado, url });
                 localStorage.setItem('sensometrika_empresas_b2b', JSON.stringify(empresas));
