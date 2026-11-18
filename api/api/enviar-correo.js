@@ -80,11 +80,11 @@ module.exports = async (req, res) => {
     const tipoToken = (tipo === 'demo' || tipo === 'b2b' || tipo === 'b2b_apr_acceso') ? tipo : 'b2c';
 
     // Duración de vigencias por defecto (minutos)
-    let minutosVigencia = 2880; // 48 horas B2C
+    let minutosVigencia = 2880; 
     if (tipoToken === 'demo') {
       minutosVigencia = 6;
     } else if (tipoToken === 'b2b' || tipoToken === 'b2b_apr_acceso') {
-      minutosVigencia = 4320; // 72 horas B2B
+      minutosVigencia = 4320; 
     }
 
     if (duracion_minutos && Number(duracion_minutos) > 0) {
@@ -93,10 +93,14 @@ module.exports = async (req, res) => {
 
     let enlaceFinal = '';
 
-    // Sanitización o generación de enlace con token
+    // Sanitización o generación inteligente de enlace según el tipo
     if (typeof enlaceEntrante === 'string' && enlaceEntrante.length > 5) {
       const matchCustom = enlaceEntrante.match(/https?:\/\/[^\s\]\)\'\"]+/);
       enlaceFinal = matchCustom ? matchCustom[0] : enlaceEntrante.trim();
+    } else if (tipo === 'b2b') {
+      // Si es correo de presentación B2B y no viene link, apuntar a la vitrina comercial de empresa
+      const nombreEmp = encodeURIComponent(empresa || 'Empresa Mandante');
+      enlaceFinal = `${cleanDomain}/demo_empresa.html?empresa=${nombreEmp}`;
     } else {
       const generatedToken = crypto.randomUUID();
       const expiresAt = new Date(Date.now() + minutosVigencia * 60 * 1000).toISOString();
@@ -135,125 +139,10 @@ module.exports = async (req, res) => {
       (typeof planNombre === 'string' && /informe|dictamen|certificado/i.test(planNombre)) ||
       (typeof enlaceFinal === 'string' && /informe_b2b|informe_/i.test(enlaceFinal));
 
-    if (esInforme) {
-      // PLANTILLA DEDICADA: INFORME PERICIAL DEL TRABAJADOR
-      const razonSocial = empresa || (detalles && detalles.razonSocial) || 'Empresa Acreditada';
-      const nombrePlan = planNombre || (detalles && detalles.nombrePlan) || 'Evaluación Psicosensométrica D.S. N° 170';
-
-      asunto = `Informe Pericial Disponible: ${trabajadorNombre} (${rutFinal}) — Sensometrika`;
-      htmlContent = `
-        <!DOCTYPE html>
-        <html>
-        <head><meta charset="utf-8"></head>
-        <body style="background-color: #0b0f19; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #ffffff; padding: 30px 15px; margin:0;">
-          <div style="max-width: 580px; margin: 0 auto; background-color: #0f172a; border: 1px solid rgba(56, 189, 248, 0.35); border-radius: 16px; overflow: hidden; box-shadow: 0 15px 35px rgba(0,0,0,0.6);">
-            <div style="padding: 24px; text-align: center; border-bottom: 1px solid #1e293b; background-color: #070d18;">
-              <h1 style="margin: 0; font-size: 20px; font-weight: 900; letter-spacing: 2px; color: #ffffff;">SENSOMETRIKA <span style="color: #38bdf8; font-size: 14px;">SpA</span></h1>
-              <p style="margin: 4px 0 0 0; font-size: 10px; color: #94a3b8; letter-spacing: 1.5px; text-transform: uppercase;">Gabinete Sensotécnico Laboral • D.S. Nº 170 MTT</p>
-            </div>
-            <div style="padding: 28px 24px; background-color: #0f172a;">
-              <span style="display: inline-block; padding: 4px 12px; background-color: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.4); border-radius: 20px; color: #38bdf8; font-size: 11px; font-weight: 700; text-transform: uppercase; margin-bottom: 14px;">
-                📄 Informe Pericial del Trabajador
-              </span>
-              <h2 style="font-size: 18px; margin: 0 0 12px 0; color: #ffffff;">Estimado(a) Supervisor(a) / Encargado APR:</h2>
-              <p style="font-size: 13px; line-height: 1.6; color: #cbd5e1; margin: 0 0 18px 0;">
-                Informamos que el trabajador <strong style="color: #ffffff;">${trabajadorNombre}</strong> ha finalizado su evaluación psicosensométrica para <strong style="color: #ffffff;">${razonSocial}</strong>. El <strong style="color: #38bdf8;">Informe Pericial y Dictamen Oficial</strong> ya se encuentra emitido y disponible para descarga:
-              </p>
-
-              <div style="background-color: #0b1320; border: 1px solid #1e293b; border-radius: 10px; padding: 15px; margin-bottom: 20px; text-align: left;">
-                <div style="font-size: 11px; color: #94a3b8; text-transform: uppercase; font-weight: 700; margin-bottom: 2px;">Trabajador Evaluado:</div>
-                <div style="font-size: 14px; font-weight: 800; color: #ffffff; margin-bottom: 10px;">${trabajadorNombre}</div>
-
-                <div style="font-size: 11px; color: #94a3b8; text-transform: uppercase; font-weight: 700; margin-bottom: 2px;">RUT Evaluado:</div>
-                <div style="font-size: 13px; font-weight: 800; color: #34d399; margin-bottom: 10px;">${rutFinal}</div>
-
-                ${cargoFinal ? `
-                  <div style="font-size: 11px; color: #94a3b8; text-transform: uppercase; font-weight: 700; margin-bottom: 2px;">Cargo / Maquinaria:</div>
-                  <div style="font-size: 13px; font-weight: 700; color: #ffffff; margin-bottom: 10px;">${cargoFinal}</div>
-                ` : ''}
-
-                <div style="font-size: 11px; color: #94a3b8; text-transform: uppercase; font-weight: 700; margin-bottom: 2px;">Batería Evaluada:</div>
-                <div style="font-size: 13px; font-weight: 700; color: #38bdf8;">${nombrePlan}</div>
-              </div>
-
-              <div style="background-color: #131b2e; border: 1px solid #1e293b; border-radius: 12px; padding: 22px; text-align: center; margin-bottom: 20px;">
-                <p style="font-size: 12px; color: #cbd5e1; margin: 0 0 14px 0; font-weight: 600;">
-                  Acceda al informe pericial completo y dictamen con código QR:
-                </p>
-                <a href="${enlaceFinal}" target="_blank" style="display: inline-block; background-color: #10b981; color: #000000; text-decoration: none; font-weight: 900; font-size: 14px; padding: 13px 28px; border-radius: 10px; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.35);">
-                  📄 Ver Informe del Trabajador →
-                </a>
-                <p style="font-size: 11px; color: #94a3b8; margin: 14px 0 0 0; word-break: break-all;">
-                  Si el botón no abre, haz clic directo en este enlace seguro:<br>
-                  <a href="${enlaceFinal}" target="_blank" style="color: #38bdf8; text-decoration: underline;">${enlaceFinal}</a>
-                </p>
-              </div>
-            </div>
-            <div style="padding: 16px; text-align: center; border-top: 1px solid #1e293b; background-color: #070d18; font-size: 10px; color: #64748b;">
-              Sensometrika SpA • Plataforma de Calibración & Gestión Psicosensométrica • Chile • contacto@sensometrika.com
-            </div>
-          </div>
-        </body>
-        </html>
-      `;
-    } else if (tipo === 'b2b_apr_acceso') {
-      // CONSOLA APR
-      const razonSocial = empresa || (detalles && detalles.razonSocial) || 'Empresa Acreditada';
-      const rutEmpFinal = rutEmpresa || (detalles && detalles.rutEmpresa) || '--';
-      const planTexto = planNombre || 'Bolsa Corporativa B2B';
-      const codigoFinal = codigoEmpresa || 'SENSE-B2B-ACTIVO';
-      const docSiiTexto = tipoDocumento === 'BOLETA' ? 'Boleta Electrónica' : 'Factura Electrónica (DTE 33)';
-      const totalTexto = montoTotal || monto || 'Confirmado';
-
-      asunto = `Consola APR Activada: ${razonSocial} (${codigoFinal}) — Sensometrika`;
-      htmlContent = `
-        <!DOCTYPE html>
-        <html>
-        <head><meta charset="utf-8"></head>
-        <body style="background-color: #0b0f19; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #ffffff; padding: 30px 15px; margin:0;">
-          <div style="max-width: 580px; margin: 0 auto; background-color: #0f172a; border: 1px solid rgba(16, 185, 129, 0.4); border-radius: 16px; overflow: hidden; box-shadow: 0 15px 35px rgba(0,0,0,0.6);">
-            <div style="padding: 24px; text-align: center; border-bottom: 1px solid #1e293b; background-color: #070d18;">
-              <h1 style="margin: 0; font-size: 20px; font-weight: 900; letter-spacing: 2px; color: #ffffff;">SENSOMETRIKA <span style="color: #10b981; font-size: 14px;">B2B</span></h1>
-              <p style="margin: 4px 0 0 0; font-size: 10px; color: #94a3b8; letter-spacing: 1.5px; text-transform: uppercase;">Consola de Gestión APR • D.S. Nº 170 MTT</p>
-            </div>
-            <div style="padding: 28px 24px; background-color: #0f172a;">
-              <span style="display: inline-block; padding: 4px 12px; background-color: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.4); border-radius: 20px; color: #34d399; font-size: 11px; font-weight: 700; text-transform: uppercase; margin-bottom: 14px;">
-                Credenciales Corporativas Activas
-              </span>
-              <h2 style="font-size: 18px; margin: 0 0 12px 0; color: #ffffff;">Estimado(a) ${destinatarioNombre}:</h2>
-              <p style="font-size: 13px; line-height: 1.6; color: #cbd5e1; margin: 0 0 18px 0;">
-                Hemos habilitado su <strong style="color: #ffffff;">Consola de Administración APR</strong> para <strong style="color: #ffffff;">${razonSocial}</strong>.
-              </p>
-
-              <div style="background-color: #0b1320; border: 1px solid #1e293b; border-radius: 12px; padding: 16px; margin-bottom: 22px; text-align: left;">
-                <div style="font-size: 11px; color: #94a3b8; text-transform: uppercase; font-weight: 700;">Código de Acceso Empresa:</div>
-                <div style="font-size: 16px; font-weight: 900; color: #34d399; letter-spacing: 1px; margin: 2px 0 10px 0;">${codigoFinal}</div>
-
-                <div style="font-size: 11px; color: #94a3b8; text-transform: uppercase; font-weight: 700;">Empresa / RUT:</div>
-                <div style="font-size: 13px; font-weight: 700; color: #ffffff; margin: 2px 0 10px 0;">${razonSocial} • ${rutEmpFinal}</div>
-
-                <div style="font-size: 11px; color: #94a3b8; text-transform: uppercase; font-weight: 700;">Plan Contratado:</div>
-                <div style="font-size: 13px; font-weight: 700; color: #ffffff; margin: 2px 0 10px 0;">${planTexto}</div>
-
-                <div style="font-size: 11px; color: #94a3b8; text-transform: uppercase; font-weight: 700;">Respaldo Tributario SII & Total:</div>
-                <div style="font-size: 13px; font-weight: 700; color: #38bdf8; margin-top: 2px;">${docSiiTexto} • ${totalTexto} (IVA Inc.)</div>
-              </div>
-
-              <div style="background-color: #131b2e; border: 1px solid #1e293b; border-radius: 12px; padding: 22px; text-align: center; margin-bottom: 18px;">
-                <a href="${enlaceFinal}" target="_blank" style="display: inline-block; background-color: #10b981; color: #000000; text-decoration: none; font-weight: 900; font-size: 14px; padding: 13px 28px; border-radius: 10px; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.35);">
-                  Ir a Consola APR →
-                </a>
-              </div>
-            </div>
-            <div style="padding: 16px; text-align: center; border-top: 1px solid #1e293b; background-color: #070d18; font-size: 10px; color: #64748b;">
-              Sensometrika SpA • Chile • contacto@sensometrika.com
-            </div>
-          </div>
-        </body>
-        </html>
-      `;
-    } else if (tipo === 'b2b') {
-      // NUEVA PLANTILLA B2B: CORREO DE PRESENTACIÓN COMERCIAL A EMPRESAS / APR (D.S. N° 170)
+    // ==========================================
+    // 1. PLANTILLA B2B: PRESENTACIÓN COMERCIAL
+    // ==========================================
+    if (tipo === 'b2b') {
       const razonSocial = empresa || (detalles && detalles.razonSocial) || 'Empresa Mandante';
       const nombreAprPersona = nombreApr || destinatarioNombre || 'Prevencionista / APR';
 
@@ -319,6 +208,116 @@ module.exports = async (req, res) => {
         </body>
         </html>
       `;
+    } else if (esInforme) {
+      // PLANTILLA INFORME PERICIAL
+      const razonSocial = empresa || (detalles && detalles.razonSocial) || 'Empresa Acreditada';
+      const nombrePlan = planNombre || (detalles && detalles.nombrePlan) || 'Evaluación Psicosensométrica D.S. N° 170';
+
+      asunto = `Informe Pericial Disponible: ${trabajadorNombre} (${rutFinal}) — Sensometrika`;
+      htmlContent = `
+        <!DOCTYPE html>
+        <html>
+        <head><meta charset="utf-8"></head>
+        <body style="background-color: #0b0f19; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #ffffff; padding: 30px 15px; margin:0;">
+          <div style="max-width: 580px; margin: 0 auto; background-color: #0f172a; border: 1px solid rgba(56, 189, 248, 0.35); border-radius: 16px; overflow: hidden; box-shadow: 0 15px 35px rgba(0,0,0,0.6);">
+            <div style="padding: 24px; text-align: center; border-bottom: 1px solid #1e293b; background-color: #070d18;">
+              <h1 style="margin: 0; font-size: 20px; font-weight: 900; letter-spacing: 2px; color: #ffffff;">SENSOMETRIKA <span style="color: #38bdf8; font-size: 14px;">SpA</span></h1>
+              <p style="margin: 4px 0 0 0; font-size: 10px; color: #94a3b8; letter-spacing: 1.5px; text-transform: uppercase;">Gabinete Sensotécnico Laboral • D.S. Nº 170 MTT</p>
+            </div>
+            <div style="padding: 28px 24px; background-color: #0f172a;">
+              <span style="display: inline-block; padding: 4px 12px; background-color: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.4); border-radius: 20px; color: #38bdf8; font-size: 11px; font-weight: 700; text-transform: uppercase; margin-bottom: 14px;">
+                📄 Informe Pericial del Trabajador
+              </span>
+              <h2 style="font-size: 18px; margin: 0 0 12px 0; color: #ffffff;">Estimado(a) Supervisor(a) / Encargado APR:</h2>
+              <p style="font-size: 13px; line-height: 1.6; color: #cbd5e1; margin: 0 0 18px 0;">
+                Informamos que el trabajador <strong style="color: #ffffff;">${trabajadorNombre}</strong> ha finalizado su evaluación psicosensométrica para <strong style="color: #ffffff;">${razonSocial}</strong>. El <strong style="color: #38bdf8;">Informe Pericial y Dictamen Oficial</strong> ya se encuentra emitido y disponible para descarga:
+              </p>
+
+              <div style="background-color: #0b1320; border: 1px solid #1e293b; border-radius: 10px; padding: 15px; margin-bottom: 20px; text-align: left;">
+                <div style="font-size: 11px; color: #94a3b8; text-transform: uppercase; font-weight: 700; margin-bottom: 2px;">Trabajador Evaluado:</div>
+                <div style="font-size: 14px; font-weight: 800; color: #ffffff; margin-bottom: 10px;">${trabajadorNombre}</div>
+
+                <div style="font-size: 11px; color: #94a3b8; text-transform: uppercase; font-weight: 700; margin-bottom: 2px;">RUT Evaluado:</div>
+                <div style="font-size: 13px; font-weight: 800; color: #34d399; margin-bottom: 10px;">${rutFinal}</div>
+
+                ${cargoFinal ? `
+                  <div style="font-size: 11px; color: #94a3b8; text-transform: uppercase; font-weight: 700; margin-bottom: 2px;">Cargo / Maquinaria:</div>
+                  <div style="font-size: 13px; font-weight: 700; color: #ffffff; margin-bottom: 10px;">${cargoFinal}</div>
+                ` : ''}
+
+                <div style="font-size: 11px; color: #94a3b8; text-transform: uppercase; font-weight: 700; margin-bottom: 2px;">Batería Evaluada:</div>
+                <div style="font-size: 13px; font-weight: 700; color: #38bdf8;">${nombrePlan}</div>
+              </div>
+
+              <div style="background-color: #131b2e; border: 1px solid #1e293b; border-radius: 12px; padding: 22px; text-align: center; margin-bottom: 20px;">
+                <a href="${enlaceFinal}" target="_blank" style="display: inline-block; background-color: #10b981; color: #000000; text-decoration: none; font-weight: 900; font-size: 14px; padding: 13px 28px; border-radius: 10px; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.35);">
+                  📄 Ver Informe del Trabajador →
+                </a>
+              </div>
+            </div>
+            <div style="padding: 16px; text-align: center; border-top: 1px solid #1e293b; background-color: #070d18; font-size: 10px; color: #64748b;">
+              Sensometrika SpA • Chile • contacto@sensometrika.com
+            </div>
+          </div>
+        </body>
+        </html>
+      `;
+    } else if (tipo === 'b2b_apr_acceso') {
+      // CONSOLA APR
+      const razonSocial = empresa || (detalles && detalles.razonSocial) || 'Empresa Acreditada';
+      const rutEmpFinal = rutEmpresa || (detalles && detalles.rutEmpresa) || '--';
+      const planTexto = planNombre || 'Bolsa Corporativa B2B';
+      const codigoFinal = codigoEmpresa || 'SENSE-B2B-ACTIVO';
+      const docSiiTexto = tipoDocumento === 'BOLETA' ? 'Boleta Electrónica' : 'Factura Electrónica (DTE 33)';
+      const totalTexto = montoTotal || monto || 'Confirmado';
+
+      asunto = `Consola APR Activada: ${razonSocial} (${codigoFinal}) — Sensometrika`;
+      htmlContent = `
+        <!DOCTYPE html>
+        <html>
+        <head><meta charset="utf-8"></head>
+        <body style="background-color: #0b0f19; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #ffffff; padding: 30px 15px; margin:0;">
+          <div style="max-width: 580px; margin: 0 auto; background-color: #0f172a; border: 1px solid rgba(16, 185, 129, 0.4); border-radius: 16px; overflow: hidden; box-shadow: 0 15px 35px rgba(0,0,0,0.6);">
+            <div style="padding: 24px; text-align: center; border-bottom: 1px solid #1e293b; background-color: #070d18;">
+              <h1 style="margin: 0; font-size: 20px; font-weight: 900; letter-spacing: 2px; color: #ffffff;">SENSOMETRIKA <span style="color: #10b981; font-size: 14px;">B2B</span></h1>
+              <p style="margin: 4px 0 0 0; font-size: 10px; color: #94a3b8; letter-spacing: 1.5px; text-transform: uppercase;">Consola de Gestión APR • D.S. Nº 170 MTT</p>
+            </div>
+            <div style="padding: 28px 24px; background-color: #0f172a;">
+              <span style="display: inline-block; padding: 4px 12px; background-color: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.4); border-radius: 20px; color: #34d399; font-size: 11px; font-weight: 700; text-transform: uppercase; margin-bottom: 14px;">
+                Credenciales Corporativas Activas
+              </span>
+              <h2 style="font-size: 18px; margin: 0 0 12px 0; color: #ffffff;">Estimado(a) ${destinatarioNombre}:</h2>
+              <p style="font-size: 13px; line-height: 1.6; color: #cbd5e1; margin: 0 0 18px 0;">
+                Hemos habilitado su <strong style="color: #ffffff;">Consola de Administración APR</strong> para <strong style="color: #ffffff;">${razonSocial}</strong>.
+              </p>
+
+              <div style="background-color: #0b1320; border: 1px solid #1e293b; border-radius: 12px; padding: 16px; margin-bottom: 22px; text-align: left;">
+                <div style="font-size: 11px; color: #94a3b8; text-transform: uppercase; font-weight: 700;">Código de Acceso Empresa:</div>
+                <div style="font-size: 16px; font-weight: 900; color: #34d399; letter-spacing: 1px; margin: 2px 0 10px 0;">${codigoFinal}</div>
+
+                <div style="font-size: 11px; color: #94a3b8; text-transform: uppercase; font-weight: 700;">Empresa / RUT:</div>
+                <div style="font-size: 13px; font-weight: 700; color: #ffffff; margin: 2px 0 10px 0;">${razonSocial} • ${rutEmpFinal}</div>
+
+                <div style="font-size: 11px; color: #94a3b8; text-transform: uppercase; font-weight: 700;">Plan Contratado:</div>
+                <div style="font-size: 13px; font-weight: 700; color: #ffffff; margin: 2px 0 10px 0;">${planTexto}</div>
+
+                <div style="font-size: 11px; color: #94a3b8; text-transform: uppercase; font-weight: 700;">Respaldo Tributario SII & Total:</div>
+                <div style="font-size: 13px; font-weight: 700; color: #38bdf8; margin-top: 2px;">${docSiiTexto} • ${totalTexto} (IVA Inc.)</div>
+              </div>
+
+              <div style="background-color: #131b2e; border: 1px solid #1e293b; border-radius: 12px; padding: 22px; text-align: center; margin-bottom: 18px;">
+                <a href="${enlaceFinal}" target="_blank" style="display: inline-block; background-color: #10b981; color: #000000; text-decoration: none; font-weight: 900; font-size: 14px; padding: 13px 28px; border-radius: 10px; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.35);">
+                  Ir a Consola APR →
+                </a>
+              </div>
+            </div>
+            <div style="padding: 16px; text-align: center; border-top: 1px solid #1e293b; background-color: #070d18; font-size: 10px; color: #64748b;">
+              Sensometrika SpA • Chile • contacto@sensometrika.com
+            </div>
+          </div>
+        </body>
+        </html>
+      `;
     } else {
       // PLANTILLA B2C / PARTICULARES
       const nombrePlan = planNombre || (detalles && detalles.nombrePlan) || (tipoToken === 'demo' ? 'Pase de Demostración' : 'Pase Psicomotriz (3 Sim)');
@@ -350,24 +349,16 @@ module.exports = async (req, res) => {
               <div style="background-color: #0b1320; border: 1px solid #1e293b; border-radius: 10px; padding: 14px; margin-bottom: 20px; text-align: left;">
                 <div style="font-size: 11px; color: #94a3b8; text-transform: uppercase; font-weight: 700; margin-bottom: 4px;">RUT Evaluado:</div>
                 <div style="font-size: 13px; font-weight: 800; color: #ffffff; margin-bottom: 8px;">${rutFinal}</div>
-                ${(montoTotal || monto) ? `
-                  <div style="font-size: 11px; color: #94a3b8; text-transform: uppercase; font-weight: 700; margin-bottom: 4px;">Detalle / Estado:</div>
-                  <div style="font-size: 13px; font-weight: 800; color: #34d399;">${montoTotal || monto}</div>
-                ` : ''}
               </div>
 
               <div style="background-color: #131b2e; border: 1px solid #1e293b; border-radius: 12px; padding: 22px; text-align: center; margin-bottom: 24px;">
                 <a href="${enlaceFinal}" target="_blank" style="display: inline-block; background-color: #0284c7; color: #ffffff; text-decoration: none; font-weight: 800; font-size: 14px; padding: 13px 28px; border-radius: 10px; box-shadow: 0 4px 15px rgba(2, 132, 199, 0.4);">
                   Comenzar Evaluación Ahora →
                 </a>
-                <p style="font-size: 11px; color: #94a3b8; margin: 14px 0 0 0; word-break: break-all;">
-                  Si el botón no abre, haz clic directo en este enlace seguro:<br>
-                  <a href="${enlaceFinal}" target="_blank" style="color: #38bdf8; text-decoration: underline;">${enlaceFinal}</a>
-                </p>
               </div>
             </div>
             <div style="padding: 16px; text-align: center; border-top: 1px solid #1e293b; background-color: #070d18; font-size: 10px; color: #64748b;">
-              Sensometrika SpA • Plataforma de Calibración & Gestión Psicosensométrica • Chile • contacto@sensometrika.com
+              Sensometrika SpA • Chile • contacto@sensometrika.com
             </div>
           </div>
         </body>
