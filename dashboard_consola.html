@@ -298,7 +298,7 @@
             </div>
         </div>
 
-        <!-- FORMULARIO DE GENERACIÓN DE ENLACE (SIN SELECTOR DE PROTOCOLO) -->
+        <!-- FORMULARIO DE GENERACIÓN DE ENLACE -->
         <div class="panel-card">
             <div class="card-title">🎟️ Generar Enlace o Código QR Integral para Trabajador</div>
             <form id="formRegistrar" onsubmit="generarLinkTrabajador(event)">
@@ -387,14 +387,25 @@
         let empresaActiva = '';
         let llaveNominaEmpresa = 'sensometrika_consola_nomina_default';
         let trabajadores = [];
-        let foliosRestantes = parseInt(localStorage.getItem('sensometrika_b2b_folios') || localStorage.getItem('sensometrika_cantidad_perfiles') || '10', 10);
+        let foliosRestantes = 10;
 
         document.addEventListener('DOMContentLoaded', () => {
-            empresaActiva = (localStorage.getItem('sensometrika_b2b_empresa') || 'EMPRESA MINERA / TRANSPORTE').trim().toUpperCase();
-            const encargado = localStorage.getItem('sensometrika_b2b_encargado') || 'DPTO PREVENCIÓN / MÉDICO';
+            let datosEmp = {};
+            try { datosEmp = JSON.parse(localStorage.getItem('sensometrika_datos_empresa_activa')) || {}; } catch (e) {}
+
+            empresaActiva = (datosEmp.razonSocial || localStorage.getItem('sensometrika_b2b_empresa') || 'EMPRESA MINERA / TRANSPORTE').trim().toUpperCase();
+            const encargado = (datosEmp.encargadoAPR || localStorage.getItem('sensometrika_b2b_encargado') || 'DPTO PREVENCIÓN / MÉDICO').trim();
+
+            foliosRestantes = parseInt(
+                localStorage.getItem('sensometrika_b2b_folios') ||
+                localStorage.getItem('sensometrika_cantidad_perfiles') ||
+                '10',
+                10
+            );
+            if (isNaN(foliosRestantes) || foliosRestantes < 0) foliosRestantes = 10;
 
             llaveNominaEmpresa = `sensometrika_consola_nomina_${empresaActiva.replace(/[^A-Z0-9]/g, '_')}`;
-            trabajadores = JSON.parse(localStorage.getItem(llaveNominaEmpresa)) || [];
+            try { trabajadores = JSON.parse(localStorage.getItem(llaveNominaEmpresa)) || []; } catch (e) { trabajadores = []; }
 
             document.getElementById('lblEmpresa').innerText = empresaActiva;
             document.getElementById('lblEncargado').innerText = encargado.toUpperCase();
@@ -453,11 +464,12 @@
             const telefono = document.getElementById('inputTelefono').value.trim();
             const cargo = document.getElementById('inputCargo').value.trim();
 
-            const cleanRut = rut.replace(/[^0-9Kk]/g, '');
+            const cleanRut = rut.replace(/[^0-9Kk]/g, '').toUpperCase();
             const sessionId = `SESION_INTEGRAL_${cleanRut}_${Date.now()}`;
 
             foliosRestantes--;
             localStorage.setItem('sensometrika_b2b_folios', foliosRestantes);
+            localStorage.setItem('sensometrika_cantidad_perfiles', foliosRestantes);
             document.getElementById('lblFoliosRestantes').innerText = `${foliosRestantes} Evaluaciones`;
 
             const baseUrl = window.location.origin.replace(/\/$/, '');
@@ -525,8 +537,8 @@
                     claseEstado = 'badge-pending';
                 }
 
-                const urlInformeVial = `informe_b2b.html?rut=${t.rut}&nombre=${encodeURIComponent(t.nombre)}&session=${sessionParam}&mode=b2b`;
-                const urlInformeFaena = `informe_faena.html?rut=${t.rut}&nombre=${encodeURIComponent(t.nombre)}&session=${sessionParam}&mode=b2b_mf`;
+                const urlInformeVial = `informe_b2b.html?rut=${encodeURIComponent(t.rut)}&nombre=${encodeURIComponent(t.nombre)}&session=${sessionParam}&mode=b2b`;
+                const urlInformeFaena = `informe_faena.html?rut=${encodeURIComponent(t.rut)}&nombre=${encodeURIComponent(t.nombre)}&session=${sessionParam}&mode=b2b_mf`;
 
                 const qrContainerId = `qrcode_table_${index}`;
                 const textoWpFila = encodeURIComponent(`Hola *${t.nombre}*, desde *${t.empresa}* te enviamos tu acceso de evaluación Sensometrika Integral:\n\n${t.url}`);

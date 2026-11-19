@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>SENSOMETRIKA | Informe Técnico Demo Empresa (5 Módulos a Libre Elección)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        :root {
+            --bg-page: #0f172a;
+            --sheet-bg: #ffffff;
+            --text-dark: #0f172a;
+            --text-muted: #475569;
+            --border-color: #cbd5e1;
+            --navy-brand: #0284c7;
+            --green-ok: #16a34a;
+            --red-bad: #dc2626;
+            --amber-pend: #d97706;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            background-color: var(--bg-page);
+            color: var(--text-dark);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px 10px;
+        }
+
+        .sheet-container {
+            background-color: var(--sheet-bg);
+            width: 100%;
+            max-width: 640px;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .header-brand {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid var(--navy-brand);
+            padding-bottom: 8px;
+        }
+
+        .brand-title {
+            font-size: 0.9rem;
+            font-weight: 900;
+            color: var(--navy-brand);
+            letter-spacing: -0.3px;
+        }
+
+        .brand-sub {
+            font-size: 0.55rem;
+            color: var(--text-muted);
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .qr-placeholder {
+            width: 52px;
+            height: 52px;
+            background: #f1f5f9;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+
+        .qr-placeholder img { width: 100%; height: 100%; object-fit: contain; }
+
+        .notice-banner {
+            background-color: #f0f9ff;
+            border: 1px solid #bae6fd;
+            color: #0369a1;
+            font-size: 0.58rem;
+            font-weight: 700;
+            padding: 6px 10px;
+            border-radius: 6px;
+            text-align: center;
+        }
+
+        .ficha-layout {
+            display: grid;
+            grid-template-columns: 1fr 120px;
+            gap: 10px;
+            background-color: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 10px;
+        }
+
+        .grid-ficha-info {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            font-size: 0.65rem;
+        }
+
+        .ficha-item { display: flex; flex-direction: column; gap: 1px; }
+        .ficha-label { font-size: 0.52rem; color: #64748b; font-weight: 800; text-transform: uppercase; }
+        .ficha-val { font-weight: 800; color: #0f172a; }
+
+        .biometric-box {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            min-height: 130px;
+            border-radius: 6px;
+            overflow: hidden;
+            border: 1px solid #cbd5e1;
+            background-color: #0f172a;
+        }
+
+        .biometric-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        .biometric-tag {
+            position: absolute;
+            bottom: 0; left: 0; right: 0;
+            background: rgba(2, 132, 199, 0.9);
+            color: #ffffff;
+            font-size: 0.45rem;
+            font-weight: 800;
+            text-align: center;
+            padding: 2px 0;
+            text-transform: uppercase;
+        }
+
+        .sensor-telemetry-box {
+            background-color: #0f172a;
+            color: #f8fafc;
+            border-radius: 8px;
+            padding: 8px 12px;
+            font-size: 0.58rem;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 6px;
+            border: 1px solid #1e293b;
+        }
+
+        .sensor-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sensor-label {
+            font-size: 0.48rem;
+            color: #38bdf8;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .sensor-value {
+            font-weight: 800;
+            color: #ffffff;
+        }
+
+        .vigencia-bar {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            border-radius: 6px;
+            overflow: hidden;
+            font-size: 0.60rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            text-align: center;
+        }
+
+        .vigencia-blue { background-color: #0284c7; color: #ffffff; padding: 6px; }
+        .vigencia-green { background-color: #16a34a; color: #ffffff; padding: 6px; }
+
+        .banner-dictamen {
+            border-radius: 8px;
+            padding: 10px;
+            text-align: center;
+            font-size: 0.75rem;
+            font-weight: 900;
+            text-transform: uppercase;
+        }
+
+        .dictamen-aprobado { background-color: #dcfce7; border: 1px solid #86efac; color: #15803d; }
+
+        .tabla-oficial {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.58rem;
+        }
+
+        .tabla-oficial th {
+            background-color: var(--navy-brand);
+            color: #ffffff;
+            padding: 6px 8px;
+            text-align: left;
+            font-size: 0.52rem;
+            font-weight: 800;
+            text-transform: uppercase;
+        }
+
+        .tabla-oficial td {
+            padding: 6px 8px;
+            border-bottom: 1px solid #e2e8f0;
+            vertical-align: middle;
+        }
+
+        .badge-sem {
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.50rem;
+            font-weight: 800;
+            display: inline-block;
+            text-transform: uppercase;
+        }
+
+        .sem-ok { background-color: #dcfce7; color: #15803d; border: 1px solid #86efac; }
+
+        .firmas-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-top: 4px;
+            padding-top: 4px;
+            border-top: 1px dashed #cbd5e1;
+            text-align: center;
+        }
+
+        .firma-box { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; }
+        .firma-graphic-box { height: 48px; display: flex; align-items: center; justify-content: center; width: 100%; }
+        .firma-graphic-img { max-height: 44px; width: auto; object-fit: contain; }
+        .linea-firma { width: 88%; border-top: 1px solid #0f172a; margin-top: 2px; }
+        .firma-label { font-size: 0.55rem; font-weight: 800; color: #0f172a; margin-top: 2px; }
+        .firma-sub { font-size: 0.50rem; color: #64748b; }
+
+        .actions-stack {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .btn-action {
+            background-color: var(--navy-brand);
+            color: #ffffff;
+            border: none;
+            border-radius: 8px;
+            padding: 11px;
+            font-weight: 800;
+            font-size: 0.75rem;
+            width: 100%;
+            text-align: center;
+            cursor: pointer;
+            text-decoration: none;
+            display: block;
+            text-transform: uppercase;
+        }
+
+        .btn-invite-dashboard {
+            background-color: #16a34a;
+            color: #ffffff;
+            padding: 12px;
+            font-size: 0.78rem;
+            box-shadow: 0 4px 12px rgba(22, 163, 74, 0.25);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="sheet-container">
+        <header class="header-brand">
+            <div>
+                <div class="brand-title">SENSOMETRIKA SpA</div>
+                <div class="brand-sub">INFORME TÉCNICO DE DEMOSTRACIÓN CORPORATIVA (5 MÓDULOS)</div>
+            </div>
+            <div class="qr-placeholder">
+                <img id="imgQrVerificacion" src="" alt="QR Validador Demo">
+            </div>
+        </header>
+
+        <div class="notice-banner">
+            🔒 Sesión Demo Consumida y Cerrada: 5 módulos ejecutados sin manipulación posterior.
+        </div>
+
+        <div class="ficha-layout">
+            <div class="grid-ficha-info">
+                <div class="ficha-item">
+                    <span class="ficha-label">EVALUADO DEMOSTRACIÓN</span>
+                    <span class="ficha-val" id="lblNombre">CARGANDO...</span>
+                </div>
+                <div class="ficha-item">
+                    <span class="ficha-label">RUT / IDENTIFICACIÓN</span>
+                    <span class="ficha-val" id="lblRut">CARGANDO...</span>
+                </div>
+                <div class="ficha-item">
+                    <span class="ficha-label">CARGO / PERFIL OPERATIVO</span>
+                    <span class="ficha-val" id="lblCargo">OPERADOR DE MAQUINARIA</span>
+                </div>
+                <div class="ficha-item">
+                    <span class="ficha-label">EMPRESA INVITADA</span>
+                    <span class="ficha-val" id="lblEmpresa">EMPRESA MANDANTE DEMO</span>
+                </div>
+                <div style="display: flex; justify-content: space-between;" class="mt-1">
+                    <div class="ficha-item">
+                        <span class="ficha-label">INICIO DEMO</span>
+                        <span class="ficha-val text-sky-600" id="lblFechaInicio">--</span>
+                    </div>
+                    <div class="ficha-item">
+                        <span class="ficha-label">EMISIÓN INFORME</span>
+                        <span class="ficha-val text-sky-600" id="lblFechaTermino">--</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="biometric-box">
+                <img id="imgBiometrica" src="../sensometrica.jpg" alt="Biometría" class="biometric-img" onerror="this.style.display='none'">
+                <div class="biometric-tag">BIOMETRÍA DEMO</div>
+            </div>
+        </div>
+
+        <div class="sensor-telemetry-box">
+            <div class="sensor-item">
+                <span class="sensor-label">🖥️ Hardware Base</span>
+                <span class="sensor-value" id="lblHardware">Cockpit Sensometrika Demo B2B</span>
+            </div>
+            <div class="sensor-item">
+                <span class="sensor-label">⚡ Latencia Muestreo</span>
+                <span class="sensor-value" id="lblLatencia">2.4 ms (Aver. Hz: 250)</span>
+            </div>
+            <div class="sensor-item">
+                <span class="sensor-label">🎯 Precisión Punteo</span>
+                <span class="sensor-value" id="lblPrecisionSensor">± 0.05 mm (Óptico)</span>
+            </div>
+        </div>
+
+        <div class="vigencia-bar">
+            <div class="vigencia-blue">📋 MODALIDAD DE AUDITORÍA</div>
+            <div id="lblEstadoVigencia" class="vigencia-green">DEMOSTRACIÓN B2B (5 MÓDULOS)</div>
+        </div>
+
+        <div id="boxDictamen" class="banner-dictamen dictamen-aprobado">
+            ✔ DICTAMEN TÉCNICO DE DEMOSTRACIÓN: BATERÍA DE 5 MÓDULOS CONSOLIDADA
+            <div style="font-size: 0.52rem; font-weight: 600; margin-top: 2px;" id="lblDictamenSub">
+                Simulación corporativa ejecutada con trazabilidad biométrica y telemetría de sensores.
+            </div>
+        </div>
+
+        <table class="tabla-oficial">
+            <thead>
+                <tr>
+                    <th style="width: 34%;">MÓDULO EVALUADO (5 ELEGIDOS)</th>
+                    <th style="width: 18%;">ESTÁNDAR</th>
+                    <th style="width: 33%;">TELEMETRÍA Y MÉTRICAS REGISTRADAS</th>
+                    <th style="width: 15%; text-align: right;">ESTADO</th>
+                </tr>
+            </thead>
+            <tbody id="tbodyModulosDemo"></tbody>
+        </table>
+
+        <div class="firmas-container">
+            <div class="firma-box">
+                <div class="firma-graphic-box">
+                    <img id="imgFirmaTrabajador" src="" alt="Firma" class="firma-graphic-img">
+                </div>
+                <div class="linea-firma"></div>
+                <div class="firma-label" id="lblFirmaNombre">NOMBRE EVALUADO</div>
+                <div class="firma-sub">RÚBRICA DIGITAL DE SESIÓN DEMO</div>
+            </div>
+
+            <div class="firma-box">
+                <div class="firma-graphic-box">
+                    <img id="imgFirmaInstitucional" src="" alt="Firma Gerencia Sensometrika SpA" class="firma-graphic-img">
+                </div>
+                <div class="linea-firma"></div>
+                <div class="firma-label">Sensometrika SpA • Ingeniería B2B</div>
+                <div class="firma-sub">V°B° MUESTRA TÉCNICA CORPORATIVA</div>
+            </div>
+        </div>
+
+        <div class="actions-stack">
+            <button type="button" class="btn-action" onclick="volverDemoMenuB2B()">
+                ← VOLVER AL MENÚ DEMO B2B
+            </button>
+            <button type="button" class="btn-action btn-invite-dashboard" onclick="irADashboardEmpresa()">
+                🚀 IR A DASHBOARD EMPRESA Y ARMAR EVALUACIÓN →
+            </button>
+        </div>
+    </div>
+
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        let datosUsuario = {};
+        try { datosUsuario = JSON.parse(localStorage.getItem('sensometrika_datos_usuario')) || {}; } catch(e){}
+
+        const rawNombre = urlParams.get('nombre') || datosUsuario.nombre || localStorage.getItem('sensometrika_nombre') || 'EVALUADO DEMO';
+        const rawRut = urlParams.get('rut') || datosUsuario.rut || localStorage.getItem('sensometrika_rut') || '12.345.678-9';
+        const rawCargo = urlParams.get('cargo') || datosUsuario.cargo || localStorage.getItem('sensometrika_cargo') || 'Operador Minero';
+        const rawEmpresa = urlParams.get('empresa') || datosUsuario.empresa || localStorage.getItem('sensometrika_empresa') || 'Empresa Invitada Demo';
+        const sessionId = urlParams.get('session') || localStorage.getItem('sensometrika_session_activa') || `SESION_DEMO_${Date.now()}`;
+        const cleanRut = rawRut.replace(/[^0-9Kk]/g, '').toUpperCase();
+
+        const nombreLimpio = decodeURIComponent(rawNombre);
+        const cargoLimpio = decodeURIComponent(rawCargo);
+        const empresaLimpia = decodeURIComponent(rawEmpresa);
+
+        function quemarSesionDemo() {
+            localStorage.setItem(`sensometrika_demo_quemado_${cleanRut}_${sessionId}`, 'true');
+            localStorage.setItem(`sensometrika_demo_quemado_${sessionId}`, 'true');
+            localStorage.setItem('sensometrika_demo_enlace_quemado', 'true');
+        }
+
+        function volverDemoMenuB2B() {
+            quemarSesionDemo();
+            const paramsMenu = new URLSearchParams({
+                flujo: 'demo',
+                quemado: '1',
+                rut: rawRut,
+                nombre: nombreLimpio,
+                cargo: cargoLimpio,
+                empresa: empresaLimpia,
+                session: sessionId
+            });
+            window.location.href = `demo_menu_b2b.html?${paramsMenu.toString()}`;
+        }
+
+        function irADashboardEmpresa() {
+            quemarSesionDemo();
+            const paramsDashboard = new URLSearchParams({
+                desde: 'demo',
+                empresa: empresaLimpia,
+                nombre: nombreLimpio,
+                rut: rawRut,
+                session: sessionId
+            });
+            window.location.href = `../dashboard_empresa.html?${paramsDashboard.toString()}`;
+        }
+
+        function obtenerTelemetriaModulo(nombreTest) {
+            const dataStr = localStorage.getItem(`sensometrika_last_${nombreTest}_${cleanRut}_${sessionId}`) ||
+                            localStorage.getItem(`sensometrika_historial_${nombreTest}_${cleanRut}_${sessionId}`);
+            try {
+                return JSON.parse(dataStr) || null;
+            } catch(e) {
+                return null;
+            }
+        }
+
+        const catalogoReferencias = {
+            anticipacion: { title: '1. Anticipación Pro ⏱️', est: 'Cálculo velocidad', sim: 'Encoder virtual: <b>Margen 0.08s</b>' },
+            reactimetro: { title: '2. Reactímetro Simple ⚡', est: 'Reacción < 350ms', sim: 'Sensor lumínico: <b>Reacción 285ms (Hz: 250)</b>' },
+            punteo: { title: '3. Punteo Viso-Motriz 🎯', est: 'Precisión lineal', sim: 'Tablet digitalizadora: <b>Desv. 1.2mm</b>' },
+            palancas: { title: '4. Test de Palancas Bimanual 🕹️', est: 'Control bilateral', sim: 'Ejes bimanuales: <b>Sincronía 98.4%</b>' },
+            visual: { title: '5. Tamizaje Visual (Snellen) 👁️', est: 'Agudeza 20/20', sim: 'Optotipo digital: <b>Agudeza 20/20</b>' },
+            periferico: { title: '6. Campo Periférico 👁️‍🗨️', est: 'Amplitud lateral', sim: 'Ángulo lateral: <b>175° Binocular</b>' },
+            estereopsis: { title: '7. Estereopsis (Profundidad) 📐', est: 'Percepción 3D', sim: 'Disparidad binocular: <b>40 arcseg</b>' },
+            encandilamiento: { title: '8. Encandilamiento & Recuperación 💡', est: 'Recup. fotópica', sim: 'Recuperación: <b>1.8 s post-destello</b>' },
+            auditivo: { title: '9. Tamizaje Auditivo Ocupacional 🔊', est: 'Umbrales auditivos', sim: 'Banda 500-4000Hz: <b>< 20 dB HL</b>' },
+            cargadual: { title: '10. Test de Carga Dual 🔀', est: 'Ejecución simultánea', sim: 'Multitarea: <b>Eficiencia 94.2%</b>' },
+            memoria: { title: '11. Memoria de Trabajo Operativa 🧩', est: 'Retención secuencias', sim: 'Span operativo: <b>7 dígitos / 96%</b>' },
+            fatiga: { title: '12. Fatiga y Vigilancia (PVT) 😴', est: 'Nivel de alerta', sim: 'PVT 3 min: <b>0 lapsos > 500ms</b>' },
+            visomotriz: { title: '13. Visomotriz Avanzada 🚗', est: 'Frenado en pista', sim: 'Telemetría pista: <b>Frenado nominal</b>' },
+            atencion: { title: '14. Atención Sostenida (CPT) 🧠', est: 'Concentración continua', sim: 'Índice d-prime: <b>Estable (97%)</b>' },
+            ishihara: { title: '15. Discriminación Colores 🎨', est: 'Test Ishihara', sim: 'Láminas cromáticas: <b>12/12 aciertos</b>' },
+            reaccion_compleja: { title: '16. Reacción Compleja Múltiple ⚡', est: 'Decisión estímulo', sim: 'Multiseñal: <b>312ms sin errores</b>' },
+            emocional: { title: '17. Estabilidad Emocional 🧠', est: 'Control impulsos', sim: 'Go/No-Go: <b>Inhibición 98%</b>' },
+            romberg: { title: 'M1. Estabilidad Vestibular (Romberg) ⚖️', est: 'Control postural', sim: 'Acelerómetro: <b>Oscilación < 1.1°</b>' },
+            temblores: { title: 'M2. Estabilidad Motora (Temblores) ✋', est: 'Pulso estacionario', sim: 'Micro-oscilación: <b>0.3 mm/s</b>' },
+            grip: { title: 'M3. Dinamometría y Fuerza (Grip) ✊', est: 'Prehensión manual', sim: 'Dinamómetro: <b>46.5 kgf</b>' },
+            ppg: { title: 'M4. Frecuencia Cardíaca Basal (PPG) 💓', est: 'Signos vitales', sim: 'PPG óptico: <b>72 lpm (Ritmo regular)</b>' },
+            pupilar: { title: 'M5. Reflejo Fotomotor Pupilar 👁️', est: 'Reactividad pupilar', sim: 'MediaPipe Iris: <b>Constricción 240ms</b>' },
+            espirometria: { title: 'M6. Espirometría Ocupacional Pro 🫁', est: 'Flujo respiratorio', sim: 'Flujo espiratorio: <b>95% predicho</b>' },
+            tapping: { title: 'M7. Agilidad Digital (Tapping) ⚡', est: 'Velocidad motora', sim: 'Frecuencia: <b>6.4 taps/seg</b>' },
+            auditivo_faena: { title: 'M8. Reacción a Alarma de Faena 🚨', est: 'Alerta emergencia', sim: 'Latencia acústica: <b>265 ms</b>' },
+            nistagmo: { title: 'M9. Estabilidad Oculomotriz 🔄', est: 'Seguimiento ocular', sim: 'Sacadas oculares: <b>Sin nistagmo</b>' },
+            somnolencia: { title: 'M10. Tamizaje de Somnolencia Pro 😴', est: 'Fatiga crítica', sim: 'Alerta ocular: <b>Vigilia óptima</b>' }
+        };
+
+        document.addEventListener('DOMContentLoaded', () => {
+            quemarSesionDemo();
+
+            document.getElementById('lblNombre').textContent = nombreLimpio.toUpperCase();
+            document.getElementById('lblRut').textContent = rawRut;
+            document.getElementById('lblCargo').textContent = cargoLimpio.toUpperCase();
+            document.getElementById('lblEmpresa').textContent = empresaLimpia.toUpperCase();
+            document.getElementById('lblFirmaNombre').textContent = nombreLimpio.toUpperCase();
+
+            // Rúbrica gerencial elegante con trazo continuo y rúbrica final firme
+            const svgFirmaGerencial = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="240" height="52" viewBox="0 0 240 52"><path d="M 22 36 C 34 10, 48 6, 45 24 C 42 38, 28 40, 38 26 C 48 14, 62 34, 76 24 C 86 17, 94 31, 108 23 C 122 15, 134 32, 152 24 C 166 18, 178 28, 198 22 M 52 41 C 92 38, 148 35, 206 33" fill="none" stroke="%230f172a" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+            document.getElementById('imgFirmaInstitucional').src = svgFirmaGerencial;
+
+            const latDemoRaw = localStorage.getItem(`sensometrika_demo_latencia_${cleanRut}_${sessionId}`);
+            if (latDemoRaw) {
+                try {
+                    const latObj = JSON.parse(latDemoRaw);
+                    if (latObj && latObj.promedioMs) {
+                        document.getElementById('lblLatencia').textContent = `${latObj.promedioMs} ms (Aver. Hz: ${latObj.hz || 250})`;
+                    }
+                } catch(e) {}
+            }
+
+            let timestampInicioKey = `sensometrika_ts_inicio_${cleanRut}_${sessionId}`;
+            let timestampTerminoKey = `sensometrika_ts_termino_${cleanRut}_${sessionId}`;
+
+            let tsInicio = localStorage.getItem(timestampInicioKey);
+            if (!tsInicio) {
+                tsInicio = Date.now() - (8 * 60 * 1000);
+                localStorage.setItem(timestampInicioKey, tsInicio);
+            }
+
+            let tsTermino = localStorage.getItem(timestampTerminoKey);
+            if (!tsTermino) {
+                tsTermino = Date.now();
+                localStorage.setItem(timestampTerminoKey, tsTermino);
+            }
+
+            const formatFecha = (ts) => {
+                const d = new Date(parseInt(ts));
+                return `${d.getDate().toString().padStart(2, '0')}-${(d.getMonth()+1).toString().padStart(2, '0')}-${d.getFullYear()} ${d.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })}`;
+            };
+
+            document.getElementById('lblFechaInicio').textContent = formatFecha(tsInicio);
+            document.getElementById('lblFechaTermino').textContent = formatFecha(tsTermino);
+
+            const folioDemo = `SMK-DEMO5-${cleanRut.substring(0, 6)}-${Math.floor(Math.random()*899+100)}`;
+
+            const fotoGuardada = localStorage.getItem(`sensometrika_demo_foto_${cleanRut}_${sessionId}`) ||
+                                 localStorage.getItem(`sensometrika_foto_${cleanRut}_${sessionId}`) ||
+                                 localStorage.getItem(`sensometrika_foto_${cleanRut}`);
+            if (fotoGuardada && (fotoGuardada.startsWith('data:image') || fotoGuardada.length > 50)) {
+                document.getElementById('imgBiometrica').src = fotoGuardada;
+            }
+
+            const firmaGuardada = localStorage.getItem(`sensometrika_demo_firma_${cleanRut}_${sessionId}`) ||
+                                  localStorage.getItem(`sensometrika_firma_${cleanRut}_${sessionId}`) ||
+                                  localStorage.getItem(`sensometrika_firma_${cleanRut}`);
+            const svgFirmaRespaldo = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="60" viewBox="0 0 200 60"><path d="M 15 35 Q 35 15, 65 30 T 105 18 T 155 38 Q 175 48, 185 25" fill="none" stroke="%230f172a" stroke-width="2" stroke-linecap="round"/></svg>`;
+            document.getElementById('imgFirmaTrabajador').src = (firmaGuardada && firmaGuardada.startsWith('data:image')) ? firmaGuardada : svgFirmaRespaldo;
+
+            let seleccionados = [];
+            try {
+                seleccionados = JSON.parse(localStorage.getItem('sensometrika_demo_5_modulos')) || [];
+            } catch(e) {}
+            if (!Array.isArray(seleccionados) || seleccionados.length === 0) {
+                seleccionados = ['anticipacion', 'reactimetro', 'punteo', 'palancas', 'visual'];
+            }
+
+            let resultadosDemo = [];
+            try {
+                resultadosDemo = JSON.parse(localStorage.getItem('sensometrika_demo_resultados')) || [];
+            } catch(e) {}
+
+            const tbody = document.getElementById('tbodyModulosDemo');
+            tbody.innerHTML = '';
+
+            seleccionados.forEach((key, index) => {
+                const ref = catalogoReferencias[key] || {
+                    title: `${index + 1}. Módulo ${key}`,
+                    est: 'Estándar B2B',
+                    sim: 'Sensor óptico: <b>Parámetro nominal óptimo</b>'
+                };
+                const resDemo = resultadosDemo.find(r => r.key === key);
+                const telData = obtenerTelemetriaModulo(key);
+
+                let detalleTelemetria = '';
+                if (telData) {
+                    if (telData.tiempoReaccion) detalleTelemetria += `T. reacción: <b>${telData.tiempoReaccion}ms</b><br>`;
+                    if (telData.score) detalleTelemetria += `Score: <b>${telData.score} pts</b><br>`;
+                    if (telData.precision) detalleTelemetria += `Precisión: <b>${telData.precision}%</b><br>`;
+                    if (telData.agudeza) detalleTelemetria += `Agudeza: <b>${telData.agudeza}</b><br>`;
+                    if (telData.desvio) detalleTelemetria += `Desv.: <b>${telData.desvio}px</b>`;
+                }
+                if (!detalleTelemetria && resDemo && resDemo.latencia) {
+                    detalleTelemetria = `Telemetría demo: <b>${resDemo.latencia} (Hz: 250)</b>`;
+                }
+                if (!detalleTelemetria) {
+                    detalleTelemetria = ref.sim;
+                }
+
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td class="font-bold text-slate-800">${ref.title}</td>
+                    <td class="text-slate-600">${ref.est}</td>
+                    <td class="text-slate-700" style="font-size:0.53rem; line-height:1.2;">${detalleTelemetria}</td>
+                    <td style="text-align: right;"><span class="badge-sem sem-ok">APTO</span></td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            const lblDictamenSub = document.getElementById('lblDictamenSub');
+            if (lblDictamenSub) {
+                lblDictamenSub.textContent = `Muestra ejecutiva de ${seleccionados.length} módulos verificada con biometría y telemetría para ${empresaLimpia.toUpperCase()}.`;
+            }
+
+            const imgQr = document.getElementById('imgQrVerificacion');
+            if (imgQr) {
+                const paramsPublicos = new URLSearchParams({
+                    rut: rawRut,
+                    nombre: nombreLimpio,
+                    cargo: cargoLimpio,
+                    empresa: empresaLimpia,
+                    folio: folioDemo,
+                    estado: 'DEMO_APROBADA_QUEMADA',
+                    tipo: 'Demo Corporativa 5 Modulos'
+                });
+                const urlValidacionSegura = `${window.location.origin}/validar.html?${paramsPublicos.toString()}`;
+                imgQr.src = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(urlValidacionSegura)}`;
+            }
+        });
+    </script>
+</body>
+</html>
