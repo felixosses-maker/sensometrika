@@ -296,7 +296,6 @@
       border-color: var(--accent-green);
     }
 
-    /* SELECTOR NORMATIVO SII: FACTURA / BOLETA */
     .doc-type-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -359,7 +358,6 @@
       color: var(--accent-green);
     }
 
-    /* MODAL REINGRESO APR */
     .modal-backdrop {
       position: fixed;
       inset: 0;
@@ -396,13 +394,11 @@
       <p style="font-size: 0.65rem; color: var(--text-muted); margin-top: 2px;">Acreditación de Conductores • D.S. N° 170 / Minería & Forestal</p>
     </div>
 
-    <!-- SWITCHER B2C / B2B -->
     <div class="tab-switcher">
       <button id="tabB2C" class="tab-btn" onclick="switchPerfil('b2c')">👤 PARTICULAR (B2C)</button>
       <button id="tabB2B" class="tab-btn active-b2b" onclick="switchPerfil('b2b')">🏢 EMPRESAS (B2B)</button>
     </div>
 
-    <!-- SECCIÓN PLANES PARTICULARES (B2C) -->
     <div id="secB2C" class="section-container" style="display: none;">
       <div class="card-plan">
         <div class="card-header">
@@ -456,10 +452,7 @@
       </div>
     </div>
 
-    <!-- SECCIÓN PLANES CORPORATIVOS (B2B) -->
     <div id="secB2B" class="section-container">
-
-      <!-- BOTÓN DE ACCESO DIRECTO PARA EMPRESAS YA REGISTRADAS -->
       <button type="button" class="btn-reingreso-apr" onclick="abrirModalReingresoAPR()">
         🔑 Ya tengo bolsa activa • Entrar a Consola APR →
       </button>
@@ -478,7 +471,6 @@
         </div>
       </div>
 
-      <!-- SELECCIÓN DE PLANES B2B -->
       <div class="card-plan selected-plan" id="cardPlan_BASICO" onclick="marcarPlanB2B('BASICO')">
         <div class="card-header">
           <span class="plan-title">Plan Básico Laboral (B2B)</span>
@@ -547,13 +539,11 @@
         </div>
       </div>
 
-      <!-- FORMULARIO DE REGISTRO CORPORATIVO, FACTURACIÓN SII Y PAGO -->
       <div class="form-b2b-card">
         <span style="font-size: 0.72rem; color: var(--accent-green); font-weight: 800; text-transform: uppercase;">
           🏢 REGISTRO CORPORATIVO, TRIBUTACIÓN SII Y PAGO
         </span>
 
-        <!-- SELECTOR NORMATIVO SII: FACTURA ELECTRÓNICA vs BOLETA ELECTRÓNICA -->
         <div class="form-group">
           <label>Documento Tributario Electrónico (SII) *</label>
           <div class="doc-type-grid">
@@ -578,7 +568,6 @@
           <input type="text" id="inputRutEmpresa" class="form-control" placeholder="Ej: 75.151.701-3" value="75.151.701-3">
         </div>
 
-        <!-- CAMPOS EXIGIDOS POR SII PARA EMISIÓN DE FACTURA ELECTRÓNICA (DTE 33) -->
         <div id="camposFacturaSII" style="display: flex; flex-direction: column; gap: 10px;">
           <div class="form-group">
             <label>Giro Comercial (Exigido SII para Factura) *</label>
@@ -607,7 +596,6 @@
           <input type="email" id="inputCorreoApr" class="form-control" placeholder="Ej: felix.osses@gmail.com" value="felix.osses@gmail.com">
         </div>
 
-        <!-- RESUMEN TRIBUTARIO NETO + IVA 19% + TOTAL A PAGAR -->
         <div class="summary-checkout-box">
           <div class="summary-row">
             <span id="lblResumenPlan">Plan Básico Laboral (10 eval.)</span>
@@ -631,11 +619,9 @@
           Serás redirigido a <strong>Checkout y Mercado Pago</strong>. Una vez acreditado el pago, se habilitará tu Consola APR y despacharemos el respaldo al correo registrado.
         </div>
       </div>
-
     </div>
   </div>
 
-  <!-- MODAL PARA REINGRESAR A CONSOLA APR SI CERRÓ SESIÓN -->
   <div id="modalReingresoAPR" class="modal-backdrop">
     <div class="modal-card">
       <div style="display: flex; justify-content: space-between; align-items: center;">
@@ -663,9 +649,7 @@
   <script>
     let cantidadBolsa = 10;
     let planSeleccionadoB2B = 'BASICO';
-    let tipoDocumentoSII = 'FACTURA'; // 'FACTURA' | 'BOLETA'
-
-    const DOMINIO_OFICIAL = 'https://www.sensometrika.com';
+    let tipoDocumentoSII = 'FACTURA';
 
     const TARIFAS_UNITARIAS = {
       BASICO: 7990,
@@ -834,7 +818,6 @@
         tributacion: datosTributarios
       };
 
-      // Guardar sesión corporativa pendiente de confirmación de pago
       localStorage.setItem('sensometrika_datos_empresa', JSON.stringify(datosB2B));
       localStorage.setItem('sensometrika_plan_empresa', JSON.stringify({
         plan: planSeleccionadoB2B,
@@ -846,7 +829,6 @@
       localStorage.setItem('sensometrika_b2b_token', tokenEmpresa);
       localStorage.setItem('sensometrika_b2b_correo', aprCorreo);
 
-      // Guardar pedido unificado para checkout.html y /api/crear-orden-mp
       const pedidoCheckout = {
         rol: 'empresa',
         tipo: 'b2b',
@@ -882,7 +864,6 @@
         tipoDte: tipoDocumentoSII.toLowerCase()
       }));
 
-      // Redirigir a checkout.html para cobrar mediante Mercado Pago
       const paramsCheckout = new URLSearchParams({
         mode: 'b2b',
         plan: planSeleccionadoB2B,
@@ -894,7 +875,6 @@
       window.location.href = `checkout.html?${paramsCheckout.toString()}`;
     }
 
-    // MODAL DE REINGRESO APR
     function abrirModalReingresoAPR() {
       const modal = document.getElementById('modalReingresoAPR');
       const input = document.getElementById('inputCodigoORutReingreso');
@@ -951,7 +931,7 @@
         apr: guardado.apr || 'ENCARGADO APR',
         correo: guardado.correo || '',
         plan: guardado.plan || 'BASICO',
-        codigo: esCodigo ? cleanInput : (guardado.codigo || `SENSE-B2B-ACCESO`),
+        codigo: esCodigo ? cleanInput : (guardado.codigo || 'SENSE-B2B-ACCESO'),
         mode: 'b2b'
       });
       window.location.href = `dashboard_apr.html?${params.toString()}`;
