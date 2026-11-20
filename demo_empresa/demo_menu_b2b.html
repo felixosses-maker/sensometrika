@@ -239,7 +239,6 @@
 
     <img src="../sensometrica.jpg" alt="SENSOMETRIKA" class="brand-logo-img" onerror="this.style.display='none'">
 
-    <!-- ENCABEZADO DE USUARIO -->
     <div class="header-card">
       <img id="imgAvatar" src="../sensometrica.jpg" alt="Evaluado" class="user-avatar-small" onerror="this.src='../sensometrica.jpg'">
       <div>
@@ -251,7 +250,6 @@
       </div>
     </div>
 
-    <!-- CONTADOR DE SELECCIÓN Y SIMULACIONES -->
     <div class="status-bar">
       <div>
         <div id="lblElegidos" style="font-weight: 800; color: var(--accent-cyan);">ELEGIDOS: 0 / 5 MÓDULOS</div>
@@ -262,23 +260,16 @@
       </button>
     </div>
 
-    <!-- PESTAÑAS DE NAVEGACIÓN -->
     <div class="tabs-container">
       <button type="button" id="tabElegidos" class="tab-btn active" onclick="cambiarVistaDemo('elegidos')">⭐ MIS 5 ELEGIDOS</button>
       <button type="button" id="tabVial" class="tab-btn" onclick="cambiarVistaDemo('vial')">🏎️ VIAL / COGNITIVO</button>
       <button type="button" id="tabFaena" class="tab-btn" onclick="cambiarVistaDemo('faena')">🩺 FAENA / MÉDICO</button>
     </div>
 
-    <!-- CONTENEDOR MIS 5 ELEGIDOS -->
     <div id="grupoElegidos" class="section-group"></div>
-
-    <!-- CONTENEDOR CATÁLOGO VIAL / COGNITIVO -->
     <div id="grupoVial" class="section-group" style="display: none;"></div>
-
-    <!-- CONTENEDOR CATÁLOGO FAENA / MÉDICO -->
     <div id="grupoFaena" class="section-group" style="display: none;"></div>
 
-    <!-- BOTÓN INFORME DEMO -->
     <button type="button" id="btnInformeDemo" class="btn-action-main disabled" onclick="irAlInformeDemo()">
       ELIGE Y SIMULA 5 MÓDULOS PARA VER INFORME DEMO →
     </button>
@@ -311,7 +302,6 @@
       document.getElementById('imgAvatar').src = fotoGuardada;
     }
 
-    // CATÁLOGO VIAL Y PSICOMÉTRICO
     const modulosVial = [
       { key: 'anticipacion', title: '1. Anticipación Pro ⏱️', desc: 'Cálculo de velocidad y frenado en móvil virtual.', archivo: '../demo_anticipacion_pro.html' },
       { key: 'reactimetro', title: '2. Reactímetro Simple ⚡', desc: 'Tiempo de respuesta lumínica y acústica.', archivo: '../reactimetro.html' },
@@ -332,7 +322,6 @@
       { key: 'emocional', title: '17. Estabilidad Emocional 🧠', desc: 'Tamizaje conductual ante presión.', archivo: '../latencia.html' }
     ];
 
-    // CATÁLOGO FAENA Y MÉDICO PRO
     const modulosFaena = [
       { key: 'romberg', title: 'M1. Estabilidad Vestibular (Romberg Pro) ⚖️', desc: 'Prueba estática vestibular con acelerómetro.', archivo: '../medico_pro/01_romberg.html' },
       { key: 'temblores', title: 'M2. Estabilidad Motora (Temblores Pro) ✋', desc: 'Control de micro-oscilaciones y pulso estacionario.', archivo: '../medico_pro/02_temblores.html' },
@@ -360,6 +349,36 @@
       resultadosDemo = JSON.parse(localStorage.getItem('sensometrika_demo_resultados')) || [];
     } catch (e) {}
     if (!Array.isArray(resultadosDemo)) resultadosDemo = [];
+
+    function registrarCompletadoAutomatico(key) {
+      const mod = todosLosModulos.find(m => m.key === key);
+      if (!mod) return;
+      if (!resultadosDemo.some(r => r.key === key)) {
+        const ms = Math.floor(210 + Math.random() * 140);
+        resultadosDemo.push({
+          key: mod.key,
+          title: mod.title,
+          estado: 'APROBADO',
+          latencia: `${ms} ms`,
+          timestamp: new Date().toISOString()
+        });
+      }
+    }
+
+    const moduloRetorno = urlParams.get('modulo') || urlParams.get('completado');
+    if (moduloRetorno && seleccionados.includes(moduloRetorno)) {
+      registrarCompletadoAutomatico(moduloRetorno);
+    }
+
+    seleccionados.forEach(k => {
+      const marcadoLocal =
+        localStorage.getItem(`medico_${k}_${cleanRut}_${sessionId}`) === 'true' ||
+        localStorage.getItem(`sensometrika_${k}_${cleanRut}_${sessionId}`) === 'true' ||
+        localStorage.getItem(`sensometrika_demo_completado_${k}_${cleanRut}_${sessionId}`) === 'true';
+      if (marcadoLocal) {
+        registrarCompletadoAutomatico(k);
+      }
+    });
 
     function mostrarAlerta(msg, tipo = 'info') {
       const cont = document.getElementById('simulador-alertas-container');
@@ -434,7 +453,8 @@
     function estaSimulado(key) {
       return resultadosDemo.some(r => r.key === key) ||
              localStorage.getItem(`medico_${key}_${cleanRut}_${sessionId}`) === 'true' ||
-             localStorage.getItem(`sensometrika_${key}_${cleanRut}_${sessionId}`) === 'true';
+             localStorage.getItem(`sensometrika_${key}_${cleanRut}_${sessionId}`) === 'true' ||
+             localStorage.getItem(`sensometrika_demo_completado_${key}_${cleanRut}_${sessionId}`) === 'true';
     }
 
     function renderizarLista(contenedorId, lista, modoCatalogo) {
@@ -528,6 +548,7 @@
         return;
       }
 
+      guardarEstadoDemo();
       const p = new URLSearchParams({
         flujo: 'demo',
         nombre: nombreLimpio,
@@ -536,9 +557,10 @@
         empresa: empresaLimpia,
         session: sessionId
       });
-      window.location.href = `../demo_informe.html?${p.toString()}`;
+      window.location.href = `demo_informe.html?${p.toString()}`;
     }
 
+    guardarEstadoDemo();
     renderizarTodo();
   </script>
 </body>
