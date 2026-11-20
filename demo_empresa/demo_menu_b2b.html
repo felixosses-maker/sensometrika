@@ -187,10 +187,10 @@
       background: #10b981;
       color: #000;
       border: none;
-      padding: 7px 11px;
+      padding: 8px 12px;
       border-radius: 8px;
       font-weight: 900;
-      font-size: 0.66rem;
+      font-size: 0.68rem;
       cursor: pointer;
       text-transform: uppercase;
       text-decoration: none;
@@ -253,7 +253,7 @@
     <div class="status-bar">
       <div>
         <div id="lblElegidos" style="font-weight: 800; color: var(--accent-cyan);">ELEGIDOS: 0 / 5 MÓDULOS</div>
-        <div id="lblSimulados" style="font-size: 0.64rem; color: var(--text-muted); margin-top: 2px;">SIMULADOS: 0 / 5</div>
+        <div id="lblSimulados" style="font-size: 0.64rem; color: var(--text-muted); margin-top: 2px;">COMPLETADOS: 0 / 5</div>
       </div>
       <button type="button" onclick="limpiarSeleccionDemo()" style="background:#0c182e;border:1px solid #1e3a6d;color:#f8fafc;padding:6px 10px;border-radius:7px;font-size:0.64rem;font-weight:700;cursor:pointer;">
         Reiniciar elección
@@ -271,7 +271,7 @@
     <div id="grupoFaena" class="section-group" style="display: none;"></div>
 
     <button type="button" id="btnInformeDemo" class="btn-action-main disabled" onclick="irAlInformeDemo()">
-      ELIGE Y SIMULA 5 MÓDULOS PARA VER INFORME DEMO →
+      ELIGE Y COMPLETA 5 MÓDULOS PARA VER INFORME DEMO →
     </button>
   </div>
 
@@ -350,16 +350,14 @@
     } catch (e) {}
     if (!Array.isArray(resultadosDemo)) resultadosDemo = [];
 
-    function registrarCompletadoAutomatico(key) {
+    function registrarCompletadoModulo(key) {
       const mod = todosLosModulos.find(m => m.key === key);
       if (!mod) return;
       if (!resultadosDemo.some(r => r.key === key)) {
-        const ms = Math.floor(210 + Math.random() * 140);
         resultadosDemo.push({
           key: mod.key,
           title: mod.title,
-          estado: 'APROBADO',
-          latencia: `${ms} ms`,
+          estado: 'COMPLETADO',
           timestamp: new Date().toISOString()
         });
       }
@@ -367,16 +365,18 @@
 
     const moduloRetorno = urlParams.get('modulo') || urlParams.get('completado');
     if (moduloRetorno && seleccionados.includes(moduloRetorno)) {
-      registrarCompletadoAutomatico(moduloRetorno);
+      registrarCompletadoModulo(moduloRetorno);
     }
 
     seleccionados.forEach(k => {
       const marcadoLocal =
         localStorage.getItem(`medico_${k}_${cleanRut}_${sessionId}`) === 'true' ||
         localStorage.getItem(`sensometrika_${k}_${cleanRut}_${sessionId}`) === 'true' ||
-        localStorage.getItem(`sensometrika_demo_completado_${k}_${cleanRut}_${sessionId}`) === 'true';
+        localStorage.getItem(`sensometrika_demo_completado_${k}_${cleanRut}_${sessionId}`) === 'true' ||
+        localStorage.getItem(`sensometrika_last_${k}_${cleanRut}_${sessionId}`) !== null ||
+        localStorage.getItem(`sensometrika_historial_${k}_${cleanRut}_${sessionId}`) !== null;
       if (marcadoLocal) {
-        registrarCompletadoAutomatico(k);
+        registrarCompletadoModulo(k);
       }
     });
 
@@ -415,24 +415,7 @@
       seleccionados = [];
       resultadosDemo = [];
       guardarEstadoDemo();
-      mostrarAlerta('Selección y simulaciones de la demo reiniciadas.', 'info');
-      renderizarTodo();
-    }
-
-    function marcarSimuladoDemo(key) {
-      const mod = todosLosModulos.find(m => m.key === key);
-      if (!mod) return;
-      const ms = Math.floor(210 + Math.random() * 140);
-      resultadosDemo = resultadosDemo.filter(r => r.key !== key);
-      resultadosDemo.push({
-        key: mod.key,
-        title: mod.title,
-        estado: 'APROBADO',
-        latencia: `${ms} ms`,
-        timestamp: new Date().toISOString()
-      });
-      guardarEstadoDemo();
-      mostrarAlerta(`Simulación registrada en ${mod.title} (${ms} ms).`, 'exito');
+      mostrarAlerta('Selección reiniciada.', 'info');
       renderizarTodo();
     }
 
@@ -450,11 +433,13 @@
       return `${archivo}?${p.toString()}`;
     }
 
-    function estaSimulado(key) {
+    function estaCompletado(key) {
       return resultadosDemo.some(r => r.key === key) ||
              localStorage.getItem(`medico_${key}_${cleanRut}_${sessionId}`) === 'true' ||
              localStorage.getItem(`sensometrika_${key}_${cleanRut}_${sessionId}`) === 'true' ||
-             localStorage.getItem(`sensometrika_demo_completado_${key}_${cleanRut}_${sessionId}`) === 'true';
+             localStorage.getItem(`sensometrika_demo_completado_${key}_${cleanRut}_${sessionId}`) === 'true' ||
+             localStorage.getItem(`sensometrika_last_${key}_${cleanRut}_${sessionId}`) !== null ||
+             localStorage.getItem(`sensometrika_historial_${key}_${cleanRut}_${sessionId}`) !== null;
     }
 
     function renderizarLista(contenedorId, lista, modoCatalogo) {
@@ -472,7 +457,7 @@
 
       lista.forEach(m => {
         const elegido = seleccionados.includes(m.key);
-        const simulado = estaSimulado(m.key);
+        const completado = estaCompletado(m.key);
         const card = document.createElement('div');
         card.className = `module-card ${elegido ? 'selected' : ''}`;
 
@@ -495,12 +480,9 @@
               <span class="module-desc">${m.desc}</span>
             </div>
             <div class="module-actions">
-              <a href="${construirUrlModulo(m.archivo, m.key)}" class="btn-module ${simulado ? 'completed' : ''}">
-                ${simulado ? '✓ SIMULADO' : 'INICIAR →'}
+              <a href="${construirUrlModulo(m.archivo, m.key)}" class="btn-module ${completado ? 'completed' : ''}">
+                ${completado ? '✓ COMPLETADO' : 'ABRIR MÓDULO →'}
               </a>
-              <button type="button" class="btn-pick" onclick="marcarSimuladoDemo('${m.key}')">
-                Marcar listo
-              </button>
             </div>
           `;
         }
@@ -513,22 +495,22 @@
         .map(k => todosLosModulos.find(m => m.key === k))
         .filter(Boolean);
 
-      const simuladosDeElegidos = modulosElegidosObjs.filter(m => estaSimulado(m.key)).length;
+      const completadosDeElegidos = modulosElegidosObjs.filter(m => estaCompletado(m.key)).length;
 
       document.getElementById('lblElegidos').textContent = `ELEGIDOS: ${modulosElegidosObjs.length} / ${LIMITE_MODULOS_DEMO} MÓDULOS`;
-      document.getElementById('lblSimulados').textContent = `SIMULADOS: ${simuladosDeElegidos} / ${LIMITE_MODULOS_DEMO}`;
+      document.getElementById('lblSimulados').textContent = `COMPLETADOS: ${completadosDeElegidos} / ${LIMITE_MODULOS_DEMO}`;
 
       renderizarLista('grupoElegidos', modulosElegidosObjs, false);
       renderizarLista('grupoVial', modulosVial, true);
       renderizarLista('grupoFaena', modulosFaena, true);
 
       const btnInforme = document.getElementById('btnInformeDemo');
-      if (modulosElegidosObjs.length === LIMITE_MODULOS_DEMO && simuladosDeElegidos >= LIMITE_MODULOS_DEMO) {
+      if (modulosElegidosObjs.length === LIMITE_MODULOS_DEMO && completadosDeElegidos >= LIMITE_MODULOS_DEMO) {
         btnInforme.className = 'btn-action-main';
         btnInforme.textContent = 'VER INFORME DEMO CONSOLIDADO →';
       } else {
         btnInforme.className = 'btn-action-main disabled';
-        btnInforme.textContent = `ELEGIDOS ${modulosElegidosObjs.length}/5 • SIMULADOS ${simuladosDeElegidos}/5 PARA INFORME DEMO`;
+        btnInforme.textContent = `ELEGIDOS ${modulosElegidosObjs.length}/5 • COMPLETADOS ${completadosDeElegidos}/5 PARA INFORME DEMO`;
       }
     }
 
@@ -541,10 +523,10 @@
 
     function irAlInformeDemo() {
       const modulosElegidosObjs = seleccionados.map(k => todosLosModulos.find(m => m.key === k)).filter(Boolean);
-      const simuladosDeElegidos = modulosElegidosObjs.filter(m => estaSimulado(m.key)).length;
+      const completadosDeElegidos = modulosElegidosObjs.filter(m => estaCompletado(m.key)).length;
 
-      if (modulosElegidosObjs.length < LIMITE_MODULOS_DEMO || simuladosDeElegidos < LIMITE_MODULOS_DEMO) {
-        mostrarAlerta(`Debes elegir ${LIMITE_MODULOS_DEMO} módulos y completar sus ${LIMITE_MODULOS_DEMO} simulaciones antes de ver el informe demo.`, 'alerta');
+      if (modulosElegidosObjs.length < LIMITE_MODULOS_DEMO || completadosDeElegidos < LIMITE_MODULOS_DEMO) {
+        mostrarAlerta(`Debes elegir ${LIMITE_MODULOS_DEMO} módulos y abrir/completar los ${LIMITE_MODULOS_DEMO} antes de ver el informe demo.`, 'alerta');
         return;
       }
 
