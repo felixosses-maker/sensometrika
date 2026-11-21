@@ -171,6 +171,34 @@
       cursor: pointer;
     }
 
+    .btn-sec:hover {
+      border-color: var(--border-active);
+      color: var(--text-primary);
+    }
+
+    .latencia-box {
+      background: #040914;
+      border: 1px solid #24344d;
+      border-radius: 12px;
+      padding: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .latencia-val {
+      font-size: 1.05rem;
+      font-weight: 900;
+      color: var(--accent-cyan);
+    }
+
+    .latencia-sub {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
     .firma-wrap {
       background: #040914;
       border: 1px solid #24344d;
@@ -225,6 +253,10 @@
       .row-2 {
         grid-template-columns: 1fr;
       }
+      .latencia-box {
+        flex-direction: column;
+        align-items: flex-start;
+      }
     }
   </style>
 </head>
@@ -272,7 +304,18 @@
     </section>
 
     <section class="card">
-      <div class="section-title">3. Firma Digital del Trabajador</div>
+      <div class="section-title">3. Latencia del Equipo</div>
+      <div class="latencia-box">
+        <div>
+          <div class="latencia-val" id="lblLatenciaValor">Midiendo...</div>
+          <div class="latencia-sub" id="lblLatenciaSub">Muestreo de respuesta gráfica del dispositivo</div>
+        </div>
+        <button type="button" id="btnMedirLatencia" class="btn-sec">⚡ Medir Latencia</button>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="section-title">4. Firma Digital del Trabajador</div>
       <div class="firma-wrap">
         <canvas id="canvasFirma"></canvas>
       </div>
@@ -309,6 +352,56 @@
       if (urlParams.get("rut")) inpRut.value = decodeURIComponent(urlParams.get("rut"));
       if (urlParams.get("cargo")) inpCargo.value = decodeURIComponent(urlParams.get("cargo"));
       if (urlParams.get("empresa")) inpEmpresa.value = decodeURIComponent(urlParams.get("empresa"));
+
+      // Medición de latencia del equipo
+      const lblLatenciaValor = document.getElementById("lblLatenciaValor");
+      const lblLatenciaSub = document.getElementById("lblLatenciaSub");
+      let latenciaEquipoMs = parseInt(localStorage.getItem("sensometrika_latencia_ms") || "0", 10) || 0;
+
+      function pintarLatencia(ms) {
+        const hz = ms > 0 ? Math.round(1000 / ms) : 60;
+        lblLatenciaValor.textContent = `${ms} ms`;
+        lblLatenciaSub.textContent = `Frecuencia estimada ~${hz} Hz · Registrado para la sesión`;
+      }
+
+      function medirLatenciaEquipo(muestras = 24) {
+        return new Promise((resolve) => {
+          lblLatenciaValor.textContent = "Midiendo...";
+          const deltas = [];
+          let anterior = performance.now();
+          let i = 0;
+
+          function paso(ahora) {
+            if (i > 0) deltas.push(ahora - anterior);
+            anterior = ahora;
+            i++;
+            if (i <= muestras) {
+              requestAnimationFrame(paso);
+            } else {
+              const prom = deltas.length
+                ? deltas.reduce((acc, v) => acc + v, 0) / deltas.length
+                : 16.7;
+              resolve(Math.max(1, Math.round(prom)));
+            }
+          }
+          requestAnimationFrame(paso);
+        });
+      }
+
+      async function actualizarLatencia() {
+        const ms = await medirLatenciaEquipo(24);
+        latenciaEquipoMs = ms;
+        localStorage.setItem("sensometrika_latencia_ms", String(latenciaEquipoMs));
+        pintarLatencia(latenciaEquipoMs);
+      }
+
+      document.getElementById("btnMedirLatencia").addEventListener("click", actualizarLatencia);
+
+      if (latenciaEquipoMs > 0) {
+        pintarLatencia(latenciaEquipoMs);
+      } else {
+        actualizarLatencia();
+      }
 
       // Cámara web
       const videoEl = document.getElementById("videoCam");
@@ -403,7 +496,7 @@
         tieneFirma = false;
       });
 
-      document.getElementById("btnValidarContinuar").addEventListener("click", () => {
+      document.getElementById("btnValidarContinuar").addEventListener("click", async () => {
         const nombre = inpNombre.value.trim();
         const rut = inpRut.value.trim();
         const cargo = inpCargo.value.trim() || "Operador";
@@ -417,6 +510,11 @@
         if (!acepto) {
           alert("Debes aceptar los términos y condiciones para continuar.");
           return;
+        }
+
+        if (!latenciaEquipoMs) {
+          latenciaEquipoMs = await medirLatenciaEquipo(16);
+          localStorage.setItem("sensometrika_latencia_ms", String(latenciaEquipoMs));
         }
 
         if (!fotoDataUrl && videoEl.videoWidth > 0) {
@@ -453,6 +551,7 @@
           empresa,
           session: sessionId,
           entorno: "PSICOSENSOMETRICO_CERRADO",
+          latenciaEquipoMs: latenciaEquipoMs,
           foto: fotoDataUrl || "",
           firma: firmaUrl,
           fechaRegistro: nowTs
@@ -466,6 +565,7 @@
         localStorage.setItem("sensometrika_session_activa", sessionId);
         if (cleanRut) {
           localStorage.setItem(`sensometrika_active_session_${cleanRut}`, sessionId);
+          localStorage.setItem(`sensometrika_latencia_ms_${cleanRut}_${sessionId}`, String(latenciaEquipoMs));
           if (fotoDataUrl) localStorage.setItem(`sensometrika_foto_${cleanRut}`, fotoDataUrl);
           if (firmaUrl) localStorage.setItem(`sensometrika_firma_${cleanRut}`, firmaUrl);
         }
@@ -484,6 +584,7 @@
           nombre,
           cargo,
           empresa,
+          latenciaEquipoMs: latenciaEquipoMs,
           cp1_ts: nowTs,
           checkpoints: {
             cp1: fotoDataUrl ? { imagen: fotoDataUrl, timestamp: nowTs } : null
@@ -499,7 +600,7 @@
           streamCam.getTracks().forEach(t => t.stop());
         }
 
-        const qs = `?nombre=${encodeURIComponent(nombre)}&rut=${encodeURIComponent(rut)}&cargo=${encodeURIComponent(cargo)}&empresa=${encodeURIComponent(empresa)}&session=${encodeURIComponent(sessionId)}`;
+        const qs = `?nombre=${encodeURIComponent(nombre)}&rut=${encodeURIComponent(rut)}&cargo=${encodeURIComponent(cargo)}&empresa=${encodeURIComponent(empresa)}&session=${encodeURIComponent(sessionId)}&latenciaMs=${encodeURIComponent(latenciaEquipoMs)}`;
         window.location.href = `psico_menu_b2b.html${qs}`;
       });
     })();
