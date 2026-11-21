@@ -360,7 +360,8 @@
               dSes.precision !== undefined ||
               dSes.toques !== undefined ||
               dSes.latenciaPromedioMs !== undefined ||
-              dSes.lapsos !== undefined
+              dSes.lapsos !== undefined ||
+              dSes.dimensiones !== undefined
             )
           ) {
             return true;
@@ -369,10 +370,6 @@
         return false;
       }
 
-      const datoTestSesion = (cleanRut && sessionId)
-        ? parseJsonSafe(localStorage.getItem(`sensometrika_psico_test_${cleanRut}_${sessionId}`))
-        : null;
-
       const MODULOS = [
         {
           id: "reactimetro",
@@ -380,7 +377,7 @@
           titulo: "Reactímetro Avanzado",
           desc: "Tiempo de reacción lumínica y frenado ante estímulos aleatorios.",
           archivo: "psico_reactimetro_avanzado.html",
-          completado: Boolean(rendidos.reactimetro) || tieneDatoDeSesion(["sensometrika_reactimetro_avanzado", "sensometrika_reactimetro"])
+          baseKeys: ["sensometrika_reactimetro_avanzado", "sensometrika_reactimetro"]
         },
         {
           id: "palancas",
@@ -388,7 +385,7 @@
           titulo: "Palancas (Coordinación Bimanual)",
           desc: "Coordinación motriz fina con disociación de ejes en pista continua.",
           archivo: "psico_palancas_bimanual.html",
-          completado: Boolean(rendidos.palancas) || tieneDatoDeSesion(["sensometrika_palancas", "sensometrika_psico_palancas"])
+          baseKeys: ["sensometrika_palancas", "sensometrika_psico_palancas"]
         },
         {
           id: "punteo",
@@ -396,7 +393,7 @@
           titulo: "Punteo y Ritmo Visomotriz",
           desc: "Sincronía ojo-mano y precisión de impacto en zona dorada.",
           archivo: "psico_punteo.html",
-          completado: Boolean(rendidos.punteo) || tieneDatoDeSesion(["sensometrika_punteo", "sensometrika_psico_punteo"])
+          baseKeys: ["sensometrika_punteo", "sensometrika_psico_punteo"]
         },
         {
           id: "vigilancia",
@@ -404,7 +401,7 @@
           titulo: "Vigilancia y Fatiga (PVT)",
           desc: "Atención sostenida, dispersión (σ), lapsos y anticipaciones.",
           archivo: "psico_vigilancia.html",
-          completado: Boolean(rendidos.vigilancia) || tieneDatoDeSesion(["sensometrika_vigilancia", "sensometrika_psico_vigilancia", "sensometrika_fatiga_pvt"])
+          baseKeys: ["sensometrika_vigilancia", "sensometrika_psico_vigilancia", "sensometrika_fatiga_pvt"]
         },
         {
           id: "test_factores",
@@ -412,12 +409,24 @@
           titulo: "Factores Humanos y Conducta (28 Ítems)",
           desc: "Autocontrol, reacción ante errores, fatiga y apego a normas.",
           archivo: "psico_test.html",
-          completado: Boolean(rendidos.test_factores) || Boolean(datoTestSesion?.dimensiones)
+          baseKeys: ["sensometrika_psico_test"]
         }
       ];
 
+      // Fusiona estado guardado sin borrar ninguno previo de la sesión
+      const estadoConsolidado = Object.assign({}, rendidos);
+      MODULOS.forEach(m => {
+        if (rendidos[m.id] === true || tieneDatoDeSesion(m.baseKeys)) {
+          estadoConsolidado[m.id] = true;
+        }
+      });
+      if (rendidosKey) {
+        localStorage.setItem(rendidosKey, JSON.stringify(estadoConsolidado));
+      }
+
       const listaEl = document.getElementById("listaModulos");
       listaEl.innerHTML = MODULOS.map(m => {
+        const completado = Boolean(estadoConsolidado[m.id]);
         const sep = m.archivo.includes("?") ? "&" : "?";
         const href = `${m.archivo}${qsBase}${sep}mode=psico`;
         return `
@@ -426,8 +435,8 @@
               <span class="mod-title">${m.num}. ${m.titulo}</span>
               <span class="mod-desc">${m.desc}</span>
             </div>
-            <span class="mod-badge ${m.completado ? "done" : "go"}">
-              ${m.completado ? "✓ COMPLETADO" : "INICIAR →"}
+            <span class="mod-badge ${completado ? "done" : "go"}">
+              ${completado ? "✓ COMPLETADO" : "INICIAR →"}
             </span>
           </a>
         `;
