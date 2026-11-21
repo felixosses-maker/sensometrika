@@ -45,7 +45,6 @@
       padding: 14px 12px 24px;
     }
 
-    /* CABECERA ESTÁNDAR SENSOMETRIKA */
     .header-brand {
       text-align: center;
       margin-bottom: 12px;
@@ -97,7 +96,6 @@
       display: inline-block;
     }
 
-    /* TARJETA PRINCIPAL DEL MÓDULO */
     .module-shell {
       width: 100%;
       max-width: 720px;
@@ -108,7 +106,6 @@
       box-shadow: 0 24px 60px rgba(0, 0, 0, 0.75), inset 0 1px 0 rgba(255, 255, 255, 0.06);
     }
 
-    /* BARRA SUPERIOR CON BIOMETRÍA CENTRADA */
     .top-nav-bar {
       display: flex;
       align-items: center;
@@ -170,7 +167,6 @@
       padding: 2px 0;
     }
 
-    /* PÍLDORA DE FASE CENTRADA */
     .phase-row {
       display: flex;
       justify-content: center;
@@ -219,7 +215,6 @@
       box-shadow: 0 0 8px var(--accent-cyan);
     }
 
-    /* VISOR RADAR DE PISTA EN MOVIMIENTO */
     .radar-stage {
       position: relative;
       width: 100%;
@@ -243,7 +238,6 @@
       display: block;
     }
 
-    /* HUD SUPERIOR EN CABINA */
     .hud-cabin-bar {
       position: absolute;
       top: 10px;
@@ -278,7 +272,6 @@
       border-color: var(--accent-red);
     }
 
-    /* OVERLAY BLOQUEO BIOMÉTRICO */
     .bio-lock-overlay {
       position: absolute;
       inset: 0;
@@ -312,7 +305,6 @@
       line-height: 1.45;
     }
 
-    /* MANDOS BIMANUALES DISOCIADOS (IZQUIERDA X / DERECHA Y) */
     .controls-deck {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -371,7 +363,6 @@
       cursor: not-allowed;
     }
 
-    /* BOTÓN DE ACCIÓN PRINCIPAL */
     .action-row {
       margin-top: 14px;
     }
@@ -416,7 +407,6 @@
       cursor: not-allowed;
     }
 
-    /* BARRA INFERIOR UNIFICADA DE 5 MÉTRICAS */
     .metrics-strip {
       display: grid;
       grid-template-columns: repeat(5, 1fr);
@@ -455,7 +445,6 @@
       color: #f8fafc;
     }
 
-    /* MODAL INSTRUCCIONES Y RESULTADOS */
     .modal-backdrop {
       position: fixed;
       inset: 0;
@@ -513,7 +502,6 @@
   </style>
 </head>
 <body>
-  <!-- CABECERA OFICIAL SENSOMETRIKA -->
   <header class="header-brand">
     <div class="brand-logo-wrap">
       <img src="sensometrica.jpg" alt="Sensometrika" class="brand-logo-img" onerror="this.style.display='none'" />
@@ -524,9 +512,8 @@
   </header>
 
   <main class="module-shell">
-    <!-- BARRA DE NAVEGACIÓN CON BIOMETRÍA -->
     <div class="top-nav-bar">
-      <button type="button" class="nav-pill-btn" onclick="ejecutarRetornoMenu()">← Menú Evaluaciones</button>
+      <button type="button" class="nav-pill-btn" id="btnVolverTop" onclick="ejecutarRetornoMenu()">← Menú Evaluaciones</button>
 
       <div class="biometry-pip" title="Control Biométrico MediaPipe (35–65 cm)">
         <video id="webcamVideo" autoplay playsinline muted></video>
@@ -536,7 +523,6 @@
       <button type="button" class="nav-pill-btn" onclick="abrirModalAyuda()">? ¿Cómo funciona?</button>
     </div>
 
-    <!-- PÍLDORA DE ESTADO DE FASE -->
     <div class="phase-row">
       <div class="phase-badge" id="badgeFase">
         <span class="phase-dot"></span>
@@ -544,7 +530,6 @@
       </div>
     </div>
 
-    <!-- VISOR TELEMÉTRICO DE PISTA EN AVANCE CONTINUO -->
     <div class="radar-stage" id="radarStage">
       <div class="hud-cabin-bar">
         <span class="hud-chip" id="hudAvance">AVANCE: 0%</span>
@@ -554,7 +539,6 @@
 
       <canvas id="canvasPalancas" width="680" height="290"></canvas>
 
-      <!-- OVERLAY DE BLOQUEO BIOMÉTRICO -->
       <div class="bio-lock-overlay" id="bioLockOverlay">
         <div class="bio-lock-title">⚠️ DISTANCIA BIOMÉTRICA FUERA DE NORMA</div>
         <div class="bio-lock-desc" id="bioLockDesc">
@@ -563,7 +547,6 @@
       </div>
     </div>
 
-    <!-- MANDOS BIMANUALES DISOCIADOS -->
     <div class="controls-deck">
       <div class="hand-panel">
         <span class="hand-label">Mano Izquierda (Eje Horizontal)</span>
@@ -586,14 +569,12 @@
       </div>
     </div>
 
-    <!-- BOTÓN DE ACCIÓN PRINCIPAL -->
     <div class="action-row">
       <button type="button" class="btn-main-action btn-demo" id="btnAccionPrincipal" onclick="manejarClickPrincipal()">
         INICIAR CALIBRACIÓN DEMO (15 S) →
       </button>
     </div>
 
-    <!-- BARRA INFERIOR UNIFICADA DE 5 MÉTRICAS -->
     <section class="metrics-strip">
       <div class="metric-cell">
         <span class="metric-lbl">TIEMPO</span>
@@ -618,7 +599,6 @@
     </section>
   </main>
 
-  <!-- MODAL DE INSTRUCCIONES Y DICTAMEN -->
   <div class="modal-backdrop" id="modalSistema">
     <div class="modal-box">
       <div class="modal-title" id="modalTitulo">Protocolo Test de Palancas B2B</div>
@@ -635,14 +615,20 @@
   </div>
 
   <script>
-    // =========================================================
-    // 1. BLINDAJE ESTRICTO ENTORNO B2B (RAÍZ)
-    // =========================================================
+    const urlParams = new URLSearchParams(window.location.search);
+    const modeParam = urlParams.get('mode') || 'b2b';
+    const esFlujoDemo =
+      urlParams.get('flujo') === 'demo' ||
+      modeParam === 'demo' ||
+      localStorage.getItem('sensometrika_flujo_demo_activo') === 'true';
+    const claveModulo = urlParams.get('modulo') || 'palancas';
+
     (function () {
-      localStorage.removeItem('sensometrika_b2c_mode');
+      if (!esFlujoDemo) {
+        localStorage.removeItem('sensometrika_b2c_mode');
+      }
     })();
 
-    const urlParams = new URLSearchParams(window.location.search);
     const rutEvaluado = (urlParams.get('rut') || localStorage.getItem('sensometrika_rut_activo') || 'SIN-RUT').trim();
     const cleanRut = rutEvaluado.replace(/[^0-9kK]/g, '').toUpperCase() || 'GENERAL';
     const rawNombre = urlParams.get('nombre') || localStorage.getItem('sensometrika_nombre_activo') || 'TRABAJADOR EVALUADO';
@@ -651,22 +637,53 @@
     const planActivo = (urlParams.get('plan') || localStorage.getItem('sensometrika_plan_activo') || 'BASICO').toUpperCase();
     const sessionId = urlParams.get('session') || localStorage.getItem('sensometrika_session_activa') || 'B2B_DEFAULT';
 
-    document.getElementById('lblSubtituloPlan').textContent = `MÓDULO PALANCAS • PLAN ${planActivo} (B2B)`;
+    function marcarCompletadoDemo() {
+      if (!esFlujoDemo) return;
+      localStorage.setItem(`sensometrika_${claveModulo}_${cleanRut}_${sessionId}`, 'true');
+      localStorage.setItem(`sensometrika_demo_completado_${claveModulo}_${cleanRut}_${sessionId}`, 'true');
+    }
+
+    function resolverDestinoPalancas() {
+      const returnUrl = urlParams.get('returnUrl');
+      if (returnUrl) {
+        return decodeURIComponent(returnUrl);
+      }
+
+      if (esFlujoDemo) {
+        const paramsSalida = new URLSearchParams(urlParams.toString());
+        paramsSalida.set('flujo', 'demo');
+        paramsSalida.set('mode', 'demo');
+        paramsSalida.set('modulo', claveModulo);
+        return `demo_empresa/demo_menu_b2b.html?${paramsSalida.toString()}`;
+      }
+
+      const paramsRegreso = new URLSearchParams({
+        rut: rutEvaluado,
+        nombre: rawNombre,
+        cargo: rawCargo,
+        empresa: rawEmpresa,
+        plan: planActivo,
+        session: sessionId,
+        mode: 'b2b'
+      });
+      return `menu_b2b_planes.html?${paramsRegreso.toString()}`;
+    }
+
+    document.getElementById('lblSubtituloPlan').textContent = esFlujoDemo
+      ? `MÓDULO PALANCAS • DEMO B2B (${planActivo})`
+      : `MÓDULO COORDINACIÓN BIMANUAL • PLAN ${planActivo} (B2B)`;
     document.getElementById('lblDatosEvaluado').textContent = `${decodeURIComponent(rawNombre).toUpperCase()} | RUT: ${rutEvaluado} | ${decodeURIComponent(rawCargo).toUpperCase()}`;
 
     const KEY_DEMO = `palancas_demo_b2b_${cleanRut}_${sessionId}`;
     const KEY_OFICIAL = `sensometrika_palancas_${cleanRut}_${sessionId}`;
     const KEY_LAST = `sensometrika_last_palancas_${cleanRut}_${sessionId}`;
 
-    // =========================================================
-    // 2. ESTADO DE FASES Y MOTOR DE PISTA (VELOCIDAD 0.80x)
-    // =========================================================
-    const VEL_PISTA = 90;     // 0.80x de 112 px/s base
-    const VEL_PALANCA = 144;  // 0.80x de 180 px/s base
-    const ANCHO_CANAL = 54;   // Tolerancia del canal normativo
+    const VEL_PISTA = 90;
+    const VEL_PALANCA = 144;
+    const ANCHO_CANAL = 54;
     const RADIO_CURSOR = 9;
 
-    let faseActual = 'DEMO'; // 'DEMO' | 'LISTO_OFICIAL' | 'OFICIAL' | 'COMPLETADO'
+    let faseActual = 'DEMO';
     let enEjecucion = false;
     let bloqueadoPorDistancia = false;
 
@@ -675,13 +692,11 @@
     let distanciaRecorrida = 0;
     let seedCircuito = Math.random() * 100;
 
-    // Coordenadas del cursor del evaluado
     let cursorX = 340;
     let cursorY = 145;
     let inputX = 0;
     let inputY = 0;
 
-    // Métricas telemétricas
     let toquesBorde = 0;
     let estabaEnError = false;
     let tiempoEnError = 0;
@@ -702,14 +717,12 @@
 
       if (yaRindioOficial) {
         faseActual = 'COMPLETADO';
-        actualizarUIFase();
       } else if (yaHizoDemo) {
         faseActual = 'LISTO_OFICIAL';
-        actualizarUIFase();
       } else {
         faseActual = 'DEMO';
-        actualizarUIFase();
       }
+      actualizarUIFase();
       dibujarEscena();
     }
 
@@ -729,7 +742,7 @@
         document.getElementById('mTiempo').textContent = '15.0s';
       } else if (faseActual === 'LISTO_OFICIAL') {
         badge.classList.add('oficial');
-        txtFase.textContent = 'Fase 2: Simulación Oficial B2B (1/1)';
+        txtFase.textContent = esFlujoDemo ? 'Fase 2: Simulación Demo B2B (1/1)' : 'Fase 2: Simulación Oficial B2B (1/1)';
         btn.className = 'btn-main-action btn-oficial';
         btn.textContent = 'INICIAR SIMULACIÓN OFICIAL B2B (30 S) →';
         document.getElementById('mTiempo').textContent = '30.0s';
@@ -743,11 +756,10 @@
         badge.classList.add('completado');
         txtFase.textContent = '✓ EVALUACIÓN OFICIAL B2B REGISTRADA (1/1)';
         btn.className = 'btn-main-action btn-return';
-        btn.textContent = 'VOLVER AL MENÚ DE EVALUACIONES B2B →';
+        btn.textContent = esFlujoDemo ? 'VOLVER AL MENÚ DEMO →' : 'VOLVER AL MENÚ DE EVALUACIONES B2B →';
       }
     }
 
-    // Ecuación del centro curvilíneo del camino en función del avance
     function obtenerCentroCanalY(xCanvas, avancePx) {
       const s = (xCanvas + avancePx) * 0.0115 + seedCircuito;
       const onda1 = Math.sin(s) * 56;
@@ -824,15 +836,12 @@
         tiempoTotalActivo += dt;
         distanciaRecorrida += VEL_PISTA * dt;
 
-        // Desplazamiento bimanual del cursor
         cursorX += inputX * VEL_PALANCA * dt;
         cursorY += inputY * VEL_PALANCA * dt;
 
-        // Límites del visor
         cursorX = Math.max(24, Math.min(canvas.width - 24, cursorX));
         cursorY = Math.max(24, Math.min(canvas.height - 24, cursorY));
 
-        // Evaluar desviación respecto al eje central del canal
         const centroIdealY = obtenerCentroCanalY(cursorX, distanciaRecorrida);
         const desviacion = Math.abs(cursorY - centroIdealY);
         const fueraDeCanal = desviacion > (ANCHO_CANAL / 2);
@@ -855,7 +864,6 @@
           hudSensor.className = 'hud-chip status-ok';
         }
 
-        // Registrar estela visual
         estelaPuntos.push({ x: cursorX, y: cursorY, err: fueraDeCanal });
         if (estelaPuntos.length > 36) estelaPuntos.shift();
         for (let i = 0; i < estelaPuntos.length; i++) {
@@ -892,7 +900,6 @@
       const h = canvas.height;
       ctx.clearRect(0, 0, w, h);
 
-      // Cuadrícula telemétrica de cabina
       ctx.strokeStyle = 'rgba(56, 189, 248, 0.07)';
       ctx.lineWidth = 1;
       const offsetGrid = distanciaRecorrida % 40;
@@ -909,7 +916,6 @@
         ctx.stroke();
       }
 
-      // Franja del camino curvilíneo
       ctx.save();
       ctx.beginPath();
       for (let x = 0; x <= w; x += 6) {
@@ -925,7 +931,6 @@
       ctx.fillStyle = estabaEnError ? 'rgba(239, 68, 68, 0.12)' : 'rgba(0, 229, 255, 0.10)';
       ctx.fill();
 
-      // Bordes luminosos del canal
       ctx.lineWidth = 2.5;
       ctx.strokeStyle = estabaEnError ? '#ef4444' : '#00e5ff';
       ctx.shadowColor = estabaEnError ? 'rgba(239, 68, 68, 0.7)' : 'rgba(0, 229, 255, 0.65)';
@@ -947,7 +952,6 @@
       }
       ctx.stroke();
 
-      // Línea guía central punteada
       ctx.shadowBlur = 0;
       ctx.setLineDash([8, 8]);
       ctx.lineWidth = 1.3;
@@ -962,7 +966,6 @@
       ctx.setLineDash([]);
       ctx.restore();
 
-      // Estela de trayectoria del sensor
       if (estelaPuntos.length > 1) {
         for (let i = 1; i < estelaPuntos.length; i++) {
           const p0 = estelaPuntos[i - 1];
@@ -976,7 +979,6 @@
         }
       }
 
-      // Puntero / Sensor bimanual del evaluado
       ctx.save();
       ctx.beginPath();
       ctx.arc(cursorX, cursorY, RADIO_CURSOR, 0, Math.PI * 2);
@@ -988,7 +990,6 @@
       ctx.strokeStyle = '#ffffff';
       ctx.stroke();
 
-      // Mira de precisión interior
       ctx.beginPath();
       ctx.arc(cursorX, cursorY, 3, 0, Math.PI * 2);
       ctx.fillStyle = '#ffffff';
@@ -1032,10 +1033,10 @@
           fecha: new Date().toISOString()
         };
 
-        // Guardar en todas las claves corporativas B2B
         localStorage.setItem(KEY_OFICIAL, JSON.stringify(registroB2B));
         localStorage.setItem(KEY_LAST, JSON.stringify(registroB2B));
         localStorage.setItem('sensometrika_palancas', JSON.stringify(registroB2B));
+        marcarCompletadoDemo();
 
         try {
           const rendidos = JSON.parse(localStorage.getItem('sensometrika_modulos_rendidos') || '{}');
@@ -1048,17 +1049,14 @@
         mostrarModal(
           'Evaluación Oficial B2B Registrada',
           `Resultado almacenado en expediente corporativo:<br><br>
-          • <b>Precisión Bimanual:</b> ${precisionFinal}%<br>
-          • <b>Toques de Borde:</b> ${toquesBorde}<br>
-          • <b>Tiempo Fuera de Eje:</b> ${tiempoEnError.toFixed(2)} s<br>
-          • <b>Dictamen Técnico:</b> <b>${registroB2B.dictamen}</b>`
+- <b>Precisión Bimanual:</b> ${precisionFinal}%<br>
+- <b>Toques de Borde:</b> ${toquesBorde}<br>
+- <b>Tiempo Fuera de Eje:</b> ${tiempoEnError.toFixed(2)} s<br>
+- <b>Dictamen Técnico:</b> <b>${registroB2B.dictamen}</b>`
         );
       }
     }
 
-    // =========================================================
-    // 3. CONTROLES TÁCTILES Y DE TECLADO
-    // =========================================================
     function setInput(hand, dir, pressed) {
       if (hand === 'left') {
         inputX = dir;
@@ -1085,9 +1083,6 @@
       if (k === 'w' || e.key === 'ArrowUp' || k === 's' || e.key === 'ArrowDown') setInput('right', 0, false);
     });
 
-    // =========================================================
-    // 4. TELEMETRÍA BIOMÉTRICA MEDIAPIPE FACEMESH (35–65 CM)
-    // =========================================================
     function iniciarBiometriaMediaPipe() {
       const videoEl = document.getElementById('webcamVideo');
       const lblDist = document.getElementById('mDistancia');
@@ -1129,7 +1124,6 @@
         const dy = ojoDer.y - ojoIzq.y;
         const distOjosNorm = Math.sqrt(dx * dx + dy * dy);
 
-        // Estimación telemétrica calibrada en centímetros
         const cmEstimados = Math.round(6.3 / Math.max(distOjosNorm, 0.04));
         lblDist.textContent = `${cmEstimados} cm`;
 
@@ -1162,9 +1156,6 @@
       }
     }
 
-    // =========================================================
-    // 5. MODALES Y RETORNO EXCLUSIVO B2B
-    // =========================================================
     function mostrarModal(titulo, htmlCuerpo) {
       document.getElementById('modalTitulo').textContent = titulo;
       document.getElementById('modalCuerpo').innerHTML = htmlCuerpo;
@@ -1188,20 +1179,17 @@
     }
 
     function ejecutarRetornoMenu() {
-      localStorage.removeItem('sensometrika_b2c_mode');
-      const paramsRegreso = new URLSearchParams({
-        rut: rutEvaluado,
-        nombre: rawNombre,
-        cargo: rawCargo,
-        empresa: rawEmpresa,
-        plan: planActivo,
-        session: sessionId,
-        mode: 'b2b'
-      });
-      window.location.href = `menu_b2b_planes.html?${paramsRegreso.toString()}`;
+      if (!esFlujoDemo) {
+        localStorage.removeItem('sensometrika_b2c_mode');
+      }
+      window.location.href = resolverDestinoPalancas();
     }
 
     window.addEventListener('DOMContentLoaded', () => {
+      if (esFlujoDemo) {
+        const btnTop = document.getElementById('btnVolverTop');
+        if (btnTop) btnTop.textContent = '← Menú Demo';
+      }
       inicializarEstadoFlujo();
       iniciarBiometriaMediaPipe();
     });

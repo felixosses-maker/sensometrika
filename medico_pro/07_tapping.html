@@ -136,7 +136,6 @@
 
     .instruction-text { font-size: 0.74rem; color: #cbd5e1; line-height: 1.35; text-align: center; }
 
-    /* Estructura oficial de rejilla de telemetría SENSOMETRIKA */
     .metricas-grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
@@ -218,7 +217,7 @@
         </div>
       </div>
 
-      <button class="btn-action" id="btnIniciar" onclick="iniciarTapping()">INICIAR TAPPING →</button>
+      <button type="button" class="btn-action" id="btnIniciar" onclick="iniciarTapping()">INICIAR TAPPING →</button>
 
       <!-- OVERLAY DE BLOQUEO POR DISTANCIA -->
       <div id="boxBlockDistancia" class="distance-block-overlay">
@@ -230,12 +229,41 @@
 
   <script>
     const urlParams = new URLSearchParams(window.location.search);
-    const cleanRut = (urlParams.get('rut') || localStorage.getItem('sensometrika_rut') || '12345678').replace(/[^0-9Kk]/g, '');
+    const cleanRut = (urlParams.get('rut') || localStorage.getItem('sensometrika_rut') || '12345678').replace(/[^0-9Kk]/g, '').toUpperCase();
     const sessionId = urlParams.get('session') || localStorage.getItem('sensometrika_session_activa') || 'SESION_DEFAULT';
     const isB2C = localStorage.getItem('sensometrika_b2c_mode') === 'true' || urlParams.get('mode') === 'b2c';
+    const esFlujoDemo =
+      urlParams.get('flujo') === 'demo' ||
+      urlParams.get('mode') === 'demo' ||
+      localStorage.getItem('sensometrika_flujo_demo_activo') === 'true';
+    const claveModulo = urlParams.get('modulo') || 'tapping';
 
-    const menuHref = isB2C ? `../menu_B2C.html?${urlParams.toString()}` : `../menu_B2B.html?${urlParams.toString()}`;
-    document.getElementById('linkMenu').href = urlParams.get('returnUrl') ? decodeURIComponent(urlParams.get('returnUrl')) : menuHref;
+    function marcarCompletadoDemo() {
+      if (!esFlujoDemo) return;
+      localStorage.setItem(`sensometrika_${claveModulo}_${cleanRut}_${sessionId}`, 'true');
+      localStorage.setItem(`sensometrika_demo_completado_${claveModulo}_${cleanRut}_${sessionId}`, 'true');
+    }
+
+    function resolverDestinoTapping() {
+      const returnUrl = urlParams.get('returnUrl');
+      if (returnUrl) {
+        return decodeURIComponent(returnUrl);
+      }
+
+      const paramsSalida = new URLSearchParams(urlParams.toString());
+      if (esFlujoDemo) {
+        paramsSalida.set('flujo', 'demo');
+        paramsSalida.set('mode', 'demo');
+        paramsSalida.set('modulo', claveModulo);
+        return `../demo_empresa/demo_menu_b2b.html?${paramsSalida.toString()}`;
+      }
+
+      return isB2C ? `../menu_B2C.html?${paramsSalida.toString()}` : `../menu_B2B.html?${paramsSalida.toString()}`;
+    }
+
+    const linkMenuEl = document.getElementById('linkMenu');
+    linkMenuEl.href = resolverDestinoTapping();
+    linkMenuEl.textContent = esFlujoDemo ? '← Menú Demo' : '← Menú';
 
     let distanciaMedidaCm = 55;
     let estaBloqueadoPorDistancia = false;
@@ -250,7 +278,7 @@
         if (typeof FaceMesh !== 'undefined' && typeof Camera !== 'undefined') {
           const faceMesh = new FaceMesh({ locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}` });
           faceMesh.setOptions({ maxNumFaces: 1, refineLandmarks: true, minDetectionConfidence: 0.5, minTrackingConfidence: 0.5 });
-          
+
           faceMesh.onResults((results) => {
             const telDistancia = document.getElementById('tel-distancia');
             const overlay = document.getElementById('boxBlockDistancia');
@@ -266,7 +294,7 @@
             let dist = Math.round(9.5 / Math.sqrt(dx * dx + dy * dy));
             distanciaMedidaCm = Math.round(distanciaMedidaCm * 0.5 + dist * 0.5);
             telDistancia.textContent = `${distanciaMedidaCm} cm`;
-            
+
             if (distanciaMedidaCm >= 40 && distanciaMedidaCm <= 70) {
               estaBloqueadoPorDistancia = false;
               overlay.style.display = 'none';
@@ -277,10 +305,10 @@
             }
           });
 
-          cameraInstance = new Camera(videoElement, { 
-            onFrame: async () => { await faceMesh.send({ image: videoElement }); }, 
-            width: 320, 
-            height: 240 
+          cameraInstance = new Camera(videoElement, {
+            onFrame: async () => { await faceMesh.send({ image: videoElement }); },
+            width: 320,
+            height: 240
           });
           await cameraInstance.start();
         }
@@ -318,12 +346,12 @@
       document.getElementById('btnIniciar').style.display = 'none';
       testEnCurso = true;
       conteoTaps = 0;
-      
+
       let tiempoRestante = 25;
       const cronometroTapping = document.getElementById('cronometro-tapping');
       const lblTimer = document.getElementById('lblTimer');
       const lblEstado = document.getElementById('lblEstado');
-      
+
       emitirPitido(880, 0.3);
       lblEstado.textContent = "Fase de preparación (0s - 5s): Prepárese...";
 
@@ -341,7 +369,7 @@
           clearInterval(intervaloTimer);
           testEnCurso = false;
           if (cameraInstance) { try { cameraInstance.stop(); } catch(e){} }
-          
+
           emitirPitido(587, 0.2);
           setTimeout(() => emitirPitido(880, 0.4), 250);
 
@@ -350,10 +378,10 @@
           document.getElementById('tel-ritmo').textContent = `${conteoTaps} (Óptimo)`;
           document.getElementById('tel-ritmo').style.color = "var(--accent-green)";
 
-          // Guardar doble clave oficial en localStorage
           localStorage.setItem(`sensometrika_tapping_${cleanRut}_${sessionId}`, 'true');
           localStorage.setItem(`medico_tapping_${cleanRut}_${sessionId}`, 'true');
           localStorage.setItem(`medico_tapping_score_${cleanRut}_${sessionId}`, conteoTaps);
+          marcarCompletadoDemo();
 
           let modulosRendidos = JSON.parse(localStorage.getItem('sensometrika_modulos_rendidos')) || {};
           modulosRendidos.tapping = true;
@@ -361,24 +389,14 @@
           localStorage.setItem('sensometrika_modulos_rendidos', JSON.stringify(modulosRendidos));
 
           setTimeout(() => {
-            const returnUrl = urlParams.get('returnUrl');
-            if (returnUrl) {
-              window.location.href = decodeURIComponent(returnUrl);
-            } else {
-              window.location.href = menuHref;
-            }
+            window.location.href = resolverDestinoTapping();
           }, 2200);
         }
       }, 1000);
     }
 
     function volverMenu() {
-      const returnUrl = urlParams.get('returnUrl');
-      if (returnUrl) {
-        window.location.href = decodeURIComponent(returnUrl);
-      } else {
-        window.location.href = menuHref;
-      }
+      window.location.href = resolverDestinoTapping();
     }
 
     document.addEventListener('DOMContentLoaded', () => {

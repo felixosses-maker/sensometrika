@@ -368,14 +368,14 @@
 
         <div class="eval-card">
             <div class="top-nav">
-                <button id="btnVolverNav" onclick="ejecutarRetornoMenu()">&larr; Menú Pruebas</button>
+                <button type="button" id="btnVolverNav" onclick="ejecutarRetornoMenu()">← Menú Pruebas</button>
 
                 <div class="cam-preview-pip-header">
                     <video id="webcamVideo" autoplay playsinline muted></video>
                     <div class="cam-tag-header">Biometría</div>
                 </div>
 
-                <button id="btnInfo">ℹ ¿Cómo funciona?</button>
+                <button type="button" id="btnInfo">ℹ ¿Cómo funciona?</button>
             </div>
 
             <div class="status-badge-container">
@@ -400,11 +400,11 @@
 
                 <!-- CONTROLES BINAURALES IZQUIERDA / DERECHA -->
                 <div class="binaural-grid">
-                    <button id="btnOidoIzq" class="btn-ear" disabled onclick="registrarRespuestaBinaural('IZQ')">
+                    <button type="button" id="btnOidoIzq" class="btn-ear" disabled onclick="registrarRespuestaBinaural('IZQ')">
                         <span style="font-size:1.4rem;">👂</span>
                         <span>OÍDO IZQUIERDO</span>
                     </button>
-                    <button id="btnOidoDer" class="btn-ear" disabled onclick="registrarRespuestaBinaural('DER')">
+                    <button type="button" id="btnOidoDer" class="btn-ear" disabled onclick="registrarRespuestaBinaural('DER')">
                         <span style="font-size:1.4rem;">👂</span>
                         <span>OÍDO DERECHO</span>
                     </button>
@@ -421,7 +421,7 @@
                 </div>
             </div>
 
-            <button id="btnStartAuditivo" class="btn-start" disabled onclick="iniciarTamizajeAuditivo()">INICIAR EVALUACIÓN AUDITIVA (8 TONOS)</button>
+            <button type="button" id="btnStartAuditivo" class="btn-start" disabled onclick="iniciarTamizajeAuditivo()">INICIAR EVALUACIÓN AUDITIVA (8 TONOS)</button>
 
             <!-- PANEL TELEMÉTRICO 4 COLUMNAS -->
             <div class="metrics-grid">
@@ -434,7 +434,7 @@
                     <span id="metricaSenal" class="metric-value" style="color:#38bdf8;">0 / 8</span>
                 </div>
                 <div class="metric-item">
-                    <span class="metric-label">ACIENTOS</span>
+                    <span class="metric-label">ACIERTOS</span>
                     <span id="metricaAciertos" class="metric-value" style="color:#10b981;">0</span>
                 </div>
                 <div class="metric-item">
@@ -448,7 +448,7 @@
             <div class="modal-content">
                 <div id="modalTitle" class="modal-title">EVALUACIÓN FINALIZADA</div>
                 <div id="modalBody" class="modal-body">Resultados registrados con éxito.</div>
-                <button id="modalBtnClose" class="modal-btn">Continuar</button>
+                <button type="button" id="modalBtnClose" class="modal-btn">Continuar</button>
             </div>
         </div>
     </div>
@@ -476,11 +476,17 @@
         const urlParams = new URLSearchParams(window.location.search);
         const modeParam = urlParams.get('mode') || (localStorage.getItem('sensometrika_b2c_mode') === 'true' ? 'b2c' : 'b2b');
         const esB2B = (modeParam === 'b2b');
+        const esFlujoDemo =
+            urlParams.get('flujo') === 'demo' ||
+            modeParam === 'demo' ||
+            localStorage.getItem('sensometrika_flujo_demo_activo') === 'true';
+        const claveModulo = urlParams.get('modulo') || 'auditivo';
 
         let datosUsuario = {};
         try { datosUsuario = JSON.parse(localStorage.getItem('sensometrika_datos_usuario')) || {}; } catch(e){}
-        const rutEvaluado = urlParams.get('rut') || datosUsuario.rut || 'GENERICO';
-        const cleanRut = rutEvaluado.replace(/[^0-9Kk]/g, '');
+        const rutEvaluado = urlParams.get('rut') || datosUsuario.rut || localStorage.getItem('sensometrika_rut') || 'GENERICO';
+        const cleanRut = rutEvaluado.replace(/[^0-9Kk]/g, '').toUpperCase() || 'GENERICO';
+        const sessionId = urlParams.get('session') || localStorage.getItem('sensometrika_session_activa') || 'SESION_DEFAULT';
 
         let distanciaMedidaCm = 55;
         let estaBloqueadoPorDistancia = false;
@@ -491,10 +497,9 @@
         let aciertosIzq = 0;
         let aciertosDer = 0;
         let tonoEsperandoRespuesta = false;
-        let canalActivo = null; // 'IZQ' o 'DER'
+        let canalActivo = null;
         let timerTono = null;
 
-        // SECUENCIA AUDIOMÉTRICA (500Hz, 1000Hz, 2000Hz, 4000Hz) EN AMBOS OÍDOS
         const BATERIA_TONOS = [
             { canal: 'IZQ', freq: 500 },
             { canal: 'DER', freq: 1000 },
@@ -506,14 +511,37 @@
             { canal: 'IZQ', freq: 4000 }
         ];
 
-        function ejecutarRetornoMenu() {
+        function marcarCompletadoDemo() {
+            if (!esFlujoDemo) return;
+            localStorage.setItem(`sensometrika_${claveModulo}_${cleanRut}_${sessionId}`, 'true');
+            localStorage.setItem(`sensometrika_demo_completado_${claveModulo}_${cleanRut}_${sessionId}`, 'true');
+        }
+
+        function resolverDestinoAuditivo() {
             const returnUrlParam = urlParams.get('returnUrl');
             if (returnUrlParam) {
-                window.location.href = decodeURIComponent(returnUrlParam);
-            } else {
-                const menuDestino = esB2B ? 'menu_B2B.html' : 'menu_B2C.html';
-                window.location.href = `${menuDestino}?${urlParams.toString()}`;
+                return decodeURIComponent(returnUrlParam);
             }
+
+            const paramsSalida = new URLSearchParams(urlParams.toString());
+            if (esFlujoDemo) {
+                paramsSalida.set('flujo', 'demo');
+                paramsSalida.set('mode', 'demo');
+                paramsSalida.set('modulo', claveModulo);
+                return `demo_empresa/demo_menu_b2b.html?${paramsSalida.toString()}`;
+            }
+
+            const menuDestino = esB2B ? 'menu_B2B.html' : 'menu_B2C.html';
+            return `${menuDestino}?${paramsSalida.toString()}`;
+        }
+
+        function ejecutarRetornoMenu() {
+            window.location.href = resolverDestinoAuditivo();
+        }
+
+        const btnVolverNav = document.getElementById('btnVolverNav');
+        if (btnVolverNav && esFlujoDemo) {
+            btnVolverNav.textContent = '← Menú Demo';
         }
 
         function validarGatekeeperAudifonos() {
@@ -630,10 +658,8 @@
                 canalActivo = item.canal;
                 tonoEsperandoRespuesta = true;
 
-                // Ventana de 2.5s para responder
                 timerTono = setTimeout(() => {
                     if (tonoEsperandoRespuesta) {
-                        // Omisión
                         tonoEsperandoRespuesta = false;
                         pasoActual++;
                         programarSiguienteTono();
@@ -709,6 +735,11 @@
             };
 
             localStorage.setItem(`sensometrika_last_auditivo_${cleanRut}`, JSON.stringify(registroData));
+            marcarCompletadoDemo();
+
+            if (esFlujoDemo) {
+                modalBtnClose.textContent = 'Volver al Menú Demo';
+            }
 
             mostrarModal(
                 aprobado ? "✓ TAMIZAJE AUDITIVO APROBADO" : "⚠️ EVALUACIÓN AUDITIVA OBSERVADA",
@@ -732,7 +763,7 @@
         }
 
         document.getElementById('btnInfo').addEventListener('click', () => {
-            mostrarModal("¿CÓMO FUNCIONA EL TAMIZAJE AUDITIVO?", 
+            mostrarModal("¿CÓMO FUNCIONA EL TAMIZAJE AUDITIVO?",
                 "Evalúa la capacidad de percepción y separación binaural en frecuencias ocupacionales (500Hz - 4000Hz):<br>1. Conecte sus <b>audífonos estéreo</b> obligatoriamente.<br>2. Presione <b>👂 Oído Izquierdo</b> u <b>Oído Derecho 👂</b> al escuchar el tono corto.<br>3. Mantenga la postura recomendada frente a la cámara.");
         });
 

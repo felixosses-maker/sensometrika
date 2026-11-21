@@ -1,0 +1,815 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Sensometrika B2B | Coordinación Bimanual (Palancas)</title>
+  <style>
+    :root {
+      --bg-main: #040810;
+      --bg-card: #091120;
+      --bg-surface: #0f172a;
+      --border-subtle: #1e293b;
+      --accent-cyan: #00bfff;
+      --accent-sky: #38bdf8;
+      --accent-amber: #f59e0b;
+      --accent-green: #10b981;
+      --accent-red: #ef4444;
+      --text-primary: #f8fafc;
+      --text-secondary: #cbd5e1;
+      --text-muted: #94a3b8;
+    }
+
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background-color: var(--bg-main);
+      color: var(--text-primary);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      padding: 14px 10px 28px;
+    }
+
+    .modulo-card-container {
+      width: 100%;
+      max-width: 520px;
+      background: var(--bg-card);
+      border: 1.5px solid var(--border-subtle);
+      border-radius: 18px;
+      padding: 16px;
+      box-shadow: 0 18px 42px rgba(0, 0, 0, 0.65);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .brand-header {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid #152238;
+    }
+
+    .logo-frame {
+      width: 100%;
+      max-width: 250px;
+      background: #060d1d;
+      border: 1px solid #15263d;
+      border-radius: 14px;
+      padding: 6px 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 22px rgba(0, 229, 255, 0.16);
+      overflow: hidden;
+    }
+
+    .brand-logo-img {
+      width: 100%;
+      max-height: 82px;
+      object-fit: contain;
+      display: block;
+      mix-blend-mode: lighten;
+      filter: drop-shadow(0 0 8px rgba(0, 229, 255, 0.35));
+    }
+
+    .brand-sub {
+      font-size: 0.68rem;
+      font-weight: 800;
+      letter-spacing: 1.2px;
+      color: var(--accent-sky);
+      text-transform: uppercase;
+      text-align: center;
+    }
+
+    .top-nav-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .nav-pill-btn {
+      background: var(--bg-surface);
+      border: 1px solid #293952;
+      color: var(--text-secondary);
+      border-radius: 9px;
+      padding: 7px 11px;
+      font-size: 0.76rem;
+      font-weight: 700;
+      text-decoration: none;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .nav-pill-btn:hover {
+      border-color: var(--accent-sky);
+      color: #ffffff;
+    }
+
+    .pip-box {
+      width: 78px;
+      height: 54px;
+      background: #020617;
+      border: 1.5px solid #0284c7;
+      border-radius: 9px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+
+    .pip-box video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transform: scaleX(-1);
+    }
+
+    .pip-label {
+      position: absolute;
+      bottom: 0;
+      width: 100%;
+      background: rgba(2, 6, 23, 0.85);
+      color: var(--accent-cyan);
+      font-size: 0.56rem;
+      font-weight: 800;
+      text-align: center;
+      letter-spacing: 0.6px;
+      padding: 1px 0;
+    }
+
+    .phase-pill-wrap {
+      display: flex;
+      justify-content: center;
+    }
+
+    .phase-pill {
+      background: #0a1930;
+      border: 1px solid #1d4ed8;
+      color: #93c5fd;
+      font-size: 0.72rem;
+      font-weight: 800;
+      padding: 5px 12px;
+      border-radius: 999px;
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+    }
+
+    .phase-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--accent-amber);
+    }
+
+    .radar-wrapper {
+      position: relative;
+      width: 100%;
+      height: 290px;
+      background: #040914;
+      border: 1.5px solid #1e3a5f;
+      border-radius: 14px;
+      overflow: hidden;
+      box-shadow: inset 0 0 28px rgba(0, 191, 255, 0.08);
+    }
+
+    canvas#pistaCanvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+      touch-action: none;
+    }
+
+    .controls-pad {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .mando-card {
+      background: var(--bg-surface);
+      border: 1px solid #24344d;
+      border-radius: 12px;
+      padding: 8px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .mando-card span {
+      font-size: 0.68rem;
+      font-weight: 800;
+      color: var(--text-muted);
+      text-transform: uppercase;
+    }
+
+    .pad-grid-3 {
+      display: grid;
+      gap: 5px;
+      justify-content: center;
+    }
+
+    .pad-btn {
+      background: #172554;
+      border: 1px solid #38bdf8;
+      color: #e0f2fe;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      font-weight: 800;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .pad-btn:active {
+      background: #0284c7;
+      transform: scale(0.95);
+    }
+
+    .btn-main-action {
+      width: 100%;
+      min-height: 46px;
+      border: none;
+      border-radius: 12px;
+      font-size: 0.9rem;
+      font-weight: 900;
+      letter-spacing: 0.4px;
+      cursor: pointer;
+      color: #030712;
+      background: var(--accent-amber);
+    }
+
+    .btn-main-action.oficial {
+      background: var(--accent-green);
+      color: #022c22;
+    }
+
+    .metrics-bar-5 {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 6px;
+      background: var(--bg-surface);
+      border: 1px solid #1e293b;
+      border-radius: 12px;
+      padding: 8px 6px;
+    }
+
+    .metric-cell {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      gap: 2px;
+    }
+
+    .metric-cell span {
+      font-size: 0.58rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+    }
+
+    .metric-cell strong {
+      font-size: 0.8rem;
+      color: var(--text-primary);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(2, 6, 23, 0.84);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 14px;
+      z-index: 40;
+    }
+
+    .modal-backdrop.open {
+      display: flex;
+    }
+
+    .modal-panel {
+      width: 100%;
+      max-width: 440px;
+      background: var(--bg-card);
+      border: 1.5px solid #38bdf8;
+      border-radius: 16px;
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .modal-panel h3 {
+      font-size: 1rem;
+      color: var(--accent-sky);
+    }
+
+    .modal-panel p,
+    .modal-panel li {
+      font-size: 0.82rem;
+      line-height: 1.45;
+      color: var(--text-secondary);
+    }
+
+    .modal-panel ul {
+      padding-left: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+  </style>
+</head>
+<body>
+  <div class="modulo-card-container">
+    <div class="brand-header">
+      <div class="logo-frame">
+        <img id="logoSensometrikaImg" src="../sensometrika.jpg" alt="SENSOMETRIKA Calibration Technology" class="brand-logo-img">
+      </div>
+      <span class="brand-sub">Módulo Coordinación Bimanual · Palancas Alta Complejidad</span>
+    </div>
+
+    <div class="top-nav-row">
+      <button type="button" id="btnVolverMenuTop" class="nav-pill-btn">← Menú Psicosensométrico</button>
+
+      <div class="pip-box" id="pipBox">
+        <video id="pipVideo" autoplay playsinline muted></video>
+        <span id="pipFallback" style="font-size: 0.62rem; color: #64748b;">Cámara</span>
+        <div class="pip-label">BIOMETRÍA</div>
+      </div>
+
+      <button type="button" class="nav-pill-btn" id="btnComoFunciona">? ¿Cómo funciona?</button>
+    </div>
+
+    <div class="phase-pill-wrap">
+      <div class="phase-pill" id="pillFase">
+        <span class="phase-dot" id="dotFase"></span>
+        <span id="txtFase">Paso 1: Calibración Demo (1/1)</span>
+      </div>
+    </div>
+
+    <div class="radar-wrapper">
+      <canvas id="pistaCanvas" width="480" height="290"></canvas>
+    </div>
+
+    <div class="controls-pad">
+      <div class="mando-card">
+        <span>Mando Izquierdo (Eje X · ← / →)</span>
+        <div class="pad-grid-3" style="grid-template-columns: repeat(2, 56px); grid-template-rows: 38px;">
+          <button type="button" class="pad-btn" data-dir="left">←</button>
+          <button type="button" class="pad-btn" data-dir="right">→</button>
+        </div>
+      </div>
+      <div class="mando-card">
+        <span>Mando Derecho (Eje Y · ↑ / ↓)</span>
+        <div class="pad-grid-3" style="grid-template-columns: repeat(2, 56px); grid-template-rows: 38px;">
+          <button type="button" class="pad-btn" data-dir="up">↑</button>
+          <button type="button" class="pad-btn" data-dir="down">↓</button>
+        </div>
+      </div>
+    </div>
+
+    <button type="button" class="btn-main-action" id="btnIniciarPrueba">
+      ▶ INICIAR CALIBRACIÓN DEMO (15s)
+    </button>
+
+    <div class="metrics-bar-5">
+      <div class="metric-cell"><span>Tiempo</span><strong id="mTiempo">0.0s</strong></div>
+      <div class="metric-cell"><span>Roces</span><strong id="mRoces">0</strong></div>
+      <div class="metric-cell"><span>T. Error</span><strong id="mTerror">0.0s</strong></div>
+      <div class="metric-cell"><span>Precisión</span><strong id="mPrecision">100%</strong></div>
+      <div class="metric-cell"><span>Meta</span><strong id="mMeta">0%</strong></div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="modalAyuda">
+    <div class="modal-panel">
+      <h3>¿Cómo funciona Coordinación Bimanual?</h3>
+      <p>Evalúa la disociación motriz fina entre ambas manos hasta llegar a la zona verde <strong>META</strong>.</p>
+      <ul>
+        <li><strong>Finalización inmediata en META:</strong> Al llegar al círculo verde de meta, la ronda termina de inmediato sin esperar a que se agote el reloj.</li>
+        <li><strong>Mando Izquierdo (A/D o ←/→):</strong> desplaza horizontalmente (Eje X).</li>
+        <li><strong>Mando Derecho (W/S o ↑/↓):</strong> desplaza verticalmente (Eje Y).</li>
+        <li><strong>Anti-memorización:</strong> cada ronda varía la geometría del trazado.</li>
+      </ul>
+      <button type="button" class="btn-main-action oficial" id="btnCerrarAyuda">Entendido</button>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      const logoImg = document.getElementById("logoSensometrikaImg");
+      const candidatosLogo = ["../sensometrika.jpg", "sensometrika.jpg", "../sensometrica.jpg", "sensometrica.jpg"];
+      let idxLogo = 0;
+      logoImg.addEventListener("error", () => {
+        idxLogo++;
+        if (idxLogo < candidatosLogo.length) {
+          logoImg.src = candidatosLogo[idxLogo];
+        } else {
+          logoImg.style.display = "none";
+        }
+      });
+
+      const canvas = document.getElementById("pistaCanvas");
+      const ctx = canvas.getContext("2d");
+
+      const btnIniciar = document.getElementById("btnIniciarPrueba");
+      const btnVolverMenuTop = document.getElementById("btnVolverMenuTop");
+      const dotFase = document.getElementById("dotFase");
+      const txtFase = document.getElementById("txtFase");
+
+      const mTiempo = document.getElementById("mTiempo");
+      const mRoces = document.getElementById("mRoces");
+      const mTerror = document.getElementById("mTerror");
+      const mPrecision = document.getElementById("mPrecision");
+      const mMeta = document.getElementById("mMeta");
+
+      const modalAyuda = document.getElementById("modalAyuda");
+      document.getElementById("btnComoFunciona").addEventListener("click", () => modalAyuda.classList.add("open"));
+      document.getElementById("btnCerrarAyuda").addEventListener("click", () => modalAyuda.classList.remove("open"));
+
+      const pipVideo = document.getElementById("pipVideo");
+      const pipFallback = document.getElementById("pipFallback");
+      let pipStream = null;
+      (async function initCam() {
+        try {
+          pipStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user", width: 160, height: 120 }, audio: false });
+          pipVideo.srcObject = pipStream;
+          pipFallback.style.display = "none";
+        } catch (e) {
+          pipVideo.style.display = "none";
+          pipFallback.style.display = "block";
+        }
+      })();
+
+      const urlParams = new URLSearchParams(window.location.search);
+      let datosUsuario = {};
+      try { datosUsuario = JSON.parse(localStorage.getItem("sensometrika_datos_usuario")) || {}; } catch (e) {}
+      const rawRut = urlParams.get("rut") || datosUsuario.rut || localStorage.getItem("sensometrika_rut") || "";
+      const cleanRut = rawRut.replace(/[^0-9Kk]/g, "");
+      const sessionId = urlParams.get("session") || localStorage.getItem("sensometrika_session_activa") || "";
+
+      const PATRONES_PISTA = [
+        function (t) {
+          return {
+            x: 54 + t * (canvas.width - 108),
+            y: canvas.height * 0.52 + Math.sin(t * Math.PI * 3.2) * 68
+          };
+        },
+        function (t) {
+          const wave = Math.sin(t * Math.PI * 5) * 0.65 + Math.cos(t * Math.PI * 2.5) * 0.35;
+          return {
+            x: 54 + t * (canvas.width - 108),
+            y: canvas.height * 0.5 + wave * 74
+          };
+        },
+        function (t) {
+          return {
+            x: 54 + t * (canvas.width - 108),
+            y: canvas.height * 0.5 + Math.sin(t * Math.PI * 2) * 82 * Math.cos(t * Math.PI * 1.5)
+          };
+        },
+        function (t) {
+          const baseY = 215 - t * 140;
+          return {
+            x: 54 + t * (canvas.width - 108),
+            y: baseY + Math.sin(t * Math.PI * 6) * 44
+          };
+        }
+      ];
+
+      let faseActual = "DEMO";
+      let corriendo = false;
+      let rafId = null;
+      let patronIdx = Math.floor(Math.random() * PATRONES_PISTA.length);
+      let duracionMs = 15000;
+      let inicioMs = 0;
+      let ultimoFrameMs = 0;
+
+      let cursor = { x: 64, y: canvas.height * 0.5 };
+      let estela = [];
+      let roces = 0;
+      let enContactoPrevio = false;
+      let tiempoErrorMs = 0;
+      let framesDentro = 0;
+      let framesTotales = 0;
+
+      const teclas = { left: false, right: false, up: false, down: false };
+
+      function volverMenuPsico() {
+        corriendo = false;
+        if (rafId) cancelAnimationFrame(rafId);
+        if (pipStream) {
+          pipStream.getTracks().forEach(t => t.stop());
+          pipStream = null;
+        }
+        const q = window.location.search || "";
+        window.location.href = `psico_menu_b2b.html${q}`;
+      }
+
+      btnVolverMenuTop.addEventListener("click", volverMenuPsico);
+
+      function obtenerCentroPista(progreso) {
+        const p = Math.max(0, Math.min(1, progreso));
+        return PATRONES_PISTA[patronIdx](p);
+      }
+
+      function resetearRonda(esOficial) {
+        patronIdx = Math.floor(Math.random() * PATRONES_PISTA.length);
+        duracionMs = esOficial ? 30000 : 15000;
+        const p0 = obtenerCentroPista(0);
+        cursor = { x: p0.x, y: p0.y };
+        estela = [{ x: cursor.x, y: cursor.y }];
+        roces = 0;
+        enContactoPrevio = false;
+        tiempoErrorMs = 0;
+        framesDentro = 0;
+        framesTotales = 0;
+        teclas.left = teclas.right = teclas.up = teclas.down = false;
+        mTiempo.textContent = "0.0s";
+        mRoces.textContent = "0";
+        mTerror.textContent = "0.0s";
+        mPrecision.textContent = "100%";
+        mMeta.textContent = "0%";
+      }
+
+      function guardarResultadoOficial(payload) {
+        const json = JSON.stringify(payload);
+        localStorage.setItem("sensometrika_psico_palancas_bimanual", json);
+        localStorage.setItem("sensometrika_palancas", json);
+        if (cleanRut && sessionId) {
+          localStorage.setItem(`sensometrika_psico_palancas_${cleanRut}_${sessionId}`, json);
+          localStorage.setItem(`sensometrika_palancas_${cleanRut}_${sessionId}`, json);
+        }
+
+        try {
+          const rendidos = JSON.parse(localStorage.getItem("sensometrika_modulos_rendidos")) || {};
+          rendidos.palancas = true;
+          localStorage.setItem("sensometrika_modulos_rendidos", JSON.stringify(rendidos));
+
+          if (cleanRut && sessionId) {
+            const rendidosSes = JSON.parse(localStorage.getItem(`sensometrika_modulos_rendidos_${cleanRut}_${sessionId}`)) || {};
+            rendidosSes.palancas = true;
+            localStorage.setItem(`sensometrika_modulos_rendidos_${cleanRut}_${sessionId}`, JSON.stringify(rendidosSes));
+          }
+        } catch (e) {}
+
+        try {
+          const sesion = JSON.parse(localStorage.getItem("sensometrika_psico_sesion"));
+          if (sesion) {
+            sesion.modulos = sesion.modulos || {};
+            sesion.modulos.palancas_bimanual = { completado: true, data: payload };
+            localStorage.setItem("sensometrika_psico_sesion", JSON.stringify(sesion));
+            if (cleanRut && sessionId) {
+              localStorage.setItem(`sensometrika_psico_sesion_${cleanRut}_${sessionId}`, JSON.stringify(sesion));
+            }
+          }
+        } catch (e) {}
+      }
+
+      function finalizarRonda(transcurridoMs, alcanzoMeta) {
+        if (!corriendo) return;
+        corriendo = false;
+        if (rafId) cancelAnimationFrame(rafId);
+        teclas.left = teclas.right = teclas.up = teclas.down = false;
+
+        const precision = framesTotales > 0 ? Math.round((framesDentro / framesTotales) * 100) : 100;
+        const tErrorSeg = Number((tiempoErrorMs / 1000).toFixed(2));
+        const tEmpleadoSeg = Number((Math.min(transcurridoMs, duracionMs) / 1000).toFixed(1));
+        mTiempo.textContent = `${tEmpleadoSeg.toFixed(1)}s`;
+        if (alcanzoMeta) mMeta.textContent = "100%";
+
+        if (faseActual === "DEMO") {
+          faseActual = "OFICIAL";
+          txtFase.textContent = "Fase 2: Simulación Oficial (1/1)";
+          dotFase.style.background = "#10b981";
+          btnIniciar.textContent = "▶ INICIAR SIMULACIÓN OFICIAL (30s)";
+          btnIniciar.className = "btn-main-action oficial";
+          btnIniciar.disabled = false;
+          patronIdx = (patronIdx + 1) % PATRONES_PISTA.length;
+          const pNext = obtenerCentroPista(0);
+          cursor = { x: pNext.x, y: pNext.y };
+          estela = [{ x: cursor.x, y: cursor.y }];
+          dibujarEscena(0, false);
+        } else if (faseActual === "OFICIAL") {
+          faseActual = "COMPLETADO";
+          const resultadoFinal = {
+            modulo: "palancas_bimanual",
+            estado: "completado",
+            timestamp: new Date().toISOString(),
+            duracionSeg: tEmpleadoSeg,
+            alcanzoMeta,
+            roces,
+            toques: roces,
+            tiempoErrorMs: Math.round(tiempoErrorMs),
+            tiempoErrorSeg: tErrorSeg,
+            precision,
+            efectividad: precision,
+            patronIndice: patronIdx + 1,
+            aprobado: precision >= 80 && roces <= 6
+          };
+          guardarResultadoOficial(resultadoFinal);
+
+          txtFase.textContent = alcanzoMeta ? "Meta Alcanzada · Oficial Registrada ✓" : "Tiempo Cumplido · Oficial Registrada ✓";
+          dotFase.style.background = "#38bdf8";
+          btnIniciar.textContent = `✓ REGISTRADO (${precision}% PREC.) · VOLVER AL MENÚ →`;
+          btnIniciar.className = "btn-main-action oficial";
+          btnIniciar.disabled = false;
+        }
+      }
+
+      function dibujarEscena(progreso, enRoce) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        ctx.strokeStyle = "rgba(56, 189, 248, 0.08)";
+        ctx.lineWidth = 1;
+        for (let gx = 40; gx < canvas.width; gx += 40) {
+          ctx.beginPath(); ctx.moveTo(gx, 0); ctx.lineTo(gx, canvas.height); ctx.stroke();
+        }
+        for (let gy = 40; gy < canvas.height; gy += 40) {
+          ctx.beginPath(); ctx.moveTo(0, gy); ctx.lineTo(canvas.width, gy); ctx.stroke();
+        }
+
+        const pasos = 80;
+        ctx.lineCap = "round";
+        ctx.lineJoin = "round";
+
+        ctx.beginPath();
+        for (let i = 0; i <= pasos; i++) {
+          const pt = obtenerCentroPista(i / pasos);
+          if (i === 0) ctx.moveTo(pt.x, pt.y);
+          else ctx.lineTo(pt.x, pt.y);
+        }
+        ctx.strokeStyle = enRoce ? "rgba(239, 68, 68, 0.35)" : "rgba(0, 191, 255, 0.22)";
+        ctx.lineWidth = 44;
+        ctx.stroke();
+
+        ctx.setLineDash([6, 6]);
+        ctx.beginPath();
+        for (let i = 0; i <= pasos; i++) {
+          const pt = obtenerCentroPista(i / pasos);
+          if (i === 0) ctx.moveTo(pt.x, pt.y);
+          else ctx.lineTo(pt.x, pt.y);
+        }
+        ctx.strokeStyle = "rgba(148, 163, 184, 0.45)";
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        const pFin = obtenerCentroPista(1);
+        ctx.beginPath();
+        ctx.arc(pFin.x, pFin.y, 16, 0, Math.PI * 2);
+        ctx.fillStyle = "rgba(16, 185, 129, 0.25)";
+        ctx.fill();
+        ctx.lineWidth = 2.5;
+        ctx.strokeStyle = "#10b981";
+        ctx.stroke();
+        ctx.fillStyle = "#a7f3d0";
+        ctx.font = "bold 9px sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText("META", pFin.x, pFin.y - 21);
+
+        if (estela.length > 1) {
+          ctx.beginPath();
+          ctx.moveTo(estela[0].x, estela[0].y);
+          for (let i = 1; i < estela.length; i++) ctx.lineTo(estela[i].x, estela[i].y);
+          ctx.strokeStyle = enRoce ? "#ef4444" : "#38bdf8";
+          ctx.lineWidth = 2.5;
+          ctx.stroke();
+        }
+
+        ctx.beginPath();
+        ctx.arc(cursor.x, cursor.y, 8.5, 0, Math.PI * 2);
+        ctx.fillStyle = enRoce ? "#ef4444" : "#00e5ff";
+        ctx.fill();
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = "#ffffff";
+        ctx.stroke();
+      }
+
+      function loop(now) {
+        if (!corriendo) return;
+        const dtMs = Math.min(60, now - ultimoFrameMs);
+        ultimoFrameMs = now;
+        const transcurrido = now - inicioMs;
+        const progreso = Math.min(1, transcurrido / duracionMs);
+
+        const velPxPorSeg = faseActual === "OFICIAL" ? 195 : 165;
+        const dxInput = (teclas.right ? 1 : 0) - (teclas.left ? 1 : 0);
+        const dyInput = (teclas.down ? 1 : 0) - (teclas.up ? 1 : 0);
+
+        cursor.x += dxInput * velPxPorSeg * (dtMs / 1000);
+        cursor.y += dyInput * velPxPorSeg * (dtMs / 1000);
+        cursor.x = Math.max(16, Math.min(canvas.width - 16, cursor.x));
+        cursor.y = Math.max(16, Math.min(canvas.height - 16, cursor.y));
+
+        estela.push({ x: cursor.x, y: cursor.y });
+        if (estela.length > 90) estela.shift();
+
+        const avancePista = Math.max(0, Math.min(1, (cursor.x - 54) / Math.max(1, canvas.width - 108)));
+        const refPt = obtenerCentroPista(Math.max(progreso, avancePista));
+        const distCarril = Math.hypot(cursor.x - refPt.x, cursor.y - refPt.y);
+        const dentroCarril = distCarril <= 22;
+
+        framesTotales++;
+        if (dentroCarril) {
+          framesDentro++;
+          enContactoPrevio = false;
+        } else {
+          tiempoErrorMs += dtMs;
+          if (!enContactoPrevio) {
+            roces++;
+            enContactoPrevio = true;
+          }
+        }
+
+        const pctAvance = Math.min(100, Math.round(avancePista * 100));
+        const pctPrecision = Math.round((framesDentro / framesTotales) * 100);
+
+        mTiempo.textContent = `${(transcurrido / 1000).toFixed(1)}s`;
+        mRoces.textContent = String(roces);
+        mTerror.textContent = `${(tiempoErrorMs / 1000).toFixed(1)}s`;
+        mPrecision.textContent = `${pctPrecision}%`;
+        mMeta.textContent = `${pctAvance}%`;
+
+        dibujarEscena(progreso, !dentroCarril);
+
+        const pFin = obtenerCentroPista(1);
+        const distMeta = Math.hypot(cursor.x - pFin.x, cursor.y - pFin.y);
+        if (distMeta <= 18 && avancePista >= 0.85) {
+          finalizarRonda(transcurrido, true);
+          return;
+        }
+
+        if (transcurrido >= duracionMs) {
+          finalizarRonda(duracionMs, false);
+          return;
+        }
+
+        rafId = requestAnimationFrame(loop);
+      }
+
+      function iniciarRonda() {
+        if (faseActual === "COMPLETADO") {
+          volverMenuPsico();
+          return;
+        }
+        resetearRonda(faseActual === "OFICIAL");
+        corriendo = true;
+        inicioMs = performance.now();
+        ultimoFrameMs = inicioMs;
+        btnIniciar.disabled = true;
+        btnIniciar.textContent = faseActual === "OFICIAL" ? "EVALUACIÓN OFICIAL EN CURSO..." : "CALIBRACIÓN DEMO EN CURSO...";
+        rafId = requestAnimationFrame(loop);
+      }
+
+      btnIniciar.addEventListener("click", iniciarRonda);
+
+      document.querySelectorAll(".pad-btn").forEach(btn => {
+        const dir = btn.getAttribute("data-dir");
+        const activar = (e) => { e.preventDefault(); teclas[dir] = true; };
+        const desactivar = (e) => { e.preventDefault(); teclas[dir] = false; };
+        btn.addEventListener("pointerdown", activar);
+        btn.addEventListener("pointerup", desactivar);
+        btn.addEventListener("pointerleave", desactivar);
+        btn.addEventListener("pointercancel", desactivar);
+      });
+
+      window.addEventListener("keydown", (e) => {
+        if (e.key === "ArrowLeft" || e.key === "a" || e.key === "A") teclas.left = true;
+        if (e.key === "ArrowRight" || e.key === "d" || e.key === "D") teclas.right = true;
+        if (e.key === "ArrowUp" || e.key === "w" || e.key === "W") teclas.up = true;
+        if (e.key === "ArrowDown" || e.key === "s" || e.key === "S") teclas.down = true;
+      });
+      window.addEventListener("keyup", (e) => {
+        if (e.key === "ArrowLeft" || e.key === "a" || e.key === "A") teclas.left = false;
+        if (e.key === "ArrowRight" || e.key === "d" || e.key === "D") teclas.right = false;
+        if (e.key === "ArrowUp" || e.key === "w" || e.key === "W") teclas.up = false;
+        if (e.key === "ArrowDown" || e.key === "s" || e.key === "S") teclas.down = false;
+      });
+
+      dibujarEscena(0, false);
+    })();
+  </script>
+</body>
+</html>

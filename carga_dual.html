@@ -343,14 +343,14 @@
 
         <div class="eval-card">
             <div class="top-nav">
-                <button id="btnVolverNav" onclick="ejecutarRetornoMenu()">&larr; Menú Pruebas</button>
+                <button type="button" id="btnVolverNav" onclick="ejecutarRetornoMenu()">← Menú Pruebas</button>
 
                 <div class="cam-preview-pip-header">
                     <video id="webcamVideo" autoplay playsinline muted></video>
                     <div class="cam-tag-header">Biometría</div>
                 </div>
 
-                <button id="btnInfo">ℹ ¿Cómo funciona?</button>
+                <button type="button" id="btnInfo">ℹ ¿Cómo funciona?</button>
             </div>
 
             <div class="status-badge-container">
@@ -376,9 +376,9 @@
 
             <!-- CONTROLES TÁCTILES PARA SMARTPHONE -->
             <div class="touch-controls-panel">
-                <button id="btnTouchLeft" class="btn-touch-dir">◄</button>
-                <button id="btnTouchRight" class="btn-touch-dir">►</button>
-                <button id="btnTouchAudio" class="btn-touch-audio">🔔 ALERTA</button>
+                <button type="button" id="btnTouchLeft" class="btn-touch-dir">◄</button>
+                <button type="button" id="btnTouchRight" class="btn-touch-dir">►</button>
+                <button type="button" id="btnTouchAudio" class="btn-touch-audio">🔔 ALERTA</button>
             </div>
 
             <div class="instruction-text" id="instructionText">
@@ -386,7 +386,7 @@
                 <b>PC:</b> Teclas A-D / Flechas, clic de mouse y Barra Espaciadora.
             </div>
 
-            <button id="btnStart" class="btn-start" onclick="iniciarEvaluacionDual()">INICIAR EVALUACIÓN COGNITIVA (60s)</button>
+            <button type="button" id="btnStart" class="btn-start" onclick="iniciarEvaluacionDual()">INICIAR EVALUACIÓN COGNITIVA (60s)</button>
 
             <!-- PANEL TELEMÉTRICO 4 COLUMNAS -->
             <div class="metrics-grid">
@@ -413,7 +413,7 @@
             <div class="modal-content">
                 <div id="modalTitle" class="modal-title">EVALUACIÓN FINALIZADA</div>
                 <div id="modalBody" class="modal-body">Resultados registrados.</div>
-                <button id="modalBtnClose" class="modal-btn">Continuar</button>
+                <button type="button" id="modalBtnClose" class="modal-btn">Continuar</button>
             </div>
         </div>
     </div>
@@ -442,13 +442,52 @@
         const urlParams = new URLSearchParams(window.location.search);
         const modeParam = urlParams.get('mode') || (localStorage.getItem('sensometrika_b2c_mode') === 'true' ? 'b2c' : 'b2b');
         const esB2B = (modeParam === 'b2b');
+        const esFlujoDemo =
+            urlParams.get('flujo') === 'demo' ||
+            modeParam === 'demo' ||
+            localStorage.getItem('sensometrika_flujo_demo_activo') === 'true';
+        const claveModulo = urlParams.get('modulo') || 'cargadual';
 
         let datosUsuario = {};
         try { datosUsuario = JSON.parse(localStorage.getItem('sensometrika_datos_usuario')) || {}; } catch(e){}
-        const rutEvaluado = urlParams.get('rut') || datosUsuario.rut || 'GENERICO';
-        const cleanRut = rutEvaluado.replace(/[^0-9Kk]/g, '');
+        const rutEvaluado = urlParams.get('rut') || datosUsuario.rut || localStorage.getItem('sensometrika_rut') || 'GENERICO';
+        const cleanRut = rutEvaluado.replace(/[^0-9Kk]/g, '').toUpperCase() || 'GENERICO';
+        const sessionId = urlParams.get('session') || localStorage.getItem('sensometrika_session_activa') || `SESION_${cleanRut}_${Date.now()}`;
 
         const latenciaHardware = parseInt(localStorage.getItem('sensometrika_latencia_ms') || '0', 10);
+
+        function marcarCompletadoDemo() {
+            if (!esFlujoDemo) return;
+            localStorage.setItem(`sensometrika_${claveModulo}_${cleanRut}_${sessionId}`, 'true');
+            localStorage.setItem(`sensometrika_demo_completado_${claveModulo}_${cleanRut}_${sessionId}`, 'true');
+        }
+
+        function resolverDestinoCargaDual() {
+            const returnUrlParam = urlParams.get('returnUrl');
+            if (returnUrlParam) {
+                return decodeURIComponent(returnUrlParam);
+            }
+
+            const paramsSalida = new URLSearchParams(urlParams.toString());
+            if (esFlujoDemo) {
+                paramsSalida.set('flujo', 'demo');
+                paramsSalida.set('mode', 'demo');
+                paramsSalida.set('modulo', claveModulo);
+                return `demo_empresa/demo_menu_b2b.html?${paramsSalida.toString()}`;
+            }
+
+            const menuDestino = esB2B ? 'menu_B2B.html' : 'menu_B2C.html';
+            return `${menuDestino}?${paramsSalida.toString()}`;
+        }
+
+        function ejecutarRetornoMenu() {
+            window.location.href = resolverDestinoCargaDual();
+        }
+
+        const btnVolverNav = document.getElementById('btnVolverNav');
+        if (btnVolverNav && esFlujoDemo) {
+            btnVolverNav.textContent = '← Menú Demo';
+        }
 
         let distanciaMedidaCm = 55;
         let estaBloqueadoPorDistancia = false;
@@ -480,16 +519,6 @@
         let aciertosAudio = 0;
         let falsasAlarmasAudio = 0;
         let timerAudio = null;
-
-        function ejecutarRetornoMenu() {
-            const returnUrlParam = urlParams.get('returnUrl');
-            if (returnUrlParam) {
-                window.location.href = decodeURIComponent(returnUrlParam);
-            } else {
-                const menuDestino = esB2B ? 'menu_B2B.html' : 'menu_B2C.html';
-                window.location.href = `${menuDestino}?${urlParams.toString()}`;
-            }
-        }
 
         function iniciarMediaPipeFaceMesh() {
             const faceMesh = new FaceMesh({
@@ -552,7 +581,6 @@
             }
         }
 
-        // BINDINGS DE EVENTOS PC Y MÓVIL
         window.addEventListener('keydown', (e) => {
             if (e.code === 'KeyA' || e.code === 'ArrowLeft') teclas.left = true;
             if (e.code === 'KeyD' || e.code === 'ArrowRight') teclas.right = true;
@@ -568,7 +596,6 @@
             if (e.code === 'KeyD' || e.code === 'ArrowRight') teclas.right = false;
         });
 
-        // EVENTOS TÁCTILES D-PAD Y BOTÓN AUDIO
         btnTouchLeft.addEventListener('pointerdown', (e) => { e.preventDefault(); teclas.left = true; });
         btnTouchLeft.addEventListener('pointerup', (e) => { e.preventDefault(); teclas.left = false; });
         btnTouchLeft.addEventListener('mouseleave', () => { teclas.left = false; });
@@ -582,7 +609,6 @@
             if (simulacionActiva && !estaBloqueadoPorDistancia) responderAudio();
         });
 
-        // IMPACTO EN BLANCOS ROJOS VÍA MOUSE / TOUCH EN CANVAS
         function manejarImpactoCanvas(clientX, clientY) {
             if (!simulacionActiva || estaBloqueadoPorDistancia) return;
 
@@ -748,7 +774,6 @@
 
             const limiteIzq = centroRutaX - (anchoRuta / 2);
 
-            // Carril de Conducción
             ctx.fillStyle = '#0b1626';
             ctx.fillRect(limiteIzq, 0, anchoRuta, canvas.height);
 
@@ -764,7 +789,6 @@
             ctx.lineWidth = 2;
             ctx.strokeRect(limiteIzq, 0, anchoRuta, canvas.height);
 
-            // Cabina Jugador
             ctx.fillStyle = '#10b981';
             ctx.shadowColor = '#10b981';
             ctx.shadowBlur = 10;
@@ -773,7 +797,6 @@
             ctx.fill();
             ctx.shadowBlur = 0;
 
-            // Blancos Emergentes Tarea 2
             objetivos.forEach((obj) => {
                 if (obj.activo) {
                     ctx.fillStyle = '#ef4444';
@@ -822,6 +845,12 @@
             };
 
             localStorage.setItem(`sensometrika_last_cargadual_${cleanRut}`, JSON.stringify(registroData));
+            localStorage.setItem(`sensometrika_last_cargadual_${cleanRut}_${sessionId}`, JSON.stringify(registroData));
+            marcarCompletadoDemo();
+
+            if (esFlujoDemo) {
+                modalBtnClose.textContent = 'Volver al Menú Demo';
+            }
 
             mostrarModal(
                 aprobado ? "✓ ACREDITACIÓN CARGA DUAL APROBADA" : "⚠️ EVALUACIÓN CON OBSERVACIONES",
@@ -845,7 +874,7 @@
         }
 
         document.getElementById('btnInfo').addEventListener('click', () => {
-            mostrarModal("¿CÓMO FUNCIONA LA CARGA COGNITIVA DUAL?", 
+            mostrarModal("¿CÓMO FUNCIONA LA CARGA COGNITIVA DUAL?",
                 "Evalúa atención dividida y coordinación bajo sobrecarga:<br>1. <b>Mover Cabina:</b> Pulsa ◄ / ► en smartphone o teclas A/D en PC.<br>2. <b>Impactar Blancos:</b> Toca o haz clic sobre los círculos rojos.<br>3. <b>Audio:</b> Pulsa 🔔 ALERTA sólo al escuchar el tono AGUDO.");
         });
 

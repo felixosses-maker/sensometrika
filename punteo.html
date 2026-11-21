@@ -303,19 +303,19 @@
     <div class="main-container">
         <header class="brand-header">
             <img src="sensometrica.jpg" alt="SENSOMETRIKA" class="brand-logo-img">
-            <span class="brand-subtitle">MÓDULO PUNTEO VISO-MOTRIZ • RITMO Y PRECISIÓN PRO</span>
+            <span class="brand-subtitle" id="subtituloPunteoPro">MÓDULO PUNTEO VISO-MOTRIZ • RITMO Y PRECISIÓN PRO</span>
         </header>
 
         <div class="eval-card">
             <div class="top-nav">
-                <button class="nav-btn" onclick="ejecutarRetornoMenu()">← Menú Pruebas</button>
+                <button type="button" id="btnVolverNav" class="nav-btn" onclick="ejecutarRetornoMenu()">← Menú Pruebas</button>
 
                 <div class="cam-preview-pip-header">
                     <video id="webcamVideo" autoplay playsinline muted></video>
                     <div class="cam-tag-header">Biometría</div>
                 </div>
 
-                <button id="btnInfo" class="nav-btn">? ¿Cómo funciona?</button>
+                <button type="button" id="btnInfo" class="nav-btn">? ¿Cómo funciona?</button>
             </div>
 
             <div class="status-badge-container">
@@ -343,8 +343,8 @@
             </div>
 
             <div>
-                <button id="btnStart" class="btn-start">INICIAR EVALUACIÓN</button>
-                <button id="btnNext" class="btn-next" onclick="ejecutarRetornoMenu()">VOLVER AL MENÚ DE PRUEBAS →</button>
+                <button type="button" id="btnStart" class="btn-start">INICIAR EVALUACIÓN</button>
+                <button type="button" id="btnNext" class="btn-next" onclick="ejecutarRetornoMenu()">VOLVER AL MENÚ DE PRUEBAS →</button>
             </div>
 
             <div class="metrics-grid">
@@ -371,7 +371,7 @@
             <div class="modal-content">
                 <div id="modalTitle" class="modal-title">PRUEBA FINALIZADA</div>
                 <div id="modalBody" class="modal-body">Resultados registrados.</div>
-                <button id="modalBtnClose" class="modal-btn">Continuar</button>
+                <button type="button" id="modalBtnClose" class="modal-btn">Continuar</button>
             </div>
         </div>
     </div>
@@ -398,6 +398,11 @@
 
         const urlParams = new URLSearchParams(window.location.search);
         const modeParam = urlParams.get('mode') || 'b2b';
+        const esFlujoDemo =
+            urlParams.get('flujo') === 'demo' ||
+            modeParam === 'demo' ||
+            localStorage.getItem('sensometrika_flujo_demo_activo') === 'true';
+        const claveModulo = urlParams.get('modulo') || 'punteo';
         const esB2B = (modeParam === 'b2b') || urlParams.has('token') || urlParams.has('session');
 
         let datosUsuario = {};
@@ -406,10 +411,41 @@
         } catch(e){}
 
         const rutEvaluado = urlParams.get('rut') || datosUsuario.rut || localStorage.getItem('sensometrika_rut') || '12345678-K';
-        const cleanRut = rutEvaluado.replace(/[^0-9Kk]/g, '');
+        const cleanRut = rutEvaluado.replace(/[^0-9Kk]/g, '').toUpperCase() || '12345678K';
         const sessionId = urlParams.get('session') || localStorage.getItem('sensometrika_session_activa') || `SESION_${cleanRut}_${Date.now()}`;
 
-        // Control de Estado: Prioridad para forzar Demo en Sesión Activa
+        function marcarCompletadoDemo() {
+            if (!esFlujoDemo) return;
+            localStorage.setItem(`sensometrika_${claveModulo}_${cleanRut}_${sessionId}`, 'true');
+            localStorage.setItem(`sensometrika_demo_completado_${claveModulo}_${cleanRut}_${sessionId}`, 'true');
+        }
+
+        function resolverDestinoPunteoPro() {
+            const returnUrl = urlParams.get('returnUrl');
+            if (returnUrl) {
+                return decodeURIComponent(returnUrl);
+            }
+
+            if (esFlujoDemo) {
+                const paramsSalida = new URLSearchParams(urlParams.toString());
+                paramsSalida.set('flujo', 'demo');
+                paramsSalida.set('mode', 'demo');
+                paramsSalida.set('modulo', claveModulo);
+                return `demo_empresa/demo_menu_b2b.html?${paramsSalida.toString()}`;
+            }
+
+            const paramsRegreso = new URLSearchParams({
+                rut: rutEvaluado,
+                nombre: urlParams.get('nombre') || datosUsuario.nombre || '',
+                cargo: urlParams.get('cargo') || datosUsuario.cargo || '',
+                empresa: urlParams.get('empresa') || datosUsuario.empresa || '',
+                plan: urlParams.get('plan') || localStorage.getItem('sensometrika_b2b_plan') || 'PLUS',
+                session: sessionId,
+                mode: 'b2b'
+            });
+            return `menu_b2b_planes.html?${paramsRegreso.toString()}`;
+        }
+
         let modoActual = 'DEMO'; 
 
         let evaluacionActiva = false;
@@ -431,16 +467,7 @@
         let estaBloqueadoPorDistancia = false;
 
         function ejecutarRetornoMenu() {
-            const paramsRegreso = new URLSearchParams({
-                rut: rutEvaluado,
-                nombre: urlParams.get('nombre') || datosUsuario.nombre || '',
-                cargo: urlParams.get('cargo') || datosUsuario.cargo || '',
-                empresa: urlParams.get('empresa') || datosUsuario.empresa || '',
-                plan: urlParams.get('plan') || localStorage.getItem('sensometrika_b2b_plan') || 'PLUS',
-                session: sessionId,
-                mode: 'b2b'
-            });
-            window.location.href = `menu_b2b_planes.html?${paramsRegreso.toString()}`;
+            window.location.href = resolverDestinoPunteoPro();
         }
 
         function iniciarMediaPipeFaceMesh() {
@@ -532,6 +559,7 @@
                 badgeText.textContent = `EVALUACIÓN REGISTRADA (1/1)`;
                 badgeDot.style.backgroundColor = "#10b981"; 
                 btnStart.style.display = 'none';
+                btnNext.textContent = esFlujoDemo ? 'VOLVER AL MENÚ DEMO →' : 'VOLVER AL MENÚ DE PRUEBAS →';
                 btnNext.style.display = 'block';
                 instructionText.textContent = 'Evaluación Viso-Motriz finalizada con éxito. Retorna al menú.';
             } else if (modoActual === 'DEMO') {
@@ -543,7 +571,7 @@
                 btnNext.style.display = 'none';
                 instructionText.textContent = "Modo Demo: Inducción táctil libre para habituarse al tiempo de caída del objetivo.";
             } else {
-                badgeText.textContent = "Fase 2: Simulación Oficial B2B (1/1)";
+                badgeText.textContent = esFlujoDemo ? "Fase 2: Simulación Demo B2B (1/1)" : "Fase 2: Simulación Oficial B2B (1/1)";
                 badgeDot.style.backgroundColor = "#10b981"; 
                 btnStart.textContent = "INICIAR SIMULACIÓN OFICIAL B2B (1/1)";
                 btnStart.style.backgroundColor = "#10b981";
@@ -710,10 +738,10 @@
                     fecha: new Date().toISOString() 
                 };
 
-                // Guardar en claves compatibles con informe-b2b.html
                 localStorage.setItem(`sensometrika_punteo_${cleanRut}_${sessionId}`, JSON.stringify(registroData));
                 localStorage.setItem(`sensometrika_last_punteo_${cleanRut}_${sessionId}`, JSON.stringify(registroData));
                 localStorage.setItem('sensometrika_punteo', JSON.stringify(registroData));
+                marcarCompletadoDemo();
 
                 let modulosRendidos = {};
                 try { modulosRendidos = JSON.parse(localStorage.getItem('sensometrika_modulos_rendidos')) || {}; } catch(e){}
@@ -748,6 +776,12 @@
         });
 
         document.addEventListener('DOMContentLoaded', () => {
+            if (esFlujoDemo) {
+                const btnNav = document.getElementById('btnVolverNav');
+                const sub = document.getElementById('subtituloPunteoPro');
+                if (btnNav) btnNav.textContent = '← Menú Demo';
+                if (sub) sub.textContent = 'MÓDULO PUNTEO VISO-MOTRIZ • DEMO B2B';
+            }
             iniciarMediaPipeFaceMesh();
             actualizarEstadoUI();
             renderLoop();

@@ -71,7 +71,7 @@
 
     <section class="modulo-card-container">
       <div class="nav-top-row">
-        <button type="button" class="link-volver" onclick="ejecutarRetornoMenu()">← Menú Pruebas</button>
+        <button type="button" class="link-volver" id="btnVolverTop" onclick="ejecutarRetornoMenu()">← Menú Pruebas</button>
         <button type="button" class="btn-como-funciona" onclick="mostrarModalAyudaAudio()">? ¿Cómo funciona?</button>
       </div>
 
@@ -121,6 +121,11 @@
     const urlParams = new URLSearchParams(window.location.search);
     const modeParam = urlParams.get('mode') || 'b2b';
     const esB2B = (modeParam === 'b2b') || urlParams.has('token') || urlParams.has('session');
+    const esFlujoDemo =
+      urlParams.get('flujo') === 'demo' ||
+      modeParam === 'demo' ||
+      localStorage.getItem('sensometrika_flujo_demo_activo') === 'true';
+    const claveModulo = urlParams.get('modulo') || 'audicion';
 
     let datosUsuario = {};
     try { datosUsuario = JSON.parse(localStorage.getItem('sensometrika_datos_usuario')) || {}; } catch(e){}
@@ -130,11 +135,11 @@
     const rawEmpresa = urlParams.get('empresa') || datosUsuario.empresa || localStorage.getItem('sensometrika_b2b_empresa') || '';
     const planActivo = (urlParams.get('plan') || localStorage.getItem('sensometrika_b2b_plan') || 'BASICO').toUpperCase();
     const rut = urlParams.get('rut') || datosUsuario.rut || localStorage.getItem('sensometrika_rut') || '12345678-K';
-    const cleanRut = rut.replace(/[^0-9Kk]/g, '');
+    const cleanRut = rut.replace(/[^0-9Kk]/g, '').toUpperCase();
     const sessionId = urlParams.get('session') || localStorage.getItem('sensometrika_session_activa') || `SESION_B2B_${cleanRut}_${Date.now()}`;
 
     let modoActual = 'DEMO';
-    let totalTonosActual = 4; // 4 para DEMO, 8 para OFICIAL
+    let totalTonosActual = 4;
     let audioCtx = null;
     let oscilador = null;
     let gainNode = null;
@@ -160,20 +165,46 @@
     const mAciertos = document.getElementById('mAciertos');
     const mEstado = document.getElementById('mEstado');
 
-    function ejecutarRetornoMenu() {
-      const paramsRegreso = new URLSearchParams({
+    function marcarCompletadoDemo() {
+      if (!esFlujoDemo) return;
+      localStorage.setItem(`sensometrika_${claveModulo}_${cleanRut}_${sessionId}`, 'true');
+      localStorage.setItem(`sensometrika_demo_completado_${claveModulo}_${cleanRut}_${sessionId}`, 'true');
+    }
+
+    function resolverDestinoAuditivo() {
+      const returnUrl = urlParams.get('returnUrl');
+      if (returnUrl) {
+        return decodeURIComponent(returnUrl);
+      }
+
+      const paramsSalida = new URLSearchParams({
         rut: rut,
         nombre: rawNombre,
         cargo: rawCargo,
         empresa: rawEmpresa,
         plan: planActivo,
         session: sessionId,
-        mode: 'b2b'
+        mode: esFlujoDemo ? 'demo' : (esB2B ? 'b2b' : 'b2c')
       });
-      window.location.href = `menu_b2b_planes.html?${paramsRegreso.toString()}`;
+
+      if (esFlujoDemo) {
+        paramsSalida.set('flujo', 'demo');
+        paramsSalida.set('modulo', claveModulo);
+        return `demo_empresa/demo_menu_b2b.html?${paramsSalida.toString()}`;
+      }
+
+      return esB2B ? `menu_b2b_planes.html?${paramsSalida.toString()}` : `menu_B2C.html?${paramsSalida.toString()}`;
     }
 
-    // VALIDACIÓN ESTRICTA POR SESIÓN CORRIENTE B2B
+    function ejecutarRetornoMenu() {
+      window.location.href = resolverDestinoAuditivo();
+    }
+
+    const btnVolverTop = document.getElementById('btnVolverTop');
+    if (btnVolverTop && esFlujoDemo) {
+      btnVolverTop.textContent = '← Menú Demo';
+    }
+
     function verificarModuloEjecutadoEnSesion() {
       if (urlParams.has('reeval')) return false;
       const dataStr = localStorage.getItem(`sensometrika_audicion_${cleanRut}_${sessionId}`);
@@ -200,6 +231,7 @@
         cajaCheck.style.display = 'none';
         btnIniciar.style.display = 'none';
         btnRetornarMenu.style.display = 'block';
+        btnRetornarMenu.innerText = esFlujoDemo ? 'VOLVER AL MENÚ DEMO →' : 'VOLVER AL MENÚ DE PRUEBAS →';
         badgeFase.innerText = `✓ EVALUACIÓN REGISTRADA (1/1)`;
         badgeFase.style.color = '#10b981';
         badgeFase.style.borderColor = '#10b981';
@@ -209,7 +241,7 @@
         lblUmbral.innerText = 'Evaluación auditiva registrada en el sistema';
         mEstado.innerText = 'Completado';
         mEstado.style.color = '#10b981';
-        statusText.innerText = 'Evaluación corporativa B2B finalizada con éxito. Retorna al menú de evaluaciones.';
+        statusText.innerText = esFlujoDemo ? 'Evaluación demo finalizada con éxito. Retorna al menú demo.' : 'Evaluación corporativa B2B finalizada con éxito. Retorna al menú de evaluaciones.';
       } else if (modoActual === 'DEMO') {
         cajaCheck.style.display = 'flex';
         btnIniciar.style.display = 'block';
@@ -272,7 +304,7 @@
               <p>2. <strong>Estímulos Aleatorios:</strong> El sistema emitirá tonos desordenados (250 Hz a 6000 Hz) en el oído izquierdo o derecho.</p>
               <p>3. <strong>Estándar de Exigencia:</strong> En la fase oficial, requiere al menos 7 de 8 aciertos (87.5%) para obtener dictamen APROBADO.</p>
             </div>
-            <button onclick="document.getElementById('modalAyudaAudio').remove()" style="width: 100%; background: #0284c7; color: #ffffff; border: none; border-radius: 10px; padding: 12px; font-weight: 700; cursor: pointer;">
+            <button type="button" onclick="document.getElementById('modalAyudaAudio').remove()" style="width: 100%; background: #0284c7; color: #ffffff; border: none; border-radius: 10px; padding: 12px; font-weight: 700; cursor: pointer;">
               Entendido · Volver al Test
             </button>
           </div>
@@ -416,10 +448,10 @@
           fecha: new Date().toISOString()
         };
 
-        // REGISTRO DE TODAS LAS CLAVES COMPATIBLES CON INFORME-B2B.HTML Y MENU
         localStorage.setItem(`sensometrika_audicion_${cleanRut}_${sessionId}`, JSON.stringify(registroData));
         localStorage.setItem(`sensometrika_last_audicion_${cleanRut}_${sessionId}`, JSON.stringify(registroData));
         localStorage.setItem('sensometrika_audicion', JSON.stringify(registroData));
+        marcarCompletadoDemo();
 
         let modulosRendidos = {};
         try { modulosRendidos = JSON.parse(localStorage.getItem('sensometrika_modulos_rendidos')) || {}; } catch(e){}
@@ -462,8 +494,8 @@
 
             <p style="font-size: 0.8rem; color: #cbd5e1; margin-bottom: 16px;">${mensajeModal}</p>
 
-            <button id="btnContinuarModal" style="width: 100%; background: #0284c7; color: #ffffff; border: none; border-radius: 10px; padding: 12px; font-weight: 700; cursor: pointer; font-size: 0.9rem; text-transform: uppercase; box-shadow: 0 4px 14px rgba(2, 132, 199, 0.4);">
-              ${esDemo ? 'CONTINUAR A SIMULACIÓN OFICIAL →' : '← VOLVER AL MENÚ DE EVALUACIONES'}
+            <button type="button" id="btnContinuarModal" style="width: 100%; background: #0284c7; color: #ffffff; border: none; border-radius: 10px; padding: 12px; font-weight: 700; cursor: pointer; font-size: 0.9rem; text-transform: uppercase; box-shadow: 0 4px 14px rgba(2, 132, 199, 0.4);">
+              ${esDemo ? 'CONTINUAR A SIMULACIÓN OFICIAL →' : (esFlujoDemo ? '← VOLVER AL MENÚ DEMO' : '← VOLVER AL MENÚ DE EVALUACIONES')}
             </button>
           </div>
         </div>

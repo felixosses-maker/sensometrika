@@ -74,7 +74,7 @@
       gap: 8px !important;
     }
 
-    .top-nav-bar button, 
+    .top-nav-bar button,
     .top-nav-bar a {
       background: #0c182e !important;
       border: 1px solid #1e3a6d !important;
@@ -91,7 +91,7 @@
       justify-content: center !important;
     }
 
-    .top-nav-bar button:hover, 
+    .top-nav-bar button:hover,
     .top-nav-bar a:hover {
       background: #1e293b !important;
       color: #ffffff !important;
@@ -313,7 +313,7 @@
     <section class="modulo-card-container">
       <!-- NAVEGACIÓN SUPERIOR CON PIP BIOMÉTRICO -->
       <div class="top-nav-bar">
-        <button type="button" onclick="regresarAlMenu()">← Menú Evaluaciones</button>
+        <button type="button" id="btnVolverTop" onclick="regresarAlMenu()">← Menú Evaluaciones</button>
 
         <!-- PIP BIOMÉTRICO RESTRINGIDO (56px) -->
         <div class="cam-preview-pip-header">
@@ -385,7 +385,7 @@
         3. Reaccione haciendo clic instantáneo sobre los destellos luminosos laterales usando la visión periférica.<br>
         4. Consta de 8 estímulos de evaluación oficial.
       </p>
-      <button onclick="cerrarModalGuia()" style="width: 100%; background: #0284c7; color: #ffffff; border: none; border-radius: 10px; padding: 10px; font-weight: 700; cursor: pointer;">Entendido</button>
+      <button type="button" onclick="cerrarModalGuia()" style="width: 100%; background: #0284c7; color: #ffffff; border: none; border-radius: 10px; padding: 10px; font-weight: 700; cursor: pointer;">Entendido</button>
     </div>
   </div>
 
@@ -393,17 +393,50 @@
     const urlParams = new URLSearchParams(window.location.search);
     const modeParam = urlParams.get('mode') || (localStorage.getItem('sensometrika_b2c_mode') === 'true' ? 'b2c' : 'b2b');
     const esB2B = (modeParam === 'b2b');
+    const esFlujoDemo =
+      urlParams.get('flujo') === 'demo' ||
+      modeParam === 'demo' ||
+      localStorage.getItem('sensometrika_flujo_demo_activo') === 'true';
+    const claveModulo = urlParams.get('modulo') || 'campo_periferico';
 
     let datosUsuario = {};
     try {
       datosUsuario = JSON.parse(localStorage.getItem('sensometrika_datos_usuario')) || {};
     } catch(e){}
 
-    const rut = urlParams.get('rut') || datosUsuario.rut || 'GENERICO';
-    const cleanRut = rut.replace(/[^0-9Kk]/g, '');
+    const rut = urlParams.get('rut') || datosUsuario.rut || localStorage.getItem('sensometrika_rut') || 'GENERICO';
+    const cleanRut = rut.replace(/[^0-9Kk]/g, '').toUpperCase() || 'GENERICO';
     const sessionId = urlParams.get('session') || localStorage.getItem('sensometrika_session_activa') || `SESION_${cleanRut}_${Date.now()}`;
 
-    // PARÁMETROS TELEMÉTRICOS DE CÁMARA (MEDIAPIPE)
+    function marcarCompletadoDemo() {
+      if (!esFlujoDemo) return;
+      localStorage.setItem(`sensometrika_${claveModulo}_${cleanRut}_${sessionId}`, 'true');
+      localStorage.setItem(`sensometrika_demo_completado_${claveModulo}_${cleanRut}_${sessionId}`, 'true');
+    }
+
+    function resolverDestinoCampoPeriferico() {
+      const returnUrlParam = urlParams.get('returnUrl');
+      if (returnUrlParam) {
+        return decodeURIComponent(returnUrlParam);
+      }
+
+      const paramsSalida = new URLSearchParams(urlParams.toString());
+      if (esFlujoDemo) {
+        paramsSalida.set('flujo', 'demo');
+        paramsSalida.set('mode', 'demo');
+        paramsSalida.set('modulo', claveModulo);
+        return `demo_empresa/demo_menu_b2b.html?${paramsSalida.toString()}`;
+      }
+
+      const menuDestino = esB2B ? 'menu_B2B.html' : 'menu_B2C.html';
+      return `${menuDestino}?${paramsSalida.toString()}`;
+    }
+
+    const btnVolverTop = document.getElementById('btnVolverTop');
+    if (btnVolverTop && esFlujoDemo) {
+      btnVolverTop.textContent = '← Menú Demo';
+    }
+
     let distanciaMedidaCm = 55;
     let estaBloqueadoPorDistancia = false;
 
@@ -443,7 +476,6 @@
       const landmarks = results.multiFaceLandmarks[0];
       const leftEye = landmarks[33];
       const rightEye = landmarks[263];
-      const noseTip = landmarks[1];
 
       const dx = leftEye.x - rightEye.x;
       const dy = leftEye.y - rightEye.y;
@@ -484,16 +516,9 @@
     function cerrarModalGuia() { document.getElementById('modalGuia').style.display = 'none'; }
 
     function regresarAlMenu() {
-      const returnUrlParam = urlParams.get('returnUrl');
-      if (returnUrlParam) {
-        window.location.href = decodeURIComponent(returnUrlParam);
-      } else {
-        const menuDestino = esB2B ? 'menu_B2B.html' : 'menu_B2C.html';
-        window.location.href = `${menuDestino}?${urlParams.toString()}`;
-      }
+      window.location.href = resolverDestinoCampoPeriferico();
     }
 
-    // LOGICA DEL TEST PERIFÉRICO MEJORADO
     let estadoTest = 'esperando';
     let stimIndex = 0;
     const totalEstímulos = 8;
@@ -506,7 +531,6 @@
 
     document.addEventListener('DOMContentLoaded', () => {
       iniciarMediaPipeFaceMesh();
-      // Efecto dinámico de pulso en el anillo central
       setInterval(() => {
         const ring = document.getElementById('fixationRing');
         if (ring) {
@@ -518,7 +542,7 @@
     function comenzarPrueba() {
       if (estaBloqueadoPorDistancia) return;
       cerrarModalGuia();
-      
+
       const btn = document.getElementById('btn-accion');
       btn.disabled = true;
       estadoTest = 'corriendo';
@@ -538,7 +562,7 @@
 
       stimIndex++;
       actualizarMetricasUI();
-      
+
       const dot = document.getElementById('dotStimulus');
       dot.style.display = 'none';
 
@@ -552,7 +576,6 @@
         const maxY = viewport.clientHeight - 50;
 
         const ladoIzquierdo = Math.random() < 0.5;
-        // Posicionamiento lateral estricto en los extremos (conos visuales de alta exigencia)
         const posX = ladoIzquierdo ? (Math.random() * 50 + 20) : (viewport.clientWidth - (Math.random() * 50 + 20));
         const posY = maxY / 2 + (Math.random() * 40 - 20);
 
@@ -561,7 +584,6 @@
         dot.style.display = 'block';
         tiempoInicio = performance.now();
 
-        // Tiempo límite reducido a 1.8 segundos para exigir visión periférica real sin movimientos oculares
         timeoutSiguiente = setTimeout(() => {
           if (dot.style.display === 'block') {
             dot.style.display = 'none';
@@ -638,6 +660,7 @@
       };
 
       localStorage.setItem(`sensometrika_last_campo_periferico_${cleanRut}_${sessionId}`, JSON.stringify(datosResultado));
+      marcarCompletadoDemo();
       let historial = JSON.parse(localStorage.getItem(`sensometrika_historial_campo_periferico_${cleanRut}`)) || [];
       historial.push(datosResultado);
       localStorage.setItem(`sensometrika_historial_campo_periferico_${cleanRut}`, JSON.stringify(historial));

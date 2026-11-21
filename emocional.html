@@ -126,7 +126,6 @@
       border-radius: 12px;
     }
 
-    /* ZONA DE ESTÍMULO INTERACTIVO GO/NO-GO */
     .stimulus-target-box {
       width: 100%;
       height: 170px;
@@ -185,7 +184,7 @@
 
     <div class="main-card">
       <div class="top-nav-bar">
-        <button type="button" onclick="volverMenu()">← Menú Pruebas</button>
+        <button type="button" id="btnVolverTop" onclick="volverMenu()">← Menú Pruebas</button>
         <div class="cam-preview-pip-header">
           <video id="webcamVideo" autoplay playsinline muted></video>
           <div class="cam-tag-header">Biometría</div>
@@ -193,7 +192,7 @@
         <button type="button" onclick="mostrarAyuda()">? Ayuda</button>
       </div>
 
-      <div class="pill-mode">• Inhibición Motora B2B PRO</div>
+      <div class="pill-mode" id="pillModo">• Inhibición Motora B2B PRO</div>
 
       <div style="position: relative;">
         <div id="boxBlockDistancia" class="distance-block-overlay">
@@ -208,7 +207,7 @@
         </div>
       </div>
 
-      <button id="btnIniciar" class="btn-action-main" onclick="iniciarTestGoNoGo()">INICIAR TEST DE IMPULSOS</button>
+      <button type="button" id="btnIniciar" class="btn-action-main" onclick="iniciarTestGoNoGo()">INICIAR TEST DE IMPULSOS</button>
 
       <div class="telemetry-row">
         <div class="telemetry-col"><span class="telemetry-lbl">FASE</span><span id="lblFase" class="telemetry-val" style="color: var(--accent-cyan);">GO/NO</span></div>
@@ -222,10 +221,47 @@
 
   <script>
     const urlParams = new URLSearchParams(window.location.search);
+    const modeParam = urlParams.get('mode') || '';
+    const isB2C = localStorage.getItem('sensometrika_b2c_mode') === 'true' || modeParam === 'b2c';
+    const esFlujoDemo =
+      urlParams.get('flujo') === 'demo' ||
+      modeParam === 'demo' ||
+      localStorage.getItem('sensometrika_flujo_demo_activo') === 'true';
+    const claveModulo = urlParams.get('modulo') || 'emocional';
+
+    function obtenerDatosSesion() {
+      const rut = urlParams.get('rut') || localStorage.getItem('sensometrika_rut') || 'S/RUT';
+      const cleanRut = rut.replace(/[^0-9Kk]/g, '').toUpperCase() || 'SRUT';
+      const sessionId = urlParams.get('session') || localStorage.getItem('sensometrika_session_activa') || `SESION_${Date.now()}`;
+      return { rut, cleanRut, sessionId };
+    }
+
+    function marcarCompletadoDemo(cleanRut, sessionId) {
+      if (!esFlujoDemo) return;
+      localStorage.setItem(`sensometrika_${claveModulo}_${cleanRut}_${sessionId}`, 'true');
+      localStorage.setItem(`sensometrika_demo_completado_${claveModulo}_${cleanRut}_${sessionId}`, 'true');
+    }
+
+    function resolverDestinoGoNoGo() {
+      const returnUrl = urlParams.get('returnUrl');
+      if (returnUrl) {
+        return decodeURIComponent(returnUrl);
+      }
+
+      const paramsSalida = new URLSearchParams(urlParams.toString());
+      if (esFlujoDemo) {
+        paramsSalida.set('flujo', 'demo');
+        paramsSalida.set('mode', 'demo');
+        paramsSalida.set('modulo', claveModulo);
+        return `demo_empresa/demo_menu_b2b.html?${paramsSalida.toString()}`;
+      }
+
+      return isB2C ? `menu_B2C.html?${paramsSalida.toString()}` : `menu_B2B.html?${paramsSalida.toString()}`;
+    }
+
     let distanciaMedidaCm = 55;
     let estaBloqueado = false;
 
-    // Validación de distancia con MediaPipe
     function iniciarMediaPipe() {
       const videoEl = document.getElementById('webcamVideo');
       const fm = new FaceMesh({ locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}` });
@@ -259,12 +295,11 @@
       }
     }
 
-    // Motor Go / No-Go
     let ensayoActual = 0;
     const totalEnsayos = 10;
     let aciertos = 0;
     let impulsosFalsos = 0;
-    let tipoEstímuloActual = ''; // 'GO' o 'NOGO'
+    let tipoEstímuloActual = '';
     let estadoActivo = false;
     let timeoutEstímulo = null;
 
@@ -292,33 +327,28 @@
       caja.style.backgroundColor = '#050a14';
       txt.textContent = 'Preparando...';
 
-      // Espera aleatoria entre 1 y 2 segundos antes de mostrar el estímulo
       const delayAparicion = Math.random() * 1000 + 1000;
 
       timeoutEstímulo = setTimeout(() => {
-        // 70% de probabilidad de ser GO (verde), 30% de ser NO-GO (rojo de alta tensión)
         tipoEstímuloActual = Math.random() < 0.7 ? 'GO' : 'NOGO';
         estadoActivo = true;
 
         if (tipoEstímuloActual === 'GO') {
-          caja.style.backgroundColor = '#065f46'; // Verde operativo
+          caja.style.backgroundColor = '#065f46';
           txt.textContent = '¡TOCA AHORA!';
           txt.style.color = '#34d399';
         } else {
-          caja.style.backgroundColor = '#7f1d1d'; // Rojo de parada (No-Go)
+          caja.style.backgroundColor = '#7f1d1d';
           txt.textContent = '¡ALTO / NO TOCAR!';
           txt.style.color = '#fca5a5';
         }
 
-        // El estímulo desaparece tras 900 ms
         setTimeout(() => {
           if (estadoActivo) {
-            // Si era GO y el usuario no tocó a tiempo (omisión)
             if (tipoEstímuloActual === 'GO') {
               impulsosFalsos++;
               document.getElementById('lblImpulsos').textContent = impulsosFalsos;
             } else {
-              // Si era NO-GO y el usuario logró frenarse con éxito
               aciertos++;
               document.getElementById('lblAciertos').textContent = aciertos;
             }
@@ -341,13 +371,11 @@
       const txt = document.getElementById('txtIndicador');
 
       if (tipoEstímuloActual === 'GO') {
-        // Acierto al tocar el estímulo verde
         aciertos++;
         document.getElementById('lblAciertos').textContent = aciertos;
         caja.style.backgroundColor = '#047857';
         txt.textContent = '✓ BIEN';
       } else {
-        // Error de impulso: tocó la pantalla cuando el estímulo era ROJO (No-Go)
         impulsosFalsos++;
         document.getElementById('lblImpulsos').textContent = impulsosFalsos;
         caja.style.backgroundColor = '#991b1b';
@@ -369,30 +397,35 @@
       txt.style.color = 'var(--accent-cyan)';
 
       const aprobado = impulsosFalsos <= 2;
-      const rut = urlParams.get('rut') || localStorage.getItem('sensometrika_rut') || 'S/RUT';
-      const cleanRut = rut.replace(/[^0-9Kk]/g, '');
-      const sessionId = urlParams.get('session') || localStorage.getItem('sensometrika_session_activa') || `SESION_${Date.now()}`;
+      const { cleanRut, sessionId } = obtenerDatosSesion();
 
       localStorage.setItem(`sensometrika_emocional_${cleanRut}_${sessionId}`, 'true');
       localStorage.setItem(`sensometrika_last_emocional_${cleanRut}_${sessionId}`, JSON.stringify({
         aprobado: aprobado,
         score: `${aciertos} Aciertos / ${impulsosFalsos} Errores de Impulso`
       }));
+      marcarCompletadoDemo(cleanRut, sessionId);
 
       setTimeout(() => {
-        const returnUrl = urlParams.get('returnUrl');
-        window.location.href = returnUrl ? decodeURIComponent(returnUrl) : `menu_B2B.html?${urlParams.toString()}`;
+        window.location.href = resolverDestinoGoNoGo();
       }, 1500);
     }
 
     function volverMenu() {
-      const returnUrl = urlParams.get('returnUrl');
-      window.location.href = returnUrl ? decodeURIComponent(returnUrl) : `menu_B2B.html?${urlParams.toString()}`;
+      window.location.href = resolverDestinoGoNoGo();
     }
 
     function mostrarAyuda() { alert('Instrucciones: Toque la pantalla únicamente cuando se muestre el color verde (GO). Evite tocar cuando se encienda el color rojo de parada (NO-GO).'); }
 
-    document.addEventListener('DOMContentLoaded', iniciarMediaPipe);
+    document.addEventListener('DOMContentLoaded', () => {
+      if (esFlujoDemo) {
+        const btnTop = document.getElementById('btnVolverTop');
+        const pill = document.getElementById('pillModo');
+        if (btnTop) btnTop.textContent = '← Menú Demo';
+        if (pill) pill.textContent = '• Inhibición Motora Demo B2B PRO';
+      }
+      iniciarMediaPipe();
+    });
   </script>
 </body>
 </html>

@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>SENSOMETRIKA | Vigilancia y Fatiga (PVT)</title>
+  <style>
+    :root {
+      --bg-main: #040810;
+      --bg-card: #091120;
+      --bg-surface: #0f172a;
+      --border-subtle: #1e293b;
+      --accent-cyan: #00e5ff;
+      --accent-sky: #38bdf8;
+      --accent-amber: #f59e0b;
+      --accent-green: #10b981;
+      --accent-red: #ef4444;
+      --text-primary: #f8fafc;
+      --text-secondary: #cbd5e1;
+      --text-muted: #94a3b8;
+    }
+
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background-color: var(--bg-main);
+      color: var(--text-primary);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      padding: 14px 10px 28px;
+    }
+
+    .modulo-card-container {
+      width: 100%;
+      max-width: 520px;
+      background: var(--bg-card);
+      border: 1.5px solid var(--border-subtle);
+      border-radius: 18px;
+      padding: 16px;
+      box-shadow: 0 18px 42px rgba(0, 0, 0, 0.65);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .brand-header {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid #152238;
+    }
+
+    .logo-frame {
+      width: 100%;
+      max-width: 260px;
+      background: #060d1d;
+      border: 1px solid #15263d;
+      border-radius: 14px;
+      padding: 8px 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 22px rgba(0, 229, 255, 0.16);
+      overflow: hidden;
+    }
+
+    .brand-logo-img {
+      width: 100%;
+      max-height: 92px;
+      object-fit: contain;
+      display: block;
+      mix-blend-mode: lighten;
+      filter: drop-shadow(0 0 8px rgba(0, 229, 255, 0.35));
+    }
+
+    .brand-sub {
+      font-size: 0.66rem;
+      font-weight: 800;
+      letter-spacing: 1px;
+      color: var(--accent-sky);
+      text-transform: uppercase;
+      text-align: center;
+    }
+
+    .top-nav-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .nav-pill-btn {
+      background: var(--bg-surface);
+      border: 1px solid #293952;
+      color: var(--text-secondary);
+      border-radius: 9px;
+      padding: 7px 11px;
+      font-size: 0.74rem;
+      font-weight: 700;
+      text-decoration: none;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      white-space: nowrap;
+    }
+
+    .nav-pill-btn:hover {
+      border-color: var(--accent-sky);
+      color: #ffffff;
+    }
+
+    .pip-box {
+      width: 78px;
+      height: 54px;
+      background: #020617;
+      border: 1.5px solid #0284c7;
+      border-radius: 9px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      flex-shrink: 0;
+    }
+
+    .pip-box video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transform: scaleX(-1);
+      display: none;
+    }
+
+    .pip-label {
+      position: absolute;
+      bottom: 0;
+      width: 100%;
+      background: rgba(2, 6, 23, 0.85);
+      color: var(--accent-cyan);
+      font-size: 0.56rem;
+      font-weight: 800;
+      text-align: center;
+      letter-spacing: 0.6px;
+      padding: 1px 0;
+    }
+
+    .phase-pill-wrap {
+      display: flex;
+      justify-content: center;
+    }
+
+    .phase-pill {
+      background: #0a1930;
+      border: 1px solid #1d4ed8;
+      color: #93c5fd;
+      font-size: 0.72rem;
+      font-weight: 800;
+      padding: 5px 12px;
+      border-radius: 999px;
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+    }
+
+    .phase-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--accent-amber);
+    }
+
+    .vigilance-stage {
+      width: 100%;
+      height: 190px;
+      background: #040914;
+      border: 1.5px solid #1e3a5f;
+      border-radius: 14px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      padding: 14px;
+      text-align: center;
+      box-shadow: inset 0 0 28px rgba(0, 191, 255, 0.08);
+    }
+
+    .beacon-ring {
+      width: 78px;
+      height: 78px;
+      border-radius: 50%;
+      border: 2.5px solid #334155;
+      background: #0f172a;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.85rem;
+      font-weight: 900;
+      color: #94a3b8;
+      transition: all 0.08s ease;
+    }
+
+    .beacon-ring.espera {
+      border-color: #22c55e;
+      box-shadow: 0 0 20px rgba(34, 197, 94, 0.28);
+      color: #4ade80;
+    }
+
+    .beacon-ring.alerta {
+      border-color: #ef4444;
+      background: rgba(239, 68, 68, 0.22);
+      box-shadow: 0 0 28px rgba(239, 68, 68, 0.65);
+      color: #fca5a5;
+    }
+
+    .status-banner {
+      background: var(--bg-surface);
+      border: 1px solid #24344d;
+      border-radius: 10px;
+      padding: 9px 12px;
+      font-size: 0.78rem;
+      color: var(--text-secondary);
+      text-align: center;
+      min-height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .btn-main-action {
+      width: 100%;
+      min-height: 48px;
+      border: none;
+      border-radius: 12px;
+      font-size: 0.92rem;
+      font-weight: 900;
+      letter-spacing: 0.4px;
+      cursor: pointer;
+      color: #030712;
+      background: var(--accent-amber);
+    }
+
+    .btn-main-action.responder {
+      background: var(--accent-red);
+      color: #ffffff;
+    }
+
+    .btn-main-action.oficial {
+      background: var(--accent-green);
+      color: #022c22;
+    }
+
+    .metrics-bar-5 {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 6px;
+      background: var(--bg-surface);
+      border: 1px solid #1e293b;
+      border-radius: 12px;
+      padding: 8px 6px;
+    }
+
+    .metric-cell {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      gap: 2px;
+    }
+
+    .metric-cell span {
+      font-size: 0.58rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+    }
+
+    .metric-cell strong {
+      font-size: 0.8rem;
+      color: var(--text-primary);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(2, 6, 23, 0.84);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 14px;
+      z-index: 40;
+    }
+
+    .modal-backdrop.open {
+      display: flex;
+    }
+
+    .modal-panel {
+      width: 100%;
+      max-width: 440px;
+      background: var(--bg-card);
+      border: 1.5px solid #38bdf8;
+      border-radius: 16px;
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .modal-panel h3 {
+      font-size: 1rem;
+      color: var(--accent-sky);
+    }
+
+    .modal-panel p,
+    .modal-panel li {
+      font-size: 0.82rem;
+      line-height: 1.45;
+      color: var(--text-secondary);
+    }
+
+    .modal-panel ul {
+      padding-left: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+  </style>
+</head>
+<body>
+  <div class="modulo-card-container">
+    <header class="brand-header">
+      <div class="logo-frame">
+        <img id="logoSensometrikaImg" src="../sensometrika.jpg" alt="SENSOMETRIKA Calibration Technology" class="brand-logo-img">
+      </div>
+      <span class="brand-sub">Módulo Vigilancia y Fatiga (PVT) · Evaluación Psicosensométrica</span>
+    </header>
+
+    <div class="top-nav-row">
+      <button type="button" id="btnVolverMenuTop" class="nav-pill-btn">← Menú Psicosensométrico</button>
+
+      <div class="pip-box">
+        <video id="pipVideo" autoplay playsinline muted></video>
+        <span id="pipFallback" style="font-size: 0.62rem; color: #64748b;">Cámara</span>
+        <div class="pip-label">BIOMETRÍA</div>
+      </div>
+
+      <button type="button" class="nav-pill-btn" id="btnComoFunciona">? ¿Cómo funciona?</button>
+    </div>
+
+    <div class="phase-pill-wrap">
+      <div class="phase-pill">
+        <span class="phase-dot" id="dotFase"></span>
+        <span id="txtFase">Paso 1: Calibración Demo (3 estímulos)</span>
+      </div>
+    </div>
+
+    <div class="vigilance-stage">
+      <div id="beaconRing" class="beacon-ring">ESPERA</div>
+      <div id="txtSubStage" style="font-size: 0.82rem; color: #cbd5e1; font-weight: 700;">
+        Mantén la atención sin anticiparte hasta que aparezca la señal roja
+      </div>
+    </div>
+
+    <div class="status-banner" id="txtEstado">
+      Pulsa INICIAR para comenzar la tanda de vigilancia con intervalos aleatorios.
+    </div>
+
+    <button type="button" class="btn-main-action" id="btnAccion">
+      ▶ INICIAR CALIBRACIÓN DEMO
+    </button>
+
+    <div class="metrics-bar-5">
+      <div class="metric-cell"><span>Latencia</span><strong id="mLatencia">-- ms</strong></div>
+      <div class="metric-cell"><span>Disp. σ</span><strong id="mSigma">-- ms</strong></div>
+      <div class="metric-cell"><span>Lapsos</span><strong id="mLapsos">0</strong></div>
+      <div class="metric-cell"><span>Anticip.</span><strong id="mAnticip">0</strong></div>
+      <div class="metric-cell"><span>Último</span><strong id="mUltimo">-- ms</strong></div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="modalAyuda">
+    <div class="modal-panel">
+      <h3>¿Cómo funciona Vigilancia y Fatiga (PVT)?</h3>
+      <p>Evalúa la consistencia de tu atención y la aparición de lapsos o fatiga ante intervalos irregulares.</p>
+      <ul>
+        <li><strong>Intervalos variables:</strong> la espera cambia aleatoriamente entre 1,6 s y 4,1 s para evitar memorización por ritmo.</li>
+        <li><strong>Reacciona a la señal roja:</strong> pulsa el botón o barra espaciadora apenas aparezca la alerta.</li>
+        <li><strong>Lapsos y anticipaciones:</strong> se registran respuestas lentas (> 500 ms) o pulsaciones antes de tiempo.</li>
+      </ul>
+      <button type="button" class="btn-main-action oficial" id="btnCerrarAyuda">Entendido</button>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      const logoImg = document.getElementById("logoSensometrikaImg");
+      const candidatosLogo = [
+        "../sensometrika.jpg",
+        "sensometrika.jpg",
+        "../sensometrica.jpg",
+        "sensometrica.jpg"
+      ];
+      let idxLogo = 0;
+      logoImg.addEventListener("error", () => {
+        idxLogo++;
+        if (idxLogo < candidatosLogo.length) {
+          logoImg.src = candidatosLogo[idxLogo];
+        } else {
+          logoImg.style.display = "none";
+        }
+      });
+
+      const beaconRing = document.getElementById("beaconRing");
+      const txtSubStage = document.getElementById("txtSubStage");
+      const txtEstado = document.getElementById("txtEstado");
+      const btnAccion = document.getElementById("btnAccion");
+      const txtFase = document.getElementById("txtFase");
+      const dotFase = document.getElementById("dotFase");
+      const btnVolverMenuTop = document.getElementById("btnVolverMenuTop");
+
+      const mLatencia = document.getElementById("mLatencia");
+      const mSigma = document.getElementById("mSigma");
+      const mLapsos = document.getElementById("mLapsos");
+      const mAnticip = document.getElementById("mAnticip");
+      const mUltimo = document.getElementById("mUltimo");
+
+      const modalAyuda = document.getElementById("modalAyuda");
+      document.getElementById("btnComoFunciona").addEventListener("click", () => modalAyuda.classList.add("open"));
+      document.getElementById("btnCerrarAyuda").addEventListener("click", () => modalAyuda.classList.remove("open"));
+
+      const pipVideo = document.getElementById("pipVideo");
+      const pipFallback = document.getElementById("pipFallback");
+      let pipStream = null;
+      (async function initCam() {
+        try {
+          pipStream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: "user", width: 160, height: 120 },
+            audio: false
+          });
+          pipVideo.srcObject = pipStream;
+          pipVideo.style.display = "block";
+          pipFallback.style.display = "none";
+        } catch (e) {
+          pipVideo.style.display = "none";
+          pipFallback.style.display = "block";
+        }
+      })();
+
+      const urlParams = new URLSearchParams(window.location.search);
+      let datosUsuario = {};
+      try { datosUsuario = JSON.parse(localStorage.getItem("sensometrika_datos_usuario")) || {}; } catch (e) {}
+      const rawRut = urlParams.get("rut") || datosUsuario.rut || localStorage.getItem("sensometrika_rut") || "";
+      const cleanRut = rawRut.replace(/[^0-9Kk]/g, "");
+      const sessionId = urlParams.get("session") || localStorage.getItem("sensometrika_session_activa") || "";
+
+      function volverMenuPsicosensometrico() {
+        clearTimeout(timerEspera);
+        if (pipStream) {
+          pipStream.getTracks().forEach(t => t.stop());
+          pipStream = null;
+        }
+        const q = window.location.search || "";
+        window.location.href = `psico_menu_b2b.html${q}`;
+      }
+
+      btnVolverMenuTop.addEventListener("click", volverMenuPsicosensometrico);
+
+      let fase = "DEMO";
+      let estadoCiclo = "IDLE";
+      let metaEstimulos = 3;
+      let timerEspera = null;
+      let tEstimuloInicio = 0;
+      let latencias = [];
+      let lapsos = 0;
+      let anticipaciones = 0;
+      let demoCompletados = 0;
+      let ultimoInputTs = 0;
+
+      function calcularSigma(arr) {
+        if (!arr.length) return 0;
+        const mean = arr.reduce((a, b) => a + b, 0) / arr.length;
+        const sq = arr.map(v => Math.pow(v - mean, 2));
+        return Math.round(Math.sqrt(sq.reduce((a, b) => a + b, 0) / arr.length));
+      }
+
+      function actualizarMetricasUI(ultimoMs) {
+        if (typeof ultimoMs === "number") mUltimo.textContent = `${ultimoMs} ms`;
+        mLapsos.textContent = String(lapsos);
+        mAnticip.textContent = String(anticipaciones);
+        if (latencias.length) {
+          const avg = Math.round(latencias.reduce((a, b) => a + b, 0) / latencias.length);
+          const sig = calcularSigma(latencias);
+          mLatencia.textContent = `${avg} ms`;
+          mSigma.textContent = `${sig} ms`;
+        }
+      }
+
+      function guardarResultadoOficial(payload) {
+        const json = JSON.stringify(payload);
+        localStorage.setItem("sensometrika_vigilancia", json);
+        localStorage.setItem("sensometrika_fatiga", json);
+        if (cleanRut && sessionId) {
+          localStorage.setItem(`sensometrika_vigilancia_${cleanRut}_${sessionId}`, json);
+          localStorage.setItem(`sensometrika_fatiga_${cleanRut}_${sessionId}`, json);
+        }
+        try {
+          const rendidos = JSON.parse(localStorage.getItem("sensometrika_modulos_rendidos")) || {};
+          rendidos.vigilancia = true;
+          rendidos.fatiga = true;
+          localStorage.setItem("sensometrika_modulos_rendidos", JSON.stringify(rendidos));
+
+          if (cleanRut && sessionId) {
+            const rendidosSes = JSON.parse(localStorage.getItem(`sensometrika_modulos_rendidos_${cleanRut}_${sessionId}`)) || {};
+            rendidosSes.vigilancia = true;
+            rendidosSes.fatiga = true;
+            localStorage.setItem(`sensometrika_modulos_rendidos_${cleanRut}_${sessionId}`, JSON.stringify(rendidosSes));
+          }
+        } catch (e) {}
+      }
+
+      function programarSiguienteEstimulo() {
+        clearTimeout(timerEspera);
+        estadoCiclo = "ESPERA";
+        const conteoActual = fase === "OFICIAL" ? latencias.length + 1 : demoCompletados + 1;
+        beaconRing.className = "beacon-ring espera";
+        beaconRing.textContent = `${conteoActual}/${metaEstimulos}`;
+        txtSubStage.textContent = `Estímulo ${conteoActual} de ${metaEstimulos} · Espera la señal roja`;
+        btnAccion.textContent = "RESPONDER SEÑAL ROJA";
+        btnAccion.className = "btn-main-action responder";
+
+        const delayMs = Math.floor(Math.random() * (4100 - 1600 + 1)) + 1600;
+        timerEspera = setTimeout(() => {
+          if (estadoCiclo !== "ESPERA") return;
+          estadoCiclo = "ACTIVO";
+          beaconRing.className = "beacon-ring alerta";
+          beaconRing.textContent = "¡YA!";
+          txtSubStage.textContent = "¡Señal roja activa! Responde de inmediato";
+          tEstimuloInicio = performance.now();
+        }, delayMs);
+      }
+
+      function cerrarFase() {
+        clearTimeout(timerEspera);
+        estadoCiclo = "IDLE";
+        beaconRing.className = "beacon-ring";
+        beaconRing.textContent = "FIN";
+
+        const promedioMs = latencias.length
+          ? Math.round(latencias.reduce((a, b) => a + b, 0) / latencias.length)
+          : 0;
+        const sigmaMs = calcularSigma(latencias);
+
+        if (fase === "DEMO") {
+          fase = "OFICIAL";
+          metaEstimulos = 10;
+          latencias = [];
+          lapsos = 0;
+          anticipaciones = 0;
+          demoCompletados = 0;
+
+          txtFase.textContent = "Fase 2: Simulación Oficial (10 estímulos)";
+          dotFase.style.background = "#10b981";
+          txtSubStage.textContent = "Calibración completada. Inicia la tanda oficial de vigilancia.";
+          txtEstado.textContent = "Listo para iniciar Vigilancia Oficial.";
+          btnAccion.textContent = "▶ INICIAR VIGILANCIA OFICIAL";
+          btnAccion.className = "btn-main-action oficial";
+
+          mLatencia.textContent = "-- ms";
+          mSigma.textContent = "-- ms";
+          mLapsos.textContent = "0";
+          mAnticip.textContent = "0";
+          mUltimo.textContent = "-- ms";
+        } else if (fase === "OFICIAL") {
+          fase = "COMPLETADO";
+          const aprobado = promedioMs > 0 && promedioMs <= 400 && lapsos <= 1 && anticipaciones <= 2;
+          const payload = {
+            modulo: "vigilancia",
+            estado: "completado",
+            timestamp: new Date().toISOString(),
+            estimulos: metaEstimulos,
+            promedioTiempo: promedioMs,
+            promedioMs,
+            desviacionMs: sigmaMs,
+            lapsos,
+            anticipaciones,
+            aprobado,
+            dictamen: aprobado ? "APROBADO" : "OBSERVADO"
+          };
+          guardarResultadoOficial(payload);
+
+          txtFase.textContent = "Simulación Oficial Completada ✓";
+          dotFase.style.background = "#38bdf8";
+          txtSubStage.textContent = "Métricas de vigilancia registradas para el informe.";
+          txtEstado.textContent = `Promedio: ${promedioMs} ms · Dispersión σ: ${sigmaMs} ms · Lapsos: ${lapsos}.`;
+          btnAccion.textContent = `✓ REGISTRADO (${promedioMs} ms) · VOLVER AL MENÚ →`;
+          btnAccion.className = "btn-main-action oficial";
+        }
+      }
+
+      function manejarPulsacion() {
+        const ahora = performance.now();
+        if (ahora - ultimoInputTs < 120) return;
+        ultimoInputTs = ahora;
+
+        if (modalAyuda.classList.contains("open")) return;
+
+        if (fase === "COMPLETADO") {
+          volverMenuPsicosensometrico();
+          return;
+        }
+        if (estadoCiclo === "IDLE") {
+          programarSiguienteEstimulo();
+          return;
+        }
+        if (estadoCiclo === "ESPERA") {
+          clearTimeout(timerEspera);
+          if (fase === "OFICIAL") anticipaciones++;
+          actualizarMetricasUI(null);
+          txtEstado.textContent = "Anticipación detectada: pulsaste antes de la señal roja.";
+          programarSiguienteEstimulo();
+          return;
+        }
+        if (estadoCiclo === "ACTIVO") {
+          const rt = Math.max(1, Math.round(performance.now() - tEstimuloInicio));
+          estadoCiclo = "IDLE";
+          beaconRing.className = "beacon-ring";
+          beaconRing.textContent = `${rt}ms`;
+
+          if (fase === "OFICIAL") {
+            latencias.push(rt);
+            if (rt > 500) lapsos++;
+            actualizarMetricasUI(rt);
+            txtEstado.textContent = rt > 500
+              ? `Respuesta en ${rt} ms (lapso atencional > 500 ms).`
+              : `Respuesta registrada: ${rt} ms.`;
+            if (latencias.length >= metaEstimulos) {
+              cerrarFase();
+              return;
+            }
+          } else {
+            demoCompletados++;
+            mUltimo.textContent = `${rt} ms`;
+            txtEstado.textContent = `Ensayo demo ${demoCompletados}/${metaEstimulos}: ${rt} ms.`;
+            if (demoCompletados >= metaEstimulos) {
+              cerrarFase();
+              return;
+            }
+          }
+          programarSiguienteEstimulo();
+        }
+      }
+
+      btnAccion.addEventListener("pointerdown", (e) => {
+        e.preventDefault();
+        manejarPulsacion();
+      });
+
+      window.addEventListener("keydown", (e) => {
+        if (e.code === "Space" || e.key === " ") {
+          e.preventDefault();
+          manejarPulsacion();
+        }
+      });
+    })();
+  </script>
+</body>
+</html>

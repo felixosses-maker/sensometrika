@@ -213,7 +213,7 @@
         </div>
       </div>
 
-      <button class="btn-action" id="btnIniciar" onclick="iniciarPupilar()">INICIAR ESCANEO PUPILAR (20s) →</button>
+      <button type="button" class="btn-action" id="btnIniciar" onclick="iniciarPupilar()">INICIAR ESCANEO PUPILAR (20s) →</button>
 
       <!-- OVERLAY DE BLOQUEO NORMATIVO (Distancia / Posición) -->
       <div id="boxBlockNormativo" class="distance-block-overlay">
@@ -232,24 +232,54 @@
     <div class="modal-card">
       <div style="font-size: 1.1rem; font-weight: 900; color: #10b981;">PRUEBA COMPLETADA 👁️</div>
       <div id="txtResumenPupila" style="font-size: 0.82rem; color: var(--text-main); line-height: 1.4;">Procesando telemetría...</div>
-      <button onclick="finalizarYVolver()" style="background:#10b981; color:#000; border:none; padding:12px; border-radius:10px; font-weight:900; cursor:pointer; text-transform:uppercase;">GUARDAR Y VOLVER AL MENÚ</button>
+      <button type="button" id="btnGuardarVolver" onclick="finalizarYVolver()" style="background:#10b981; color:#000; border:none; padding:12px; border-radius:10px; font-weight:900; cursor:pointer; text-transform:uppercase;">GUARDAR Y VOLVER AL MENÚ</button>
     </div>
   </div>
 
   <script>
     const urlParams = new URLSearchParams(window.location.search);
     const rawRut = urlParams.get('rut') || localStorage.getItem('sensometrika_rut') || '12345678';
-    const cleanRut = rawRut.replace(/[^0-9Kk]/g, '');
+    const cleanRut = rawRut.replace(/[^0-9Kk]/g, '').toUpperCase();
     const sessionId = urlParams.get('session') || localStorage.getItem('sensometrika_session_activa') || 'SESION_DEFAULT';
-    
-    const menuUrl = `../menu_B2B.html?${urlParams.toString()}`;
-    document.getElementById('linkMenu').href = urlParams.get('returnUrl') ? decodeURIComponent(urlParams.get('returnUrl')) : menuUrl;
+    const isB2C = localStorage.getItem('sensometrika_b2c_mode') === 'true' || urlParams.get('mode') === 'b2c';
+    const esFlujoDemo =
+      urlParams.get('flujo') === 'demo' ||
+      urlParams.get('mode') === 'demo' ||
+      localStorage.getItem('sensometrika_flujo_demo_activo') === 'true';
+    const claveModulo = urlParams.get('modulo') || 'pupilar';
+
+    function marcarCompletadoDemo() {
+      if (!esFlujoDemo) return;
+      localStorage.setItem(`sensometrika_${claveModulo}_${cleanRut}_${sessionId}`, 'true');
+      localStorage.setItem(`sensometrika_demo_completado_${claveModulo}_${cleanRut}_${sessionId}`, 'true');
+    }
+
+    function resolverDestinoPupilar() {
+      const returnUrl = urlParams.get('returnUrl');
+      if (returnUrl) {
+        return decodeURIComponent(returnUrl);
+      }
+
+      const paramsSalida = new URLSearchParams(urlParams.toString());
+      if (esFlujoDemo) {
+        paramsSalida.set('flujo', 'demo');
+        paramsSalida.set('mode', 'demo');
+        paramsSalida.set('modulo', claveModulo);
+        return `../demo_empresa/demo_menu_b2b.html?${paramsSalida.toString()}`;
+      }
+
+      return isB2C ? `../menu_B2C.html?${paramsSalida.toString()}` : `../menu_B2B.html?${paramsSalida.toString()}`;
+    }
+
+    const linkMenuEl = document.getElementById('linkMenu');
+    linkMenuEl.href = resolverDestinoPupilar();
+    linkMenuEl.textContent = esFlujoDemo ? '← Menú Demo' : '← Menú';
 
     let testEnCurso = false;
     let tiempoRestante = 20;
     let intervaloTimer = null;
     let cameraInstance = null;
-    
+
     let distanciaMedidaCm = 30;
     let estaBloqueadoNormativo = false;
     let totalFramesActivos = 0;
@@ -279,7 +309,7 @@
         if (typeof FaceMesh !== 'undefined' && typeof Camera !== 'undefined') {
           const faceMesh = new FaceMesh({ locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}` });
           faceMesh.setOptions({ maxNumFaces: 1, refineLandmarks: true, minDetectionConfidence: 0.5, minTrackingConfidence: 0.5 });
-          
+
           faceMesh.onResults((results) => {
             const telEstado = document.getElementById('tel-estado');
             const telIndice = document.getElementById('tel-indice');
@@ -293,7 +323,7 @@
                 desviacionesRostro++;
                 telEstado.textContent = "Rostro Ausente";
                 telEstado.style.color = "var(--accent-red)";
-                
+
                 estaBloqueadoNormativo = true;
                 lblTituloBloqueo.textContent = "⚠️ ROSTRO NO DETECTADO";
                 lblDetalleBloqueo.innerHTML = "Posiciónese frente a la cámara.<br>Mantenga la vista fija en el dispositivo.";
@@ -304,13 +334,11 @@
 
             const landmarks = results.multiFaceLandmarks[0];
 
-            // 1. Control de Distancia (basado en apertura interocular entre pómulos/ojos externos)
             const dx = landmarks[33].x - landmarks[263].x;
             const dy = landmarks[33].y - landmarks[263].y;
             let dist = Math.round(9.5 / Math.sqrt(dx * dx + dy * dy));
             distanciaMedidaCm = Math.round(distanciaMedidaCm * 0.5 + dist * 0.5);
 
-            // 2. Control de Parpadeo / Apertura Ocular
             const verticalOjoIzq = Math.abs(landmarks[159].y - landmarks[145].y);
             const verticalOjoDer = Math.abs(landmarks[386].y - landmarks[374].y);
             const aperturaPromedio = (verticalOjoIzq + verticalOjoDer) / 2;
@@ -329,12 +357,11 @@
 
               let penalizacion = ((framesOjosCerradosTotal + (desviacionesRostro * 2)) / totalFramesActivos) * 100;
               let indiceActual = Math.max(0, Math.round(100 - penalizacion * 1.2));
-              
+
               telIndice.textContent = `${indiceActual}%`;
               telIndice.style.color = indiceActual >= 75 ? "var(--accent-green)" : "var(--accent-red)";
             }
 
-            // Validación de Normativa de Distancia (25 a 38 cm)
             if (distanciaMedidaCm >= 25 && distanciaMedidaCm <= 38) {
               estaBloqueadoNormativo = false;
               overlay.style.display = 'none';
@@ -347,10 +374,10 @@
             }
           });
 
-          cameraInstance = new Camera(videoElement, { 
-            onFrame: async () => { await faceMesh.send({ image: videoElement }); }, 
-            width: 320, 
-            height: 240 
+          cameraInstance = new Camera(videoElement, {
+            onFrame: async () => { await faceMesh.send({ image: videoElement }); },
+            width: 320,
+            height: 240
           });
           await cameraInstance.start();
         }
@@ -374,7 +401,7 @@
       intervaloTimer = setInterval(() => {
         if (estaBloqueadoNormativo) {
           document.getElementById('lblEstado').textContent = "⚠️ Prueba en pausa: Ajuste su posición";
-          return; // Pausa el cronómetro si rompe la norma de distancia
+          return;
         }
 
         tiempoRestante--;
@@ -400,13 +427,17 @@
       let indiceOptico = Math.max(0, Math.round(100 - proporcionFallas * 100));
       let aprobado = indiceOptico >= 70 && proporcionFallas < 0.3;
 
-      // GUARDADO OFICIAL EXCLUSIVO PARA M5 (PUPILAR)
       localStorage.setItem(`medico_pupilar_${cleanRut}_${sessionId}`, 'true');
       localStorage.setItem(`sensometrika_last_pupilar_${cleanRut}_${sessionId}`, JSON.stringify({
         aprobado: aprobado,
         score: `${indiceOptico}%`,
         timestamp: Date.now()
       }));
+      marcarCompletadoDemo();
+
+      if (esFlujoDemo) {
+        document.getElementById('btnGuardarVolver').textContent = 'GUARDAR Y VOLVER AL MENÚ DEMO';
+      }
 
       document.getElementById('txtResumenPupila').innerHTML = `
         Índice de Reactividad Óptica: <strong>${indiceOptico}%</strong><br>
@@ -417,12 +448,7 @@
     }
 
     function finalizarYVolver() {
-      const returnUrl = urlParams.get('returnUrl');
-      if (returnUrl) {
-        window.location.href = decodeURIComponent(returnUrl);
-      } else {
-        window.location.href = menuUrl;
-      }
+      window.location.href = resolverDestinoPupilar();
     }
 
     document.addEventListener('DOMContentLoaded', () => {

@@ -292,19 +292,19 @@
     <div class="main-container">
         <header class="brand-header">
             <img src="sensometrica.jpg" alt="SENSOMETRIKA" class="brand-logo-img">
-            <span class="brand-subtitle">CHECK-IN MICRO-FIT CABINA PRO • FIT-FOR-DUTY</span>
+            <span class="brand-subtitle" id="subtituloHeader">CHECK-IN MICRO-FIT CABINA PRO • FIT-FOR-DUTY</span>
         </header>
 
         <div class="eval-card">
             <div class="top-nav">
-                <button id="btnVolverNav" onclick="ejecutarRetornoMenu()">&larr; Menú Pruebas</button>
+                <button type="button" id="btnVolverNav" onclick="ejecutarRetornoMenu()">← Menú Pruebas</button>
 
                 <div class="cam-preview-pip-header">
                     <video id="webcamVideo" autoplay playsinline muted></video>
                     <div class="cam-tag-header">Biometría</div>
                 </div>
 
-                <button id="btnInfo">ℹ ¿Cómo funciona?</button>
+                <button type="button" id="btnInfo">ℹ ¿Cómo funciona?</button>
             </div>
 
             <div class="status-badge-container">
@@ -331,7 +331,7 @@
                 Presione <b>INICIAR CHECK-IN</b> para ejecutar el monitoreo PERCLOS de parpadeo y test de reacción PVT.
             </div>
 
-            <button id="btnStart" class="btn-start" onclick="iniciarCheckIn()">INICIAR CHECK-IN (60s)</button>
+            <button type="button" id="btnStart" class="btn-start" onclick="iniciarCheckIn()">INICIAR CHECK-IN (60s)</button>
 
             <div class="metrics-grid">
                 <div class="metric-item">
@@ -357,7 +357,7 @@
             <div class="modal-content">
                 <div id="modalTitle" class="modal-title">CHECK-IN FINALIZADO</div>
                 <div id="modalBody" class="modal-body">Resultados registrados.</div>
-                <button id="modalBtnClose" class="modal-btn">Continuar</button>
+                <button type="button" id="modalBtnClose" class="modal-btn">Continuar</button>
             </div>
         </div>
     </div>
@@ -381,11 +381,41 @@
         const urlParams = new URLSearchParams(window.location.search);
         const modeParam = urlParams.get('mode') || (localStorage.getItem('sensometrika_b2c_mode') === 'true' ? 'b2c' : 'b2b');
         const esB2B = (modeParam === 'b2b');
+        const esFlujoDemo =
+            urlParams.get('flujo') === 'demo' ||
+            modeParam === 'demo' ||
+            localStorage.getItem('sensometrika_flujo_demo_activo') === 'true';
+        const claveModulo = urlParams.get('modulo') || 'microfit';
 
         let datosUsuario = {};
         try { datosUsuario = JSON.parse(localStorage.getItem('sensometrika_datos_usuario')) || {}; } catch(e){}
-        const rutEvaluado = urlParams.get('rut') || datosUsuario.rut || 'GENERICO';
-        const cleanRut = rutEvaluado.replace(/[^0-9Kk]/g, '');
+        const rutEvaluado = urlParams.get('rut') || datosUsuario.rut || localStorage.getItem('sensometrika_rut') || 'GENERICO';
+        const cleanRut = rutEvaluado.replace(/[^0-9Kk]/g, '').toUpperCase() || 'GENERICO';
+        const sessionId = urlParams.get('session') || localStorage.getItem('sensometrika_session_activa') || `SESION_${cleanRut}_${Date.now()}`;
+
+        function marcarCompletadoDemo() {
+            if (!esFlujoDemo) return;
+            localStorage.setItem(`sensometrika_${claveModulo}_${cleanRut}_${sessionId}`, 'true');
+            localStorage.setItem(`sensometrika_demo_completado_${claveModulo}_${cleanRut}_${sessionId}`, 'true');
+        }
+
+        function resolverDestinoMicrofit() {
+            const returnUrlParam = urlParams.get('returnUrl');
+            if (returnUrlParam) {
+                return decodeURIComponent(returnUrlParam);
+            }
+
+            const paramsSalida = new URLSearchParams(urlParams.toString());
+            if (esFlujoDemo) {
+                paramsSalida.set('flujo', 'demo');
+                paramsSalida.set('mode', 'demo');
+                paramsSalida.set('modulo', claveModulo);
+                return `demo_empresa/demo_menu_b2b.html?${paramsSalida.toString()}`;
+            }
+
+            const menuDestino = esB2B ? 'menu_B2B.html' : 'menu_B2C.html';
+            return `${menuDestino}?${paramsSalida.toString()}`;
+        }
 
         const latenciaHardware = parseInt(localStorage.getItem('sensometrika_latencia_ms') || '0', 10);
 
@@ -404,13 +434,7 @@
         let timeoutEstimulo = null;
 
         function ejecutarRetornoMenu() {
-            const returnUrlParam = urlParams.get('returnUrl');
-            if (returnUrlParam) {
-                window.location.href = decodeURIComponent(returnUrlParam);
-            } else {
-                const menuDestino = esB2B ? 'menu_B2B.html' : 'menu_B2C.html';
-                window.location.href = `${menuDestino}?${urlParams.toString()}`;
-            }
+            window.location.href = resolverDestinoMicrofit();
         }
 
         function iniciarMediaPipeFaceMesh() {
@@ -567,7 +591,6 @@
 
             metricLatencia.textContent = `${promPVTNeto} ms`;
 
-            // UMBRAL PERICIAL REAL OCUPACIONAL: Hasta 580 ms es Apto (GO) para turno/ruta
             let aprobado = (pctPerclos <= 12) && (promPVTNeto <= 580);
 
             if (aprobado) {
@@ -589,6 +612,7 @@
             };
 
             localStorage.setItem(`sensometrika_last_microfit_${cleanRut}`, JSON.stringify(registroData));
+            marcarCompletadoDemo();
 
             mostrarModal(
                 aprobado ? "✓ CHECK-IN PRE-SHIFT APROBADO" : "⚠️ ALERTA DE SOMNOLENCIA / FATIGA",
@@ -616,6 +640,12 @@
         });
 
         document.addEventListener('DOMContentLoaded', () => {
+            if (esFlujoDemo) {
+                const btnNav = document.getElementById('btnVolverNav');
+                const sub = document.getElementById('subtituloHeader');
+                if (btnNav) btnNav.innerHTML = '← Menú Demo';
+                if (sub) sub.textContent = 'CHECK-IN MICRO-FIT DEMO • FIT-FOR-DUTY';
+            }
             iniciarMediaPipeFaceMesh();
         });
     </script>

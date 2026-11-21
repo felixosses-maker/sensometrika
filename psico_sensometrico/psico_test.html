@@ -1,0 +1,975 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>SENSOMETRIKA | Evaluación de Factores Humanos y Conducta</title>
+  <style>
+    :root {
+      --bg-main: #040810;
+      --bg-card: #091120;
+      --bg-surface: #0f172a;
+      --border-subtle: #1e293b;
+      --border-active: #38bdf8;
+      --accent-cyan: #00e5ff;
+      --accent-sky: #38bdf8;
+      --accent-blue: #0284c7;
+      --accent-green: #10b981;
+      --accent-amber: #f59e0b;
+      --accent-red: #ef4444;
+      --text-primary: #f8fafc;
+      --text-secondary: #cbd5e1;
+      --text-muted: #94a3b8;
+    }
+
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background-color: var(--bg-main);
+      color: var(--text-primary);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      padding: 16px 12px 32px;
+    }
+
+    .app-shell {
+      width: 100%;
+      max-width: 540px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    /* ENCABEZADO OFICIAL SENSOMETRIKA */
+    .sensometrika-brand-header {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid #152238;
+      text-align: center;
+      user-select: none;
+    }
+
+    .logo-frame {
+      width: 100%;
+      max-width: 250px;
+      background: #060d1d;
+      border: 1px solid #15263d;
+      border-radius: 14px;
+      padding: 6px 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 22px rgba(0, 229, 255, 0.16);
+      overflow: hidden;
+    }
+
+    .brand-logo-img {
+      width: 100%;
+      max-height: 82px;
+      object-fit: contain;
+      display: block;
+      mix-blend-mode: lighten;
+      filter: drop-shadow(0 0 8px rgba(0, 229, 255, 0.35));
+    }
+
+    .brand-sub {
+      font-size: 0.66rem;
+      font-weight: 800;
+      letter-spacing: 1.2px;
+      color: var(--accent-sky);
+      text-transform: uppercase;
+    }
+
+    .top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      background: var(--bg-card);
+      border: 1.5px solid var(--border-subtle);
+      border-radius: 14px;
+      padding: 12px 14px;
+      box-shadow: 0 10px 24px rgba(0, 0, 0, 0.5);
+    }
+
+    .brand-tag {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      min-width: 0;
+    }
+
+    .brand-tag strong {
+      font-size: 0.88rem;
+      letter-spacing: 0.6px;
+      color: var(--accent-cyan);
+      text-transform: uppercase;
+    }
+
+    .brand-tag span {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .btn-link-menu {
+      background: var(--bg-surface);
+      color: var(--text-secondary);
+      border: 1px solid #293952;
+      border-radius: 9px;
+      padding: 8px 12px;
+      font-size: 0.76rem;
+      font-weight: 700;
+      text-decoration: none;
+      cursor: pointer;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .btn-link-menu:hover {
+      border-color: var(--border-active);
+      color: var(--text-primary);
+    }
+
+    .progress-card {
+      background: var(--bg-card);
+      border: 1.5px solid var(--border-subtle);
+      border-radius: 14px;
+      padding: 12px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .progress-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.78rem;
+      color: var(--text-secondary);
+      font-weight: 700;
+    }
+
+    .progress-track {
+      width: 100%;
+      height: 10px;
+      background: var(--bg-surface);
+      border-radius: 999px;
+      overflow: hidden;
+      border: 1px solid #1e293b;
+    }
+
+    .progress-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, var(--accent-blue), var(--accent-cyan));
+      transition: width 0.25s ease;
+    }
+
+    .main-card {
+      background: var(--bg-card);
+      border: 1.5px solid var(--border-subtle);
+      border-radius: 16px;
+      padding: 18px 16px;
+      box-shadow: 0 14px 34px rgba(0, 0, 0, 0.6);
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .stage-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      align-self: flex-start;
+      background: rgba(0, 229, 255, 0.1);
+      border: 1px solid rgba(0, 229, 255, 0.35);
+      color: var(--accent-cyan);
+      font-size: 0.72rem;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      padding: 5px 11px;
+      border-radius: 999px;
+      text-transform: uppercase;
+    }
+
+    .question-box {
+      background: #040914;
+      border: 1.5px solid #1e3a5f;
+      border-radius: 14px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      box-shadow: inset 0 0 24px rgba(0, 191, 255, 0.06);
+    }
+
+    .question-text {
+      font-size: 1.1rem;
+      line-height: 1.45;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .helper-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .btn-audio {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: #0a1930;
+      border: 1.5px solid var(--accent-sky);
+      color: #e0f2fe;
+      border-radius: 10px;
+      padding: 9px 14px;
+      font-size: 0.84rem;
+      font-weight: 800;
+      cursor: pointer;
+      min-height: 42px;
+    }
+
+    .btn-audio:active {
+      transform: scale(0.98);
+    }
+
+    .btn-audio.speaking {
+      background: var(--accent-blue);
+      border-color: var(--accent-cyan);
+      color: #ffffff;
+    }
+
+    .audio-hint {
+      font-size: 0.74rem;
+      color: var(--text-muted);
+    }
+
+    .options-list {
+      display: flex;
+      flex-direction: column;
+      gap: 9px;
+    }
+
+    .option-btn {
+      width: 100%;
+      min-height: 52px;
+      background: var(--bg-surface);
+      border: 1.5px solid #24344d;
+      border-radius: 12px;
+      padding: 11px 14px;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      cursor: pointer;
+      text-align: left;
+      transition: border-color 0.15s ease, background-color 0.15s ease, transform 0.08s ease;
+    }
+
+    .option-btn:hover {
+      border-color: var(--accent-sky);
+    }
+
+    .option-btn:active {
+      transform: scale(0.99);
+    }
+
+    .option-btn.selected {
+      background: rgba(0, 229, 255, 0.12);
+      border-color: var(--accent-cyan);
+      box-shadow: 0 0 0 1px rgba(0, 229, 255, 0.28);
+    }
+
+    .option-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .option-num {
+      width: 30px;
+      height: 30px;
+      border-radius: 8px;
+      background: #040914;
+      border: 1px solid #293952;
+      color: var(--accent-cyan);
+      font-weight: 900;
+      font-size: 0.9rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .option-btn.selected .option-num {
+      background: var(--accent-cyan);
+      border-color: var(--accent-cyan);
+      color: #030712;
+    }
+
+    .option-label {
+      font-size: 0.96rem;
+      font-weight: 700;
+    }
+
+    .option-sub {
+      font-size: 0.74rem;
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+
+    .nav-row {
+      display: grid;
+      grid-template-columns: 1fr 1.4fr;
+      gap: 10px;
+      margin-top: 4px;
+    }
+
+    .btn-nav {
+      min-height: 46px;
+      border-radius: 12px;
+      font-size: 0.88rem;
+      font-weight: 800;
+      cursor: pointer;
+      border: none;
+    }
+
+    .btn-prev {
+      background: var(--bg-surface);
+      color: var(--text-secondary);
+      border: 1px solid #293952;
+    }
+
+    .btn-prev:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    .btn-next {
+      background: var(--accent-cyan);
+      color: #030712;
+    }
+
+    .btn-next:disabled {
+      background: #1e293b;
+      color: #64748b;
+      cursor: not-allowed;
+    }
+
+    .info-box {
+      background: #040914;
+      border-left: 3px solid var(--accent-amber);
+      border-radius: 8px;
+      padding: 12px 14px;
+      font-size: 0.8rem;
+      line-height: 1.45;
+      color: var(--text-secondary);
+    }
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .summary-stat {
+      background: var(--bg-surface);
+      border: 1px solid #24344d;
+      border-radius: 12px;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .summary-stat span {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+    }
+
+    .summary-stat strong {
+      font-size: 1rem;
+      color: var(--text-primary);
+    }
+
+    .legal-note {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      line-height: 1.4;
+      text-align: center;
+    }
+
+    @media (max-width: 420px) {
+      .question-text {
+        font-size: 1.02rem;
+      }
+      .summary-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <!-- ENCABEZADO OFICIAL SENSOMETRIKA -->
+    <header class="sensometrika-brand-header">
+      <div class="logo-frame">
+        <img id="logoSensometrikaImg" src="../sensometrika.jpg" alt="SENSOMETRIKA Calibration Technology" class="brand-logo-img">
+      </div>
+      <span class="brand-sub">Factores Humanos y Conducta · Evaluación B2B</span>
+    </header>
+
+    <div class="top-bar">
+      <div class="brand-tag">
+        <strong>FACTORES HUMANOS Y CONDUCTA</strong>
+        <span id="txtTrabajadorHeader">Evaluación Orientativa Operacional</span>
+      </div>
+      <a href="psico_menu_b2b.html" id="linkMenuTop" class="btn-link-menu">← Menú Psicosensométrico</a>
+    </div>
+
+    <section class="progress-card">
+      <div class="progress-meta">
+        <span id="txtProgresoEtapa">Paso inicial guiado</span>
+        <span id="txtProgresoConteo">0 / 28</span>
+      </div>
+      <div class="progress-track">
+        <div id="barraProgreso" class="progress-fill"></div>
+      </div>
+    </section>
+
+    <main id="contenedorVista" class="main-card"></main>
+
+    <p class="legal-note">
+      Instrumento orientativo de factores humanos y conducta operacional para apoyo preventivo B2B. No constituye diagnóstico clínico ni peritaje médico oficial.
+    </p>
+  </div>
+
+  <script>
+    (function () {
+      const logoImg = document.getElementById("logoSensometrikaImg");
+      const candidatosLogo = [
+        "../sensometrika.jpg",
+        "sensometrika.jpg",
+        "../sensometrica.jpg",
+        "sensometrica.jpg"
+      ];
+      let idxLogo = 0;
+      logoImg.addEventListener("error", () => {
+        idxLogo++;
+        if (idxLogo < candidatosLogo.length) {
+          logoImg.src = candidatosLogo[idxLogo];
+        } else {
+          logoImg.style.display = "none";
+        }
+      });
+
+      const queryString = window.location.search || "";
+      const urlParams = new URLSearchParams(queryString);
+      const linkMenuTop = document.getElementById("linkMenuTop");
+      if (linkMenuTop) {
+        linkMenuTop.href = `psico_menu_b2b.html${queryString}`;
+      }
+
+      const ESCALA_OPCIONES = [
+        { valor: 1, titulo: "Nunca", sub: "No me ocurre o casi nunca" },
+        { valor: 2, titulo: "Casi nunca", sub: "Ocurre en contadas ocasiones" },
+        { valor: 3, titulo: "A veces", sub: "Ocurre en la mitad de los casos" },
+        { valor: 4, titulo: "Casi siempre", sub: "Ocurre con frecuencia" },
+        { valor: 5, titulo: "Siempre", sub: "Ocurre casi todo el tiempo" }
+      ];
+
+      const PREGUNTAS = [
+        { id: "D1_01", dim: "D1", etapa: 1, tituloEtapa: "Etapa 1 de 4 · Autocontrol y Ritmo", texto: "Cuando aparece una señal o aviso repentino, suelo reaccionar de inmediato antes de mirar bien todo alrededor.", invertido: false },
+        { id: "D1_02", dim: "D1", etapa: 1, tituloEtapa: "Etapa 1 de 4 · Autocontrol y Ritmo", texto: "En tareas que piden calma y pulso firme, me cuesta tener paciencia si el avance se siente lento.", invertido: false },
+        { id: "D1_03", dim: "D1", etapa: 1, tituloEtapa: "Etapa 1 de 4 · Autocontrol y Ritmo", texto: "Antes de mover o activar algo importante, reviso primero las condiciones aunque me tome un par de segundos más.", invertido: true },
+        { id: "D1_04", dim: "D1", etapa: 1, tituloEtapa: "Etapa 1 de 4 · Autocontrol y Ritmo", texto: "Cuando siento que voy atrasado o apurado, tiendo a acelerar mis movimientos más de lo seguro.", invertido: false },
+        { id: "D1_05", dim: "D1", etapa: 1, tituloEtapa: "Etapa 1 de 4 · Autocontrol y Ritmo", texto: "Cuando toca esperar un buen rato sin moverme, a veces actúo por impulso solo para cortar la espera.", invertido: false },
+        { id: "D1_06", dim: "D1", etapa: 1, tituloEtapa: "Etapa 1 de 4 · Autocontrol y Ritmo", texto: "Cuando la regla es esperar la señal exacta, logro aguantar sin apretar ni moverme antes de tiempo.", invertido: true },
+
+        { id: "D2_01", dim: "D2", etapa: 2, tituloEtapa: "Etapa 2 de 4 · Reacción ante Errores", texto: "Cuando cometo un error seguido, siento rabia o tensión que me cuesta soltar en el siguiente intento.", invertido: false },
+        { id: "D2_02", dim: "D2", etapa: 2, tituloEtapa: "Etapa 2 de 4 · Reacción ante Errores", texto: "Si me equivoco en un paso, respiro, acomodo la postura y sigo con el mismo método sin desordenarme.", invertido: true },
+        { id: "D2_03", dim: "D2", etapa: 2, tituloEtapa: "Etapa 2 de 4 · Reacción ante Errores", texto: "Si algo no sale bien a la primera o aparece un imprevisto, me cuesta mantenerme tranquilo.", invertido: false },
+        { id: "D2_04", dim: "D2", etapa: 2, tituloEtapa: "Etapa 2 de 4 · Reacción ante Errores", texto: "Cuando me apuran por tiempo o meta, me equivoco más seguido que cuando trabajo con calma.", invertido: false },
+        { id: "D2_05", dim: "D2", etapa: 2, tituloEtapa: "Etapa 2 de 4 · Reacción ante Errores", texto: "Frente a correcciones o fallos repetidos, mantengo el control suave en vez de forzar el movimiento.", invertido: true },
+        { id: "D2_06", dim: "D2", etapa: 2, tituloEtapa: "Etapa 2 de 4 · Reacción ante Errores", texto: "Cuando acumulo dos o tres fallos seguidos, pierdo el hilo y me cuesta volver a concentrarme.", invertido: false },
+
+        { id: "D3_01", dim: "D3", etapa: 3, tituloEtapa: "Etapa 3 de 4 · Cansancio y Atención", texto: "En tareas largas o repetitivas, noto que mi mente se desconecta por breves segundos.", invertido: false },
+        { id: "D3_02", dim: "D3", etapa: 3, tituloEtapa: "Etapa 3 de 4 · Cansancio y Atención", texto: "Me doy cuenta a tiempo cuando el cansancio o el sueño ya me están bajando la atención.", invertido: true },
+        { id: "D3_03", dim: "D3", etapa: 3, tituloEtapa: "Etapa 3 de 4 · Cansancio y Atención", texto: "Cuando me enfoco en una sola cosa, se me pasan por alto avisos o ruidos que ocurren al lado.", invertido: false },
+        { id: "D3_04", dim: "D3", etapa: 3, tituloEtapa: "Etapa 3 de 4 · Cansancio y Atención", texto: "Dormir pocas horas o dormir mal se nota rápido en mi rapidez y claridad mental.", invertido: false },
+        { id: "D3_05", dim: "D3", etapa: 3, tituloEtapa: "Etapa 3 de 4 · Cansancio y Atención", texto: "En tramos monótonos donde hay que estar atento sin mucha acción, siento pesadez o sueño.", invertido: false },
+        { id: "D3_06", dim: "D3", etapa: 3, tituloEtapa: "Etapa 3 de 4 · Cansancio y Atención", texto: "Mantengo la atención pareja incluso cuando la prueba o tarea dura varios minutos seguidos.", invertido: true },
+
+        { id: "D4_01", dim: "D4", etapa: 4, tituloEtapa: "Etapa 4 de 4 · Reglas y Consistencia", texto: "Cumplo las reglas y límites de trabajo tal como corresponden, aunque nadie me esté mirando.", invertido: true },
+        { id: "D4_02", dim: "D4", etapa: 4, tituloEtapa: "Etapa 4 de 4 · Reglas y Consistencia", texto: "Cuando un paso previo es lento o molesto, a veces me lo salto para avanzar más rápido.", invertido: false },
+        { id: "D4_03", dim: "D4", etapa: 4, tituloEtapa: "Etapa 4 de 4 · Reglas y Consistencia", texto: "Prefiero hacer todos los pasos de seguridad antes que tomar un atajo para ganar tiempo.", invertido: true },
+        { id: "D4_04", dim: "D4", etapa: 4, tituloEtapa: "Etapa 4 de 4 · Reglas y Consistencia", texto: "Cuando ya conozco bien una tarea, siento que puedo saltar o cambiar partes sin que haya problema.", invertido: false },
+        { id: "D4_05", dim: "D4", etapa: 4, tituloEtapa: "Etapa 4 de 4 · Reglas y Consistencia", texto: "Reconozco con honestidad cuando una prueba o tarea me cuesta más o tengo un punto débil.", invertido: true },
+        { id: "D4_06", dim: "D4", etapa: 4, tituloEtapa: "Etapa 4 de 4 · Reglas y Consistencia", texto: "A veces siento que las normas o controles son exagerados para alguien que ya tiene experiencia.", invertido: false },
+        { id: "VC_01", dim: "VC", etapa: 4, tituloEtapa: "Etapa 4 de 4 · Reglas y Consistencia", texto: "En toda mi vida, jamás he sentido apuro, impaciencia ni molestia ante nada.", invertido: false, deseabilidad: true },
+        { id: "VC_02", dim: "VC", etapa: 4, tituloEtapa: "Etapa 4 de 4 · Reglas y Consistencia", texto: "Es normal que en el día a día uno sienta cansancio o distracción en algún momento.", invertido: true },
+        { id: "VC_03", dim: "VC", etapa: 4, tituloEtapa: "Etapa 4 de 4 · Reglas y Consistencia", texto: "Estoy respondiendo con calma y fijándome en lo que dice cada pregunta, sin marcar al azar.", invertido: true },
+        { id: "VC_04", dim: "VC", etapa: 4, tituloEtapa: "Etapa 4 de 4 · Reglas y Consistencia", texto: "Cuando un cuestionario es largo, a veces cansa mantenerse concentrado hasta el final.", invertido: false }
+      ];
+
+      let datosUsuario = {};
+      try {
+        datosUsuario = JSON.parse(localStorage.getItem("sensometrika_datos_usuario")) || {};
+      } catch (e) {}
+
+      const nombreActual = decodeURIComponent(urlParams.get("nombre") || datosUsuario.nombre || localStorage.getItem("sensometrika_nombre") || "");
+      const rutActual = decodeURIComponent(urlParams.get("rut") || datosUsuario.rut || localStorage.getItem("sensometrika_rut") || "");
+      const cargoActual = decodeURIComponent(urlParams.get("cargo") || datosUsuario.cargo || localStorage.getItem("sensometrika_cargo") || "");
+      const cleanRut = rutActual.replace(/[^0-9Kk]/g, "");
+      const storageKey = cleanRut ? `sensometrika_psico_test_${cleanRut}` : "sensometrika_psico_test";
+
+      let estadoGuardado = null;
+      try {
+        estadoGuardado = JSON.parse(localStorage.getItem(storageKey)) || JSON.parse(localStorage.getItem("sensometrika_psico_test"));
+      } catch (e) {}
+
+      let vistaActual = "INTRO";
+      let indicePregunta = 0;
+      let respuestas = (estadoGuardado && estadoGuardado.respuestas) ? { ...estadoGuardado.respuestas } : {};
+      let tiemposRespuestaMs = (estadoGuardado && estadoGuardado.tiemposRespuestaMs) ? { ...estadoGuardado.tiemposRespuestaMs } : {};
+      let marcaTiempoPregunta = Date.now();
+
+      const contenedorVista = document.getElementById("contenedorVista");
+      const txtProgresoEtapa = document.getElementById("txtProgresoEtapa");
+      const txtProgresoConteo = document.getElementById("txtProgresoConteo");
+      const barraProgreso = document.getElementById("barraProgreso");
+      const txtTrabajadorHeader = document.getElementById("txtTrabajadorHeader");
+
+      if (nombreActual || rutActual) {
+        txtTrabajadorHeader.textContent = `${nombreActual || "Trabajador"} · ${rutActual || "--"}`;
+      }
+
+      function detenerVoz() {
+        if ("speechSynthesis" in window) {
+          window.speechSynthesis.cancel();
+        }
+        document.querySelectorAll(".btn-audio").forEach(btn => btn.classList.remove("speaking"));
+      }
+
+      function hablarTexto(texto, btnEl) {
+        if (!("speechSynthesis" in window)) {
+          alert("Tu navegador no soporta lectura en voz alta. Puedes leer las opciones en pantalla.");
+          return;
+        }
+        if (window.speechSynthesis.speaking) {
+          detenerVoz();
+          return;
+        }
+        const utterance = new SpeechSynthesisUtterance(texto);
+        utterance.lang = "es-CL";
+        utterance.rate = 0.92;
+        utterance.pitch = 1.0;
+        if (btnEl) btnEl.classList.add("speaking");
+        utterance.onend = () => {
+          if (btnEl) btnEl.classList.remove("speaking");
+        };
+        utterance.onerror = () => {
+          if (btnEl) btnEl.classList.remove("speaking");
+        };
+        window.speechSynthesis.speak(utterance);
+      }
+
+      function persistirProgresoParcial() {
+        const snapshot = {
+          version: "1.0",
+          rut: rutActual || "SIN_RUT",
+          actualizadoEn: new Date().toISOString(),
+          respuestas,
+          tiemposRespuestaMs
+        };
+        localStorage.setItem(storageKey, JSON.stringify(snapshot));
+        localStorage.setItem("sensometrika_psico_test", JSON.stringify(snapshot));
+      }
+
+      function calcularNivel(score) {
+        if (score >= 70) return { nivel: "ALTO", etiqueta: "Requiere revisión" };
+        if (score >= 40) return { nivel: "MODERADO", etiqueta: "Vigilancia moderada" };
+        return { nivel: "BAJO", etiqueta: "Rango regulado" };
+      }
+
+      function promedioDimension(dimCode) {
+        const items = PREGUNTAS.filter(p => p.dim === dimCode && typeof respuestas[p.id] === "number");
+        if (!items.length) return 0;
+        const sumNormalizado = items.reduce((acc, p) => {
+          const raw = respuestas[p.id];
+          const ajustado = p.invertido ? (6 - raw) : raw;
+          const pct = ((ajustado - 1) / 4) * 100;
+          return acc + pct;
+        }, 0);
+        return Math.round(sumNormalizado / items.length);
+      }
+
+      function calcularEvaluacionFinal() {
+        const d1Score = promedioDimension("D1");
+        const d2Score = promedioDimension("D2");
+        const d3Score = promedioDimension("D3");
+        const d4Score = promedioDimension("D4");
+
+        const observaciones = [];
+        let penalizacionConsistencia = 0;
+
+        const vc01 = respuestas["VC_01"];
+        if (typeof vc01 === "number" && vc01 >= 4) {
+          penalizacionConsistencia += 20;
+          observaciones.push("Respuesta muy elevada en ítem de deseabilidad social (VC_01); conviene contrastar con ejecución práctica.");
+        }
+
+        const vc02 = respuestas["VC_02"];
+        if (typeof vc01 === "number" && typeof vc02 === "number" && vc01 >= 4 && vc02 <= 2) {
+          penalizacionConsistencia += 15;
+          observaciones.push("Posible inconsistencia entre ítems de control de respuesta.");
+        }
+
+        const tiempos = Object.values(tiemposRespuestaMs).filter(t => typeof t === "number" && t > 0);
+        const tiempoPromedioMs = tiempos.length ? Math.round(tiempos.reduce((a, b) => a + b, 0) / tiempos.length) : 0;
+        if (tiempoPromedioMs > 0 && tiempoPromedioMs < 1100) {
+          penalizacionConsistencia += 20;
+          observaciones.push(`Ritmo de respuesta muy rápido (${tiempoPromedioMs} ms promedio por pregunta); revisar comprensión o atención.`);
+        }
+
+        const vals = Object.values(respuestas);
+        if (vals.length === PREGUNTAS.length) {
+          const conteoFrec = {};
+          vals.forEach(v => { conteoFrec[v] = (conteoFrec[v] || 0) + 1; });
+          const maxIgual = Math.max(...Object.values(conteoFrec));
+          if (maxIgual >= Math.ceil(PREGUNTAS.length * 0.8)) {
+            penalizacionConsistencia += 25;
+            observaciones.push("Patrón repetitivo en la gran mayoría de respuestas; validar con entrevista o observación.");
+          }
+        }
+
+        const consistenciaScore = Math.max(0, 100 - penalizacionConsistencia);
+        const alertaInconsistencia = consistenciaScore < 65 || observaciones.length > 0;
+
+        const resultado = {
+          version: "1.0",
+          rut: rutActual || "SIN_RUT",
+          nombre: nombreActual,
+          cargo: cargoActual,
+          completadoEn: new Date().toISOString(),
+          totalPreguntas: PREGUNTAS.length,
+          tiempoPromedioMs,
+          respuestas,
+          tiemposRespuestaMs,
+          dimensiones: {
+            autocontrol_impulsividad: {
+              codigo: "D1",
+              nombre: "Autocontrol, Impulsividad y Precipitación",
+              score: d1Score,
+              ...calcularNivel(d1Score)
+            },
+            tolerancia_frustracion_error: {
+              codigo: "D2",
+              nombre: "Tolerancia a la Frustración, Estrés y Errores",
+              score: d2Score,
+              ...calcularNivel(d2Score)
+            },
+            gestion_fatiga_distraccion: {
+              codigo: "D3",
+              nombre: "Gestión de Fatiga, Sueño y Distracción",
+              score: d3Score,
+              ...calcularNivel(d3Score)
+            },
+            disciplina_apego_normas: {
+              codigo: "D4",
+              nombre: "Disciplina Operacional y Apego a Normas",
+              score: d4Score,
+              ...calcularNivel(d4Score)
+            }
+          },
+          validez: {
+            consistenciaScore,
+            alertaInconsistencia,
+            observaciones
+          }
+        };
+
+        localStorage.setItem(storageKey, JSON.stringify(resultado));
+        localStorage.setItem("sensometrika_psico_test", JSON.stringify(resultado));
+        return resultado;
+      }
+
+      function actualizarProgresoUI() {
+        const respondidas = Object.keys(respuestas).length;
+        txtProgresoConteo.textContent = `${respondidas} / ${PREGUNTAS.length}`;
+        const pct = Math.round((respondidas / PREGUNTAS.length) * 100);
+        barraProgreso.style.width = `${pct}%`;
+
+        if (vistaActual === "INTRO") {
+          txtProgresoEtapa.textContent = "Ejemplo rápido antes de empezar";
+        } else if (vistaActual === "RESUMEN") {
+          txtProgresoEtapa.textContent = "Evaluación completada";
+        } else {
+          txtProgresoEtapa.textContent = PREGUNTAS[indicePregunta].tituloEtapa;
+        }
+      }
+
+      function renderIntro() {
+        detenerVoz();
+        vistaActual = "INTRO";
+        actualizarProgresoUI();
+
+        const ejemploTexto = "Ejemplo: Cuando conduzco o trabajo con herramientas, reviso que todo esté en orden antes de partir. Si quieres, puedes pulsar el botón Escuchar pregunta en cualquier momento.";
+
+        contenedorVista.innerHTML = `
+          <span class="stage-pill">Guía Interactiva · 28 Preguntas</span>
+          <h2 style="font-size: 1.15rem; color: #ffffff;">Cómo responder este cuestionario</h2>
+          <p style="font-size: 0.9rem; color: var(--text-secondary); line-height: 1.5;">
+            Verás <strong>una pregunta a la vez</strong>. No hay respuestas correctas ni incorrectas: responde con sinceridad según cómo actúas normalmente en tu trabajo o conducción.
+          </p>
+
+          <div class="question-box">
+            <span style="font-size: 0.72rem; font-weight: 800; color: var(--accent-cyan); text-transform: uppercase;">Ejemplo de prueba (no suma puntaje)</span>
+            <div class="question-text" id="txtEjemploPregunta">
+              "Cuando inicio una tarea o maniobra, reviso que todo esté listo antes de moverme."
+            </div>
+            <div class="helper-row">
+              <button type="button" class="btn-audio" id="btnAudioEjemplo">
+                🔊 Escuchar ejemplo
+              </button>
+              <span class="audio-hint">Usa audio si prefieres escuchar en vez de leer</span>
+            </div>
+          </div>
+
+          <div class="info-box">
+            <strong>¿Cómo elegir?</strong> Toca uno de los 5 botones (desde <strong>1 · Nunca</strong> hasta <strong>5 · Siempre</strong>) y luego presiona <strong>Siguiente →</strong>. Puedes volver atrás si te equivocas.
+          </div>
+
+          <button type="button" class="btn-nav btn-next" id="btnComenzarCuestionario">
+            Comenzar evaluación →
+          </button>
+        `;
+
+        document.getElementById("btnAudioEjemplo").addEventListener("click", (e) => {
+          hablarTexto(ejemploTexto, e.currentTarget);
+        });
+
+        document.getElementById("btnComenzarCuestionario").addEventListener("click", () => {
+          detenerVoz();
+          const primeraSinResponder = PREGUNTAS.findIndex(p => typeof respuestas[p.id] !== "number");
+          indicePregunta = primeraSinResponder >= 0 ? primeraSinResponder : 0;
+          marcaTiempoPregunta = Date.now();
+          renderPregunta();
+        });
+      }
+
+      function renderPregunta() {
+        detenerVoz();
+        vistaActual = "PREGUNTA";
+        actualizarProgresoUI();
+
+        const p = PREGUNTAS[indicePregunta];
+        const valorSeleccionado = respuestas[p.id];
+
+        const opcionesHtml = ESCALA_OPCIONES.map(opt => {
+          const isSelected = valorSeleccionado === opt.valor;
+          return `
+            <button type="button" class="option-btn ${isSelected ? "selected" : ""}" data-val="${opt.valor}">
+              <div class="option-left">
+                <span class="option-num">${opt.valor}</span>
+                <div>
+                  <div class="option-label">${opt.titulo}</div>
+                  <div class="option-sub">${opt.sub}</div>
+                </div>
+              </div>
+              <span style="font-size: 0.82rem; font-weight: 800; color: ${isSelected ? "#00e5ff" : "#64748b"};">
+                ${isSelected ? "✓ Elegido" : ""}
+              </span>
+            </button>
+          `;
+        }).join("");
+
+        const esUltima = indicePregunta === PREGUNTAS.length - 1;
+
+        contenedorVista.innerHTML = `
+          <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap;">
+            <span class="stage-pill">${p.tituloEtapa}</span>
+            <span style="font-size: 0.8rem; font-weight: 800; color: var(--text-muted);">Pregunta ${indicePregunta + 1} de ${PREGUNTAS.length}</span>
+          </div>
+
+          <div class="question-box">
+            <div class="question-text">${p.texto}</div>
+            <div class="helper-row">
+              <button type="button" class="btn-audio" id="btnEscucharPregunta">
+                🔊 Escuchar pregunta
+              </button>
+              <span class="audio-hint">Toca una opción de 1 a 5 abajo</span>
+            </div>
+          </div>
+
+          <div class="options-list" id="listaOpciones">
+            ${opcionesHtml}
+          </div>
+
+          <div class="nav-row">
+            <button type="button" class="btn-nav btn-prev" id="btnAnterior" ${indicePregunta === 0 ? "disabled" : ""}>
+              ← Anterior
+            </button>
+            <button type="button" class="btn-nav btn-next" id="btnSiguiente" ${typeof valorSeleccionado === "number" ? "" : "disabled"}>
+              ${esUltima ? "Finalizar test ✓" : "Siguiente →"}
+            </button>
+          </div>
+        `;
+
+        document.getElementById("btnEscucharPregunta").addEventListener("click", (e) => {
+          const locucion = `Pregunta ${indicePregunta + 1}. ${p.texto}. Opciones: 1 Nunca, 2 Casi nunca, 3 A veces, 4 Casi siempre, 5 Siempre.`;
+          hablarTexto(locucion, e.currentTarget);
+        });
+
+        document.querySelectorAll(".option-btn").forEach(btn => {
+          btn.addEventListener("click", () => {
+            const val = parseInt(btn.getAttribute("data-val"), 10);
+            const duracion = Math.max(250, Date.now() - marcaTiempoPregunta);
+            respuestas[p.id] = val;
+            tiemposRespuestaMs[p.id] = duracion;
+            persistirProgresoParcial();
+            actualizarProgresoUI();
+
+            document.querySelectorAll(".option-btn").forEach(b => {
+              const active = parseInt(b.getAttribute("data-val"), 10) === val;
+              b.classList.toggle("selected", active);
+              const rightSpan = b.querySelector("span:last-child");
+              if (rightSpan) {
+                rightSpan.textContent = active ? "✓ Elegido" : "";
+                rightSpan.style.color = active ? "#00e5ff" : "#64748b";
+              }
+            });
+
+            document.getElementById("btnSiguiente").disabled = false;
+          });
+        });
+
+        document.getElementById("btnAnterior").addEventListener("click", () => {
+          detenerVoz();
+          if (indicePregunta > 0) {
+            indicePregunta--;
+            marcaTiempoPregunta = Date.now();
+            renderPregunta();
+          }
+        });
+
+        document.getElementById("btnSiguiente").addEventListener("click", () => {
+          detenerVoz();
+          if (typeof respuestas[p.id] !== "number") return;
+
+          if (indicePregunta < PREGUNTAS.length - 1) {
+            indicePregunta++;
+            marcaTiempoPregunta = Date.now();
+            renderPregunta();
+          } else {
+            const faltantes = PREGUNTAS.filter(item => typeof respuestas[item.id] !== "number");
+            if (faltantes.length > 0) {
+              const idxFaltante = PREGUNTAS.findIndex(item => item.id === faltantes[0].id);
+              alert(`Aún falta responder la pregunta ${idxFaltante + 1}. Te llevaremos ahí para completarla.`);
+              indicePregunta = idxFaltante;
+              marcaTiempoPregunta = Date.now();
+              renderPregunta();
+              return;
+            }
+            const evalFinal = calcularEvaluacionFinal();
+            renderResumen(evalFinal);
+          }
+        });
+      }
+
+      function colorNivel(nivel) {
+        if (nivel === "ALTO") return "#f87171";
+        if (nivel === "MODERADO") return "#fbbf24";
+        return "#34d399";
+      }
+
+      function renderResumen(evalData) {
+        detenerVoz();
+        vistaActual = "RESUMEN";
+        actualizarProgresoUI();
+
+        const dims = evalData.dimensiones;
+        const obsHtml = evalData.validez.observaciones.length
+          ? `<div class="info-box"><strong>Notas de consistencia:</strong><br>${evalData.validez.observaciones.map(o => "• " + o).join("<br>")}</div>`
+          : `<div class="info-box" style="border-left-color: #10b981;"><strong>Consistencia verificada:</strong> Respuestas coherentes y completas registradas para el informe.</div>`;
+
+        contenedorVista.innerHTML = `
+          <span class="stage-pill" style="background: rgba(16, 185, 129, 0.14); border-color: rgba(16, 185, 129, 0.4); color: #34d399;">
+            ✓ Cuestionario Registrado
+          </span>
+          <h2 style="font-size: 1.15rem; color: #ffffff;">Evaluación de Factores Humanos Completada</h2>
+          <p style="font-size: 0.86rem; color: var(--text-secondary); line-height: 1.45;">
+            Tus respuestas ya quedaron guardadas en esta sesión y serán integradas en el informe junto con las pruebas psicomotoras.
+          </p>
+
+          <div class="summary-grid">
+            <div class="summary-stat">
+              <span>D1 · Autocontrol y Ritmo</span>
+              <strong style="color: ${colorNivel(dims.autocontrol_impulsividad.nivel)};">${dims.autocontrol_impulsividad.score}/100 (${dims.autocontrol_impulsividad.nivel})</strong>
+            </div>
+            <div class="summary-stat">
+              <span>D2 · Reacción ante Errores</span>
+              <strong style="color: ${colorNivel(dims.tolerancia_frustracion_error.nivel)};">${dims.tolerancia_frustracion_error.score}/100 (${dims.tolerancia_frustracion_error.nivel})</strong>
+            </div>
+            <div class="summary-stat">
+              <span>D3 · Fatiga y Atención</span>
+              <strong style="color: ${colorNivel(dims.gestion_fatiga_distraccion.nivel)};">${dims.gestion_fatiga_distraccion.score}/100 (${dims.gestion_fatiga_distraccion.nivel})</strong>
+            </div>
+            <div class="summary-stat">
+              <span>D4 · Reglas y Consistencia</span>
+              <strong style="color: ${colorNivel(dims.disciplina_apego_normas.nivel)};">${dims.disciplina_apego_normas.score}/100 (${dims.disciplina_apego_normas.nivel})</strong>
+            </div>
+          </div>
+
+          <div class="summary-stat">
+            <span>Índice de Consistencia del Cuestionario</span>
+            <strong style="color: ${evalData.validez.alertaInconsistencia ? "#fbbf24" : "#00e5ff"};">${evalData.validez.consistenciaScore}% ${evalData.validez.alertaInconsistencia ? "· Con observación" : "· Coherente"}</strong>
+          </div>
+
+          ${obsHtml}
+
+          <div class="nav-row">
+            <button type="button" class="btn-nav btn-prev" id="btnRevisarRespuestas">
+              Revisar respuestas
+            </button>
+            <a href="psico_menu_b2b.html${queryString}" class="btn-nav btn-next" style="display: flex; align-items: center; justify-content: center; text-decoration: none;">
+              Ir al Menú Psicosensométrico →
+            </a>
+          </div>
+        `;
+
+        document.getElementById("btnRevisarRespuestas").addEventListener("click", () => {
+          indicePregunta = 0;
+          marcaTiempoPregunta = Date.now();
+          renderPregunta();
+        });
+      }
+
+      if (Object.keys(respuestas).length === PREGUNTAS.length && estadoGuardado && estadoGuardado.dimensiones) {
+        renderResumen(estadoGuardado);
+      } else {
+        renderIntro();
+      }
+    })();
+  </script>
+</body>
+</html>

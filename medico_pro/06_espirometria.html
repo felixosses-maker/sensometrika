@@ -199,25 +199,54 @@
         </div>
       </div>
 
-      <button class="btn-action" id="btnIniciar" onclick="iniciarEspirometria()">INICIAR SOPLO RESPIRATORIO →</button>
+      <button type="button" class="btn-action" id="btnIniciar" onclick="iniciarEspirometria()">INICIAR SOPLO RESPIRATORIO →</button>
 
       <!-- OVERLAY INTEGRADO DE CALIBRACIÓN DE MICRÓFONO -->
       <div id="boxMicPrompt" class="mic-prompt-overlay" style="display: flex;">
         <span style="color: var(--accent-cyan); font-weight: 900; font-size: 0.9rem;">🎤 CALIBRACIÓN DE ENTORNO ACÚSTICO</span>
         <span class="instruction-text">Para medir su capacidad pulmonar, SENSOMETRIKA requiere calibrar el sensor de audio. Haga clic abajo para iniciar los sensores.</span>
-        <button class="btn-action" style="max-width: 220px; margin-top: 6px;" onclick="otorgarPermisoMic()">INICIAR CALIBRACIÓN →</button>
+        <button type="button" class="btn-action" style="max-width: 220px; margin-top: 6px;" onclick="otorgarPermisoMic()">INICIAR CALIBRACIÓN →</button>
       </div>
     </div>
   </div>
 
   <script>
     const urlParams = new URLSearchParams(window.location.search);
-    const cleanRut = (urlParams.get('rut') || localStorage.getItem('sensometrika_rut') || '12345678').replace(/[^0-9Kk]/g, '');
+    const cleanRut = (urlParams.get('rut') || localStorage.getItem('sensometrika_rut') || '12345678').replace(/[^0-9Kk]/g, '').toUpperCase();
     const sessionId = urlParams.get('session') || localStorage.getItem('sensometrika_session_activa') || 'SESION_DEFAULT';
     const isB2C = localStorage.getItem('sensometrika_b2c_mode') === 'true' || urlParams.get('mode') === 'b2c';
+    const esFlujoDemo =
+      urlParams.get('flujo') === 'demo' ||
+      urlParams.get('mode') === 'demo' ||
+      localStorage.getItem('sensometrika_flujo_demo_activo') === 'true';
+    const claveModulo = urlParams.get('modulo') || 'espirometria';
 
-    const menuHref = isB2C ? `../menu_B2C.html?${urlParams.toString()}` : `../menu_B2B.html?${urlParams.toString()}`;
-    document.getElementById('linkMenu').href = urlParams.get('returnUrl') ? decodeURIComponent(urlParams.get('returnUrl')) : menuHref;
+    function marcarCompletadoDemo() {
+      if (!esFlujoDemo) return;
+      localStorage.setItem(`sensometrika_${claveModulo}_${cleanRut}_${sessionId}`, 'true');
+      localStorage.setItem(`sensometrika_demo_completado_${claveModulo}_${cleanRut}_${sessionId}`, 'true');
+    }
+
+    function resolverDestinoEspirometria() {
+      const returnUrl = urlParams.get('returnUrl');
+      if (returnUrl) {
+        return decodeURIComponent(returnUrl);
+      }
+
+      const paramsSalida = new URLSearchParams(urlParams.toString());
+      if (esFlujoDemo) {
+        paramsSalida.set('flujo', 'demo');
+        paramsSalida.set('mode', 'demo');
+        paramsSalida.set('modulo', claveModulo);
+        return `../demo_empresa/demo_menu_b2b.html?${paramsSalida.toString()}`;
+      }
+
+      return isB2C ? `../menu_B2C.html?${paramsSalida.toString()}` : `../menu_B2B.html?${paramsSalida.toString()}`;
+    }
+
+    const linkMenuEl = document.getElementById('linkMenu');
+    linkMenuEl.href = resolverDestinoEspirometria();
+    linkMenuEl.textContent = esFlujoDemo ? '← Menú Demo' : '← Menú';
 
     let audioContext = null;
     let analyser = null;
@@ -258,7 +287,7 @@
         if (typeof FaceMesh !== 'undefined' && typeof Camera !== 'undefined') {
           const faceMesh = new FaceMesh({ locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}` });
           faceMesh.setOptions({ maxNumFaces: 1, refineLandmarks: true, minDetectionConfidence: 0.4, minTrackingConfidence: 0.4 });
-          
+
           faceMesh.onResults((results) => {
             const telDistancia = document.getElementById('tel-distancia');
             if (!results.multiFaceLandmarks || results.multiFaceLandmarks.length === 0) {
@@ -272,10 +301,10 @@
             telDistancia.textContent = `${Math.min(Math.max(dist, 30), 75)} cm`;
           });
 
-          cameraInstance = new Camera(videoElement, { 
-            onFrame: async () => { await faceMesh.send({ image: videoElement }); }, 
-            width: 320, 
-            height: 240 
+          cameraInstance = new Camera(videoElement, {
+            onFrame: async () => { await faceMesh.send({ image: videoElement }); },
+            width: 320,
+            height: 240
           });
           await cameraInstance.start();
         }
@@ -308,14 +337,14 @@
       }
 
       document.getElementById('btnIniciar').style.display = 'none';
-      
+
       let tiempoTranscurrido = 0;
       const totalSegundos = 25;
       const lblTimer = document.getElementById('lblTimer');
       const lblEstado = document.getElementById('lblEstado');
       const cronometroEspirometria = document.getElementById('cronometro-espirometría');
       const telFlujo = document.getElementById('tel-flujo');
-      
+
       emitirPitido(880, 0.3);
       lblEstado.textContent = "Fase de preparación (0s - 5s): Tome aire profundamente...";
 
@@ -339,17 +368,16 @@
           lblEstado.textContent = "Prueba completada. Relájese (20s - 25s)...";
         }
 
-        // VENTANA DE CAPTURA ACTIVA (5s a 20s)
         if (tiempoTranscurrido >= 5 && tiempoTranscurrido <= 20) {
           let volumenActual = obtenerVolumenMicrofono();
-          
+
           if (volumenActual > 8) {
             muestrasValidas++;
             let flujoCalculado = ((volumenActual - 7) / 4).toFixed(1);
             if (flujoCalculado < 1.0) flujoCalculado = "1.5";
             if (flujoCalculado > 6.0) flujoCalculado = "6.0";
             flujoTotalAcumulado += parseFloat(flujoCalculado);
-            
+
             telFlujo.textContent = `${flujoCalculado} L/s`;
             telFlujo.style.color = "var(--accent-green)";
             lblEstado.textContent = "✓ Detectando flujo respiratorio constante";
@@ -365,7 +393,7 @@
         if (tiempoTranscurrido >= totalSegundos) {
           clearInterval(intervalo);
           if (cameraInstance) { try { cameraInstance.stop(); } catch(e){} }
-          
+
           emitirPitido(587, 0.2);
           setTimeout(() => emitirPitido(880, 0.4), 250);
 
@@ -387,6 +415,7 @@
           localStorage.setItem(`sensometrika_espirometria_${cleanRut}_${sessionId}`, aprobadoEspiro ? 'true' : 'false');
           localStorage.setItem(`medico_espirometria_${cleanRut}_${sessionId}`, aprobadoEspiro ? 'true' : 'false');
           localStorage.setItem(`medico_espirometria_flujo_${cleanRut}_${sessionId}`, `${flujoFinalPromedio} L/s`);
+          marcarCompletadoDemo();
 
           let modulosRendidos = JSON.parse(localStorage.getItem('sensometrika_modulos_rendidos')) || {};
           modulosRendidos.espirometria = true;
@@ -394,12 +423,7 @@
           localStorage.setItem('sensometrika_modulos_rendidos', JSON.stringify(modulosRendidos));
 
           setTimeout(() => {
-            const returnUrl = urlParams.get('returnUrl');
-            if (returnUrl) {
-              window.location.href = decodeURIComponent(returnUrl);
-            } else {
-              window.location.href = menuHref;
-            }
+            window.location.href = resolverDestinoEspirometria();
           }, 2200);
         }
       }, 1000);

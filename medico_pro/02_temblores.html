@@ -17,7 +17,7 @@
     .card { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 14px; padding: 18px; width: 100%; max-width: 440px; display: flex; flex-direction: column; gap: 14px; text-align: center; box-shadow: 0 15px 35px rgba(0,0,0,0.6); }
     .btn { background: var(--accent-cyan); color: #000; border: none; padding: 12px; border-radius: 8px; font-weight: 900; cursor: pointer; text-transform: uppercase; width: 100%; transition: opacity 0.2s; }
     .btn:hover { opacity: 0.9; }
-    
+
     .camera-container {
       position: relative;
       width: 100%;
@@ -79,14 +79,14 @@
 <body>
   <div class="card">
     <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--card-border); padding-bottom: 8px;">
-      <a href="#" id="linkMenu" style="font-size: 0.70rem; font-weight: 800; color: var(--accent-cyan); text-decoration: none;">← MENÚ B2B</a>
+      <a href="#" id="linkMenu" style="font-size: 0.70rem; font-weight: 800; color: var(--accent-cyan); text-decoration: none;">← VOLVER</a>
       <span style="font-size: 0.75rem; font-weight: 900; color: var(--accent-cyan);">M2 - ESTABILIDAD MOTORA</span>
-      <button onclick="location.reload()" style="background: none; border: none; color: var(--text-muted); font-size: 0.70rem; cursor: pointer;">🔄 REINICIAR</button>
+      <button type="button" onclick="location.reload()" style="background: none; border: none; color: var(--text-muted); font-size: 0.70rem; cursor: pointer;">🔄 REINICIAR</button>
     </div>
 
     <h2 style="color: var(--accent-cyan); font-size: 0.95rem; font-weight: 900;">2. Estabilidad Motora (Temblores Pro)</h2>
     <p style="font-size: 0.74rem; color: var(--text-muted);">Extienda sus brazos al frente sosteniendo el dispositivo durante <strong>25 segundos</strong>.</p>
-    
+
     <div class="camera-container">
       <video id="webcamVideo" autoplay playsinline muted></video>
       <div class="camera-overlay" id="lblDistanciaCam">Iniciando cámara frontal...</div>
@@ -112,17 +112,46 @@
       </div>
     </div>
 
-    <button class="btn" id="btnIniciar" onclick="iniciarTemblores()">INICIAR MEDICIÓN OFICIAL →</button>
+    <button type="button" class="btn" id="btnIniciar" onclick="iniciarTemblores()">INICIAR MEDICIÓN OFICIAL →</button>
   </div>
 
   <script>
     const urlParams = new URLSearchParams(window.location.search);
-    const cleanRut = (urlParams.get('rut') || localStorage.getItem('sensometrika_rut') || '12345678').replace(/[^0-9Kk]/g, '');
+    const cleanRut = (urlParams.get('rut') || localStorage.getItem('sensometrika_rut') || '12345678').replace(/[^0-9Kk]/g, '').toUpperCase();
     const sessionId = urlParams.get('session') || localStorage.getItem('sensometrika_session_activa') || 'SESION_DEFAULT';
     const isB2C = localStorage.getItem('sensometrika_b2c_mode') === 'true' || urlParams.get('mode') === 'b2c';
+    const esFlujoDemo =
+      urlParams.get('flujo') === 'demo' ||
+      urlParams.get('mode') === 'demo' ||
+      localStorage.getItem('sensometrika_flujo_demo_activo') === 'true';
+    const claveModulo = urlParams.get('modulo') || 'temblores';
 
-    const menuHref = isB2C ? `../menu_B2C.html?${urlParams.toString()}` : `../menu_B2B.html?${urlParams.toString()}`;
-    document.getElementById('linkMenu').href = urlParams.get('returnUrl') ? decodeURIComponent(urlParams.get('returnUrl')) : menuHref;
+    function marcarCompletadoDemo() {
+      if (!esFlujoDemo) return;
+      localStorage.setItem(`sensometrika_${claveModulo}_${cleanRut}_${sessionId}`, 'true');
+      localStorage.setItem(`sensometrika_demo_completado_${claveModulo}_${cleanRut}_${sessionId}`, 'true');
+    }
+
+    function resolverDestinoTemblores() {
+      const returnUrl = urlParams.get('returnUrl');
+      if (returnUrl) {
+        return decodeURIComponent(returnUrl);
+      }
+
+      const paramsSalida = new URLSearchParams(urlParams.toString());
+      if (esFlujoDemo) {
+        paramsSalida.set('flujo', 'demo');
+        paramsSalida.set('mode', 'demo');
+        paramsSalida.set('modulo', claveModulo);
+        return `../demo_empresa/demo_menu_b2b.html?${paramsSalida.toString()}`;
+      }
+
+      return isB2C ? `../menu_B2C.html?${paramsSalida.toString()}` : `../menu_B2B.html?${paramsSalida.toString()}`;
+    }
+
+    const linkMenuEl = document.getElementById('linkMenu');
+    linkMenuEl.href = resolverDestinoTemblores();
+    linkMenuEl.textContent = esFlujoDemo ? '← MENÚ DEMO' : '← MENÚ B2B';
 
     let datosAcelerometro = [];
     let listenerMovimiento = null;
@@ -172,8 +201,8 @@
             if (results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0) {
               const landmarks = results.multiFaceLandmarks[0];
               const distanciaPixel = Math.hypot(landmarks[10].x - landmarks[152].x, landmarks[10].y - landmarks[152].y);
-              const distanciaCm = Math.round(1850 / (distanciaPixel * 100)); 
-              
+              const distanciaCm = Math.round(1850 / (distanciaPixel * 100));
+
               if (distanciaCm >= 45 && distanciaCm <= 100) {
                 lblDistancia.textContent = `Distancia: ${distanciaCm} cm (Óptima)`;
                 lblDistancia.style.color = "var(--accent-green)";
@@ -204,14 +233,14 @@
     async function iniciarTemblores() {
       await solicitarPermisosSensores();
       document.getElementById('btnIniciar').style.display = 'none';
-      
+
       let tiempoRestante = 25;
       const lblTimer = document.getElementById('lblTimer');
       const lblEstado = document.getElementById('lblEstado');
       const cronometroTemblores = document.getElementById('cronometro-temblores');
       const contadorMuestras = document.getElementById('contador-muestras');
       const desviacionTemblores = document.getElementById('desviacion-temblores');
-      
+
       emitirPitido(880, 0.3);
       lblEstado.textContent = "Fase de preparación (0s - 5s): Extienda brazos al frente...";
 
@@ -248,7 +277,7 @@
           emitirPitido(1046, 0.2);
           lblEstado.textContent = "Midiendo micro-oscilaciones reales (Captura Activa 20s)...";
         }
-        
+
         if (tiempoRestante <= 0) {
           finalizarPruebaFormal();
         }
@@ -259,7 +288,7 @@
       clearInterval(intervalo);
       if (listenerMovimiento) window.removeEventListener('devicemotion', listenerMovimiento);
       if (cameraInstance) { try { cameraInstance.stop(); } catch(e){} }
-      
+
       emitirPitido(587, 0.2);
       setTimeout(() => emitirPitido(880, 0.4), 250);
 
@@ -290,11 +319,11 @@
 
       desviacionTemblores.textContent = `${desviacionTotal.toFixed(3)} m/s²`;
 
-      // Guardado formal y persistencia en localStorage
       localStorage.setItem(`sensometrika_temblores_${cleanRut}_${sessionId}`, 'true');
       localStorage.setItem(`medico_temblores_${cleanRut}_${sessionId}`, 'true');
       localStorage.setItem(`medico_temblores_desviacion_${cleanRut}_${sessionId}`, desviacionTotal.toFixed(3));
       localStorage.setItem(`medico_temblores_muestras_${cleanRut}_${sessionId}`, datosAcelerometro.length);
+      marcarCompletadoDemo();
 
       let modulosRendidos = JSON.parse(localStorage.getItem('sensometrika_modulos_rendidos')) || {};
       modulosRendidos.temblores = true;
@@ -302,12 +331,7 @@
       localStorage.setItem('sensometrika_modulos_rendidos', JSON.stringify(modulosRendidos));
 
       setTimeout(() => {
-        const returnUrl = urlParams.get('returnUrl');
-        if (returnUrl) {
-          window.location.href = decodeURIComponent(returnUrl);
-        } else {
-          window.location.href = menuHref;
-        }
+        window.location.href = resolverDestinoTemblores();
       }, 1800);
     }
   </script>

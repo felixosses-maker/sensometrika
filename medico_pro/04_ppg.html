@@ -156,11 +156,11 @@
 <body>
 
     <div class="container">
-        
+
         <div class="header-top">
             <a href="#" id="linkMenu" class="btn-nav">← Menú B2B</a>
             <span class="module-title">4. PPG Pro (Pulso)</span>
-            <button class="btn-nav" onclick="location.reload()">🔄 Reiniciar</button>
+            <button type="button" class="btn-nav" onclick="location.reload()">🔄 Reiniciar</button>
         </div>
 
         <div class="instructions">
@@ -196,19 +196,48 @@
             </div>
         </div>
 
-        <button id="btnIniciar" class="btn-action" onclick="iniciarPruebaPPG()">
+        <button type="button" id="btnIniciar" class="btn-action" onclick="iniciarPruebaPPG()">
             ▶ INICIAR CAPTURA ÓPTICA & FLASH OFICIAL
         </button>
     </div>
 
     <script>
         const urlParams = new URLSearchParams(window.location.search);
-        const cleanRut = (urlParams.get('rut') || localStorage.getItem('sensometrika_rut') || '12345678').replace(/[^0-9Kk]/g, '');
+        const cleanRut = (urlParams.get('rut') || localStorage.getItem('sensometrika_rut') || '12345678').replace(/[^0-9Kk]/g, '').toUpperCase();
         const sessionId = urlParams.get('session') || localStorage.getItem('sensometrika_session_activa') || 'SESION_DEFAULT';
         const isB2C = localStorage.getItem('sensometrika_b2c_mode') === 'true' || urlParams.get('mode') === 'b2c';
+        const esFlujoDemo =
+            urlParams.get('flujo') === 'demo' ||
+            urlParams.get('mode') === 'demo' ||
+            localStorage.getItem('sensometrika_flujo_demo_activo') === 'true';
+        const claveModulo = urlParams.get('modulo') || 'ppg';
 
-        const menuHref = isB2C ? `../menu_B2C.html?${urlParams.toString()}` : `../menu_B2B.html?${urlParams.toString()}`;
-        document.getElementById('linkMenu').href = urlParams.get('returnUrl') ? decodeURIComponent(urlParams.get('returnUrl')) : menuHref;
+        function marcarCompletadoDemo() {
+            if (!esFlujoDemo) return;
+            localStorage.setItem(`sensometrika_${claveModulo}_${cleanRut}_${sessionId}`, 'true');
+            localStorage.setItem(`sensometrika_demo_completado_${claveModulo}_${cleanRut}_${sessionId}`, 'true');
+        }
+
+        function resolverDestinoPPG() {
+            const returnUrl = urlParams.get('returnUrl');
+            if (returnUrl) {
+                return decodeURIComponent(returnUrl);
+            }
+
+            const paramsSalida = new URLSearchParams(urlParams.toString());
+            if (esFlujoDemo) {
+                paramsSalida.set('flujo', 'demo');
+                paramsSalida.set('mode', 'demo');
+                paramsSalida.set('modulo', claveModulo);
+                return `../demo_empresa/demo_menu_b2b.html?${paramsSalida.toString()}`;
+            }
+
+            return isB2C ? `../menu_B2C.html?${paramsSalida.toString()}` : `../menu_B2B.html?${paramsSalida.toString()}`;
+        }
+
+        const linkMenuEl = document.getElementById('linkMenu');
+        linkMenuEl.href = resolverDestinoPPG();
+        linkMenuEl.textContent = esFlujoDemo ? '← Menú Demo' : '← Menú B2B';
 
         let streamCam = null;
         let trackVideo = null;
@@ -335,10 +364,10 @@
 
             const bpmFinal = Math.round(valoresBpmArray.reduce((a,b)=>a+b,0)/valoresBpmArray.length);
 
-            // Guardado formal y persistencia en localStorage
             localStorage.setItem(`sensometrika_ppg_${cleanRut}_${sessionId}`, 'true');
             localStorage.setItem(`medico_ppg_${cleanRut}_${sessionId}`, 'true');
             localStorage.setItem(`medico_ppg_score_${cleanRut}_${sessionId}`, bpmFinal);
+            marcarCompletadoDemo();
 
             let modulosRendidos = JSON.parse(localStorage.getItem('sensometrika_modulos_rendidos')) || {};
             modulosRendidos.ppg = true;
@@ -351,12 +380,7 @@
             document.getElementById('lblEstadoOptico').style.color = '#10b981';
 
             setTimeout(() => {
-                const returnUrl = urlParams.get('returnUrl');
-                if (returnUrl) {
-                    window.location.href = decodeURIComponent(returnUrl);
-                } else {
-                    window.location.href = menuHref;
-                }
+                window.location.href = resolverDestinoPPG();
             }, 1800);
         }
 

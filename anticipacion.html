@@ -76,7 +76,7 @@
       gap: 8px !important;
     }
 
-    .top-nav-bar button, 
+    .top-nav-bar button,
     .top-nav-bar a {
       background: #0c182e !important;
       border: 1px solid #1e3a6d !important;
@@ -93,7 +93,7 @@
       justify-content: center !important;
     }
 
-    .top-nav-bar button:hover, 
+    .top-nav-bar button:hover,
     .top-nav-bar a:hover {
       background: #1e293b !important;
       color: #ffffff !important;
@@ -316,7 +316,7 @@
     <section class="modulo-card-container">
       <!-- NAVEGACIÓN SUPERIOR UNIFICADA CON BIOMETRÍA PIP EN HEADER -->
       <div class="top-nav-bar">
-        <button type="button" onclick="regresarAlMenu()">← Menú Evaluaciones</button>
+        <button type="button" id="btnVolverMenuTop" onclick="regresarAlMenu()">← Menú Evaluaciones</button>
 
         <!-- PIP BIOMÉTRICO RESTRINGIDO (56px) -->
         <div class="cam-preview-pip-header">
@@ -384,7 +384,7 @@
       <p style="font-size: 0.8rem; color: #cbd5e1; line-height: 1.5; margin-bottom: 10px;">
         Consta de 1 ensayo Demo (práctica libre no puntuable) seguido de 3 simulaciones oficiales consecutivas. El sistema promediará los 3 ensayos oficiales para emitir el dictamen bajo la norma D.S. N° 170.
       </p>
-      <button onclick="cerrarModalGuia()" style="width: 100%; background: #0284c7; color: #ffffff; border: none; border-radius: 10px; padding: 10px; font-weight: 700; cursor: pointer;">Entendido</button>
+      <button type="button" onclick="cerrarModalGuia()" style="width: 100%; background: #0284c7; color: #ffffff; border: none; border-radius: 10px; padding: 10px; font-weight: 700; cursor: pointer;">Entendido</button>
     </div>
   </div>
 
@@ -392,6 +392,11 @@
     const urlParams = new URLSearchParams(window.location.search);
     const modeParam = urlParams.get('mode') || 'b2b';
     const esB2B = (modeParam === 'b2b') || urlParams.has('token') || urlParams.has('session');
+    const esFlujoDemo =
+      urlParams.get('flujo') === 'demo' ||
+      modeParam === 'demo' ||
+      localStorage.getItem('sensometrika_flujo_demo_activo') === 'true';
+    const claveModulo = urlParams.get('modulo') || 'anticipacion';
 
     let datosUsuario = {};
     try {
@@ -403,10 +408,45 @@
     const rawEmpresa = urlParams.get('empresa') || datosUsuario.empresa || localStorage.getItem('sensometrika_b2b_empresa') || '';
     const planActivo = (urlParams.get('plan') || localStorage.getItem('sensometrika_b2b_plan') || 'BASICO').toUpperCase();
     const rut = urlParams.get('rut') || datosUsuario.rut || localStorage.getItem('sensometrika_rut') || '12345678-K';
-    const cleanRut = rut.replace(/[^0-9Kk]/g, '');
+    const cleanRut = rut.replace(/[^0-9Kk]/g, '').toUpperCase();
     const sessionId = urlParams.get('session') || localStorage.getItem('sensometrika_session_activa') || `SESION_B2B_${cleanRut}_${Date.now()}`;
 
-    // PARÁMETROS TELEMÉTRICOS DE CÁMARA
+    function marcarCompletadoDemo() {
+      if (!esFlujoDemo) return;
+      localStorage.setItem(`sensometrika_${claveModulo}_${cleanRut}_${sessionId}`, 'true');
+      localStorage.setItem(`sensometrika_demo_completado_${claveModulo}_${cleanRut}_${sessionId}`, 'true');
+    }
+
+    function resolverDestinoAnticipacion() {
+      const returnUrl = urlParams.get('returnUrl');
+      if (returnUrl) {
+        return decodeURIComponent(returnUrl);
+      }
+
+      const paramsSalida = new URLSearchParams({
+        rut: rut,
+        nombre: rawNombre,
+        cargo: rawCargo,
+        empresa: rawEmpresa,
+        plan: planActivo,
+        session: sessionId,
+        mode: esFlujoDemo ? 'demo' : (esB2B ? 'b2b' : 'b2c')
+      });
+
+      if (esFlujoDemo) {
+        paramsSalida.set('flujo', 'demo');
+        paramsSalida.set('modulo', claveModulo);
+        return `demo_empresa/demo_menu_b2b.html?${paramsSalida.toString()}`;
+      }
+
+      return esB2B ? `menu_b2b_planes.html?${paramsSalida.toString()}` : `menu_B2C.html?${paramsSalida.toString()}`;
+    }
+
+    const btnVolverMenuTop = document.getElementById('btnVolverMenuTop');
+    if (btnVolverMenuTop && esFlujoDemo) {
+      btnVolverMenuTop.textContent = '← Menú Demo';
+    }
+
     let distanciaMedidaCm = 55;
     let estaBloqueadoPorDistancia = false;
 
@@ -481,16 +521,7 @@
     function cerrarModalGuia() { document.getElementById('modalGuia').style.display = 'none'; }
 
     function regresarAlMenu() {
-      const paramsRegreso = new URLSearchParams({
-        rut: rut,
-        nombre: rawNombre,
-        cargo: rawCargo,
-        empresa: rawEmpresa,
-        plan: planActivo,
-        session: sessionId,
-        mode: 'b2b'
-      });
-      window.location.href = `menu_b2b_planes.html?${paramsRegreso.toString()}`;
+      window.location.href = resolverDestinoAnticipacion();
     }
 
     function mostrarModalInterno(titulo, mensaje, callback) {
@@ -512,13 +543,12 @@
     let interval = null;
     let posicionX = 15;
     let velocidad = 4;
-    let posicionObjetivo = 250; 
+    let posicionObjetivo = 250;
     let simulando = false;
 
-    let faseActual = 0; 
+    let faseActual = 0;
     let erroresOficiales = [];
 
-    // VERIFICACIÓN ESTRICTA POR RUT Y SESIÓN B2B
     function verificarModuloEjecutado() {
       if (urlParams.has('reeval')) return false;
       const dataStr = localStorage.getItem(`sensometrika_anticipacion_${cleanRut}_${sessionId}`);
@@ -535,12 +565,12 @@
 
       if (ejecutado) {
         document.getElementById('titulo-fase').innerText = `✓ EVALUACIÓN REGISTRADA (1/1)`;
-        document.getElementById('badge-modo').innerText = `✓ REGISTRADO EN INFORME B2B`;
+        document.getElementById('badge-modo').innerText = esFlujoDemo ? `✓ REGISTRADO EN DEMO` : `✓ REGISTRADO EN INFORME B2B`;
         document.getElementById('badge-modo').style.borderColor = '#10b981';
         document.getElementById('badge-modo').style.color = '#10b981';
-        document.getElementById('panel-estado').innerText = 'Evaluación corporativa B2B registrada exitosamente.';
+        document.getElementById('panel-estado').innerText = esFlujoDemo ? 'Evaluación demo registrada exitosamente.' : 'Evaluación corporativa B2B registrada exitosamente.';
         const btn = document.getElementById('btn-accion');
-        btn.innerText = 'VOLVER AL MENÚ DE EVALUACIONES →';
+        btn.innerText = esFlujoDemo ? 'VOLVER AL MENÚ DEMO →' : 'VOLVER AL MENÚ DE EVALUACIONES →';
         btn.style.backgroundColor = '#10b981';
         btn.onclick = regresarAlMenu;
       }
@@ -573,7 +603,7 @@
             vehiculo.style.transform = `translateX(${posicionX}px)`;
 
             if (posicionX > 330) {
-              registrarFinEnsayo(195); 
+              registrarFinEnsayo(195);
             }
           }
         }, 30);
@@ -590,7 +620,6 @@
       simulando = false;
 
       if (faseActual === 0) {
-        // "QUEMAR" EL DEMO Y PASAR DIRECTAMENTE A LA FASE OFICIAL
         localStorage.setItem(`anticipacion_demo_completada_${cleanRut}_${sessionId}`, 'true');
 
         mostrarModalInterno(
@@ -640,10 +669,10 @@
         fecha: new Date().toISOString()
       };
 
-      // REGISTRO DE CLAVES PARA LECTURA DIRECTA EN INFORME B2B
       localStorage.setItem(`sensometrika_anticipacion_${cleanRut}_${sessionId}`, JSON.stringify(registroData));
       localStorage.setItem(`sensometrika_last_anticipacion_${cleanRut}_${sessionId}`, JSON.stringify(registroData));
       localStorage.setItem('sensometrika_anticipacion', JSON.stringify(registroData));
+      marcarCompletadoDemo();
 
       let modulosRendidos = {};
       try { modulosRendidos = JSON.parse(localStorage.getItem('sensometrika_modulos_rendidos')) || {}; } catch(e){}

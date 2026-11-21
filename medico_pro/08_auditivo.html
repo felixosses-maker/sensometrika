@@ -176,7 +176,7 @@
         <p id="lblEstado" style="font-size: 0.72rem; color: var(--accent-cyan);">Pulse iniciar para comenzar tamizaje auditivo</p>
       </div>
 
-      <button class="btn-action" id="btnIniciar" onclick="iniciarTestAuditivo()">INICIAR TEST AUDITIVO →</button>
+      <button type="button" class="btn-action" id="btnIniciar" onclick="iniciarTestAuditivo()">INICIAR TEST AUDITIVO →</button>
 
       <!-- OVERLAY DE BLOQUEO POR DISTANCIA -->
       <div id="boxBlockDistancia" class="distance-block-overlay">
@@ -188,12 +188,41 @@
 
   <script>
     const urlParams = new URLSearchParams(window.location.search);
-    const cleanRut = (urlParams.get('rut') || localStorage.getItem('sensometrika_rut') || '12345678').replace(/[^0-9Kk]/g, '');
+    const cleanRut = (urlParams.get('rut') || localStorage.getItem('sensometrika_rut') || '12345678').replace(/[^0-9Kk]/g, '').toUpperCase();
     const sessionId = urlParams.get('session') || localStorage.getItem('sensometrika_session_activa') || 'SESION_DEFAULT';
     const isB2C = localStorage.getItem('sensometrika_b2c_mode') === 'true' || urlParams.get('mode') === 'b2c';
+    const esFlujoDemo =
+      urlParams.get('flujo') === 'demo' ||
+      urlParams.get('mode') === 'demo' ||
+      localStorage.getItem('sensometrika_flujo_demo_activo') === 'true';
+    const claveModulo = urlParams.get('modulo') || 'auditivo';
 
-    const menuHref = isB2C ? `../menu_B2C.html?${urlParams.toString()}` : `../menu_B2B.html?${urlParams.toString()}`;
-    document.getElementById('linkMenu').href = urlParams.get('returnUrl') ? decodeURIComponent(urlParams.get('returnUrl')) : menuHref;
+    function marcarCompletadoDemo() {
+      if (!esFlujoDemo) return;
+      localStorage.setItem(`sensometrika_${claveModulo}_${cleanRut}_${sessionId}`, 'true');
+      localStorage.setItem(`sensometrika_demo_completado_${claveModulo}_${cleanRut}_${sessionId}`, 'true');
+    }
+
+    function resolverDestinoAuditivo() {
+      const returnUrl = urlParams.get('returnUrl');
+      if (returnUrl) {
+        return decodeURIComponent(returnUrl);
+      }
+
+      const paramsSalida = new URLSearchParams(urlParams.toString());
+      if (esFlujoDemo) {
+        paramsSalida.set('flujo', 'demo');
+        paramsSalida.set('mode', 'demo');
+        paramsSalida.set('modulo', claveModulo);
+        return `../demo_empresa/demo_menu_b2b.html?${paramsSalida.toString()}`;
+      }
+
+      return isB2C ? `../menu_B2C.html?${paramsSalida.toString()}` : `../menu_B2B.html?${paramsSalida.toString()}`;
+    }
+
+    const linkMenuEl = document.getElementById('linkMenu');
+    linkMenuEl.href = resolverDestinoAuditivo();
+    linkMenuEl.textContent = esFlujoDemo ? '← Menú Demo' : '← Menú';
 
     let distanciaMedidaCm = 55;
     let estaBloqueadoPorDistancia = false;
@@ -211,7 +240,7 @@
         if (typeof FaceMesh !== 'undefined' && typeof Camera !== 'undefined') {
           const faceMesh = new FaceMesh({ locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}` });
           faceMesh.setOptions({ maxNumFaces: 1, refineLandmarks: true, minDetectionConfidence: 0.5, minTrackingConfidence: 0.5 });
-          
+
           faceMesh.onResults((results) => {
             if (!results.multiFaceLandmarks || results.multiFaceLandmarks.length === 0) return;
             const landmarks = results.multiFaceLandmarks[0];
@@ -219,7 +248,7 @@
             const dy = landmarks[33].y - landmarks[263].y;
             let dist = Math.round(9.5 / Math.sqrt(dx * dx + dy * dy));
             distanciaMedidaCm = Math.round(distanciaMedidaCm * 0.5 + dist * 0.5);
-            
+
             const overlay = document.getElementById('boxBlockDistancia');
             if (distanciaMedidaCm >= 45 && distanciaMedidaCm <= 65) {
               estaBloqueadoPorDistancia = false;
@@ -231,10 +260,10 @@
             }
           });
 
-          cameraInstance = new Camera(videoElement, { 
-            onFrame: async () => { await faceMesh.send({ image: videoElement }); }, 
-            width: 320, 
-            height: 240 
+          cameraInstance = new Camera(videoElement, {
+            onFrame: async () => { await faceMesh.send({ image: videoElement }); },
+            width: 320,
+            height: 240
           });
           await cameraInstance.start();
         }
@@ -280,7 +309,7 @@
 
       const lblTimer = document.getElementById('lblTimer');
       const lblEstado = document.getElementById('lblEstado');
-      
+
       emitirTonoAlarma(880, 0.3);
       lblEstado.textContent = "Escuche atentamente la alarma de faena...";
 
@@ -299,17 +328,17 @@
           clearInterval(intervaloTimer);
           testEnCurso = false;
           if (cameraInstance) { try { cameraInstance.stop(); } catch(e){} }
-          
+
           emitirTonoAlarma(587, 0.2);
           setTimeout(() => emitirTonoAlarma(880, 0.4), 250);
 
           lblEstado.textContent = `✓ Tamizaje auditivo completado (${aciertosAuditivos} aciertos)`;
           lblTimer.style.color = "var(--accent-green)";
 
-          // Guardar doble clave oficial en localStorage
           localStorage.setItem(`sensometrika_auditivo_${cleanRut}_${sessionId}`, 'true');
           localStorage.setItem(`medico_auditivo_${cleanRut}_${sessionId}`, 'true');
           localStorage.setItem(`medico_auditivo_score_${cleanRut}_${sessionId}`, aciertosAuditivos);
+          marcarCompletadoDemo();
 
           let modulosRendidos = JSON.parse(localStorage.getItem('sensometrika_modulos_rendidos')) || {};
           modulosRendidos.auditivo = true;
@@ -317,24 +346,14 @@
           localStorage.setItem('sensometrika_modulos_rendidos', JSON.stringify(modulosRendidos));
 
           setTimeout(() => {
-            const returnUrl = urlParams.get('returnUrl');
-            if (returnUrl) {
-              window.location.href = decodeURIComponent(returnUrl);
-            } else {
-              window.location.href = menuHref;
-            }
+            window.location.href = resolverDestinoAuditivo();
           }, 1800);
         }
       }, 1000);
     }
 
     function volverMenu() {
-      const returnUrl = urlParams.get('returnUrl');
-      if (returnUrl) {
-        window.location.href = decodeURIComponent(returnUrl);
-      } else {
-        window.location.href = menuHref;
-      }
+      window.location.href = resolverDestinoAuditivo();
     }
 
     document.addEventListener('DOMContentLoaded', () => {

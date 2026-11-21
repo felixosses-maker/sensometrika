@@ -311,19 +311,19 @@
     <div class="main-container">
         <header class="brand-header">
             <img src="sensometrica.jpg" alt="SENSOMETRIKA" class="brand-logo-img">
-            <span class="brand-subtitle">MÓDULO REACTÍMETRO • TIEMPO DE FRENADO B2B</span>
+            <span class="brand-subtitle" id="subtituloReactimetro">MÓDULO REACTÍMETRO • TIEMPO DE FRENADO B2B</span>
         </header>
 
         <div class="eval-card">
             <div class="top-nav">
-                <button onclick="ejecutarRetornoMenu()">← Menú Pruebas</button>
+                <button type="button" id="btnVolverNav" onclick="ejecutarRetornoMenu()">← Menú Pruebas</button>
 
                 <div class="cam-preview-pip-header">
                     <video id="webcamVideo" autoplay playsinline muted></video>
                     <div class="cam-tag-header">Biometría</div>
                 </div>
 
-                <button id="btnInfo">? ¿Cómo funciona?</button>
+                <button type="button" id="btnInfo">? ¿Cómo funciona?</button>
             </div>
 
             <div class="status-badge-container">
@@ -351,8 +351,8 @@
             </div>
 
             <div>
-                <button id="btnStart" class="btn-start">INICIAR EVALUACIÓN</button>
-                <button id="btnNext" class="btn-next" onclick="ejecutarRetornoMenu()">VOLVER AL MENÚ DE PRUEBAS →</button>
+                <button type="button" id="btnStart" class="btn-start">INICIAR EVALUACIÓN</button>
+                <button type="button" id="btnNext" class="btn-next" onclick="ejecutarRetornoMenu()">VOLVER AL MENÚ DE PRUEBAS →</button>
             </div>
 
             <div class="metrics-grid">
@@ -379,7 +379,7 @@
             <div class="modal-content">
                 <div id="modalTitle" class="modal-title">PRUEBA FINALIZADA</div>
                 <div id="modalBody" class="modal-body">Resultados registrados.</div>
-                <button id="modalBtnClose" class="modal-btn">Continuar</button>
+                <button type="button" id="modalBtnClose" class="modal-btn">Continuar</button>
             </div>
         </div>
     </div>
@@ -404,6 +404,11 @@
 
         const urlParams = new URLSearchParams(window.location.search);
         const modeParam = urlParams.get('mode') || 'b2b';
+        const esFlujoDemo =
+            urlParams.get('flujo') === 'demo' ||
+            modeParam === 'demo' ||
+            localStorage.getItem('sensometrika_flujo_demo_activo') === 'true';
+        const claveModulo = urlParams.get('modulo') || 'reactimetro';
         const esB2B = (modeParam === 'b2b') || urlParams.has('token') || urlParams.has('session');
 
         let datosUsuario = {};
@@ -414,22 +419,29 @@
         const rawEmpresa = urlParams.get('empresa') || datosUsuario.empresa || localStorage.getItem('sensometrika_b2b_empresa') || '';
         const planActivo = (urlParams.get('plan') || localStorage.getItem('sensometrika_b2b_plan') || 'BASICO').toUpperCase();
         const rutEvaluado = urlParams.get('rut') || datosUsuario.rut || localStorage.getItem('sensometrika_rut') || '12345678-K';
-        const cleanRut = rutEvaluado.replace(/[^0-9Kk]/g, '');
+        const cleanRut = rutEvaluado.replace(/[^0-9Kk]/g, '').toUpperCase() || '12345678K';
         const sessionId = urlParams.get('session') || localStorage.getItem('sensometrika_session_activa') || `SESION_B2B_${cleanRut}_${Date.now()}`;
 
-        let modoActual = 'DEMO';
-        let evaluacionEnCurso = false;
-        let estadoLuz = 'APAGADO'; // APAGADO, ROJO, VERDE
-        let tiemposReaccion = [];
-        let estimuloActual = 0;
-        let totalEstimulosActual = 3; // 3 para DEMO, 6 para OFICIAL
-        let tiempoInicioEstimuloMs = 0;
-        let timerEsperaLuz = null;
+        function marcarCompletadoDemo() {
+            if (!esFlujoDemo) return;
+            localStorage.setItem(`sensometrika_${claveModulo}_${cleanRut}_${sessionId}`, 'true');
+            localStorage.setItem(`sensometrika_demo_completado_${claveModulo}_${cleanRut}_${sessionId}`, 'true');
+        }
 
-        let distanciaMedidaCm = 55;
-        let estaBloqueadoPorDistancia = false;
+        function resolverDestinoReactimetro() {
+            const returnUrl = urlParams.get('returnUrl');
+            if (returnUrl) {
+                return decodeURIComponent(returnUrl);
+            }
 
-        function ejecutarRetornoMenu() {
+            if (esFlujoDemo) {
+                const paramsSalida = new URLSearchParams(urlParams.toString());
+                paramsSalida.set('flujo', 'demo');
+                paramsSalida.set('mode', 'demo');
+                paramsSalida.set('modulo', claveModulo);
+                return `demo_empresa/demo_menu_b2b.html?${paramsSalida.toString()}`;
+            }
+
             const paramsRegreso = new URLSearchParams({
                 rut: rutEvaluado,
                 nombre: rawNombre,
@@ -439,7 +451,23 @@
                 session: sessionId,
                 mode: 'b2b'
             });
-            window.location.href = `menu_b2b_planes.html?${paramsRegreso.toString()}`;
+            return `menu_b2b_planes.html?${paramsRegreso.toString()}`;
+        }
+
+        let modoActual = 'DEMO';
+        let evaluacionEnCurso = false;
+        let estadoLuz = 'APAGADO';
+        let tiemposReaccion = [];
+        let estimuloActual = 0;
+        let totalEstimulosActual = 3;
+        let tiempoInicioEstimuloMs = 0;
+        let timerEsperaLuz = null;
+
+        let distanciaMedidaCm = 55;
+        let estaBloqueadoPorDistancia = false;
+
+        function ejecutarRetornoMenu() {
+            window.location.href = resolverDestinoReactimetro();
         }
 
         function iniciarMediaPipeFaceMesh() {
@@ -510,7 +538,6 @@
             }
         }
 
-        // VERIFICACIÓN ESTRICTA POR SESIÓN
         function verificarModuloEjecutadoEnSesion() {
             if (urlParams.has('reeval')) return false;
             const dataStr = localStorage.getItem(`sensometrika_reactimetro_${cleanRut}_${sessionId}`);
@@ -537,6 +564,7 @@
                 badgeText.textContent = `EVALUACIÓN REGISTRADA (1/1)`;
                 badgeDot.style.backgroundColor = "#10b981"; 
                 btnStart.style.display = 'none';
+                btnNext.textContent = esFlujoDemo ? 'VOLVER AL MENÚ DEMO →' : 'VOLVER AL MENÚ DE PRUEBAS →';
                 btnNext.style.display = 'block';
                 instructionText.textContent = 'Evaluación de Tiempo de Reacción finalizada con éxito. Retorna al menú.';
             } else if (modoActual === 'DEMO') {
@@ -548,7 +576,7 @@
                 btnNext.style.display = 'none';
                 instructionText.textContent = "Modo Demo: Inducción táctil libre para habituarse al estímulo visual de frenado.";
             } else {
-                badgeText.textContent = "Fase 2: Simulación Oficial B2B (1/1)";
+                badgeText.textContent = esFlujoDemo ? "Fase 2: Simulación Demo B2B (1/1)" : "Fase 2: Simulación Oficial B2B (1/1)";
                 badgeDot.style.backgroundColor = "#10b981"; 
                 btnStart.textContent = "INICIAR SIMULACIÓN OFICIAL B2B (6 ESTÍMULOS)";
                 btnStart.style.backgroundColor = "#10b981";
@@ -599,7 +627,6 @@
             if (!evaluacionEnCurso || estaBloqueadoPorDistancia) return;
 
             if (estadoLuz === 'ROJO') {
-                // Anticipación / Error de partida falsa
                 clearTimeout(timerEsperaLuz);
                 luzDisplay.className = 'luz-indicadora';
                 luzDisplay.style.backgroundColor = '#ef4444';
@@ -662,10 +689,10 @@
                     fecha: new Date().toISOString()
                 };
 
-                // GUARDAR EN CLAVES COMPATIBLES CON INFORME-B2B.HTML Y MENU B2B
                 localStorage.setItem(`sensometrika_reactimetro_${cleanRut}_${sessionId}`, JSON.stringify(registroData));
                 localStorage.setItem(`sensometrika_last_reactimetro_${cleanRut}_${sessionId}`, JSON.stringify(registroData));
                 localStorage.setItem('sensometrika_reactimetro', JSON.stringify(registroData));
+                marcarCompletadoDemo();
 
                 let modulosRendidos = {};
                 try { modulosRendidos = JSON.parse(localStorage.getItem('sensometrika_modulos_rendidos')) || {}; } catch(e){}
@@ -700,6 +727,12 @@
         });
 
         document.addEventListener('DOMContentLoaded', () => {
+            if (esFlujoDemo) {
+                const btnNav = document.getElementById('btnVolverNav');
+                const sub = document.getElementById('subtituloReactimetro');
+                if (btnNav) btnNav.textContent = '← Menú Demo';
+                if (sub) sub.textContent = 'MÓDULO REACTÍMETRO • DEMO B2B';
+            }
             iniciarMediaPipeFaceMesh();
             actualizarEstadoUI();
         });

@@ -237,23 +237,52 @@
         </div>
       </div>
 
-      <button class="btn-action" id="btnIniciar" disabled style="opacity: 0.4; cursor: not-allowed;" onclick="iniciarNistagmo()">CALIBRANDO DISTANCIA...</button>
+      <button type="button" class="btn-action" id="btnIniciar" disabled style="opacity: 0.4; cursor: not-allowed;" onclick="iniciarNistagmo()">CALIBRANDO DISTANCIA...</button>
     </div>
   </div>
 
   <script>
     const urlParams = new URLSearchParams(window.location.search);
-    const cleanRut = (urlParams.get('rut') || localStorage.getItem('sensometrika_rut') || '12345678').replace(/[^0-9Kk]/g, '');
+    const cleanRut = (urlParams.get('rut') || localStorage.getItem('sensometrika_rut') || '12345678').replace(/[^0-9Kk]/g, '').toUpperCase();
     const sessionId = urlParams.get('session') || localStorage.getItem('sensometrika_session_activa') || 'SESION_DEFAULT';
     const isB2C = localStorage.getItem('sensometrika_b2c_mode') === 'true' || urlParams.get('mode') === 'b2c';
+    const esFlujoDemo =
+      urlParams.get('flujo') === 'demo' ||
+      urlParams.get('mode') === 'demo' ||
+      localStorage.getItem('sensometrika_flujo_demo_activo') === 'true';
+    const claveModulo = urlParams.get('modulo') || 'nistagmo';
 
-    const menuHref = isB2C ? `../menu_B2C.html?${urlParams.toString()}` : `../menu_B2B.html?${urlParams.toString()}`;
-    document.getElementById('linkMenu').href = urlParams.get('returnUrl') ? decodeURIComponent(urlParams.get('returnUrl')) : menuHref;
+    function marcarCompletadoDemo() {
+      if (!esFlujoDemo) return;
+      localStorage.setItem(`sensometrika_${claveModulo}_${cleanRut}_${sessionId}`, 'true');
+      localStorage.setItem(`sensometrika_demo_completado_${claveModulo}_${cleanRut}_${sessionId}`, 'true');
+    }
+
+    function resolverDestinoNistagmo() {
+      const returnUrl = urlParams.get('returnUrl');
+      if (returnUrl) {
+        return decodeURIComponent(returnUrl);
+      }
+
+      const paramsSalida = new URLSearchParams(urlParams.toString());
+      if (esFlujoDemo) {
+        paramsSalida.set('flujo', 'demo');
+        paramsSalida.set('mode', 'demo');
+        paramsSalida.set('modulo', claveModulo);
+        return `../demo_empresa/demo_menu_b2b.html?${paramsSalida.toString()}`;
+      }
+
+      return isB2C ? `../menu_B2C.html?${paramsSalida.toString()}` : `../menu_B2B.html?${paramsSalida.toString()}`;
+    }
+
+    const linkMenuEl = document.getElementById('linkMenu');
+    linkMenuEl.href = resolverDestinoNistagmo();
+    linkMenuEl.textContent = esFlujoDemo ? '← Menú Demo' : '← Menú';
 
     let cameraInstance = null;
     let pruebaActiva = false;
     let distanciaOk = false;
-    
+
     let tiempoFueraRegistroMs = 0;
     let girosRostroDetectados = 0;
     let parpadeosProlongados = 0;
@@ -266,7 +295,7 @@
         if (typeof FaceMesh !== 'undefined' && typeof Camera !== 'undefined') {
           const faceMesh = new FaceMesh({ locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}` });
           faceMesh.setOptions({ maxNumFaces: 1, refineLandmarks: true, minDetectionConfidence: 0.5, minTrackingConfidence: 0.5 });
-          
+
           faceMesh.onResults((results) => {
             const banner = document.getElementById('bannerAlerta');
             const btnIniciar = document.getElementById('btnIniciar');
@@ -293,13 +322,11 @@
             }
 
             const landmarks = results.multiFaceLandmarks[0];
-            
-            // Cálculo telemétrico estricto de distancia (25 a 40 cm)
+
             const dx = landmarks[33].x - landmarks[263].x;
             const dy = landmarks[33].y - landmarks[263].y;
             let dist = Math.round(9.5 / Math.sqrt(dx * dx + dy * dy));
 
-            // Detección de giros bruscos de cabeza
             const narizX = landmarks[1].x;
             if (ultimaPosicionNarizX !== null) {
               let diferenciaMovimiento = Math.abs(narizX - ultimaPosicionNarizX);
@@ -312,7 +339,6 @@
             }
             ultimaPosicionNarizX = narizX;
 
-            // Detección de parpadeo prolongado
             const ojoIzqAlto = Math.abs(landmarks[159].y - landmarks[145].y);
             if (ojoIzqAlto < 0.007) {
               if (pruebaActiva) {
@@ -321,7 +347,6 @@
               }
             }
 
-            // REGLA ESTRICTA DE DISTANCIA: 25 cm a 40 cm
             if (dist >= 25 && dist <= 40) {
               distanciaOk = true;
               banner.style.display = 'none';
@@ -356,10 +381,10 @@
             }
           });
 
-          cameraInstance = new Camera(videoElement, { 
-            onFrame: async () => { await faceMesh.send({ image: videoElement }); }, 
-            width: 320, 
-            height: 240 
+          cameraInstance = new Camera(videoElement, {
+            onFrame: async () => { await faceMesh.send({ image: videoElement }); },
+            width: 320,
+            height: 240
           });
           await cameraInstance.start();
         }
@@ -384,7 +409,7 @@
 
       let posicionPaso = 0;
       const posicionesX = ['10%', '85%', '20%', '80%', '15%', '85%', '50%'];
-      
+
       const movimientoIntervalo = setInterval(() => {
         posicionPaso = (posicionPaso + 1) % posicionesX.length;
         targetDot.style.left = posicionesX[posicionPaso];
@@ -413,7 +438,8 @@
 
           localStorage.setItem(`sensometrika_nistagmo_${cleanRut}_${sessionId}`, aprobadoNistagmo ? 'true' : 'false');
           localStorage.setItem(`medico_nistagmo_${cleanRut}_${sessionId}`, aprobadoNistagmo ? 'true' : 'false');
-          
+          marcarCompletadoDemo();
+
           let detalleJson = {
             aprobado: aprobadoNistagmo,
             score: scoreSeguimiento,
@@ -430,12 +456,7 @@
           localStorage.setItem('sensometrika_modulos_rendidos', JSON.stringify(modulosRendidos));
 
           setTimeout(() => {
-            const returnUrl = urlParams.get('returnUrl');
-            if (returnUrl) {
-              window.location.href = decodeURIComponent(returnUrl);
-            } else {
-              window.location.href = menuHref;
-            }
+            window.location.href = resolverDestinoNistagmo();
           }, 2500);
         }
       }, 1000);

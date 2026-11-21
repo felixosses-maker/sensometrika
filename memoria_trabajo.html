@@ -97,7 +97,6 @@
       color: #ffffff !important;
     }
 
-    /* PIP BIOMÉTRICO RESTRINGIDO A 56px X 56px */
     .cam-preview-pip-header {
       position: relative !important;
       width: 56px !important;
@@ -151,7 +150,6 @@
       text-align: center;
     }
 
-    /* CONTENEDOR DE LA MATRIZ DE MEMORIA */
     .memory-viewport {
       position: relative;
       width: 100%;
@@ -209,7 +207,6 @@
       color: #fff !important;
     }
 
-    /* OVERLAY DE BLOQUEO POR DISTANCIA NORMATIVA */
     .distance-block-overlay {
       position: absolute;
       inset: 0;
@@ -285,7 +282,6 @@
 </head>
 <body>
 
-  <!-- ELEMENTO OCULTO PARA RECEPCIÓN DE VIDEO DE CÁMARA -->
   <video id="webcamInput" style="display:none;" playsinline></video>
 
   <main class="app-container">
@@ -297,11 +293,9 @@
     </header>
 
     <section class="modulo-card-container">
-      <!-- NAVEGACIÓN SUPERIOR CON PIP BIOMÉTRICO -->
       <div class="top-nav-bar">
-        <button type="button" onclick="regresarAlMenu()">← Menú Evaluaciones</button>
+        <button type="button" id="btnVolverTop" onclick="regresarAlMenu()">← Menú Evaluaciones</button>
 
-        <!-- PIP BIOMÉTRICO RESTRINGIDO (56px) -->
         <div class="cam-preview-pip-header">
           <video id="webcamVideo" autoplay playsinline muted></video>
           <div class="cam-tag-header">Biometría</div>
@@ -314,7 +308,6 @@
         <span class="badge-fase" id="badge-modo">🧩 SIMULACIÓN OFICIAL B2B PRO</span>
       </div>
 
-      <!-- CONTENEDOR DE LA MATRIZ DE MEMORIA -->
       <div class="memory-viewport" id="viewportTest">
         <div class="grid-matriz" id="gridMatriz">
           <div class="celda-memoria" data-index="0" onclick="clicCelda(0)">1</div>
@@ -328,7 +321,6 @@
           <div class="celda-memoria" data-index="8" onclick="clicCelda(8)">9</div>
         </div>
 
-        <!-- OVERLAY DE BLOQUEO POR DISTANCIA NORMATIVA -->
         <div id="boxBlockDistancia" class="distance-block-overlay">
           <span class="distance-block-title">⚠️ DISTANCIA / POSTURA FUERA DE RANGO</span>
           <span id="txtDistanciaDetalle" class="distance-block-desc">
@@ -347,7 +339,6 @@
         ▶ Iniciar Simulación Oficial B2B
       </button>
 
-      <!-- METRICAS GRID -->
       <div class="metricas-grid">
         <div class="col-metrica">
           <span>Nivel / Ronda</span>
@@ -365,17 +356,16 @@
     </section>
   </main>
 
-  <!-- Modal Guía -->
   <div id="modalGuia" style="display: none; position: fixed; inset: 0; background: rgba(3, 7, 18, 0.9); backdrop-filter: blur(8px); z-index: 99999; align-items: center; justify-content: center; padding: 16px;">
     <div style="background: #0f172a; border: 1px solid rgba(56, 189, 248, 0.4); border-radius: 16px; max-width: 400px; width: 100%; padding: 22px; text-align: left; color: #f8fafc;">
       <h3 style="font-size: 1.15rem; font-weight: 800; color: #38bdf8; margin-bottom: 10px;">🧩 Memoria de Trabajo Operativa</h3>
       <p style="font-size: 0.8rem; color: #cbd5e1; line-height: 1.5; margin-bottom: 10px;">
-        1. Mantenga su dispositivo a una distancia reglamentaria de <strong>45 a 65 cm</strong>.<br>
-        2. Observe atentamente la secuencia de iluminación de los números en la cuadrícula.<br>
-        3. Una vez finalizada la muestra, repita la secuencia haciendo clic en las celdas en el orden exacto.<br>
-        4. Consta de 4 rondas progresivas de retención operativa.
+1. Mantenga su dispositivo a una distancia reglamentaria de <strong>45 a 65 cm</strong>.<br>
+2. Observe atentamente la secuencia de iluminación de los números en la cuadrícula.<br>
+3. Una vez finalizada la muestra, repita la secuencia haciendo clic en las celdas en el orden exacto.<br>
+4. Consta de 4 rondas progresivas de retención operativa.
       </p>
-      <button onclick="cerrarModalGuia()" style="width: 100%; background: #0284c7; color: #ffffff; border: none; border-radius: 10px; padding: 10px; font-weight: 700; cursor: pointer;">Entendido</button>
+      <button type="button" onclick="cerrarModalGuia()" style="width: 100%; background: #0284c7; color: #ffffff; border: none; border-radius: 10px; padding: 10px; font-weight: 700; cursor: pointer;">Entendido</button>
     </div>
   </div>
 
@@ -383,15 +373,44 @@
     const urlParams = new URLSearchParams(window.location.search);
     const modeParam = urlParams.get('mode') || (localStorage.getItem('sensometrika_b2c_mode') === 'true' ? 'b2c' : 'b2b');
     const esB2B = (modeParam === 'b2b');
+    const esFlujoDemo =
+      urlParams.get('flujo') === 'demo' ||
+      modeParam === 'demo' ||
+      localStorage.getItem('sensometrika_flujo_demo_activo') === 'true';
+    const claveModulo = urlParams.get('modulo') || 'memoria_trabajo';
 
     let datosUsuario = {};
     try {
       datosUsuario = JSON.parse(localStorage.getItem('sensometrika_datos_usuario')) || {};
     } catch(e){}
 
-    const rut = urlParams.get('rut') || datosUsuario.rut || 'GENERICO';
-    const cleanRut = rut.replace(/[^0-9Kk]/g, '');
+    const rut = urlParams.get('rut') || datosUsuario.rut || localStorage.getItem('sensometrika_rut') || 'GENERICO';
+    const cleanRut = rut.replace(/[^0-9Kk]/g, '').toUpperCase() || 'GENERICO';
     const sessionId = urlParams.get('session') || localStorage.getItem('sensometrika_session_activa') || `SESION_${cleanRut}_${Date.now()}`;
+
+    function marcarCompletadoDemo() {
+      if (!esFlujoDemo) return;
+      localStorage.setItem(`sensometrika_${claveModulo}_${cleanRut}_${sessionId}`, 'true');
+      localStorage.setItem(`sensometrika_demo_completado_${claveModulo}_${cleanRut}_${sessionId}`, 'true');
+    }
+
+    function resolverDestinoMemoria() {
+      const returnUrlParam = urlParams.get('returnUrl');
+      if (returnUrlParam) {
+        return decodeURIComponent(returnUrlParam);
+      }
+
+      const paramsSalida = new URLSearchParams(urlParams.toString());
+      if (esFlujoDemo) {
+        paramsSalida.set('flujo', 'demo');
+        paramsSalida.set('mode', 'demo');
+        paramsSalida.set('modulo', claveModulo);
+        return `demo_empresa/demo_menu_b2b.html?${paramsSalida.toString()}`;
+      }
+
+      const menuDestino = esB2B ? 'menu_B2B.html' : 'menu_B2C.html';
+      return `${menuDestino}?${paramsSalida.toString()}`;
+    }
 
     let distanciaMedidaCm = 55;
     let estaBloqueadoPorDistancia = false;
@@ -455,17 +474,10 @@
     function cerrarModalGuia() { document.getElementById('modalGuia').style.display = 'none'; }
 
     function regresarAlMenu() {
-      const returnUrlParam = urlParams.get('returnUrl');
-      if (returnUrlParam) {
-        window.location.href = decodeURIComponent(returnUrlParam);
-      } else {
-        const menuDestino = esB2B ? 'menu_B2B.html' : 'menu_B2C.html';
-        window.location.href = `${menuDestino}?${urlParams.toString()}`;
-      }
+      window.location.href = resolverDestinoMemoria();
     }
 
-    // LÓGICA DEL TEST DE MEMORIA DE TRABAJO
-    let estadoTest = 'esperando'; // esperando, mostrando, input_usuario, finalizado
+    let estadoTest = 'esperando';
     let rondaActual = 0;
     const totalRondas = 4;
     let secuenciaObjetivo = [];
@@ -474,6 +486,12 @@
     let erroresTotales = 0;
 
     document.addEventListener('DOMContentLoaded', () => {
+      if (esFlujoDemo) {
+        const btnTop = document.getElementById('btnVolverTop');
+        const badge = document.getElementById('badge-modo');
+        if (btnTop) btnTop.textContent = '← Menú Demo';
+        if (badge) badge.textContent = '🧩 SIMULACIÓN DEMO B2B PRO';
+      }
       iniciarMediaPipeFaceMesh();
     });
 
@@ -499,7 +517,6 @@
       document.getElementById('valRonda').textContent = `${rondaActual} / ${totalRondas}`;
       document.getElementById('panel-estado').textContent = `Ronda ${rondaActual}: Observe la secuencia...`;
 
-      // Generar secuencia aleatoria (longitud aumenta por ronda: 3, 4, 5, 6)
       const longitudSecuencia = rondaActual + 2;
       secuenciaObjetivo = [];
       for (let i = 0; i < longitudSecuencia; i++) {
@@ -537,13 +554,11 @@
       secuenciaIngresada.push(index);
       const celda = document.querySelector(`.celda-memoria[data-index="${index}"]`);
       
-      // Feedback visual rápido
       celda.classList.add('activa');
       setTimeout(() => celda.classList.remove('activa'), 200);
 
       const pasoActual = secuenciaIngresada.length - 1;
 
-      // Verificar si el usuario se equivocó
       if (secuenciaIngresada[pasoActual] !== secuenciaObjetivo[pasoActual]) {
         erroresTotales++;
         celda.classList.add('error');
@@ -555,7 +570,6 @@
         return;
       }
 
-      // Verificar si completó la secuencia actual con éxito
       if (secuenciaIngresada.length === secuenciaObjetivo.length) {
         aciertosTotales++;
         celda.classList.add('correcta');
@@ -581,7 +595,6 @@
       const efectividadFinal = Math.round((aciertosTotales / totalRondas) * 100);
       const aprobado = efectividadFinal >= 75;
 
-      // Registrar en modulos rendidos
       let modulosRendidos = JSON.parse(localStorage.getItem('sensometrika_modulos_rendidos')) || {};
       modulosRendidos.memoria_trabajo = true;
       localStorage.setItem('sensometrika_modulos_rendidos', JSON.stringify(modulosRendidos));
@@ -600,6 +613,7 @@
       let historial = JSON.parse(localStorage.getItem(`sensometrika_historial_memoria_trabajo_${cleanRut}`)) || [];
       historial.push(datosResultado);
       localStorage.setItem(`sensometrika_historial_memoria_trabajo_${cleanRut}`, JSON.stringify(historial));
+      marcarCompletadoDemo();
 
       setTimeout(() => {
         regresarAlMenu();

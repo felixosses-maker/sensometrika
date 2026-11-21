@@ -117,7 +117,6 @@
             text-decoration: none !important;
         }
 
-        /* PIP BIOMÉTRICO EN HEADER */
         .cam-preview-pip-header {
             position: relative !important;
             width: 56px !important;
@@ -179,7 +178,6 @@
             border-radius: 50%;
         }
 
-        /* VIEWPORT CANVAS PUNTEO TRANSPORTE */
         .canvas-wrapper {
             position: relative;
             width: 100%;
@@ -237,7 +235,6 @@
             transition: background 0.2s;
         }
 
-        /* METRICAS TELEMÉTRICAS 4 COLUMNAS */
         .metrics-grid {
             display: grid;
             grid-template-columns: 1fr 1fr 1fr 1fr;
@@ -288,19 +285,19 @@
     <div class="main-container">
         <header class="brand-header">
             <img src="sensometrica.jpg" alt="SENSOMETRIKA" class="brand-logo-img">
-            <span class="brand-subtitle">RITMO Y PRECISIÓN VISOMOTRIZ • PUNTEO TRANSPORTE</span>
+            <span class="brand-subtitle" id="subtituloPunteo">RITMO Y PRECISIÓN VISOMOTRIZ • PUNTEO TRANSPORTE</span>
         </header>
 
         <div class="eval-card">
             <div class="top-nav">
-                <button id="btnVolverNav" onclick="ejecutarRetornoMenu()">&larr; Menú Pruebas</button>
+                <button type="button" id="btnVolverNav" onclick="ejecutarRetornoMenu()">← Menú Pruebas</button>
 
                 <div class="cam-preview-pip-header">
                     <video id="webcamVideo" autoplay playsinline muted></video>
                     <div class="cam-tag-header">Biometría</div>
                 </div>
 
-                <button id="btnInfo">ℹ ¿Cómo funciona?</button>
+                <button type="button" id="btnInfo">ℹ ¿Cómo funciona?</button>
             </div>
 
             <div class="status-badge-container">
@@ -313,7 +310,6 @@
             <div class="canvas-wrapper">
                 <canvas id="lienzo-punteo" width="360" height="270"></canvas>
 
-                <!-- OVERLAY DE BLOQUEO POR DISTANCIA NORMATIVA -->
                 <div id="boxBlockDistancia" class="distance-block-overlay">
                     <span class="distance-block-title">⚠️ DISTANCIA / POSTURA FUERA DE RANGO</span>
                     <span id="txtDistanciaDetalle" class="distance-block-desc">
@@ -328,9 +324,8 @@
                 Toca o presiona las esferas únicamente cuando crucen la <b>Franja Dorada Central</b>.
             </div>
 
-            <button id="btnStartPunteo" class="btn-start" onclick="iniciarModuloPunteo()">INICIAR DEMO DE CALIBRACIÓN (15s)</button>
+            <button type="button" id="btnStartPunteo" class="btn-start" onclick="iniciarModuloPunteo()">INICIAR DEMO DE CALIBRACIÓN (15s)</button>
 
-            <!-- PANEL TELEMÉTRICO 4 COLUMNAS -->
             <div class="metrics-grid">
                 <div class="metric-item">
                     <span class="metric-label">ACIENTOS</span>
@@ -355,7 +350,7 @@
             <div class="modal-content">
                 <div id="modalTitle" class="modal-title">EVALUACIÓN FINALIZADA</div>
                 <div id="modalBody" class="modal-body">Resultados registrados con éxito.</div>
-                <button id="modalBtnClose" class="modal-btn">Continuar</button>
+                <button type="button" id="modalBtnClose" class="modal-btn">Continuar</button>
             </div>
         </div>
     </div>
@@ -381,11 +376,41 @@
         const urlParams = new URLSearchParams(window.location.search);
         const modeParam = urlParams.get('mode') || (localStorage.getItem('sensometrika_b2c_mode') === 'true' ? 'b2c' : 'b2b');
         const esB2B = (modeParam === 'b2b');
+        const esFlujoDemo =
+            urlParams.get('flujo') === 'demo' ||
+            modeParam === 'demo' ||
+            localStorage.getItem('sensometrika_flujo_demo_activo') === 'true';
+        const claveModulo = urlParams.get('modulo') || 'punteo';
 
         let datosUsuario = {};
         try { datosUsuario = JSON.parse(localStorage.getItem('sensometrika_datos_usuario')) || {}; } catch(e){}
-        const rutEvaluado = urlParams.get('rut') || datosUsuario.rut || 'GENERICO';
-        const cleanRut = rutEvaluado.replace(/[^0-9Kk]/g, '');
+        const rutEvaluado = urlParams.get('rut') || datosUsuario.rut || localStorage.getItem('sensometrika_rut') || 'GENERICO';
+        const cleanRut = rutEvaluado.replace(/[^0-9Kk]/g, '').toUpperCase() || 'GENERICO';
+        const sessionId = urlParams.get('session') || localStorage.getItem('sensometrika_session_activa') || `SESION_${cleanRut}_${Date.now()}`;
+
+        function marcarCompletadoDemo() {
+            if (!esFlujoDemo) return;
+            localStorage.setItem(`sensometrika_${claveModulo}_${cleanRut}_${sessionId}`, 'true');
+            localStorage.setItem(`sensometrika_demo_completado_${claveModulo}_${cleanRut}_${sessionId}`, 'true');
+        }
+
+        function resolverDestinoPunteo() {
+            const returnUrlParam = urlParams.get('returnUrl');
+            if (returnUrlParam) {
+                return decodeURIComponent(returnUrlParam);
+            }
+
+            if (esFlujoDemo) {
+                const paramsSalida = new URLSearchParams(urlParams.toString());
+                paramsSalida.set('flujo', 'demo');
+                paramsSalida.set('mode', 'demo');
+                paramsSalida.set('modulo', claveModulo);
+                return `demo_empresa/demo_menu_b2b.html?${paramsSalida.toString()}`;
+            }
+
+            const menuDestino = esB2B ? 'menu_B2B.html' : 'menu_B2C.html';
+            return `${menuDestino}?${urlParams.toString()}`;
+        }
 
         const latenciaHardware = parseInt(localStorage.getItem('sensometrika_latencia_ms') || '0', 10);
 
@@ -408,13 +433,7 @@
         let fallos = 0;
 
         function ejecutarRetornoMenu() {
-            const returnUrlParam = urlParams.get('returnUrl');
-            if (returnUrlParam) {
-                window.location.href = decodeURIComponent(returnUrlParam);
-            } else {
-                const menuDestino = esB2B ? 'menu_B2B.html' : 'menu_B2C.html';
-                window.location.href = `${menuDestino}?${urlParams.toString()}`;
-            }
+            window.location.href = resolverDestinoPunteo();
         }
 
         function iniciarMediaPipeFaceMesh() {
@@ -693,6 +712,7 @@
                 };
 
                 localStorage.setItem(`sensometrika_last_punteo_${cleanRut}`, JSON.stringify(registroData));
+                marcarCompletadoDemo();
 
                 mostrarModal(
                     aprobado ? "✓ EVALUACIÓN DE PUNTEO APROBADA" : "⚠️ EVALUACIÓN CON OBSERVACIONES",
@@ -722,6 +742,12 @@
         });
 
         document.addEventListener('DOMContentLoaded', () => {
+            if (esFlujoDemo) {
+                const btnNav = document.getElementById('btnVolverNav');
+                const sub = document.getElementById('subtituloPunteo');
+                if (btnNav) btnNav.innerHTML = '← Menú Demo';
+                if (sub) sub.textContent = 'RITMO Y PRECISIÓN VISOMOTRIZ • DEMO PUNTEO';
+            }
             iniciarMediaPipeFaceMesh();
             renderizarTambor();
         });

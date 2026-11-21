@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>SENSOMETRIKA | Punteo y Ritmo Visomotriz</title>
+  <style>
+    :root {
+      --bg-main: #040810;
+      --bg-card: #091120;
+      --bg-surface: #0f172a;
+      --border-subtle: #1e293b;
+      --accent-cyan: #00e5ff;
+      --accent-sky: #38bdf8;
+      --accent-amber: #f59e0b;
+      --accent-gold: #eab308;
+      --accent-green: #10b981;
+      --accent-red: #ef4444;
+      --text-primary: #f8fafc;
+      --text-secondary: #cbd5e1;
+      --text-muted: #94a3b8;
+    }
+
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background-color: var(--bg-main);
+      color: var(--text-primary);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      padding: 14px 10px 28px;
+    }
+
+    .modulo-card-container {
+      width: 100%;
+      max-width: 520px;
+      background: var(--bg-card);
+      border: 1.5px solid var(--border-subtle);
+      border-radius: 18px;
+      padding: 16px;
+      box-shadow: 0 18px 42px rgba(0, 0, 0, 0.65);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .brand-header {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid #152238;
+    }
+
+    .logo-frame {
+      width: 100%;
+      max-width: 250px;
+      background: #060d1d;
+      border: 1px solid #15263d;
+      border-radius: 14px;
+      padding: 6px 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 22px rgba(0, 229, 255, 0.16);
+      overflow: hidden;
+    }
+
+    .brand-logo-img {
+      width: 100%;
+      max-height: 82px;
+      object-fit: contain;
+      display: block;
+      mix-blend-mode: lighten;
+      filter: drop-shadow(0 0 8px rgba(0, 229, 255, 0.35));
+    }
+
+    .brand-sub {
+      font-size: 0.68rem;
+      font-weight: 800;
+      letter-spacing: 1.1px;
+      color: var(--accent-sky);
+      text-transform: uppercase;
+      text-align: center;
+    }
+
+    .top-nav-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .nav-pill-btn {
+      background: var(--bg-surface);
+      border: 1px solid #293952;
+      color: var(--text-secondary);
+      border-radius: 9px;
+      padding: 7px 11px;
+      font-size: 0.74rem;
+      font-weight: 700;
+      text-decoration: none;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      white-space: nowrap;
+    }
+
+    .nav-pill-btn:hover {
+      border-color: var(--accent-sky);
+      color: #ffffff;
+    }
+
+    .pip-box {
+      width: 78px;
+      height: 54px;
+      background: #020617;
+      border: 1.5px solid #0284c7;
+      border-radius: 9px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      flex-shrink: 0;
+    }
+
+    .pip-box video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transform: scaleX(-1);
+    }
+
+    .pip-label {
+      position: absolute;
+      bottom: 0;
+      width: 100%;
+      background: rgba(2, 6, 23, 0.85);
+      color: var(--accent-cyan);
+      font-size: 0.56rem;
+      font-weight: 800;
+      text-align: center;
+      letter-spacing: 0.6px;
+      padding: 1px 0;
+    }
+
+    .phase-pill-wrap {
+      display: flex;
+      justify-content: center;
+    }
+
+    .phase-pill {
+      background: #0a1930;
+      border: 1px solid #1d4ed8;
+      color: #93c5fd;
+      font-size: 0.72rem;
+      font-weight: 800;
+      padding: 5px 12px;
+      border-radius: 999px;
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+    }
+
+    .phase-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--accent-amber);
+    }
+
+    .punteo-wrapper {
+      position: relative;
+      width: 100%;
+      height: 270px;
+      background: #040914;
+      border: 1.5px solid #1e3a5f;
+      border-radius: 14px;
+      overflow: hidden;
+      box-shadow: inset 0 0 28px rgba(0, 191, 255, 0.08);
+    }
+
+    canvas#punteoCanvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+      touch-action: none;
+    }
+
+    .status-banner {
+      background: var(--bg-surface);
+      border: 1px solid #24344d;
+      border-radius: 10px;
+      padding: 8px 12px;
+      font-size: 0.78rem;
+      color: var(--text-secondary);
+      text-align: center;
+      min-height: 34px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .btn-main-action {
+      width: 100%;
+      min-height: 48px;
+      border: none;
+      border-radius: 12px;
+      font-size: 0.9rem;
+      font-weight: 900;
+      letter-spacing: 0.4px;
+      cursor: pointer;
+      color: #030712;
+      background: var(--accent-amber);
+    }
+
+    .btn-main-action.disparar {
+      background: var(--accent-sky);
+      color: #030712;
+    }
+
+    .btn-main-action.oficial {
+      background: var(--accent-green);
+      color: #022c22;
+    }
+
+    .metrics-bar-5 {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 6px;
+      background: var(--bg-surface);
+      border: 1px solid #1e293b;
+      border-radius: 12px;
+      padding: 8px 6px;
+    }
+
+    .metric-cell {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      gap: 2px;
+    }
+
+    .metric-cell span {
+      font-size: 0.58rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+    }
+
+    .metric-cell strong {
+      font-size: 0.8rem;
+      color: var(--text-primary);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(2, 6, 23, 0.84);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 14px;
+      z-index: 40;
+    }
+
+    .modal-backdrop.open {
+      display: flex;
+    }
+
+    .modal-panel {
+      width: 100%;
+      max-width: 440px;
+      background: var(--bg-card);
+      border: 1.5px solid #38bdf8;
+      border-radius: 16px;
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .modal-panel h3 {
+      font-size: 1rem;
+      color: var(--accent-sky);
+    }
+
+    .modal-panel p,
+    .modal-panel li {
+      font-size: 0.82rem;
+      line-height: 1.45;
+      color: var(--text-secondary);
+    }
+
+    .modal-panel ul {
+      padding-left: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+  </style>
+</head>
+<body>
+  <div class="modulo-card-container">
+    <header class="brand-header">
+      <div class="logo-frame">
+        <img id="logoSensometrikaImg" src="../sensometrika.jpg" alt="SENSOMETRIKA Calibration Technology" class="brand-logo-img">
+      </div>
+      <span class="brand-sub">Módulo Punteo y Ritmo Visomotriz · Evaluación Psicosensométrica</span>
+    </header>
+
+    <div class="top-nav-row">
+      <button type="button" id="btnVolverMenuTop" class="nav-pill-btn">← Menú Psicosensométrico</button>
+
+      <div class="pip-box">
+        <video id="pipVideo" autoplay playsinline muted></video>
+        <span id="pipFallback" style="font-size: 0.62rem; color: #64748b;">Cámara</span>
+        <div class="pip-label">BIOMETRÍA</div>
+      </div>
+
+      <button type="button" class="nav-pill-btn" id="btnComoFunciona">? ¿Cómo funciona?</button>
+    </div>
+
+    <div class="phase-pill-wrap">
+      <div class="phase-pill">
+        <span class="phase-dot" id="dotFase"></span>
+        <span id="txtFase">Paso 1: Calibración Demo (10s)</span>
+      </div>
+    </div>
+
+    <div class="punteo-wrapper">
+      <canvas id="punteoCanvas" width="480" height="270"></canvas>
+    </div>
+
+    <div class="status-banner" id="txtEstado">
+      Pulsa INICIAR y marca cada esfera cuando cruce la franja dorada inferior.
+    </div>
+
+    <button type="button" class="btn-main-action" id="btnAccion">
+      ▶ INICIAR CALIBRACIÓN DEMO
+    </button>
+
+    <div class="metrics-bar-5">
+      <div class="metric-cell"><span>Aciertos</span><strong id="mAciertos">0</strong></div>
+      <div class="metric-cell"><span>Errores</span><strong id="mErrores">0</strong></div>
+      <div class="metric-cell"><span>T. Error</span><strong id="mTerror">0.0s</strong></div>
+      <div class="metric-cell"><span>Precisión</span><strong id="mPrecision">100%</strong></div>
+      <div class="metric-cell"><span>Tiempo</span><strong id="mTiempo">0.0s</strong></div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="modalAyuda">
+    <div class="modal-panel">
+      <h3>¿Cómo funciona Punteo y Ritmo Visomotriz?</h3>
+      <p>Evalúa la sincronía ojo-mano y la precisión rítmica al interceptar objetivos en movimiento.</p>
+      <ul>
+        <li><strong>Franja dorada:</strong> pulsa el botón, toca el lienzo o usa <strong>ESPACIO</strong> cuando el objetivo esté dentro de la zona dorada.</li>
+        <li><strong>Cambio cromático:</strong> el objetivo cae en celeste, pasa a verde al acertar en zona y a rojo si fallas o se escapa.</li>
+        <li><strong>Anti-memorización:</strong> la secuencia de carriles y cadencia varía en cada ronda.</li>
+      </ul>
+      <button type="button" class="btn-main-action oficial" id="btnCerrarAyuda">Entendido</button>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      const logoImg = document.getElementById("logoSensometrikaImg");
+      const candidatosLogo = ["../sensometrika.jpg", "sensometrika.jpg", "../sensometrica.jpg", "sensometrica.jpg"];
+      let idxLogo = 0;
+      logoImg.addEventListener("error", () => {
+        idxLogo++;
+        if (idxLogo < candidatosLogo.length) {
+          logoImg.src = candidatosLogo[idxLogo];
+        } else {
+          logoImg.style.display = "none";
+        }
+      });
+
+      const canvas = document.getElementById("punteoCanvas");
+      const ctx = canvas.getContext("2d");
+
+      const btnAccion = document.getElementById("btnAccion");
+      const txtEstado = document.getElementById("txtEstado");
+      const txtFase = document.getElementById("txtFase");
+      const dotFase = document.getElementById("dotFase");
+      const btnVolverMenuTop = document.getElementById("btnVolverMenuTop");
+
+      const mAciertos = document.getElementById("mAciertos");
+      const mErrores = document.getElementById("mErrores");
+      const mTerror = document.getElementById("mTerror");
+      const mPrecision = document.getElementById("mPrecision");
+      const mTiempo = document.getElementById("mTiempo");
+
+      const modalAyuda = document.getElementById("modalAyuda");
+      document.getElementById("btnComoFunciona").addEventListener("click", () => modalAyuda.classList.add("open"));
+      document.getElementById("btnCerrarAyuda").addEventListener("click", () => modalAyuda.classList.remove("open"));
+
+      const pipVideo = document.getElementById("pipVideo");
+      const pipFallback = document.getElementById("pipFallback");
+      let pipStream = null;
+      (async function initCam() {
+        try {
+          pipStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user", width: 160, height: 120 }, audio: false });
+          pipVideo.srcObject = pipStream;
+          pipFallback.style.display = "none";
+        } catch (e) {
+          pipVideo.style.display = "none";
+          pipFallback.style.display = "block";
+        }
+      })();
+
+      const urlParams = new URLSearchParams(window.location.search);
+      let datosUsuario = {};
+      try { datosUsuario = JSON.parse(localStorage.getItem("sensometrika_datos_usuario")) || {}; } catch (e) {}
+      const rawRut = urlParams.get("rut") || datosUsuario.rut || localStorage.getItem("sensometrika_rut") || "";
+      const cleanRut = rawRut.replace(/[^0-9Kk]/g, "");
+      const sessionId = urlParams.get("session") || localStorage.getItem("sensometrika_session_activa") || "";
+
+      let rafId = null;
+
+      function volverMenuPsicosensometrico() {
+        corriendo = false;
+        if (rafId) cancelAnimationFrame(rafId);
+        if (pipStream) {
+          pipStream.getTracks().forEach(t => t.stop());
+          pipStream = null;
+        }
+        const q = window.location.search || "";
+        window.location.href = `psico_menu_b2b.html${q}`;
+      }
+
+      btnVolverMenuTop.addEventListener("click", volverMenuPsicosensometrico);
+
+      const NUM_CARRILES = 4;
+      const ZONA_Y = canvas.height - 54;
+      const ZONA_ALTO = 34;
+
+      let fase = "DEMO";
+      let corriendo = false;
+      let duracionMs = 10000;
+      let inicioMs = 0;
+      let ultimoFrameMs = 0;
+      let ultimoSpawnMs = 0;
+      let intervaloSpawnMs = 820;
+      let ultimoToqueMs = 0;
+
+      let blancos = [];
+      let aciertos = 0;
+      let errores = 0;
+      let omisiones = 0;
+      let tiempoErrorMs = 0;
+
+      function posXCarril(idx) {
+        const margen = 64;
+        const usable = canvas.width - margen * 2;
+        return margen + (usable / (NUM_CARRILES - 1)) * idx;
+      }
+
+      function actualizarMetricasUI(transcurridoMs) {
+        mTiempo.textContent = `${(Math.min(transcurridoMs, duracionMs) / 1000).toFixed(1)}s`;
+        mAciertos.textContent = String(aciertos);
+        const totalErrores = errores + omisiones;
+        mErrores.textContent = String(totalErrores);
+        mTerror.textContent = `${(tiempoErrorMs / 1000).toFixed(1)}s`;
+        const total = aciertos + totalErrores;
+        const pct = total > 0 ? Math.round((aciertos / total) * 100) : 100;
+        mPrecision.textContent = `${pct}%`;
+      }
+
+      function guardarResultadoOficial(payload) {
+        const json = JSON.stringify(payload);
+        localStorage.setItem("sensometrika_punteo", json);
+        if (cleanRut && sessionId) {
+          localStorage.setItem(`sensometrika_punteo_${cleanRut}_${sessionId}`, json);
+        }
+        try {
+          const rendidos = JSON.parse(localStorage.getItem("sensometrika_modulos_rendidos")) || {};
+          rendidos.punteo = true;
+          localStorage.setItem("sensometrika_modulos_rendidos", JSON.stringify(rendidos));
+
+          if (cleanRut && sessionId) {
+            const rendidosSes = JSON.parse(localStorage.getItem(`sensometrika_modulos_rendidos_${cleanRut}_${sessionId}`)) || {};
+            rendidosSes.punteo = true;
+            localStorage.setItem(`sensometrika_modulos_rendidos_${cleanRut}_${sessionId}`, JSON.stringify(rendidosSes));
+          }
+        } catch (e) {}
+      }
+
+      function spawnBlanco() {
+        const carril = Math.floor(Math.random() * NUM_CARRILES);
+        const velPxSeg = fase === "OFICIAL" ? 155 + Math.random() * 35 : 130;
+        blancos.push({
+          carril,
+          x: posXCarril(carril),
+          y: -16,
+          r: 13,
+          vy: velPxSeg,
+          estado: "ACTIVO",
+          tMarca: 0
+        });
+        intervaloSpawnMs = fase === "OFICIAL"
+          ? Math.floor(Math.random() * (950 - 620 + 1)) + 620
+          : 820;
+      }
+
+      function registrarDisparo() {
+        if (fase === "COMPLETADO") {
+          volverMenuPsicosensometrico();
+          return;
+        }
+        if (!corriendo) return;
+
+        const ahora = performance.now();
+        if (ahora - ultimoToqueMs < 130) return;
+        ultimoToqueMs = ahora;
+
+        const objetivoEnZona = blancos.find(b =>
+          b.estado === "ACTIVO" &&
+          Math.abs(b.y - ZONA_Y) <= ZONA_ALTO * 0.72
+        );
+
+        if (objetivoEnZona) {
+          objetivoEnZona.estado = "ACIERTO";
+          objetivoEnZona.tMarca = ahora;
+          aciertos++;
+          txtEstado.textContent = "Impacto en zona dorada ✓";
+        } else {
+          errores++;
+          tiempoErrorMs += 180;
+          txtEstado.textContent = "Pulso fuera de ventana dorada";
+        }
+        actualizarMetricasUI(ahora - inicioMs);
+      }
+
+      function finalizarRonda() {
+        corriendo = false;
+        if (rafId) cancelAnimationFrame(rafId);
+
+        const totalErrores = errores + omisiones;
+        const total = aciertos + totalErrores;
+        const precision = total > 0 ? Math.round((aciertos / total) * 100) : 100;
+        const tErrorSeg = Number((tiempoErrorMs / 1000).toFixed(2));
+
+        if (fase === "DEMO") {
+          fase = "OFICIAL";
+          duracionMs = 20000;
+          blancos = [];
+          aciertos = 0;
+          errores = 0;
+          omisiones = 0;
+          tiempoErrorMs = 0;
+          actualizarMetricasUI(0);
+          txtFase.textContent = "Fase 2: Simulación Oficial (20s)";
+          dotFase.style.background = "#10b981";
+          txtEstado.textContent = "Calibración lista. Pulsa para iniciar la evaluación oficial.";
+          btnAccion.textContent = "▶ INICIAR SIMULACIÓN OFICIAL";
+          btnAccion.className = "btn-main-action oficial";
+          dibujarEscena(performance.now());
+        } else if (fase === "OFICIAL") {
+          fase = "COMPLETADO";
+          const payload = {
+            modulo: "punteo",
+            estado: "completado",
+            timestamp: new Date().toISOString(),
+            duracionSeg: Number((duracionMs / 1000).toFixed(1)),
+            aciertos,
+            errores: totalErrores,
+            omisiones,
+            tiempoErrorMs: Math.round(tiempoErrorMs),
+            tiempoErrorSeg: tErrorSeg,
+            precision,
+            efectividad: precision,
+            aprobado: precision >= 75 && totalErrores <= 5 && tErrorSeg <= 3.0
+          };
+          guardarResultadoOficial(payload);
+          txtFase.textContent = "Simulación Oficial Completada ✓";
+          dotFase.style.background = "#38bdf8";
+          txtEstado.textContent = `Aciertos: ${aciertos} · Precisión: ${precision}% · T. Error: ${tErrorSeg.toFixed(1)}s.`;
+          btnAccion.textContent = `✓ REGISTRADO (${precision}% PREC.) · VOLVER AL MENÚ →`;
+          btnAccion.className = "btn-main-action oficial";
+        }
+      }
+
+      function dibujarEscena(now) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        for (let i = 0; i < NUM_CARRILES; i++) {
+          const cx = posXCarril(i);
+          ctx.strokeStyle = "rgba(56, 189, 248, 0.14)";
+          ctx.lineWidth = 2;
+          ctx.setLineDash([5, 5]);
+          ctx.beginPath();
+          ctx.moveTo(cx, 12);
+          ctx.lineTo(cx, canvas.height - 16);
+          ctx.stroke();
+          ctx.setLineDash([]);
+        }
+
+        ctx.fillStyle = "rgba(234, 179, 8, 0.14)";
+        ctx.fillRect(18, ZONA_Y - ZONA_ALTO / 2, canvas.width - 36, ZONA_ALTO);
+        ctx.strokeStyle = "#eab308";
+        ctx.lineWidth = 2;
+        ctx.strokeRect(18, ZONA_Y - ZONA_ALTO / 2, canvas.width - 36, ZONA_ALTO);
+
+        ctx.fillStyle = "#fde047";
+        ctx.font = "bold 10px sans-serif";
+        ctx.textAlign = "right";
+        ctx.fillText("ZONA DE IMPACTO", canvas.width - 26, ZONA_Y - ZONA_ALTO / 2 - 5);
+
+        blancos.forEach(b => {
+          let fill = "#38bdf8";
+          if (b.estado === "ACIERTO") fill = "#10b981";
+          if (b.estado === "FALLO") fill = "#ef4444";
+
+          ctx.beginPath();
+          ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2);
+          ctx.fillStyle = fill;
+          ctx.fill();
+          ctx.lineWidth = 2;
+          ctx.strokeStyle = "#ffffff";
+          ctx.stroke();
+        });
+
+        if (!corriendo && fase !== "COMPLETADO") {
+          ctx.fillStyle = "rgba(148, 163, 184, 0.7)";
+          ctx.font = "bold 12px sans-serif";
+          ctx.textAlign = "center";
+          ctx.fillText("ESPERANDO INICIO DE RONDA", canvas.width / 2, 34);
+        }
+      }
+
+      function loop(now) {
+        if (!corriendo) return;
+        const dtMs = Math.min(60, now - ultimoFrameMs);
+        ultimoFrameMs = now;
+        const transcurrido = now - inicioMs;
+
+        if (now - ultimoSpawnMs >= intervaloSpawnMs) {
+          spawnBlanco();
+          ultimoSpawnMs = now;
+        }
+
+        blancos.forEach(b => {
+          b.y += b.vy * (dtMs / 1000);
+          if (b.estado === "ACTIVO" && b.y > ZONA_Y + ZONA_ALTO * 0.75) {
+            b.estado = "FALLO";
+            b.tMarca = now;
+            omisiones++;
+            tiempoErrorMs += 250;
+          }
+        });
+
+        blancos = blancos.filter(b => {
+          if (b.estado === "ACTIVO") return b.y < canvas.height + 24;
+          return (now - b.tMarca) < 220;
+        });
+
+        actualizarMetricasUI(transcurrido);
+        dibujarEscena(now);
+
+        if (transcurrido >= duracionMs) {
+          finalizarRonda();
+          return;
+        }
+
+        rafId = requestAnimationFrame(loop);
+      }
+
+      function iniciarRonda() {
+        if (fase === "COMPLETADO") {
+          volverMenuPsicosensometrico();
+          return;
+        }
+        if (corriendo) {
+          registrarDisparo();
+          return;
+        }
+
+        blancos = [];
+        aciertos = 0;
+        errores = 0;
+        omisiones = 0;
+        tiempoErrorMs = 0;
+        actualizarMetricasUI(0);
+        corriendo = true;
+        inicioMs = performance.now();
+        ultimoFrameMs = inicioMs;
+        ultimoSpawnMs = inicioMs - intervaloSpawnMs;
+        btnAccion.textContent = "🎯 MARCAR EN ZONA DORADA (ESPACIO / CLIC)";
+        btnAccion.className = "btn-main-action disparar";
+        txtEstado.textContent = "Ronda en curso: intercepta las esferas en la franja dorada.";
+        rafId = requestAnimationFrame(loop);
+      }
+
+      btnAccion.addEventListener("pointerdown", (e) => {
+        e.preventDefault();
+        iniciarRonda();
+      });
+
+      canvas.addEventListener("pointerdown", (e) => {
+        e.preventDefault();
+        if (corriendo) registrarDisparo();
+      });
+
+      window.addEventListener("keydown", (e) => {
+        if (e.code === "Space" || e.key === " ") {
+          e.preventDefault();
+          if (corriendo) registrarDisparo();
+          else iniciarRonda();
+        }
+      });
+
+      dibujarEscena(performance.now());
+    })();
+  </script>
+</body>
+</html>

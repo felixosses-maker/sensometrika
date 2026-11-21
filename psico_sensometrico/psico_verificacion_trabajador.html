@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>SENSOMETRIKA | Verificación de Identidad y Consentimiento</title>
+  <style>
+    :root {
+      --bg-main: #040810;
+      --bg-card: #091120;
+      --bg-surface: #0f172a;
+      --border-subtle: #1e293b;
+      --border-active: #38bdf8;
+      --accent-cyan: #00e5ff;
+      --accent-sky: #38bdf8;
+      --accent-green: #10b981;
+      --text-primary: #f8fafc;
+      --text-secondary: #cbd5e1;
+      --text-muted: #94a3b8;
+    }
+
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background: var(--bg-main);
+      color: var(--text-primary);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      padding: 16px 12px 32px;
+    }
+
+    .app-shell {
+      width: 100%;
+      max-width: 540px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .brand-header {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid #152238;
+      text-align: center;
+    }
+
+    .logo-frame {
+      width: 100%;
+      max-width: 240px;
+      background: #060d1d;
+      border: 1px solid #15263d;
+      border-radius: 14px;
+      padding: 6px 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 20px rgba(0, 229, 255, 0.15);
+      overflow: hidden;
+    }
+
+    .brand-logo-img {
+      width: 100%;
+      max-height: 76px;
+      object-fit: contain;
+      display: block;
+      mix-blend-mode: lighten;
+    }
+
+    .brand-sub {
+      font-size: 0.68rem;
+      font-weight: 800;
+      letter-spacing: 1.1px;
+      color: var(--accent-sky);
+      text-transform: uppercase;
+    }
+
+    .card {
+      background: var(--bg-card);
+      border: 1.5px solid var(--border-subtle);
+      border-radius: 16px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .section-title {
+      font-size: 0.8rem;
+      font-weight: 900;
+      letter-spacing: 0.6px;
+      text-transform: uppercase;
+      color: var(--accent-cyan);
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .row-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    label {
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: var(--text-muted);
+    }
+
+    input[type="text"] {
+      width: 100%;
+      background: var(--bg-surface);
+      border: 1px solid #293952;
+      border-radius: 10px;
+      padding: 10px 12px;
+      color: var(--text-primary);
+      font-size: 0.9rem;
+    }
+
+    input[type="text"]:focus {
+      outline: none;
+      border-color: var(--accent-cyan);
+    }
+
+    .cam-box {
+      width: 100%;
+      height: 190px;
+      background: #040914;
+      border: 1px solid #24344d;
+      border-radius: 12px;
+      overflow: hidden;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    video, canvas.preview-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .btn-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .btn-sec {
+      background: var(--bg-surface);
+      color: var(--text-secondary);
+      border: 1px solid #293952;
+      border-radius: 10px;
+      padding: 9px 12px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .firma-wrap {
+      background: #040914;
+      border: 1px solid #24344d;
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    #canvasFirma {
+      width: 100%;
+      height: 180px;
+      display: block;
+      touch-action: none;
+      cursor: crosshair;
+    }
+
+    .consent-box {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      font-size: 0.78rem;
+      color: var(--text-secondary);
+      line-height: 1.4;
+    }
+
+    .consent-box input {
+      margin-top: 2px;
+      width: 18px;
+      height: 18px;
+      accent-color: var(--accent-cyan);
+      flex-shrink: 0;
+    }
+
+    .btn-primary {
+      width: 100%;
+      min-height: 48px;
+      background: var(--accent-green);
+      color: #ffffff;
+      border: none;
+      border-radius: 12px;
+      font-size: 0.9rem;
+      font-weight: 900;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      cursor: pointer;
+    }
+
+    .btn-primary:hover {
+      filter: brightness(1.06);
+    }
+
+    @media (max-width: 460px) {
+      .row-2 {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <header class="brand-header">
+      <div class="logo-frame">
+        <img id="logoSensometrikaImg" src="../sensometrika.jpg" alt="SENSOMETRIKA Calibration Technology" class="brand-logo-img">
+      </div>
+      <span class="brand-sub">Verificación de Identidad y Consentimiento · Entorno Psicosensométrico</span>
+    </header>
+
+    <section class="card">
+      <div class="section-title">1. Datos del Trabajador Evaluado</div>
+      <div class="field">
+        <label for="inpNombre">Nombre Completo</label>
+        <input id="inpNombre" type="text" placeholder="Ej: Juan Pérez González">
+      </div>
+      <div class="row-2">
+        <div class="field">
+          <label for="inpRut">RUT</label>
+          <input id="inpRut" type="text" placeholder="Ej: 12.876.344-1">
+        </div>
+        <div class="field">
+          <label for="inpCargo">Cargo / Función</label>
+          <input id="inpCargo" type="text" placeholder="Ej: Operador Harvester">
+        </div>
+      </div>
+      <div class="field">
+        <label for="inpEmpresa">Empresa / Faena</label>
+        <input id="inpEmpresa" type="text" placeholder="Ej: Empresa Mandante">
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="section-title">2. Registro Biométrico (Cámara Web)</div>
+      <div class="cam-box">
+        <video id="videoCam" autoplay playsinline muted></video>
+        <canvas id="canvasFoto" class="preview-img" style="display: none;"></canvas>
+      </div>
+      <div class="btn-row">
+        <button type="button" id="btnCapturarFoto" class="btn-sec">📷 Capturar Fotografía</button>
+        <button type="button" id="btnRepetirToma" class="btn-sec">↻ Repetir Toma</button>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="section-title">3. Firma Digital del Trabajador</div>
+      <div class="firma-wrap">
+        <canvas id="canvasFirma"></canvas>
+      </div>
+      <button type="button" id="btnLimpiarFirma" class="btn-sec" style="width: 100%;">✎ Limpiar Firma</button>
+    </section>
+
+    <section class="card">
+      <label class="consent-box">
+        <input type="checkbox" id="chkConsentimiento" checked>
+        <span>Declaro que mis datos de identificación son fidedignos, que realizaré la evaluación de forma personal y acepto los términos y condiciones del protocolo psicosensométrico.</span>
+      </label>
+      <button type="button" id="btnValidarContinuar" class="btn-primary">Validar y Continuar al Menú →</button>
+    </section>
+  </div>
+
+  <script>
+    (function () {
+      const logoImg = document.getElementById("logoSensometrikaImg");
+      const candidatosLogo = ["../sensometrika.jpg", "sensometrika.jpg", "../sensometrica.jpg", "sensometrica.jpg"];
+      let idxLogo = 0;
+      logoImg.addEventListener("error", () => {
+        idxLogo++;
+        if (idxLogo < candidatosLogo.length) logoImg.src = candidatosLogo[idxLogo];
+        else logoImg.style.display = "none";
+      });
+
+      const urlParams = new URLSearchParams(window.location.search);
+      const inpNombre = document.getElementById("inpNombre");
+      const inpRut = document.getElementById("inpRut");
+      const inpCargo = document.getElementById("inpCargo");
+      const inpEmpresa = document.getElementById("inpEmpresa");
+
+      if (urlParams.get("nombre")) inpNombre.value = decodeURIComponent(urlParams.get("nombre"));
+      if (urlParams.get("rut")) inpRut.value = decodeURIComponent(urlParams.get("rut"));
+      if (urlParams.get("cargo")) inpCargo.value = decodeURIComponent(urlParams.get("cargo"));
+      if (urlParams.get("empresa")) inpEmpresa.value = decodeURIComponent(urlParams.get("empresa"));
+
+      // Cámara web
+      const videoEl = document.getElementById("videoCam");
+      const canvasFoto = document.getElementById("canvasFoto");
+      let streamCam = null;
+      let fotoDataUrl = null;
+
+      async function iniciarCamara() {
+        try {
+          if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return;
+          streamCam = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" }, audio: false });
+          videoEl.srcObject = streamCam;
+        } catch (e) {
+          console.warn("Cámara no disponible o permiso pendiente:", e);
+        }
+      }
+      iniciarCamara();
+
+      document.getElementById("btnCapturarFoto").addEventListener("click", () => {
+        const w = videoEl.videoWidth || 320;
+        const h = videoEl.videoHeight || 240;
+        canvasFoto.width = w;
+        canvasFoto.height = h;
+        const ctx = canvasFoto.getContext("2d");
+        ctx.drawImage(videoEl, 0, 0, w, h);
+        fotoDataUrl = canvasFoto.toDataURL("image/jpeg", 0.8);
+        canvasFoto.style.display = "block";
+        videoEl.style.display = "none";
+      });
+
+      document.getElementById("btnRepetirToma").addEventListener("click", () => {
+        fotoDataUrl = null;
+        canvasFoto.style.display = "none";
+        videoEl.style.display = "block";
+      });
+
+      // Firma digital
+      const canvasFirma = document.getElementById("canvasFirma");
+      const ctxFirma = canvasFirma.getContext("2d");
+      let dibujando = false;
+      let tieneFirma = false;
+
+      function ajustarCanvasFirma() {
+        const rect = canvasFirma.getBoundingClientRect();
+        canvasFirma.width = Math.max(280, Math.floor(rect.width));
+        canvasFirma.height = 180;
+        ctxFirma.strokeStyle = "#00e5ff";
+        ctxFirma.lineWidth = 2.6;
+        ctxFirma.lineCap = "round";
+        ctxFirma.lineJoin = "round";
+      }
+      ajustarCanvasFirma();
+      window.addEventListener("resize", ajustarCanvasFirma);
+
+      function posFirma(ev) {
+        const rect = canvasFirma.getBoundingClientRect();
+        const clientX = ev.touches ? ev.touches[0].clientX : ev.clientX;
+        const clientY = ev.touches ? ev.touches[0].clientY : ev.clientY;
+        return { x: clientX - rect.left, y: clientY - rect.top };
+      }
+
+      function iniciarTrazo(ev) {
+        ev.preventDefault();
+        dibujando = true;
+        tieneFirma = true;
+        const p = posFirma(ev);
+        ctxFirma.beginPath();
+        ctxFirma.moveTo(p.x, p.y);
+      }
+
+      function moverTrazo(ev) {
+        if (!dibujando) return;
+        ev.preventDefault();
+        const p = posFirma(ev);
+        ctxFirma.lineTo(p.x, p.y);
+        ctxFirma.stroke();
+      }
+
+      function terminarTrazo() {
+        dibujando = false;
+      }
+
+      canvasFirma.addEventListener("mousedown", iniciarTrazo);
+      canvasFirma.addEventListener("mousemove", moverTrazo);
+      window.addEventListener("mouseup", terminarTrazo);
+      canvasFirma.addEventListener("touchstart", iniciarTrazo, { passive: false });
+      canvasFirma.addEventListener("touchmove", moverTrazo, { passive: false });
+      window.addEventListener("touchend", terminarTrazo);
+
+      document.getElementById("btnLimpiarFirma").addEventListener("click", () => {
+        ctxFirma.clearRect(0, 0, canvasFirma.width, canvasFirma.height);
+        tieneFirma = false;
+      });
+
+      document.getElementById("btnValidarContinuar").addEventListener("click", () => {
+        const nombre = inpNombre.value.trim();
+        const rut = inpRut.value.trim();
+        const cargo = inpCargo.value.trim() || "Operador";
+        const empresa = inpEmpresa.value.trim() || "Empresa Mandante";
+        const acepto = document.getElementById("chkConsentimiento").checked;
+
+        if (!nombre || !rut) {
+          alert("Por favor ingresa Nombre Completo y RUT del trabajador.");
+          return;
+        }
+        if (!acepto) {
+          alert("Debes aceptar los términos y condiciones para continuar.");
+          return;
+        }
+
+        if (!fotoDataUrl && videoEl.videoWidth > 0) {
+          canvasFoto.width = videoEl.videoWidth;
+          canvasFoto.height = videoEl.videoHeight;
+          canvasFoto.getContext("2d").drawImage(videoEl, 0, 0, canvasFoto.width, canvasFoto.height);
+          fotoDataUrl = canvasFoto.toDataURL("image/jpeg", 0.8);
+        }
+
+        const cleanRut = rut.replace(/[^0-9Kk]/g, "");
+        const prevRut = (localStorage.getItem("sensometrika_rut") || "").replace(/[^0-9Kk]/g, "");
+        const sessionId = `SESION_PSICO_${cleanRut || "EVAL"}_${Date.now()}`;
+
+        if (prevRut && prevRut !== cleanRut) {
+          [
+            "sensometrika_reactimetro_avanzado",
+            "sensometrika_reactimetro",
+            "sensometrika_palancas",
+            "sensometrika_punteo",
+            "sensometrika_vigilancia",
+            "sensometrika_fatiga_pvt",
+            "sensometrika_psico_test",
+            "sensometrika_modulos_rendidos"
+          ].forEach(k => localStorage.removeItem(k));
+        }
+
+        const firmaUrl = tieneFirma ? canvasFirma.toDataURL("image/png") : "";
+        const nowTs = new Date().toLocaleString("es-CL", { hour12: false });
+
+        const datosSesion = {
+          nombre,
+          rut,
+          cargo,
+          empresa,
+          session: sessionId,
+          entorno: "PSICOSENSOMETRICO_CERRADO",
+          foto: fotoDataUrl || "",
+          firma: firmaUrl,
+          fechaRegistro: nowTs
+        };
+
+        localStorage.setItem("sensometrika_datos_usuario", JSON.stringify(datosSesion));
+        localStorage.setItem("sensometrika_nombre", nombre);
+        localStorage.setItem("sensometrika_rut", rut);
+        localStorage.setItem("sensometrika_cargo", cargo);
+        localStorage.setItem("sensometrika_b2b_empresa", empresa);
+        localStorage.setItem("sensometrika_session_activa", sessionId);
+        if (cleanRut) {
+          localStorage.setItem(`sensometrika_active_session_${cleanRut}`, sessionId);
+          if (fotoDataUrl) localStorage.setItem(`sensometrika_foto_${cleanRut}`, fotoDataUrl);
+          if (firmaUrl) localStorage.setItem(`sensometrika_firma_${cleanRut}`, firmaUrl);
+        }
+        if (fotoDataUrl) localStorage.setItem("sensometrika_foto_trabajador", fotoDataUrl);
+        if (firmaUrl) localStorage.setItem("sensometrika_firma_trabajador", firmaUrl);
+
+        const estadoLimpio = { reactimetro: false, palancas: false, punteo: false, vigilancia: false };
+        localStorage.setItem("sensometrika_modulos_rendidos", JSON.stringify(estadoLimpio));
+        if (cleanRut) {
+          localStorage.setItem(`sensometrika_modulos_rendidos_${cleanRut}_${sessionId}`, JSON.stringify(estadoLimpio));
+        }
+
+        const sesionObj = {
+          sessionId,
+          rut,
+          nombre,
+          cargo,
+          empresa,
+          cp1_ts: nowTs,
+          checkpoints: {
+            cp1: fotoDataUrl ? { imagen: fotoDataUrl, timestamp: nowTs } : null
+          },
+          firma: firmaUrl
+        };
+        localStorage.setItem("sensometrika_psico_sesion", JSON.stringify(sesionObj));
+        if (cleanRut) {
+          localStorage.setItem(`sensometrika_psico_sesion_${cleanRut}_${sessionId}`, JSON.stringify(sesionObj));
+        }
+
+        if (streamCam) {
+          streamCam.getTracks().forEach(t => t.stop());
+        }
+
+        const qs = `?nombre=${encodeURIComponent(nombre)}&rut=${encodeURIComponent(rut)}&cargo=${encodeURIComponent(cargo)}&empresa=${encodeURIComponent(empresa)}&session=${encodeURIComponent(sessionId)}`;
+        window.location.href = `psico_menu_b2b.html${qs}`;
+      });
+    })();
+  </script>
+</body>
+</html>

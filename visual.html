@@ -265,14 +265,14 @@
   <div class="main-container">
     <header class="brand-header">
       <img src="sensometrica.jpg" alt="SENSOMETRIKA" class="brand-logo-img">
-      <span style="color: var(--accent-cyan); font-size: 0.70rem; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase;">
+      <span id="subtituloScreeningVisual" style="color: var(--accent-cyan); font-size: 0.70rem; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase;">
         MÓDULO SCREENING VISUAL PERICIAL B2B
       </span>
     </header>
 
     <div class="module-card">
       <div class="nav-bar-top">
-        <a onclick="volverMenu()" class="btn-text-nav">← Menú Evaluaciones</a>
+        <a id="btnVolverScreening" onclick="volverMenu()" class="btn-text-nav">← Menú Evaluaciones</a>
         <span class="btn-text-nav" style="color: var(--accent-cyan);">D.S. N° 170 MTT</span>
       </div>
 
@@ -293,7 +293,6 @@
         <div id="boxOptotipo" class="optotipo-e rot-0" style="font-size: 5rem;">E</div>
         <div id="feedbackToast" class="feedback-toast toast-ok">¡CORRECTO!</div>
 
-        <!-- OVERLAY DE BLOQUEO POR DISTANCIA -->
         <div id="boxBlockDistancia" class="distance-block-overlay">
           <span class="distance-block-title">⚠️ DISTANCIA FUERA DE RANGO</span>
           <span id="txtDistanciaDetalle" class="distance-block-desc">
@@ -321,20 +320,20 @@
         </div>
       </div>
 
-      <button id="btnIniciarExamen" onclick="iniciarExamenVisual()" class="btn-action-main">
+      <button type="button" id="btnIniciarExamen" onclick="iniciarExamenVisual()" class="btn-action-main">
         INICIAR DEMO (4 ENSAYOS) →
       </button>
 
       <div id="boxKeypad" class="keypad-grid" style="display: none;">
         <div></div>
-        <button onclick="responderDireccion('ARRIBA')" class="btn-key btn-key-action">▲</button>
+        <button type="button" onclick="responderDireccion('ARRIBA')" class="btn-key btn-key-action">▲</button>
         <div></div>
-        <button onclick="responderDireccion('IZQUIERDA')" class="btn-key btn-key-action">◀</button>
-        <button onclick="responderDireccion('ABAJO')" class="btn-key btn-key-action">▼</button>
-        <button onclick="responderDireccion('DERECHA')" class="btn-key btn-key-action">▶</button>
+        <button type="button" onclick="responderDireccion('IZQUIERDA')" class="btn-key btn-key-action">◀</button>
+        <button type="button" onclick="responderDireccion('ABAJO')" class="btn-key btn-key-action">▼</button>
+        <button type="button" onclick="responderDireccion('DERECHA')" class="btn-key btn-key-action">▶</button>
       </div>
 
-      <button id="btnSiguienteFase" onclick="finalizarFase()" class="btn-action-main" style="display: none; background: var(--accent-green);">
+      <button type="button" id="btnSiguienteFase" onclick="finalizarFase()" class="btn-action-main" style="display: none; background: var(--accent-green);">
         CONTINUAR AL MENÚ DE PRUEBAS →
       </button>
     </div>
@@ -344,13 +343,18 @@
     <div class="modal-content">
       <div id="modalTitle" class="modal-title">PRUEBA FINALIZADA</div>
       <div id="modalBody" class="modal-body">Resultados registrados.</div>
-      <button id="modalBtnClose" class="modal-btn">Continuar</button>
+      <button type="button" id="modalBtnClose" class="modal-btn">Continuar</button>
     </div>
   </div>
 
   <script>
     const urlParams = new URLSearchParams(window.location.search);
     const modeParam = urlParams.get('mode') || 'b2b';
+    const esFlujoDemo =
+      urlParams.get('flujo') === 'demo' ||
+      modeParam === 'demo' ||
+      localStorage.getItem('sensometrika_flujo_demo_activo') === 'true';
+    const claveModulo = urlParams.get('modulo') || 'visual';
     const esB2B = (modeParam === 'b2b') || urlParams.has('token') || urlParams.has('session');
 
     let datosUsuario = {};
@@ -363,13 +367,45 @@
     const rawEmpresa = urlParams.get('empresa') || datosUsuario.empresa || localStorage.getItem('sensometrika_b2b_empresa') || '';
     const planActivo = (urlParams.get('plan') || localStorage.getItem('sensometrika_b2b_plan') || 'BASICO').toUpperCase();
     const rut = urlParams.get('rut') || datosUsuario.rut || localStorage.getItem('sensometrika_rut') || '12345678-K';
-    const cleanRut = rut.replace(/[^0-9Kk]/g, '');
+    const cleanRut = rut.replace(/[^0-9Kk]/g, '').toUpperCase() || '12345678K';
     const sessionId = urlParams.get('session') || localStorage.getItem('sensometrika_session_activa') || `SESION_B2B_${cleanRut}_${Date.now()}`;
+
+    function marcarCompletadoDemo() {
+      if (!esFlujoDemo) return;
+      localStorage.setItem(`sensometrika_${claveModulo}_${cleanRut}_${sessionId}`, 'true');
+      localStorage.setItem(`sensometrika_demo_completado_${claveModulo}_${cleanRut}_${sessionId}`, 'true');
+    }
+
+    function resolverDestinoScreeningVisual() {
+      const returnUrl = urlParams.get('returnUrl');
+      if (returnUrl) {
+        return decodeURIComponent(returnUrl);
+      }
+
+      if (esFlujoDemo) {
+        const paramsSalida = new URLSearchParams(urlParams.toString());
+        paramsSalida.set('flujo', 'demo');
+        paramsSalida.set('mode', 'demo');
+        paramsSalida.set('modulo', claveModulo);
+        return `demo_empresa/demo_menu_b2b.html?${paramsSalida.toString()}`;
+      }
+
+      const paramsRegreso = new URLSearchParams({
+        rut: rut,
+        nombre: rawNombre,
+        cargo: rawCargo,
+        empresa: rawEmpresa,
+        plan: planActivo,
+        session: sessionId,
+        mode: 'b2b'
+      });
+      return `menu_b2b_planes.html?${paramsRegreso.toString()}`;
+    }
 
     let audioCtx = null;
     let esDemo = true;
     let modoActual = 'DEMO';
-    let maxEnsayosActual = 4; // 4 para DEMO, 8 para OFICIAL
+    let maxEnsayosActual = 4;
     let ensayoActual = 0;
     let aciertosReales = 0;
     let direccionCorrecta = 'DERECHA';
@@ -400,7 +436,6 @@
       };
     }
 
-    // VERIFICACIÓN ESTRICTA ÚNICAMENTE POR SESIÓN CORRIENTE
     function verificarModuloEjecutadoEnSesion() {
       if (urlParams.has('reeval')) return false;
       const dataStr = localStorage.getItem(`sensometrika_visual_${cleanRut}_${sessionId}`);
@@ -419,11 +454,11 @@
         document.getElementById('lblFaseBadge').style.background = 'rgba(16, 185, 129, 0.1)';
         document.getElementById('btnIniciarExamen').style.display = 'none';
         document.getElementById('btnSiguienteFase').style.display = 'block';
-        document.getElementById('btnSiguienteFase').textContent = '← RETORNAR AL MENÚ DE EVALUACIONES';
+        document.getElementById('btnSiguienteFase').textContent = esFlujoDemo ? '← RETORNAR AL MENÚ DEMO' : '← RETORNAR AL MENÚ DE EVALUACIONES';
       } else if (!demoRealizada) {
         esDemo = true;
         modoActual = 'DEMO';
-        maxEnsayosActual = 4; // REDUCIDO A 4 ENSAYOS PARA LA DEMO
+        maxEnsayosActual = 4;
         document.getElementById('lblFaseBadge').textContent = 'Paso 1: Calibración Demo (1/1)';
         document.getElementById('lblFaseBadge').style.borderColor = 'var(--accent-gold)';
         document.getElementById('lblFaseBadge').style.color = 'var(--accent-gold)';
@@ -435,8 +470,8 @@
       } else {
         esDemo = false;
         modoActual = 'OFICIAL';
-        maxEnsayosActual = 8; // 8 ENSAYOS PARA LA PRUEBA OFICIAL B2B
-        document.getElementById('lblFaseBadge').textContent = 'Fase 2: Simulación Oficial B2B (1/1)';
+        maxEnsayosActual = 8;
+        document.getElementById('lblFaseBadge').textContent = esFlujoDemo ? 'Fase 2: Simulación Demo B2B (1/1)' : 'Fase 2: Simulación Oficial B2B (1/1)';
         document.getElementById('lblFaseBadge').style.borderColor = 'var(--accent-cyan)';
         document.getElementById('lblFaseBadge').style.color = 'var(--accent-cyan)';
         document.getElementById('lblFaseBadge').style.background = 'rgba(0, 191, 255, 0.1)';
@@ -452,6 +487,12 @@
     }
 
     document.addEventListener('DOMContentLoaded', () => {
+      if (esFlujoDemo) {
+        const btnNav = document.getElementById('btnVolverScreening');
+        const sub = document.getElementById('subtituloScreeningVisual');
+        if (btnNav) btnNav.textContent = '← Menú Demo';
+        if (sub) sub.textContent = 'MÓDULO SCREENING VISUAL • DEMO B2B';
+      }
       actualizarEstadoUI();
       iniciarMediaPipeFaceMesh();
       configurarTecladoFisico();
@@ -704,10 +745,10 @@
           fecha: new Date().toISOString()
         };
 
-        // REGISTRO DE TODAS LAS CLAVES COMPATIBLES CON INFORME-B2B.HTML Y MENU
         localStorage.setItem(`sensometrika_visual_${cleanRut}_${sessionId}`, JSON.stringify(registroData));
         localStorage.setItem(`sensometrika_last_visual_${cleanRut}_${sessionId}`, JSON.stringify(registroData));
         localStorage.setItem('sensometrika_visual', JSON.stringify(registroData));
+        marcarCompletadoDemo();
 
         let modulosRendidos = {};
         try { modulosRendidos = JSON.parse(localStorage.getItem('sensometrika_modulos_rendidos')) || {}; } catch(e){}
@@ -725,16 +766,7 @@
     }
 
     function volverPortal() {
-      const paramsRegreso = new URLSearchParams({
-        rut: rut,
-        nombre: rawNombre,
-        cargo: rawCargo,
-        empresa: rawEmpresa,
-        plan: planActivo,
-        session: sessionId,
-        mode: 'b2b'
-      });
-      window.location.href = `menu_b2b_planes.html?${paramsRegreso.toString()}`;
+      window.location.href = resolverDestinoScreeningVisual();
     }
 
     function volverMenu() { volverPortal(); }

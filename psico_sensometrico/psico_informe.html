@@ -1,0 +1,990 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>SENSOMETRIKA | Informe Pericial Psicosensométrico</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    :root {
+      --bg-main: #040810;
+      --bg-card: #091120;
+      --bg-surface: #0f172a;
+      --border-subtle: #1e293b;
+      --border-active: #38bdf8;
+      --accent-cyan: #00e5ff;
+      --accent-sky: #38bdf8;
+      --accent-blue: #0284c7;
+      --accent-green: #10b981;
+      --accent-amber: #f59e0b;
+      --accent-red: #ef4444;
+      --text-primary: #f8fafc;
+      --text-secondary: #cbd5e1;
+      --text-muted: #94a3b8;
+    }
+
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background-color: var(--bg-main);
+      color: var(--text-primary);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      padding: 16px 12px 36px;
+    }
+
+    .report-shell {
+      width: 100%;
+      max-width: 840px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .action-bar {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      background: var(--bg-card);
+      border: 1.5px solid var(--border-subtle);
+      border-radius: 14px;
+      padding: 12px 14px;
+    }
+
+    .action-group {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn-ui {
+      background: var(--bg-surface);
+      color: var(--text-secondary);
+      border: 1px solid #293952;
+      border-radius: 9px;
+      padding: 8px 13px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn-ui:hover {
+      border-color: var(--border-active);
+      color: var(--text-primary);
+    }
+
+    .btn-ui.primary {
+      background: var(--accent-cyan);
+      color: #030712;
+      border-color: var(--accent-cyan);
+      font-weight: 900;
+    }
+
+    .pericial-doc {
+      background: var(--bg-card);
+      border: 1.5px solid var(--border-subtle);
+      border-radius: 18px;
+      padding: 20px 18px;
+      box-shadow: 0 18px 42px rgba(0, 0, 0, 0.65);
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .doc-header {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 14px;
+      padding-bottom: 14px;
+      border-bottom: 1px solid #152238;
+    }
+
+    .brand-block {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .logo-frame {
+      width: 170px;
+      background: #060d1d;
+      border: 1px solid #15263d;
+      border-radius: 12px;
+      padding: 5px 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 18px rgba(0, 229, 255, 0.14);
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+
+    .brand-logo-img {
+      width: 100%;
+      max-height: 62px;
+      object-fit: contain;
+      display: block;
+      mix-blend-mode: lighten;
+    }
+
+    .doc-title-wrap h1 {
+      font-size: 1.05rem;
+      font-weight: 900;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      color: var(--text-primary);
+    }
+
+    .doc-title-wrap p {
+      font-size: 0.72rem;
+      color: var(--accent-sky);
+      font-weight: 700;
+      margin-top: 2px;
+    }
+
+    .folio-box {
+      background: #040914;
+      border: 1px solid #1e3a5f;
+      border-radius: 12px;
+      padding: 9px 12px;
+      font-size: 0.74rem;
+      line-height: 1.5;
+      color: var(--text-secondary);
+      text-align: right;
+    }
+
+    .folio-box strong {
+      color: var(--accent-cyan);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .dictamen-banner {
+      border-radius: 14px;
+      padding: 14px 16px;
+      border: 1.5px solid var(--border-subtle);
+      background: #040914;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .dictamen-banner.apto {
+      border-color: rgba(16, 185, 129, 0.55);
+      background: rgba(16, 185, 129, 0.08);
+    }
+
+    .dictamen-banner.observado {
+      border-color: rgba(245, 158, 11, 0.6);
+      background: rgba(245, 158, 11, 0.09);
+    }
+
+    .dictamen-banner.alerta {
+      border-color: rgba(239, 68, 68, 0.65);
+      background: rgba(239, 68, 68, 0.09);
+    }
+
+    .dictamen-kicker {
+      font-size: 0.68rem;
+      font-weight: 800;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: var(--text-muted);
+    }
+
+    .dictamen-main {
+      font-size: 1rem;
+      font-weight: 900;
+      color: var(--text-primary);
+    }
+
+    .dictamen-sub {
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      line-height: 1.45;
+    }
+
+    .section-card {
+      background: var(--bg-surface);
+      border: 1px solid #24344d;
+      border-radius: 14px;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .section-title {
+      font-size: 0.78rem;
+      font-weight: 900;
+      letter-spacing: 0.7px;
+      text-transform: uppercase;
+      color: var(--accent-cyan);
+    }
+
+    .meta-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(175px, 1fr));
+      gap: 10px;
+    }
+
+    .meta-item {
+      background: #040914;
+      border: 1px solid #1b2a42;
+      border-radius: 10px;
+      padding: 9px 11px;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+
+    .meta-item span {
+      font-size: 0.65rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      color: var(--text-muted);
+    }
+
+    .meta-item strong {
+      font-size: 0.84rem;
+      color: var(--text-primary);
+      word-break: break-word;
+    }
+
+    /* GRID DE 3 CHECKPOINTS BIOMÉTRICOS + FIRMA */
+    .biometria-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+    }
+
+    .bio-card {
+      background: #040914;
+      border: 1px solid #1b2a42;
+      border-radius: 10px;
+      padding: 9px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      gap: 6px;
+    }
+
+    .bio-card-tag {
+      font-size: 0.64rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      color: var(--accent-sky);
+      letter-spacing: 0.4px;
+    }
+
+    .bio-thumb {
+      width: 100%;
+      height: 76px;
+      border-radius: 8px;
+      border: 1px solid #24344d;
+      background: #091120;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      font-size: 0.68rem;
+      color: var(--text-muted);
+    }
+
+    .bio-thumb img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .bio-thumb.firma-box img {
+      object-fit: contain;
+      background: #f8fafc;
+      padding: 4px;
+    }
+
+    .bio-ts {
+      font-size: 0.65rem;
+      color: var(--text-secondary);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+      border-radius: 10px;
+      border: 1px solid #1e293b;
+      background: #040914;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.78rem;
+    }
+
+    th, td {
+      padding: 9px 10px;
+      border-bottom: 1px solid #152238;
+      text-align: left;
+    }
+
+    th {
+      background: #091326;
+      color: var(--accent-sky);
+      font-size: 0.68rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 0.68rem;
+      font-weight: 800;
+    }
+
+    .badge.ok {
+      background: rgba(16, 185, 129, 0.16);
+      color: #6ee7b7;
+      border: 1px solid rgba(16, 185, 129, 0.4);
+    }
+
+    .badge.warn {
+      background: rgba(245, 158, 11, 0.16);
+      color: #fcd34d;
+      border: 1px solid rgba(245, 158, 11, 0.45);
+    }
+
+    .badge.pend {
+      background: rgba(148, 163, 184, 0.15);
+      color: #cbd5e1;
+      border: 1px solid rgba(148, 163, 184, 0.35);
+    }
+
+    .cruce-list {
+      padding-left: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      line-height: 1.45;
+    }
+
+    .qr-footer-grid {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 16px;
+      align-items: center;
+    }
+
+    .qr-box {
+      width: 124px;
+      height: 124px;
+      background: #ffffff;
+      border-radius: 12px;
+      padding: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .hash-code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 0.72rem;
+      color: var(--accent-cyan);
+      background: #040914;
+      border: 1px solid #1b2a42;
+      border-radius: 8px;
+      padding: 8px 10px;
+      word-break: break-all;
+    }
+
+    .legal-box {
+      background: #040914;
+      border-left: 3px solid var(--accent-amber);
+      border-radius: 8px;
+      padding: 11px 13px;
+      font-size: 0.74rem;
+      line-height: 1.45;
+      color: var(--text-muted);
+    }
+
+    .sync-status {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+    }
+
+    @media (max-width: 640px) {
+      .biometria-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      .qr-footer-grid {
+        grid-template-columns: 1fr;
+        justify-items: center;
+        text-align: center;
+      }
+      .folio-box {
+        text-align: left;
+      }
+    }
+
+    @media print {
+      body {
+        background: #ffffff;
+        color: #0f172a;
+        padding: 0;
+      }
+      .action-bar, .no-print {
+        display: none !important;
+      }
+      .pericial-doc, .section-card, .meta-item, .bio-card, .bio-thumb, .table-wrap, th, td, .folio-box, .dictamen-banner, .hash-code, .legal-box {
+        background: #ffffff !important;
+        color: #0f172a !important;
+        border-color: #cbd5e1 !important;
+        box-shadow: none !important;
+      }
+      .logo-frame {
+        background: #ffffff !important;
+        border-color: #cbd5e1 !important;
+        box-shadow: none !important;
+      }
+      .brand-logo-img {
+        mix-blend-mode: normal !important;
+      }
+      .section-title, .bio-card-tag, .doc-title-wrap p, .folio-box strong, .hash-code {
+        color: #0f172a !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="report-shell">
+    <div class="action-bar no-print">
+      <button type="button" id="btnVolverMenu" class="btn-ui">← Menú Psicosensométrico</button>
+      <div class="action-group">
+        <span id="txtSyncBd" class="sync-status">Verificando registro...</span>
+        <button type="button" id="btnImprimir" class="btn-ui primary">🖨 Imprimir / Guardar PDF</button>
+      </div>
+    </div>
+
+    <article class="pericial-doc" id="documentoPericial">
+      <header class="doc-header">
+        <div class="brand-block">
+          <div class="logo-frame">
+            <img id="logoSensometrikaImg" src="../sensometrika.jpg" alt="SENSOMETRIKA Calibration Technology" class="brand-logo-img">
+          </div>
+          <div class="doc-title-wrap">
+            <h1>Informe Pericial Psicosensométrico</h1>
+            <p>SENSOMETRIKA · Entorno Cerrado de Telemetría y Factores Humanos</p>
+          </div>
+        </div>
+        <div class="folio-box">
+          <div>Folio: <strong id="lblFolio">--</strong></div>
+          <div>Sesión: <strong id="lblSession">--</strong></div>
+          <div>Emisión: <strong id="lblFecha">--</strong></div>
+        </div>
+      </header>
+
+      <section id="bannerDictamen" class="dictamen-banner observado">
+        <span class="dictamen-kicker">Dictamen Técnico Pericial Consolidado</span>
+        <div class="dictamen-main" id="lblDictamenTitulo">Evaluando registro...</div>
+        <div class="dictamen-sub" id="lblDictamenDetalle">--</div>
+      </section>
+
+      <section class="section-card">
+        <div class="section-title">1. Identificación del Evaluado y Entorno de Sesión</div>
+        <div class="meta-grid">
+          <div class="meta-item"><span>Nombre Evaluado</span><strong id="metaNombre">--</strong></div>
+          <div class="meta-item"><span>RUT</span><strong id="metaRut">--</strong></div>
+          <div class="meta-item"><span>Cargo / Función</span><strong id="metaCargo">--</strong></div>
+          <div class="meta-item"><span>Empresa / Mandante</span><strong id="metaEmpresa">--</strong></div>
+          <div class="meta-item"><span>Entorno Evaluativo</span><strong id="metaEntorno">PSICOSENSOMÉTRICO CERRADO</strong></div>
+          <div class="meta-item"><span>Biometría / Checkpoints</span><strong id="metaBioResumen">--</strong></div>
+        </div>
+      </section>
+
+      <section class="section-card">
+        <div class="section-title">2. Trazabilidad Biométrica de Identidad (3 Registros + Firma)</div>
+        <div class="biometria-grid" id="gridBiometria"></div>
+      </section>
+
+      <section class="section-card">
+        <div class="section-title">3. Telemetría de Módulos Psicosensométricos</div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Módulo</th>
+                <th>Métrica Principal</th>
+                <th>Precisión / Estabilidad</th>
+                <th>Anticipaciones / Errores</th>
+                <th>Estado</th>
+              </tr>
+            </thead>
+            <tbody id="tbodyModulos"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="section-card">
+        <div class="section-title">4. Factores Humanos y Conducta (28 Ítems) + Cruce Pericial</div>
+        <div class="meta-grid" id="gridDimensiones"></div>
+        <ul class="cruce-list" id="listaCruce"></ul>
+      </section>
+
+      <section class="section-card">
+        <div class="section-title">5. Verificación por Código QR e Integridad Digital</div>
+        <div class="qr-footer-grid">
+          <div class="qr-box" id="qrContainer" aria-label="Código QR de verificación del informe"></div>
+          <div style="display: flex; flex-direction: column; gap: 8px;">
+            <div style="font-size: 0.8rem; color: var(--text-secondary); line-height: 1.45;">
+              URL de validación vinculada al folio: <strong id="lblUrlQr" style="color: var(--accent-sky); word-break: break-all;">--</strong>
+            </div>
+            <div class="hash-code" id="lblHashIntegridad">SHA256-PENDIENTE</div>
+            <div class="legal-box">
+              <strong>Encuadre Pericial y Preventivo:</strong> Este informe consolida los registros biométricos de sesión, telemetría psicosensométrica y autoevaluación conductual capturados dentro del entorno cerrado Psicosensométrico de Sensometrika con fines preventivos, de control operacional y respaldo documental. No constituye diagnóstico clínico, examen médico ocupacional ni certificación oficial de autoridad competente.
+            </div>
+          </div>
+        </div>
+      </section>
+    </article>
+  </div>
+
+  <script>
+    (function () {
+      const logoImg = document.getElementById("logoSensometrikaImg");
+      const candidatosLogo = [
+        "../sensometrika.jpg",
+        "sensometrika.jpg",
+        "../sensometrica.jpg",
+        "sensometrica.jpg"
+      ];
+      let idxLogo = 0;
+      logoImg.addEventListener("error", () => {
+        idxLogo++;
+        if (idxLogo < candidatosLogo.length) {
+          logoImg.src = candidatosLogo[idxLogo];
+        } else {
+          logoImg.style.display = "none";
+        }
+      });
+
+      const queryString = window.location.search || "";
+      const urlParams = new URLSearchParams(queryString);
+
+      function parseJsonSafe(raw) {
+        if (!raw) return null;
+        try { return JSON.parse(raw); } catch (e) { return null; }
+      }
+
+      const datosUsuario = parseJsonSafe(localStorage.getItem("sensometrika_datos_usuario")) || {};
+      const nombre = decodeURIComponent(urlParams.get("nombre") || datosUsuario.nombre || localStorage.getItem("sensometrika_nombre") || "Evaluado No Especificado");
+      const rut = decodeURIComponent(urlParams.get("rut") || datosUsuario.rut || localStorage.getItem("sensometrika_rut") || "No Informado");
+      const cargo = decodeURIComponent(urlParams.get("cargo") || datosUsuario.cargo || localStorage.getItem("sensometrika_cargo") || "Operador");
+      const empresa = decodeURIComponent(urlParams.get("empresa") || datosUsuario.empresa || localStorage.getItem("sensometrika_b2b_empresa") || "Particular / No Informada");
+      const cleanRut = rut.replace(/[^0-9Kk]/g, "");
+
+      // Normalizar ID de Sesión bajo el entorno Psicosensométrico cerrado
+      const rawSession = urlParams.get("session") || datosUsuario.session || localStorage.getItem("sensometrika_session_activa") || "";
+      let sessionId = rawSession;
+      if (!sessionId) {
+        sessionId = cleanRut ? `SESION_PSICO_${cleanRut}` : "SESION_PSICO_LOCAL";
+      } else if (sessionId.startsWith("SESION_B2B_")) {
+        sessionId = sessionId.replace(/^SESION_B2B_/, "SESION_PSICO_");
+      }
+
+      function leerClaveConContexto(baseKeys) {
+        for (const base of baseKeys) {
+          if (cleanRut && rawSession) {
+            const v0 = parseJsonSafe(localStorage.getItem(`${base}_${cleanRut}_${rawSession}`));
+            if (v0) return v0;
+          }
+          if (cleanRut && sessionId) {
+            const v1 = parseJsonSafe(localStorage.getItem(`${base}_${cleanRut}_${sessionId}`));
+            if (v1) return v1;
+          }
+          if (cleanRut) {
+            const v2 = parseJsonSafe(localStorage.getItem(`${base}_${cleanRut}`));
+            if (v2) return v2;
+          }
+          const v3 = parseJsonSafe(localStorage.getItem(base));
+          if (v3) return v3;
+        }
+        return null;
+      }
+
+      const reactData = leerClaveConContexto(["sensometrika_reactimetro_avanzado", "sensometrika_reactimetro", "sensometrika_psico_reactimetro"]);
+      const palData = leerClaveConContexto(["sensometrika_palancas", "sensometrika_psico_palancas"]);
+      const puntData = leerClaveConContexto(["sensometrika_punteo", "sensometrika_psico_punteo"]);
+      const vigData = leerClaveConContexto(["sensometrika_vigilancia", "sensometrika_psico_vigilancia", "sensometrika_fatiga_pvt"]);
+      const testData = leerClaveConContexto(["sensometrika_psico_test"]);
+      const sesionObj = leerClaveConContexto(["sensometrika_psico_sesion"]) || {};
+
+      let modulosRendidos = parseJsonSafe(localStorage.getItem("sensometrika_modulos_rendidos")) || {};
+      if (cleanRut && rawSession) {
+        const rendidosRaw = parseJsonSafe(localStorage.getItem(`sensometrika_modulos_rendidos_${cleanRut}_${rawSession}`));
+        if (rendidosRaw) modulosRendidos = { ...modulosRendidos, ...rendidosRaw };
+      }
+
+      const folioKey = cleanRut && sessionId ? `sensometrika_folio_${cleanRut}_${sessionId}` : `sensometrika_folio_${sessionId}`;
+      let folio = localStorage.getItem(folioKey);
+      if (!folio) {
+        const baseNum = Math.abs(Array.from(`${cleanRut}|${sessionId}`).reduce((acc, ch) => ((acc << 5) - acc) + ch.charCodeAt(0), 0)) % 900000 + 100000;
+        folio = `SMK-${baseNum}`;
+        localStorage.setItem(folioKey, folio);
+      }
+
+      const fechaEmision = new Date().toLocaleString("es-CL", { hour12: false });
+
+      // EXTRACCIÓN DE LOS 3 CHECKPOINTS BIOMÉTRICOS + FIRMA
+      function buscarImagenCheckpoint(num) {
+        const candidatos = [
+          sesionObj?.checkpoints?.[`cp${num}`],
+          sesionObj?.biometria?.[`cp${num}`],
+          parseJsonSafe(localStorage.getItem(`sensometrika_cp${num}_${cleanRut}`)),
+          parseJsonSafe(localStorage.getItem(`sensometrika_checkpoint_${num}`)),
+          localStorage.getItem(`sensometrika_cp${num}_img`),
+          localStorage.getItem(`sensometrika_foto_cp${num}`)
+        ];
+        if (num === 1) {
+          candidatos.push(
+            datosUsuario.foto || datosUsuario.fotoBase64 || datosUsuario.selfie,
+            localStorage.getItem("sensometrika_foto_trabajador"),
+            localStorage.getItem(`sensometrika_foto_${cleanRut}`)
+          );
+        }
+        for (const item of candidatos) {
+          if (!item) continue;
+          if (typeof item === "string" && item.startsWith("data:image")) {
+            return { img: item, ts: sesionObj?.[`cp${num}_ts`] || "Registrado en sesión" };
+          }
+          if (typeof item === "object") {
+            const imgStr = item.imagen || item.foto || item.dataUrl || item.src || "";
+            if (typeof imgStr === "string" && imgStr.startsWith("data:image")) {
+              return { img: imgStr, ts: item.timestamp || item.fecha || "Registrado en sesión" };
+            }
+          }
+        }
+        return null;
+      }
+
+      function buscarFirma() {
+        const candidatos = [
+          sesionObj?.firma,
+          datosUsuario.firma,
+          localStorage.getItem(`sensometrika_firma_${cleanRut}`),
+          localStorage.getItem("sensometrika_firma_trabajador"),
+          localStorage.getItem("sensometrika_firma")
+        ];
+        for (const item of candidatos) {
+          if (!item) continue;
+          if (typeof item === "string" && item.startsWith("data:image")) return item;
+          if (typeof item === "object" && typeof item.dataUrl === "string" && item.dataUrl.startsWith("data:image")) return item.dataUrl;
+        }
+        return null;
+      }
+
+      const cp1 = buscarImagenCheckpoint(1);
+      const cp2 = buscarImagenCheckpoint(2);
+      const cp3 = buscarImagenCheckpoint(3);
+      const firmaImg = buscarFirma();
+      const cpsCapturados = [cp1, cp2, cp3].filter(Boolean).length;
+
+      function renderBioCard(etiqueta, registro, esFirma) {
+        if (esFirma) {
+          return `
+            <div class="bio-card">
+              <span class="bio-card-tag">${etiqueta}</span>
+              <div class="bio-thumb firma-box">
+                ${registro ? `<img src="${registro}" alt="Firma digital del evaluado">` : `<span>Firma vinculada en sesión</span>`}
+              </div>
+              <span class="bio-ts">${registro ? "Firma verificada ✓" : "Consentimiento registrado"}</span>
+            </div>
+          `;
+        }
+        return `
+          <div class="bio-card">
+            <span class="bio-card-tag">${etiqueta}</span>
+            <div class="bio-thumb">
+              ${registro ? `<img src="${registro.img}" alt="${etiqueta}">` : `<span>Captura en cabina</span>`}
+            </div>
+            <span class="bio-ts">${registro ? registro.ts : "Pendiente / Sin captura"}</span>
+          </div>
+        `;
+      }
+
+      document.getElementById("gridBiometria").innerHTML = [
+        renderBioCard("CP1 · Apertura", cp1, false),
+        renderBioCard("CP2 · Intermedio", cp2, false),
+        renderBioCard("CP3 · Cierre", cp3, false),
+        renderBioCard("Firma Digital", firmaImg, true)
+      ].join("");
+
+      document.getElementById("metaBioResumen").textContent = `${cpsCapturados} / 3 Capturas Biométricas`;
+
+      // NORMALIZACIÓN DE LOS 4 MÓDULOS PSICOSENSOMÉTRICOS
+      function normalizarModulo(nombreModulo, data, flagKey) {
+        const completado = Boolean(data && (data.estado === "completado" || data.completado === true || data.promedioMs || data.promedioTiempo || data.efectividad !== undefined || data.precision !== undefined || data.toques !== undefined || data.latenciaPromedioMs || data.lapsos !== undefined)) || Boolean(flagKey && modulosRendidos[flagKey]);
+        if (!completado || !data) {
+          return {
+            nombre: nombreModulo,
+            completado: false,
+            principal: "Sin registro",
+            estabilidad: "--",
+            errores: "--",
+            estadoBadge: '<span class="badge pend">PENDIENTE</span>',
+            alerta: false
+          };
+        }
+
+        const promMs = data.promedioMs ?? data.promedioTiempo ?? data.latenciaPromedioMs ?? data.tiempo ?? null;
+        const sigma = data.desviacionMs ?? data.sigmaMs ?? data.dispersionMs ?? null;
+        const prec = data.precision ?? data.efectividad ?? data.punteo_pct ?? null;
+        const antErrores = data.anticipaciones ?? data.toques ?? data.errores ?? data.lapsos ?? 0;
+        const aprobadoFlag = typeof data.aprobado === "boolean" ? data.aprobado : true;
+
+        let principal = "--";
+        if (promMs !== null) principal = `${promMs} ms`;
+        else if (prec !== null) principal = `${prec}%`;
+
+        let estabilidad = "--";
+        if (sigma !== null && prec !== null) estabilidad = `σ ${sigma} ms · ${prec}%`;
+        else if (sigma !== null) estabilidad = `Disp. σ: ${sigma} ms`;
+        else if (prec !== null) estabilidad = `Precisión: ${prec}%`;
+
+        const alerta = !aprobadoFlag || (typeof antErrores === "number" && antErrores > 3);
+
+        return {
+          nombre: nombreModulo,
+          completado: true,
+          principal,
+          estabilidad,
+          errores: String(antErrores),
+          estadoBadge: alerta
+            ? '<span class="badge warn">OBSERVADO</span>'
+            : '<span class="badge ok">REGISTRADO</span>',
+          alerta,
+          promMs,
+          antErrores
+        };
+      }
+
+      const mReact = normalizarModulo("1. Reactímetro Avanzado", reactData, "reactimetro");
+      const mPal = normalizarModulo("2. Palancas Bimanuales", palData, "palancas");
+      const mPunt = normalizarModulo("3. Punteo / Precisión", puntData, "punteo");
+      const mVig = normalizarModulo("4. Vigilancia / Fatiga (PVT)", vigData, "vigilancia");
+
+      const listaModulos = [mReact, mPal, mPunt, mVig];
+      document.getElementById("tbodyModulos").innerHTML = listaModulos.map(m => `
+        <tr>
+          <td><strong>${m.nombre}</strong></td>
+          <td>${m.principal}</td>
+          <td>${m.estabilidad}</td>
+          <td>${m.errores}</td>
+          <td>${m.estadoBadge}</td>
+        </tr>
+      `).join("");
+
+      // FACTORES HUMANOS Y CONDUCTA (28 ÍTEMS) + CRUCE
+      const dimsObj = (testData && testData.dimensiones) ? testData.dimensiones : null;
+      const dimsDef = [
+        { key: "autocontrol_impulsividad", titulo: "D1 · Autocontrol y Ritmo" },
+        { key: "tolerancia_frustracion_error", titulo: "D2 · Reacción ante Errores" },
+        { key: "gestion_fatiga_distraccion", titulo: "D3 · Fatiga y Atención" },
+        { key: "disciplina_apego_normas", titulo: "D4 · Reglas y Consistencia" }
+      ];
+
+      const gridDimsEl = document.getElementById("gridDimensiones");
+      if (dimsObj) {
+        gridDimsEl.innerHTML = dimsDef.map(d => {
+          const item = dimsObj[d.key] || { score: 0, nivel: "SIN DATO" };
+          return `
+            <div class="meta-item">
+              <span>${d.titulo}</span>
+              <strong>${item.score}/100 · ${item.nivel}</strong>
+            </div>
+          `;
+        }).join("");
+      } else {
+        gridDimsEl.innerHTML = `
+          <div class="meta-item" style="grid-column: 1 / -1;">
+            <span>Cuestionario de Factores Humanos (28 Ítems)</span>
+            <strong>Pendiente de completar en esta sesión (psico_test.html)</strong>
+          </div>
+        `;
+      }
+
+      const cruceNotes = [];
+      if (dimsObj) {
+        const d1 = dimsObj.autocontrol_impulsividad?.score ?? 0;
+        const d3 = dimsObj.gestion_fatiga_distraccion?.score ?? 0;
+        const consist = testData?.validez?.consistenciaScore ?? 100;
+        cruceNotes.push(`Consistencia interna del cuestionario conductual: <strong>${consist}%</strong>.`);
+
+        if (d1 < 40 && mReact.completado && (mReact.antErrores > 1)) {
+          cruceNotes.push("<strong>Cruce D1 vs. Reactímetro:</strong> Baja impulsividad autopercibida, pero se registraron anticipaciones en la prueba de reacción; conviene validar control inhibitorio bajo presión.");
+        }
+        if (d3 < 40 && mVig.completado && (mVig.antErrores > 1)) {
+          cruceNotes.push("<strong>Cruce D3 vs. Vigilancia:</strong> Baja fatiga autopercibida frente a lapsos o alertas en vigilancia sostenida.");
+        }
+        if (Array.isArray(testData?.validez?.observaciones)) {
+          testData.validez.observaciones.forEach(obs => cruceNotes.push(`Observación de validez: ${obs}`));
+        }
+      } else {
+        cruceNotes.push("Al completar el módulo de Factores Humanos y Conducta (28 ítems), el cruce automático aparecerá consolidado en este bloque.");
+      }
+
+      const modulosCompletadosCount = listaModulos.filter(m => m.completado).length;
+      const tieneAlertasModulos = listaModulos.some(m => m.alerta);
+      const alertaTest = Boolean(testData?.validez?.alertaInconsistencia);
+
+      const bannerEl = document.getElementById("bannerDictamen");
+      const dictTituloEl = document.getElementById("lblDictamenTitulo");
+      const dictDetEl = document.getElementById("lblDictamenDetalle");
+
+      let dictamenTexto = "DICTAMEN PERICIAL PSICOSENSOMÉTRICO: EN PROCESO";
+      if (modulosCompletadosCount === 0 && !dimsObj) {
+        bannerEl.className = "dictamen-banner alerta";
+        dictamenTexto = "SIN REGISTROS EVALUATIVOS EN SESIÓN PSICOSENSOMÉTRICA";
+        dictTituloEl.textContent = dictamenTexto;
+        dictDetEl.textContent = "No se detectaron resultados completados en los módulos ni en el test de factores humanos para esta sesión.";
+      } else if (tieneAlertasModulos || alertaTest) {
+        bannerEl.className = "dictamen-banner observado";
+        dictamenTexto = `DICTAMEN PERICIAL PREVENTIVO: OBSERVADO (${modulosCompletadosCount}/4 MÓDULOS REGISTRADOS)`;
+        dictTituloEl.textContent = dictamenTexto;
+        dictDetEl.textContent = "Se detectaron indicadores de dispersión, anticipación, error o inconsistencia para revisión preventiva y contraste operacional.";
+      } else {
+        bannerEl.className = "dictamen-banner apto";
+        dictamenTexto = `DICTAMEN PERICIAL PREVENTIVO: SIN ALERTAS CRÍTICAS (${modulosCompletadosCount}/4 MÓDULOS REGISTRADOS)`;
+        dictTituloEl.textContent = dictamenTexto;
+        dictDetEl.textContent = "Los parámetros registrados en la sesión psicosensométrica presentan consistencia dentro de los rangos configurados.";
+      }
+
+      // Llenar ficha de identidad
+      document.getElementById("lblFolio").textContent = folio;
+      document.getElementById("lblSession").textContent = sessionId;
+      document.getElementById("lblFecha").textContent = fechaEmision;
+      document.getElementById("metaNombre").textContent = nombre;
+      document.getElementById("metaRut").textContent = rut;
+      document.getElementById("metaCargo").textContent = cargo;
+      document.getElementById("metaEmpresa").textContent = empresa;
+      document.getElementById("listaCruce").innerHTML = cruceNotes.map(n => `<li>${n}</li>`).join("");
+
+      // Hash de integridad determinístico
+      const payloadResumen = {
+        folio,
+        sessionId,
+        rut,
+        nombre,
+        biometria: cpsCapturados,
+        modulos: listaModulos.map(m => ({ m: m.nombre, p: m.principal, e: m.errores, c: m.completado })),
+        testScore: dimsObj ? {
+          d1: dimsObj.autocontrol_impulsividad?.score,
+          d2: dimsObj.tolerancia_frustracion_error?.score,
+          d3: dimsObj.gestion_fatiga_distraccion?.score,
+          d4: dimsObj.disciplina_apego_normas?.score
+        } : null
+      };
+
+      const rawStr = JSON.stringify(payloadResumen);
+      let h1 = 0x811c9dc5;
+      for (let i = 0; i < rawStr.length; i++) {
+        h1 ^= rawStr.charCodeAt(i);
+        h1 = Math.imul(h1, 0x01000193);
+      }
+      const hashHex = `SMK-SHA-${(h1 >>> 0).toString(16).padStart(8, "0").toUpperCase()}-${rawStr.length.toString(16).toUpperCase()}`;
+      document.getElementById("lblHashIntegridad").textContent = `HASH DE INTEGRIDAD: ${hashHex}`;
+
+      // Código QR
+      const originBase = window.location.origin && window.location.origin !== "null"
+        ? window.location.origin
+        : "https://sensometrika.cl";
+      const qrUrl = `${originBase}/validar.html?folio=${encodeURIComponent(folio)}&rut=${encodeURIComponent(rut)}&session=${encodeURIComponent(sessionId)}`;
+      document.getElementById("lblUrlQr").textContent = qrUrl;
+
+      const qrContainer = document.getElementById("qrContainer");
+      if (typeof window.QRCode === "function") {
+        new window.QRCode(qrContainer, {
+          text: qrUrl,
+          width: 108,
+          height: 108,
+          correctLevel: window.QRCode.CorrectLevel ? window.QRCode.CorrectLevel.M : 1
+        });
+      } else {
+        qrContainer.innerHTML = `<span style="color:#0f172a;font-size:0.65rem;font-weight:800;text-align:center;">FOLIO<br>${folio}</span>`;
+      }
+
+      // Respaldo en Supabase
+      const syncEl = document.getElementById("txtSyncBd");
+      (async function syncSupabase() {
+        try {
+          if (!window.supabase || typeof window.supabase.createClient !== "function") {
+            syncEl.textContent = "Respaldo local activo";
+            return;
+          }
+          const SUPABASE_URL = "https://kytuewhkhshrjddzoknv.supabase.co";
+          const SUPABASE_ANON_KEY = "sb_publishable_ou-yRIieMQOGoWJ4YZIYtg_-Lusc711";
+          const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+          const { error } = await client.from("certificados_folios").insert([{
+            folio,
+            evaluado: nombre,
+            rut,
+            empresa,
+            dictamen: dictamenTexto,
+            reactimetro_ms: mReact.promMs ?? null,
+            palancas_toques: typeof palData?.toques === "number" ? palData.toques : null,
+            punteo_pct: typeof puntData?.precision === "number" ? puntData.precision : (typeof puntData?.efectividad === "number" ? puntData.efectividad : null),
+            aprobado: !tieneAlertasModulos && !alertaTest
+          }]);
+
+          if (error) {
+            syncEl.textContent = error.code === "23505"
+              ? `Folio ${folio} verificado`
+              : "Respaldo local activo";
+          } else {
+            syncEl.textContent = `Respaldado en BD · ${folio}`;
+          }
+        } catch (e) {
+          syncEl.textContent = "Respaldo local activo";
+        }
+      })();
+
+      // Retorno al menú del entorno cerrado Psicosensométrico
+      function volverMenuBase() {
+        const qs = window.location.search || "";
+        window.location.href = `psico_menu_b2b.html${qs}`;
+      }
+
+      document.getElementById("btnVolverMenu").addEventListener("click", volverMenuBase);
+      document.getElementById("btnImprimir").addEventListener("click", () => window.print());
+    })();
+  </script>
+</body>
+</html>

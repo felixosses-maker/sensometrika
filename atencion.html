@@ -184,7 +184,7 @@
 
     <div class="main-card">
       <div class="top-nav-bar">
-        <button type="button" onclick="volverMenu()">← Menú Pruebas</button>
+        <button type="button" id="btnVolverMenuTop" onclick="volverMenu()">← Menú Pruebas</button>
         <div class="cam-preview-pip-header">
           <video id="webcamVideo" autoplay playsinline muted></video>
           <div class="cam-tag-header">Biometría</div>
@@ -207,7 +207,7 @@
         </div>
       </div>
 
-      <button id="btnIniciar" class="btn-action-main" onclick="iniciarCPT()">INICIAR EVALUACIÓN CPT</button>
+      <button type="button" id="btnIniciar" class="btn-action-main" onclick="iniciarCPT()">INICIAR EVALUACIÓN CPT</button>
 
       <div class="telemetry-row">
         <div class="telemetry-col"><span class="telemetry-lbl">FASE</span><span id="lblFase" class="telemetry-val" style="color: var(--accent-cyan);">CPT</span></div>
@@ -221,10 +221,52 @@
 
   <script>
     const urlParams = new URLSearchParams(window.location.search);
+    const modeParam = urlParams.get('mode') || '';
+    const isB2C = localStorage.getItem('sensometrika_b2c_mode') === 'true' || modeParam === 'b2c';
+    const esFlujoDemo =
+      urlParams.get('flujo') === 'demo' ||
+      modeParam === 'demo' ||
+      localStorage.getItem('sensometrika_flujo_demo_activo') === 'true';
+    const claveModulo = urlParams.get('modulo') || 'atencion';
+
+    function obtenerDatosSesion() {
+      const rut = urlParams.get('rut') || localStorage.getItem('sensometrika_rut') || 'S/RUT';
+      const cleanRut = rut.replace(/[^0-9Kk]/g, '').toUpperCase() || 'SRUT';
+      const sessionId = urlParams.get('session') || localStorage.getItem('sensometrika_session_activa') || `SESION_${Date.now()}`;
+      return { rut, cleanRut, sessionId };
+    }
+
+    function marcarCompletadoDemo(cleanRut, sessionId) {
+      if (!esFlujoDemo) return;
+      localStorage.setItem(`sensometrika_${claveModulo}_${cleanRut}_${sessionId}`, 'true');
+      localStorage.setItem(`sensometrika_demo_completado_${claveModulo}_${cleanRut}_${sessionId}`, 'true');
+    }
+
+    function resolverDestinoCPT() {
+      const returnUrl = urlParams.get('returnUrl');
+      if (returnUrl) {
+        return decodeURIComponent(returnUrl);
+      }
+
+      const paramsSalida = new URLSearchParams(urlParams.toString());
+      if (esFlujoDemo) {
+        paramsSalida.set('flujo', 'demo');
+        paramsSalida.set('mode', 'demo');
+        paramsSalida.set('modulo', claveModulo);
+        return `demo_empresa/demo_menu_b2b.html?${paramsSalida.toString()}`;
+      }
+
+      return isB2C ? `menu_B2C.html?${paramsSalida.toString()}` : `menu_B2B.html?${paramsSalida.toString()}`;
+    }
+
+    const btnVolverMenuTop = document.getElementById('btnVolverMenuTop');
+    if (btnVolverMenuTop && esFlujoDemo) {
+      btnVolverMenuTop.textContent = '← Menú Demo';
+    }
+
     let distanciaMedidaCm = 55;
     let estaBloqueado = false;
 
-    // Configuración MediaPipe Face Mesh para distancia
     function iniciarMediaPipe() {
       const videoEl = document.getElementById('webcamVideo');
       const fm = new FaceMesh({ locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}` });
@@ -258,7 +300,6 @@
       }
     }
 
-    // Motor CPT
     let ensayo = 0;
     const totalEnsayos = 15;
     let aciertos = 0;
@@ -283,19 +324,18 @@
       }
       ensayo++;
       document.getElementById('lblEnsayo').textContent = `${ensayo}/${totalEnsayos}`;
-      
+
       const setLetras = ['A', 'C', 'X', 'E', 'M', 'X', 'P', 'S', 'X', 'F', 'H', 'X', 'T', 'N', 'X'];
       letraActual = setLetras[ensayo - 1];
 
       const txt = document.getElementById('txtEstimulo');
       txt.textContent = letraActual;
       txt.style.color = letraActual === 'X' ? '#34d399' : 'var(--accent-cyan)';
-      
+
       activoParaPulsar = true;
 
       timeoutCiclo = setTimeout(() => {
         if (activoParaPulsar && letraActual === 'X') {
-          // Omisión
           errores++;
           document.getElementById('lblErrores').textContent = errores;
         }
@@ -314,7 +354,7 @@
         aciertos++;
         document.getElementById('lblAciertos').textContent = aciertos;
       } else {
-        errores++; // Comisión (presionó cuando no era X)
+        errores++;
         document.getElementById('lblErrores').textContent = errores;
       }
 
@@ -325,25 +365,22 @@
     function finalizarCPT() {
       document.getElementById('txtEstimulo').textContent = 'FIN';
       const aprobado = errores <= 3;
-      const rut = urlParams.get('rut') || localStorage.getItem('sensometrika_rut') || 'S/RUT';
-      const cleanRut = rut.replace(/[^0-9Kk]/g, '');
-      const sessionId = urlParams.get('session') || localStorage.getItem('sensometrika_session_activa') || `SESION_${Date.now()}`;
+      const { cleanRut, sessionId } = obtenerDatosSesion();
 
       localStorage.setItem(`sensometrika_atencion_${cleanRut}_${sessionId}`, 'true');
       localStorage.setItem(`sensometrika_last_atencion_${cleanRut}_${sessionId}`, JSON.stringify({
         aprobado: aprobado,
         score: `${aciertos} Aciertos / ${errores} Errores`
       }));
+      marcarCompletadoDemo(cleanRut, sessionId);
 
       setTimeout(() => {
-        const returnUrl = urlParams.get('returnUrl');
-        window.location.href = returnUrl ? decodeURIComponent(returnUrl) : `menu_B2B.html?${urlParams.toString()}`;
+        window.location.href = resolverDestinoCPT();
       }, 1500);
     }
 
     function volverMenu() {
-      const returnUrl = urlParams.get('returnUrl');
-      window.location.href = returnUrl ? decodeURIComponent(returnUrl) : `menu_B2B.html?${urlParams.toString()}`;
+      window.location.href = resolverDestinoCPT();
     }
 
     function mostrarAyuda() { alert('Instrucciones: Toque la pantalla únicamente cuando la letra sea X. Evite pulsar ante cualquier otra letra.'); }
