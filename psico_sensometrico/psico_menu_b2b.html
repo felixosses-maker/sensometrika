@@ -280,7 +280,6 @@
     <div class="top-actions">
       <a href="psico_verificacion_trabajador.html" id="linkVolverVerif" class="btn-mini">← Volver</a>
       <span class="pill-env">PSICOSENSOMÉTRICO</span>
-      <button type="button" id="btnReiniciarSesion" class="btn-mini">↻ Reiniciar</button>
     </div>
 
     <section class="profile-card">
@@ -343,7 +342,6 @@
         avatarBox.innerHTML = `<img src="${fotoData}" alt="${nombre}">`;
       }
 
-      // Leer estado estrictamente aislado para este RUT y esta sesión
       const rendidosKey = (cleanRut && sessionId) ? `sensometrika_modulos_rendidos_${cleanRut}_${sessionId}` : "";
       const rendidos = (rendidosKey && parseJsonSafe(localStorage.getItem(rendidosKey))) || {};
 
@@ -437,28 +435,6 @@
 
       document.getElementById("btnVerInforme").addEventListener("click", () => {
         window.location.href = `psico_informe.html${qsBase}`;
-      });
-
-      document.getElementById("btnReiniciarSesion").addEventListener("click", () => {
-        if (cleanRut && sessionId) {
-          [
-            "sensometrika_reactimetro_avanzado",
-            "sensometrika_reactimetro",
-            "sensometrika_palancas",
-            "sensometrika_psico_palancas",
-            "sensometrika_punteo",
-            "sensometrika_psico_punteo",
-            "sensometrika_vigilancia",
-            "sensometrika_psico_vigilancia",
-            "sensometrika_fatiga_pvt",
-            "sensometrika_psico_test",
-            "sensometrika_modulos_rendidos"
-          ].forEach(base => localStorage.removeItem(`${base}_${cleanRut}_${sessionId}`));
-        }
-        const nuevaSes = `SESION_PSICO_${cleanRut || "EVAL"}_${Date.now()}`;
-        localStorage.setItem("sensometrika_session_activa", nuevaSes);
-        const qsNuevo = `?nombre=${encodeURIComponent(nombre)}&rut=${encodeURIComponent(rut)}&cargo=${encodeURIComponent(cargo)}&empresa=${encodeURIComponent(empresa)}&session=${encodeURIComponent(nuevaSes)}`;
-        window.location.href = `psico_menu_b2b.html${qsNuevo}`;
       });
     })();
   </script>
